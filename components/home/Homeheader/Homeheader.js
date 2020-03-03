@@ -309,7 +309,7 @@ class Homeheader extends React.Component {
             fontSize: '1.5rem',
             textShadow: '0px 0.5px 2px #696969'
           }}>
-            Particuliers ou indépendants ?  Créez dès aujourd’hui votre boutique, proposez vos services et arrondissez vos fins de mois avec My-Alfred !
+            Particuliers ou indépendants ?  Créez dès aujourd’hui votre boutique, proposez vos services et arrondissez vos fins de mois avec My Alfred !
           </h4>
         </div>
         {popopen ?
@@ -323,7 +323,7 @@ class Homeheader extends React.Component {
                   <p onClick={this.handleClose} style={{color: '#F8727F', cursor: 'pointer'}}>x</p>
                 </Grid>
                 <Grid item xs={12}>
-                  <h2 style={{textAlign: 'center',color: 'rgba(84,89,95,0.95)',letterSpacing: -2, fontWeight: 'bold',}}>Les réservations seront disponibles en Mars !</h2>
+                  <h2 style={{textAlign: 'center',color: 'rgba(84,89,95,0.95)',letterSpacing: -2, fontWeight: 'bold',}}>Créez votre boutique !<br/>Les réservations seront ouvertes en Mars</h2>
                 </Grid>
                 <Grid item xs={5}/>
                 <Grid item xs={2} style={{marginTop: '-10px'}}><hr className={classes.grosHR}/></Grid>
