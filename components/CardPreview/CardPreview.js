@@ -27,6 +27,8 @@ import DialogActions from '@material-ui/core/DialogActions';
 import Dialog from '@material-ui/core/Dialog';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import Fab from '@material-ui/core/Fab';
+
 
 const { config } = require('../../config/config');
 const url = config.apiUrl;
@@ -87,15 +89,15 @@ class CardPreview extends React.Component{
               <Grid>
                 <Grid className={classes.actionMediaEdit}>
                   <Link href={'/myShop/services?id=' + services._id}>
-                    <IconButton aria-label="Edit" className={classes.iconButtonStyle}>
+                    <Fab aria-label="edit" className={classes.iconButtonStyle}>
                       <EditIcon style={{color: '#4fbdd7'}}/>
-                    </IconButton>
+                    </Fab>
                   </Link>
                 </Grid>
                 <Grid className={classes.actionMediaRemove}>
-                  <IconButton aria-label="remove" className={classes.iconButtonStyle}>
+                  <Fab aria-label="remove" className={classes.iconButtonStyle}>
                     <DeleteForeverIcon onClick={()=>this.handleClickOpen(services._id)} style={{color: '#f87280'}}/>
-                  </IconButton>
+                  </Fab>
                 </Grid>
               </Grid>
               : null
