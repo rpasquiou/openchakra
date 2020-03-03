@@ -59,7 +59,6 @@ class home extends React.Component {
             users_count: 0,
             alfred_count: 0,
         }
-        setInterval(()=> this.getCounts(), 5000);
         this.getCounts=this.getCounts.bind(this);
     }
 
@@ -99,6 +98,7 @@ class home extends React.Component {
             this.setState({is_admin: decode.is_admin});
         }
         this.getCounts();
+        setInterval(()=> this.getCounts(), 5000);
     }
 
 
