@@ -32,4 +32,16 @@ export default theme => ({
     marginLeft: theme.spacing(1),
     marginRight: theme.spacing(1),
   },
+  textFieldEditable:{
+    width: 250,
+    [theme.breakpoints.down('lg')]: {
+      width: 'auto'
+    }
+  },
+  fontSizeTextField:{
+    fontSize: '0.875rem',
+    fontFamily: 'Helvetica',
+    fontWeight: 400,
+    lineHeight: 1.43,
+  }
 })
