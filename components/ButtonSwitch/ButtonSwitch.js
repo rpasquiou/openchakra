@@ -1,9 +1,7 @@
 import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import Switch from '@material-ui/core/Switch';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Grid from '@material-ui/core/Grid';
-import { Field } from 'formik';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -66,15 +64,6 @@ const IOSSwitch = withStyles(theme => ({
   );
 });
 
-const CssTextField = withStyles({
-  root: {
-    '& label': {
-      fontSize: '0.8rem',
-    },
-  },
-})(TextField);
-
-
 class ButtonSwitch extends React.Component {
   constructor(props) {
     super(props);
@@ -90,12 +79,12 @@ class ButtonSwitch extends React.Component {
       price:this.props.price,
       label: this.props.label,
     };
-    
+
     this.onToggle = this.onToggle.bind(this);
     this.onChangeBilling = this.onChangeBilling.bind(this);
     this.onChangePrice = this.onChangePrice.bind(this);
     this.onChangeLabel = this.onChangeLabel.bind(this);
-  
+
     this.fireChange = this.fireChange.bind(this);
   }
 
@@ -127,10 +116,10 @@ class ButtonSwitch extends React.Component {
   render() {
     const {classes, isEditable, isOption, isPrice, billings} = this.props;
     const {label, checked} = this.state;
-  
+
     if (checked) {
       console.log("Render checked:"+JSON.stringify(this.state, null, 2));
-    } 
+    }
 
     return(
       <Grid className={classes.contentFiltre}>
@@ -146,7 +135,17 @@ class ButtonSwitch extends React.Component {
           <Grid>
             <span>
         {isEditable ?
-           <CssTextField placeholder='Saisissez un intitulé' value={this.state.label} onChange={this.onChangeLabel} />
+           <TextField
+             placeholder='Saisissez un intitulé'
+             value={this.state.label}
+             onChange={this.onChangeLabel}
+             className={classes.textFieldEditable}
+             InputProps={{
+               classes: {
+                 input: classes.fontSizeTextField,
+               },
+             }}
+           />
            :
            label === undefined ? "label introuvable" : label}
             </span>
@@ -156,7 +155,7 @@ class ButtonSwitch extends React.Component {
           <Grid className={classes.responsiveIOSswitchContent}>
             {checked === true ?
               <Grid style={{display:'flex'}}>
-                <CssTextField
+                <TextField
                   value={this.state.price}
                   label={`Prix`}
                   type="number"
@@ -168,6 +167,9 @@ class ButtonSwitch extends React.Component {
                       min: 0
                     },
                     endAdornment: <InputAdornment position="start">€</InputAdornment>,
+                    classes: {
+                      input: classes.fontSizeTextField,
+                    },
                   }}
                 />
                 { isOption ?
@@ -182,7 +184,6 @@ class ButtonSwitch extends React.Component {
                     value={this.state.billing}
                   >
                     {billings.map(option => {
-                      console.log( checked ? JSON.stringify(option): '');
                       return (
                         <MenuItem value={option._id}>{option.label}</MenuItem>
                       )
