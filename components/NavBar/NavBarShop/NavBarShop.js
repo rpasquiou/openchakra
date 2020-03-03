@@ -20,12 +20,12 @@ class NavBarShop extends React.Component{
           </Link>
         </Grid>
         <Grid item xs={2} style={{textAlign:"center"}}>
-          <Link href={'/myShop/messages'}><a style={{textDecoration:'none'}}>
+          <Link href={`/myShop/messages?id_alfred=${userId}`}><a style={{textDecoration:'none'}}>
             <p style={{color: "white",cursor: 'pointer'}}>Messages</p></a>
           </Link>
         </Grid>
         <Grid item xs={2} style={{textAlign:"center"}}>
-          <Link href={'/myShop/mesreservations'}><a style={{textDecoration:'none'}}>
+          <Link href={`/myShop/mesreservations?id_alfred=${userId}`}><a style={{textDecoration:'none'}}>
             <p style={{color: "white",cursor: 'pointer'}}>Mes réservations</p></a>
           </Link>
         </Grid>
@@ -35,7 +35,7 @@ class NavBarShop extends React.Component{
           </Link>
         </Grid>
         <Grid item xs={2} style={{textAlign:"center"}}>
-          <Link href={'/myShop/performances'}><a style={{textDecoration:'none'}}>
+          <Link href={`/myShop/performances?id_alfred=${userId}`}><a style={{textDecoration:'none'}}>
             <p style={{color: "white",cursor: 'pointer'}}>Performance</p></a>
           </Link>
         </Grid>

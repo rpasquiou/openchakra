@@ -226,7 +226,11 @@ export default theme => ({
   },
   containerPrestas:{
     marginTop: 30,
-    width: '100%'
+    width: '100%',
+    [theme.breakpoints.down('xs')]: {
+      marginBottom : 150
+    },
+
   }
 
 })

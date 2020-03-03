@@ -14,6 +14,7 @@ const url = config.apiUrl;
 
 import { MYSHOP_MESSAGE, MYSHOP_SUBTITLE, MYSHOP_TITLE } from '../../utils/messages.js';
 import axios from 'axios';
+import NavBarShop from '../../components/NavBar/NavBarShop/NavBarShop';
 
 const styles = theme => ({
     bigContainer: {
@@ -46,8 +47,15 @@ class Messages extends React.Component {
         super(props);
         this.state={
             alfred: false,
-            userId: ""
+            userId: "",
+            services: [],
+            isOwner:false,
+            id: props.aboutId,
         }
+    }
+
+    static getInitialProps ({ query: { id_alfred } }) {
+        return { aboutId: id_alfred }
     }
 
     componentDidMount() {
@@ -67,71 +75,61 @@ class Messages extends React.Component {
               })
               .catch(err => console.log(err))
         }
+
+        axios.get(`${url}myAlfred/api/shop/alfred/${this.state.id}`)
+          .then( response  =>  {
+              let shop = response.data;
+              console.log(shop, 'shop')
+              this.setState({
+                  services: shop.services,
+                  idAlfred: shop.alfred._id,
+              }, () => this.checkIfOwner());
+
+          })
+          .catch(function (error) {
+              console.log(error);
+          });
+    }
+
+    checkIfOwner() {
+        Object.keys(this.state.services).map( result =>{
+            if(this.state.services[result].user === this.state.userId){
+                this.setState({isOwner: true});
+            }
+        });
     }
 
     render() {
         const {classes} = this.props;
+        let isOwner= this.state.idAlfred === this.state.userId;
+
 
         return (
             <Fragment>
-		<Helmet>
-        <title>Mes messages - My Alfred </title>
-        <meta property="description" content="Echangez avec des Alfred à proximité au travers de la messagerie My Alfred ! Des milliers de services entre particuliers et professionnels rémunérés.Inscription My Alfred gratuite. Paiement sécurisé." />
-      </Helmet>
+                <Helmet>
+                    <title>Mes messages - My Alfred </title>
+                    <meta property="description" content="Echangez avec des Alfred à proximité au travers de la messagerie My Alfred ! Des milliers de services entre particuliers et professionnels rémunérés.Inscription My Alfred gratuite. Paiement sécurisé." />
+                </Helmet>
                 <Layout>
-                    <Grid container className={classes.bigContainer}>
-                        <Grid container className={classes.topbar} justify="center" style={{backgroundColor: '#4fbdd7',marginTop: -3, height: '52px'}}>
-                            <Grid item xs={1} className={classes.shopbar}/>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={`/shop?id_alfred=${this.state.userId}`}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Ma boutique</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center",borderBottom: '2px solid white',zIndex:999}}>
-                                <Link href={'/myShop/messages'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Messages</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/mesreservations'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Mes réservations</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/myAvailabilities'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Mon calendrier</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/performances'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Performance</p>
-                                    </a>
-                                </Link>
-                            </Grid>
+                <Grid container className={classes.bigContainer}>
+                    {isOwner ?
+                      <NavBarShop userId={this.state.userId}/>
+                      : null
+                    }
+                    <Grid container>
+                        <Grid item md={5} xs={12} style={{textAlign:'center', padding: '4%'}}>
+                            <h1>{MYSHOP_TITLE}</h1>
+                            <p>
+                                {MYSHOP_SUBTITLE}
+                            </p>
+                            <p>
+                                {MYSHOP_MESSAGE}
+                            </p>
+                            <Button color={"primary"} style={{borderRadius:'30px'}} variant={"contained"}><a style={{textDecoration:'none',color:'white'}} href={this.state.alfred ? '/myShop/services' : '/creaShop/creaShop'}> {this.state.alfred ? 'Ma boutique' : 'Créer ma boutique'}</a></Button>
                         </Grid>
-                        <Grid container>
-                            <Grid item md={5} xs={12} style={{textAlign:'center', padding: '4%'}}>
-                                <h1>{MYSHOP_TITLE}</h1>
-                                <p>
-                                    {MYSHOP_SUBTITLE}
-                                </p>
-                                <p>
-                                    {MYSHOP_MESSAGE}
-                                </p>
-                                <Button color={"primary"} style={{borderRadius:'30px'}} variant={"contained"}><a style={{textDecoration:'none',color:'white'}} href={this.state.alfred ? '/myShop/services' : '/creaShop/creaShop'}> {this.state.alfred ? 'Ma boutique' : 'Créer ma boutique'}</a></Button>
-                            </Grid>
-                            <Grid item md={7} xs={12} style={{backgroundImage:'url(../../static/background/pagesina.svg)',backgroundPosition: 'center',backgroundRepeat: 'no-repeat',backgroundSize: 'cover', width: '100%', height: '100vh'}}/>
-                        </Grid>
+                        <Grid item md={7} xs={12} style={{backgroundImage:'url(../../static/background/pagesina.svg)',backgroundPosition: 'center',backgroundRepeat: 'no-repeat',backgroundSize: 'cover', width: '100%', height: '100vh'}}/>
                     </Grid>
+                </Grid>
                 </Layout>
                 <Grid container className={classes.bottombar} justify="center" style={{backgroundColor: 'white',bottom:0, position:'fixed', zIndex:'999'}}>
                     <Grid item xs={2} style={{textAlign:"center"}}>
@@ -160,8 +158,7 @@ class Messages extends React.Component {
                         </a></Link>
                     </Grid>
                 </Grid>
-                {/* <Footer/>*/}
-
+             {/* <Footer/>*/}
             </Fragment>
         );
     };

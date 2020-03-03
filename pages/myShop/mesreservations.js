@@ -8,6 +8,7 @@ import Footer from '../../hoc/Layout/Footer/Footer';
 import { MYSHOP_MESSAGE, MYSHOP_SUBTITLE, MYSHOP_TITLE } from '../../utils/messages.js';
 import axios from 'axios';
 import {Helmet} from 'react-helmet';
+import NavBarShop from '../../components/NavBar/NavBarShop/NavBarShop';
 
 
 const jwt = require('jsonwebtoken');
@@ -46,8 +47,15 @@ class Mesreservations extends React.Component {
         super(props);
         this.state={
             alfred: false,
-            userId:""
+            userId:"",
+            services: [],
+            isOwner:false,
+            id: props.aboutId,
         }
+    }
+
+    static getInitialProps ({ query: { id_alfred } }) {
+        return { aboutId: id_alfred }
     }
 
     componentDidMount() {
@@ -67,59 +75,47 @@ class Mesreservations extends React.Component {
               })
               .catch(err => console.log(err))
         }
+
+        axios.get(`${url}myAlfred/api/shop/alfred/${this.state.id}`)
+          .then( response  =>  {
+              let shop = response.data;
+              console.log(shop, 'shop')
+              this.setState({
+                  services: shop.services,
+                  idAlfred: shop.alfred._id,
+              }, () => this.checkIfOwner());
+
+          })
+          .catch(function (error) {
+              console.log(error);
+          });
+    }
+
+    checkIfOwner() {
+        Object.keys(this.state.services).map( result =>{
+            if(this.state.services[result].user === this.state.userId){
+                this.setState({isOwner: true});
+            }
+        });
     }
 
     render() {
         const {classes} = this.props;
+        let isOwner= this.state.idAlfred === this.state.userId;
 
         return (
             <Fragment>
-			<Helmet>
-        <title>Mes réservations - My Alfred </title>
-        <meta property="description" content="Consultez vos réservations de services entre particuliers ! Découvrez le service et les prestations réservés, le lieu, la date et l'ensemble des détails de votre réservation sur My Alfred" />
-      </Helmet>
+              <Helmet>
+                <title>Mes réservations - My Alfred </title>
+                <meta property="description" content="Consultez vos réservations de services entre particuliers ! Découvrez le service et les prestations réservés, le lieu, la date et l'ensemble des détails de votre réservation sur My Alfred" />
+              </Helmet>
 
                 <Layout>
                     <Grid container className={classes.bigContainer}>
-                        <Grid container className={classes.topbar} justify="center" style={{backgroundColor: '#4fbdd7',marginTop: -3, height: '52px'}}>
-                            <Grid item xs={1} className={classes.shopbar}/>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={`/shop?id_alfred=${this.state.userId}`}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Ma boutique</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/messages'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Messages</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center",borderBottom: '2px solid white',zIndex:999}}>
-                                <Link href={'/myShop/mesreservations'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Mes réservations</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/myAvailabilities'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Mon calendrier</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-                            <Grid item xs={2} className={classes.shopbar} style={{textAlign:"center"}}>
-                                <Link href={'/myShop/performances'}>
-                                    <a style={{textDecoration:'none'}}>
-                                        <p style={{color: "white",cursor: 'pointer'}}>Performance</p>
-                                    </a>
-                                </Link>
-                            </Grid>
-
-                        </Grid>
+                        {isOwner ?
+                          <NavBarShop userId={this.state.userId}/>
+                          : null
+                        }
                         <Grid container>
                             <Grid item md={5} xs={12} style={{textAlign:'center', padding: '4%'}}>
                                 <h1>{MYSHOP_TITLE}</h1>

@@ -102,10 +102,7 @@ const styles = theme => ({
     width: 40,
     height: 40,
   },
-  theavatarbutton: {
-    width: 45,
-    height: 45,
-  },
+
   lemenuavatar: {
     marginTop: '2.5%!important',
     marginLeft: '1%!important',
