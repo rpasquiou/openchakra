@@ -214,7 +214,6 @@ class myAvailabilities extends React.Component {
     }
 
     checkIfOwner() {
-      console.log(this.state.services, this.state.userId)
       Object.keys(this.state.services).map( result =>{
         if(this.state.services[result].user === this.state.userId){
           this.setState({isOwner: true});
@@ -233,10 +232,10 @@ class myAvailabilities extends React.Component {
 
       return (
           <Fragment>
-          <Helmet>
-              <title> Mes disponibilités - My Alfred </title>
-              <meta property="description" content="Indiquez vos dispoinibilités pour proposer vos services entre particuliers ! Des services à proximité, rémunérés et assurés ! Vos disponibilités permettront à vos futurs clients de vous réserver directement, au créneau souhaité !" />
-            </Helmet>
+            <Helmet>
+                <title> Mes disponibilités - My Alfred </title>
+                <meta property="description" content="Indiquez vos dispoinibilités pour proposer vos services entre particuliers ! Des services à proximité, rémunérés et assurés ! Vos disponibilités permettront à vos futurs clients de vous réserver directement, au créneau souhaité !" />
+              </Helmet>
               <Layout>
                 <AlfredBanner alfred={this.state.alfred} shop={this.state.shop} banner={this.state.banner} isOwner={isOwner}  needRefresh={this.needRefresh}/>
                 {isOwner ?
