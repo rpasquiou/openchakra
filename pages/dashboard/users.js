@@ -58,6 +58,7 @@ class home extends React.Component {
         this.state = {
             users_count: 0,
             alfred_count: 0,
+            services_count: 0,
         }
         this.getCounts=this.getCounts.bind(this);
     }
@@ -77,6 +78,16 @@ class home extends React.Component {
 
         axios.get(url+"myAlfred/api/admin/users/alfred")
             .then((response) => { this.setState({alfred_count: response.data.length}) })
+            .catch((error) => {
+             console.log(error);
+             if(error.response.status === 401 || error.response.status === 403) {
+                localStorage.removeItem('token');
+                Router.push({pathname: '/login'})
+            }
+          });
+
+        axios.get(url+"myAlfred/api/serviceUser/all")
+            .then((response) => { this.setState({services_count: response.data.length}) })
             .catch((error) => {
              console.log(error);
              if(error.response.status === 401 || error.response.status === 403) {
@@ -117,6 +128,12 @@ class home extends React.Component {
                         </Grid>
                         <Grid item style={{ display: 'flex', justifyContent: 'center' }}>
                             <Avatar className={classes.bigAvatar}>{ this.state.alfred_count}</Avatar>
+                        </Grid>
+                        <Grid item style={{ display: 'flex', justifyContent: 'center', marginTop:'20%' }}>
+                            <Typography style={{ fontSize: 30 }}>Services</Typography>
+                        </Grid>
+                        <Grid item style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Avatar className={classes.mediumAvatar}>{ this.state.services_count}</Avatar>
                         </Grid>
                     </Grid>;
         const refused = <Grid item style={{ display: 'flex', justifyContent: 'center' }}>
