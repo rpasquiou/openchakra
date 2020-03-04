@@ -1,20 +1,4 @@
 export default theme => ({
-  card: {
-    width: '100%',
-    height: 450,
-    [theme.breakpoints.down('lg')]: {
-      height: 400
-    },
-    [theme.breakpoints.down('md')]: {
-      height: 400
-    },
-    [theme.breakpoints.down('sm')]: {
-      height: 500
-    },
-    [theme.breakpoints.down('xs')]: {
-      height: 'auto'
-    }
-  },
   cardMedia: {
     paddingTop: '56.25%', // 16:9
     backgroundImage:  "url(" + "../../static/assets/img/skillsAlfred/bgCardAddService.svg" + ")",
@@ -22,7 +6,6 @@ export default theme => ({
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right',
     position: 'relative',
-    height:300
   },
   fab: {
     position: 'absolute',
@@ -31,15 +14,31 @@ export default theme => ({
     transform: 'translate(-50%, -50%)',
     margin: theme.spacing(1),
   },
-  textPosition:{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 150,
-  },
   textStyle:{
     color: '#4fbdd7',
     fontWeight: 'bold',
     fontSize: 'large'
+  },
+  card: {
+    width: '100%',
+    height: 'auto',
+  },
+  cardContent:{
+    height: 85,
+    display: 'flex',
+    flexDirection: 'column-reverse',
+    alignItems: 'center'
+  },
+  cardContentHeader:{
+    marginBottom: '2%'
+  },
+  flexPosition:{
+    paddingBottom: 0
+  },
+  responsiveListContainer:{
+    marginTop: 10,
+    [theme.breakpoints.down('xs')]: {
+      margin: 0,
+    },
   }
 })
