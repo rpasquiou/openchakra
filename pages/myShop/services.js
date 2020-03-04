@@ -309,19 +309,21 @@ class services extends React.Component {
                       <Stepper activeStep={this.state.activeStep} isType={ this.props.service_user_id ? "updateService" : "addService"}/>
                   </Grid>
               </Grid>
-              <Grid className={classes.marginContainer}>
-                  <Grid className={classes.mainContainer}>
-                      <Grid className={hideRightPanel ? classes.mainContainerNoImg : classes.leftContentComponent }>
-                          { this.renderSwitch(this.state.activeStep) }
-                      </Grid>
-                      { hideRightPanel ?
-                        null:
-                        <Grid className={classes.rightContentComponent}>
-                            <Grid className={classes.contentRight} style={{backgroundImage: `url(/static/assets/img/creaShop/bgImage/etape${this.state.activeStep}.svg)`}}/>
-                        </Grid>
-                      }
+            <Grid className={hideRightPanel ? classes.scheduleResponsive : classes.bodyContainer }>
+              <Grid className={hideRightPanel ? classes.marginContainerNoImg : classes.marginContainer }>
+                <Grid className={classes.mainContainer}>
+                  <Grid className={hideRightPanel ? classes.mainContainerNoImg : classes.leftContentComponent }>
+                    {this.renderSwitch(this.state.activeStep)}
                   </Grid>
+                </Grid>
               </Grid>
+              { hideRightPanel ?
+                null:
+                <Grid className={classes.rightContentComponent}>
+                  <Grid className={classes.contentRight} style={{backgroundImage: `url(../../../static/assets/img/creaShop/bgImage/etape${this.state.activeStep}.svg)`}}/>
+                </Grid>
+              }
+            </Grid>
               <Grid className={classes.footerMainContainer}>
                   <Grid className={classes.footerContainer}>
                       <Grid className={classes.marginHr}>

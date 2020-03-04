@@ -73,8 +73,8 @@ export default theme => ({
       backgroundColor: 'white',
     },
     [theme.breakpoints.down('sm')]: {
-        height:50,
-        width:50,
+      height:50,
+      width:50,
   },
     [theme.breakpoints.down('xs')]: {
       height:20,
@@ -114,7 +114,8 @@ export default theme => ({
 
   },
   flexPosition:{
-    display:'flex'
+    display:'flex',
+    paddingBottom: 0
   },
   minWidth:{
     minWidth:30
