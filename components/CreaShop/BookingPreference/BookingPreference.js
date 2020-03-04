@@ -52,7 +52,7 @@ class BookingPreference extends React.Component {
               <Grid className={classes.contentTitle}>
                 <Typography className={classes.policySizeTitle}>{service ? service.label : ''} : vos préférences de réservation</Typography>
               </Grid>
-              <Grid style={{width: '80%'}}>
+              <Grid style={{width: '80%', height: '100%'}}>
                 <Grid>
                   <Grid>
                     <h3 className={classes.policySizeSubtitle}>De quel délai souhaitez-vous disposer entre la réservation et la réalisation du service ? </h3>
@@ -98,7 +98,7 @@ class BookingPreference extends React.Component {
                 </Grid>
                 <Grid>
                   <TextField
-                    style={{width: 200}}
+                    style={{width: 200, zIndex:0}}
                     type="number"
                     value={this.state.minimum_basket}
                     fullWidth
@@ -116,7 +116,7 @@ class BookingPreference extends React.Component {
                   />
                 </Grid>
                 </Grid>
-                <Grid style={{marginBottom: 100}}>
+                <Grid>
                   <Grid>
                     <Grid>
                       <Grid>

@@ -9,9 +9,21 @@ export default theme => ({
   },
   marginContainer:{
     position: 'relative',
-    marginLeft: 200,
-    marginRight : 200,
     top: 150,
+    width: '60%',
+    [theme.breakpoints.down('md')]: {
+      top: 150,
+      width: '100%',
+    },
+    [theme.breakpoints.down('xs')]: {
+      marginLeft: 40,
+      marginRight : 40,
+    },
+  },
+  marginContainerNoImg:{
+    position: 'relative',
+    top: 150,
+    width: '100%',
     [theme.breakpoints.down('md')]: {
       top: 150,
     },
@@ -51,11 +63,11 @@ export default theme => ({
     },
   },
   leftContentComponent:{
-    width: '60%',
     height : '100%',
     display: 'flex',
     flexDirection : 'column',
     justifyContent: 'space-between',
+    marginBottom: 100,
     [theme.breakpoints.down('md')]: {
       width: '100%',
     },
@@ -69,16 +81,20 @@ export default theme => ({
   },
   rightContentComponent:{
     width: '40%',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
     position: 'relative',
+    top: 150,
     [theme.breakpoints.down('md')]: {
       display: 'none'
     },
   },
   contentRight: {
     width: 'auto',
-    height: '100%',
+    height: '70vh',
     display: 'block',
     backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center'
 
   },
   footerMainContainer:{
@@ -116,5 +132,15 @@ export default theme => ({
   nextButton:{
     color: 'white'
   },
-
+  scheduleResponsive: {
+    marginLeft: 200,
+    marginRight: 200,
+    marginBottom: 250
+  },
+  bodyContainer:{
+    display: 'flex',
+    marginLeft: 200,
+    marginRight: 200,
+    marginBottom: 100
+  }
 })

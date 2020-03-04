@@ -5,7 +5,7 @@ export default theme => ({
   },
   contentContainer:{
     display: 'flex',
-    height: 700,
+    height: 'auto',
     width: '100%'
   },
   contentLeftTop:{
@@ -68,6 +68,7 @@ export default theme => ({
   bottomSpacer:{
     width : 500,
     marginTop: 30,
+    height: '100%',
     [theme.breakpoints.down('md')]: {
       width: '100%'
     },

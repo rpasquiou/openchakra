@@ -114,7 +114,8 @@ export default theme => ({
 
   },
   flexPosition:{
-    display:'flex'
+    display:'flex',
+    paddingBottom: 0
   },
   minWidth:{
     minWidth:30

@@ -48,13 +48,13 @@ class creaShop extends React.Component {
         minimum_basket: 0,
         diplomaName: null,
         diplomaYear: null,
-	diplomaPicture: null,
+	      diplomaPicture: null,
         certificationName: null,
         certificationYear: null,
         certificationPicture: null,
         deadline_value: 1, // Valeur de prévenance
         deadline_unit: "jours", // Unité de prévenance (h:heures, j:jours, s:semaines)
-	level: '',
+	      level: '',
         service_address: {address:"", city:"", zip:"", country:""}, // Adresse différente ; null si non spécifiée
         perimeter: 1,
         availabilities: [],
@@ -137,8 +137,8 @@ class creaShop extends React.Component {
       axios.defaults.headers.common['Authorization'] = localStorage.getItem('token');
       axios.post(url+'myAlfred/api/shop/add', cloned_shop)
         .then(res => {
-          
-          var su_id = res.data.services[0]._id; 
+
+          var su_id = res.data.services[0]._id;
           if(cloned_shop.diplomaPicture !== null) {
             var dpChanged = typeof(cloned_shop.diplomaPicture)=='object';
             const formData = new FormData();
@@ -222,8 +222,8 @@ class creaShop extends React.Component {
         description: state.description,
         level: state.level,
         diplomaName: state.diplomaName,
-	diplomaYear: state.diplomaYear,
-	diplomaPicture: state.diplomaPicture,
+        diplomaYear: state.diplomaYear,
+        diplomaPicture: state.diplomaPicture,
         certificationName: state.certificationName,
         certificationYear: state.certificationYear,
         certificationPicture: state.certificationPicture
@@ -303,19 +303,21 @@ class creaShop extends React.Component {
             <Stepper activeStep={this.state.activeStep} isType={"creaShop"}/>
           </Grid>
         </Grid>
-        <Grid className={classes.marginContainer}>
+      <Grid className={hideRightPanel ? classes.scheduleResponsive : classes.bodyContainer }>
+        <Grid className={hideRightPanel ? classes.marginContainerNoImg : classes.marginContainer }>
           <Grid className={classes.mainContainer}>
             <Grid className={hideRightPanel ? classes.mainContainerNoImg : classes.leftContentComponent }>
               {this.renderSwitch(this.state.activeStep)}
             </Grid>
-            { hideRightPanel ?
-              null:
-              <Grid className={classes.rightContentComponent}>
-                <Grid className={classes.contentRight} style={{backgroundImage: `url(../../../static/assets/img/creaShop/bgImage/etape${this.state.activeStep}.svg)`}}/>
-              </Grid>
-            }
           </Grid>
         </Grid>
+        { hideRightPanel ?
+          null:
+          <Grid className={classes.rightContentComponent}>
+            <Grid className={classes.contentRight} style={{backgroundImage: `url(../../../static/assets/img/creaShop/bgImage/etape${this.state.activeStep}.svg)`}}/>
+          </Grid>
+        }
+      </Grid>
         <Grid className={classes.footerMainContainer}>
           <Grid className={classes.footerContainer}>
             <Grid className={classes.marginHr}>
@@ -323,15 +325,13 @@ class creaShop extends React.Component {
             </Grid>
             <Grid className={classes.navButtonContent}>
               <Grid>
-              { false ? // FIX : corriger pb retour sur panel précédent
                 <Button
                   color="primary"
                   disabled={this.state.activeStep === 0}
                   onClick={this.handleBack}
                 >
                   Retour
-                </Button>:null
-              }
+                </Button>
               </Grid>
               <Grid>
                 <Button variant="contained" color="secondary" className={classes.nextButton} onClick={this.handleNext} disabled={this.nextDisabled()}>

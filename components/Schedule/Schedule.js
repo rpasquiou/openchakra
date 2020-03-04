@@ -242,7 +242,7 @@ class Schedule extends React.Component {
     console.log("Events rendered:"+JSON.stringify(events[0]));
 
     return (
-      <Grid style={{height:700}}>
+      <Grid>
         { title || subtitle  ?
           <Grid style={{ marginBottom: 50 }}>
             { title ?

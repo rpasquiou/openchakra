@@ -18,7 +18,7 @@ class CreaShopPresentation extends React.Component {
     return(
       <Grid className={classes.mainContainer}>
         <Grid className={classes.contentContainer}>
-          <Grid className={classes.contentLeft}>
+          <Grid>
             <Grid className={classes.contentLeftTop}>
               <Grid className={classes.contentTitle}>
                 <Typography className={classes.policySizeTitle}>Nous allons vous aider à créer votre service & devenir un Alfred en 3 minutes !  </Typography>
