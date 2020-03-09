@@ -28,6 +28,7 @@ const sendMail = (from, to, template, locals) => {
     transport: transporter
   })
 
+  /*
   email
     .send({
       template: template,
@@ -38,6 +39,7 @@ const sendMail = (from, to, template, locals) => {
     })
     .then(console.log)
     .catch(console.error);
+  */
 };
 
 module.exports = {sendMail};
