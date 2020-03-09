@@ -103,7 +103,7 @@ class statistics extends React.Component {
                             <Typography style={{ fontSize: 30 }}>Alfred</Typography>
                         </Grid>
                         <Grid item style={{ display: 'flex', justifyContent: 'center' }} >
-                            <Avatar className={classes.bigAvatar}>{ this.state.alfred}</Avatar>
+                            <Avatar className={classes.mediumAvatar}>{ this.state.alfred}</Avatar>
                         </Grid>
                         <Grid item style={{ display: 'flex', justifyContent: 'center', marginTop:'5%' }}>
                             <Typography style={{ fontSize: 30 }}>Services</Typography>
