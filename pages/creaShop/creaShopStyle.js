@@ -135,12 +135,21 @@ export default theme => ({
   scheduleResponsive: {
     marginLeft: 200,
     marginRight: 200,
-    marginBottom: 250
+    marginBottom: 250,
+    [theme.breakpoints.down('xs')]: {
+      marginLeft: 5,
+      marginRight: 5,
+    }
   },
   bodyContainer:{
     display: 'flex',
     marginLeft: 200,
     marginRight: 200,
-    marginBottom: 100
+    marginBottom: 100,
+    [theme.breakpoints.down('xs')]: {
+      marginLeft: 5,
+      marginRight: 5,
+    }
+
   }
 })
