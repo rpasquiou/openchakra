@@ -77,8 +77,8 @@ export default theme => ({
       width:50,
   },
     [theme.breakpoints.down('xs')]: {
-      height:20,
-      width:20,
+      height:40,
+      width:40,
     }
   },
   chipStyle:{

@@ -17,6 +17,9 @@ export default theme => ({
   },
   contentTitle:{
     width: '80%',
+    [theme.breakpoints.down('xs')]: {
+      width: '100%'
+    },
   },
   contentTextSize:{
     width : 500,

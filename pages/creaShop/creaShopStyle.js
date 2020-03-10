@@ -28,10 +28,11 @@ export default theme => ({
       top: 150,
     },
     [theme.breakpoints.down('xs')]: {
-      marginLeft: 40,
-      marginRight : 40,
+      display: 'flex',
+      justifyContent: 'center'
     },
   },
+
   mainHeader:{
     width: "100%",
     display: "flex",
@@ -139,6 +140,8 @@ export default theme => ({
     [theme.breakpoints.down('xs')]: {
       marginLeft: 5,
       marginRight: 5,
+      backgroundColor : 'green'
+
     }
   },
   bodyContainer:{
