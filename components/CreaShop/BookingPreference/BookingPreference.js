@@ -52,7 +52,7 @@ class BookingPreference extends React.Component {
               <Grid className={classes.contentTitle}>
                 <Typography className={classes.policySizeTitle}>{service ? service.label : ''} : vos préférences de réservation</Typography>
               </Grid>
-              <Grid style={{width: '80%', height: '100%'}}>
+              <Grid className={classes.contentTitle}>
                 <Grid>
                   <Grid>
                     <h3 className={classes.policySizeSubtitle}>De quel délai souhaitez-vous disposer entre la réservation et la réalisation du service ? </h3>

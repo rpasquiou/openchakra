@@ -64,7 +64,7 @@ class AssetsService extends React.Component {
               <Grid className={classes.contentTitle}>
                 <Typography className={classes.policySizeTitle} >Vos atouts pour ce service ! </Typography>
               </Grid>
-              <Grid style={{width: '80%'}}>
+              <Grid className={classes.contentTitle}>
                 <Grid>
                   <Grid>
                     <h3 className={classes.policySizeSubtitle}>Décrivez votre expertise  ! (facultatif)</h3>
@@ -90,7 +90,7 @@ class AssetsService extends React.Component {
                   </Grid>
                 </Grid>
               </Grid>
-              <Grid style={{width: '80%'}}>
+              <Grid className={classes.contentTitle}>
                 <Grid>
                   <p className={classes.policySizeContent}>
                     Précisez le nombre d’années d’expérience dont vous disposez sur ce service.
