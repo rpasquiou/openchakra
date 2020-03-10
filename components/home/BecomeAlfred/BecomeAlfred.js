@@ -151,7 +151,7 @@ class becomeAlfred extends React.Component{
                 <Grid item xs={12} className={classes.details}>
                   <CardContent className={classes.content}>
                     <Typography component="h5" variant="h5" className={classes.padding}>
-                      Devenir Alfred
+                      Proposer mes services
                     </Typography>
                     <Typography style={{width: '100%'}} variant="body1" color="textSecondary"
                                 className={classes.padding}>
@@ -179,7 +179,7 @@ class becomeAlfred extends React.Component{
                     />
                     <CardContent>
                       <Typography component="h5" variant="h5" className={classes.padding}>
-                        Devenir Alfred
+                        Proposer mes services
                       </Typography>
                       <Typography variant="body1" color="textSecondary" className={classes.padding}>
                         Créez en quelques minutes votre espace Alfred,
