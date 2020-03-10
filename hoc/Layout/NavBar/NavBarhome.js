@@ -403,7 +403,7 @@ class NavBar extends Component {
               <Typography className={classes.navbarItem}>
                 <Link href={'/creaShop/creaShop'}>
                   <a className={classes.navbarLink} style={{color:this.state.isTop ? '' : '#505050' }}>
-                    Créer ma boutique
+                    Proposer mes services
                   </a>
                 </Link>
               </Typography>}

@@ -162,7 +162,7 @@ class becomeAlfred extends React.Component{
                     <Link href={this.state.logged && this.state.alfred ? `/shop?id_alfred=${this.state.userId}`  : this.state.logged && !this.state.alfred ? '/creaShop/creaShop' : '/signup'}>
                       <a style={{textDecoration:'none'}}>
                     <Button variant="contained" color={"primary"} className={classes.margin}>
-                      Créer ma boutique
+                      Proposer mes services
                     </Button>
                       </a>
                     </Link>
@@ -190,7 +190,7 @@ class becomeAlfred extends React.Component{
                     <Link href={this.state.logged && this.state.alfred ?  `/shop?id_alfred=${this.state.userId}`  : this.state.logged && !this.state.alfred ? '/creaShop/creaShop' : '/signup'}>
                       <a style={{textDecoration:'none'}}>
                         <Button variant="contained" color={"primary"} className={classes.margin}>
-                          Créer ma boutique
+                          Proposer mes services
                         </Button>
                       </a>
                     </Link>

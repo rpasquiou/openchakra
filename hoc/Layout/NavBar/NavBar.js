@@ -377,7 +377,7 @@ class NavBar extends Component {
               <Typography className={classes.navbarItem}>
                 <Link href={'/creaShop/creaShop'}>
                   <a className={classes.navbarLink}>
-                    Créer ma boutique
+                    Proposer mes services
                   </a>
                 </Link>
               </Typography>}
