@@ -195,7 +195,7 @@ class all extends React.Component {
                                                         <Link href={`/dashboard/alfred/idCard?id=${e._id}`}><a>Détails</a></Link>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Link href={`/shop?id_alfred=${e._id}`}><a>Consulter</a></Link>
+                                                        <Link href={`/shop?id_alfred=${e.alfred._id}`}><a>Consulter</a></Link>
                                                     </TableCell>
 
                                                 </TableRow>
