@@ -312,14 +312,14 @@ router.get('/users/alfred',passport.authenticate('jwt',{session:false}),(req,res
     const admin = decode.is_admin;
 
     if(admin) {
-        User.find({is_alfred: true})
-            .sort({name: 1})
-            .then(user => {
-                if (!user) {
+        Shop.find()
+            .sort({creation_date: -1})
+            .populate('alfred')
+            .then(users => {
+                if (!users) {
                     res.status(400).json({msg: 'No alfred found'});
                 }
-
-                res.json(user);
+                res.json(users);
             })
             .catch(err => res.status(404).json({alfred: 'No alfred found'}))
     } else {

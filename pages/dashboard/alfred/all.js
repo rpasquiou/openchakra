@@ -166,6 +166,7 @@ class all extends React.Component {
                                             <TableCell>Nom</TableCell>
                                             <TableCell>Prénom</TableCell>
                                             <TableCell>Email</TableCell>
+                                            <TableCell>Boutique créée le</TableCell>
                                             <TableCell>Action</TableCell>
                                             <TableCell>Carte d'identité</TableCell>
                                             <TableCell>Boutique</TableCell>
@@ -176,13 +177,16 @@ class all extends React.Component {
                                             .map((e,index) =>
                                                 <TableRow key={index}>
                                                     <TableCell component="th" scope="row">
-                                                        {e.name}
+                                                        {e.alfred.name}
                                                     </TableCell>
                                                     <TableCell component="th" scope="row">
-                                                        {e.firstname}
+                                                        {e.alfred.firstname}
                                                     </TableCell>
                                                     <TableCell component="th" scope="row">
-                                                        {e.email}
+                                                        {e.alfred.email}
+                                                    </TableCell>
+                                                    <TableCell component="th" scope="row">
+                                                        {e.creation_date}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link href={`/dashboard/alfred/view?id=${e._id}`}><a>Modifier</a></Link>

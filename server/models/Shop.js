@@ -80,7 +80,6 @@ const ShopSchema = new Schema({
     picture: String,
     creation_date: {
         type: Date,
-        default: Date.now
     },
 });
 
