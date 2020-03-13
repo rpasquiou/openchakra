@@ -21,8 +21,8 @@ import LastPageIcon from "@material-ui/icons/LastPage";
 import Link from "next/link";
 import HomeIcon from '@material-ui/icons/Home';
 import Typography from "@material-ui/core/Typography";
-
-
+import moment from 'moment-timezone';
+moment.locale('fr');;
 
 const {config} = require('../../../config/config');
 const url = config.apiUrl;
@@ -186,7 +186,7 @@ class all extends React.Component {
                                                         {e.alfred.email}
                                                     </TableCell>
                                                     <TableCell component="th" scope="row">
-                                                        {e.creation_date}
+                                                        {moment(e.creation_date).format('L LT')}
                                                     </TableCell>
                                                     <TableCell>
                                                         <Link href={`/dashboard/alfred/view?id=${e._id}`}><a>Modifier</a></Link>
