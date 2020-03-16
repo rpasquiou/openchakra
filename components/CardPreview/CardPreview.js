@@ -64,8 +64,7 @@ class CardPreview extends React.Component{
 
   render(){
     const {classes, service, serviceUser, shop, userState, isOwner, alfred} = this.props;
-
-
+    
     const StyledRating = withStyles({
       iconFilled: {
         color: '#4fbdd7',
@@ -76,7 +75,7 @@ class CardPreview extends React.Component{
       <Grid>
         <Card className={classes.card}>
           <Grid className={classes.cardMedia} style={{ backgroundImage:  'url("' + service.picture + '")'}}>
-            { serviceUser.is_professional ?
+            { shop.is_professional ?
               <Grid className={classes.statusMedia}>
                 <Chip label="PRO" className={classes.chipStyle}/>
               </Grid>
@@ -85,7 +84,7 @@ class CardPreview extends React.Component{
             {userState && isOwner ?
               <Grid>
                 <Grid className={classes.actionMediaEdit}>
-                  <Link href={'/myShop/services?id=' + shop._id}>
+                  <Link href={'/myShop/services?id=' + serviceUser._id}>
                     <Fab aria-label="edit" className={classes.iconButtonStyle}>
                       <EditIcon style={{color: '#4fbdd7'}}/>
                     </Fab>
@@ -93,7 +92,7 @@ class CardPreview extends React.Component{
                 </Grid>
                 <Grid className={classes.actionMediaRemove}>
                   <Fab aria-label="remove" className={classes.iconButtonStyle}>
-                    <DeleteForeverIcon onClick={()=>this.handleClickOpen(shop._id)} style={{color: '#f87280'}}/>
+                    <DeleteForeverIcon onClick={()=>this.handleClickOpen(serviceUser._id)} style={{color: '#f87280'}}/>
                   </Fab>
                 </Grid>
               </Grid>
@@ -137,7 +136,7 @@ class CardPreview extends React.Component{
                   <Grid>
                     <ListItem className={classes.noPadding}>
                       <ListItemIcon className={classes.minWidth}>
-                        <img src={shop.graduated && shop.graduated !== "" && shop.graduated !== null && shop.graduated !== undefined ? '../../static/assets/img/iconCardAlfred/graduated.svg' : '../../static/assets/img/iconCardAlfred/no_graduated.svg'} alt={'Diplome'} title={'Diplome'} className={classes.imageStyle}/>
+                        <img src={serviceUser.graduated && serviceUser.graduated !== "" && serviceUser.graduated !== null && serviceUser.graduated !== undefined ? '../../static/assets/img/iconCardAlfred/graduated.svg' : '../../static/assets/img/iconCardAlfred/no_graduated.svg'} alt={'Diplome'} title={'Diplome'} className={classes.imageStyle}/>
                       </ListItemIcon>
                       <ListItemText
                         classes={{primary:classes.sizeText}}
@@ -148,7 +147,7 @@ class CardPreview extends React.Component{
                   <Grid>
                     <ListItem className={classes.noPadding} style={{marginLeft : 5}}>
                       <ListItemIcon  className={classes.minWidth}>
-                        <img src={shop.is_certified && shop.is_certified !== "" && shop.is_certified !== null && shop.is_certified !== undefined ? '../../static/assets/img/iconCardAlfred/certificate.svg' : '../../static/assets/img/iconCardAlfred/no_certificate.svg'} alt={'Certifié'} title={'Certifié'} className={classes.imageStyle}/>
+                        <img src={serviceUser.is_certified && serviceUser.is_certified !== "" && serviceUser.is_certified !== null && serviceUser.is_certified !== undefined ? '../../static/assets/img/iconCardAlfred/certificate.svg' : '../../static/assets/img/iconCardAlfred/no_certificate.svg'} alt={'Certifié'} title={'Certifié'} className={classes.imageStyle}/>
                       </ListItemIcon>
                       <ListItemText
                         classes={{primary:classes.sizeText}}
@@ -159,7 +158,7 @@ class CardPreview extends React.Component{
                   <Grid>
                     <ListItem className={classes.noPadding} style={{marginLeft : 5}}>
                       <ListItemIcon className={classes.minWidth}>
-                        <img src={shop.level && shop.level !== "" && shop.level !== null && shop.level !== undefined ? '../../static/assets/img/iconCardAlfred/experience.svg' : '../../static/assets/img/iconCardAlfred/no_experience.svg'} alt={'Expérimenté'} title={'Expérimenté'} className={classes.imageStyle}/>
+                        <img src={serviceUser.level && serviceUser.level !== "" && serviceUser.level !== null && serviceUser.level !== undefined ? '../../static/assets/img/iconCardAlfred/experience.svg' : '../../static/assets/img/iconCardAlfred/no_experience.svg'} alt={'Expérimenté'} title={'Expérimenté'} className={classes.imageStyle}/>
                       </ListItemIcon>
                       <ListItemText
                         classes={{primary:classes.sizeText}}

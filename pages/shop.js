@@ -149,9 +149,9 @@ class shop extends React.Component {
                                           isOwner={isOwner} //Si propriétaire du shop, true or false
                                           userState={this.state.userState} // Si la personne est log ou pas, true or false
                                           alfred={this.state.alfred} //Infos perso de l'alfred
-                                          serviceUser={this.state.shop} // Infos du serviceUser
+                                          shop={this.state.shop} // Infos du shop
                                           service={this.state.services[result].service} // Infos du service
-                                          shop={this.state.services[result]} // Infos du shop
+                                          serviceUser={this.state.services[result]} // Infos du serviceUser
                                           needRefresh={this.needRefresh} // Fonction pour rafraichir le componentDidmount après suppression
                                         />
                                     </Grid>
