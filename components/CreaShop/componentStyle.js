@@ -234,7 +234,8 @@ export default theme => ({
     [theme.breakpoints.down('xs')]: {
       marginBottom : 150
     },
-
+  },
+  marginButtonSwitch:{
+    marginBottom: 30
   }
-
 })
