@@ -146,13 +146,14 @@ class shop extends React.Component {
                                   return (
                                     <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
                                         <CardPreview
-                                          isOwner={isOwner}
-                                          userState={this.state.userState}
-                                          alfred={this.state.alfred}
-                                          shop={this.state.shop}
-                                          service={this.state.services[result].service}
-                                          services={this.state.services[result]}
-                                          needRefresh={this.needRefresh}/>
+                                          isOwner={isOwner} //Si propriétaire du shop, true or false
+                                          userState={this.state.userState} // Si la personne est log ou pas, true or false
+                                          alfred={this.state.alfred} //Infos perso de l'alfred
+                                          serviceUser={this.state.shop} // Infos du serviceUser
+                                          service={this.state.services[result].service} // Infos du service
+                                          shop={this.state.services[result]} // Infos du shop
+                                          needRefresh={this.needRefresh} // Fonction pour rafraichir le componentDidmount après suppression
+                                        />
                                     </Grid>
                                   )
                               })
