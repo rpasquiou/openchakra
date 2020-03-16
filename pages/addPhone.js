@@ -23,7 +23,7 @@ const styles = theme => ({
     },
     card: {
         fontFamily: 'Helvetica',
-        width: 800,
+        width: '100%',
         marginTop: '100px',
     },
     cardContant: {
@@ -36,13 +36,20 @@ const styles = theme => ({
         lineHeight: 4.15,
     },
     banner: {
-        marginBottom: 25,
         backgroundColor: '#2FBCD3',
-        height: 80,
+        display: 'flex',
+        textAlign: 'center',
+        justifyContent: 'center'
 
     },
     newContainer: {
         padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        alignContent: 'center',
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'justify',
     },
     title: {
         fontFamily: 'Helvetica',
@@ -53,6 +60,9 @@ const styles = theme => ({
         paddingTop: 22,
         letterSpacing: 1,
     },
+    mainContainer:{
+        width : '100%'
+    }
 });
 
 class addPhone extends React.Component {
@@ -95,12 +105,12 @@ class addPhone extends React.Component {
         return (
             <Layout>
                 <Grid container className={classes.signupContainer}>
-                    <Card className={classes.card}>
-                        <div className={classes.banner}>
+                    <Grid className={classes.card}>
+                        <Grid className={classes.banner}>
                             <h2 className={classes.title}>Confirmez votre numéro de téléphone</h2>
-
-                        </div>
-                            <div className={classes.newContainer}>
+                        </Grid>
+                        <Grid className={classes.mainContainer}>
+                            <Grid className={classes.newContainer}>
                                 <Typography style={{fontFamily: 'Helvetica'}}>L'ajout de votre numéro de téléphone permet aux membres My-Alfred
                                     de disposer d'un moyen pour vous contacter.</Typography>
                                 <Grid container style={{display: 'flex', justifyContent: 'center', marginTop: 20}}>
@@ -110,16 +120,16 @@ class addPhone extends React.Component {
                                     <form onSubmit={this.onSubmit}>
                                         <Grid item>
                                             <TextField
-                                                id="standard-with-placeholder"
-                                                label="Numéro de téléphone"
-                                                placeholder="Numéro de téléphone"
-                                                margin="normal"
-                                                style={{ width: '100%' }}
-                                                type={'number'}
-                                                name="phone"
-                                                variant="outlined"
-                                                value={this.state.address}
-                                                onChange={this.onChange}
+                                              id="standard-with-placeholder"
+                                              label="Numéro de téléphone"
+                                              placeholder="Numéro de téléphone"
+                                              margin="normal"
+                                              style={{ width: '100%' }}
+                                              type={'number'}
+                                              name="phone"
+                                              variant="outlined"
+                                              value={this.state.address}
+                                              onChange={this.onChange}
                                             />
                                         </Grid>
                                         <Grid item style={{ display: 'flex', justifyContent: 'center', marginTop: 30 }}>
@@ -129,10 +139,9 @@ class addPhone extends React.Component {
                                         </Grid>
                                     </form>
                                 </Grid>
-
-                            </div>
-
-                    </Card>
+                            </Grid>
+                        </Grid>
+                    </Grid>
                 </Grid>
             </Layout>
         );
