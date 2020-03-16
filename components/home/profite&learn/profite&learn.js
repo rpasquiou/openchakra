@@ -185,7 +185,7 @@ class profiteandlearn extends React.Component {
                 </Grid>
                 <Grid item xs={12} className={classes.contentTextBox}>
                   <Typography className={classes.textBox3}>
-                    Une fois votre boutique ouverte, les personnes intéressées par vos prestations pourront réserver vos services en ligne. Si vous avez des questions avant la prestation, vous pourrez les contacter !                  </Typography>
+                    Une fois votre boutique en ligne, les personnes intéressées par vos prestations pourront réserver en ligne vos services. Si votre client ou vous même avez des questions avant la prestation, vous pourrez échanger !</Typography>
                 </Grid>
               </Grid>
             </Grid>
