@@ -17,6 +17,9 @@ export default theme => ({
   },
   contentTitle:{
     width: '80%',
+    [theme.breakpoints.down('xs')]: {
+      width: '100%'
+    },
   },
   contentTextSize:{
     width : 500,
@@ -187,7 +190,7 @@ export default theme => ({
     width: '50%',
     marginRight: '5%',
     zIndex:0,
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       width: '100%'
     },
   },
@@ -231,7 +234,8 @@ export default theme => ({
     [theme.breakpoints.down('xs')]: {
       marginBottom : 150
     },
-
+  },
+  marginButtonSwitch:{
+    marginBottom: 30
   }
-
 })

@@ -1,12 +1,10 @@
 import { toast } from 'react-toastify';
 import React from 'react';
-import Card from '@material-ui/core/Card';
 import Grid from '@material-ui/core/Grid';
 import { Typography } from '@material-ui/core';
 import TextField from '@material-ui/core/TextField';
 import { withStyles } from '@material-ui/core/styles';
 import axios from 'axios';
-import Router from "next/router";
 import Button from "@material-ui/core/Button";
 
 const moment = require('moment');
@@ -14,7 +12,8 @@ moment.locale('fr');
 
 const { config } = require('../../config/config');
 const url = config.apiUrl;
-const styles = {
+
+const styles = theme => ({
     loginContainer: {
         alignItems: 'center',
         height: '100vh',
@@ -36,7 +35,13 @@ const styles = {
     menu: {
         width: 200,
     },
-};
+  siretResponsive:{
+    [theme.breakpoints.down('xs')]: {
+      marginBottom : 30,
+      marginTop: 50
+    },
+  }
+});
 
 class siret extends React.Component {
 
@@ -56,7 +61,7 @@ class siret extends React.Component {
 
     onChange = e => {
       let {name, value} = e.target;
-      if (name=='siret') {
+      if (name==='siret') {
         value = value.replace(/ /g, '');
       }
       this.setState({ [name]: value });
@@ -129,7 +134,7 @@ class siret extends React.Component {
                 </Grid>
 
 
-                <Grid container>
+                <Grid container className={classes.siretResponsive}>
                     <Grid item xs={12} sm={12} md={6}>
                                 <Typography>Siret/Siren : {this.state.siret}</Typography>
                     </Grid>
