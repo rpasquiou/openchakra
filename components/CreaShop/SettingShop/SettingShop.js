@@ -43,12 +43,15 @@ class SettingShop extends React.Component {
           <Grid>
             <Grid className={classes.contentLeftTop}>
               <Grid className={classes.contentTitle}>
-                <Typography className={classes.policySizeTitle}>Indiquez votre message de bienvenue ! </Typography>
+                <Typography className={classes.policySizeTitle}>Paramétrez votre boutique </Typography>
               </Grid>
               <Grid>
                 <Grid>
-                  <h3  className={classes.policySizeSubtitle}>Les utilisateurs recevront votre message lorsque vous confirmerez leur réservation. </h3>
+                  <h3  className={classes.policySizeSubtitle}>Indiquez votre message de bienvenue ! </h3>
                 </Grid>
+              </Grid>
+              <Grid>
+                <p className={classes.policySizeContent}>Les utilisateurs recevront votre message lorsque vous confirmerez leur réservation. </p>
               </Grid>
               <Grid>
                 <Grid className={classes.texfieldContentWelcomedMessage}>
@@ -57,7 +60,7 @@ class SettingShop extends React.Component {
                     label="Message de bienvenue"
                     multiline
                     rows="4"
-                    className={classes.textField}
+                    className={classes.texfieldContentWelcomedMessage}
                     margin="normal"
                     variant="outlined"
                     InputLabelProps={{
@@ -78,10 +81,10 @@ class SettingShop extends React.Component {
                   </Grid>
                 </Grid>
                 <Grid>
-                  <Grid>
+                  <Grid className={classes.marginButtonSwitch}>
                     <ButtonSwitch id={CANCEL_MODE.FLEXIBLE} checked={this.state.cancel_mode==CANCEL_MODE.FLEXIBLE} label={"Flexibles: Remboursement intégral jusqu'à 1 jour avant la prestation"} onChange={this.cancelModeChanged} ref={this.cancel_buttons[CANCEL_MODE.FLEXIBLE]}/>
                   </Grid>
-                  <Grid>
+                  <Grid className={classes.marginButtonSwitch}>
                     <ButtonSwitch id={CANCEL_MODE.MODERATE} checked={this.state.cancel_mode==CANCEL_MODE.MODERATE} label={"Modérées: Remboursement intégral jusqu'à 5 jours avant la prestation"} onChange={this.cancelModeChanged} ref={this.cancel_buttons[CANCEL_MODE.MODERATE]}/>
                   </Grid>
                   <Grid>

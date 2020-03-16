@@ -53,15 +53,18 @@ class IntroduceYou extends React.Component {
     return (
       <Grid className={classes.mainContainer}>
         <Grid className={classes.contentContainer}>
-          <Grid className={classes.contentLeft}>
+          <Grid>
             <Grid className={classes.contentLeftTop}>
               <Grid className={classes.contentTitle}>
-                <Typography className={classes.policySizeTitle}>Indiquez votre message de bienvenue ! </Typography>
+                <Typography className={classes.policySizeTitle}>Présentez vous !</Typography>
               </Grid>
               <Grid>
                 <Grid>
-                  <h3 className={classes.policySizeSubtitle}>Les utilisateurs recevront votre message lorsque vous confirmerez leur réservation. </h3>
+                  <h3 className={classes.policySizeSubtitle}>Vérifiez votre identité</h3>
                 </Grid>
+              </Grid>
+              <Grid>
+                <p className={classes.policySizeContent}>Ces informations ne seront pas visibles par les utilisateurs. </p>
               </Grid>
               <Grid>
                 <Grid>
