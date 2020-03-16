@@ -140,8 +140,6 @@ export default theme => ({
     [theme.breakpoints.down('xs')]: {
       marginLeft: 5,
       marginRight: 5,
-      backgroundColor : 'green'
-
     }
   },
   bodyContainer:{
