@@ -40,7 +40,7 @@ class faq extends React.Component {
                 <Grid container style={{marginTop:80}}>
                     <Grid item md={7} sm={12} style={{paddingLeft:'3%'}}>
                         <Grid container>
-                        <h3>Devenir Alfred</h3>
+                        <h3>Proposer mes services</h3>
                             <Grid item xs={12}>
                                 <ExpansionPanel
                                     style={{ border: "none", boxShadow: "none", width: "70%" }}
@@ -99,7 +99,7 @@ class faq extends React.Component {
                                             </p>
                                             <p>
                                                 Prêt à vous lancer ?
-                                                Pour démarrer la création de votre boutique, l’inscription est obligatoire. Une fois identifé(e) sur My-Alfred, il suffit de cliquer sur le bouton “Devenir Alfred’’.
+                                                Pour démarrer la création de votre boutique, l’inscription est obligatoire. Une fois identifé(e) sur My-Alfred, il suffit de cliquer sur le bouton “Proposer mses services’’.
 
                                             </p>
                                             <p>
@@ -894,7 +894,7 @@ class faq extends React.Component {
                                             Pour devenir Alfred, vous devez fournir une pièce d’identité en règle qui peut être soit une carte
                                             nationale d’identité soit un passeport.  Vous pouvez fournir cette pièce d’identité lors de la création
                                             de votre boutique ou plus tard dans le menu Votre profil.  La vérification de votre pièce d’identité
-                                            est indispensable pour Devenir Alfred et pour que votre boutique soit visible des autres autres membres
+                                            est indispensable pour devenir Alfred et pour que votre boutique soit visible des autres autres membres
                                             My-Alfred.
 
                                         </p>

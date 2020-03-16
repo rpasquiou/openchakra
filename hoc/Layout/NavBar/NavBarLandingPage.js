@@ -198,7 +198,7 @@ class NavBar extends Component {
     const logged = this.state.logged;
     const user = this.state.user;
     const maboutique = <MenuItem onClick={this.handleMenuClose}><Typography><Link href={`/shop?id_alfred=${user ? user._id : ''}`}><a className={classes.navbarLinkMobile}>Ma boutique</a></Link></Typography></MenuItem>;
-    const becomealfred = <MenuItem onClick={this.handleMobileMenuClose}><Typography><Link href={'/creaShop/creaShop'}><a className={classes.navbarLinkMobile}>Créer ma boutique</a></Link></Typography></MenuItem>;
+    const becomealfred = <MenuItem onClick={this.handleMobileMenuClose}><Typography><Link href={'/creaShop/creaShop'}><a className={classes.navbarLinkMobile}>Proposer mes services</a></Link></Typography></MenuItem>;
     const picture = this.state.picture;
     const mobileavatar =
 	<React.Fragment>
@@ -394,7 +394,7 @@ class NavBar extends Component {
               <Typography className={classes.navbarItem}>
                 <Link href={'/creaShop/creaShop'}>
                   <a className={classes.navbarLink}>
-                    Créer ma boutique
+                    Proposer mes services
                   </a>
                 </Link>
               </Typography>}
