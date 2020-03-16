@@ -190,7 +190,7 @@ export default theme => ({
     width: '50%',
     marginRight: '5%',
     zIndex:0,
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       width: '100%'
     },
   },
