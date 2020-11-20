@@ -9,6 +9,14 @@ import {withStyles} from '@material-ui/core/styles';
 import Footer from '../hoc/Layout/Footer/Footer';
 import cookie from 'react-cookies';
 
+const styles = theme => ({
+    bigContainer: {
+        flexGrow: 1,
+
+    },
+
+});
+
 class PaymentDirectSuccessCreate extends React.Component {
   constructor(props) {
     super(props);
@@ -187,4 +195,4 @@ class PaymentDirectSuccessCreate extends React.Component {
 }
 
 
-export default withStyles(PaymentDirectSuccessCreate);
+export default withStyles(styles, { withTheme: true})(PaymentDirectSuccessCreate);

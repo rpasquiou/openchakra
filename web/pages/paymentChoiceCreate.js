@@ -77,7 +77,7 @@ class PaymentChoiceCreate extends React.Component {
     };
     axios.post('/myAlfred/api/payment/payInDirectCreate', data)
       .then(() => {
-        Router.push('/paymentDirectSuccessCreate?=' + this.state.booking_id);
+        Router.push('/paymentDirectSuccessCreate');
 
       })
       .catch();
