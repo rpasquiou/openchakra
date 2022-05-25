@@ -1,12 +1,12 @@
 import React, {useState} from 'react'
-const {SHIPRATE, CREATE} = require('../../utils/consts')
+import {SHIPRATE, CREATE} from '../../utils/consts'
 
-const DataImport = require('../DataImport/DataImport')
-const DialogBase = require('../Dialog/DialogBase')
-const {PleasantButton} = require('./Button')
+import DataImport from '../DataImport/DataImport'
+import DialogBase from '../Dialog/DialogBase'
+import {PleasantButton} from './Button'
 
-const {shipratesColumns} = require('./tablestructures')
-const BaseListTable = require('./BaseListTable')
+import {shipratesColumns} from './tablestructures'
+import BaseListTable from './BaseListTable'
 
 const ShipratesList = ({accessRights}) => {
 
@@ -26,7 +26,7 @@ const ShipratesList = ({accessRights}) => {
           <PleasantButton key={`action${i}`} onClick={() => setImportInfo(imp)}>{imp.title}</PleasantButton>
         ))}
       </div>
-      <BaseListTable endpoint='shiprates' columns={shipratesColumns} accessRights={accessRights}/>
+      <BaseListTable caption='Frais de livraison' endpoint='shiprates' columns={shipratesColumns} accessRights={accessRights}/>
       {importInfo &&
         <DialogBase open={true}>
           <DataImport title={importInfo.title} subTitle={importInfo.subTitle} importURL={importInfo.url}/>

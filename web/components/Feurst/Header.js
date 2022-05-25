@@ -1,50 +1,73 @@
 import React from 'react'
 import Link from 'next/link'
 import styled from 'styled-components'
-const {FEURST_PHONE_NUMBER, BASEPATH_EDI} = require('../../utils/consts')
-const QuickMenu = require('./QuickMenu')
+import {screen} from '../../../web/styles/screenWidths'
+import {FEURST_PHONE_NUMBER, BASEPATH_EDI} from '../../utils/consts'
+import QuickMenu from './QuickMenu'
 
 const HeaderContainer = styled.header`
 
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: var(--spc-2);
   align-items: center;
-  justify-content: space-around;
   column-gap: var(--spc-8);
-  margin-bottom: var(--spc-6);
+  margin-block: var(--spc-8) var(--spc-18);
+  width: var(--container-lg);
+  margin-inline: auto;
 
-  a {
-    text-decoration-line: none;
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);FEURST_PHONE
-    transition: all var(--delayIn) ease-out;
-    color: ${props => props.theme.colors?.black || '#111'};
-
-    &:hover {
-      text-decoration-line: underline;
-      text-decoration-color: ${props => props.theme.colors?.blue || '#00F'};
-    }
+  @media (${screen.md}) {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 
+
   .phonenumber {
+    font-size: var(--text-sm);
     white-space: nowrap;
     color: ${props => props.theme.colors?.blueFeurst || '#00F'};
-    font-weight: var(--font-semibold);
+    font-weight: var(--font-bold);
+    text-decoration: none;
+
+    @media (${screen.lg}) {
+      font-size: var(--text-base);
+    }
   }
 `
 
+const LogoLink = styled.a`
+  justify-self: center;
+  cursor: pointer;
+`
+
+const InfoBox = styled.div`
+  display: flex; 
+  justify-content: center;
+  align-items: center;
+  background-color: var(--brand-color);
+  color: var(--white);
+  font-weight: var(--font-bold);
+  text-align: center;
+  padding-block: var(--spc-2);
+`
+
 const Header = ({accessRights}) => {
+
   return (
-    <HeaderContainer role="banner">
-      <div className='flex items-center'>
-        <a className='phonenumber' href={`tel:${FEURST_PHONE_NUMBER.replace(/\s+/g, '')}`}>{FEURST_PHONE_NUMBER}</a>
-      </div>
-      <Link href={`${BASEPATH_EDI}`}>
-        <a><img className='img-responsive max-w-350' src="https://feurst.fr/wp-content/uploads/2022/01/logo-feurst-01.svg" alt='' width={350} height={104} /></a>
-      </Link>
-      <QuickMenu accessRights={accessRights} />
-    </HeaderContainer>
+    <>
+      <InfoBox>
+        <p>Toute commande passée avant 11h00 sera traitée dans la journée. Notre secrétariat est ouvert du lundi au vendredi de 9h00 à 17h00.</p>
+      </InfoBox>
+      <HeaderContainer role="banner">
+      
+        <a className='phonenumber' href={`tel:${FEURST_PHONE_NUMBER.replace(/\s+/g, '')}`}>Une question ? {FEURST_PHONE_NUMBER}</a>
+      
+        <Link href={`${BASEPATH_EDI}`}>
+          <LogoLink><img className='img-responsive max-w-200' src="https://feurst.fr/wp-content/uploads/2022/01/logo-feurst-01.svg" alt='' width={350} height={104} /></LogoLink>
+        </Link>
+        <QuickMenu accessRights={accessRights} />
+      </HeaderContainer>
+    </>
   )
 }
 
-module.exports=Header
+export default Header

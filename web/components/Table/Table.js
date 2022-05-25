@@ -1,6 +1,5 @@
 import React, {useMemo} from 'react'
 import {useTable, useSortBy, useFilters, useGlobalFilter} from 'react-table'
-import lodash from 'lodash'
 import {GlobalFilter} from './TableFilter'
 import {fuzzyTextFilterFn} from './table-helper'
 import TableDialogFilter from './TableDialogFilter'
@@ -47,7 +46,17 @@ function dateBetweenFilterFn(rows, id, filterValues) {
 dateBetweenFilterFn.autoRemove = val => !val
 
 
-const Table = ({data, columns, caption = null, updateMyData = null, globalfilter=null}) => {
+const Table = (
+  {
+    data,
+    columns,
+    caption = null,
+    footer = null,
+    updateMyData = null,
+    globalfilter=null,
+    filtered=false,
+  },
+) => {
 
   const filterTypes = useMemo(
     () => ({
@@ -84,10 +93,10 @@ const Table = ({data, columns, caption = null, updateMyData = null, globalfilter
     getTableProps,
     getTableBodyProps,
     headerGroups,
+    footerGroups,
     rows,
     prepareRow,
     state,
-    visibleColumns,
     preGlobalFilteredRows,
     setGlobalFilter,
   } = useTable(
@@ -99,10 +108,11 @@ const Table = ({data, columns, caption = null, updateMyData = null, globalfilter
       visibleColumns: [],
       updateMyData,
     },
-    useFilters,
+    filtered && useFilters,
     useGlobalFilter,
     useSortBy,
   )
+  
 
   return (
     <div>
@@ -119,11 +129,14 @@ const Table = ({data, columns, caption = null, updateMyData = null, globalfilter
         <thead>
           {headerGroups.map(headerGroup => (
             <tr {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column, i) => (
+              {headerGroup.headers.map(column => (
                 <th {...column.getHeaderProps()}>
                   {column.render('Header') !== '' &&
                     <div className='header'>
-                      <button {...column.getHeaderProps(column.getSortByToggleProps())}>
+                      <button {...{...column.getHeaderProps(column.getSortByToggleProps()), 'aria-label': `tri ${column.isSorted &&(
+                        column.isSortedDesc
+                          ? 'décroissant'
+                          : 'croissant') || ': non trié' }`, title: null}} >
                         {column.render('Header')}
                         {column.isSorted &&(
                           column.isSortedDesc
@@ -158,13 +171,23 @@ const Table = ({data, columns, caption = null, updateMyData = null, globalfilter
             return (
               <tr {...row.getRowProps()}>
                 {row.cells.map(cell => {
-                  // console.log(cell)
                   return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                 })}
               </tr>
             )
           })}
         </tbody>
+        {footer ?
+          <tfoot>
+            {footerGroups.map(group => (
+              <tr {...group.getFooterGroupProps()}>
+                {group.headers.map(column => (
+                  <td {...column.getFooterProps()}>{column.render('Footer')}</td>
+                ))}
+              </tr>
+            ))}
+          </tfoot>
+          : null}
       </table>
     </div>
   )

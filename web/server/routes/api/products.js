@@ -1,18 +1,19 @@
 const express = require('express')
 const passport = require('passport')
 const moment = require('moment')
-const {getDataFilter, isActionAllowed} = require('../../utils/userAccess')
+const {fileImport, productsImport} = require('../../utils/import')
+const {isActionAllowed} = require('../../utils/userAccess')
+const {DELETE} = require('../../../utils/feurst/consts')
+const {XL_FILTER, createMemoryMulter} = require('../../utils/filesystem')
 const {PRODUCT, VIEW, CREATE} = require('../../../utils/consts')
-const {TEXT_FILTER, createMemoryMulter} = require('../../utils/filesystem')
 const Product = require('../../models/Product')
 
 const router = express.Router()
 const {validateProduct}=require('../../validation/product')
-const {csvImport}=require('../../utils/import')
 moment.locale('fr')
 
 // PRODUCTS
-const uploadProducts = createMemoryMulter(TEXT_FILTER)
+const uploadProducts = createMemoryMulter(XL_FILTER)
 
 const DATA_TYPE=PRODUCT
 
@@ -22,39 +23,18 @@ const DATA_TYPE=PRODUCT
 // @Access private
 router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 
-  if (!isActionAllowed(req.user.roles, DATA_TYPE, VIEW)) {
-    return res.status(301)
+  let andFilter= () => true
+
+  if (req.query.pattern) {
+    const elements=req.query.pattern.split(' ')
+    const andPattern=new RegExp(elements.map(e => `(?=.*${e})`).join(''), 'i')
+    andFilter=p => `${p.reference} ${p.description} ${p.description_2}`.match(andPattern)
   }
 
-  const pattern = new RegExp(req.query.pattern, 'i')
-  const filter=req.query.pattern ? {
-    $or: [
-      {reference: pattern},
-      {description: pattern},
-      {description_2: pattern},
-    ],
-  }: {}
-
-  Product.find({...filter, ...getDataFilter(req.user, DATA_TYPE, VIEW), price: {$gt: 0}, weight: {$gt: 0}})
+  Product.find({})
     .then(products => {
-      res.json(products)
-    })
-    .catch(err => {
-      console.error(err)
-      res.status(500).json(err)
-    })
-})
-
-// @Route GET /myAlfred/api/products/:product_id
-// View one product
-// @Access private
-router.get('/:product_id', passport.authenticate('jwt', {session: false}), (req, res) => {
-  Product.findById(req.params.product_id)
-    .then(product => {
-      if (!product) {
-        return res.status(404).json()
-      }
-      return res.json(product)
+      const andEdProducts=products.filter(p => andFilter(p))
+      res.json(andEdProducts)
     })
     .catch(err => {
       console.error(err)
@@ -103,7 +83,7 @@ router.put('/:product_id', passport.authenticate('jwt', {session: false}), (req,
 router.delete('/:product_id', passport.authenticate('jwt', {session: false}), (req, res) => {
 
   if (!isActionAllowed(req.user.roles, DATA_TYPE, DELETE)) {
-    return res.status(301).json()
+    return res.sendStatus(301)
   }
 
   Product.findByIdAndDelete(req.params.product_id, {runValidators: true, new: true})
@@ -124,7 +104,7 @@ router.delete('/:product_id', passport.authenticate('jwt', {session: false}), (r
 router.post('/import', passport.authenticate('jwt', {session: false}), (req, res) => {
 
   if (!isActionAllowed(req.user.roles, DATA_TYPE, CREATE)) {
-    return res.status(301).json()
+    return res.sendStatus(301)
   }
 
   uploadProducts.single('buffer')(req, res, err => {
@@ -136,50 +116,21 @@ router.post('/import', passport.authenticate('jwt', {session: false}), (req, res
     const DB_MAPPING={
       'reference': 'Code article',
       'description_2': 'Description 2',
-      'production_line': 'Ligne prod.',
       'group': 'Grpe',
       'family': 'Famille',
       'description': 'Description',
       'weight': "Poids d'expédition",
     }
 
-    csvImport(Product, req.file.buffer, DB_MAPPING, {key: 'reference'})
+    const options=JSON.parse(req.body.options)
+
+    productsImport(Product, req.file.buffer, DB_MAPPING, {...options, key: 'reference'})
       .then(result => {
-        res.json(result)
+        return res.json(result)
       })
       .catch(err => {
         console.error(err)
-        res.status(500).error(err)
-      })
-  })
-})
-
-// @Route POST /myAlfred/api/products/import-price
-// Imports prices from csv
-router.post('/import-price', passport.authenticate('jwt', {session: false}), (req, res) => {
-
-  if (!isActionAllowed(req.user.roles, DATA_TYPE, CREATE)) {
-    return res.status(301).json()
-  }
-
-  uploadProducts.single('buffer')(req, res, err => {
-    if (err) {
-      console.error(err)
-      return res.status(404).json({errors: err.message})
-    }
-    // db field => import field
-    const DB_MAPPING={
-      'reference': 'CODE ARTICCLE',
-      'price': 'PRIX 2022',
-    }
-
-    csvImport(Product, req.file.buffer, DB_MAPPING, {key: 'reference', update: true})
-      .then(result => {
-        res.json(result)
-      })
-      .catch(err => {
-        console.error(err)
-        res.status(500).error(err)
+        return res.status(500).json(err)
       })
   })
 })
@@ -188,7 +139,6 @@ router.post('/import-price', passport.authenticate('jwt', {session: false}), (re
 // Imports stock from csv
 router.post('/import-stock', passport.authenticate('jwt', {session: false}), (req, res) => {
 
-  console.log(`Actions:${JSON.stringify(req.user.roles, null, 2)}`)
   if (!isActionAllowed(req.user.roles, DATA_TYPE, CREATE)) {
     return res.status(401).json()
   }
@@ -204,13 +154,14 @@ router.post('/import-stock', passport.authenticate('jwt', {session: false}), (re
       'stock': 'FSTMG',
     }
 
-    csvImport(Product, req.file.buffer, DB_MAPPING, {key: 'reference', update: true})
+    const options=JSON.parse(req.body.options)
+    fileImport(Product, req.file.buffer, DB_MAPPING, {...options, key: 'reference', update: true})
       .then(result => {
         res.json(result)
       })
       .catch(err => {
         console.error(err)
-        res.status(500).error(err)
+        return res.status(500).json(err)
       })
   })
 })

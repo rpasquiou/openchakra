@@ -1,14 +1,14 @@
-import React, {useEffect, useMemo, useState} from 'react'
+import React from 'react'
 import withEdiAuth from '../../../hoc/withEdiAuth'
-const Shiprates = require('../../../components/Feurst/Shiprates')
-const {BASEPATH_EDI} = require('../../../utils/feurst/consts')
-const {SHIPRATE, VIEW} = require('../../../utils/consts')
+import {BASEPATH_EDI} from '../../../utils/feurst/consts'
+import {SHIPRATE, VIEW} from '../../../utils/consts'
+import ShipratesList from '../../../components/Feurst/ShipratesList'
 
-const ShipratesList = ({accessRights}) => {
+const List = ({accessRights}) => {
 
   return (<>
-    <Shiprates accessRights={accessRights} />
+    <ShipratesList accessRights={accessRights} />
   </>)
 }
 
-module.exports=withEdiAuth(ShipratesList, {model: SHIPRATE, action: VIEW, pathAfterFailure: `${BASEPATH_EDI}/login`})
+export default withEdiAuth(List, {model: SHIPRATE, action: VIEW, pathAfterFailure: `${BASEPATH_EDI}/login`})

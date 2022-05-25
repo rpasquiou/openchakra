@@ -1,5 +1,7 @@
 import {createGlobalStyle} from 'styled-components'
 import {screen} from '../screenWidths'
+import Roboto from '../../static/assets/fonts/Roboto-Regular.woff2'
+import RobotoBold from '../../static/assets/fonts/Roboto-Bold-webfont.woff2'
 
 const blue = '#141953'
 const blueFeurst = 'hsl(210.6, 50.9%, 41.6%)'
@@ -16,15 +18,20 @@ export const theme = {
     metalGray: '#a8a9ab',
     lightGray: '#e4e4e4',
   },
-  containerSize: 'min(100% - 2rem, 60rem)',
+  containerSize: {
+    base: 'min(100% - 2rem, 60rem)',
+    lg: 'min(100% - 2rem, 70rem)',
+    xl: 'min(100% - 2rem, 80rem)',
+  },
   //   space: [0, 4, 8, 16, 24, 32, 48, 64, 128, 256, 512],
   fontSizes: {
+    xxs: '0.6rem',
     xs: '0.75rem',
     sm: '0.875rem',
     base: '1rem',
     lg: '1.125rem',
   },
-  fontFamily: 'Roboto',
+  fontFamily: `Roboto, 'Source Sans Pro', sans-serif !important`,
   fontWeights: [100, 200, 300, 400, 500, 600, 700, 800, 900],
   lineHeights: {
     normal: 1,
@@ -36,6 +43,19 @@ export const theme = {
 
 export const GlobalStyleEdi = createGlobalStyle`
   
+  @font-face {
+    font-family: 'Roboto';
+    src: local('Roboto'), url(${Roboto}) format('woff2');
+    font-weight: 500;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: 'Roboto';
+    src: local('Roboto'), url(${RobotoBold}) format('woff2');
+    font-weight: 700;
+    font-style: normal;
+  }
+
   :root {
     /* Colors */
     accent-color: ${props => props.theme?.accentColor || 'auto'};
@@ -45,6 +65,7 @@ export const GlobalStyleEdi = createGlobalStyle`
     --black: #111;
     --white: ${props => props.theme?.colors?.white || '#FFF'};
     --yellow-500: ${props => props.theme?.colors?.yellow || rgb(218, 187, 66)};
+    --green-500: ${props => props.theme?.colors?.green || 'hsl(90.3, 38.3%, 50.4%)'};
     --bg-selectedZone: #bcc0cd;
     --text-selectedZone: #fff;
     --gray-800: rgb(190, 190, 190);
@@ -65,6 +86,7 @@ export const GlobalStyleEdi = createGlobalStyle`
     --stone-700: #1C1917;
 
     /* text */
+    --text-xxs: 0.6rem;
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
     --text-base: 1rem;
@@ -99,8 +121,10 @@ export const GlobalStyleEdi = createGlobalStyle`
     --spc-10: 2.5rem;
     --spc-11: 2.75rem;
     --spc-12: 3rem;
+    --spc-18: 4.5rem;
     --spc-24: 6rem;
     --spc-32: 8rem;
+    --spc-96: 24rem;
 
     /* Grid */
     --grid-cols-1: repeat(1, minmax(0, 1fr));
@@ -115,6 +139,13 @@ export const GlobalStyleEdi = createGlobalStyle`
     --rounded-3xl: 1.5rem;
     --rounded-7xl: 3.5rem;
     --rounded-full: 9999px;
+
+    /* containers */
+    --container-sm: ${props => (props.theme?.containerSize?.sm ? props.theme.containerSize.sm : 'min(100% - 2rem, 30rem)')}; 
+    --container-md: ${props => (props.theme?.containerSize?.md ? props.theme.containerSize.md : 'min(100% - 2rem, 40rem)')}; 
+    --container-base: ${props => (props.theme?.containerSize?.base ? props.theme.containerSize.base : 'min(100% - 2rem, 50rem)')}; 
+    --container-lg: ${props => (props.theme?.containerSize?.lg ? props.theme.containerSize.lg : 'min(100% - 2rem, 60rem)')}; 
+    --container-xl: ${props => (props.theme?.containerSize?.xl ? props.theme.containerSize.xl : 'min(100% - 2rem, 70rem)')}; 
 
     /* Miscellaneous */
     --minTapSize: 44px;
@@ -132,13 +163,35 @@ export const GlobalStyleEdi = createGlobalStyle`
   body {
     padding: 0;
     margin: 0;
-    min-height: 100vh;
     color: ${props => (props.whiteColor ? 'white' : 'black')};
     font-family: ${props => props.theme?.fontFamily};
   }
 
-  .container {
-    width: ${props => (props.theme?.containerSize ? props.theme.containerSize : 'min(100% - 2rem, 50rem)')}; 
+  * {
+    font-family: inherit !important;
+  }
+
+  
+  .container-sm {
+    width: var(--container-sm);
+    margin-inline: auto;
+  }
+  .container-md {
+    width: var(--container-md);
+    margin-inline: auto;
+  }
+  .container-base {
+    width: var(--container-base);
+    margin-inline: auto;
+  }
+  
+  .container-lg {
+    width: var(--container-lg); 
+    margin-inline: auto;
+  }
+
+  .container-xl {
+    width: var(--container-xl); 
     margin-inline: auto;
   }
 
@@ -157,7 +210,19 @@ export const GlobalStyleEdi = createGlobalStyle`
     width: 100%;
     height: auto;
   }
-  
+
+/* Text */
+
+.dl-inline dt {
+  float: left;
+  clear: left;
+  margin-right: 10px;
+}
+.dl-inline dd {
+  margin-left: 0px;
+}
+
+/* font-sizes */
 .text-sm {
   font-size: 0.875rem;
 }
@@ -186,6 +251,20 @@ export const GlobalStyleEdi = createGlobalStyle`
 
 .text-right {
   text-align: right;
+}
+
+/* font-weight */
+
+.font-semibold {
+  font-weight: var(--font-semibold);
+}
+
+/* font-colors */
+.text-black {
+  color: var(--black);
+}
+.text-white {
+  color: var(--white);
 }
 
 .no-underline	{text-decoration-line: none;}
@@ -217,6 +296,10 @@ input:focus:not(:focus-visible) {
   grid-template-columns: 1fr 2fr;
 }
 
+.col-end-auto	{grid-column-end: auto;}
+.col-start-2 {grid-column-start: 2;}
+.col-start-1 {grid-column-start: 1;}
+
 .col-span-2 {
   grid-column: span 2 / span 2;
 }
@@ -240,30 +323,24 @@ input:focus:not(:focus-visible) {
   flex-wrap: wrap;
 }
 
+.grow {
+  flex-grow: 1;
+}
+
 .place-items-center {
   place-items: center;
 }
 
-.justify-center {
-  justify-content: center;
-}
-.justify-evenly {
-  justify-content: space-evenly;
-}
-.justify-between {
-  justify-content: space-between;
-}
-.justify-self-end {
-  justify-self: end;
-}	
+.justify-center {justify-content: center;}
+.justify-end {justify-content: end;}
+.justify-evenly {justify-content: space-evenly;}
+.justify-between {justify-content: space-between;}
+.justify-self-start {justify-self: start;}
+.justify-self-end {justify-self: end;}
 
-.items-center {
-  align-items: center;
-}
-
-.items-end {
-  align-items: end;
-}
+.items-baseline	{align-items: baseline;}
+.items-center {align-items: center;}
+.items-end {align-items: end;}
 
 .gap-x-2 {
   column-gap: 0.5rem;
@@ -279,6 +356,10 @@ input:focus:not(:focus-visible) {
 
 .gap-y-1 {
   row-gap: 0.25rem;
+}
+
+.gap-y-3 {
+  row-gap: 0.75rem;
 }
 
 .gap-y-4 {
@@ -315,44 +396,53 @@ input:focus:not(:focus-visible) {
   height: 100%;
 }
 
+.max-w-200 {
+  max-width: 200px;
+}
 .max-w-350 {
   max-width: 350px;
 }
 
 /* Espacements */
 
-.m-4 {margin: 1em;}
-.m-8 {margin: 2em;}
+.m-4 {margin: var(--spc-4);}
+.m-8 {margin: var(--spc-8);}
 
 .mx-auto {margin: 0 auto;}
 
-.mr-8 {margin-right: 2rem;}
+.mr-8 {margin-right: var(--spc-8);}
 
-.mb-4 {margin-bottom: 1rem !important;}
-.mb-6 {margin-bottom: 1.5rem !important;}
+.mb-0 {margin-bottom: 0}
+.mb-4 {margin-bottom: var(--spc-4) !important;}
+.mb-6 {margin-bottom: var(--spc-6) !important;}
+.mb-8 {margin-bottom: var(--spc-8) !important;}
 
-.ml-12 {margin-left: 3rem;}
+.ml-12 {margin-left: var(--spc-12);}
 
-.p-2 {padding: 0.5rem;}
-.p-4 {padding: 1rem;}
+.p-2 {padding: var(--spc-2);}
+.p-4 {padding: var(--spc-4);}
 
-.pl-4 {padding-left: 1rem;}
-.pl-6 {padding-left: 1.5rem;}
+.pl-4 {padding-left: var(--spc-4);}
+.pl-6 {padding-left: var(--spc-6);}
+.pr-6 {padding-right: var(--spc-6);}
 
 .px-1 {
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
+  padding-left: var(--spc-1);
+  padding-right: var(--spc-1);
 }
 
 .py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: var(--spc-2);
+  padding-bottom: var(--spc-2);
 }
 
 /* Backgrounds */
 
 .bg-white {
   background-color: var(--white);
+}
+.bg-brand {
+  background-color: var(--brand-color);
 }
 .bg-gray-200 {
   background-color: var(--gray-200);
@@ -362,6 +452,53 @@ input:focus:not(:focus-visible) {
 
 .rounded-xl {
   border-radius: 0.75rem;
+}
+
+/* Components */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+[role=tooltip] {
+  visibility: hidden;
+  position: absolute;
+}
+[aria-describedby]:hover,
+[aria-describedby]:focus {
+  position: relative;
+}
+[aria-describedby]:hover + [role=tooltip],
+[aria-describedby]:focus + [role=tooltip] {
+ visibility: visible;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+.scale-50 {
+  transform: scale(50%);
+}
+
+.scale-100 {
+  transform: scale(100%);
+}
+
+.translate-y-0 {
+  transform: translateY(0px);
+}
+
+.-translate-y-full {
+  transform: translateY(-100%);
+}
+
+.-translate-y-25	{ 
+  transform: translateY(-25%);
 }
 
 

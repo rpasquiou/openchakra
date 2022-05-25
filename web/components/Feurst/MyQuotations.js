@@ -1,12 +1,12 @@
 import React from 'react'
-const BaseListTable = require('./BaseListTable')
-const {quotationsColumns} = require('./tablestructures')
+import BaseListTable from './BaseListTable'
+import {quotationsColumns} from './tablestructures'
 
 const MyQuotations = () => {
 
   return (
-    <BaseListTable endpoint='quotations' columns={quotationsColumns} />
+    <BaseListTable caption='Historique des devis' endpoint='quotations' columns={quotationsColumns} />
   )
 }
 
-module.exports=MyQuotations
+export default MyQuotations

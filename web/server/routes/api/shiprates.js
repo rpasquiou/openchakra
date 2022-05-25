@@ -1,14 +1,12 @@
 const express = require('express')
 const passport = require('passport')
-const lodash=require('lodash')
 const moment = require('moment')
 const xlsx=require('node-xlsx')
-const {extractCsv, shipRatesImport} = require('../../utils/import')
+const {shipRatesImport} = require('../../utils/import')
 const {TEXT_FILTER, createMemoryMulter} = require('../../utils/filesystem')
 const {SHIPRATE} = require('../../../utils/feurst/consts')
 const ShipRate = require('../../models/ShipRate')
-const {addItem} = require('../../utils/commands')
-const {getDataFilter, isActionAllowed} = require('../../utils/userAccess')
+const {isActionAllowed} = require('../../utils/userAccess')
 
 const router = express.Router()
 const {VIEW}=require('../../../utils/consts')
@@ -41,10 +39,10 @@ router.get('/template', passport.authenticate('jwt', {session: false}), (req, re
 router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 
   if (!isActionAllowed(req.user.roles, DATA_TYPE, VIEW)) {
-    return res.status(301)
+    return res.sendStatus(301)
   }
 
-  MODEL.find(getDataFilter(req.user, DATA_TYPE, VIEW))
+  MODEL.find()
     .then(data => {
       return res.json(data)
     })
@@ -63,7 +61,9 @@ router.post('/import', passport.authenticate('admin', {session: false}), (req, r
       return res.status(404).json({errors: err.message})
     }
 
-    shipRatesImport(req.file.buffer)
+    const options=JSON.parse(req.body.options)
+
+    shipRatesImport(req.file.buffer, options)
       .then(result => {
         res.json(result)
       })

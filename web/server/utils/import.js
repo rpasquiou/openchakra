@@ -1,107 +1,113 @@
-const csv_parse = require('csv-parse/lib/sync')
+const Validator = require('validator')
 const lodash=require('lodash')
-const {MAX_WEIGHT} = require('../../utils/feurst/consts')
+const bcrypt = require('bcryptjs')
+const {
+  CUSTOMER_ADMIN,
+  MAIN_ADDRESS_LABEL,
+  MAX_WEIGHT,
+} = require('../../utils/feurst/consts')
+const PriceList = require('../models/PriceList')
+const User = require('../models/User')
+const Company = require('../models/Company')
+const {extractData} = require('../../utils/import')
 const ShipRate = require('../models/ShipRate')
-const {bufferToString} = require('../../utils/text')
+const {addItem, updateShipFee} = require('./commands')
 
-const toFloat = value => {
-  try {
-    return value.replace(',', '.')
-  }
-  catch(err) {
-    console.error(err)
-    return value
-  }
+const getMissingColumns = (mandatory, columns) => {
+  const missingColumns=mandatory.filter(f => !columns.includes(f))
+  return missingColumns
 }
 
 const mapRecord=(record, mapping) => {
-  let newRecord=lodash.fromPairs(Object.keys(mapping).map(dbKey => [dbKey, record[mapping[dbKey]]]))
-  newRecord=newRecord.price ? {...newRecord, price: toFloat(newRecord.price)} : newRecord
+  let newRecord={}
+  // Apply tranforms if any
+  Object.entries(mapping).forEach(([key, dest]) => {
+    let column=lodash.isString(dest) ? dest : dest.column
+    let transform = lodash.isObject(dest) && dest.transform || lodash.identity
+    newRecord[key]=transform(record[column])
+  })
   return newRecord
 }
 
 const dataImport=(model, headers, records, mapping, options) => {
   const updateOnly=!!options.update
   const uniqueKey=options.key
+  const result={created: 0, updated: 0, warnings: [], errors: []}
   return new Promise((resolve, reject) => {
     const modelObj = model.schema.obj
     const modelFields=Object.keys(modelObj)
     const mandatoryFields = updateOnly ? [uniqueKey] : modelFields.filter(f => !!modelObj[f].required)
-    const fileMandatoryFields=mandatoryFields.map(f => mapping[f])
+    const fileMandatoryFields=mandatoryFields.map(f => mapping[f].column || mapping[f])
 
     // Check missing columns
-    const missingColumns=fileMandatoryFields.filter(f => !headers.includes(f))
+    const missingColumns=getMissingColumns(fileMandatoryFields, headers)
     if (!lodash.isEmpty(missingColumns)) {
       console.error(`Missing: ${missingColumns}`)
-      return reject({imported: 0, warnings: [], errors: missingColumns.map(f => `Colonne ${f} manquante`)})
+      result.errors=missingColumns.map(f => `Colonne ${f} manquante`)
+      return resolve(result)
     }
 
     // Check empty mandatory fields in records
-    const warnings=[]
     records.forEach((record, idx) => {
-      const missingFields=fileMandatoryFields.filter(mandField => lodash.isEmpty(record[mandField]))
+      const missingFields=fileMandatoryFields.filter(mandField => !record[mandField])
       if (!lodash.isEmpty(missingFields)) {
-        warnings.push(`Ligne ${idx+2}: Valeur(s) vide(s) pour ${missingFields.join(',')}`)
+        result.warnings.push(`Ligne ${idx+2}: Valeur(s) vide(s) pour ${missingFields.join(',')}`)
+        return resolve(result)
       }
     })
-
-    if (!lodash.isEmpty(warnings)) {
-      return reject({imported: 0, warnings: warnings, errors: null})
-    }
 
     const formattedRecords=records.map(record => {
       return mapRecord(record, mapping)
     })
 
+    // Check duplicates keys
+    if (options.key) {
+      const duplicates=lodash(formattedRecords).groupBy(options.key).pickBy(x => x.length > 1).keys().value()
+      if (!lodash.isEmpty(duplicates)) {
+        return reject(`Valeurs dupliquées dans la colonne '${mapping[options.key]}':${duplicates.join(', ')}`)
+      }
+    }
+
     const promises=formattedRecords.map(record =>
-      model.updateOne({[uniqueKey]: record[uniqueKey]}, record, {upsert: !updateOnly && true}),
+      model.updateOne({[uniqueKey]: record[uniqueKey]}, record, {upsert: true, new: true}),
     )
+
+    console.log(JSON.stringify(promises.length))
 
     Promise.allSettled(promises)
       .then(res => {
         const fulfilled=res.filter(r => r.status=='fulfilled').map(r => r.value)
-        const updated=lodash.sum(fulfilled.map(f => f.nModified))
-        const created=lodash.sum(fulfilled.map(f => (f.upserted ? f.upserted.length : 0)))
-        const result={updated: updated, created: created, warnings: null, errors: null}
+        const rejected=res.filter(r => r.status=='rejected').map(r => r.reason)
+        result.updated=lodash.sum(fulfilled.map(f => f.modifiedCount))
+        result.created=lodash.sum(fulfilled.map(f => f.upsertedCount))
+        result.errors.push(...rejected.map(r => r.message))
+        return resolve(result)
+      })
+      .catch(err => {
+        result.errors.push(err)
         return resolve(result)
       })
   })
 }
 
-const extractCsv=(bufferData, options) => {
-  return new Promise((resolve, reject) => {
-    const contents = bufferToString(bufferData)
-    try {
-      const records=csv_parse(contents, {columns: true, delimiter: ';', ...options})
-      const input_fields = Object.keys(records[0]).sort()
-      resolve({headers: input_fields, records: records})
-    }
-    catch(err) {
-      reject(err)
-    }
-  })
+/**
+Post import: Promise (fileRecord, dbRecord) => dBrecord
+To modify record after reading & mapping, before DB insertion
+*/
+const fileImport= (model, bufferData, mapping, options, postImport=null) => {
+  return extractData(bufferData, options)
+    .then(({headers, records}) => {
+      return dataImport(model, headers, records, mapping, options, postImport)
+    })
+    .catch(err => {
+      return ({created: 0, updated: 0, errors: [String(err)], warnings: []})
+    })
 }
 
-const csvImport= (model, bufferData, mapping, options) => {
-  return new Promise((resolve, reject) => {
-    // data buffer to CSV
-    extractCsv(bufferData, options)
-      .then(({headers, records}) => {
-        return dataImport(model, headers, records, mapping, options)
-      })
-      .then(result => {
-        resolve(result)
-      })
-      .catch(err => {
-        resolve({errors: [err]})
-      })
-  })
-}
-
-const shipRatesImport = buffer => {
+const shipRatesImport = (buffer, options) => {
   return new Promise((resolve, reject) => {
     let shiprates=[]
-    extractCsv(buffer, {columns: false, from_line: 4})
+    extractData(buffer, {...options, columns: false})
       .then(result => {
         const records=result.records
         records.forEach(r => {
@@ -143,7 +149,7 @@ const shipRatesImport = buffer => {
         return ShipRate.insertMany(shiprates)
       })
       .then(result => {
-        resolve({updated: 0, created: result.length, warnings: null, errors: null})
+        return resolve({updated: 0, created: result.length, warnings: [], errors: []})
       })
       .catch(err => {
         reject(err)
@@ -151,5 +157,146 @@ const shipRatesImport = buffer => {
   })
 }
 
+const lineItemsImport = (model, buffer, mapping, options) => {
+  return new Promise((resolve, reject) => {
+    const importResult={created: 0, updated: 0, warnings: [], errors: []}
+    extractData(buffer, options)
+      .then(data => {
+        const headers=data.headers
+        const mandatoryColumns=Object.values(mapping)
+        const missingColumns=getMissingColumns(mandatoryColumns, headers)
+        if (!lodash.isEmpty(missingColumns)) {
+          console.error(`Missing: ${missingColumns}`)
+          importResult.errors=missingColumns.map(f => `Colonne ${f} manquante`)
+          return Promise.reject('break')
+        }
+        data.records=data.records.map(r => mapRecord(r, mapping))
+        const promises=data.records.map(r => addItem(model, null, r.reference, parseInt(r.quantity)))
+        return Promise.allSettled(promises)
+      })
+      .then(res => {
+        importResult.created+=res.filter(r => r.status=='fulfilled').length
+        importResult.warnings.push(...res.filter(r => r.status=='rejected').map(r => r.reason))
+      })
+      .then(() => {
+        return updateShipFee(model)
+      })
+      .then(model => {
+        return model.save()
+      })
+      .then(() => {
+        return resolve(importResult)
+      })
+      .catch(err => {
+        console.error(err)
+        return err=='break' ? resolve(importResult) : reject(err)
+      })
+  })
+}
 
-module.exports={csvImport, extractCsv, shipRatesImport}
+const priceListImport = (model, buffer, mapping, options) => {
+  let importResult={created: 0, updated: 0, errors: [], warnings: []}
+  return new Promise((resolve, reject) => {
+    extractData(buffer, {...options, columns: false})
+      .then(({headers, records}) => {
+        const keyIdx=0
+        const firstListIdx=headers.findIndex(i => i=='PVCDIS')
+        const listsRange=lodash.range(firstListIdx, headers.length+1)
+        const lists=records.map(records => {
+          return listsRange.map(idx => (
+            {reference: records[keyIdx], name: headers[idx], price: records[idx]}
+          ))
+        })
+        const prices=lodash.flattenDeep(lists).filter(a => !!a.name && !!a.price)
+        const promises=prices.map(p => model.findOneAndUpdate({reference: p.reference, name: p.name}, p, {upsert: true}))
+        Promise.allSettled(promises)
+          .then(res => {
+            importResult.created +=res.filter(r => r.status=='fulfilled').length
+            importResult.warnings.push(...res.filter(r => r.status=='rejected').map(r => r.reason))
+            return resolve(importResult)
+          })
+      })
+  })
+}
+
+const accountsImport = (model, buffer, mapping, options) => {
+  let importResult={created: 0, updated: 0, errors: [], warnings: []}
+  return new Promise((resolve, reject) => {
+    const firstLine=options.from_line || 1
+    extractData(buffer, {...options, columns: true})
+      .then(({headers, records}) => {
+        const promises=records.map((record, row) => {
+          const msg=label => {
+            return `Ligne:${row+firstLine+1}:${label}`
+          }
+          const address=lodash.range(4).map(key => record[`Adresse ${key}`]).filter(i => !!i).join(',')
+          const zip_code=record['Code postal'].match(/\d+/)[0]
+          const city=record.Ville
+          if (!address|| !zip_code || !city) { return Promise.reject(msg('Adresse incorrecte')) }
+          const addr={label: MAIN_ADDRESS_LABEL, address, zip_code, city, country: 'France'}
+          const companyName=record.Adresse
+          const deliverZipCodesValues=record['Zone de chalandise']
+          if (!deliverZipCodesValues) { return Promise.reject(msg(`Zone de chalandise incorrecte:${deliverZipCodesValues}`)) }
+          const delivery_zip_codes=String(deliverZipCodesValues).trim().split(/\s+/).map(i => parseInt(i))
+          if (lodash.isEmpty(delivery_zip_codes)) { return Promise.reject(msg(`Zone de chalandise incorrecte:${deliverZipCodesValues}`)) }
+          if (!companyName) { return Promise.reject(msg('Société incorrecte')) }
+          const francoKey=Object.keys(record).find(k => k.match(/franco/i))
+          if (!francoKey) { return Promise.reject('Colonne franco introuvable') }
+          const franco=record[francoKey]
+          if (lodash.isNil(franco)) { return Promise.reject(msg(`Valeur franco incorrect:${franco}`)) }
+          const catalogPrices=record.PVC
+          const netPrices=record['Liste de prix net']
+          return PriceList.find({name: {$in: [catalogPrices, netPrices]}})
+            .then(prices => {
+              const pvc=prices.find(p => p.name==catalogPrices)
+              const discount=prices.find(p => p.name==netPrices)
+              if (!pvc || !discount) { return Promise.reject(msg('Liste de prix inconnue, avez-vous importé les tarifs?')) }
+              return Company.findOneAndUpdate({name: companyName},
+                {addresses: [addr], catalog_prices: catalogPrices, net_prices: netPrices, franco: franco, delivery_zip_codes},
+                {upsert: true, new: true})
+                .then(company => {
+                  if (!company) {
+                    return Promise.reject(msg('Compagnie inconnue'))
+                  }
+                  const email=(record.Messagerie.text || record.Messagerie).trim()
+                  const [firstname, name]=record['Administrateur (Prénom et Nom)'].replace(/\s+/, '|').split('|')
+                  if (!(email && firstname && name && Validator.isEmail(email))) {
+                    return Promise.reject(msg(`Erreur nom, prénom ou email`))
+                  }
+                  return User.findOneAndUpdate({email},
+                    {$set: {firstname, name, company: company, email, roles: [CUSTOMER_ADMIN]},
+                      $setOnInsert: {password: bcrypt.hashSync('Alfred123;', 10)}},
+                    {upsert: true, new: true},
+                  )
+                })
+
+            })
+        })
+        Promise.allSettled(promises)
+          .then(res => {
+            importResult.created +=res.filter(r => r.status=='fulfilled').length
+            importResult.warnings.push(...res.filter(r => r.status=='rejected').map(r => r.reason))
+            return resolve(importResult)
+          })
+      })
+      .catch(err => {
+        return reject(err)
+      })
+  })
+}
+
+const productsImport = (model, bufferData, mapping, options) => {
+  const importComponents = record => {
+    const FIELDS='Adapteur,Chapeau,Fourreau,Clavette,BouchonGBouchonD,Pointe'.split(',')
+    const compIds = FIELDS.map(f => record[f]).filter(v => !!v)
+    if (compIds.length==0) {
+      return Promise.resolve(record)
+    }
+
+  }
+
+  return fileImport(model, bufferData, mapping, options)
+}
+
+module.exports={fileImport, shipRatesImport, lineItemsImport,
+  priceListImport, accountsImport, productsImport}

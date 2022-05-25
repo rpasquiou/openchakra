@@ -1,12 +1,12 @@
-import React, {useEffect, useMemo, useState} from 'react'
+import React from 'react'
 import withEdiAuth from '../../../hoc/withEdiAuth'
-const Products = require('../../../components/Feurst/Products')
-const {PRODUCT, VIEW, BASEPATH_EDI} = require('../../../utils/consts')
+import ProductsList from '../../../components/Feurst/ProductsList'
+import {PRODUCT, VIEW, BASEPATH_EDI} from '../../../utils/consts'
 
 const List = ({accessRights}) => {
 
   return (<>
-    <Products accessRights={accessRights} />
+    <ProductsList accessRights={accessRights} />
   </>)
 }
 

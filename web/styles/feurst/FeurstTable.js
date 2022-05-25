@@ -11,8 +11,8 @@ const TablesStyles = styled.div`
     border-collapse: collapse;
     text-align: center;
     width: 100%;
-    max-width: fit-content;
-    margin: 0 auto;
+    max-width: 100vw;
+    margin-inline: auto;
     overflow-x: auto;
     white-space: nowrap;
     margin-bottom: var(--spc-8);
@@ -21,11 +21,13 @@ const TablesStyles = styled.div`
   @media (${screen.lg}) {
 
     table {
+      display: table;
+      max-width: unset;
       overflow-x: visible;
       white-space: unset;
     }
   }
-  
+
   caption {
     caption-side: top;
     background: var(--brand-color);
@@ -33,30 +35,44 @@ const TablesStyles = styled.div`
     padding-block: var(--spc-1);
     font-weight: var(--font-bold);
   }
-  
+
   button {
     background: none;
     border: 0;
   }
-  
+
   th, td {
     border-left: 1px solid var(--stone-300);
     padding: var(--spc-2);
   }
-  
+
   tr {
     border-top: 1px solid var(--stone-300);
+    height: var(--spc-12);
   }
 
   tr:nth-child(2n + 2) {
     background: var(--stone-200);
   }
 
+  tfoot {
+    background-color: var(--stone-600);
+    color: var(--white);
+    font-weight: var(--font-bold);
+  }
 
   input {
-    max-width: 80%;
+    max-width: var(--spc-24);
+    padding: var(--spc-2) var(--spc-4);
     background: inherit;
     border: 1px solid var(--stone-400);
+  }
+
+  a {
+    font-weight: var(--font-bold);
+    font-size: var(--text-base);
+    color: var(--brand-color);
+    text-decoration:none;
   }
 
 
@@ -96,7 +112,7 @@ const TablesStyles = styled.div`
       font-weight: var(--font-bold);
       font-size: var(--text-sm);
     }
-    
+
   }
 `
 
@@ -109,4 +125,4 @@ const FeurstTable = props => {
 }
 
 
-export default FeurstTable
+module.exports=FeurstTable

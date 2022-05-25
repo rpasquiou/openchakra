@@ -2,6 +2,32 @@ import React from 'react'
 import styled from 'styled-components'
 import {localeMoneyFormat} from '../../utils/converters'
 
+
+const ShippingFees = ({shipping_mode, requestUpdate, shippingoptions}) => {
+
+  return (
+    <ShippingOptions>
+      {/* {SHIPPING_MODES} */}
+      {Object.entries(shippingoptions).map(([key, value]) => {
+        const priceLabel=value==0 ? 'franco de port' : `environ ${localeMoneyFormat({value})}`
+        return (
+          <label key={key}>
+            <input
+              type={'radio'}
+              name={'shippingOption'}
+              value={key}
+              checked={key == shipping_mode}
+              onChange={e => requestUpdate({shipping_mode: e.target.value, shipping_fee: value})}
+            />
+            <span>Livraison {key} - {priceLabel}</span>
+          </label>
+        )
+      },
+      )}
+    </ShippingOptions>
+  )
+}
+
 const ShippingOptions = styled.div`
 
 label {
@@ -22,26 +48,5 @@ label {
   }
 
 `
-
-const ShippingFees = ({state, setState, shippingoptions}) => {
-
-  return (
-    <ShippingOptions>
-      {Object.entries(shippingoptions).map(([key, value]) => (
-        <label key={key}>
-          <input
-            type={'radio'}
-            name={'shippingOption'}
-            value={key}
-            checked={key == state.shippingOption}
-            onChange={(e) => setState({...state, shippingOption: e.target.value})}
-          />
-          <span>Livraison {key} - environ {localeMoneyFormat({value})}</span>
-        </label>
-      ),
-      )}
-    </ShippingOptions>
-  )
-}
 
 export default ShippingFees

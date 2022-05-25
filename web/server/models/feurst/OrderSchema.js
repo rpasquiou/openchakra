@@ -1,6 +1,14 @@
+const mongooseLeanVirtuals = require('mongoose-lean-virtuals')
 const mongoose=require('mongoose')
 const lodash=require('lodash')
-const {ORDER_VALID, ORDER_FULFILLED, ORDER_CREATED, ROLES} = require('../../../utils/consts')
+const {
+  COMPLETE,
+  CREATED,
+  HANDLED,
+  PARTIALLY_HANDLED,
+  ROLES,
+  VALID,
+} = require('../../../utils/feurst/consts')
 const BaseSchema = require('./QuotationBookingBaseSchema')
 
 const OrderSchema = BaseSchema.clone()
@@ -21,22 +29,26 @@ OrderSchema.add({
   receipt_number: {
     type: String,
   },
-  source_quotation: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'quotation',
-    required: false,
+  // Was the order handled by Feurst ?
+  handle_status: {
+    type: String,
+    enum: [null, PARTIALLY_HANDLED, HANDLED],
   },
 })
 
 OrderSchema.virtual('status').get(function() {
-  if (!lodash.isEmpty(this.address) && !lodash.isEmpty(this.shipping_mode)) {
-    return ORDER_VALID
+  if (this.handled_date) {
+    return this.handle_status
   }
-  if (this.items?.length>0) {
-    return ORDER_FULFILLED
+  if (this.validation_date) {
+    return VALID
   }
-  return ORDER_CREATED
+  if (!lodash.isEmpty(this.address) && !lodash.isEmpty(this.shipping_mode) && !lodash.isNil(this.shipping_fee) && !lodash.isEmpty(this.items)) {
+    return COMPLETE
+  }
+  return CREATED
 })
 
+OrderSchema.plugin(mongooseLeanVirtuals)
 
 module.exports = OrderSchema

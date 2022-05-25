@@ -14,11 +14,9 @@ import {screen} from '../../styles/screenWidths'
 import {PleasantButton} from './Button'
 
 const LoginStyles = styled.div`
+
+  width: min(calc(100% - 2rem), 35rem);
   color: var(--black);
-  
-  @media (${screen.xl}) {
-    margin: 0 10%;
-  }
   
   h1 {
     color: inherit;
@@ -74,7 +72,6 @@ const FeurstLogin = ({
   t,
   onChange,
   onSubmit,
-  checkRoles,
   handleClickShowPassword,
   handleMouseDownPassword,
   state,
@@ -100,7 +97,6 @@ const FeurstLogin = ({
           value={username}
           autoComplete="email"
           onChange={onChange}
-          onBlur={checkRoles}
           error={errors.username}
         />
         <em>{errors.username}</em>

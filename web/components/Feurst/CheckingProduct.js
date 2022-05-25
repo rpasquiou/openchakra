@@ -1,9 +1,58 @@
 import React from 'react'
 import styled from 'styled-components'
+import {withTranslation} from 'react-i18next'
 import {screen} from '../../styles/screenWidths'
 import {localeMoneyFormat} from '../../utils/converters'
 import {snackBarError} from '../../utils/notifications'
 import {PleasantButton} from './Button'
+
+
+const CheckingProduct = ({endpoint, orderid, article, setArticle, selectItem, addProduct, wordingSection, t}) => {
+
+  const {info, quantity} = article
+
+  const confirmAdd = async() => {
+    await addProduct({endpoint, orderid, ...article})
+      .then(() => {
+        setArticle({...article, item: null, quantity: null, showArticlePanel: false})
+        selectItem(null)
+      })
+      .catch(() => snackBarError(`Ajout de l'article non effectué`))
+
+  }
+
+  return (info ?
+    <CheckingProductArea role={'status'} aria-live='polite'>
+      <dl>
+        <dt>Désignation du produit :</dt>
+        <dd>{info.description} {info.description_2}</dd>
+        <dt>Référence :</dt>
+        <dd>{info.reference}</dd>
+        <dt>Quantité disponible :</dt>
+        <dd>{quantity > info.stock ? `${info.stock || 0} sur ${quantity} ⚠️ stock partiel` : `${quantity} sur ${quantity}`} </dd>
+      </dl>
+      <dl>
+        <dt>Prix catalogue :</dt>
+        <dd>{localeMoneyFormat({value: info?.catalog_price})}</dd>
+        <dt>Poids unitaire :</dt>
+        <dd>{info?.weight?.toLocaleString()} kg</dd>
+        <dt>Votre prix :</dt>
+        <dd>{localeMoneyFormat({value: info?.net_price})}</dd>
+      </dl>
+
+      <PleasantButton
+        bgColor={`#dabb42`}
+        rounded={'full'}
+        onClick={confirmAdd}
+      >
+        {t(`${wordingSection}.addTo`)}
+      </PleasantButton>
+
+    </CheckingProductArea>
+    : null
+  )
+}
+
 
 const CheckingProductArea = styled.div`
   display: grid;
@@ -30,13 +79,14 @@ const CheckingProductArea = styled.div`
   dl {
       display: grid;
       grid-template-columns: max-content auto;
+      align-content: center;
       column-gap: var(--spc-2);
       row-gap: var(--spc-2);
       padding: var(--spc-2);
   }
 
   dd {
-    margin-left: 0;  
+    margin-left: 0;
     border-bottom: 1px solid var(--black);
     width: fit-content;
   }
@@ -49,56 +99,9 @@ const CheckingProductArea = styled.div`
         font-weight: var(--font-bold);
         padding: 6px 30px;
         border: 1px solid var(--gray-500);
+        min-width: 15ch;
       }
   }
 `
 
-
-const CheckingProduct = ({article, setArticle, addProduct}) => {
-
-  const {info, qty} = article
-
-  const confirmAdd = async() => {
-    const addTo = await addProduct(article)
-      .catch(() => snackBarError(`Ajout de l'article non effectué`))
-
-    if (addTo) {
-      setArticle({...article, showArticlePanel: false})
-    }
-    else {
-      snackBarError(`Ajout de l'article non effectué`)
-    }
-  }
-  
-  return (
-    <CheckingProductArea role={'status'} aria-live='polite'>
-      <dl>
-        <dt>Désignation du produit :</dt>
-        <dd>{info.description} {info.description_2}</dd>
-        <dt>Poids unitaire :</dt>
-        <dd>{info.weight.toLocaleString()} kg</dd>
-        <dt>Quantité disponible :</dt>
-        <dd>{qty > info.stock ? `${info.stock} sur ${qty} ⚠️ stock partiel` : `${qty} sur ${qty}`} </dd>
-      </dl>
-      <dl>
-        <dt>Prix catalogue :</dt>
-        <dd>{localeMoneyFormat({value: info.price})}</dd>
-        <dt>Votre remise :</dt>
-        <dd>???</dd>
-        <dt>Votre prix :</dt>
-        <dd>{localeMoneyFormat({value: info.price})}</dd>
-      </dl>
-      
-      <PleasantButton
-        bgColor={`#dabb42`}
-        rounded={'full'}
-        onClick={confirmAdd}
-      >
-        Ajouter&nbsp;à&nbsp;ma commande
-      </PleasantButton>
-      
-    </CheckingProductArea>
-  )
-}
-
-export default CheckingProduct
+export default withTranslation('feurst', {withRef: true})(CheckingProduct)

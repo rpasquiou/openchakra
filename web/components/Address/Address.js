@@ -1,12 +1,13 @@
-import React, {useState} from 'react'
+import React from 'react'
 import {withTranslation} from 'react-i18next'
-import styled from 'styled-components'
-import { Input } from '../Feurst/components.styles'
+import {Input} from '../Feurst/components.styles'
 
 
-const Address = ({t, address, setAddress, getShippingFees, errors}) => {
+const Address = ({t, state, requestUpdate, errors}) => {
 
-  const changeAddress = e => setAddress({...address, [e.target.name]: e.target.value})
+  const changeAddress = e => requestUpdate({address: {...state.address, [e.target.name]: e.target.value}})
+
+  const {address} = state
   const isDisabled = false
 
   return (
@@ -19,7 +20,7 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
           placeholder={'rue'}
           name="address"
           autoComplete='street-address'
-          value={address?.address}
+          value={address?.address || ''}
           onChange={changeAddress}
         />
       </div>
@@ -32,10 +33,8 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
           type="text"
           name="zip_code"
           autoComplete='postal-code'
-          value={address?.zip_code}
-          // onChange={e => { changeAddress(e); getShippingFees(e.target.value) }}
-          onChange={e => { changeAddress(e) }}
-          onBlur={e => getShippingFees(e.target.value)}
+          value={address?.zip_code || ''}
+          onChange={changeAddress}
         />
       </div>
       <div className='city'>
@@ -47,7 +46,7 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
           type="text"
           name="city"
           autoComplete='address-level2'
-          value={address?.city}
+          value={address?.city || ''}
           onChange={changeAddress}
         />
       </div>
@@ -60,7 +59,7 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
           type="text"
           name="country"
           autoComplete='country'
-          value={address?.country}
+          value={address?.country || ''}
           onChange={changeAddress}
         />
       </div>
@@ -74,7 +73,7 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
           type="tel"
           name="phone"
           autoComplete='phone'
-          value={address?.phone}
+          value={address?.phone || ''}
           onChange={changeAddress}
         />
       </div>
@@ -83,4 +82,4 @@ const Address = ({t, address, setAddress, getShippingFees, errors}) => {
   )
 }
 
-export default withTranslation('custom', {withRef: true})(Address)
+export default withTranslation('feurst', {withRef: true})(Address)

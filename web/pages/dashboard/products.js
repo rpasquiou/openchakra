@@ -1,10 +1,10 @@
-const {PRODUCT, CREATE} = require('../../utils/consts')
 import {withTranslation} from 'react-i18next'
-const {DataPage, styles}=require('../../components/AlfredDashboard/DataPage')
 import {withStyles} from '@material-ui/core/styles'
-const models=require('../../components/BigList/models')
 import axios from 'axios'
 const moment = require('moment')
+const models=require('../../components/BigList/models')
+const {DataPage, styles}=require('../../components/AlfredDashboard/DataPage')
+const {PRODUCT, CREATE} = require('../../utils/consts')
 
 moment.locale('fr')
 const {setAxiosAuthentication} = require('../../utils/authentication')
@@ -18,7 +18,6 @@ class all extends DataPage {
       models.textColumn({headerName: 'Description', field: 'description'}),
       models.textColumn({headerName: 'Description 2', field: 'description_2'}),
       models.textColumn({headerName: 'Groupe', field: 'group'}),
-      models.textColumn({headerName: 'Ligne de production', field: 'production_line'}),
       models.textColumn({headerName: 'Famille', field: 'family'}),
       models.currencyColumn({headerName: 'Tarif', field: 'price'}),
       {headerName: 'Stock', field: 'stock'},
@@ -37,7 +36,7 @@ class all extends DataPage {
         this.setState({data: response.data})
       })
     setAxiosAuthentication()
-    axios.get('/myAlfred/api/users/actions')
+    axios.get(`${API_PATH}/users/actions`)
       .then(response => {
         this.setState({actions: response.data})
       })

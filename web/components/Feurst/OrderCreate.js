@@ -1,13 +1,14 @@
 import React from 'react'
+import {ENDPOINTS, ORDER} from '../../utils/consts'
 import BaseCreateTable from'./BaseCreateTable'
-const {orderColumns} = require('./tablestructures')
+import {orderColumns} from './tablestructures'
 
 
 const OrderCreate = ({accessRights}) => {
 
   return (
-    <BaseCreateTable storage={'order'} endpoint='orders' columns={orderColumns} accessRights={accessRights}/>
+    <BaseCreateTable storage={'order'} endpoint={ENDPOINTS[ORDER]} columns={orderColumns} wordingSection={'EDI.ORDER'} accessRights={accessRights}/>
   )
 }
 
-module.exports=OrderCreate
+export default OrderCreate

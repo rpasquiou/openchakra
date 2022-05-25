@@ -108,6 +108,10 @@ const SIRET = {
   sirenUrl: 'https://api.insee.fr/entreprises/sirene/V3/siren',
 }
 
+const getSibApiKey = () => {
+  return SIB_APIKEY
+}
+
 const canAlfredSelfRegister = () => {
   return !DISABLE_ALFRED_SELF_REGISTER
 }
@@ -152,6 +156,10 @@ const checkConfig = () => {
     if (isEmpty(SIB_TEMPLATES)) {
       reject(`SIB_TEMPLATES non renseigné`)
     }
+    // TODO check database name correctness
+    if (isEmpty(SIB_APIKEY)) {
+      reject(`SIB_APIKEY non renseigné`)
+    }
     if (isEmpty(MANGOPAY_CLIENTID)) {
       reject(`MANGOPAY_CLIENTID non renseigné`)
     }
@@ -186,10 +194,6 @@ const skipFailedPayment = () => {
   return !is_production() && !!SKIP_FAILED_PAYMENT
 }
 
-const getSibApiKey = () => {
-  return SIB_APIKEY
-}
-
 // DEV mode: allow https without certificate
 if (is_development()) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -208,6 +212,5 @@ module.exports = {
   mustDisplayChat, getChatURL,
   canAlfredSelfRegister, canAlfredParticularRegister,
   getSibTemplates, checkConfig, getDatabaseUri, hideStoreDialog,
-  getDataModel, skipFailedPayment,
-  getSibApiKey,
+  getDataModel, skipFailedPayment, getSibApiKey,
 }

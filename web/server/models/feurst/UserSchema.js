@@ -64,4 +64,12 @@ UserSchema.virtual('is_registered').get(() => {
   return true
 })
 
+// For Feurst ADV/sales
+UserSchema.virtual('companies', {
+  ref: 'company', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'sales_representative', // is equal to foreignField
+})
+
+
 module.exports = UserSchema

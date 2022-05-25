@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 
 const fs = require('fs').promises
+const mongoose = require('mongoose')
 const express = require('express')
 const passport = require('passport')
 const bcrypt = require('bcryptjs')
@@ -8,9 +9,12 @@ const CronJob = require('cron').CronJob
 const moment = require('moment')
 const axios = require('axios')
 const gifFrames = require('gif-frames')
-const {ORDER, QUOTATION} = require('../../../utils/feurst/consts')
-const Order = require('../../models/Order')
-const Quotation = require('../../models/Quotation')
+const {BASEPATH_EDI, FEURST_ADMIN, FEURST_ADV, FEURST_SALES, CUSTOMER_ADMIN, CUSTOMER_BUYER, CUSTOMER_TCI} = require('../../../utils/consts')
+const {filterUsers} = require('../../utils/userAccess')
+const {CREATE} = require('../../../utils/feurst/consts')
+const {XL_FILTER, createMemoryMulter} = require('../../utils/filesystem')
+const {accountsImport} = require('../../utils/import')
+const {ACCOUNT, LINK, VIEW} = require('../../../utils/feurst/consts')
 const Shop = require('../../models/Shop')
 const {is_development} = require('../../../config/config')
 const {getActionsForRoles} = require('../../utils/userAccess')
@@ -29,10 +33,10 @@ const {validateSimpleRegisterInput, validateEditProfile, validateEditProProfile,
 const validateLoginInput = require('../../validation/login')
 const {sendResetPassword, sendVerificationMail, sendVerificationSMS, sendB2BAccount, sendAlert} = require('../../utils/mailing')
 moment.locale('fr')
-const {ROLES, ACCOUNT, VIEW}=require('../../../utils/consts')
+const {ROLES}=require('../../../utils/consts')
 const {mangoApi, addIdIfRequired, addRegistrationProof, createMangoClient, createMangoProvider, install_hooks} = require('../../utils/mangopay')
 const {send_cookie}=require('../../utils/serverContext')
-const {getDataFilter, isActionAllowed} = require('../../utils/userAccess')
+const {isActionAllowed} = require('../../utils/userAccess')
 const ResetToken = require('../../../server/models/ResetToken')
 
 axios.defaults.withCredentials = true
@@ -59,19 +63,45 @@ router.get('/check_register_code/:code', (req, res) => {
 })
 
 const DATA_TYPE=ACCOUNT
-// @Route POST /myAlfred/api/users/register
-// Register
+// @Route GET /myAlfred/api/users
+// Returns all users
+// @Access private
 router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
   if (!isActionAllowed(req.user.roles, DATA_TYPE, VIEW)) {
-    return res.status(301)
+    return res.sendStatus(301)
   }
 
-  User.find(getDataFilter(req.user, DATA_TYPE, VIEW))
+  User.find()
     .populate('company')
+    .populate('companies')
     .then(data => {
+      data=filterUsers(data, DATA_TYPE, req.user, VIEW)
       res.json(data)
     })
     .catch(err => {
+      console.error(err)
+      res.status(500).json(err)
+    })
+})
+
+
+// @Route GET /myAlfred/api/users/sales-representatives
+// Returns all FEURST_SALES users
+// @Access private
+router.get('/sales-representatives', passport.authenticate('jwt', {session: false}), (req, res) => {
+  if (!isActionAllowed(req.user.roles, DATA_TYPE, VIEW)) {
+    return res.sendStatus(301)
+  }
+
+  User.find({roles: FEURST_SALES})
+    .populate('company')
+    .populate('companies')
+    .then(data => {
+      data=filterUsers(data, DATA_TYPE, req.user, VIEW)
+      res.json(data)
+    })
+    .catch(err => {
+      console.error(err)
       res.status(500).json(err)
     })
 })
@@ -619,7 +649,10 @@ router.get('/all', (req, res) => {
       }
       res.json(user)
     })
-    .catch(err => res.status(404).json({user: 'No users found'}))
+    .catch(err => {
+      console.error(err)
+      res.status(404).json({user: 'No users found'})
+    })
 })
 
 // @Route GET /myAlfred/api/users/users
@@ -639,7 +672,7 @@ router.get('/users', (req, res) => {
 // Get roles for an email's user
 router.get('/roles/:email', (req, res) => {
 
-  User.findOne({email: req.params.email}, 'roles')
+  User.findOne({email: new RegExp(req.params.email, 'i')}, 'roles')
     .then(user => {
       if (!user) {
         console.log(`Request roles for email ${req.params.email}:[]`)
@@ -648,7 +681,10 @@ router.get('/roles/:email', (req, res) => {
       console.log(`Request roles for email ${req.params.email}:${user.roles}`)
       res.json(user.roles)
     })
-    .catch(err => res.status(404).json({user: 'No user found'}))
+    .catch(err => {
+      console.error(err)
+      res.status(404).json({user: 'No user found'})
+    })
 })
 
 // @Route GET /myAlfred/api/users/users/:id
@@ -766,6 +802,7 @@ router.get('/alfred', (req, res) => {
 router.get('/current', passport.authenticate('jwt', {session: false}), (req, res) => {
   User.findById(req.user.id)
     .populate('resetToken')
+    .populate('company')
     .then(user => {
       res.json(user)
     })
@@ -1284,28 +1321,61 @@ router.get('/hook', (req, res) => {
     })
 })
 
-// TODO Feurst only - make it general later
-router.get('/addresses', passport.authenticate('jwt', {session: false}), (req, res) => {
+// PRODUCTS
+const uploadAccounts = createMemoryMulter(XL_FILTER)
 
-  if (!isActionAllowed(req.user.roles, ORDER, VIEW) || !isActionAllowed(req.user.roles, QUOTATION, VIEW)) {
-    return res.status(401)
+// @Route POST /myAlfred/api/products/import
+// Imports products from csv
+router.post('/import', passport.authenticate('jwt', {session: false}), (req, res) => {
+
+  if (!isActionAllowed(req.user.roles, DATA_TYPE, CREATE)) {
+    return res.sendStatus(301)
   }
 
-  let addresses=[]
-  Order.find(getDataFilter(req.user, ORDER, VIEW), {address: true})
-    .then(result => {
-      addresses=[...addresses, ...result.map(o => o.address)]
-      return Quotation.find(getDataFilter(req.user, ORDER, VIEW), {address: true})
-    })
-    .then(result => {
-      addresses=[...addresses, ...result.map(q => q.address)]
-      addresses=addresses.filter(a => !!a)
-      return res.json(addresses)
-    })
-    .catch(err => {
+  uploadAccounts.single('buffer')(req, res, err => {
+    if (err) {
       console.error(err)
-      res.status(500).json(err)
-    })
+      return res.status(404).json({errors: err.message})
+    }
+
+    const options=JSON.parse(req.body.options)
+
+    accountsImport(User, req.file.buffer, null, options)
+      .then(result => {
+        res.json(result)
+      })
+      .catch(err => {
+        console.error(err)
+        res.status(500).error(err)
+      })
+  })
+})
+
+/**
+ @Route GET /myAlfred/api/users/landing-page
+ Returns landing page URL depending on role
+ */
+router.get('/landing-page', passport.authenticate('jwt', {session: false}), (req, res) => {
+  const roles=req.user.roles
+  if (roles.includes(FEURST_ADMIN)) {
+    return res.json(`${BASEPATH_EDI}/orders/handle`)
+  }
+  if (roles.includes(FEURST_ADV)) {
+    return res.json(`${BASEPATH_EDI}/orders/handle`)
+  }
+  if (roles.includes(FEURST_SALES)) {
+    return res.json(`${BASEPATH_EDI}/quotations/handle`)
+  }
+  if (roles.includes(CUSTOMER_ADMIN)) {
+    return res.json(`${BASEPATH_EDI}/orders/create`)
+  }
+  if (roles.includes(CUSTOMER_BUYER)) {
+    return res.json(`${BASEPATH_EDI}/orders/create`)
+  }
+  if (roles.includes(CUSTOMER_TCI)) {
+    return res.json(`${BASEPATH_EDI}/quotations`)
+  }
+  return res.status(404).json(`Unknown loading page for ${roles}`)
 })
 
 // DEV tricks : set any atribute, log without password
@@ -1318,6 +1388,7 @@ if (is_development()) {
       .catch(err => {
         return res.status(500).json(err)
       })
+
   })
 
   router.post('/force-login', (req, res) => {

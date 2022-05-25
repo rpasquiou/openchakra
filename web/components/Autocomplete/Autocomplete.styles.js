@@ -18,6 +18,8 @@ const StyledAutocomplete = styled.div.attrs(props => ({
 
   label {
     grid-area: downlabel;
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
   }
 
   .loading {
@@ -39,7 +41,7 @@ const StyledAutocomplete = styled.div.attrs(props => ({
     position: relative;
     & input {
       padding-right: 60px;
-      color: var(--gray-800);
+      color: var(--black);
       width: 100%;
     }
   }
@@ -51,6 +53,10 @@ const StyledAutocomplete = styled.div.attrs(props => ({
     min-height: var(--minTapSize);
     outline: none;
     width: min-content;
+  }
+
+  input:placeholder-shown {
+    font-style: italic;
   }
 
   [aria-expanded="true"] + [role="listbox"] {

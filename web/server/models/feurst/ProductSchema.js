@@ -17,9 +17,6 @@ const ProductSchema = new Schema({
   group: {
     type: String,
   },
-  production_line: {
-    type: String,
-  },
   family: {
     type: String,
   },
@@ -28,16 +25,15 @@ const ProductSchema = new Schema({
     min: 0,
     required: true,
   },
-  price: {
-    type: Number,
-    min: 0,
-    // required: true, TODO make mandatory then import
-  },
   stock: {
     type: Number,
     min: 0,
     // required: true, TODO make mandatory then import
   },
+  components: [{
+    type: Schema.Types.ObjectId,
+    ref: 'product',
+  }],
 })
 
 module.exports=ProductSchema

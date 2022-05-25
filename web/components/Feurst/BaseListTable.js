@@ -1,55 +1,29 @@
-import React, {useMemo, useState, useEffect, useCallback} from 'react'
-import useLocalStorageState from 'use-local-storage-state'
-import styled from 'styled-components'
-import {getAuthToken} from '../../utils/authentication'
-import Table from '../Table/Table'
-import {client} from '../../utils/client'
-import {snackBarError} from '../../utils/notifications'
-import AddArticle from './AddArticle'
-import ImportExcelFile from './ImportExcelFile'
-import {PleasantButton} from './Button'
+import React, {useState, useEffect} from 'react'
+import {withTranslation} from 'react-i18next'
+import withEdiRequest from '../../hoc/withEdiRequest'
+import {
+  UPDATE,
+} from '../../utils/consts'
+import FeurstTable from '../../styles/feurst/FeurstTable'
 
 
-const BaseListTable = ({endpoint, columns, refresh}) => {
+const BaseListTable = ({
+  accessRights,
+  endpoint,
+  columns,
+  refresh,
+  caption,
+  getList,
+  deleteOrder,
+  state,
+  filter,
+  filtered,
+  updateSeller,
+}) => {
 
-  const [data, setData] = useState(useMemo(() => [], []))
   const [language, setLanguage] = useState('fr')
-  const dataToken = getAuthToken()
 
-  const updateMyData = (rowIndex, columnId, value) => {
-    setData(old =>
-      old.map((row, index) => {
-        if (index === rowIndex) {
-          return {
-            ...old[rowIndex],
-            [columnId]: value,
-          }
-        }
-        return row
-      }),
-    )
-  }
-
-  const getContentFrom = useCallback(async() => {
-
-    const data = await client(`myAlfred/api/${endpoint}`)
-      .catch(err => snackBarError(err?.msg))
-
-    data && setData(data)
-
-  }, [endpoint, refresh])
-
-
-  const deleteProduct = useCallback(async({idItem}) => {
-    console.log(idItem)
-    if (!idItem) { return }
-
-    const afterDeleteProduct = await client(`myAlfred/api/${endpoint}/${idItem}`, {method: 'DELETE'})
-      .catch(e => console.error(`Can't delete product ${e}`))
-
-    // TODO verif delete
-    getContentFrom()
-  }, [endpoint, getContentFrom])
+  const canUpdateSeller = accessRights?.isActionAllowed(accessRights.getModel(), UPDATE)
 
   // Init language and order
   useEffect(() => {
@@ -58,15 +32,20 @@ const BaseListTable = ({endpoint, columns, refresh}) => {
 
   // Init table
   useEffect(() => {
-    getContentFrom()
-  }, [getContentFrom])
+    getList({endpoint, filter})
+  }, [endpoint, getList, filter, refresh])
 
-  const cols= columns({language, data, setData, deleteProduct: deleteProduct})
+  const cols= columns({language, endpoint, deleteOrder, updateSeller: canUpdateSeller ? updateSeller : null})
 
-  return (<>
-    <Table data={data} columns={cols} updateMyData={updateMyData} />
-  </>
+  return (
+    <FeurstTable
+      caption={caption}
+      data={state.orders}
+      columns={cols}
+      filter={filter}
+      filtered={filtered}
+    />
   )
 }
 
-module.exports=BaseListTable
+export default withTranslation('feurst', {withRef: true})(withEdiRequest(BaseListTable))

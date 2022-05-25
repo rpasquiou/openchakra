@@ -1,6 +1,32 @@
 import styled from 'styled-components'
 import {screen} from '../../styles/screenWidths'
 
+const H2confirm = styled.h2`
+  font-size: var(--text-2xl);
+  color: var(--black);
+  text-align: center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  row-gap: var(--spc-2);
+
+  button {
+    background-color: unset;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--spc-1);
+    font-weight: var(--font-bold);
+    font-size: var(--text-base);
+    
+    span {
+      font-size: var(--text-2xl);
+      color: var(--black);
+    }
+  }
+`
 
 const FormAddArticle = styled.form`
   display: grid;
@@ -50,4 +76,4 @@ const Refquantity = styled.div`
   }
 `
 
-export {FormAddArticle, Label, Input, Refquantity}
+export {H2confirm, FormAddArticle, Label, Input, Refquantity}

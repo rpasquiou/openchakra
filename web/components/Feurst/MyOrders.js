@@ -1,12 +1,12 @@
 import React from 'react'
-const {ordersColumns} = require('./tablestructures')
-const BaseListTable = require('./BaseListTable')
+import {ordersColumns} from './tablestructures'
+import BaseListTable from './BaseListTable'
 
 const MyOrders = () => {
 
   return (
-    <BaseListTable endpoint='orders' columns={ordersColumns} />
+    <BaseListTable caption='Historique des commandes' endpoint='orders' columns={ordersColumns} />
   )
 }
 
-module.exports=MyOrders
+export default MyOrders

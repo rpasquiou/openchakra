@@ -1,15 +1,14 @@
-const lodash=require('lodash')
 const mongoose = require('mongoose')
 const {
-  ORDER_CREATED,
-  ORDER_FULFILLED,
-  ORDER_VALID,
-} = require('../../../utils/feurst/consts')
-const {MONGOOSE_OPTIONS} = require('../../utils/database')
+  COMPLETE,
+  CREATED,
+  VALID,
+} = require('../../../../utils/feurst/consts')
+const {MONGOOSE_OPTIONS} = require('../../../../server/utils/database')
 
-const ProductSchema = require('./ProductSchema')
-const OrderSchema = require('./OrderSchema')
-const UserSchema = require('./UserSchema')
+const ProductSchema = require('../../../../server/models/feurst/ProductSchema')
+const OrderSchema = require('../../../../server/models/feurst/OrderSchema')
+const UserSchema = require('../../../../server/models/feurst/UserSchema')
 
 const Order=mongoose.model('order', OrderSchema)
 const Product=mongoose.model('product', ProductSchema)
@@ -18,8 +17,8 @@ const User=mongoose.model('user', UserSchema)
 describe('Feurst Order/Products test', () => {
 
   const PRODUCTS=[
-    {description: 'Produit 1', reference: 'ref1', weight: 12, price: 12},
-    {description: 'Produit 2', reference: 'ref2', weight: 20, price: 15},
+    {description: 'Produit 1', reference: 'ref1', weight: 12},
+    {description: 'Produit 2', reference: 'ref2', weight: 20},
   ]
 
   beforeAll(() => {
@@ -51,14 +50,15 @@ describe('Feurst Order/Products test', () => {
   test('Order amount properly computed', () => {
     return Product.find()
       .then(products => {
-        const items=products.map(p => ({product: p, catalog_price: p.price, discount: 0.1, quantity: 2}))
+        const items=products.map(p => ({product: p, catalog_price: 50, net_price: 50*0.9, quantity: 2}))
         return Order.updateOne({}, {$set: {items: items}}, {new: true})
       })
       .then(() => {
         return Order.findOne()
       })
       .then(order => {
-        return expect(order.total_amount).toBe(48.6)
+        expect(order.items[0].discount).toBe(0.1)
+        return expect(order.total_amount).toBe(180)
       })
   })
 
@@ -70,7 +70,7 @@ describe('Feurst Order/Products test', () => {
       })
       .then(res => {
         order=res
-        expect(order.status).toBe(ORDER_CREATED)
+        expect(order.status).toBe(CREATED)
         return Product.findOne()
       })
       .then(product => {
@@ -78,11 +78,11 @@ describe('Feurst Order/Products test', () => {
         return Order.findByIdAndUpdate(order._id, {$set: {items: items}}, {new: true})
       })
       .then(order => {
-        expect(order.status).toBe(ORDER_FULFILLED)
-        return Order.findByIdAndUpdate(order._id, {$set: {address: {address: 'Rue'}, shipping_mode: 'express'}}, {new: true})
+        expect(order.status).toBe(COMPLETE)
+        return Order.findByIdAndUpdate(order._id, {$set: {validation_date: true}}, {new: true})
       })
       .then(order => {
-        expect(order.status).toBe(ORDER_VALID)
+        expect(order.status).toBe(VALID)
       })
   })
 

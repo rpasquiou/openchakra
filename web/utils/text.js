@@ -171,8 +171,14 @@ const capitalize = text => {
   return text ? text[0].toUpperCase()+text.slice(1) : text
 }
 
-const guessSeparator = text => {
-  return csv_string.detect(text)
+const guessDelimiter = text => {
+  const delimiter=csv_string.detect(text)
+  return delimiter
+}
+
+const formatPercent = value => {
+  if (!value) { return null }
+  return `${parseInt(value*100)}%`
 }
 
 module.exports = {
@@ -194,5 +200,6 @@ module.exports = {
   computeBookingReference,
   capitalize,
   getWordAt,
-  guessSeparator,
+  guessDelimiter,
+  formatPercent,
 }
