@@ -348,10 +348,15 @@ router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 router.post('/:quotation_id/convert', passport.authenticate('jwt', {session: false}), (req, res) => {
 
   if (!isActionAllowed(req.user.roles, DATA_TYPE, CONVERT)) {
-    return res.status(403).json()
+    return res.status(HTTP_CODES.FORBIDDEN).json()
   }
 
   const quotation_id=req.params.quotation_id
+  const reference=req.body.reference?.trim()
+
+  if (!reference) {
+    return res.status(HTTP_CODES.BAD_REQUEST).json(`Indiquez la référence pour la commande`)
+  }
 
   let quotation=null
   let order = null
@@ -363,7 +368,10 @@ router.post('/:quotation_id/convert', passport.authenticate('jwt', {session: fal
         return res.status(HTTP_CODES.NOT_FOUND).json(`${DATA_TYPE} #${quotation_id} not found`)
       }
       quotation=result
-      const order={...lodash.omit(quotation, '_id'), items: quotation.items.map(item => lodash.omit(item, '_id')), validation_date: moment(), handled_date: null}
+      const order={...lodash.omit(quotation, '_id'),
+        reference: reference,
+        items: quotation.items.map(item => lodash.omit(item, '_id')),
+        validation_date: moment(), handled_date: null}
       return Order.create(order)
     })
     .then(result => {
