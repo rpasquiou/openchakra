@@ -98,7 +98,7 @@ const getStatusLabel = (data, model, user) => {
       COMPLETE: () => 'En cours de création',
       VALID: () => (isCustomer ? 'Feurst traite votre commande' : canHandle ? 'Nouvelle commande à traiter' : 'En cours de traitement par ADV'),
       HANDLED: () => (isCustomer ? 'Feurst a traité votre commande' : canHandle ? 'Commande traitée' : 'Traitée par ADV'),
-      PARTIALLY_HANDLED: () => (isCustomer ? 'Votre commande est partiellemennt traitée' : canHandle ? 'Commande partiellement traitée' : 'Partiellement traitée par ADV'),
+      PARTIALLY_HANDLED: () => (isCustomer || canHandle ? 'Commande partiellement traitée' : 'Partiellement traitée par ADV'),
     },
   }
   const label=LABELS[model][data.status]()
