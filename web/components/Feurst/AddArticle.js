@@ -58,7 +58,7 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
     },
     itemToString: item => (item ? `${item.reference}` : ''),
     onSelectedItemChange: ({selectedItem}) => {
-      setArticle({...article, item: selectedItem})
+      setArticle({...article, item: selectedItem, showArticlePanel: false})
     },
   })
 
@@ -152,7 +152,7 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
             placeholder='Qté souhaitée'
             value={article?.quantity || ''}
             disabled={false}
-            onChange={ev => !isNaN(parseInt(ev.target.value)) && setArticle({...article, quantity: parseInt(ev.target.value)})}
+            onChange={ev => !isNaN(parseInt(ev.target.value)) && setArticle({...article, quantity: parseInt(ev.target.value), showArticlePanel: false})}
           />
         </Refquantity>
         <NormalButton disabled={!checkProductEnabled} rounded={'full'} onClick={() => checkProduct(article)}>Vérifier</NormalButton>
