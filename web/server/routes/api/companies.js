@@ -801,9 +801,30 @@ router.post('/import', passport.authenticate('jwt', {session: false}), (req, res
 
     const options=JSON.parse(req.body.options)
 
-    accountsImport(req.file.buffer, options)
+    let emailsBefore=[]
+    let importResult=null
+    User.find({}, {email: 1})
+      .then(data => {
+        emailsBefore=data.map(r => r.email).sort()
+        return accountsImport(req.file.buffer, options)
+      })
       .then(result => {
-        return res.json(result)
+        importResult=result
+        return User.find({}, {email: 1})
+      })
+      .then(data => {
+        const emailsAfter=data.map(r => r.email).sort()
+        const newEmails=lodash.difference(emailsAfter, emailsBefore)
+        return Promise.allSettled(newEmails.map(email =>
+          axios.post(new URL('/myAlfred/api/users/forgotPassword', getHostUrl()).href, {email: email}),
+        ))
+      })
+      .then(result => {
+        if (result.length>0) {
+          const grouped=lodash.groupBy(result, 'status')
+          console.log(`Sent reset passwords emails:${grouped.fulfilled?.length||0} OK, ${grouped.rejected?.length||0} NOK`)
+        }
+        return res.json(importResult)
       })
       .catch(err => {
         console.error(err)
