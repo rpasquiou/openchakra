@@ -40,6 +40,7 @@ import Delivery from './Delivery'
 
 const DialogAddress = dynamic(() => import('./DialogAddress'))
 const DialogConvertQuotation = dynamic(() => import('./DialogConvertQuotation'))
+const DialogOrderRef = dynamic(() => import('./DialogOrderRef'))
 
 const ConfirmHandledValidation = ({onClick, className, children}) => (
   <NormalButton
@@ -67,7 +68,7 @@ const ConfirmPartialHandledValidation = ({onClick, className, children}) => {
 
 const BaseCreateTable = ({
   filtered,
-  id,
+  id: orderid,
   endpoint,
   columns,
   accessRights,
@@ -86,9 +87,9 @@ const BaseCreateTable = ({
 }) => {
 
   const [language, setLanguage] = useState('fr')
-  const [orderid, setOrderid] = useState(id)
   const [isOpenDialog, setIsOpenDialog] = useState(false)
   const [isOpenDialogConvert, setIsOpenDialogConvert] = useState(false)
+  const [isOpenDialogOrderRef, setIsOpenDialogOrderRef] = useState(false)
   const [actionButtons, setActionButtons]=useState([])
   const [addAddress, setAddAddress] = useState(false)
   const [alertText, setAlertText] = useState(false)
@@ -151,9 +152,9 @@ const BaseCreateTable = ({
       })
   }
 
-  const convert = ({endpoint, orderid}) => {
+  const convert = ({endpoint, orderid, reference}) => {
     setAxiosAuthentication()
-    axios.post(`${API_PATH}/${endpoint}/${orderid}/convert`)
+    axios.post(`${API_PATH}/${endpoint}/${orderid}/convert`, {reference})
       .then(res => {
         if(res.data) {
           const finalDestination = ENDPOINTS[accessRights.model==ORDER ? QUOTATION : ORDER]
@@ -311,7 +312,7 @@ const BaseCreateTable = ({
           textColor={'#141953'}
           className={'justify-self-end col-start-2'}
           borderColor={'1px solid #141953'}
-          onClick={() => convert({endpoint, orderid})}
+          onClick={() => setIsOpenDialogOrderRef(true)}
         >
         Convertir en commande
         </NormalButton>}
@@ -367,6 +368,14 @@ const BaseCreateTable = ({
         accessRights={accessRights}
         convert={convert}
         revertToEdition={revertToEdition}
+      />
+
+      <DialogOrderRef
+        orderid={orderid}
+        endpoint={endpoint}
+        isOpenDialog={isOpenDialogOrderRef}
+        setIsOpenDialog={setIsOpenDialogOrderRef}
+        convert={convert}
       />
 
     </> : <div>Devis/Commande non trouvée</div>}
