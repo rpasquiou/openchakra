@@ -130,7 +130,7 @@ const USER_ACTIONS={
     createUserAction(ACCOUNT, UPDATE),
     [VIEW, CREATE, UPDATE, DELETE].map(action => [CUSTOMER_BUYER, CUSTOMER_TCI].map(type => createUserAction(ACCOUNT, action, {type: type, visibility: COMPANY}))),
     [CREATE, VIEW, UPDATE, CONVERT, DELETE, VALIDATE, REWRITE].map(action => createUserAction(QUOTATION, action, {visibility: COMPANY})),
-    [CREATE, VIEW, UPDATE, VALIDATE, CONVERT].map(action => createUserAction(ORDER, action, {visibility: COMPANY})),
+    [CREATE, VIEW, UPDATE, VALIDATE, DELETE, CONVERT].map(action => createUserAction(ORDER, action, {visibility: COMPANY})),
   ]),
   [CUSTOMER_BUYER]: lodash.flattenDeep([
     createUserAction(ACCOUNT, UPDATE),
