@@ -57,6 +57,7 @@ const Button = styled.button.attrs(props => ({
 
   &:disabled {
     background-color: ${props => props.bgColorDisabled};
+    cursor: not-allowed;
   }
 `
 
