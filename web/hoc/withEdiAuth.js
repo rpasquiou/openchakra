@@ -79,7 +79,7 @@ const withEdiAuth = (Component = null, options = {}) => {
           })
 
         if (is_development()) {
-          this.setState({account: `${user?.full_name} (${user?.email}), société ${user?.company?.name || 'Feurst'}`})
+          this.setState({account: `${user?.full_name} (${user?.email}), société ${user?.company?.name || 'Feurst'}, rôle:${user?.roles}`})
         }
       }
       else if (options?.force !== true) {
