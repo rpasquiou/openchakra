@@ -166,8 +166,13 @@ const BaseCreateTable = ({
         }
       })
       .catch(err => {
-        console.error(err)
-        snackBarError('Conversion non effectuée')
+        if (err?.response?.data) {
+          snackBarError(err.response.data)
+        }
+        else {
+          snackBarError('Conversion non effectuée')
+        }
+        
       })
   }
 
