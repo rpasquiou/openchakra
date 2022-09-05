@@ -1,9 +1,9 @@
 import React, {useState} from 'react'
 import styled from 'styled-components'
 import {withTranslation} from 'react-i18next'
-import {screen} from '../../styles/screenWidths'
 import PureDialog from '../Dialog/PureDialog'
-import {FormAddArticle, Label, Input} from './components.styles'
+import isEmpty from '../../server/validation/is-empty'
+import {Label, Input} from './components.styles'
 import {NormalButton} from './Button'
 
 
@@ -23,9 +23,9 @@ const DialogOrderRef = ({
       onClose={() => setIsOpenDialog(false)}
     >
 
-      <h2>Dernière étape avant la validation de votre commande</h2>
+      <h2>Dernière étape avant la conversion en commande</h2>
         
-      <p>Veuillez renseigner la référence de votre commande.</p>
+      <p>Veuillez renseigner la référence pour la commande.</p>
 
       <div className='flex flex-wrap gap-x-2 items-center mb-6'>
         <Label htmlFor='orderref'>Référence commande</Label>
@@ -35,7 +35,8 @@ const DialogOrderRef = ({
       <NormalButton
         rounded={'full'}
         className={'w-full'}
-        disabled={orderRef === ''}
+        disabled={isEmpty(orderRef)}
+        bgColorDisabled={'rgba(180, 180, 180, 0.4)'}
         bgColor={'#fff'}
         textColor={'#141953'}
         borderColor={'1px solid #141953'}
@@ -43,7 +44,6 @@ const DialogOrderRef = ({
       >
         Convertir en commande
       </NormalButton>
-
 
     </StyledDialog>
   )
