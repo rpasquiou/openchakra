@@ -18,8 +18,9 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
     item: null,
     info: null,
     quantity: null,
-    showArticlePanel: false,
   })
+
+  const [showArticlePanel, setShowArticlePanel] = useState(false)
 
   const {
     data,
@@ -51,6 +52,8 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
         setData([])
       }
 
+      setShowArticlePanel(false)
+
       if (selectedItem && inputValue.trim() === selectedItem.reference) {
         return
       }
@@ -58,7 +61,7 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
     },
     itemToString: item => (item ? `${item.reference}` : ''),
     onSelectedItemChange: ({selectedItem}) => {
-      setArticle({...article, item: selectedItem, showArticlePanel: false})
+      setArticle({...article, item: selectedItem})
     },
   })
 
@@ -69,14 +72,17 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
           console.error(`Can't fetch data in autocomplete`, e)
         })
     }
-  }, [debouncedQuery, searchTerm, run, selectedItem])
+  }, [debouncedQuery, searchTerm, run])
 
 
   const checkProduct = async article => {
 
     if (article?.item?._id) {
       await client(`${API_PATH}/${endpoint}/${orderid}/products/${article.item._id}`)
-        .then(articleInfoCheck => setArticle({...article, info: articleInfoCheck, showArticlePanel: true}))
+        .then(articleInfoCheck => {
+          setArticle({...article, info: articleInfoCheck})
+          setShowArticlePanel(true)
+        })
         .catch(errorMsg => {
           snackBarError(errorMsg.message)
         })
@@ -152,14 +158,14 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
             placeholder='Qté souhaitée'
             value={article?.quantity || ''}
             disabled={false}
-            onChange={ev => !isNaN(parseInt(ev.target.value)) && setArticle({...article, quantity: parseInt(ev.target.value), showArticlePanel: false})}
+            onChange={ev => !isNaN(parseInt(ev.target.value)) && setArticle({...article, quantity: parseInt(ev.target.value)}) && setShowArticlePanel(false)}
           />
         </Refquantity>
         <NormalButton disabled={!checkProductEnabled} rounded={'full'} onClick={() => checkProduct(article)}>Vérifier</NormalButton>
 
 
       </FormAddArticle>
-      {article.showArticlePanel ? <CheckingProduct endpoint={endpoint} orderid={orderid} updateTable={updateTable} article={article} setArticle={setArticle} selectItem={selectItem} addProduct={addProduct} wordingSection={wordingSection} /> : null}
+      {showArticlePanel ? <CheckingProduct endpoint={endpoint} orderid={orderid} updateTable={updateTable} article={article} setArticle={setArticle} selectItem={selectItem} addProduct={addProduct} wordingSection={wordingSection} /> : null}
 
     </>
   )
