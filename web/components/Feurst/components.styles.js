@@ -56,7 +56,7 @@ const Input = styled.input.attrs(props => ({
   outline: none;
   border: ${props => (props.noborder ? '0' : '1px solid var(--gray-800)')};
   width: min-content;
-  color: var(--gray-800);
+  color: var(--black);
 
   &:focus {
     outline: 2px solid var(--yellow-500);
@@ -70,6 +70,11 @@ const Refquantity = styled.div`
   column-gap: var(--spc-2);
   row-gap: var(--spc-2);
   grid-template-columns: 1fr;
+
+  input::placeholder {
+    font-style: italic;
+    color: var(--black);
+  }
   
   @media (${screen.sm}) {
     grid-template-columns: auto 1fr;
