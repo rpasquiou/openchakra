@@ -73,7 +73,6 @@ const Refquantity = styled.div`
 
   input::placeholder {
     font-style: italic;
-    color: var(--black);
   }
   
   @media (${screen.sm}) {
