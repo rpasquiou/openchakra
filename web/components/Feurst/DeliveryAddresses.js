@@ -6,7 +6,7 @@ import {API_PATH} from '../../utils/consts'
 import {StyledListbox} from '../../styles/feurst/StyledComponents'
 import isEmpty from '../../server/validation/is-empty'
 
-const DeliveryAddresses = ({state, requestUpdate, endpoint}) => {
+const DeliveryAddresses = ({orderid, currentAddress, setCurrentAddress, endpoint}) => {
 
   const {
     data,
@@ -16,30 +16,28 @@ const DeliveryAddresses = ({state, requestUpdate, endpoint}) => {
     run,
   } = useAsync({data: []})
 
-  const setAddress = useCallback(address => {
-    requestUpdate({address: {...state.address, ...address}})
-  }, [])
-
   const addressPattern = address => `${address.label}: ${address.address} ${address.zip_code} ${address.city}`
 
   /* load addresses on start */
   useEffect(() => {
-    run(client(`${API_PATH}/${endpoint}/${state.id}/addresses`))
+    run(client(`${API_PATH}/${endpoint}/${orderid}/addresses`))
+      .then(results => {
+        const [mainAddress] = results.filter(address => address.label === 'Principale')
+        if (isEmpty(currentAddress) && mainAddress) {
+          setCurrentAddress(mainAddress)
+        }
+      })
       .catch(e => {
         console.error(`Can't fetch addresses in autocomplete ${e}`)
       })
-  }, [])
+  }, [currentAddress, endpoint, orderid, run, setCurrentAddress])
 
-  useEffect(() => {
-    const [mainAddress] = data.filter(address => address.label === 'Principale')
-    if (state?.address && isEmpty(state.address) && mainAddress) { setAddress(mainAddress) }
-  }, [data, setAddress])
 
   return (<>
     <StyledListbox>
-      <Listbox as={'div'} value={state.address} onChange={setAddress}>
+      <Listbox as={'div'} value={currentAddress} onChange={setCurrentAddress}>
         <Listbox.Button>
-          <span>{state?.address?.address ? addressPattern(state?.address) : 'Choisissez une adresse'}</span><span className='icon'>▲</span>
+          <span>{currentAddress.address ? addressPattern(currentAddress) : 'Choisissez une adresse'}</span><span className='icon'>▲</span>
         </Listbox.Button>
         <Transition
           as={Fragment}
@@ -52,7 +50,7 @@ const DeliveryAddresses = ({state, requestUpdate, endpoint}) => {
         >
           <Listbox.Options>
             {data.map(address => (
-              <Listbox.Option key={`${data._id}`} value={address} className={({active}) => (active ? 'active' : '')} >
+              <Listbox.Option key={`${address._id}`} value={address} className={({active}) => (active ? 'active' : '')} >
                 {({selected}) => (selected ? <>{addressPattern(address)}<span>✓</span></> : <>{addressPattern(address)}</>)}
               </Listbox.Option>
             ))}
