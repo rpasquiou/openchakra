@@ -1,8 +1,10 @@
 const express = require('express')
+const CronJob = require('cron').CronJob
 const passport = require('passport')
 const moment = require('moment')
 const xlsx=require('node-xlsx')
 const lodash=require('lodash')
+const {QUOTATION_LIFETIME_HOURS}=require('../../../utils/feurst/consts')
 const {
   COMPLETE,
   CONVERT,
@@ -640,5 +642,23 @@ router.get('/:id/carriage-paid-delta', passport.authenticate('jwt', {session: fa
       return res.status(err.status||500).json(err.message)
     })
 })
+
+// Checking every hour quotations to remove after QUOTATION_LIMIT days
+new CronJob('0 0 * * * *', (() => {
+  const oldestCreationDate=moment().subtract(QUOTATION_LIFETIME_HOURS, 'hours')
+  console.log(`Removing non submitted quotations (${QUOTATION_LIFETIME_HOURS} hours, created before ${oldestCreationDate.format('L LT')})`)
+  MODEL.find(({creation_date: {$lt: oldestCreationDate}}))
+    .lean({virtuals: true})
+    .then(quotations => {
+      const nonSubmitted=quotations.filter(q => [CREATED, COMPLETE].includes(q.status))
+      return MODEL.remove({_id: {$in: nonSubmitted.map(q => q._id)}})
+    })
+    .then(res => {
+      console.log(`Removed:${JSON.stringify(res)} non-submitted quotations`)
+    })
+    .catch(err => {
+      console.error(err)
+    })
+}), null, true, 'Europe/Paris')
 
 module.exports = router
