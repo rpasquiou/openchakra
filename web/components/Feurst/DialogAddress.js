@@ -61,7 +61,7 @@ const DialogAddress = ({
 
   const submitAddress = async ev => {
     ev.preventDefault()
-    
+
     return await validateAddress({endpoint, orderid, shipping: {reference: reference, address, shipping_mode}})
       .then(() => setIsOpenDialog(false))
       .catch(error => {
@@ -98,16 +98,16 @@ traitement de votre commande.</p>
 
         <h2>{ReactHtmlParser(t(`${wordingSection}.dialogAddressValid`))}</h2>
         <p className='alertrequired'><RequiredField /> champs requis</p>
-        <h3>Indiquer une référence <RequiredField /></h3>
+        <h3>{ReactHtmlParser(t(`${wordingSection}.dialogAddressRef`))} <RequiredField /></h3>
 
         {/* order ref */}
         <label htmlFor='reforder' className='sr-only'>Référence</label>
         <Input noborder id="reforder" className='ref' value={reference || ''} onChange={ev => requestUpdate({reference: ev.target.value})} placeholder={'Ex : Equipements carrière X'} />
-        
+
         {/* order address */}
         <h3>Indiquer l'adresse de livraison <RequiredField /></h3>
 
-        
+
         {!addAddress &&
         <DeliveryAddresses state={state} requestUpdate={requestUpdate} endpoint={endpoint} />
         }
@@ -117,7 +117,7 @@ traitement de votre commande.</p>
             {!addAddress ? <><span>⊕</span> Ajouter une nouvelle adresse</> : <><span>⇠</span> retour à mon carnet d'adresses</>}
           </ChangeAddressButton>
         </div>
-        
+
         {addAddress &&
         <Address state={state} requestUpdate={requestUpdate} errors={errors} addAddress={addAddress} />
         }
@@ -206,7 +206,7 @@ const ChangeAddressButton = styled.button`
   font-weight: var(--font-bold);
   border-radius: var(--rounded-2xl);
   cursor: pointer;
-  
+
   span {
     font-size: var(--text-xl);
   }
