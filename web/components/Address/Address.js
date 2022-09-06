@@ -4,11 +4,9 @@ import {withTranslation} from 'react-i18next'
 import {Input} from '../Feurst/components.styles'
 
 
-const Address = ({t, state, requestUpdate, errors, addAddress}) => {
+const Address = ({t, currentAddress: address, setCurrentAddress, errors, addAddress}) => {
 
-  const changeAddress = e => requestUpdate({address: {...state.address, [e.target.name]: e.target.value}})
-
-  const {address} = state
+  const changeAddress = e => setCurrentAddress({...address, [e.target.name]: e.target.value})
   const isDisabled = !addAddress
 
   return (

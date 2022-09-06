@@ -18,11 +18,9 @@ import {Input} from './components.styles'
 const DialogAddress = ({
   isOpenDialog,
   setIsOpenDialog,
-  accessRights,
   orderid,
   endpoint,
   state,
-  requestUpdate,
   addAddress,
   setAddAddress,
   validateAddress,
@@ -32,7 +30,10 @@ const DialogAddress = ({
 
   const {reference, address, shipping_mode, errors} = state
   const [shippingfees, setShippingFees] = useState({})
-  const [valid, setValid] = useState(false)
+  const [currentReference, setCurrentReference] = useState(reference)
+  const [currentAddress, setCurrentAddress] = useState(address)
+  const [currentShippingMode, setCurrentShippingMode] = useState(shipping_mode)
+  const canSubmitDelivery = currentAddress?.address && currentAddress?.zip_code&& currentAddress?.city && currentAddress?.country && currentReference && currentShippingMode
   const formData = useRef()
 
   const isAllItemsAvailable = state?.items.map(item => {
@@ -56,13 +57,13 @@ const DialogAddress = ({
   const addNewAddress = e => {
     e.preventDefault()
     setAddAddress(!addAddress)
-    requestUpdate({address: {}})
+    setCurrentAddress({})
   }
 
   const submitAddress = async ev => {
     ev.preventDefault()
     
-    return await validateAddress({endpoint, orderid, shipping: {reference: reference, address, shipping_mode}})
+    return await validateAddress({endpoint, orderid, shipping: {reference: currentReference, address: currentAddress, shipping_mode: currentShippingMode}})
       .then(() => setIsOpenDialog(false))
       .catch(error => {
         if (error?.info) {
@@ -73,12 +74,8 @@ const DialogAddress = ({
 
 
   useEffect(() => {
-    setValid(address?.address && address?.zip_code&& address?.city && address?.country && reference && shipping_mode)
-  }, [address, shipping_mode, reference])
-
-  useEffect(() => {
-    address && address.zip_code?.length == 5 && getShippingFees(address)
-  }, [address, getShippingFees, state?.status])
+    currentAddress?.zip_code?.length == 5 && getShippingFees(currentAddress)
+  }, [currentAddress.zip_code, getShippingFees, state?.status])
 
   return (
     <StyledDialog
@@ -102,35 +99,37 @@ traitement de votre commande.</p>
 
         {/* order ref */}
         <label htmlFor='reforder' className='sr-only'>Référence</label>
-        <Input noborder id="reforder" className='ref' value={reference || ''} onChange={ev => requestUpdate({reference: ev.target.value})} placeholder={'Ex : Equipements carrière X'} />
+        <Input noborder id="reforder" className='ref' value={currentReference || ''} onChange={ev => setCurrentReference(ev.target.value)} placeholder={'Ex : Equipements carrière X'} />
         
         {/* order address */}
         <h3>Indiquer l'adresse de livraison <RequiredField /></h3>
 
         
         {!addAddress &&
-        <DeliveryAddresses state={state} requestUpdate={requestUpdate} endpoint={endpoint} />
+        <DeliveryAddresses orderid={orderid} currentAddress={currentAddress} setCurrentAddress={setCurrentAddress} endpoint={endpoint} />
         }
 
         <div className='flex justify-center mt my-2'>
           <ChangeAddressButton onClick={addNewAddress}>
-            {!addAddress ? <><span>⊕</span> Ajouter une nouvelle adresse</> : <><span>⇠</span> retour à mon carnet d'adresses</>}
+            {!addAddress
+              ? <><span>⊕</span> Ajouter une nouvelle adresse</>
+              : <><span role={'img'} alt="">⇠</span> retour à mon carnet d'adresses</>}
           </ChangeAddressButton>
         </div>
         
         {addAddress &&
-        <Address state={state} requestUpdate={requestUpdate} errors={errors} addAddress={addAddress} />
+        <Address currentAddress={currentAddress} setCurrentAddress={setCurrentAddress} errors={errors} addAddress={addAddress} />
         }
 
         {!isEmpty(shippingfees) ? (<>
           <h3>Indiquer l'option de livraison <RequiredField /></h3>
-          <ShippingFees requestUpdate={requestUpdate} shippingoptions={shippingfees} shipping_mode={shipping_mode} />
+          <ShippingFees shipping_mode={currentShippingMode} setShipping_mode={setCurrentShippingMode} shippingoptions={shippingfees} />
         </>) : null
         }
 
         <NormalButton
           bgColorDisabled={'gray'}
-          disabled={!valid}
+          disabled={!canSubmitDelivery}
           type='submit'
           onSubmit={() => submitAddress}
         >

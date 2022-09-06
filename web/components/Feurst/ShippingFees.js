@@ -3,7 +3,7 @@ import styled from 'styled-components'
 import {localeMoneyFormat} from '../../utils/converters'
 
 
-const ShippingFees = ({shipping_mode, requestUpdate, shippingoptions}) => {
+const ShippingFees = ({shipping_mode, setShipping_mode, shippingoptions}) => {
 
   return (
     <ShippingOptions>
@@ -17,7 +17,7 @@ const ShippingFees = ({shipping_mode, requestUpdate, shippingoptions}) => {
               name={'shippingOption'}
               value={key}
               checked={key == shipping_mode}
-              onChange={e => requestUpdate({shipping_mode: e.target.value, shipping_fee: value})}
+              onChange={e => setShipping_mode(e.target.value)}
             />
             <span>Livraison {key} - {priceLabel}</span>
           </label>
