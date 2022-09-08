@@ -111,6 +111,7 @@ const Editor: React.FC = () => {
   }
 
   return (
+    // @ts-ignore
     <SplitPane
       style={{ overflow: 'auto' }}
       defaultSize="50%"

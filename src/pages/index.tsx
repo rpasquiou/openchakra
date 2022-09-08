@@ -1,7 +1,7 @@
 import React from 'react'
 import { Flex, Box } from '@chakra-ui/react'
 import { DndProvider } from 'react-dnd'
-import Backend from 'react-dnd-html5-backend'
+import { HTML5Backend } from 'react-dnd-html5-backend'
 import { Global } from '@emotion/react'
 import Metadata from '~components/Metadata'
 import useShortcuts from '~hooks/useShortcuts'
@@ -27,8 +27,8 @@ const App = () => {
         })}
       />
       <Metadata />
-      {/* <Header /> */}
-      <DndProvider backend={Backend}>
+      <Header />
+      <DndProvider backend={HTML5Backend}>
         <Flex h="calc(100vh - 3rem)">
           <Menu />
           {/* <Sidebar /> */}
