@@ -2,7 +2,6 @@ import isBoolean from 'lodash/isBoolean'
 import filter from 'lodash/filter'
 import pickBy from 'lodash/pickBy'
 import icons from '~iconsList'
-import { propNames } from '@chakra-ui/react'
 import lodash from 'lodash'
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
@@ -225,7 +224,7 @@ export const generateCode = async (components: IComponents) => {
   let hooksCode = buildHooks(dataProviders)
   let code = buildBlock({ component: components.root, components })
   let componentsCodes = buildComponents(components)
-  const iconImports = [...new Set(getIconsImports(components))]
+  const iconImports = Array.from(new Set(getIconsImports(components)))
 
   const imports = [
     ...new Set(
