@@ -157,6 +157,8 @@ const StyledDialog = styled(PureDialog)`
   .dialogcontent {
     background-color: var(--gray-200);
     padding: var(--spc-10);
+    height: 70vh;
+    overflow-y: auto;
   }
 
   .disclaimer {
