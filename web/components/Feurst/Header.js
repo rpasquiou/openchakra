@@ -39,7 +39,7 @@ const Header = ({accessRights}) => {
 
         <Link href={`${BASEPATH_EDI}`}>
           <LogoLink aria-label="Accueil" href={`${BASEPATH_EDI}`}>
-            <img className='img-responsive max-w-200' src="https://feurst.fr/wp-content/uploads/2022/01/logo-feurst-01.svg" alt='' width={350} height={104} />
+            <img className='img-responsive max-w-200' src="/assets/img/feurst/logo-feurst-01.svg" alt='' width={350} height={104} />
           </LogoLink>
         </Link>
         <QuickMenu accessRights={accessRights} />
