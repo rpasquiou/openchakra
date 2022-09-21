@@ -134,10 +134,6 @@ router.post('/:order_id/import', passport.authenticate('jwt', {session: false}),
 // @Access private
 router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
 
-  if (!req.headers.referer.includes('/create')) {
-    return res.status(403).json(`Creation allowed from /create url only`)
-  }
-
   if (!isActionAllowed(req.user.roles, DATA_TYPE, CREATE)) {
     return res.status(403).json()
   }
@@ -148,6 +144,16 @@ router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
   }
 
   let attributes=req.body
+  // Feurst user: require company and contact(s)
+  if (isFeurstUser(req.user)) {
+    if (!attributes?.company) {
+      return res.status(HTTP_CODES.BAD_REQUEST).json('La compagnie est obligatoire')
+    }
+    if (!(attributes?.contacts?.length>0)) {
+      return res.status(HTTP_CODES.BAD_REQUEST).json('Au moins un contact est obligatoire')
+    }
+  }
+
   attributes={...attributes, company: req.body.company || req.user.company, created_by_company: req.user.company?._id}
 
   MODEL.create(attributes)

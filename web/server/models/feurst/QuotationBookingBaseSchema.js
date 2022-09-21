@@ -68,6 +68,12 @@ const QuotationBookingBaseSchema=new Schema({
     ref: 'company',
     required: false,
   },
+  // Customer contacts for mailing
+  contacts: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false,
+  }],
   items: [BookingItemSchema],
   shipping_fee: {
     type: Number,
