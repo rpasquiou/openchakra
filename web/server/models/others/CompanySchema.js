@@ -75,4 +75,11 @@ CompanySchema.virtual('mangopay_provider_id').get(function() {
   return this.id_mangopay
 })
 
+// TODO Use justOne to return the shop or null
+CompanySchema.virtual('users', {
+  ref: 'user', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'company', // is equal to foreignField
+})
+
 module.exports=CompanySchema
