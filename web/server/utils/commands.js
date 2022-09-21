@@ -116,7 +116,7 @@ const computeShippingFee = (model, address, express) => {
           return reject(`No rate found for dept:${orderDepartment} weight:${weight} express:${express}`)
         }
         const fee=rate.fixed_price+rate.per_kg_price*parseInt(weight)
-        return resolve(roundCurrency(fee))
+        return resolve(Math.ceil(fee))
       })
       .catch(err => {
         return reject(err)

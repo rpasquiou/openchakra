@@ -336,7 +336,7 @@ router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
     .sort({creation_date: -1})
     .populate('items.product')
     .populate({path: 'company', populate: 'sales_representative'})
-    .lean({virtuals: true})
+    .lean({virtuals: true, getters: true})
     .then(orders => {
       orders=filterOrderQuotation(orders, DATA_TYPE, req.user, VIEW)
       orders.forEach(o => {

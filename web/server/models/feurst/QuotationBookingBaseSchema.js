@@ -1,4 +1,5 @@
 const mongooseLeanVirtuals = require('mongoose-lean-virtuals')
+const mongooseLeanGetters = require('mongoose-lean-getters')
 const {Schema}=require('mongoose')
 const lodash=require('lodash')
 const {SHIPPING_MODES} = require('../../../utils/feurst/consts')
@@ -78,7 +79,9 @@ const QuotationBookingBaseSchema=new Schema({
   shipping_fee: {
     type: Number,
     default: 0,
-    get: v => roundCurrency(v),
+    // Round to ceil price
+    set: v => (v ? Math.ceil(v) : v),
+    get: v => (v ? Math.ceil(v) : v),
   },
   shipping_mode: {
     type: String,
@@ -98,7 +101,10 @@ const QuotationBookingBaseSchema=new Schema({
     type: Date,
     required: false,
   },
-}, {toJSON: {virtuals: true, getters: true}})
+}, {
+  toJSON: {virtuals: true, getters: true},
+  toObject: {virtuals: true, getters: true},
+})
 
 QuotationBookingBaseSchema.virtual('net_amount').get(function() {
   if (lodash.isEmpty(this.items)) {
@@ -138,5 +144,6 @@ QuotationBookingBaseSchema.virtual('sales_representative').get(function() {
 })
 
 QuotationBookingBaseSchema.plugin(mongooseLeanVirtuals)
+QuotationBookingBaseSchema.plugin(mongooseLeanGetters)
 
 module.exports=QuotationBookingBaseSchema
