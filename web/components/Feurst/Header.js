@@ -24,7 +24,7 @@ const Header = ({accessRights}) => {
 
   return (
     <>
-      <InfoBox>
+      <InfoBox className='no-print'>
         <p>Toute commande de moins de 30 articles (pièces) passée avant {hourLimit.toLocaleTimeString([], {hour: 'numeric', minute: 'numeric'})} sera traitée dans la journée.</p>
         {countDownToDisplay &&
           <StyledCountdown>

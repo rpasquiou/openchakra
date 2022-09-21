@@ -230,7 +230,7 @@ const BaseCreateTable = ({
         </H2confirm></div>}
 
       {canModify &&
-      <div className='container-base'>
+      <div className='container-base no-print'>
         <ImportExcelFile endpoint={endpoint} orderid={orderid} importURL={importURL} templateURL={templateURL} importFile={importFile}/>
         <LineDivider>Ou</LineDivider>
         <AddArticle endpoint={endpoint} orderid={orderid} addProduct={addProduct} wordingSection={wordingSection} />
@@ -273,7 +273,7 @@ const BaseCreateTable = ({
           shipping={{shipping_mode: state.shipping_mode, shipping_fee: state.shipping_fee, update: canUpdateShipping ? updateShippingFees : null}}
         />
         {carriagePaidDelta>0 && <>
-          <Notice className={'justify-self-center'}>
+          <Notice className={'justify-self-center no-print'}>
             <p>Plus que <strong>{localeMoneyFormat({value: carriagePaidDelta})} avant la livraison gratuite</strong>.<br/>
           Valable pour une livraison standard à l'adresse principale</p>
           </Notice>
@@ -288,7 +288,7 @@ const BaseCreateTable = ({
       </div>}
 
 
-      <div className={`grid grid-cols-2 justify-between gap-y-4 mb-8`}>
+      <div className={`grid grid-cols-2 justify-between gap-y-4 mb-8 no-print`}>
 
         {isRevertToEdition ? <div>
           <NormalButton

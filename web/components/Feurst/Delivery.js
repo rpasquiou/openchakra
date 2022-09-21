@@ -37,7 +37,7 @@ const Delivery = ({
   console.log(address)
 
   return (
-    <DeliveryStyles>
+    <DeliveryStyles className='deliveryinfo'>
       <h4>Informations de livraison</h4>
       <div className='deliverybox'>
         <div className='content'>
