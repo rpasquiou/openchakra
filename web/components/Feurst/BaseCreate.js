@@ -1,7 +1,17 @@
 import React, {useState, useEffect} from 'react'
 import {useRouter} from 'next/router'
 import Autocomplete from '@material-ui/lab/Autocomplete'
-import TextField from '@material-ui/core/TextField'
+// import {ListBox} from '@headlessui/react'
+import {
+  TextField,
+  FormControl,
+  Input,
+  InputLabel,
+  Select,
+  Checkbox,
+  ListItemText,
+  MenuItem,
+} from '@material-ui/core'
 import {withTranslation} from 'react-i18next'
 import {BASEPATH_EDI, RELATED} from '../../utils/feurst/consts'
 import {API_PATH} from '../../utils/consts'
@@ -19,6 +29,9 @@ const BaseCreate = ({
 
   const [orderCompany, setOrderCompany] = useState(null)
   const [companies, setCompanies] = useState([])
+  const [contacts, setContacts] = useState([])
+
+  console.log(orderCompany, companies)
 
   const router = useRouter()
 
@@ -28,7 +41,7 @@ const BaseCreate = ({
 
   useEffect(() => {
 
-    if ((orderCompany !== null || !isFeurstSales)) {
+    if (((orderCompany !== null && contacts.length !== false) || !isFeurstSales)) {
       createOrderId({endpoint, company: orderCompany})
         .then(data => {
           router.replace(`${BASEPATH_EDI}/${endpoint}/view/${data._id}`)
@@ -50,7 +63,7 @@ const BaseCreate = ({
   }, [isFeurstSales])
 
   return (<>
-    {isFeurstSales && !orderCompany ?
+    {isFeurstSales && contacts.length !== false ?
       <div className='container-sm mb-8'>
         <Autocomplete
           disablePortal
@@ -62,6 +75,29 @@ const BaseCreate = ({
           sx={{width: 300}}
           renderInput={params => <TextField {...params} label="Nom de la société" />}
         />
+        {orderCompany ?
+          <FormControl >
+            <InputLabel id="demo-mutiple-checkbox-label">Contacts</InputLabel>
+            <Select
+              labelId="demo-mutiple-checkbox-label"
+              id="demo-mutiple-checkbox"
+              multiple
+              value={contacts}
+              // onChange={handleChange}
+              input={<Input />}
+              renderValue={selected => selected.join(', ')}
+              
+            >
+              {orderCompany.users.map(((user, i) => (
+                <MenuItem key={`userCompany${i}`} value={user.id}>
+                  <Checkbox />
+                  <ListItemText primary={user.firstname} />
+                </MenuItem>
+              )))}
+            </Select>
+          </FormControl> : null
+        }
+
       </div> :
       null
     }
