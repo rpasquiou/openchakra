@@ -519,14 +519,18 @@ const sendDataNotification = (user, destinee_role, data, message) => {
   // Reload data to ensure sales_representative & items are loaded
   data.constructor.findById(data._id)
     .populate('items.product')
+    .populate('contacts')
+    .populate({path: 'contacts', strictPopulate: false})
     .populate({path: 'company', populate: 'sales_representative'})
     .then(result => {
       model=result
       return DESTINEES_PROMISES[destinee_role](data)
     })
-    .then(destinees => {
+    .then(destineesByRoles => {
       const companyName = isFeurstUser(user) ? 'Feurst' : data.company.name
-      destinees.forEach(destinee => {
+      const destineesByContact=isFeurstUser(user) ? model.contacts||[] : []
+      const allDestinees=lodash([...destineesByRoles, ...destineesByContact]).uniqBy('email')
+      allDestinees.forEach(destinee => {
         sendDataEvent(destinee.email, data.reference, companyName, user.firstname, message, data.url, model)
       })
     })
