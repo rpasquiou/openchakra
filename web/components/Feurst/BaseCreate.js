@@ -12,11 +12,9 @@ import {
   MenuItem,
 } from '@material-ui/core'
 import {withTranslation} from 'react-i18next'
-import {BASEPATH_EDI, RELATED} from '../../utils/feurst/consts'
+import {BASEPATH_EDI, RELATED, ROLES} from '../../utils/feurst/consts'
 import {API_PATH} from '../../utils/consts'
-
 import {client} from '../../utils/client'
-import {snackBarError} from '../../utils/notifications'
 import withEdiRequest from '../../hoc/withEdiRequest'
 import {NormalButton} from './Button'
 
@@ -100,7 +98,7 @@ const BaseCreate = ({
                 {bookedCompany.users.map(((user, i) => (
                   <MenuItem key={`userCompany${i}`} value={user.id}>
                     <Checkbox checked={contacts.indexOf(user.id) > -1} />
-                    <ListItemText primary={`${user.firstname.substr(0, 1)}. ${user.name} - ${user.roles[0]}`} />
+                    <ListItemText primary={`${user.firstname.substr(0, 1)}. ${user.name} - ${ROLES[user.roles[0]]}`} />
                   </MenuItem>
                 )))}
               </Select>
