@@ -45,7 +45,7 @@ const Delivery = ({
 
           <div className='address'>
             <address>
-              <span style={{fontWeight: 'bold'}}>Adresse {address.label}</span><br />
+              <span style={{fontWeight: 'bold'}}>{address.label}</span><br />
               {address.address}<br />
               {address.zip_code} {address.city} - {address.country}
             </address>

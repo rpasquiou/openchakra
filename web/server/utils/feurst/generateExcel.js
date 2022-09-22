@@ -9,7 +9,7 @@ const generateExcel = model => {
   data.push(['Date commande', model.creation_date || 'N/A'])
   data.push(['Client', model.company?.name])
   const address=model.address
-  data.push(['Addresse', address ? `${address.address}, ${address.zip_code} ${address.city} (${address.country})`: 'Non renseignée'])
+  data.push(['Addresse', address ? `${address.label}-${address.address}, ${address.zip_code} ${address.city} (${address.country})`: 'Non renseignée'])
   data.push(['Délégué', model.sales_representative?.full_name])
   data.push([])
   data.push('Réf. article,Désignation,Quantité,Poids,Prix catalogue,Remise,Votre prix,Total'.split(','))
