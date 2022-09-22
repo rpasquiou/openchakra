@@ -44,14 +44,12 @@ const BaseCreate = ({
   }
 
   const createThisOne = async() => {
-    await createOrderId({endpoint, company: bookedCompany, contacts})
+    await createOrderId({endpoint, data: {company: bookedCompany, contacts}})
       .then(data => {
         router.replace(`${BASEPATH_EDI}/${endpoint}/view/${data._id}`)
       })
       .catch(error => {
-        if (error.info) {
-          snackBarError(error?.info.message)
-        }
+        console.error(error)
       })
   }
 
@@ -75,7 +73,6 @@ const BaseCreate = ({
           options={companies}
           value={orderCompany?.id}
           onChange={(ev, value) => {
-            console.log(value)
             setOrderCompany(value.id)
           }}
           getOptionLabel={option => option.name}

@@ -27,13 +27,17 @@ const withEdiRequest = (Component = null) => {
       }
     }
 
-    createOrderId = async({endpoint, company}) => {
-      return await client(`${API_PATH}/${endpoint}`, {data: {company}})
+    createOrderId = async({endpoint, data}) => {
+      return await client(`${API_PATH}/${endpoint}`, {data})
         .then(data => {
           this.setState({...this.state, data})
           return data
         })
-        .catch(e => console.error(e, `Can't create ${endpoint}`))
+        .catch(error => {
+          if (error.info) {
+            snackBarError(error?.info.message)
+          }
+        })
     }
 
     getContentFrom = async({endpoint, orderid}) => {
