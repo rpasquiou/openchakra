@@ -244,6 +244,12 @@ const BaseCreateTable = ({
           <dd>{state.reference}&nbsp;</dd>
           <dt>{t(`${wordingSection}.date`)}</dt>
           <dd>{new Date(state.creation_date).toLocaleDateString()}&nbsp;</dd>
+          {state?.created_by_company &&
+          <>
+            <dt>Créé par </dt>
+            <dd>{state.created_by_company?.name}&nbsp;</dd>
+          </>
+          }
           {state.sales_representative?.firstname && (<>
             <dt>Suivi par</dt>
             <dd>{state.company.sales_representative.firstname}&nbsp;</dd>
