@@ -51,6 +51,13 @@ const BaseCreate = ({
       })
   }
 
+  useEffect(() => {
+    if (!isFeurstSales) {
+      createThisOne()
+    }
+
+  }, [isFeurstSales])
+
   /* Feurst ? => Fetch companies */
   useEffect(() => {
     if (isFeurstSales) {
