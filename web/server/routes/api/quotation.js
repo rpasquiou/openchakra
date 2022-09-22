@@ -376,10 +376,13 @@ router.post('/:quotation_id/convert', passport.authenticate('jwt', {session: fal
         return res.status(HTTP_CODES.NOT_FOUND).json(`${DATA_TYPE} #${quotation_id} not found`)
       }
       quotation=result
-      const order={...lodash.omit(quotation, '_id'),
+      const order={...lodash.omit(quotation, ['_id', 'contacts']),
         reference: reference,
         items: quotation.items.map(item => lodash.omit(item, '_id')),
-        validation_date: moment(), handled_date: null}
+        validation_date: moment(),
+        handled_date: null,
+        creator: req.user._id,
+      }
       return Order.create(order)
     })
     .then(result => {
@@ -411,7 +414,7 @@ router.get('/:order_id', passport.authenticate('jwt', {session: false}), (req, r
   MODEL.findById(order_id)
     .populate('items.product')
     .populate({path: 'company', populate: 'sales_representative'})
-    .populate('created_by_company')
+    .populate('creator')
     .then(order => {
       if (order) {
         return res.json(order)

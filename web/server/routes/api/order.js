@@ -154,7 +154,7 @@ router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
   }
 
   let attributes=req.body
-  attributes={...attributes, company: req.body.company || req.user.company, created_by_company: req.user.company?._id}
+  attributes={...attributes, company: req.body.company || req.user.company, created_by_company: req.user.company?._id, creator: req.user._id}
 
   MODEL.create(attributes)
     .then(data => {
@@ -403,7 +403,7 @@ router.get('/:order_id', passport.authenticate('jwt', {session: false}), (req, r
   MODEL.findById(order_id)
     .populate('items.product')
     .populate({path: 'company', populate: 'sales_representative'})
-    .populate('created_by_company')
+    .populate('creator')
     .then(order => {
       if (order) {
         return res.json(order)
@@ -512,6 +512,7 @@ router.post('/:order_id/validate', passport.authenticate('jwt', {session: false}
         throw new StatusError(`Address is outside delivery zone`, 422)
       }
       data.validation_date=moment()
+      data.creator=req.user._id
       return data.save()
     })
     .then(data => {
