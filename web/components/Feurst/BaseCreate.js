@@ -1,7 +1,6 @@
 import React, {useState, useEffect} from 'react'
 import {useRouter} from 'next/router'
 import Autocomplete from '@material-ui/lab/Autocomplete'
-// import {ListBox} from '@headlessui/react'
 import {
   TextField,
   FormControl,
@@ -17,7 +16,9 @@ import {BASEPATH_EDI, RELATED} from '../../utils/feurst/consts'
 import {API_PATH} from '../../utils/consts'
 
 import {client} from '../../utils/client'
+import {snackBarError} from '../../utils/notifications'
 import withEdiRequest from '../../hoc/withEdiRequest'
+import {NormalButton} from './Button'
 
 const BaseCreate = ({
   endpoint,
@@ -30,26 +31,29 @@ const BaseCreate = ({
   const [orderCompany, setOrderCompany] = useState(null)
   const [companies, setCompanies] = useState([])
   const [contacts, setContacts] = useState([])
-
-  console.log(orderCompany, companies)
-
   const router = useRouter()
 
+  const [bookedCompany] = companies
+    .filter(co => co.id == orderCompany)
+  
   // Possibles actions
   const isFeurstSales = accessRights.getFullAction()?.visibility==RELATED
+  
+  const handleChange = event => {
+    setContacts(event.target.value)
+  }
 
-
-  useEffect(() => {
-
-    if (((orderCompany !== null && contacts.length !== false) || !isFeurstSales)) {
-      createOrderId({endpoint, company: orderCompany})
-        .then(data => {
-          router.replace(`${BASEPATH_EDI}/${endpoint}/view/${data._id}`)
-        })
-        .catch(e => console.error('cant create order', e))
-    }
-
-  }, [createOrderId, endpoint, orderCompany, isFeurstSales, router])
+  const createThisOne = async() => {
+    await createOrderId({endpoint, company: bookedCompany, contacts})
+      .then(data => {
+        router.replace(`${BASEPATH_EDI}/${endpoint}/view/${data._id}`)
+      })
+      .catch(error => {
+        if (error.info) {
+          snackBarError(error?.info.message)
+        }
+      })
+  }
 
   /* Feurst ? => Fetch companies */
   useEffect(() => {
@@ -69,33 +73,46 @@ const BaseCreate = ({
           disablePortal
           id="combo-box-demo"
           options={companies}
-          value={orderCompany}
-          onChange={(ev, value) => setOrderCompany(value)}
+          value={orderCompany?.id}
+          onChange={(ev, value) => {
+            console.log(value)
+            setOrderCompany(value.id)
+          }}
           getOptionLabel={option => option.name}
           sx={{width: 300}}
           renderInput={params => <TextField {...params} label="Nom de la société" />}
         />
         {orderCompany ?
-          <FormControl >
-            <InputLabel id="demo-mutiple-checkbox-label">Contacts</InputLabel>
-            <Select
-              labelId="demo-mutiple-checkbox-label"
-              id="demo-mutiple-checkbox"
-              multiple
-              value={contacts}
-              // onChange={handleChange}
-              input={<Input />}
-              renderValue={selected => selected.join(', ')}
-              
-            >
-              {orderCompany.users.map(((user, i) => (
-                <MenuItem key={`userCompany${i}`} value={user.id}>
-                  <Checkbox />
-                  <ListItemText primary={user.firstname} />
-                </MenuItem>
-              )))}
-            </Select>
-          </FormControl> : null
+          <>
+            <FormControl style={{marginBlock: '1rem', width: '100%'}} >
+              <InputLabel id="demo-mutiple-checkbox-label">Contacts</InputLabel>
+              <Select
+                labelId="demo-mutiple-checkbox-label"
+                id="demo-mutiple-checkbox"
+                multiple
+                value={contacts}
+                onChange={handleChange}
+                input={<Input />}
+                renderValue={(selected => {
+                  return bookedCompany.users
+                    .filter(e => selected.includes(e.id))
+                    .map(user => `${user.firstname.substr(0, 1)}. ${user.name}`)
+                    .join(', ')
+                })}
+              >
+                {bookedCompany.users.map(((user, i) => (
+                  <MenuItem key={`userCompany${i}`} value={user.id}>
+                    <Checkbox checked={contacts.indexOf(user.id) > -1} />
+                    <ListItemText primary={`${user.firstname.substr(0, 1)}. ${user.name} - ${user.roles[0]}`} />
+                  </MenuItem>
+                )))}
+              </Select>
+            </FormControl>
+            <div className='flex justify-end'>
+              <NormalButton onClick={createThisOne} className="align-self-end">Continuer</NormalButton>
+            </div>
+          </>
+          : null
         }
 
       </div> :
