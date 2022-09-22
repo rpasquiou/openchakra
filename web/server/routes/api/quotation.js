@@ -411,6 +411,7 @@ router.get('/:order_id', passport.authenticate('jwt', {session: false}), (req, r
   MODEL.findById(order_id)
     .populate('items.product')
     .populate({path: 'company', populate: 'sales_representative'})
+    .populate('created_by_company')
     .then(order => {
       if (order) {
         return res.json(order)

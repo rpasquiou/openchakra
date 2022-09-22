@@ -69,7 +69,7 @@ const QuickMenu = ({accessRights}) => {
 
   return (
     <>
-      <QuickMenuStyled className='flex w-full justify-evenly gap-x-4'>
+      <QuickMenuStyled className='flex w-full justify-evenly gap-x-4 no-print'>
         {menus.map((menu, i) => (
           <Link key={`menu${i}`} href={menu.url}>
             <a className={containsPartUrl(menu.url, router.pathname) ? 'current' : null}>{menu.label}</a>

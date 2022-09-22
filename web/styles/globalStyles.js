@@ -138,7 +138,11 @@ grid-template-columns: var(--grid-cols-3);
 }
 
 .grid-cols-1-2 {
-grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr;
+  
+  @media (${screen.md}) {
+    grid-template-columns: 1fr 2fr;
+  }
 }
 
 .col-end-auto	{grid-column-end: auto;}
@@ -359,6 +363,50 @@ transform: translateY(-25%);
 
 /* media query example  */
 @media (${screen.lg}) {
+
+}
+
+/**
+* Adjustments to print orders/quotations 
+*/ 
+@media print {
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000;
+    background-color: #fff;
+  }
+  
+  * {
+    font-size: 11px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  header {
+    margin-block: 0 1rem !important;
+  }
+
+  table {
+    table-layout: fixed !important;
+    display: table !important;
+    border: 1px solid #000 !important;
+    width: 100% !important;
+    overflow-x: initial !important;
+    white-space: normal !important;
+  }
+  
+  
+  footer, .no-print, .deliveryinfo button {
+    display: none !important;
+  }
+
+  .deliveryinfo input, 
+  table input {
+    border: 0 !important;
+  }
+
+
 
 }
 
