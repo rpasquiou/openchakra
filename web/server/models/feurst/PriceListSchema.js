@@ -8,6 +8,7 @@ const PriceListSchema = new Schema({
   },
   reference: {
     type: String,
+    set: v => v ? v.toUpperCase() : v,
     required: true,
   },
   // Catalog price

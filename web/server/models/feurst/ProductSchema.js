@@ -4,6 +4,7 @@ const Schema = mongoose.Schema
 const ProductSchema = new Schema({
   reference: {
     type: String,
+    set: v => v ? v.toUpperCase() : v,
     unique: true,
     required: true,
   },
