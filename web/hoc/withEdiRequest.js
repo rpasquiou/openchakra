@@ -113,14 +113,29 @@ const withEdiRequest = (Component = null) => {
     }
 
 
-    addProduct = async({endpoint, orderid, item, quantity, replace = false, ...rest}) => {
+    addProduct = async({endpoint, orderid, item, quantity, ...rest}) => {
       if (!item) { return }
 
       const {
         _id,
       } = item
 
-      await client(`${API_PATH}/${endpoint}/${orderid}/items`, {data: {product: _id, quantity, replace, ...rest}, method: 'PUT'})
+      await client(`${API_PATH}/${endpoint}/${orderid}/items`, {data: {product: _id, quantity, ...rest}, method: 'POST'})
+        .then(() => this.getContentFrom({endpoint, orderid}))
+        .catch(error => {
+          console.error(`Can't add product`)
+          if (error.info) {
+            snackBarError(error?.info.message)
+          }
+          return false
+        })
+    }
+
+    updateLine = async({endpoint, orderid, lineId, quantity, price, ...rest}) => {
+      console.log('calling updateLine')
+      if (!lineId) { return }
+
+      await client(`${API_PATH}/${endpoint}/${orderid}/items`, {data: {lineId, quantity, price, ...rest}, method: 'PUT'})
         .then(() => this.getContentFrom({endpoint, orderid}))
         .catch(error => {
           console.error(`Can't add product`)
@@ -224,6 +239,7 @@ const withEdiRequest = (Component = null) => {
           getList={this.getList}
           deleteOrder={this.deleteOrder}
           addProduct={this.addProduct}
+          updateLine={this.updateLine}
           deleteProduct={this.deleteProduct}
           requestUpdate={this.requestUpdate}
           handleValidation={this.handleValidation}

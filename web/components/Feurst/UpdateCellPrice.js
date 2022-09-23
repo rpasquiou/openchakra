@@ -11,7 +11,7 @@ const UpdateCellPrice = ({
   // We need to keep and update the state of the cell normally
   const [value, setValue] = useState(initialValue)
 
-  const itemToUpdate = row?.original?.product
+  const lineIdToUpdate = row?.original?._id
 
   const onChange = e => {
     setValue(e.target.value)
@@ -20,7 +20,7 @@ const UpdateCellPrice = ({
   // We'll only update the external data when the input is blurred
   const onBlur = () => {
     if (typeof updateMyData === 'function') {
-      updateMyData({item: itemToUpdate, quantity: row?.original?.quantity, net_price: value, replace: true})
+      updateMyData({lineId: lineIdToUpdate, price: value})
     }
     else {
       console.error('React Table Data not updated. Did you forget the prop updateMyData on your table ?')

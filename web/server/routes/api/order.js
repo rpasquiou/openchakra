@@ -1,4 +1,5 @@
 const lodash=require('lodash')
+
 const CronJob = require('cron').CronJob
 const express = require('express')
 const passport = require('passport')
@@ -43,6 +44,7 @@ const {
   getProductPrices,
   isInDeliveryZone,
   updateCompanyAddresses,
+  updateLine,
   updateShipFee,
   updateStock,
 } = require('../../utils/commands')
@@ -51,6 +53,7 @@ const {
   filterOrderQuotation,
   getStatusLabel,
   isActionAllowed,
+  isFeurstUser,
 } = require('../../utils/userAccess')
 const Product = require('../../models/Product')
 const {lineItemsImport} = require('../../utils/import')
@@ -89,7 +92,7 @@ router.get('/:order_id/addresses', passport.authenticate('jwt', {session: false}
 router.get('/template', passport.authenticate('jwt', {session: false}), (req, res) => {
   const data = [
     ['Référence', 'Qté'],
-    ['AAAXXXZ', 6],
+    ['3789NE00', 6],
   ]
   let buffer = xlsx.build([{data: data}])
   res.setHeader('Content-Type', 'application/vnd.openxmlformats')
@@ -122,7 +125,7 @@ router.post('/:order_id/import', passport.authenticate('jwt', {session: false}),
           console.error(`${DATA_TYPE} #${order_id} not found`)
           return res.status(HTTP_CODES.NOT_FOUND).json()
         }
-        return lineItemsImport(data, req.file.buffer, options)
+        return lineItemsImport(data, req.file.buffer, {...options, merge: !isFeurstUser(req.user)})
       })
       .then(result => {
         res.json(result)
@@ -243,11 +246,10 @@ router.put('/:id', passport.authenticate('jwt', {session: false}), (req, res) =>
     })
 })
 
-// @Route PUT /myAlfred/api/orders/:id/item
-// Add item to a order {product_id, quantity, discount?, replace}
-// Adds quantity if replace is false else sets quantity
+// @Route POST /myAlfred/api/orders/:id/item
+// Add item to a order {product_id, quantity}
 // @Access private
-router.put('/:id/items', passport.authenticate('jwt', {session: false}), (req, res) => {
+router.post('/:id/items', passport.authenticate('jwt', {session: false}), (req, res) => {
 
   if (!isActionAllowed(req.user.roles, DATA_TYPE, UPDATE)) {
     return res.status(401).json()
@@ -259,9 +261,47 @@ router.put('/:id/items', passport.authenticate('jwt', {session: false}), (req, r
   }
 
   const order_id=req.params.id
-  const {product, quantity, net_price, replace=false}=req.body
+  const {product, quantity}=req.body
 
-  if (net_price && !isActionAllowed(req.user.roles, DATA_TYPE, UPDATE_ALL)) {
+  MODEL.findById(order_id)
+    .populate('items.product')
+    .populate('company')
+    .then(data => {
+      if (!data) {
+        console.error(`No order #${order_id}`)
+        return res.status(HTTP_CODES.NOT_FOUND).json()
+      }
+      return addItem({data, product_id: product, quantity, merge: !isFeurstUser(req.user)})
+    })
+    .then(data => {
+      return updateShipFee(data)
+    })
+    .then(data => {
+      return data.save()
+    })
+    .then(data => {
+      return res.json(data)
+    })
+    .catch(err => {
+      console.error(err)
+      return res.status(500).json(err)
+    })
+})
+
+// @Route PUT /myAlfred/api/orders/:id/item
+// Add item to a order {product_id, quantity, discount?, replace}
+// Adds quantity if replace is false else sets quantity
+// @Access private
+router.put('/:id/items', passport.authenticate('jwt', {session: false}), (req, res) => {
+
+  if (!isActionAllowed(req.user.roles, DATA_TYPE, UPDATE)) {
+    return res.status(401).json()
+  }
+
+  const order_id=req.params.id
+  const {lineId, quantity, price}=req.body
+
+  if (!lodash.isNil(price) && !isActionAllowed(req.user.roles, DATA_TYPE, UPDATE_ALL)) {
     return res.status(401).json(`Droits insuffisants pour modifier le prix de l'article`)
   }
 
@@ -273,7 +313,7 @@ router.put('/:id/items', passport.authenticate('jwt', {session: false}), (req, r
         console.error(`No order #${order_id}`)
         return res.status(HTTP_CODES.NOT_FOUND).json()
       }
-      return addItem({data, product_id: product, quantity, net_price, replace})
+      return updateLine({data, lineId, quantity, price})
     })
     .then(data => {
       return updateShipFee(data)

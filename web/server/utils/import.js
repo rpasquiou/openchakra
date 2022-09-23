@@ -182,6 +182,8 @@ const lineItemsImport = (model, buffer, options) => {
     'quantity': 'Qté',
   }
 
+  const {merge}=options
+
   return new Promise((resolve, reject) => {
     const importResult={total: 0, created: 0, updated: 0, warnings: [], errors: []}
     let references=[]
@@ -197,7 +199,7 @@ const lineItemsImport = (model, buffer, options) => {
         }
         const mappedRecords=data.records.map(r => mapRecord(r, mapping))
         references=mappedRecords.map(r => r.destination)
-        const promises=mappedRecords.map(r => r.destination).map(r => addItem({data: model, reference: r.reference, quantity: parseInt(r.quantity)}))
+        const promises=mappedRecords.map(r => r.destination).map(r => addItem({data: model, reference: r.reference, quantity: parseInt(r.quantity), merge}))
         return Promise.allSettled(promises)
       })
       .then(res => {

@@ -76,6 +76,7 @@ const BaseCreateTable = ({
   t,
   getContentFrom,
   addProduct,
+  updateLine,
   deleteProduct,
   requestUpdate,
   validateAddress,
@@ -130,7 +131,7 @@ const BaseCreateTable = ({
 
   /* Update product quantities or price */
   const updateMyOrderContent = data => {
-    addProduct({endpoint, orderid, ...data})
+    updateLine({endpoint, orderid, ...data})
   }
 
   const submitOrder = async({endpoint, orderid}) => {
@@ -172,7 +173,7 @@ const BaseCreateTable = ({
         else {
           snackBarError('Conversion non effectuée')
         }
-        
+
       })
   }
 

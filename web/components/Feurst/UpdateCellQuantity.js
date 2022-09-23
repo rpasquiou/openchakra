@@ -12,6 +12,7 @@ const StyledAlertStockTrigger = styled(AlertStockMsgTrigger)`
   `
 
 const AlertStockMsg = ({className, row}) => <div className={className}><span>Qté disponible&nbsp;: {row.original.product.stock}</span></div>
+
   
 const StyledAlertStockMsg = styled(AlertStockMsg)`
     background: #cc6e29;
@@ -33,7 +34,7 @@ const UpdateCell = ({
   // We need to keep and update the state of the cell normally
   const [value, setValue] = useState(initialValue)
 
-  const itemToUpdate = row?.original?.product
+  const lineIdToUpdate = row?.original?._id
   const qty = !isNaN(parseInt(value)) && parseInt(value)
 
   const stock = +row?.original?.product?.stock || 0
@@ -46,7 +47,7 @@ const UpdateCell = ({
   // We'll only update the external data when the input is blurred
   const onBlur = () => {
     if (typeof updateMyData === 'function') {
-      updateMyData({item: itemToUpdate, quantity: qty, replace: true})
+      updateMyData({lineId: lineIdToUpdate, quantity: qty})
     }
     else {
       console.error('React Table Data not updated. Did you forget the prop updateMyData on your table ?')
@@ -62,7 +63,7 @@ const UpdateCell = ({
     <input className='grow' type={'number'} value={value} onChange={onChange} onBlur={onBlur} />
     {isAvailableStock && <Tooltip trigger={<StyledAlertStockTrigger />} content={<StyledAlertStockMsg row={row} qty={qty} />}/>}
   </div>
-  
+
 }
 
 export default UpdateCell

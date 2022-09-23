@@ -27,12 +27,16 @@ const getProductPrices = (product_ref, company) => {
       })
     })
 }
+
 /** Adds product to the order :
 If product is present, adds quantity if replace is false else sets quantity
 If product is not present, adds the item to the order
 */
-const addItem = ({data, product_id, reference, quantity, net_price, replace=false, recurse=true}) => {
-  if (isNaN(parseInt(quantity))) {
+const addItem = ({data, product_id, reference, quantity, merge, recurse=true}) => {
+  if (lodash.isNil(merge)) {
+    return Promise.reject(`Merge parameter is ${JSON.stringify(merge)}`)
+  }
+  if (isNaN(parseInt(quantity)) || quantity==0) {
     return Promise.reject(`Article ${reference}: quantité ${quantity} incorrecte`)
   }
   let product=null
@@ -48,32 +52,23 @@ const addItem = ({data, product_id, reference, quantity, net_price, replace=fals
     .then(prices => {
       if (!prices) { return Promise.reject(`Tarif inconnu pour ${product.reference}`) }
       let item=data.items.find(item => item.product._id.toString()==product._id.toString())
-      if (item) {
+      if (item && merge) {
         if (quantity) {
-          item.quantity = replace ? parseInt(quantity) : item.quantity+parseInt(quantity)
-        }
-        if (net_price) {
-          item.net_price=net_price
+          item.quantity = item.quantity+parseInt(quantity)
         }
       }
       else {
-        if (replace) {
-          return Promise.reject(`Update d'une ligne de commande inexistante`)
-        }
-        if (!quantity) {
-          return Promise.reject(`Update d'un tarif sans quantité`)
-        }
-        item = {product: product, quantity: parseInt(quantity), catalog_price: prices.catalog_price, net_price: net_price || prices.net_price}
+        item = {product: product, quantity: parseInt(quantity), catalog_price: prices.catalog_price, net_price: prices.net_price}
         data.items.push(item)
       }
       // If linked articles, append them to the order/quotation
-      if (product.has_linked && !replace && recurse) {
+      if (product.has_linked && recurse) {
         return Promise.allSettled(product.components.map(c => {
-          return addItem({data, product_id: c._id, reference, quantity, replace, recurse: false})
+          return addItem({data, product_id: c._id, reference, quantity, recurse: false})
         }))
-          .then(() => {
-            return Promise.resolve(data)
-          })
+        .then(() => {
+          return Promise.resolve(data)
+        })
       }
       return Promise.resolve(data)
     })
@@ -81,6 +76,27 @@ const addItem = ({data, product_id, reference, quantity, net_price, replace=fals
       console.error(err)
       return Promise.reject(err)
     })
+}
+
+const updateLine = ({data, lineId, quantity, price}) => {
+  if (!lodash.isNil(quantity) && !quantity) {
+    return Promise.reject(`La quantité doit être positive`)
+  }
+  if (!(quantity || price)) {
+    return Promise.reject(`Quantité ou tarif requis`)
+  }
+  let product=null
+  const item=data.items.find(i => i._id.toString()==lineId.toString())
+  if (!item) {
+    return Promise.reject(`Ligne de commande ${lineId} introuvable`)
+  }
+  if (!lodash.isNil(quantity)) {
+    item.quantity=quantity
+  }
+  if (!lodash.isNil(price)) {
+    item.net_price=price
+  }
+  return Promise.resolve(data)
 }
 
 const equalAddresses= (addr1, addr2) => {
@@ -223,5 +239,5 @@ const computeCarriagePaidDelta = (schema, id) => {
 
 module.exports = {addItem, computeShippingFee, updateShipFee, getProductPrices,
   updateStock, isInDeliveryZone, updateCompanyAddresses, extractDepartment,
-  computeCarriagePaidDelta,
+  computeCarriagePaidDelta, updateLine
 }
