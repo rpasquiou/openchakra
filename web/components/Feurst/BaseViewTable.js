@@ -108,6 +108,8 @@ const BaseCreateTable = ({
   const isPartiallyHandled = actionButtons.includes(PARTIALLY_HANDLE)
   const isTotallyHandled = actionButtons.includes(TOTALLY_HANDLE)
   const canModify = actionButtons.includes(UPDATE)
+  const isValidate = !!state?.validation_date
+
 
   const isFeurstSales = accessRights.getFullAction()?.visibility==RELATED || accessRights.getFullAction()?.visibility==ALL
   const canUpdatePrice = accessRights.isActionAllowed(accessRights.getModel(), UPDATE_ALL) && canModify
@@ -241,9 +243,10 @@ const BaseCreateTable = ({
       <>
         <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
         <H3Confirm>
-          Créé {state?.creator &&
-            (`par ${state.creator?.full_name}`)
-          } le {new Date(state.creation_date).toLocaleDateString()}
+          {isValidate ? 'Validé ' : 'Créé '}
+          {state?.creator && `par ${state.creator?.full_name}`}
+          {' le '}
+          {isValidate ? new Date(state.validation_date).toLocaleDateString() : new Date(state.creation_date).toLocaleDateString()}
           {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
         </H3Confirm>
       </>}
