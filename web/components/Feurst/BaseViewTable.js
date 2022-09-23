@@ -31,7 +31,7 @@ import {
 import {snackBarError, snackBarSuccess} from '../../utils/notifications'
 import DevLog from '../DevLog'
 import Notice from '../Notice/Notice'
-import {H2confirm} from './components.styles'
+import {H2confirm, H3Confirm} from './components.styles'
 import AddArticle from './AddArticle'
 import ImportExcelFile from './ImportExcelFile'
 import {NormalButton} from './Button'
@@ -109,6 +109,8 @@ const BaseCreateTable = ({
   const isPartiallyHandled = actionButtons.includes(PARTIALLY_HANDLE)
   const isTotallyHandled = actionButtons.includes(TOTALLY_HANDLE)
   const canModify = actionButtons.includes(UPDATE)
+  const isValidate = !!state?.validation_date
+
 
   const isFeurstSales = accessRights.getFullAction()?.visibility==RELATED || accessRights.getFullAction()?.visibility==ALL
   const canUpdatePrice = accessRights.isActionAllowed(accessRights.getModel(), UPDATE_ALL) && canModify
@@ -236,28 +238,19 @@ const BaseCreateTable = ({
         <LineDivider>Ou</LineDivider>
         <AddArticle endpoint={endpoint} orderid={orderid} addProduct={addProduct} wordingSection={wordingSection} />
       </div>}
+      
 
-      {!canModify && <H2confirm>{t(`${wordingSection}.recap`)}</H2confirm>}
-
-      {!canModify && <div>
-        <dl className='dl-inline text-xl font-semibold'>
-          <dt>{t(`${wordingSection}.name`)}</dt>
-          <dd>{state.reference}&nbsp;</dd>
-          <dt>{t(`${wordingSection}.date`)}</dt>
-          <dd>{new Date(state.creation_date).toLocaleDateString()}&nbsp;</dd>
-          {state?.created_by_company &&
-          <>
-            <dt>Créé par </dt>
-            <dd>{state.created_by_company?.name}&nbsp;</dd>
-          </>
-          }
-          {state.sales_representative?.firstname && (<>
-            <dt>Suivi par</dt>
-            <dd>{state.company.sales_representative.firstname}&nbsp;</dd>
-          </>)}
-        </dl>
-      </div>}
-
+      {!canModify &&
+      <>
+        <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
+        <H3Confirm>
+          {isValidate ? 'Validé ' : 'Créé '}
+          {state?.creator && `par ${state.creator?.full_name}`}
+          {' le '}
+          {isValidate ? new Date(state.validation_date).toLocaleDateString() : new Date(state.creation_date).toLocaleDateString()}
+          {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
+        </H3Confirm>
+      </>}
 
       <FeurstTable
         caption={t(`${wordingSection}.details`)}

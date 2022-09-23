@@ -89,6 +89,12 @@ const QuotationBookingBaseSchema=new Schema({
     required: false,
   },
   address: AddressSchema,
+  // user who created the order or validate it
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false,
+  },
   creation_date: {
     type: Date,
     default: Date.now,

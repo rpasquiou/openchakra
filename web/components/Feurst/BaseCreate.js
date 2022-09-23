@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect, useCallback} from 'react'
 import {useRouter} from 'next/router'
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import {
@@ -21,8 +21,6 @@ import {NormalButton} from './Button'
 const BaseCreate = ({
   endpoint,
   accessRights,
-  wordingSection,
-  t,
   createOrderId,
 }) => {
 
@@ -41,7 +39,7 @@ const BaseCreate = ({
     setContacts(event.target.value)
   }
 
-  const createThisOne = async() => {
+  const createThisOne = useCallback(async() => {
     await createOrderId({endpoint, data: {company: bookedCompany, contacts}})
       .then(data => {
         router.replace(`${BASEPATH_EDI}/${endpoint}/view/${data._id}`)
@@ -49,14 +47,14 @@ const BaseCreate = ({
       .catch(error => {
         console.error(error)
       })
-  }
+  }, [bookedCompany, contacts, createOrderId, endpoint, router])
 
   useEffect(() => {
     if (!isFeurstSales) {
       createThisOne()
     }
 
-  }, [isFeurstSales])
+  }, [isFeurstSales, createThisOne])
 
   /* Feurst ? => Fetch companies */
   useEffect(() => {
