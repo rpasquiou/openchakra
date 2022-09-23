@@ -20,9 +20,12 @@ import {ToTheBin, ToTheBinWithAlert} from './ToTheBin'
 import OrderStatus from './OrderStatus'
 
 
-const downloadAction = ({endpoint, orderid, filename}) => <button className='flex justify-center items-center' onClick={() => simulateDownload({url: `${API_PATH}/${endpoint}/${orderid}/export`, filename: `${filename}`})} >
-  <img width={20} height={20} src={`${FEURST_IMG_PATH}/xls-icon.png`} /> Télécharger
-</button>
+const downloadAction = ({endpoint, orderid, filename}) =>
+  <div className='flex justify-center items-center'>
+    <button onClick={() => simulateDownload({url: `${API_PATH}/${endpoint}/${orderid}/export`, filename: `${filename}`})} >
+      <img width={20} height={20} src={`${FEURST_IMG_PATH}/xls-icon.png`} />
+    </button>
+  </div>
 
 // to order by datetime
 const datetime = (a, b) => {
@@ -79,6 +82,16 @@ const companyName = {
   attribute: 'company.name',
 }
 
+const customerName = {
+  label: 'Nom',
+  attribute: 'creator.full_name',
+}
+
+const shippingMode = t => ({
+  label: 'Livraison',
+  attribute: item => item.shipping_mode && t(`EDI.SHIPPING.${item.shipping_mode?.toLowerCase()}`)
+})
+
 
 const orderColumns = ({endpoint, orderid, language, canUpdateQuantity, deleteProduct}) => {
 
@@ -134,10 +147,11 @@ const orderColumns = ({endpoint, orderid, language, canUpdateQuantity, deletePro
   return deleteProduct ? [...orderColumnsBase, deleteItem] : orderColumnsBase
 }
 
-const ordersColumns = ({endpoint, language, deleteOrder, exportFile}) => {
-
+const ordersColumns = ({endpoint, language, deleteOrder, exportFile, t}) => {
 
   const ordersColumnsBase = [
+    {...companyName},
+    {...customerName},
     {
       label: 'Date commande',
       attribute: 'creation_date',
@@ -146,11 +160,11 @@ const ordersColumns = ({endpoint, language, deleteOrder, exportFile}) => {
       Filter: DateRangeColumnFilter,
       filter: 'dateBetween', /* Custom Filter Type */
     },
-    {...companyName},
     {
       label: 'Référence',
       attribute: 'reference',
     },
+    shippingMode(t),
     {
       label: 'Quantité',
       attribute: 'total_quantity',
@@ -161,12 +175,12 @@ const ordersColumns = ({endpoint, language, deleteOrder, exportFile}) => {
       Cell: ({value}) => formatWeight(value, language),
     },
     {
-      label: 'Détails',
-      attribute: '_id',
-      Cell: ({value}) => (<Link href={`/edi/orders/view/${value}`}>voir</Link>),
+      label: 'Frais de livraison',
+      attribute: 'shipping_fee',
+      Cell: ({cell: {value}}) => localeMoneyFormat({lang: language, value}),
     },
     {
-      label: 'Prix total',
+      label: 'Montant total',
       attribute: 'total_amount',
       Cell: ({value}) => localeMoneyFormat({lang: language, value}),
     },
@@ -174,6 +188,11 @@ const ordersColumns = ({endpoint, language, deleteOrder, exportFile}) => {
       label: 'Statut',
       attribute: v => { return v },
       Cell: ({value}) => <OrderStatus status={value.status} label={value.status_label} />,
+    },
+    {
+      label: 'Détails',
+      attribute: '_id',
+      Cell: ({value}) => (<Link href={`/edi/orders/view/${value}`}>voir</Link>),
     },
   ]
 
@@ -255,21 +274,26 @@ const quotationColumns = ({endpoint, orderid, language, deleteProduct, canUpdate
   return deleteProduct ? [...quotationColumnsBase, deleteItem] : quotationColumnsBase
 }
 
-const quotationsColumns = ({endpoint, language, deleteOrder}) => {
+const quotationsColumns = ({endpoint, language, deleteOrder, t}) => {
 
   const quotationsColumnsBase = [
+    companyName,
     {
-      label: 'Date commande',
+      label: 'Date devis',
       attribute: 'creation_date',
       Cell: ({cell: {value}}) => formatDate(new Date(value), language),
       sortType: 'datetime',
       Filter: DateRangeColumnFilter,
       filter: 'dateBetween', /* Custom Filter Type */
     },
-    {...companyName},
     {
       label: 'Référence',
       attribute: 'reference',
+    },
+    shippingMode(t),
+    {
+      label: 'Quantité',
+      attribute: 'total_quantity',
     },
     {
       label: 'Poids total',

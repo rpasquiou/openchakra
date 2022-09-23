@@ -69,6 +69,7 @@ const BaseListTable = ({
       exportFile: canExportXls,
       updateEmail,
       sellers,
+      t,
     })
 
   const canImport=accessRights.isActionAllowed(accessRights.getModel(), IMPORT)
