@@ -243,6 +243,8 @@ const BaseCreateTable = ({
       {!canModify &&
       <>
         <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
+
+        {endpoint === 'orders' &&
         <H3Confirm>
           {isValidate ? 'Validé ' : 'Créé '}
           {state?.creator && `par ${state.creator?.full_name}`}
@@ -250,6 +252,7 @@ const BaseCreateTable = ({
           {isValidate ? new Date(state.validation_date).toLocaleDateString() : new Date(state.creation_date).toLocaleDateString()}
           {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
         </H3Confirm>
+        }
       </>}
 
       <FeurstTable
