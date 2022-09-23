@@ -10,22 +10,16 @@ const H2confirm = styled.h2`
   justify-content: center;
   flex-direction: column;
   row-gap: var(--spc-2);
+  margin-block: 1rem;
+`
 
-  button {
-    background-color: unset;
-    border: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    column-gap: var(--spc-1);
-    font-weight: var(--font-bold);
-    font-size: var(--text-base);
-    
-    span {
-      font-size: var(--text-2xl);
-      color: var(--black);
-    }
-  }
+const H3Confirm = styled.h3`
+font-size: var(--text-xl);
+font-weight: 500;
+color: var(--black);
+text-align: center;
+
+
 `
 
 const FormAddArticle = styled.form`
@@ -139,4 +133,4 @@ const StyledCountdown = styled.div`
   }
 `
 
-export {H2confirm, FormAddArticle, Label, Input, Refquantity, StyledCountdown}
+export {H2confirm, H3Confirm, FormAddArticle, Label, Input, Refquantity, StyledCountdown}

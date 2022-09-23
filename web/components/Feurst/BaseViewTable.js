@@ -31,7 +31,7 @@ import {
 import {snackBarError, snackBarSuccess} from '../../utils/notifications'
 import DevLog from '../DevLog'
 import Notice from '../Notice/Notice'
-import {H2confirm} from './components.styles'
+import {H2confirm, H3Confirm} from './components.styles'
 import AddArticle from './AddArticle'
 import ImportExcelFile from './ImportExcelFile'
 import {NormalButton} from './Button'
@@ -235,28 +235,18 @@ const BaseCreateTable = ({
         <LineDivider>Ou</LineDivider>
         <AddArticle endpoint={endpoint} orderid={orderid} addProduct={addProduct} wordingSection={wordingSection} />
       </div>}
+      
 
-      {!canModify && <H2confirm>{t(`${wordingSection}.recap`)}</H2confirm>}
-
-      {!canModify && <div>
-        <dl className='dl-inline text-xl font-semibold'>
-          <dt>{t(`${wordingSection}.name`)}</dt>
-          <dd>{state.reference}&nbsp;</dd>
-          <dt>{t(`${wordingSection}.date`)}</dt>
-          <dd>{new Date(state.creation_date).toLocaleDateString()}&nbsp;</dd>
-          {state?.creator &&
-          <>
-            <dt>Créé par </dt>
-            <dd>{state.creator?.full_name}&nbsp;</dd>
-          </>
-          }
-          {state.sales_representative?.firstname && (<>
-            <dt>Suivi par</dt>
-            <dd>{state.company.sales_representative.firstname}&nbsp;</dd>
-          </>)}
-        </dl>
-      </div>}
-
+      {!canModify &&
+      <>
+        <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
+        <H3Confirm>
+          Créé {state?.creator &&
+            (`par ${state.creator?.full_name}`)
+          } le {new Date(state.creation_date).toLocaleDateString()}
+          {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
+        </H3Confirm>
+      </>}
 
       <FeurstTable
         caption={t(`${wordingSection}.details`)}
