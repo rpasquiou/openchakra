@@ -1,7 +1,8 @@
 import React from 'react'
+import {withTranslation} from 'react-i18next'
 import styled from 'styled-components'
 import {isEmpty} from 'lodash'
-import {FEURST_IMG_PATH} from '../../utils/feurst/consts'
+import {FEURST_IMG_PATH, STANDARD_SHIPPING, EXPRESS_SHIPPING, GROUP_SHIPPING} from '../../utils/feurst/consts'
 import {localeMoneyFormat} from '../../utils/converters'
 
 
@@ -23,6 +24,7 @@ const UpdateShippingFees = ({endpoint, orderid, shipping_fee, requestUpdate, upd
 
 
 const Delivery = ({
+  t,
   endpoint,
   orderid,
   address,
@@ -34,14 +36,25 @@ const Delivery = ({
 
   const shippingFeesMsg = shipping_fee === 0 ? 'franco de port' : `environ ${localeMoneyFormat({value: shipping_fee})}`
 
-  console.log(address)
+  const shippingDelays = shippingchosen => {
+    switch (shippingchosen) {
+      case STANDARD_SHIPPING:
+        return 'J+3'
+      case EXPRESS_SHIPPING:
+        return 'J+2'
+      case GROUP_SHIPPING:
+        return 'prochain groupage'
+      default:
+        break
+    }
+  }
 
   return (
     <DeliveryStyles className='deliveryinfo'>
       <h4>Informations de livraison</h4>
       <div className='deliverybox'>
         <div className='content'>
-          <p>Livraison {shipping_mode?.toLowerCase()} {update ? <UpdateShippingFees endpoint={endpoint} orderid={orderid} update={update} requestUpdate={requestUpdate} shipping_fee={shipping_fee}/> : shippingFeesMsg}</p>
+          <p>Livraison {t(`EDI.SHIPPING.${shipping_mode?.toLowerCase()}`)} {update ? <UpdateShippingFees endpoint={endpoint} orderid={orderid} update={update} requestUpdate={requestUpdate} shipping_fee={shipping_fee}/> : shippingFeesMsg}</p>
 
           <div className='address'>
             <address>
@@ -54,7 +67,7 @@ const Delivery = ({
             </button>}
           </div>
           {address?.phone && <p><abbr title='téléphone'>Tél.</abbr> : {address.phone}</p>}
-          <p>Livraison estimée pour les quantités disponibles&nbsp;: J+{shipping_mode == 'EXPRESS' ? '2' : '3'}</p>
+          <p>Livraison estimée pour les quantités disponibles&nbsp;: {shippingDelays(shipping_mode)}</p>
         </div>
         {isEmpty(address) ?
           <div className='overlay'>
@@ -149,5 +162,4 @@ const DeliveryStyles = styled.div`
   }
 `
 
-
-export default Delivery
+export default withTranslation(null, {withRef: true})(Delivery)

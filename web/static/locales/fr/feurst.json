@@ -108,5 +108,9 @@
   "EDI.ORDER_CONVERTED_2_FEURST": "La commande a été convertie en devis",
   "EDI.ORDER_VALID_2_FEURST": "La commande a été validée, vous pouvez la traiter",
   "EDI.ORDER_HANDLED_2_CUSTOMER": "La commande a été totalement traitée",
-  "EDI.ORDER_PARTIALLY_HANDLED_2_CUSTOMER": "La commande a été partiellement traitée"
+  "EDI.ORDER_PARTIALLY_HANDLED_2_CUSTOMER": "La commande a été partiellement traitée",
+  
+  "EDI.SHIPPING.express": "express",
+  "EDI.SHIPPING.standard": "standard",
+  "EDI.SHIPPING.group": "groupage"
 }

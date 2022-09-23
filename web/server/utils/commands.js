@@ -2,7 +2,7 @@ const lodash=require('lodash')
 const Company = require('../models/Company')
 const Product = require('../models/Product')
 const PriceList = require('../models/PriceList')
-const {EXPRESS_SHIPPING} = require('../../utils/feurst/consts')
+const {EXPRESS_SHIPPING, GROUP_SHIPPING} = require('../../utils/feurst/consts')
 const {roundCurrency} = require('../../utils/converters')
 const ShipRate = require('../models/ShipRate')
 
@@ -120,6 +120,11 @@ const computeShippingFee = (model, address, express) => {
     const orderAddress=address
     const companyMainAddress=model.company?.addresses[0]
     const weight=model.total_weight
+
+    // group delivery ?
+    if (model?.shipping_mode === GROUP_SHIPPING) {
+      return resolve(0)
+    }
 
     // Carriage paid for non express ?
     if (!express && !lodash.isNil(model.company.carriage_paid) && equalAddresses(orderAddress, companyMainAddress) && model.total_amount >= model.company.carriage_paid) {

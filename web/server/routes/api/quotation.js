@@ -17,6 +17,7 @@ const {
   EXPRESS_SHIPPING,
   FEURST_ADV,
   FEURST_SALES,
+  GROUP_SHIPPING,
   HANDLED,
   QUOTATION,
   REWRITE,
@@ -575,7 +576,7 @@ router.get('/:id/shipping-fee', passport.authenticate('jwt', {session: false}), 
 
   const address=JSON.parse(req.query.address)
 
-  const fee={[EXPRESS_SHIPPING]: 0, [STANDARD_SHIPPING]: 0}
+  const fee={[EXPRESS_SHIPPING]: 0, [STANDARD_SHIPPING]: 0, [GROUP_SHIPPING]: 0}
   let order=null
   MODEL.findById(req.params.id)
     .populate('items.product')

@@ -1,9 +1,10 @@
 import React from 'react'
 import styled from 'styled-components'
+import {withTranslation} from 'react-i18next'
 import {localeMoneyFormat} from '../../utils/converters'
 
 
-const ShippingFees = ({shipping_mode, setShipping_mode, shippingoptions}) => {
+const ShippingFees = ({t, shipping_mode, setShipping_mode, shippingoptions}) => {
 
   return (
     <ShippingOptions>
@@ -19,7 +20,7 @@ const ShippingFees = ({shipping_mode, setShipping_mode, shippingoptions}) => {
               checked={key == shipping_mode}
               onChange={e => setShipping_mode(e.target.value)}
             />
-            <span>Livraison {key} - {priceLabel}</span>
+            <span>Livraison {t(`EDI.SHIPPING.${key.toLowerCase()}`)} - {priceLabel}</span>
           </label>
         )
       },
@@ -49,4 +50,4 @@ label {
 
 `
 
-export default ShippingFees
+export default withTranslation(null, {withRef: true})(ShippingFees)
