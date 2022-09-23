@@ -227,24 +227,17 @@ const BaseCreateTable = ({
 
     { orderid ? <>
 
-      {isFeurstSales && canModify && <div className='flex'>
-        <H2confirm>
-          <span>{state?.company?.name}</span>
-        </H2confirm></div>}
-
       {canModify &&
       <div className='container-base no-print'>
         <ImportExcelFile endpoint={endpoint} orderid={orderid} importURL={importURL} templateURL={templateURL} importFile={importFile}/>
         <LineDivider>Ou</LineDivider>
         <AddArticle endpoint={endpoint} orderid={orderid} addProduct={addProduct} wordingSection={wordingSection} />
       </div>}
+
       
+      <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
 
-      {!canModify &&
-      <>
-        <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
-
-        {endpoint === ENDPOINTS[ORDER] &&
+      {endpoint === ENDPOINTS[ORDER] &&
         <H3Confirm>
           {isValidate ? 'Validé ' : 'Créé '}
           {state?.creator && `par ${state.creator?.full_name}`}
@@ -252,8 +245,7 @@ const BaseCreateTable = ({
           {isValidate ? new Date(state.validation_date).toLocaleDateString() : new Date(state.creation_date).toLocaleDateString()}
           {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
         </H3Confirm>
-        }
-      </>}
+      }
 
       <FeurstTable
         caption={t(`${wordingSection}.details`)}
