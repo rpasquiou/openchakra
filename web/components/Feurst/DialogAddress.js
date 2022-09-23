@@ -47,7 +47,7 @@ const DialogAddress = ({
     const strAddress=JSON.stringify(address)
     const res_shippingfees = await client(`${API_PATH}/${endpoint}/${orderid}/shipping-fee?address=${strAddress}`)
       .catch(e => {
-        console.error(e, `Can't get shipping fees ${e}`)
+        console.error(e, `Can't get shipping fees`)
       })
 
 
