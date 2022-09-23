@@ -244,7 +244,7 @@ const BaseCreateTable = ({
       <>
         <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
 
-        {endpoint === 'orders' &&
+        {endpoint === ENDPOINTS[ORDER] &&
         <H3Confirm>
           {isValidate ? 'Validé ' : 'Créé '}
           {state?.creator && `par ${state.creator?.full_name}`}
