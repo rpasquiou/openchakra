@@ -86,6 +86,7 @@ const QuotationBookingBaseSchema=new Schema({
     required: false,
   },
   address: AddressSchema,
+  // user who created the order or validate it
   creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
