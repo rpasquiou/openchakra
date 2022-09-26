@@ -4,7 +4,7 @@ const BaseSchema = require('../others/CompanySchema')
 
 const CompanySchema = BaseSchema.clone()
 CompanySchema.add({
-  groupShippingAllowed:{
+  group_shipping_allowed:{
     type: Boolean,
     default: false,
     required: true,
