@@ -148,17 +148,30 @@ const StyledDialog = styled(PureDialog)`
     color: red;
   }
 
+  
   .alertrequired {
     margin: 0;
     font-weight: bold;
     text-align: right;
   }
-
+  
   .dialogcontent {
     background-color: var(--gray-200);
     padding: var(--spc-10);
     height: 70vh;
     overflow-y: auto;
+    scrollbar-color: var(--brand-color) transparent;
+    scrollbar-width: thin;
+  }
+  
+  .dialogcontent::-webkit-scrollbar {
+    width: 5px;
+    height: 8px;
+    background-color: transparent; /* or add it to the track */
+  }
+
+  .dialogcontent::-webkit-scrollbar-thumb {
+    background: var(--brand-color);
   }
 
   .disclaimer {
