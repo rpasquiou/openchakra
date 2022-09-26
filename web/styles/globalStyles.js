@@ -192,6 +192,8 @@ place-items: center;
 .justify-self-center {justify-self: center;}
 .justify-self-end {justify-self: end;}
 
+.align-self-end {align-self: end;}
+
 .items-baseline	{align-items: baseline;}
 .items-center {align-items: center;}
 .items-end {align-items: end;}
