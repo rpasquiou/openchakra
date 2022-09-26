@@ -286,11 +286,16 @@ const accountsImport = (buffer, options) => {
           const netPrices=record['Liste de prix net']
           if (!catalogPrices || !netPrices) { return Promise.reject(msg('Liste de prix inconnue')) }
           const salesman=(record['Nom Délégué']||'').trim()
-          let groupShippingAllowed = record['Groupage']?.trim()
-          if (!['OUI', 'NON'].includes(groupShippingAllowed?.toUpperCase())) {
-            return Promise.reject(msg('Groupage: valeur OUI/NON attendue'))
+          // SHIPPING GROUP Hide functionality
+          let groupShippingAllowed=false
+          if (false) {
+            let groupShippingAllowed = record['Groupage']?.trim()
+            if (!['OUI', 'NON'].includes(groupShippingAllowed?.toUpperCase())) {
+              return Promise.reject(msg('Groupage: valeur OUI/NON attendue'))
+            }
+            groupShippingAllowed = groupShippingAllowed.toUpperCase()=='OUI'
           }
-          groupShippingAllowed = groupShippingAllowed.toUpperCase()=='OUI'
+          // end SHIPPING GROUP Hide functionality
           if (!salesman) { return Promise.reject(msg('Nom du délégué manquant')) }
           const [sm_name, sm_firstname]=salesman.split(' ')
           return User.findOne({name: new RegExp(sm_name, 'i'), firstname: new RegExp(sm_firstname, 'i'), roles: FEURST_SALES})

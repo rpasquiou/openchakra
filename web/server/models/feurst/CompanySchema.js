@@ -8,6 +8,8 @@ CompanySchema.add({
     type: Boolean,
     default: false,
     required: true,
+    // SHIPPING GROUP Hide functionality
+    get: v => false,
   }
 })
 
