@@ -286,6 +286,11 @@ const accountsImport = (buffer, options) => {
           const netPrices=record['Liste de prix net']
           if (!catalogPrices || !netPrices) { return Promise.reject(msg('Liste de prix inconnue')) }
           const salesman=(record['Nom Délégué']||'').trim()
+          let groupShippingAllowed = record['Groupage']?.trim()
+          if (!['OUI', 'NON'].includes(groupShippingAllowed?.toUpperCase())) {
+            return Promise.reject(msg('Groupage: valeur OUI/NON attendue'))
+          }
+          groupShippingAllowed = groupShippingAllowed.toUpperCase()=='OUI'
           if (!salesman) { return Promise.reject(msg('Nom du délégué manquant')) }
           const [sm_name, sm_firstname]=salesman.split(' ')
           return User.findOne({name: new RegExp(sm_name, 'i'), firstname: new RegExp(sm_firstname, 'i'), roles: FEURST_SALES})
@@ -294,7 +299,9 @@ const accountsImport = (buffer, options) => {
                 return Promise.reject(msg(`Commercial ${sm_firstname} ${sm_name} non trouvé`))
               }
               return Company.findOneAndUpdate({name: companyName},
-                {addresses: [addr], catalog_prices: catalogPrices, net_prices: netPrices, carriage_paid: carriage_paid, delivery_zip_codes, sales_representative: salesman},
+                {addresses: [addr], catalog_prices: catalogPrices, net_prices: netPrices,
+                  carriage_paid: carriage_paid, delivery_zip_codes, sales_representative: salesman,
+                  group_shipping_allowed: groupShippingAllowed},
                 {runValidators: true, upsert: true, new: true})
             })
             .then(company => {
