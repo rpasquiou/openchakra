@@ -9,6 +9,7 @@ import PureDialog from '../Dialog/PureDialog'
 import {client} from '../../utils/client'
 import isEmpty from '../../server/validation/is-empty'
 import {API_PATH} from '../../utils/consts'
+import {GROUP_SHIPPING} from '../../utils/feurst/consts'
 import RequiredField from '../misc/RequiredField'
 import {snackBarError} from '../../utils/notifications'
 import {NormalButton} from './Button'
@@ -28,7 +29,7 @@ const DialogAddress = ({
   t,
 }) => {
 
-  const {reference, address, shipping_mode, errors} = state
+  const {reference, address, shipping_mode, errors, company} = state
   const [shippingfees, setShippingFees] = useState({})
   const [currentReference, setCurrentReference] = useState(reference)
   const [currentAddress, setCurrentAddress] = useState(address)
@@ -42,6 +43,9 @@ const DialogAddress = ({
     return !(desiredQuantity > availableQuantities)
   }).every(av => av === true)
 
+  const shippingOptions = company?.group_shipping_allowed
+    ? shippingfees
+    : Object.fromEntries(Object.entries(shippingfees).filter(([a]) => a !== GROUP_SHIPPING))
 
   const getShippingFees = useCallback(async address => {
     const strAddress=JSON.stringify(address)
@@ -49,7 +53,6 @@ const DialogAddress = ({
       .catch(e => {
         console.error(e, `Can't get shipping fees`)
       })
-
 
     res_shippingfees && setShippingFees(res_shippingfees)
   }, [endpoint, orderid])
@@ -123,7 +126,7 @@ traitement de votre commande.</p>
 
         {!isEmpty(shippingfees) ? (<>
           <h3>Indiquer l'option de livraison <RequiredField /></h3>
-          <ShippingFees shipping_mode={currentShippingMode} setShipping_mode={setCurrentShippingMode} shippingoptions={shippingfees} />
+          <ShippingFees shipping_mode={currentShippingMode} setShipping_mode={setCurrentShippingMode} shippingoptions={shippingOptions} />
         </>) : null
         }
 
@@ -148,17 +151,30 @@ const StyledDialog = styled(PureDialog)`
     color: red;
   }
 
+  
   .alertrequired {
     margin: 0;
     font-weight: bold;
     text-align: right;
   }
-
+  
   .dialogcontent {
     background-color: var(--gray-200);
     padding: var(--spc-10);
     height: 70vh;
     overflow-y: auto;
+    scrollbar-color: var(--brand-color) transparent;
+    scrollbar-width: thin;
+  }
+  
+  .dialogcontent::-webkit-scrollbar {
+    width: 5px;
+    height: 8px;
+    background-color: transparent; /* or add it to the track */
+  }
+
+  .dialogcontent::-webkit-scrollbar-thumb {
+    background: var(--brand-color);
   }
 
   .disclaimer {
