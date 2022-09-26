@@ -3,6 +3,13 @@ const {CUSTOMER_ADMIN}=require('../../../utils/feurst/consts')
 const BaseSchema = require('../others/CompanySchema')
 
 const CompanySchema = BaseSchema.clone()
+CompanySchema.add({
+  groupShippingAllowed:{
+    type: Boolean,
+    default: false,
+    required: true,
+  }
+})
 
 CompanySchema.virtual('administrator', {
   ref: 'user', // The Model to use
