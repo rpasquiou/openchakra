@@ -112,7 +112,6 @@ const BaseCreateTable = ({
   const isValidate = !!state?.validation_date
 
 
-  const isFeurstSales = accessRights.getFullAction()?.visibility==RELATED || accessRights.getFullAction()?.visibility==ALL
   const canUpdatePrice = accessRights.isActionAllowed(accessRights.getModel(), UPDATE_ALL) && canModify
   const canUpdateQuantity = accessRights.isActionAllowed(accessRights.getModel(), UPDATE) && canModify
 
@@ -246,6 +245,19 @@ const BaseCreateTable = ({
           {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
         </H3Confirm>
       }
+
+      <div className='flex flex-col mb-4'>
+        <NormalButton
+          style={{padding: '7px'}}
+          rounded={'full'}
+          borderColor={'2px solid var(--brand-color)'}
+          onClick={() => window.print()}
+          className="flex items-center justify-center align-self-end"
+        >
+          <img src='/static/assets/img/feurst/print.svg' width={25} height={25} />
+        </NormalButton>
+
+      </div>
 
       <FeurstTable
         caption={t(`${wordingSection}.details`)}
