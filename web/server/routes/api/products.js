@@ -50,7 +50,7 @@ router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
     noSpaceFilter=p => `${p.reference}${p.description}${p.description_2}`.replace(/\s/g, '').match(query)
   }
 
-  Product.find({stock: {$exists: true}})
+  Product.find()
     .populate('components')
     .sort('reference')
     .then(products => {
