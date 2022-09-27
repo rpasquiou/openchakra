@@ -64,7 +64,7 @@ const addItem = ({data, product_id, reference, quantity, merge, recurse=true}) =
       // If linked articles, append them to the order/quotation
       if (product.has_linked && recurse) {
         return Promise.allSettled(product.components.map(c => {
-          return addItem({data, product_id: c._id, reference, quantity, recurse: false})
+          return addItem({data, product_id: c._id, reference, quantity, merge, recurse: false})
         }))
         .then(() => {
           return Promise.resolve(data)
