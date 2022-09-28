@@ -89,7 +89,7 @@ const customerName = {
 
 const shippingMode = t => ({
   label: 'Livraison',
-  attribute: item => item.shipping_mode && t(`EDI.SHIPPING.${item.shipping_mode?.toLowerCase()}`)
+  attribute: item => item.shipping_mode && t(`EDI.SHIPPING.${item.shipping_mode?.toLowerCase()}`),
 })
 
 
@@ -154,7 +154,7 @@ const ordersColumns = ({endpoint, language, deleteOrder, exportFile, t}) => {
     {...customerName},
     {
       label: 'Date commande',
-      attribute: 'creation_date',
+      attribute: v => v.validation_date || v.creation_date,
       Cell: ({cell: {value}}) => formatDate(new Date(value), language),
       sortType: datetime,
       Filter: DateRangeColumnFilter,
