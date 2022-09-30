@@ -384,7 +384,26 @@ const productsImport = (bufferData, options) => {
     'weight': {column: "Poids d'expédition", transform: v => parseFloat(String(v).replace(',', '.')) || null},
   }
 
+  let importResult=null
   return fileImport(Product, bufferData, DB_MAPPING, {key: 'reference', ...options}, importComponents)
+    .then(res => {
+      importResult=res
+      return Promise.all([
+        // references in database
+        Product.find({}, {reference: true}).then(res => res.map(r => r.reference)),
+        // references in input file
+        extractData(bufferData, options).then(({headers, records}) =>
+          records.map(r => r['Code article']).filter(r => !!r.trim()).map(r => r.trim().toUpperCase()))
+      ])
+    })
+    .then(([dbReferences, inputReferences]) => {
+      const lostReferences=lodash.difference(dbReferences, inputReferences)
+      console.log(`Product import : references disabled :${lostReferences}`)
+      return PriceList.deleteMany({reference: {$in: lostReferences}})
+    })
+    .then(()=>{
+      return importResult
+    })
 }
 
 const stockImport = (bufferData, options) => {
