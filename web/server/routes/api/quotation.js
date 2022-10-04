@@ -375,6 +375,7 @@ router.get('/', passport.authenticate('jwt', {session: false}), (req, res) => {
   MODEL.find()
     .sort({creation_date: -1})
     .populate('items.product')
+    .populate({path: 'contacts', select: 'firstname name'})
     .populate({path: 'company', populate: 'sales_representative'})
     .lean({virtuals: true, getters: true})
     .then(orders => {
@@ -455,6 +456,7 @@ router.get('/:order_id', passport.authenticate('jwt', {session: false}), (req, r
     .populate('items.product')
     .populate({path: 'company', populate: 'sales_representative'})
     .populate('creator')
+    .populate('contacts')
     .then(order => {
       if (order) {
         return res.json(order)

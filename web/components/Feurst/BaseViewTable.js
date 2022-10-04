@@ -233,6 +233,7 @@ const BaseCreateTable = ({
         <AddArticle endpoint={endpoint} orderid={orderid} addProduct={addProduct} wordingSection={wordingSection} />
       </div>}
 
+
       
       <H2confirm>{state?.company?.name} - {t(`${wordingSection}.recap`)} {state.reference}</H2confirm>
 
@@ -243,6 +244,13 @@ const BaseCreateTable = ({
           {' le '}
           {isValidate ? new Date(state.validation_date).toLocaleDateString() : new Date(state.creation_date).toLocaleDateString()}
           {state.sales_representative?.firstname && (<>{' - '}Suivi par {state.company.sales_representative.firstname}</>)}
+        </H3Confirm>
+      }
+      
+      {endpoint === ENDPOINTS[QUOTATION] && state?.contacts?.length>0 &&
+        <H3Confirm>
+          {`Contact${state.contacts.length>1 ? 's': ''} : `}
+          {state?.contacts.map(c => c.full_name).join(',')}
         </H3Confirm>
       }
 

@@ -87,6 +87,11 @@ const customerName = {
   attribute: 'creator.full_name',
 }
 
+const contactsName = {
+  label: 'Contact(s)',
+  attribute: v => v.contacts?.map(c => c.full_name).join(',')
+}
+
 const shippingMode = t => ({
   label: 'Livraison',
   attribute: item => item.shipping_mode && t(`EDI.SHIPPING.${item.shipping_mode?.toLowerCase()}`),
@@ -278,6 +283,7 @@ const quotationsColumns = ({endpoint, language, deleteOrder, t}) => {
 
   const quotationsColumnsBase = [
     companyName,
+    contactsName,
     {
       label: 'Date devis',
       attribute: 'creation_date',
