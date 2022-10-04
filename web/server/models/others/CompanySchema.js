@@ -49,10 +49,14 @@ const CompanySchema = new Schema({
   // Standard prices list name (cf. PriceList)
   catalog_prices: {
     type: String,
+    set: v => (v ? v.toString().trim() : v),
+    get: v => (v ? v.toString().trim() : v),
   },
   // Discount prices list name (cf. PriceList)
   net_prices: {
     type: String,
+    set: v => (v ? v.toString().trim() : v),
+    get: v => (v ? v.toString().trim() : v),
   },
   // Min amount for carriage_paid
   carriage_paid: {
