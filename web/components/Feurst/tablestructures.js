@@ -89,7 +89,7 @@ const customerName = {
 
 const contactsName = {
   label: 'Contact(s)',
-  attribute: v => v.contacts?.map(c => c.full_name).join(',')
+  attribute: v => v.contacts?.map(c => c.full_name).join(','),
 }
 
 const shippingMode = t => ({
@@ -473,7 +473,7 @@ const handledOrdersColumns = ({endpoint, language, exportFile /** , filter = nul
   const handledOrdersColumnsBase = [
     {
       label: 'Date commande',
-      attribute: 'creation_date',
+      attribute: v => v.validation_date || v.creation_date,
       Cell: ({cell: {value}}) => formatDate(new Date(value), language),
       sortType: datetime,
       Filter: DateRangeColumnFilter,
