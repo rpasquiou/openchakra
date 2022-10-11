@@ -30,6 +30,7 @@ const ProductSchema = new Schema({
     type: Number,
     min: 0,
     set: v => parseInt(v),
+    get : v => v || 0,
     // required: true, TODO make mandatory then import
   },
   components: {

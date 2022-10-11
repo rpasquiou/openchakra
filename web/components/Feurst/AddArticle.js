@@ -84,7 +84,7 @@ const AddArticle = ({endpoint, orderid, updateTable, addProduct, wordingSection}
           setShowArticlePanel(true)
         })
         .catch(errorMsg => {
-          snackBarError(errorMsg.message)
+          snackBarError(errorMsg.message || errorMsg.info?.message)
         })
     }
 
