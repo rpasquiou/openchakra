@@ -289,7 +289,7 @@ const accountsImport = (buffer, options) => {
           // SHIPPING GROUP Hide functionality
           let groupShippingAllowed=false
           if (false) {
-            let groupShippingAllowed = record['Groupage']?.trim()
+            let groupShippingAllowed = record.Groupage?.trim()
             if (!['OUI', 'NON'].includes(groupShippingAllowed?.toUpperCase())) {
               return Promise.reject(msg('Groupage: valeur OUI/NON attendue'))
             }
@@ -353,7 +353,7 @@ const accountsImport = (buffer, options) => {
 
 const productsImport = (bufferData, options) => {
   const importComponents = records => {
-    const FIELDS='Adapteur,Chapeau,Fourreau,Clavette,BouchonG,BouchonD,Pointe'.split(',')
+    const FIELDS='Adapteur,Chapeau,Fourreau,Clavette,BouchonG,BouchonD,Pointe,Outil,Douille'.split(',')
     let subCompsRecords=records.filter(record => FIELDS.map(f => record.source[f]).filter(v => !!(v || '').trim()).length>0)
     if (subCompsRecords.length==0) {
       return Promise.resolve()
@@ -393,7 +393,7 @@ const productsImport = (bufferData, options) => {
         Product.find({}, {reference: true}).then(res => res.map(r => r.reference)),
         // references in input file
         extractData(bufferData, options).then(({headers, records}) =>
-          records.map(r => r['Code article']).filter(r => !!r.trim()).map(r => r.trim().toUpperCase()))
+          records.map(r => r['Code article']).filter(r => !!r.trim()).map(r => r.trim().toUpperCase())),
       ])
     })
     .then(([dbReferences, inputReferences]) => {
@@ -401,7 +401,7 @@ const productsImport = (bufferData, options) => {
       console.log(`Product import : references disabled :${lostReferences}`)
       return PriceList.deleteMany({reference: {$in: lostReferences}})
     })
-    .then(()=>{
+    .then(() => {
       return importResult
     })
 }
