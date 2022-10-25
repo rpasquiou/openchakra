@@ -1,7 +1,9 @@
-import { Select } from '@chakra-ui/react'
+import { Select, Checkbox } from '@chakra-ui/react'
 import { useSelector } from 'react-redux'
 import React, { memo } from 'react'
+
 import { getModelNames } from '~core/selectors/dataSources'
+
 import { useForm } from '../../hooks/useForm'
 import FormControl from '../../components/inspector/controls/FormControl'
 import usePropsSelector from '../../hooks/usePropsSelector'
@@ -13,18 +15,15 @@ const capitalize = (word: string) => {
 const DataProviderPanel = () => {
   const { setValueFromEvent } = useForm()
   const model = usePropsSelector('model')
+  const modelCardinality = usePropsSelector('modelCardinality')
   const modelNames = useSelector(getModelNames)
-
-  const setDataModel = event => {
-    setValueFromEvent(event)
-  }
 
   return (
     <>
       <FormControl htmlFor="model" label="Model">
         <Select
           id="model"
-          onChange={setDataModel}
+          onChange={setValueFromEvent}
           name="model"
           size="sm"
           value={model || ''}
@@ -35,6 +34,22 @@ const DataProviderPanel = () => {
               {capitalize(mdl)}
             </option>
           ))}
+        </Select>
+      </FormControl>
+      <FormControl htmlFor="modelCardinality" label="Cardinality">
+        <Select
+          id="modelCardinality"
+          onChange={setValueFromEvent}
+          name="modelCardinality"
+          size="sm"
+          value={modelCardinality || 'unique'}
+        >
+          <option key="unique" value="unique">
+            unique
+          </option>
+          <option key="multiple" value="multiple">
+            multiple
+          </option>
         </Select>
       </FormControl>
     </>
