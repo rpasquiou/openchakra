@@ -5,7 +5,7 @@ const moment = require('moment')
 const xlsx=require('node-xlsx')
 const {HTTP_CODES} = require('../../utils/errors')
 const {shipRatesImport} = require('../../utils/import')
-const {TEXT_FILTER, createMemoryMulter} = require('../../utils/filesystem')
+const {XL_FILTER, createMemoryMulter} = require('../../utils/filesystem')
 const {SHIPRATE, VIEW} = require('../../../utils/feurst/consts')
 const ShipRate = require('../../models/ShipRate')
 const {isActionAllowed} = require('../../utils/userAccess')
@@ -18,7 +18,7 @@ const DATA_TYPE=SHIPRATE
 const MODEL=ShipRate
 
 // SHIP RATES
-const uploadShipRates = createMemoryMulter(TEXT_FILTER)
+const uploadShipRates = createMemoryMulter(XL_FILTER)
 
 // @Route GET /myAlfred/api/orders/template
 // Returns an order xlsx template for import
@@ -70,7 +70,7 @@ router.post('/import', passport.authenticate('admin', {session: false}), (req, r
       })
       .catch(err => {
         console.error(err)
-        res.status(500).error(err)
+        res.status(500).json(err)
       })
   })
 })

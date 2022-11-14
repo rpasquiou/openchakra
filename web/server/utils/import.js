@@ -131,16 +131,16 @@ const shipRatesImport = (buffer, options) => {
         records.forEach(r => {
           const zipcode=parseInt(r[0])
           const province=r[1]
-          const base_0_30_exp=parseFloat(r[2].replace(',', '.'))
-          const perkg_0_30_exp=parseFloat(r[3].replace(',', '.'))
-          const base_0_30=parseFloat(r[4].replace(',', '.'))
-          const perkg_0_30=parseFloat(r[5].replace(',', '.'))
-          const base_30_99=parseFloat(r[6].replace(',', '.'))
-          const perkg_30_99=parseFloat(r[7].replace(',', '.'))
-          const coef_30_99=parseFloat(r[8].replace(',', '.'))
-          const base_99_=parseFloat(r[9].replace(',', '.')) || 0
-          const perkg_99_=parseFloat(r[10].replace(',', '.'))
-          const coef_99_=parseFloat(r[11].replace(',', '.'))
+          const base_0_30_exp=r[2]
+          const perkg_0_30_exp=r[3]
+          const base_0_30=r[4]
+          const perkg_0_30=r[5]
+          const base_30_99=r[6]
+          const perkg_30_99=r[7]
+          const coef_30_99=r[8]
+          const base_99_=r[9]
+          const perkg_99_=r[10]
+          const coef_99_=r[11]
           if (base_0_30_exp && perkg_0_30_exp) {
             shiprates.push({province: province, zipcode: zipcode, express: true, min_weight: 0, max_weight: 30, fixed_price: base_0_30_exp, per_kg_price: perkg_0_30_exp})
           }

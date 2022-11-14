@@ -6,6 +6,7 @@ import {
   BASEPATH_EDI,
   FEURST_IMG_PATH,
   ROLES,
+  MAX_WEIGHT,
 } from '../../utils/feurst/consts'
 import {isFeurstUser} from '../../server/utils/userAccess'
 import {formatAddress, formatPercent} from '../../utils/text'
@@ -456,7 +457,7 @@ const shipratesColumns = ({/** language */}) => [
   {label: 'Département', attribute: 'province'},
   {label: 'Express', attribute: 'express', Cell: ({cell: {value}}) => (value ? 'Oui' : 'Non')},
   {label: 'Poids minimum', attribute: 'min_weight'},
-  {label: 'Poids maximum', attribute: 'max_weight'},
+  {label: 'Poids maximum', attribute: v => v.max_weight==MAX_WEIGHT ? 'pas de max' : v.max_weight},
   {label: 'Forfait', attribute: 'fixed_price'},
   {label: 'Par kg', attribute: 'per_kg_price'},
 ]
