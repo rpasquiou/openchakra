@@ -15,6 +15,11 @@ const validateAddress = data => {
   if (lodash.isEmpty(data.country)) {
     errors.country='Un pays est requis'
   }
+  else {
+    if (!['f','fr', 'france'].includes(data.country.trim())) {
+      errors.country='Expédition en France uniquement'
+    }
+  }
 
   return {
     errors,
