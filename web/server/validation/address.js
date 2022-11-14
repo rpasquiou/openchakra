@@ -16,7 +16,7 @@ const validateAddress = data => {
     errors.country='Un pays est requis'
   }
   else {
-    if (!['f','fr', 'france'].includes(data.country.trim())) {
+    if (!['f','fr', 'france'].includes(data.country.toLowerCase().trim())) {
       errors.country='Expédition en France uniquement'
     }
   }
