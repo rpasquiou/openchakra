@@ -1,14 +1,16 @@
+const { getDataModel, getDatabaseUri } = require('../../config/config');
 const mongoose = require('mongoose')
-const {STATUS} = require('../utils/aftral_studio/consts')
-const {MONGOOSE_OPTIONS, getModels} = require('../server/utils/database')
-const {getDatabaseUri} = require('../config/config')
-require('../server/models/Resource')
-require('../server/models/Theme')
+const {STATUS} = require('../../utils/aftral_studio/consts')
+const {MONGOOSE_OPTIONS, getModels} = require('../../server/utils/database')
+require('../../server/models/Resource')
+require('../../server/models/Theme')
 
 describe('Schema virtual enum attributes', () => {
 
   beforeAll(() => {
-    return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
+    if (getDataModel()!='aftral_studio') {
+      return Promise.reject(`Run these tests with DATA_MODE=aftral_studio`)
+    }
   })
 
   test('Should return theme status enumValues', async() => {
