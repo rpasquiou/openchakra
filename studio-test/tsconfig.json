@@ -1,16 +1,10 @@
 {
   "compilerOptions": {
-    "jsx": "preserve",
-    "target": "es5",
-    "module": "commonjs",
-    "lib": ["es6", "DOM"],
-    "allowJs": true,
-    "outDir": "build",
-    "rootDir": "src",
-    "strict": true,
-    "noImplicitAny": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "app/*": ["./packages/app/*"]
+    }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
+  "extends": "expo/tsconfig.base"
 }
