@@ -14,6 +14,7 @@ import {
   Box,
 } from 'native-base'
 import { ColorModeSwitch } from '../../components'
+import UploadFile from '../../components'
 
 export function HomeScreen() {
   return (
@@ -67,9 +68,10 @@ export function HomeScreen() {
           <Text>/</Text>
           <Link href="https://docs.nativebase.io" isExternal>
             <Text color="primary.500" underline fontSize={'xl'}>
-              Learn NativeBase
+              Test upload
             </Text>
           </Link>
+          <UploadFile />
         </HStack>
       </VStack>
       <ColorModeSwitch />
