@@ -1,12 +1,7 @@
 import { useState } from 'react';
-import { Box, Button, Text } from 'native-base'
+import { View, Button, Text } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
-import DocumentPickerWHICHDOesntWork, {
-    DirectoryPickerResponse,
-    DocumentPickerResponse,
-    isInProgress,
-    types,
-  } from 'react-native-document-picker'
+
 
 const uploadUrl = `/myAlfred/api/studio/action`
 
@@ -67,9 +62,7 @@ const UploadFile = ({
   children: React.ReactNode
 }) => {
  
-    const [result, setResult] = useState<
-    Array<DocumentPickerResponse> | DirectoryPickerResponse | undefined | null
-  >()
+    const [result, setResult] = useState()
 
   // const handleError = (err: unknown) => {
   //   if (DocumentPicker.isCancel(err)) {
@@ -89,15 +82,13 @@ const UploadFile = ({
   }
 
   return (
-    <Box {...props} display='flex' flexDirection='row'>
-      
-          <Button
-            onPress={_pickDocument}>Upload</Button>
-          {/* Whatever in children, it bring focus on InputFile */}
-          {children}
-        
-      
-    </Box>
+    <View {...props}>
+      <Button
+        title={'Upload'} 
+        onPress={_pickDocument} />
+      {/* Whatever in children, it bring focus on InputFile */}
+      {children}  
+    </View>
   )
 }
 

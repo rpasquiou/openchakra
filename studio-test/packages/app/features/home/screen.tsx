@@ -1,87 +1,85 @@
-import { Link as SolitoLink } from 'solito/link'
-import React from 'react'
-import {
-  Center,
-  Image,
-  HStack,
-  Text,
-  Heading,
-  Code,
-  Link,
-  VStack,
-  Button,
-  AspectRatio,
-  Box,
-} from 'native-base'
-import { ColorModeSwitch } from '../../components'
-import UploadFile from '../../components'
+import { Text, useSx, View, H1, P, Row, A } from 'dripsy'
+import { Button } from 'react-native'
+import { TextLink } from 'solito/link'
+import { MotiLink } from 'solito/moti'
+import * as DocumentPicker from 'expo-document-picker'
 
 export function HomeScreen() {
+  const sx = useSx()
+
+  const _pickDocument = async () => {
+    let result = await DocumentPicker.getDocumentAsync({});
+    alert(result.uri);
+    console.log(result);
+  }
+
+
   return (
-    <Center
-      flex={1}
-      _dark={{ bg: 'blueGray.900' }}
-      _light={{ bg: 'blueGray.50' }}
+    <View
+      sx={{ flex: 1, justifyContent: 'center', alignItems: 'center', p: 16 }}
     >
-            <Box id="comp-LCAIEPMUYCS8S" >
-        <Button
-          colorScheme="green"
-          variant="solid"
-          size="sm"
-        >
-          Button text
-        </Button>
-        <Button.Group isAttached colorScheme="blue" mx={{
-    base: "auto",
-    md: 0
-  }} size="sm">
-      <Button>Edit</Button>
-      <Button variant="outline">Save</Button>
-    </Button.Group>
-      </Box>
-      <VStack alignItems="center" space="md">
-        <AspectRatio w={40} ratio={1}>
-          <Image
-            rounded="full"
-            source={{
-              uri: 'https://pbs.twimg.com/profile_images/1550379416995643392/KeFMAS7m_400x400.png',
+      <H1 sx={{ fontWeight: '800' }}>Welcome to Solito.</H1>
+      <Button title='push this' onPress={_pickDocument} />
+      <View sx={{ maxWidth: 600 }}>
+        <P sx={{ textAlign: 'center' }}>
+          Here is a basic starter to show you how you can navigate from one
+          screen to another. This screen uses the same code on Next.js and React
+          Native.
+        </P>
+        <P sx={{ textAlign: 'center' }}>
+          Solito is made by{' '}
+          <A
+            href="https://twitter.com/fernandotherojo"
+            // @ts-expect-error react-native-web only types
+            hrefAttrs={{
+              target: '_blank',
+              rel: 'noreferrer',
             }}
-            alt="NextJS Logo"
-            resizeMode="contain"
-          />
-        </AspectRatio>
-        <Heading>Yes, you can ❤️</Heading>
-        <Text>
-          Edit <Code>packages/app/home/screen.tsx</Code> and save to reload.
-        </Text>
-        <HStack alignItems="center" space="sm">
-          <Link href="https://solito.dev/" isExternal>
-            <Text
-              _light={{ color: 'gray.700' }}
-              _dark={{ color: 'gray.400' }}
-              underline
-              fontSize={'xl'}
-            >
-              Learn Solito
-            </Text>
-          </Link>
-          <Text>/</Text>
-          <Link href="https://docs.nativebase.io" isExternal>
-            <Text color="primary.500" underline fontSize={'xl'}>
-              Test upload
-            </Text>
-          </Link>
-          <UploadFile />
-        </HStack>
-      </VStack>
-      <ColorModeSwitch />
-      <Box mt="6">
-        <SolitoLink href="/user/NativeBase">
-          <Button pointerEvents="none" variant="outline" colorScheme="coolGray">
-            Open User Detail
-          </Button>
-        </SolitoLink>
-      </Box>
-    </Center>
+            sx={{ color: 'blue' }}
+          >
+            Fernando Rojo
+          </A>
+          .
+        </P>
+      </View>
+      <View sx={{ height: 32 }} />
+      <Row>
+        <TextLink
+          href="/user/fernando"
+          textProps={{
+            style: sx({ fontSize: 16, fontWeight: 'bold', color: 'blue' }),
+          }}
+        >
+          Regular Link
+        </TextLink>
+        <View sx={{ width: 32 }} />
+        <MotiLink
+          href="/user/fernando"
+          animate={({ hovered, pressed }) => {
+            'worklet'
+
+            return {
+              scale: pressed ? 0.95 : hovered ? 1.1 : 1,
+              rotateZ: pressed ? '0deg' : hovered ? '-3deg' : '0deg',
+            }
+          }}
+          from={{
+            scale: 0,
+            rotateZ: '0deg',
+          }}
+          transition={{
+            type: 'timing',
+            duration: 150,
+          }}
+        >
+          <Text
+            selectable={false}
+            sx={{ fontSize: 16, color: 'black', fontWeight: 'bold' }}
+          >
+            Moti Link
+          </Text>
+        </MotiLink>
+      </Row>
+    </View>
   )
 }

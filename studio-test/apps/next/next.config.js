@@ -1,32 +1,44 @@
+const { withExpo } = require('@expo/next-adapter')
+const withFonts = require('next-fonts')
+const withImages = require('next-images')
+const withPlugins = require('next-compose-plugins')
+const withTM = require('next-transpile-modules')([
+  'solito',
+  'dripsy',
+  '@dripsy/core',
+  'moti',
+  'app',
+])
+
 /** @type {import('next').NextConfig} */
-
-const { withNativebase } = require('@native-base/next-adapter')
-
-module.exports = withNativebase({
-  dependencies: [
-    '@expo/next-adapter',
-    'react-native-vector-icons',
-    'react-native-vector-icons-for-web',
-    'solito',
-    'app',
-  ],
-  nextConfig: {
-    projectRoot: __dirname,
-    reactStrictMode: true,
-    webpack5: true,
-    webpack: (config, options) => {
-      config.resolve.alias = {
-        ...(config.resolve.alias || {}),
-        'react-native$': 'react-native-web',
-        '@expo/vector-icons': 'react-native-vector-icons',
-      }
-      config.resolve.extensions = [
-        '.web.js',
-        '.web.ts',
-        '.web.tsx',
-        ...config.resolve.extensions,
-      ]
-      return config
-    },
+const nextConfig = {
+  // reanimated (and thus, Moti) doesn't work with strict mode currently...
+  // https://github.com/nandorojo/moti/issues/224
+  // https://github.com/necolas/react-native-web/pull/2330
+  // https://github.com/nandorojo/moti/issues/224
+  // once that gets fixed, set this back to true
+  reactStrictMode: false,
+  webpack5: true,
+  images: {
+    disableStaticImages: true,
   },
-})
+  experimental: {
+    forceSwcTransforms: true, // set this to true to use reanimated + swc experimentally
+    swcPlugins: [[require.resolve('./plugins/swc_plugin_reanimated.wasm')]],
+  },
+}
+
+module.exports = withPlugins(
+  [
+    withTM,
+    withFonts,
+    withImages,
+    [
+      withExpo,
+      {
+        projectRoot: __dirname + '../../..',
+      },
+    ],
+  ],
+  nextConfig
+)
