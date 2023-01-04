@@ -1,7 +1,7 @@
 import { View } from "dripsy"
 
-const Div = ({id, reload, children, sx, ...props}: {
-  id: string
+const Box = ({id, reload, children, sx, ...props}: {
+  id?: string
   reload?:boolean
   sx?: {[prop:string]: string}
   props?: any
@@ -16,9 +16,6 @@ const Div = ({id, reload, children, sx, ...props}: {
 
   return (
     <View 
-      nativeID={id} 
-      reload={reload} 
-      sx={sx}
       {...props}
     >
       {children}
@@ -26,4 +23,4 @@ const Div = ({id, reload, children, sx, ...props}: {
   )
 }
 
-export default Div
+export default Box

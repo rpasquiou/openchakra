@@ -1,10 +1,10 @@
-import Div from './Div'
+import Box from './Box'
 
 const Flex = ({id, reload, children, ...props}) => {
   return (
-    <Div id={id} sx={{display: 'flex'}}>
+    <Box id={id} display='flex'>
       {children}
-    </Div>
+    </Box>
   )
 }
 

@@ -1,4 +1,5 @@
 import { Text, useSx, View, H1, P, Row, A } from 'dripsy'
+import {Flex} from '../../components/Chakra'
 import { Button } from 'react-native'
 import { TextLink } from 'solito/link'
 import { MotiLink } from 'solito/moti'
@@ -18,8 +19,10 @@ export function HomeScreen() {
     <View
       sx={{ flex: 1, justifyContent: 'center', alignItems: 'center', p: 16 }}
     >
+      <Flex flexDirection="row" alignItems="center" backgroundColor="yellow" onClick={() => alert('Hello')}>
       <H1 sx={{ fontWeight: '800' }}>Welcome to Solito.</H1>
       <Button title='push this' onPress={_pickDocument} />
+      </Flex>
       <View sx={{ maxWidth: 600 }}>
         <P sx={{ textAlign: 'center' }}>
           Here is a basic starter to show you how you can navigate from one
