@@ -2,14 +2,21 @@
   "version": "0.0.0",
   "name": "app",
   "main": "index.ts",
+  "private": true,
+  "sideEffects": [
+    "*.css"
+  ],
   "dependencies": {
+    "@my/ui": "*",
     "@react-navigation/native": "^6.0.11",
-    "@react-navigation/native-stack": "^6.5.0",
-    "dripsy": "^3.6.0",
-    "expo-linking": "^3.0.0",
-    "moti": "latest",
-    "react-native-reanimated": "2.9.1",
-    "solito": "^2.0.0"
-  },
-  "sideEffects": false
+    "@react-navigation/native-stack": "^6.7.0",
+    "@tamagui/animations-react-native": "^1.0.3",
+    "@tamagui/colors": "^1.0.3",
+    "@tamagui/font-inter": "^1.0.3",
+    "@tamagui/lucide-icons": "^1.0.3",
+    "@tamagui/shorthands": "^1.0.3",
+    "@tamagui/theme-base": "^1.0.3",
+    "expo-linking": "^3.2.3",
+    "solito": "2.0.0-canary.4"
+  }
 }

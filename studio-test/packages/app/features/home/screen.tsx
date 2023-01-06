@@ -1,12 +1,19 @@
-import { Text, useSx, View, H1, P, Row, A } from 'dripsy'
-import {Flex} from '../../components/Chakra'
-import { Button } from 'react-native'
-import { TextLink } from 'solito/link'
-import { MotiLink } from 'solito/moti'
-import * as DocumentPicker from 'expo-document-picker'
+import { Anchor, Button, H1, Input, Text, Paragraph, Separator, Sheet, XStack, YStack } from '@my/ui'
+import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons'
+import React, { useState } from 'react'
+import {TextLink, useLink } from 'solito/link'
+import { Box, Flex } from 'app/components/Chakra'
+// import * as DocumentPicker from 'expo-document-picker'
 
 export function HomeScreen() {
-  const sx = useSx()
+  const linkProps = useLink({
+    href: '/user/nate',
+  })
+  
+  const linkToConnexion = useLink({
+    href: '/connexion',
+  })
+
 
   const _pickDocument = async () => {
     let result = await DocumentPicker.getDocumentAsync({});
@@ -14,75 +21,100 @@ export function HomeScreen() {
     console.log(result);
   }
 
-
   return (
-    <View
-      sx={{ flex: 1, justifyContent: 'center', alignItems: 'center', p: 16 }}
-    >
-      <Flex flexDirection="row" alignItems="center" backgroundColor="yellow" onClick={() => alert('Hello')}>
-      <H1 sx={{ fontWeight: '800' }}>Welcome to Solito.</H1>
-      <Button title='push this' onPress={_pickDocument} />
-      </Flex>
-      <View sx={{ maxWidth: 600 }}>
-        <P sx={{ textAlign: 'center' }}>
-          Here is a basic starter to show you how you can navigate from one
-          screen to another. This screen uses the same code on Next.js and React
-          Native.
-        </P>
-        <P sx={{ textAlign: 'center' }}>
-          Solito is made by{' '}
-          <A
-            href="https://twitter.com/fernandotherojo"
-            // @ts-expect-error react-native-web only types
-            hrefAttrs={{
-              target: '_blank',
-              rel: 'noreferrer',
-            }}
-            sx={{ color: 'blue' }}
-          >
-            Fernando Rojo
-          </A>
-          .
-        </P>
-      </View>
-      <View sx={{ height: 32 }} />
-      <Row>
-        <TextLink
-          href="/user/fernando"
-          textProps={{
-            style: sx({ fontSize: 16, fontWeight: 'bold', color: 'blue' }),
-          }}
-        >
-          Regular Link
-        </TextLink>
-        <View sx={{ width: 32 }} />
-        <MotiLink
-          href="/user/fernando"
-          animate={({ hovered, pressed }) => {
-            'worklet'
+    <YStack f={1} jc="center" ai="center" p="$4" space>
+      <YStack space="$4" maxWidth={600}>
+        <H1 bg={'red'} ta="center">Welcome to Wapp'easy.</H1>
+        <Paragraph ta="center">
+          Here's a basic starter to show navigating from one screen to another. This screen uses the
+          same code on Next.js and React Native.
+        </Paragraph>
 
-            return {
-              scale: pressed ? 0.95 : hovered ? 1.1 : 1,
-              rotateZ: pressed ? '0deg' : hovered ? '-3deg' : '0deg',
-            }
+        <Separator />
+        <Box 
+          flexDirection="column" 
+          $gtSm={{
+            backgroundColor: 'blue',
           }}
-          from={{
-            scale: 0,
-            rotateZ: '0deg',
+          $gtMd={{
+            backgroundColor: 'green',
           }}
-          transition={{
-            type: 'timing',
-            duration: 150,
-          }}
-        >
-          <Text
-            selectable={false}
-            sx={{ fontSize: 16, color: 'black', fontWeight: 'bold' }}
           >
-            Moti Link
-          </Text>
-        </MotiLink>
-      </Row>
-    </View>
+          <Paragraph>Coucou, c'est nous</Paragraph>
+          <Text
+            mt={2} 
+            fontWeight="semibold" 
+          >
+          Modern, Chic Penthouse with Mountain, City & Sea Views
+        </Text>
+        {/* <Button onPress={_pickDocument}>push this</Button> */}
+        </Box>
+        <Flex bg="red">
+        <Paragraph>Coucou, c'est nous</Paragraph>
+        </Flex>
+
+        <TextLink color='white' {...linkToConnexion}> Ahahah, pour le 15 janvier </TextLink>
+        <Button color='white' {...linkToConnexion}> Ahahah, pour le 15 janvier </Button>
+
+        <Paragraph ta="center">
+          Made by{' '}
+          <Anchor color="$color12" href="https://twitter.com/natebirdman" target="_blank">
+            @natebirdman
+          </Anchor>
+          ,{' '}
+          <Anchor
+            color="$color12"
+            href="https://github.com/tamagui/tamagui"
+            target="_blank"
+            rel="noreferrer"
+          >
+            give it a ⭐️
+          </Anchor>
+        </Paragraph>
+      </YStack>
+
+      <XStack>
+        <Button {...linkProps}>Link to user</Button>
+      </XStack>
+
+      <SheetDemo />
+    </YStack>
+  )
+}
+
+function SheetDemo() {
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState(0)
+  return (
+    <>
+      <Button
+        size="$6"
+        icon={open ? ChevronDown : ChevronUp}
+        circular
+        onPress={() => setOpen((x) => !x)}
+      />
+      <Sheet
+        modal
+        open={open}
+        onOpenChange={setOpen}
+        snapPoints={[80]}
+        position={position}
+        onPositionChange={setPosition}
+        dismissOnSnapToBottom
+      >
+        <Sheet.Overlay />
+        <Sheet.Frame ai="center" jc="center">
+          <Sheet.Handle />
+          <Button
+            size="$6"
+            circular
+            icon={ChevronDown}
+            onPress={() => {
+              setOpen(false)
+            }}
+          />
+        </Sheet.Frame>
+      </Sheet>
+    </>
   )
 }

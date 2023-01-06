@@ -1,10 +1,11 @@
-import { Dripsy } from './dripsy'
+import config from '../tamagui.config'
 import { NavigationProvider } from './navigation'
+import { TamaguiProvider, TamaguiProviderProps } from '@my/ui'
 
-export function Provider({ children }: { children: React.ReactNode }) {
+export function Provider({ children, ...rest }: Omit<TamaguiProviderProps, 'config'>) {
   return (
-    <NavigationProvider>
-      <Dripsy>{children}</Dripsy>
-    </NavigationProvider>
+    <TamaguiProvider config={config} disableInjectCSS defaultTheme="light" {...rest}>
+      <NavigationProvider>{children}</NavigationProvider>
+    </TamaguiProvider>
   )
 }

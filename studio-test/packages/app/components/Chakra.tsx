@@ -1,68 +1,35 @@
-import React from 'react'
-import { View, Text } from "dripsy"
+import { XStack, ZStack } from "tamagui"
 
+const mapProps = (props) => {
+  
+}
 
-const chakraToDripsy = (tagName: string, propsToDerive: {[prop:string]: string}) => {
+const responsiveProps = (props) => {
   /**
-   * 'Got multiple css properties, events... (flexDirection, onClick, onBlur, data-x)
-   * We return an array of css properties
-   * and an array of props to spread
-   * 
+   * On Chakra, responsive values are detailed on a property fontSize={{base: '10px', sm: '12px'}}
+   * In Tamagui, all properties are defined by a breakpoint sm={{fontSize: '12px'}}
    */
-  const sxStyles = {}
-  const restToSpread = {}
-
-  const possibleChakraProps = {
-    display: ['display'], 
-    flexDirection: ['flexDirection'],
-    alignItems: ['alignItems'],
-    justifyContent: ['justifyContent'],
-    spacing: ['gap'],
-    background: ['background'],
-    backgroundColor: ['backgroundColor']
-  }
-
-  for (const prop in propsToDerive) {
-    for (const styleProp in possibleChakraProps) {
-      possibleChakraProps[styleProp].forEach(element => {
-        if (element === prop) {
-          sxStyles[element] = propsToDerive[prop]
-        } else {
-          restToSpread[prop] = propsToDerive[prop]
-        }
-      })
-    }
-  }
-
-  return {sxStyles, restToSpread}
-
+  // console.log(props)
+  // const prepareForTamagui = props.reduce
 }
 
 export const Box = ({id, reload, children, ...props}: {
-    id?: string
-    reload?:boolean
-    props?: any
-    children?: any
-   }) => {
+  [prop: string] : any
+ }) => {
 
-    const {sxStyles, restToSpread} = chakraToDripsy('div', props)
-  
-    return (
-      <View 
-        nativeID={id} 
-        data-reload={reload} 
-        sx={sxStyles}
-        {...restToSpread}
-      >
-        {children}
-      </View>
-    )
-  }
+  const workOnResponsive = responsiveProps(props)
 
-  export const Flex = ({children, ...props}) => {
-    return (
-      <Box flexDirection="row" {...props}>
-        {children}
-      </Box>
-    )
-  }
+  return (
+    <XStack 
+      nativeID={id} 
+      data-reload={reload} 
+      {...props}
+    >
+      {children}
+    </XStack>
+  )
+}
+
+export const Flex = Box
+
+

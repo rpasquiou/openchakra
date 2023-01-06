@@ -1,19 +1,21 @@
-import { View, Text } from 'dripsy'
+import { Button, Paragraph, YStack } from '@my/ui'
+import { ChevronLeft } from '@tamagui/lucide-icons'
+import React from 'react'
 import { createParam } from 'solito'
-import { TextLink } from 'solito/link'
+import { useLink } from 'solito/link'
 
 const { useParam } = createParam<{ id: string }>()
 
 export function UserDetailScreen() {
   const [id] = useParam('id')
+  const linkProps = useLink({ href: '/' })
 
   return (
-    <View sx={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text
-        sx={{ textAlign: 'center', mb: 16, fontWeight: 'bold' }}
-      >{`User ID: ${id}`}</Text>
-
-      <TextLink href="/">👈 Go Home</TextLink>
-    </View>
+    <YStack f={1} jc="center" ai="center" space>
+      <Paragraph ta="center" fow="800">{`User ID: ${id}`}</Paragraph>
+      <Button {...linkProps} icon={ChevronLeft}>
+        Go Home
+      </Button>
+    </YStack>
   )
 }

@@ -1,36 +1,38 @@
-import 'raf/polyfill'
+import '@tamagui/core/reset.css'
+import '@tamagui/font-inter/css/400.css'
+import '@tamagui/font-inter/css/700.css'
 
-const fixReanimatedIssue = () => {
-  // FIXME remove this once this reanimated fix gets released
-  // https://github.com/software-mansion/react-native-reanimated/issues/3355
-  if (process.browser) {
-    // @ts-ignore
-    window._frameTimestamp = null
-  }
-}
-
-fixReanimatedIssue()
-
+import { NextThemeProvider, useRootTheme } from '@tamagui/next-theme'
 import { Provider } from 'app/provider'
 import Head from 'next/head'
-import React from 'react'
+import React, { useMemo } from 'react'
 import type { SolitoAppProps } from 'solito'
+import 'raf/polyfill'
 
 function MyApp({ Component, pageProps }: SolitoAppProps) {
   return (
     <>
       <Head>
-        <title>Solito Example App</title>
-        <meta
-          name="description"
-          content="Expo + Next.js with Solito. By Fernando Rojo."
-        />
+        <title>Tamagui Example App</title>
+        <meta name="description" content="Tamagui, Solito, Expo & Next.js" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Provider>
+      <ThemeProvider>
         <Component {...pageProps} />
-      </Provider>
+      </ThemeProvider>
     </>
+  )
+}
+
+function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useRootTheme()
+
+  return (
+    <NextThemeProvider onChangeTheme={setTheme}>
+      <Provider disableRootThemeClass defaultTheme={theme}>
+        {children}
+      </Provider>
+    </NextThemeProvider>
   )
 }
 

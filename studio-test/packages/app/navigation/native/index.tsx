@@ -1,10 +1,13 @@
+import React from 'react'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 
 import { HomeScreen } from '../../features/home/screen'
 import { UserDetailScreen } from '../../features/user/detail-screen'
+import {Connexion} from '../../features/connexion'
 
 const Stack = createNativeStackNavigator<{
   home: undefined
+  connexion: undefined
   'user-detail': {
     id: string
   }
@@ -25,6 +28,13 @@ export function NativeNavigation() {
         component={UserDetailScreen}
         options={{
           title: 'User',
+        }}
+      />
+      <Stack.Screen
+        name="connexion"
+        component={Connexion}
+        options={{
+          title: 'Connexion',
         }}
       />
     </Stack.Navigator>
