@@ -32,7 +32,7 @@ const Connexion = () => {
       
       <Flex
         id="comp-L9PSEM4I96BY"
-        backgroundSize="cover"
+        backgroundsize="cover"
         width="100%"
       >
         <Flex
@@ -55,7 +55,7 @@ const Connexion = () => {
             id="comp-L9Q1L2JVOZR97"
             color="#ffffff"
             fontSize={30}
-            fontFamily="tomarik, 'open sans'"
+            fontFamily="Tomarik"
             m="3%"
             >
             Le fumoir de George
@@ -63,7 +63,7 @@ const Connexion = () => {
           <Text
             id="comp-L9Q1J5DNWXL0U"
             color="#ffffff"
-            fontFamily="radikal, arial"
+            fontFamily="Radikal"
             fontSize={20}
             m="3%"
           >

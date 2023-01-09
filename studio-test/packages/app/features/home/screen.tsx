@@ -53,8 +53,8 @@ export function HomeScreen() {
         <Paragraph>Coucou, c'est nous</Paragraph>
         </Flex>
 
-        <TextLink color='white' {...linkToConnexion}> Ahahah, pour le 15 janvier </TextLink>
-        <Button color='white' {...linkToConnexion}> Ahahah, pour le 15 janvier </Button>
+        <TextLink {...linkToConnexion}><Text fontFamily="Radikal" color={'white'}>Hello World</Text></TextLink>
+        <Button color='white' {...linkToConnexion}>Pret le 15 janvier </Button>
 
         <Paragraph ta="center">
           Made by{' '}
