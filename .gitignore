@@ -206,3 +206,10 @@ env.json
 **/.next
 **/.env
 **/env.json
+
+
+# React Native
+.expo
+.yarn
+.tamagui
+**/packages/ui
