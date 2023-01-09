@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons'
 import React, { useState } from 'react'
 import {TextLink, useLink } from 'solito/link'
 import { Box, Flex } from 'app/components/Chakra'
-// import * as DocumentPicker from 'expo-document-picker'
+import * as DocumentPicker from 'expo-document-picker'
 
 export function HomeScreen() {
   const linkProps = useLink({
@@ -47,7 +47,7 @@ export function HomeScreen() {
           >
           Modern, Chic Penthouse with Mountain, City & Sea Views
         </Text>
-        {/* <Button onPress={_pickDocument}>push this</Button> */}
+        <Button onPress={_pickDocument}>push this</Button>
         </Box>
         <Flex bg="red">
         <Paragraph>Coucou, c'est nous</Paragraph>

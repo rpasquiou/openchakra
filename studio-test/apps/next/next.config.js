@@ -1,7 +1,37 @@
-/** @type {import('next').NextConfig} */
-const { withTamagui } = require('@tamagui/next-plugin')
+const { withExpo } = require('@expo/next-adapter')
+const withFonts = require('next-fonts')
 const withImages = require('next-images')
 const { join } = require('path')
+const { withTamagui } = require('@tamagui/next-plugin')
+const withPlugins = require('next-compose-plugins')
+const withTM = require('next-transpile-modules')([
+  'app',
+  'solito',
+  'react-native-web',
+  'expo-linking',
+  'expo-constants',
+  'expo-modules-core',
+])
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  images: {
+    disableStaticImages: true,
+  },
+  reactStrictMode: false,
+  webpack5: true,
+  images: {
+    disableStaticImages: true,
+  },
+  experimental: {
+    forceSwcTransforms: true, // set this to true to use reanimated + swc experimentally
+    scrollRestoration: true,
+    legacyBrowsers: false,
+  },
+}
 
 process.env.IGNORE_TS_CONFIG_PATHS = 'true'
 process.env.TAMAGUI_TARGET = 'web'
@@ -40,54 +70,33 @@ Remove this log in next.config.js.
 
 `)
 
-const plugins = [
-  withImages,
-  withTamagui({
-    config: './tamagui.config.ts',
-    components: ['tamagui', '@my/ui'],
-    importsWhitelist: ['constants.js', 'colors.js'],
-    logTimings: true,
-    disableExtraction,
-    // experiment - reduced bundle size react-native-web
-    useReactNativeWebLite: false,
-    shouldExtract: (path) => {
-      if (path.includes(join('packages', 'app'))) {
-        return true
-      }
-    },
-    excludeReactNativeWebExports: ['Switch', 'ProgressBar', 'Picker', 'CheckBox', 'Touchable'],
-  }),
-]
 
-module.exports = function () {
-  /** @type {import('next').NextConfig} */
-  let config = {
-    typescript: {
-      ignoreBuildErrors: true,
-    },
-    images: {
-      disableStaticImages: true,
-    },
-    transpilePackages: [
-      'solito',
-      'react-native-web',
-      'expo-linking',
-      'expo-constants',
-      'expo-modules-core',
+module.exports = withPlugins(
+  [
+    withTM,
+    withFonts,
+    withImages,
+    [
+      withExpo,
+      {
+        projectRoot: __dirname + '../../..',
+      },
     ],
-    experimental: {
-      // optimizeCss: true,
-      scrollRestoration: true,
-      legacyBrowsers: false,
-    },
-  }
-
-  for (const plugin of plugins) {
-    config = {
-      ...config,
-      ...plugin(config),
-    }
-  }
-
-  return config
-}
+    withTamagui({
+      config: './tamagui.config.ts',
+      components: ['tamagui', '@my/ui'],
+      importsWhitelist: ['constants.js', 'colors.js'],
+      logTimings: true,
+      disableExtraction,
+      // experiment - reduced bundle size react-native-web
+      useReactNativeWebLite: false,
+      shouldExtract: (path) => {
+        if (path.includes(join('packages', 'app'))) {
+          return true
+        }
+      },
+      excludeReactNativeWebExports: ['Switch', 'ProgressBar', 'CheckBox', 'Touchable'],
+    }),
+  ],
+  nextConfig
+)
