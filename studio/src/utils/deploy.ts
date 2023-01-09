@@ -17,7 +17,7 @@ const copyCode = (pageName: string, contents: Buffer) => {
 export const deploy = (state: ProjectState, models: any) => {
   const pages = Object.values(state.pages)
   return Promise.all(
-    pages.map(({ pageName, components }) => validate(components)),
+    pages.map(({ pageName, components }) => validate(components, models, Object.keys(state.pages))),
   )
     .then(res => {
       if (res.length>0) {

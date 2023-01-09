@@ -20,7 +20,7 @@ import '~custom-components/NumberFormat/NumberFormatInit'
 import '~custom-components/DataProvider/DataProviderInit'
 import Menu from '~components/sidebar/Menu'
 import MediasContainer from '~components/MediasContainer'
-import { getMediasLayout } from '../core/selectors/app'
+import { getMediasLayout, getShowWarnings } from '../core/selectors/app'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -28,6 +28,7 @@ const App = () => {
   useShortcuts()
 
   const mediasLayout = useSelector(getMediasLayout)
+  const showWarnings = useSelector(getShowWarnings)
 
   return (
     <>
@@ -63,7 +64,7 @@ const App = () => {
             overflowX="visible"
             borderLeft="1px solid #cad5de"
           >
-            {false && <Warnings />}
+            {showWarnings && <Warnings />}
           </Box>
         </Flex>
       </DndProvider>

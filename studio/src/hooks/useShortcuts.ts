@@ -14,6 +14,7 @@ const keyMap = {
   DUPLICATE: 'ctrl+d, command+d',
   KONAMI_CODE:
     'up up down down left right left right b a, up up down down left right left right B A',
+  WARNINGS: 'w',
 }
 
 const hasNoSpecialKeyPressed = (event: KeyboardEvent | undefined) =>
@@ -83,6 +84,13 @@ const useShortcuts = () => {
     dispatch.project.loadDemo('secretchakra')
   }
 
+  const toggleWarnings = () => {
+    if (event && hasNoSpecialKeyPressed(event)) {
+      event.preventDefault()
+      dispatch.app.toggleWarnings()
+    }
+  }
+
   useHotkeys(keyMap.DELETE_NODE, deleteNode, {}, [selected.id])
   useHotkeys(keyMap.TOGGLE_BUILDER_MODE, toggleBuilderMode)
   useHotkeys(keyMap.TOGGLE_CODE_PANEL, toggleCodePanel)
@@ -92,6 +100,7 @@ const useShortcuts = () => {
   useHotkeys(keyMap.PARENT, onSelectParent)
   useHotkeys(keyMap.DUPLICATE, onDuplicate)
   useHotkeys(keyMap.KONAMI_CODE, onKonamiCode)
+  useHotkeys(keyMap.WARNINGS, toggleWarnings)
 }
 
 export default useShortcuts

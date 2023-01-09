@@ -15,6 +15,7 @@ import {
   ModalBody,
   FormControl,
   FormLabel,
+  IconButton,
   Input,
   FormErrorMessage,
   FormHelperText,
@@ -25,6 +26,7 @@ import {
   List,
   ListItem,
 } from '@chakra-ui/react'
+import { SmallCloseIcon } from '@chakra-ui/icons'
 import { useSelector } from 'react-redux'
 import styled from '@emotion/styled'
 import { componentsList } from '~componentsList'
@@ -78,9 +80,13 @@ const Warnings = () => {
           bg="#5bbdc5"
           display="flex"
           justifyContent="space-between"
-          flexDir="column"
+          flexDir="row"
         >
           Warnings
+          <IconButton
+            icon={<SmallCloseIcon />}
+            onClick={() => dispatch.app.toggleWarnings()}
+          />
         </Box>
         <List>
           {warnings.map(w => <WarningItem warning={w} />)}

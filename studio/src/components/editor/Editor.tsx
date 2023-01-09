@@ -5,7 +5,7 @@ import SplitPane from 'react-split-pane'
 import axios from 'axios'
 
 import { getComponents } from '~core/selectors/components'
-import { getShowOverview, getShowCode, getDevice } from '~core/selectors/app'
+import { getShowOverview, getShowCode, getShowWarnings, getDevice } from '~core/selectors/app'
 import { useDropComponent } from '~hooks/useDropComponent'
 import CodePanel from '~components/CodePanel'
 import ComponentPreview from '~components/editor/ComponentPreview'
@@ -25,6 +25,7 @@ export const gridStyles = {
 
 const Editor: React.FC = () => {
   const showCode = useSelector(getShowCode)
+  const showWarnings = useSelector(getShowWarnings)
   const device = useSelector(getDevice)
   const warnings = useSelector(getWarnings)
   const showOverview = useSelector(getShowOverview)

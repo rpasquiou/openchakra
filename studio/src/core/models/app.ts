@@ -49,7 +49,7 @@ const app = createModel({
     currentSection: 'components',
     showLeftPanel: true,
     showRightPanel: true,
-    showWarnings: true,
+    showWarnings: false,
     pageLayout: true,
     showOverview: true,
     mediasLayout: false,
@@ -77,6 +77,12 @@ const app = createModel({
       return {
         ...state,
         showCode: !state.showCode,
+      }
+    },
+    toggleWarnings(state: AppState): AppState {
+      return {
+        ...state,
+        showWarnings: !state.showWarnings,
       }
     },
     toggleInputText(state: AppState): AppState {

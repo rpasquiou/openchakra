@@ -79,7 +79,7 @@ export const getComponentNames = (state: RootState) => {
   return Array.from(new Set(names))
 }
 
-export const getComponentWarnings = (component: IComponent) => (state: RootState):IWarning[] => {
+export const getComponentWarnings = (component: IComponent, models:any, pageNames:string[]) => (state: RootState):IWarning[] => {
   if (!component) {
     return []
   }
