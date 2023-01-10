@@ -3,10 +3,19 @@ import { ChevronLeft } from '@tamagui/lucide-icons'
 import React from 'react'
 import { createParam } from 'solito'
 import { useLink } from 'solito/link'
+import { useParams } from 'app/utils/useParams'
+
 
 const { useParam } = createParam<{ id: string }>()
 
 export function UserDetailScreen() {
+
+  const params = useParams()
+  console.log('routage ?', params)
+
+  // const navigation = useNavigation();
+  // console.log('useNavigaton', navigation)
+
   const [id] = useParam('id')
   const linkProps = useLink({ href: '/' })
 

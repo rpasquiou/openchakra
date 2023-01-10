@@ -1,29 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 // import Metadata from './dependencies/Metadata' /* TO THINK */
 // import axios from 'axios' /* NEW */
 import { YStack, Image, Text, Input, Button } from '@my/ui'/* NEW */
 import { Flex } from 'app/components/Chakra'
 import { ImageBackground } from 'react-native'
+import axios from 'axios'
+import { useRouter } from 'solito/router'
+import withDynamicButton from 'app/components/dependencies/hoc/withDynamicButton'
+
 // import { ChakraProvider } from '@chakra-ui/react' /* DEPRECATED */
 // import { Flex, Image, Text, Input, Button } from '@chakra-ui/react' /* DEPRECATED */
 
 // import Fonts from './dependencies/theme/Fonts'
 // import { useLocation } from 'react-router-dom'
 // import { useUserContext } from './dependencies/context/user'
+import { createParam } from 'solito'
 
-const Connexion = () => {
+const { useParam } = createParam<{ user: string }>()
+
+const DynamicButton = withDynamicButton(Button)
+
+const Connexion = ({...props}) => {
+
+  // const navigation = useNavigation();
+
+  const L9Q1LOD21AW77 = useRef(null)
+  const L9Q1N7TC32JK4 = useRef(null)
+  
   // const query = new URLSearchParams(useLocation().search)
-  // const id = query.get('undefined') || query.get('id')
-  // const { user } = useUserContext()
-  // const get = axios.get
+  const router = useRouter()
+  console.log('solitoRouter', router)
+  const [user] = useParam('user')
+  console.log('useParam', user)
+  const id = user 
 
+  // const id = query.get('user') || query.get('id')
+  // const { user } = useUserContext()
+  const get = axios.get
+
+  const [root, setRoot] = useState([])
   const [refresh, setRefresh] = useState(false)
 
   const reload = () => {
     setRefresh(!refresh)
   }
 
-  // useEffect(() => {}, [get, refresh])
+  useEffect(() => {
+    get(`https://localhost:4002/myAlfred/api/studio/user/${id ? `${id}/` : ``}`)
+      .then(res => setRoot(res.data))
+      .catch(err => console.log(err?.response?.data || err))
+  }, [get, id, refresh])
 
   return (
     <YStack f={1} jc="center" ai="center" p="$4" space>
@@ -77,7 +103,8 @@ const Connexion = () => {
             alignItems="center"
           >
             <Input
-              id="comp-L9Q1LOD21AW77"
+              id="L9Q1LOD21AW77"
+              ref={L9Q1LOD21AW77}
               borderRadius={30}
               color="#414141"
               backgroundColor="#ffffff"
@@ -86,10 +113,12 @@ const Connexion = () => {
               opacity={0.88}
               pl="4%"
               pr="4%"
+              value='simon.hoayek@fdg.com'
               
             />
             <Input
               id="comp-L9Q1N7TC32JK4"
+              ref={L9Q1N7TC32JK4}
               borderRadius={30}
               color="#414141"
               backgroundColor="#ffffff"
@@ -109,24 +138,34 @@ const Connexion = () => {
           >
             Mot de passe oublié ?{' '}
           </Text>
-          <Button
+          <DynamicButton
             id="comp-L9Q1NWLMNF9AC"
-            m="3%"
+            reload={reload}
+            context={root?.[0]?._id}
+            backend="/"
+            dataModel="user"
+            variant="subtle"
+            m='3%'
             borderRadius={30}
             color="#ffffff"
             backgroundColor="#DAB679"
-            p="5%"
-            width="50%"
+            p='3%'
+            width='70%'
+            border="2px solid white"
             page="page-L9Q1U7EQH4UE3"
-            action="openPage"
-            actionProps='{"page":"feed","open":"false"}'
-            
+            action="login"
+            actionProps='{"page":"feed","open":"false","email":"comp-L9Q1LOD21AW77","password":"comp-L9Q1N7TC32JK4"}'
+            dataSourceId={'root'}
+            key={root[0]?._id}
+            dataSource={root}
+            nextAction="openPage"
+            nextActionProps='{"page":"mes-reservations","open":"false"}'
             pageName={'feed'}
             onClick={() => (window.location = '/feed')}
-          >
+            >
             Se connecter
-          </Button>
-          <Button
+            </DynamicButton>
+            <DynamicButton
             id="comp-LASA2MY3OQRKZ"
             m="3%"
             borderRadius={30}
@@ -135,13 +174,21 @@ const Connexion = () => {
             p="5%"
             width="50%"
             page="page-L9Q1U7EQH4UE3"
-            action="openPage"
-            actionProps='{"page":"dashboard","open":"false"}'
+            action="login"
+            actionProps='{"page":"dashboard","open":"false","email":"comp-L9Q1LOD21AW77","password":"comp-L9Q1N7TC32JK4"}'
+            colorScheme="blackAlpha"
+            dataSourceId={'root'}
+            key={root[0]?._id}
+            dataSource={root}
+            nextAction="openPage"
+            nextActionProps='{"page":"dashboard","open":"false"}'
+            pl='4%'
+            pr='4%'
             pageName={'dashboard'}
             onClick={() => (window.location = '/dashboard')}
-          >
+            >
             Connexion gestionnaire
-          </Button>
+            </DynamicButton>
         </Flex>
       </Flex>
     </YStack>
