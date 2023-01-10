@@ -17,13 +17,9 @@ passport.use(new CookieStrategy(
   },
 ))
 
-const sendCookie = (user, res) => {
+const getToken = (user, res) => {
   const token=jwt.sign({id: user.id}, 'secret')
-  return res.cookie('token', token, {
-    httpOnly: false,
-    secure: true,
-    sameSite: true,
-  })
+  return token
 }
 
-module.exports={sendCookie}
+module.exports={getToken}

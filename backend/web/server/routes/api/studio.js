@@ -1,15 +1,18 @@
-const User = require('../../models/User');
-const { getDataModel } = require('../../../config/config');
-require(`../../utils/studio/${getDataModel()}/functions`);
-const path = require("path")
-const {promises: fs} = require("fs")
-const child_process = require("child_process")
+const child_process = require('child_process')
+const fs=require('fs').promises
+const path=require('path')
+const express = require('express')
+const mongoose=require('mongoose')
+const passport = require('passport')
 const url = require("url")
-const lodash = require("lodash")
 const bcrypt = require("bcryptjs")
-const express = require("express")
-const mongoose = require("mongoose")
-const passport = require("passport")
+
+const {getToken} = require('../../config/passport')
+const { getDataModel } = require('../../../config/config');
+const User = require('../../models/User');
+require(`../../utils/studio/${getDataModel()}/functions`);
+
+
 const {
   getProductionRoot,
   getProductionPort
@@ -19,7 +22,6 @@ const {
   ROLES,
   RES_TO_COME
 } = require(`../../../utils/${getDataModel()}/consts`);
-const { sendCookie } = require("../../config/passport");
 const {
   HTTP_CODES,
   NotFoundError,
@@ -180,17 +182,27 @@ router.post("/action", passport.authenticate("cookie", { session: false }), (req
 router.post("/login", (req, res) => {
   console.log(`Trying to log`);
   const { email, password } = req.body;
-
-  return login(email, password)
+ 
+  return Promise.resolve(login(email, password))
     .then(user => {
-      return sendCookie(user, res).json(user);
+      Promise.resolve(getToken(user))
+        .then(token => {
+          res.header('Access-Control-Allow-Credentials', true)
+          res.header('Access-Control-Allow-Origin', req.headers.origin)
+          res.header('access-control-expose-headers', '*')
+          const cookieParams = {
+            httpOnly: true,
+            secure: true,
+          }
+          res.cookie('token', token, cookieParams)
+          res.send(token)
+        })
+        .catch(err => console.log(err))
     })
     .catch(err => {
-      console.log(err);
-      return res
-        .status(err.status || HTTP_CODES.SYSTEM_ERROR)
-        .json(err.message || err);
-    });
+      console.log(err)
+      return res.status(err.status || HTTP_CODES.SYSTEM_ERROR).json(err.message || err)
+    })
 });
 
 // router.post('/scormupdate', passport.authenticate('cookie', {session: false}), (req, res) => {

@@ -6,7 +6,6 @@ const next = require('next')
 const bodyParser = require('body-parser')
 const passport = require('passport')
 const glob = require('glob')
-const cors = require('cors')
 const {
   RANDOM_ID,
   checkConfig,
@@ -109,7 +108,17 @@ checkConfig()
       return next()
     })
 
-    app.use(cors())
+    app.use((req, res, next) => {
+
+      if (['OPTIONS', 'GET', 'POST', 'PUT'].includes(req.method)) {
+        res.setHeader('Access-Control-Allow-Credentials', true)
+        req?.headers?.origin && res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
+        res.setHeader('Access-Control-Allow-Headers', 'Accept, Content-Type')
+        res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+      }
+
+      next()
+    })
 
     // Check hostname is valid
     app.use('/testping', (req, res) => res.json(RANDOM_ID))
