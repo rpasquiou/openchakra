@@ -1,7 +1,7 @@
 import React, { memo, useState, useEffect } from 'react'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import { Box, Button, useClipboard } from '@chakra-ui/react'
-import { generateCode } from '~utils/code'
+import { generateCode } from '~utils/code_native'
 import theme from 'prism-react-renderer/themes/nightOwl'
 import { useSelector } from 'react-redux'
 import {
