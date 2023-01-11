@@ -15,6 +15,7 @@ const withDynamicButton = Component => {
       context,
       dataModel,
       backend,
+      refs,
       reload,
     } = props
 
@@ -37,6 +38,7 @@ const withDynamicButton = Component => {
           context,
           dataModel,
           query,
+          refs,
           model: props.dataModel,
         })
           .then(res => {
@@ -51,6 +53,7 @@ const withDynamicButton = Component => {
               context,
               dataModel,
               query,
+              refs,
               model: props.dataModel,
               ...res,
             }
