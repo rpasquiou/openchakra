@@ -5,7 +5,9 @@ import { getComponent, getComponentDataValue, clearComponentValue } from './valu
 
 const API_ROOT = 'https://localhost:4002/myAlfred/api/studio'
 export const ACTIONS = {
-  login: ({ props, level }) => {
+  login: ({ props, level, refs }) => {
+    const completeRef = 
+    console.log('valeurRefMail', refs[`${props.email}${level}`].current.value)
     const email = getComponentDataValue(props.email, level)
     const password = getComponentDataValue(props.password, level)
     let url = `${API_ROOT}/login`

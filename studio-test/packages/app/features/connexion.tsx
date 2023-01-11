@@ -5,7 +5,6 @@ import { YStack, Image, Text, Input, Button } from '@my/ui'/* NEW */
 import { Flex } from 'app/components/Chakra'
 import { ImageBackground } from 'react-native'
 import axios from 'axios'
-import { useRouter } from 'solito/router'
 import withDynamicButton from 'app/components/dependencies/hoc/withDynamicButton'
 
 // import { ChakraProvider } from '@chakra-ui/react' /* DEPRECATED */
@@ -20,16 +19,13 @@ const { useParam } = createParam<{ user: string }>()
 
 const DynamicButton = withDynamicButton(Button)
 
-const Connexion = ({...props}) => {
-
-  // const navigation = useNavigation();
+const Connexion = () => {
 
   const L9Q1LOD21AW77 = useRef(null)
   const L9Q1N7TC32JK4 = useRef(null)
   
-  // const query = new URLSearchParams(useLocation().search)
-  const router = useRouter()
-  console.log('solitoRouter', router)
+  // const query = new URLSearchParams(useLocation().search) /* DEPRECATED */
+  
   const [user] = useParam('user')
   console.log('useParam', user)
   const id = user 
@@ -113,10 +109,10 @@ const Connexion = ({...props}) => {
               opacity={0.88}
               pl="4%"
               pr="4%"
-              value='simon.hoayek@fdg.com'
-              
+              // value='simon.hoayek@fdg.com'
             />
             <Input
+              secureTextEntry
               id="comp-L9Q1N7TC32JK4"
               ref={L9Q1N7TC32JK4}
               borderRadius={30}
@@ -145,6 +141,7 @@ const Connexion = ({...props}) => {
             backend="/"
             dataModel="user"
             variant="subtle"
+            refs={{L9Q1LOD21AW77, L9Q1N7TC32JK4}}
             m='3%'
             borderRadius={30}
             color="#ffffff"
@@ -154,7 +151,7 @@ const Connexion = ({...props}) => {
             border="2px solid white"
             page="page-L9Q1U7EQH4UE3"
             action="login"
-            actionProps='{"page":"feed","open":"false","email":"comp-L9Q1LOD21AW77","password":"comp-L9Q1N7TC32JK4"}'
+            actionProps='{"page":"feed","open":"false","email":"L9Q1LOD21AW77","password":"L9Q1N7TC32JK4"}'
             dataSourceId={'root'}
             key={root[0]?._id}
             dataSource={root}
