@@ -241,13 +241,13 @@ const buildBlock = ({
           }
 
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
-            const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
+          /*   const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
               propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
             }
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
-            }
+            } */
           }
           if (tp?.type) {
             propsContent += ` dataModel='${tp.type}' `
@@ -286,8 +286,9 @@ const buildBlock = ({
           if (propName === 'type') {
             if (propsValue === 'password') {
               propsContent += ' secureTextEntry'
+              return
             }
-            return
+            
           }
 
           if (propName === 'actionProps' || propName === 'nextActionProps') {
@@ -295,6 +296,9 @@ const buildBlock = ({
               ...propsValue,
               page: propsValue.page
                 ? getPageUrl(propsValue.page, pages)
+                : undefined,
+              redirect: propsValue.redirect
+                ? getPageUrl(propsValue.redirect, pages)
                 : undefined,
             }
             propsContent += ` ${propName}='${JSON.stringify(valuesCopy)}'`
