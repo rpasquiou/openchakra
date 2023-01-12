@@ -1,8 +1,10 @@
-import { Anchor, Button, H1, Input, Text, Paragraph, Separator, Sheet, XStack, YStack } from '@my/ui'
-import { ChevronDown, ChevronUp } from '@tamagui/lucide-icons'
-import React, { useState } from 'react'
-import {TextLink, useLink } from 'solito/link'
-import { Box, Flex } from 'app/components/Chakra'
+
+import {Anchor, Button, ScrollView, H1, Input, Flex, Box, Text, Paragraph, Separator, Sheet, XStack, YStack} from '@my/ui'
+import {ChevronDown, ChevronUp} from '@tamagui/lucide-icons'
+import {View} from 'react-native'
+import React, {useState} from 'react'
+import {TextLink, useLink} from 'solito/link'
+
 import * as DocumentPicker from 'expo-document-picker'
 
 export function HomeScreen() {
@@ -13,72 +15,78 @@ export function HomeScreen() {
   const linkToConnexion = useLink({
     href: '/connexion',
   })
+  const linkToTestComp = useLink({
+    href: '/testcomponents',
+  })
 
 
-  const _pickDocument = async () => {
-    let result = await DocumentPicker.getDocumentAsync({});
-    alert(result.uri);
-    console.log(result);
+  const _pickDocument = async() => {
+    let result = await DocumentPicker.getDocumentAsync({})
+    alert(result.uri)
+    console.log(result)
   }
 
   return (
-    <YStack f={1} jc="center" ai="center" p="$4" space>
-      <YStack space="$4" maxWidth={600}>
-        <H1 bg={'red'} ta="center">Welcome to Wapp'easy.</H1>
-        <Paragraph ta="center">
+    <View style={{flex: 1, height: '100%'}}>
+      <YStack f={1} jc="center" ai="center" p="$4" space>
+        <YStack space="$4" maxWidth={600}>
+          <H1 bg={'red'} ta="center">Welcome to Wapp'easy.</H1>
+          <Paragraph ta="center">
           Here's a basic starter to show navigating from one screen to another. This screen uses the
           same code on Next.js and React Native.
-        </Paragraph>
+          </Paragraph>
 
-        <Separator />
-        <Box 
-          flexDirection="column" 
-          $gtSm={{
-            backgroundColor: 'blue',
-          }}
-          $gtMd={{
-            backgroundColor: 'green',
-          }}
+          <Separator />
+          <Box
+            flexDirection="column"
+            $gtSm={{
+              backgroundColor: 'blue',
+            }}
+            $gtMd={{
+              backgroundColor: 'green',
+            }}
           >
-          <Paragraph>Coucou, c'est nous</Paragraph>
-          <Text
-            mt={2} 
-            fontWeight="semibold" 
-          >
+            <Paragraph>Coucou, c'est nous</Paragraph>
+            <Text
+              mt={2}
+              fontWeight="semibold"
+            >
           Modern, Chic Penthouse with Mountain, City & Sea Views
-        </Text>
-        <Button onPress={_pickDocument}>push this</Button>
-        </Box>
-        <Flex bg="red">
-        <Paragraph>Coucou, c'est nous</Paragraph>
-        </Flex>
+            </Text>
+            <Button onPress={_pickDocument}>push this</Button>
+          </Box>
+          <Flex bg="red">
+            <Paragraph>Coucou, c'est nous</Paragraph>
+          </Flex>
 
-        <TextLink {...linkToConnexion}><Text fontFamily="Radikal" color={'white'}>Hello World</Text></TextLink>
-        <Button color='white' {...linkToConnexion}>Pret le 15 janvier </Button>
+          <TextLink {...linkToConnexion}><Text fontFamily="Radikal" color={'white'}>Hello World</Text></TextLink>
+          <TextLink {...linkToTestComp}><Text fontFamily="Radikal">TEST ME IF YOU CAN</Text></TextLink>
+          <Button color='white' {...linkToConnexion}>Pret le 15 janvier </Button>
 
-        <Paragraph ta="center">
+          <Paragraph ta="center">
           Made by{' '}
-          <Anchor color="$color12" href="https://twitter.com/natebirdman" target="_blank">
+            <Anchor color="$color12" href="https://twitter.com/natebirdman" target="_blank">
             @natebirdman
-          </Anchor>
+            </Anchor>
           ,{' '}
-          <Anchor
-            color="$color12"
-            href="https://github.com/tamagui/tamagui"
-            target="_blank"
-            rel="noreferrer"
-          >
+            <Anchor
+              color="$color12"
+              href="https://github.com/tamagui/tamagui"
+              target="_blank"
+              rel="noreferrer"
+            >
             give it a ⭐️
-          </Anchor>
-        </Paragraph>
+            </Anchor>
+          </Paragraph>
+        </YStack>
+
+        <XStack>
+          <Button {...linkProps}>Link to user</Button>
+        </XStack>
+
+        <SheetDemo />
       </YStack>
-
-      <XStack>
-        <Button {...linkProps}>Link to user</Button>
-      </XStack>
-
-      <SheetDemo />
-    </YStack>
+    </View>
   )
 }
 
@@ -91,7 +99,7 @@ function SheetDemo() {
         size="$6"
         icon={open ? ChevronDown : ChevronUp}
         circular
-        onPress={() => setOpen((x) => !x)}
+        onPress={() => setOpen(x => !x)}
       />
       <Sheet
         modal
