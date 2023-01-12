@@ -1,10 +1,10 @@
-import { XStack, ZStack } from "tamagui"
+import {XStack, Input, Button} from 'tamagui'
 
-const mapProps = (props) => {
+const mapProps = props => {
   
 }
 
-const responsiveProps = (props) => {
+const responsiveProps = props => {
   /**
    * On Chakra, responsive values are detailed on a property fontSize={{base: '10px', sm: '12px'}}
    * In Tamagui, all properties are defined by a breakpoint sm={{fontSize: '12px'}}
@@ -20,9 +20,9 @@ export const Box = ({id, reload, children, ...props}: {
   const workOnResponsive = responsiveProps(props)
 
   return (
-    <XStack 
-      nativeID={id} 
-      data-reload={reload} 
+    <XStack
+      nativeID={id}
+      data-reload={reload}
       {...props}
     >
       {children}
@@ -33,3 +33,23 @@ export const Box = ({id, reload, children, ...props}: {
 export const Flex = Box
 
 
+export const ChakraInput = ({focusBorderColor, ...props}) => {
+  return (
+    <Input
+      {...props}
+      focusStyle={focusBorderColor && {
+        borderColor: focusBorderColor,
+      }}
+    />
+  )
+}
+
+
+export const IconButton = ({icon, ...props}) => {
+  return (
+    <Button
+      {...props}
+      icon={icon}
+    />
+  )
+}
