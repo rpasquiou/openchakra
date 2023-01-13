@@ -1,9 +1,10 @@
+import React, {useState} from 'react'
 import {
   Anchor,
   Button,
   ScrollView,
   H1,
-  ChakraInput as Input,
+  WappizyInput as Input,
   Flex,
   IconButton,
   Box,
@@ -16,18 +17,17 @@ import {
   Label} from '@my/ui'
 import {ChevronDown, ChevronUp} from '@tamagui/lucide-icons'
 import {View} from 'react-native'
-import React, {useState} from 'react'
 import {TextLink, useLink} from 'solito/link'
 import {Plus} from '@tamagui/lucide-icons'
 
 
-import {
+/* import {
   AddIcon,
   InfoOutlineIcon,
   ArrowBackIcon,
   EditIcon,
   ChevronDownIcon,
-} from '@chakra-ui/icons'
+} from '@chakra-ui/icons' */
 
 const Testcomponents = () => {
 
@@ -46,9 +46,9 @@ const Testcomponents = () => {
         <Input
           id="comp-LCRUV5X4RD4W3"
           reload={reload}
+          type="number"
           placeholder="input number"
-          type="email"
-        />
+          />
         <Input
           id="comp-LCRUV76Z9J1G6"
           reload={reload}
@@ -65,6 +65,7 @@ const Testcomponents = () => {
           id="comp-LCRUVA960LDA9"
           reload={reload}
           type="datetime-local"
+          placeholder="datetime-local"
         />
         <Input
           id="comp-LCRUXT2KODFM0"
@@ -75,7 +76,7 @@ const Testcomponents = () => {
         <Input
           id="comp-LCRVX6E6YRE8K"
           reload={reload}
-          secureTextEntry
+          type="password"
           placeholder="input password"
         />
         <Input
@@ -115,6 +116,7 @@ const Testcomponents = () => {
           reload={reload}
           backgroundColor="pink.500"
           width={'20%'}
+          margin={5}
         >
           <Text
             id="comp-LCRUYLRVRYRUW"

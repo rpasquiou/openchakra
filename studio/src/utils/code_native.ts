@@ -284,10 +284,18 @@ const buildBlock = ({
           
           /* Handle input types */
           if (propName === 'type') {
-            if (propsValue === 'password') {
-              propsContent += ' secureTextEntry'
-              return
-            }
+            // if (propsValue === 'password') {
+            //   propsContent += ' secureTextEntry'
+            //   return
+            // }
+            
+            // if (propsValue === 'number') {
+            //   propsContent += " keyboardType='numeric'"
+            // }
+            
+            // if (propsValue === 'tel') {
+            //   propsContent += " keyboardType='phone-pad'"
+            // }
             
           }
 
