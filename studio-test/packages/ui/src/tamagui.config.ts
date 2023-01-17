@@ -1,17 +1,27 @@
-import { createTamagui } from 'tamagui'
+import { createTamagui, createTokens } from 'tamagui'
 import { createInterFont } from '@tamagui/font-inter'
 import { shorthands } from '@tamagui/shorthands'
-import { themes, size, tokens } from '@tamagui/theme-base'
+import { themes, size, tokens, color, colorTokens } from '@tamagui/theme-base'
 import { createMedia } from '@tamagui/react-native-media-driver'
 import { animations } from './animations'
+import {chakracolors} from 'app/assets/colors/chakracolors'
 
 
-const ownSizes = {
-  size, 
-  lg: '48',
-  xl: '64',
 
-}
+const owntokens = createTokens({
+  ...tokens,
+  color: {
+    ...chakracolors,
+    pinkLight: '#f17efc',
+  },
+  size: {
+    ...size,
+    lg: '48',
+    xl: '64',
+  }
+})
+
+
 
 const headingFont = createInterFont({
   size: {
@@ -67,8 +77,7 @@ export const config = createTamagui({
     body: bodyFont,
   },
   themes,
-  size: ownSizes,
-  tokens,
+  tokens: owntokens,
   media: createMedia({
     xs: { maxWidth: 660 },
     sm: { maxWidth: 800 },
