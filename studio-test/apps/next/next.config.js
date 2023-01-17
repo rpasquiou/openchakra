@@ -27,7 +27,7 @@ const nextConfig = {
     disableStaticImages: true,
   },
   experimental: {
-    forceSwcTransforms: true, // set this to true to use reanimated + swc experimentally
+    // forceSwcTransforms: true, // set this to true to use reanimated + swc experimentally
     scrollRestoration: true,
     legacyBrowsers: false,
   },
@@ -36,6 +36,8 @@ const nextConfig = {
 process.env.IGNORE_TS_CONFIG_PATHS = 'true'
 process.env.TAMAGUI_TARGET = 'web'
 process.env.TAMAGUI_DISABLE_WARN_DYNAMIC_LOAD = '1'
+// 
+// TAMAGUI_ENABLE_DYNAMIC_LOAD=1 
 
 const boolVals = {
   true: true,

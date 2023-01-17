@@ -1,8 +1,10 @@
-import {useState} from 'react'
-import {XStack, Input, Button, Text} from 'tamagui'
+import {PropsWithChildren, useState} from 'react'
+import { styled } from '@tamagui/core'
+import {Stack, XStack, Input, Button, Text, InputProps, useTheme} from 'tamagui'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker';
+// import DateTimePicker from '@react-native-community/datetimepicker';
+
 
 
 const mapProps = props => {
@@ -18,16 +20,19 @@ const responsiveProps = props => {
   // const prepareForTamagui = props.reduce
 }
 
-export const Box = ({id, reload, children, ...props}: {
+export const Box = ({id, backgroundColor, reload, children, ...props}: {
   [prop: string] : any
  }) => {
 
+  const theme = useTheme()
   const workOnResponsive = responsiveProps(props)
+  const bgColor = theme[backgroundColor] || backgroundColor
 
   return (
     <XStack
       nativeID={id}
       data-reload={reload}
+      backgroundColor={bgColor}
       {...props}
     >
       {children}
@@ -37,108 +42,61 @@ export const Box = ({id, reload, children, ...props}: {
 
 export const Flex = Box
 
-
-const InputDateTime = () => {
-
-  const [date, setDate] = useState(new Date(1598051730000));
-  const [mode, setMode] = useState('date');
-  const [show, setShow] = useState(false);
-
-  const onChange = (event, selectedDate) => {
-
-    console.log(event, selectedDate)
-
-    const currentDate = selectedDate;
-    setShow(false);
-    setDate(currentDate);
-  };
-
-  const showMode = (currentMode) => {
-    if (Platform.OS === 'android') {
-      setShow(false);
-      // for iOS, add a button that closes the picker
-    }
-    setMode(currentMode);
-  };
-
-  const showDatepicker = () => {
-    showMode('date');
-    setShow(true)
-  };
-  
-  const showTimepicker = () => {
-    showMode('time');
-    setShow(true)
-  };
-
-  
-
-  return (
-    <>
-    <Button onPress={showDatepicker} >Show date picker!</Button>
-    <Button onPress={showTimepicker} >Show time picker!</Button>
-    <Text>selected: {date.toLocaleString()}</Text>
-      {show && Platform.OS !== 'web' && (
-    <DateTimePicker 
-      value={date}
-      mode={mode}
-      is24Hour={true}
-      onChange={onChange}
-    />)}
-      {show && Platform.OS === 'web' && (
-    <input 
-      type={mode}
-      value={date.toLocaleString()}
-      mode={mode}
-      is24Hour={true}
-      onChange={onChange}
-    />)}
-    </>
-  )
+interface extendedinput extends InputProps{
+  inputMode?: string
 }
 
 
-export const WappizyInput = ({type = 'text', focusBorderColor, ...props}) => {
-
+export const WappizyInput = (
+  {
+    type, 
+    focusBorderColor, 
+    ...props
+  }: 
+  {
+    id?: string
+    placeholder?: string
+    type?: string, 
+    focusBorderColor?: string
+  }) => {  //  :InputProps or extendedinput doesn't work 
+    
+  type keyboardTypes = 'email-address' | 'numeric' | 'phone-pad' | 'default'; 
   
-  const inputType = (type) => {
+  const inputType = (type): keyboardTypes => {
     if (type) {
       switch (type) {
-        case 'password':
-          return {'secureTextEntry': true}
+
         case 'email':
-          return {keyboardType: 'email-address'}
+          return 'email-address'
         case 'number':
-          return {keyboardType: 'numeric'}
+          return 'numeric'
         case 'tel':
-          return {keyboardType: 'phone-pad'}
+          return 'phone-pad'
         default:
-        break;
-      }            
-    }
-    return null
+          break
+        }            
+      }
+      return 'default'
   }
 
-  if (type === 'date') {
-    return <InputDateTime />
-  }
+  // if (type === 'date') {
+  //   return <InputDateTime />
+  // }
 
   const keyboardType = inputType(type)
+  const isPassword = type === 'password'
 
-  return (
-    Platform.OS !== 'web' 
-    ? <Input
-      {...{...props, ...keyboardType}}
-      inputMode={type}
-      focusStyle={focusBorderColor && {
-        borderColor: focusBorderColor,
-      }}
-      
-      /> 
-      : <input 
-      type={type} 
-      {...{...props, ...inputType}}
-      />
+  return (<Input
+    // inputMode={type || 'text'} // Available in RN 0.71 
+    keyboardType={keyboardType} 
+    {...isPassword && {secureTextEntry: true}}
+    {...focusBorderColor && {focusStyle: {
+      borderColor: focusBorderColor
+    }}}
+    {
+      ...props
+    }  
+    /> 
   )
 }
 
