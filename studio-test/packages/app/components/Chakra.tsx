@@ -1,6 +1,6 @@
 import {PropsWithChildren, useState, useEffect} from 'react'
 import { styled } from '@tamagui/core'
-import {Stack, XStack, Input, Button, Text, InputProps, useTheme} from 'tamagui'
+import {Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
 import {ImageBackground} from 'react-native'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
@@ -153,6 +153,15 @@ const InputDateTime = () => {
   )
 } */
 
+
+export const WappizySwitch = ({...props}) => {
+
+  return (
+  <Switch {...props}>
+    <Switch.Thumb animation="bouncy" />
+  </Switch>
+  )
+}
 
 
 export const WappizyInput = (
