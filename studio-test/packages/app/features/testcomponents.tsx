@@ -10,15 +10,18 @@ import {
   IconButton,
   WappizyCheckbox as Checkbox,
   Box,
+  Select, 
   Text,
   Paragraph,
   Separator,
+  LinearGradient,
+  Adapt,
   Sheet,
   XStack,
   YStack,
   Label
 } from '@my/ui'
-import {ChevronDown, ChevronUp, Plus} from '@tamagui/lucide-icons'
+import {Check, ChevronDown, ChevronUp, Plus, Edit} from '@tamagui/lucide-icons'
 import Date from 'app/components/dependencies/custom-components/Date'
 import {View} from 'react-native'
 import {TextLink, Link, useLink} from 'solito/link'
@@ -35,6 +38,8 @@ import {TextLink, Link, useLink} from 'solito/link'
 const Testcomponents = () => {
 
   const reload = false
+
+  const selectItems = ['Pommes', 'poires', 'scoubidous']
 
   return (
     // <View style={{flex: 1}}>
@@ -405,6 +410,117 @@ const Testcomponents = () => {
             Ceci est un text dans un link (lui meme dans une flex)
           </Text>
         </Link>
+      </Flex>
+      <Flex
+        id="comp-LCRVZ0UA3DENK"
+        data-reload={reload}
+      >
+        {/* <Avatar
+          id="comp-LCRVZ8BAFIGHL"
+          data-reload={reload}
+        /> */}
+        <Text
+          id="comp-LCRVXZP9H1QQ2"
+          data-reload={reload}
+        >
+          Ceci est un avatar
+        </Text>
+        {/* <UploadFile
+          id="comp-LCRVZN7EV17MP"
+          data-reload={reload}
+        > */}
+          <IconButton
+            id="comp-LCRVZN7EYPVQI"
+            data-reload={reload}
+            aria-label="icon"
+            icon={<Edit />}
+            // size="md"
+          />
+        {/* </UploadFile> */}
+        <Text
+          id="comp-LCRVZPHB6V7DY"
+          data-reload={reload}
+        >
+          Ceci est un uploadFile
+        </Text>
+      </Flex>
+      <Flex
+        id="comp-LCRW05J3RX8IZ"
+        data-reload={reload}
+      >
+        <Text
+          id="comp-LCRW05J3GRFM8"
+          data-reload={reload}
+        >
+          Ceci est un select
+        </Text>
+        <Select
+          id="comp-LCRW0HU6M1BQ1"
+          data-reload={reload}
+          // icon={<ChevronDownIcon />}
+          // variant="outline"
+          // size="md"
+          defaultValue="Pommes"
+        >
+          <Select.Trigger>
+            <Select.Value placeholder="Search..." />
+          </Select.Trigger>
+          <Adapt when="sm" platform="touch">
+            <Sheet modal dismissOnSnapToBottom>
+              <Sheet.Frame>
+                <Sheet.ScrollView>
+                  <Adapt.Contents />
+                </Sheet.ScrollView>
+              </Sheet.Frame>
+              <Sheet.Overlay />
+            </Sheet>
+          </Adapt>
+
+          <Select.Content zIndex={200_000}>
+            <Select.ScrollUpButton ai="center" jc="center" pos="relative" w="100%" h="$3">
+              <YStack zi={10}>
+                <ChevronUp size={20} />
+              </YStack>
+              <LinearGradient
+                start={[0, 0]}
+                end={[0, 1]}
+                fullscreen
+                colors={['$background', '$backgroundTransparent']}
+                br="$4"
+              />
+            </Select.ScrollUpButton>
+
+            <Select.Viewport minWidth={200}>
+              <Select.Group>
+                <Select.Label>Fruits</Select.Label>
+                {selectItems.map((item, i) => {
+                  return (
+                    <Select.Item index={i} key={item} value={item.toLowerCase()}>
+                      <Select.ItemText>{item}</Select.ItemText>
+                      <Select.ItemIndicator ml="auto">
+                        <Check size={16} />
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  )
+                })}
+              </Select.Group>
+            </Select.Viewport>
+
+            <Select.ScrollDownButton ai="center" jc="center" pos="relative" w="100%" h="$3">
+              <YStack zi={10}>
+                <ChevronDown size={20} />
+              </YStack>
+              <LinearGradient
+                start={[0, 0]}
+                end={[0, 1]}
+                fullscreen
+                colors={['$backgroundTransparent', '$background']}
+                br="$4"
+              />
+            </Select.ScrollDownButton>
+          </Select.Content>
+
+        </Select>
       </Flex>
 
     </ScrollView>)
