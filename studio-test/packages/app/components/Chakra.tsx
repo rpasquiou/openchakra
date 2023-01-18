@@ -1,6 +1,7 @@
 import {PropsWithChildren, useState, useEffect} from 'react'
 import { styled } from '@tamagui/core'
 import {Stack, XStack, Input, Button, Text, InputProps, useTheme} from 'tamagui'
+import {ImageBackground} from 'react-native'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -21,7 +22,16 @@ const responsiveProps = props => {
   // const prepareForTamagui = props.reduce
 }
 
-export const Box = ({id, backgroundColor, reload, children, ...props}: {
+export const Box = ({
+  id, 
+  backgroundColor, 
+  backgroundSize,
+  backgroundImage, 
+  reload, 
+  children, 
+  height,
+  ...props
+}: {
   [prop: string] : any
  }) => {
 
@@ -29,11 +39,32 @@ export const Box = ({id, backgroundColor, reload, children, ...props}: {
   const workOnResponsive = responsiveProps(props)
   const bgColor = theme[backgroundColor] || backgroundColor
 
-  return (
-    <XStack
+  return (backgroundImage ? 
+    <ImageBackground 
+      source={{uri: backgroundImage}} 
+      resizeMode={backgroundSize}
+      // style={{
+      //   flex: 1,
+      //   minWidth: 100,
+      //   height
+      // }}
+    >
+      <XStack
+      gtXs={{width: 100}}
       nativeID={id}
       data-reload={reload}
       backgroundColor={bgColor}
+      {...height && {height}}
+      {...props}
+      >
+      {children}
+    </XStack>
+    </ImageBackground>
+    : <XStack 
+    nativeID={id}
+    data-reload={reload}
+    backgroundColor={bgColor}
+    {...height && {height}}
       {...props}
     >
       {children}
