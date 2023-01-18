@@ -8,6 +8,7 @@ import {
   WappizySwitch as Switch,
   Flex,
   IconButton,
+  WappizyCheckbox as Checkbox,
   Box,
   Text,
   Paragraph,
@@ -21,7 +22,6 @@ import {ChevronDown, ChevronUp, Plus} from '@tamagui/lucide-icons'
 import Date from 'app/components/dependencies/custom-components/Date'
 import {View} from 'react-native'
 import {TextLink, useLink} from 'solito/link'
-import { AddIcon, InfoIcon } from '@chakra-ui/icons'
 
 
 /* import {
@@ -267,6 +267,127 @@ const Testcomponents = () => {
         >
           Button text
         </Button>
+      </Flex>
+      <Flex
+        id="comp-LCRVJK2UREMWP"
+        data-reload={reload}
+      >
+        <Text
+          id="comp-LCRVJK2UUJRTU"
+          data-reload={reload}
+          width={'20%'}
+        >
+          Ceci est un bouton radio avec un radiogroup, puis un center, et des
+          flex et le composant radio avec la custom props children= (un espace)
+        </Text>
+        {/* <RadioGroup
+          // setComponentValue={setComponentValue}
+          id="comp-LCRVKJ2JERLAR"
+          data-reload={reload}
+        >
+          <Center
+            id="comp-LCRVKO5FPEA61"
+            data-reload={reload}
+          >
+            <Flex
+              id="comp-LCRVKTPKSBI39"
+              data-reload={reload}
+              flexDirection={'column'}
+            >
+              <Flex
+                id="comp-LCRVL7EHS7Y9Z"
+                data-reload={reload}
+              >
+                <Flex
+                  id="comp-LCRVMD3GEG0LV"
+                  data-reload={reload}
+                >
+                  <Flex
+                    id="comp-LCRVMHKMRHQGZ"
+                    data-reload={reload}
+                    justifyContent={{ base: 'center' }}
+                    alignItems={{ base: 'center' }}
+                  >
+                    <Media
+                      id="comp-LCRVNAFY15AMZ"
+                      data-reload={reload}
+                      src="https://www.alfredplace.io/wp-content/uploads/2022/12/types-22.svg"
+                    />
+                  </Flex>
+                  <Flex
+                    id="comp-LCRVQUQX288XZ"
+                    data-reload={reload}
+                  >
+                    <Text
+                      id="comp-LCRVNKJVA8K17"
+                      data-reload={reload}
+                    >
+                      Text value
+                    </Text>
+                  </Flex>
+                  <Radio
+                    id="comp-LCRVS85M3PGRS"
+                    data-reload={reload}
+                  >
+                    {' '}
+                  </Radio>
+                </Flex>
+              </Flex>
+              <Flex
+                id="comp-LCRVQE0L2S2IY"
+                data-reload={reload}
+              >
+                <Flex
+                  id="comp-LCRVQE0LX8HFA"
+                  data-reload={reload}
+                >
+                  <Flex
+                    id="comp-LCRVQE0LG8PVE"
+                    data-reload={reload}
+                    justifyContent={{ base: 'center' }}
+                    alignItems={{ base: 'center' }}
+                  >
+                    <Media
+                      id="comp-LCRVQE0LRX7S8"
+                      data-reload={reload}
+                      src="https://www.alfredplace.io/wp-content/uploads/2022/12/types-22.svg"
+                    />
+                    <Text
+                      id="comp-LCRVQE0LOPUAX"
+                      data-reload={reload}
+                    >
+                      Text value
+                    </Text>
+                    <Radio
+                      id="comp-LCRVQE0LRZV9R"
+                      data-reload={reload}
+                    >
+                      {' '}
+                    </Radio>
+                  </Flex>
+                </Flex>
+              </Flex>
+            </Flex>
+          </Center>
+        </RadioGroup> */}
+      </Flex>
+      <Flex
+        id="comp-LCRVUB1YS8E7F"
+        data-reload={reload}
+      >
+        <Checkbox
+          id="comp-LCRVUH253PFR7"
+          data-reload={reload}
+        >
+          Label checkbox
+        </Checkbox>
+        <Text
+          id="comp-LCRVUKGQES0HT"
+          data-reload={reload}
+          width={'20%'}
+        >
+          Ceci est une checkbox avec la customProps isReadOnly=false
+        </Text>
       </Flex>
 
     </ScrollView>)

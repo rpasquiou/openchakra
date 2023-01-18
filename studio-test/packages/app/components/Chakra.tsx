@@ -1,7 +1,8 @@
 import {PropsWithChildren, useState, useEffect} from 'react'
 import { styled } from '@tamagui/core'
+import Checkbox from 'expo-checkbox';
 import {Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
-import {ImageBackground} from 'react-native'
+import {View, StyleSheet, ImageBackground} from 'react-native'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -152,6 +153,41 @@ const InputDateTime = () => {
     </Stack>
   )
 } */
+
+export const WappizyCheckbox = ({...props}) => {
+
+  const [isChecked, setChecked] = useState(false);
+
+  return (
+    <View style={styles.section}>
+        <Checkbox
+          style={styles.checkbox}
+          value={isChecked}
+          onValueChange={setChecked}
+          color={isChecked ? '#4630EB' : undefined}
+        />
+        <Text style={styles.paragraph}>Custom colored checkbox</Text>
+      </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginHorizontal: 16,
+    marginVertical: 32,
+  },
+  section: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  paragraph: {
+    fontSize: 15,
+  },
+  checkbox: {
+    margin: 8,
+  },
+});
 
 
 export const WappizySwitch = ({...props}) => {
