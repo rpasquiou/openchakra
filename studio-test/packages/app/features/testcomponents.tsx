@@ -4,6 +4,7 @@ import {
   Button,
   ScrollView,
   H1,
+  WappizyAvatar as Avatar,
   WappizyInput as Input,
   WappizySwitch as Switch,
   Flex,
@@ -415,10 +416,12 @@ const Testcomponents = () => {
         id="comp-LCRVZ0UA3DENK"
         data-reload={reload}
       >
-        {/* <Avatar
+        {/* Some things to adapt on it (background, size, ...) */}
+        <Avatar
           id="comp-LCRVZ8BAFIGHL"
           data-reload={reload}
-        /> */}
+          src="https://images.unsplash.com/photo-1548142813-c348350df52b?&w=150&h=150&dpr=2&q=80"
+        />
         <Text
           id="comp-LCRVXZP9H1QQ2"
           data-reload={reload}

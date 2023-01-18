@@ -1,7 +1,7 @@
 import {PropsWithChildren, useState, useEffect} from 'react'
 import { styled } from '@tamagui/core'
 import Checkbox from 'expo-checkbox';
-import {Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
+import {Avatar, Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
 import {View, StyleSheet, ImageBackground} from 'react-native'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
@@ -188,6 +188,16 @@ const styles = StyleSheet.create({
     margin: 8,
   },
 });
+
+export const WappizyAvatar = ({src, ...props}) => {
+
+  return (
+    <Avatar circular size="$6">
+      <Avatar.Image src={src} />
+      <Avatar.Fallback bc="red" />
+    </Avatar>
+  )
+}
 
 
 export const WappizySwitch = ({...props}) => {
