@@ -21,7 +21,7 @@ import {
 import {ChevronDown, ChevronUp, Plus} from '@tamagui/lucide-icons'
 import Date from 'app/components/dependencies/custom-components/Date'
 import {View} from 'react-native'
-import {TextLink, useLink} from 'solito/link'
+import {TextLink, Link, useLink} from 'solito/link'
 
 
 /* import {
@@ -388,6 +388,23 @@ const Testcomponents = () => {
         >
           Ceci est une checkbox avec la customProps isReadOnly=false
         </Text>
+      </Flex>
+      <Flex
+        id="comp-LCRVXWVXB72RZ"
+        data-reload={reload}
+      >
+        <Link
+          href={'/'}
+          id="comp-LCRVYDH4VZYQ8"
+          data-reload={reload}
+        >
+          <Text
+            id="comp-LCRVZAXQJHY4P"
+            data-reload={reload}
+          >
+            Ceci est un text dans un link (lui meme dans une flex)
+          </Text>
+        </Link>
       </Flex>
 
     </ScrollView>)
