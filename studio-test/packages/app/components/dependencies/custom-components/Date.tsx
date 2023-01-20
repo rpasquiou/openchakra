@@ -1,5 +1,14 @@
 import { Text } from '@my/ui';
 
+type dateFormat = {
+  year?: string
+  month?: string
+  day?: string
+  hour?: string
+  minute?: string
+  second?: string
+} | undefined
+
 const DateComp = (
   {
     "data-value": dataValue, 
@@ -9,8 +18,9 @@ const DateComp = (
   :
   {
     id: string
+    color?: string
     'data-value'?: string, 
-    'data-format'?: string
+    'data-format'?: dateFormat
   }) => {
 
     const date = (dataValue && new Date(dataValue)) || new Date()
