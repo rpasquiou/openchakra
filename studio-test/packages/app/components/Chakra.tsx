@@ -10,21 +10,21 @@ import { useFocusEffect } from '@react-navigation/native'
 
 
 
-const mapProps = props => {
-  
-}
-
-const responsiveProps = props => {
-  /**
+const WithResponsive = ({...props}) => {
+  /** HOC to consider backgroundColor, color, height...
+   * 1. Prendre en compte les propriétés qui ont du JSON en value
+   * 2. passer en revue chaque breakpoint pris en compte (
+   *   base => xs
+   *   sm   => $gtXs 
+   *   md   => $gtSm
+   *  ... 
+   * 3. retourner dans une View toutes les props exceptées celles avec du JSON en value
+   * 
    * On Chakra, responsive values are detailed on a property fontSize={{base: '10px', sm: '12px'}}
    * In Tamagui, all properties are defined by a breakpoint sm={{fontSize: '12px'}}
+   * console.log(props)
+   * const prepareForTamagui = props.reduce
    */
-  // console.log(props)
-  // const prepareForTamagui = props.reduce
-}
-
-const WithResponsive = ({...props}) => {
-
 }
 
 export const Box = ({
