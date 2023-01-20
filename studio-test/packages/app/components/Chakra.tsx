@@ -1,7 +1,7 @@
-import {PropsWithChildren, useState, useEffect} from 'react'
+import {PropsWithChildren, ReactNode, useState, useEffect} from 'react'
 import { SizeTokens, styled } from '@tamagui/core'
 import Checkbox from 'expo-checkbox';
-import {Avatar, Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
+import {Avatar, Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch, Label} from 'tamagui'
 import {View, StyleSheet, ImageBackground} from 'react-native'
 import {TextInput as NativeInput} from 'react-native'
 import { Platform } from 'react-native'
@@ -21,6 +21,10 @@ const responsiveProps = props => {
    */
   // console.log(props)
   // const prepareForTamagui = props.reduce
+}
+
+const WithResponsive = ({...props}) => {
+
 }
 
 export const Box = ({
@@ -154,22 +158,39 @@ const InputDateTime = () => {
   )
 } */
 
-export const WappizyCheckbox = ({...props}) => {
-
-  const [isChecked, setChecked] = useState(false);
-
-  // console.log(config)
+export const WappizyCheckbox = (
+  {
+    id,
+    isChecked = false, 
+    colorScheme = '#4630EB', 
+    onChange, 
+    children, 
+    ...props
+  }
+  : PropsWithChildren<{
+    id: string
+    isChecked?: boolean
+    colorScheme?: string
+    onChange?: Function
+    children: ReactNode
+  }>) => {
+  
+  const [checkme, setCheckme] = useState(isChecked);
 
   return (
     <View style={styles.section}>
+      <Label style={styles.paragraph}>
         <Checkbox
           style={styles.checkbox}
-          value={isChecked}
-          onValueChange={setChecked}
-          color={isChecked ? '#4630EB' : undefined}
+          value={checkme}
+          onValueChange={setCheckme} // Internal state or handled via hoc ?
+          // onValueChange={onChange}
+          color={checkme ? colorScheme : undefined}
+          {...props}
         />
-        <Text style={styles.paragraph}>Custom colored checkbox</Text>
-      </View>
+        {children}
+        </Label>
+    </View>
   )
 }
 
