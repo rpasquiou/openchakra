@@ -418,8 +418,10 @@ const Testcomponents = () => {
       >
         {/* Some things to adapt on it (background, size, ...) */}
         <Avatar
+          size={'$6'}
           id="comp-LCRVZ8BAFIGHL"
           data-reload={reload}
+          circular={false}
           src="https://images.unsplash.com/photo-1548142813-c348350df52b?&w=150&h=150&dpr=2&q=80"
         />
         <Text

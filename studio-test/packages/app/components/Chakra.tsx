@@ -1,5 +1,5 @@
 import {PropsWithChildren, useState, useEffect} from 'react'
-import { styled } from '@tamagui/core'
+import { SizeTokens, styled } from '@tamagui/core'
 import Checkbox from 'expo-checkbox';
 import {Avatar, Stack, XStack, Input, Button, Text, InputProps, useTheme, Switch} from 'tamagui'
 import {View, StyleSheet, ImageBackground} from 'react-native'
@@ -51,7 +51,7 @@ export const Box = ({
       // }}
     >
       <XStack
-      gtXs={{width: 100}}
+      $gtXs={{width: 100}}
       nativeID={id}
       data-reload={reload}
       backgroundColor={bgColor}
@@ -158,6 +158,8 @@ export const WappizyCheckbox = ({...props}) => {
 
   const [isChecked, setChecked] = useState(false);
 
+  // console.log(config)
+
   return (
     <View style={styles.section}>
         <Checkbox
@@ -189,10 +191,22 @@ const styles = StyleSheet.create({
   },
 });
 
-export const WappizyAvatar = ({src, ...props}) => {
+export const WappizyAvatar = ({
+  src, 
+  size='$6',
+  backgroundColor = "white", 
+  circular=true,
+  ...props
+}: {
+  id?: string
+  src: string
+  size?: SizeTokens
+  backgroundColor?: string
+  circular?: boolean
+}) => {
 
   return (
-    <Avatar circular size="$6">
+    <Avatar circular={circular} size={size} {...props}>
       <Avatar.Image src={src} />
       <Avatar.Fallback bc="red" />
     </Avatar>
