@@ -9,6 +9,15 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native'
 
 
+/* TODO
+  Responsive
+  => Génération à la volée à tester à la suite
+  Select
+  Input Radio (histoire d'enum)
+  IconButton (voir l'icone après)
+  UploadFile
+*/ 
+
 
 const WithResponsive = ({...props}) => {
   /** HOC to consider backgroundColor, color, height...
@@ -41,7 +50,7 @@ export const Box = ({
  }) => {
 
   const theme = useTheme()
-  const workOnResponsive = responsiveProps(props)
+  
   const bgColor = theme[backgroundColor] || backgroundColor
 
   return (backgroundImage ? 
