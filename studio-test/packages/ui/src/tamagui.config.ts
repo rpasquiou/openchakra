@@ -1,26 +1,31 @@
 import { createTamagui, createTokens } from 'tamagui'
 import { createInterFont } from '@tamagui/font-inter'
 import { shorthands } from '@tamagui/shorthands'
-import { themes, size, tokens, color, colorTokens } from '@tamagui/theme-base'
+import { themes, size, space, radius, zIndex, color } from '@tamagui/theme-base'
 import { createMedia } from '@tamagui/react-native-media-driver'
 import { animations } from './animations'
 import {chakracolors} from 'app/assets/colors/chakracolors'
 
 
-
-const owntokens = createTokens({
-  ...tokens,
-  color: {
-    ...chakracolors,
-    pinkLight: '#f17efc',
-  },
+export const tokens = createTokens({
   size: {
     ...size,
-    lg: '48',
-    xl: '64',
-  }
+    6: 64,
+    $xs: 24,
+    $md: 36,
+    $lg: 48,
+    $xl: 64,
+  },
+  space,
+  radius,
+  zIndex,
+  color: {
+    ...color,
+    ...chakracolors,
+    white: '#fff',
+    black: '#000',
+  },
 })
-
 
 
 const headingFont = createInterFont({
@@ -67,17 +72,17 @@ const bodyFont = createInterFont(
   }
 )
 
-export const config = createTamagui({
+const config = createTamagui({
   animations,
-  shouldAddPrefersColorThemes: true,
-  themeClassNameOnRoot: true,
+  // shouldAddPrefersColorThemes: true,
+  // themeClassNameOnRoot: true,
   shorthands,
   fonts: {
     heading: headingFont,
     body: bodyFont,
   },
+  tokens,
   themes,
-  tokens: owntokens,
   media: createMedia({
     xs: { maxWidth: 660 },
     sm: { maxWidth: 800 },
@@ -95,3 +100,12 @@ export const config = createTamagui({
     pointerCoarse: { pointer: 'coarse' },
   }),
 })
+
+
+export type Conf = typeof config
+
+declare module 'tamagui' {
+  interface TamaguiCustomConfig extends Conf {}
+}
+
+export {config}
