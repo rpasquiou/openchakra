@@ -2,8 +2,6 @@ import camelCase from 'lodash/camelCase'
 import filter from 'lodash/filter'
 import isBoolean from 'lodash/isBoolean'
 import lodash from 'lodash'
-
-
 import icons from '~iconsList'
 
 import {
@@ -25,6 +23,46 @@ import {
 } from './dataSources';
 import { ProjectState, PageState } from '../core/models/project'
 import { isJsonString } from '../hooks/usePropsSelector'
+
+/* TODO move these breakpoints at root (in order to import them in tamagui.config) */
+export const breakpoints = {
+  base: { minWidth: 0},
+  sm: { minWidth: 480 },
+  md: { minWidth: 768 },
+  lg: { minWidth: 992 },
+  xl: { minWidth: 1280 },
+  '2xl': { minWidth: 1536 },
+}
+
+
+const cleanResponsiveValue = (val: string | number) => {  
+  // console.log(val)
+
+  if (typeof val === 'string') {
+    const isViewportUnit =  val.endsWith('vh')
+    if (isViewportUnit) {
+      return `${parseInt(val)}%`
+    }
+  
+    const isPixels = val.endsWith('px')
+    if (isPixels) {
+      return parseInt(val)
+    }
+    
+    const isPercent = val.endsWith('%')
+    if (isPercent) {
+      return val
+    }
+
+    const isJustAString = isNaN(parseInt(val))
+    if (isJustAString) {
+      return val
+    }
+  }
+
+  return `$${val}`
+}
+
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
 const HIDDEN_ATTRIBUTES: string[] = []
@@ -65,7 +103,7 @@ export const getPageComponentName = (
 
 const isDynamicComponent = (comp: IComponent) => {
   return !!comp.props.dataSource || !!comp.props.subDataSource
-    || (!!comp.props.action)
+    || (!!comp.props.action && !CONTAINER_TYPE.includes(comp.type))
     || (comp.props.model && comp.props.attribute)
 }
 
@@ -172,7 +210,7 @@ const buildBlock = ({
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let childComponent = components[key]
-    console.log(childComponent)
+    // console.log(childComponent)
     if (childComponent.type === 'DataProvider') {
       return
     }
@@ -192,7 +230,7 @@ const buildBlock = ({
       let propsContent = ''
 
       // DIRTY: stateValue for RAdioGroup to get value
-      if (childComponent.type=='RadioGroup') {
+      if ((['RadioGroup', 'Input', 'Select']).includes(childComponent.type)) {
         propsContent += ` setComponentValue={setComponentValue} `
       }
       propsContent += ` getComponentValue={getComponentValue} `
@@ -241,13 +279,13 @@ const buildBlock = ({
           }
 
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
-          /*   const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
-            if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
-            }
-            if (att?.suggestions) {
-              propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
-            } */
+            // const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
+            // if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
+            //   propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
+            // }
+            // if (att?.suggestions) {
+            //   propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
+            // }
           }
           if (tp?.type) {
             propsContent += ` dataModel='${tp.type}' `
@@ -273,6 +311,11 @@ const buildBlock = ({
         return true
       })
 
+      const responsiveProps = {}
+      /** Sur chaque propriété, si c'est une valeur json, 
+       * pour chaque breakpoint enregistré dans ce json, on l'attribue dans le breakpoint dédié
+       */
+
       propsNames
         .filter(p => !HIDDEN_ATTRIBUTES.includes(p))
         .forEach((propName: string) => {
@@ -281,23 +324,6 @@ const buildBlock = ({
             val !== null && isJsonString(val) ? JSON.parse(val) : val
           const propsValueAsObject =
             typeof propsValue === 'object' && val !== null // TODO revise this temporary fix = propsValue !== 'null' // bgGradient buggy when deleted
-          
-          /* Handle input types */
-          if (propName === 'type') {
-            // if (propsValue === 'password') {
-            //   propsContent += ' secureTextEntry'
-            //   return
-            // }
-            
-            // if (propsValue === 'number') {
-            //   propsContent += " keyboardType='numeric'"
-            // }
-            
-            // if (propsValue === 'tel') {
-            //   propsContent += " keyboardType='phone-pad'"
-            // }
-            
-          }
 
           if (propName === 'actionProps' || propName === 'nextActionProps') {
             const valuesCopy = {
@@ -321,6 +347,10 @@ const buildBlock = ({
             if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
           }
 
+          if (propName === 'subDataSource') {
+            propsContent += ` subDataSourceId={'${propsValue}'}`
+          }
+
           if (propName === 'contextFilter') {
             if (propsValue) {
               propsContent += ` contextFilter={${propsValue.replace(
@@ -337,6 +367,10 @@ const buildBlock = ({
             return
           }
 
+          if (propName === 'filterValue') {
+            propsContent += ` upd={componentsValues} `
+          }
+
           if (propName === 'textFilter' && !!propsValue) {
             const compKey = propsValue.replace(/^comp-/, '')
             propsContent += ` textFilter={${compKey}}`
@@ -349,15 +383,13 @@ const buildBlock = ({
           }
 
           if (propsValueAsObject && Object.keys(propsValue).length >= 1) {
-            const gatheredProperties = Object.entries(propsValue)
-              .map(([prop, value]) => {
-                return !isNaN(parseInt(value))
-                  ? ` ${prop}: '${value}' `
-                  : ` ${prop}: '${value}' `
+            Object.entries(propsValue)
+              .forEach(([prop, value]) => {
+                if (value && value !== "0") {
+                  responsiveProps[prop] = {...responsiveProps[prop], [propName]: cleanResponsiveValue(value)}
+                }
               })
-              .join(', ')
 
-            propsContent += `${propName}={{${gatheredProperties}}} `
           } else if (
             propName.toLowerCase().includes('icon') &&
             childComponent.type !== 'Icon'
@@ -372,7 +404,7 @@ const buildBlock = ({
             propsValue
           ) {
             let operand =
-              propName === 'dataSource' && paramProvider
+              (propName === 'dataSource' && paramProvider)
                 ? `={${paramProvider}}`
                 :
                 propName === 'subDataSource' && paramSubProvider
@@ -392,6 +424,17 @@ const buildBlock = ({
             propsContent += ` ${propName}${operand}`
           }
         })
+
+      /* Apply responsive styles */
+      for (const respProp in responsiveProps) {
+        const gatheredProperties = Object.entries(responsiveProps[respProp])
+              .map(([prop, value]) => {
+                return ` ${prop}: '${value}' `
+              })
+              .join(', ')
+
+        propsContent += `$${respProp}={{${gatheredProperties}}} `
+      }
 
       if (isFilterComponent(childComponent, components)) {
         const stateName = childComponent.id.replace(/^comp-/, '')
@@ -521,6 +564,8 @@ const buildFilterStates = (components: IComponents) => {
   const filterComponents: IComponent[] = lodash(components)
     .pickBy(c =>
       Object.values(components).some(other => other?.props?.textFilter == c.id)
+      ||
+      Object.values(components).some(other => other?.props?.filterValue == c.id)
     )
     .values()
 
@@ -582,7 +627,7 @@ const buildHooks = (components: IComponents) => {
         const dataId = dp.id.replace(/comp-/, '')
         const dpFields = getDataProviderFields(dp).join(',')
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
-        const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
+        const apiUrl = `$\{API_ROOT}/${dp.props.model}/${idPart}${
           dpFields ? `?fields=${dpFields}` : ''
         }`
         let thenClause=dp.id=='root' && singlePage ?
@@ -711,7 +756,7 @@ export const generateCode = async (
     components['root']?.props?.ignoreUrlParams == 'true'
 
   code = `import React, {useState, useEffect} from 'react';
-  import Metadata from './dependencies/Metadata';
+  import {Scrollview} from 'react-native';
   ${hooksCode ? `import axios from 'axios'` : ''}
 
   ${Object.entries(groupedComponents)
@@ -735,6 +780,7 @@ import { useUserContext } from 'app/components/dependencies/context/user'
 import { getComponentDataValue } from 'app/components/dependencies/utils/values'
 ${extraImports.join('\n')}
 
+const API_ROOT = 'https://localhost:4002/myAlfred/api/studio'
 ${dynamics || ''}
 ${maskable || ''}
 ${componentsCodes}
@@ -764,15 +810,9 @@ const ${componentName} = () => {
   ${filterStates}
 
   return (
-  <ChakraProvider resetCSS>
-    <Fonts />
-    <Metadata
-      metaTitle={'${metaTitle}'}
-      metaDescription={'${metaDescription}'}
-      metaImageUrl={'${metaImageUrl}'}
-    />
+  <Scrollview>
     ${code}
-  </ChakraProvider>
+  </Scrollview>
 )};
 
 export default ${componentName};`
