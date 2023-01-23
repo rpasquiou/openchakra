@@ -10,6 +10,8 @@ const checkEmptyDataAttribute = (
 ) => {
   if (
     !CONTAINER_TYPE.includes(comp.type) &&
+    comp.type != 'Button' &&
+    comp.type != 'IconButton' &&
     comp.props.dataSource &&
     !comp.props.attribute
   ) {
@@ -75,6 +77,18 @@ const checkUnlinkedDataProvider = (
   }
 }
 
+const checkCardinality = (
+  comp: IComponent,
+  icomponents: IComponents,
+) => {
+  if (comp.id!='root') {
+    return
+  }
+  if (!!comp.props.model!==!!comp.props.cardinality) {
+    throw new Error(`Model requires cardinality`)
+  }
+}
+
 export const validateComponent = (
   component: IComponent,
   components: IComponents,
@@ -86,12 +100,13 @@ export const validateComponent = (
     checkDispatcherManyChildren,
     checkEmptyDataAttribute,
     checkUnlinkedDataProvider,
+    checkCardinality,
   ])
     .map(v => {
       try {
         v(component, components)
         return null
-      } catch (err) {
+      } catch (err:any) {
         return { component, message: err.message }
       }
     })
@@ -110,13 +125,14 @@ export const validate = (icomponents: IComponents): IWarning[] => {
     checkDispatcherManyChildren,
     checkEmptyDataAttribute,
     checkUnlinkedDataProvider,
+    checkCardinality,
   ])
     .map(v => {
       return components.map(c => {
         try {
           v(c, icomponents)
           return null
-        } catch (err) {
+        } catch (err:any) {
           return { component: c, message: err.message }
         }
       })

@@ -25,6 +25,15 @@ const withDynamicButton = Component => {
       : {}
     
     let onClick = props.onClick
+
+    const [actionAllowed, setActionAllowed]=useState(true)
+
+    useEffect(()=> {
+      axios.get(`/myAlfred/api/studio/action-allowed/${action}/${value?._id}`)
+        .then(res => setActionAllowed(res.data))
+        .catch(err => console.error(err))
+    }, [action, value])
+
     if (action) {
       onClick = () => {
         if (!ACTIONS[action]) {
@@ -65,7 +74,7 @@ const withDynamicButton = Component => {
           })
           .catch(err => {
             console.error(err)
-            alert(err)
+            alert(err.response?.data || err)
           })
       }
     }
@@ -74,7 +83,7 @@ const withDynamicButton = Component => {
       props.dataSource,
     )
     return (
-      <Component
+      <Component disabled={!actionAllowed}
         {...props}
         onClick={onClick}
         {...conditionalProperties}

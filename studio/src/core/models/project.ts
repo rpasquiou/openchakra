@@ -1,8 +1,5 @@
 import { createModel } from '@rematch/core'
-import fromPairs from 'lodash/fromPairs'
-import flatten from 'lodash/flatten'
-import omit from 'lodash/omit'
-
+import lodash from 'lodash'
 import { DEFAULT_PROPS } from '~utils/defaultProps'
 import { duplicateComponent, deleteComponent } from '~utils/recursive'
 import { generateId } from '~utils/generateId'
@@ -51,6 +48,21 @@ export const INITIAL_COMPONENTS: IComponents = {
   },
 }
 
+const getDeleteError = (state: ProjectState, componentId:string) => {
+  const page=lodash(state.pages).values().find(p => Object.keys(p.components).includes(componentId))
+  if (!page) { return null}
+  const components=page.components
+  const comp=components[componentId]
+  if (comp.type=='DataProvider') {
+    const linkedComponents=Object.values(components)
+    .filter(c => c.props?.dataSource==componentId || c.props?.subDataSource==componentId)
+    if (linkedComponents.length>0) {
+      return `Suppression impossible:ce dataprovider est utilisé par ${lodash.map(linkedComponents, 'id')}`
+    }
+  }
+  return null
+}
+
 export const replaceId = (data, oldId, newId) => {
   const stringData = JSON.stringify(data).replace(new RegExp(oldId, 'g'), newId)
   return JSON.parse(stringData)
@@ -76,7 +88,7 @@ const getActiveComponents = (state: ProjectState) => {
 }
 
 export const getComponentById = (state: ProjectState, componentId: string) => {
-  const allComps = flatten(
+  const allComps = lodash.flatten(
     Object.values(state.pages).map(p => Object.values(p.components)),
   )
   return allComps.find(c => c.id === componentId)
@@ -169,7 +181,7 @@ const project = createModel({
               ...state.pages[state.activePage].components,
               [payload.id]: {
                 ...state.pages[state.activePage].components[payload.id],
-                props: omit(
+                props: lodash.omit(
                   state.pages[state.activePage].components[payload.id].props,
                   payload.name,
                 ),
@@ -182,6 +194,11 @@ const project = createModel({
     },
 
     deleteComponent(state: ProjectState, componentId: string) {
+      const msg=getDeleteError(state, componentId)
+      if (msg) {
+        alert(msg)
+        return state
+      }
       if (componentId === 'root') {
         return state
       }
@@ -436,7 +453,7 @@ const project = createModel({
       if (Object.keys(state.pages).length === 1) {
         return state
       }
-      const newPages = omit(state.pages, [pageId])
+      const newPages = lodash.omit(state.pages, [pageId])
       const newActivePage = Object.keys(newPages)[0]
       const rootPage =
         pageId === state.rootPage ? newActivePage : state.rootPage

@@ -2,7 +2,7 @@ import camelCase from 'lodash/camelCase'
 import filter from 'lodash/filter'
 import isBoolean from 'lodash/isBoolean'
 import lodash from 'lodash'
-import { isJsonString } from '../hooks/usePropsSelector'
+
 import icons from '~iconsList'
 
 import {
@@ -10,6 +10,7 @@ import {
   CHECKBOX_TYPE,
   CONTAINER_TYPE,
   DATE_TYPE,
+  ENUM_TYPE,
   IMAGE_TYPE,
   INPUT_TYPE,
   PROGRESS_TYPE,
@@ -17,11 +18,12 @@ import {
   SOURCE_TYPE,
   TEXT_TYPE,
   UPLOAD_TYPE,
-  ENUM_TYPE,
   getDataProviderDataType,
   getFieldsForDataProvider,
-} from './dataSources'
+  isSingleDataPage,
+} from './dataSources';
 import { ProjectState, PageState } from '../core/models/project'
+import { isJsonString } from '../hooks/usePropsSelector'
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
 const HIDDEN_ATTRIBUTES: string[] = []
@@ -61,7 +63,9 @@ export const getPageComponentName = (
 }
 
 const isDynamicComponent = (comp: IComponent) => {
-  return !!comp.props.dataSource
+  return !!comp.props.dataSource || !!comp.props.subDataSource
+    || (!!comp.props.action && !CONTAINER_TYPE.includes(comp.type))
+    || (comp.props.model && comp.props.attribute)
 }
 
 const isMaskableComponent = (comp: IComponent) => {
@@ -137,7 +141,21 @@ type BuildBlockParams = {
   components: IComponents
   forceBuildBlock?: boolean
   pages: { [key: string]: PageState }
-  models: any
+  models: any,
+  singleDataPage: boolean,
+  noAutoSaveComponents: string[]
+}
+
+// Wether component is linked to a save action, thus must not save during onChange
+const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
+  let c=Object.values(components)
+    .filter(c => c.props?.action=='save' && c.props?.actionProps)
+    .map(c => JSON.parse(c.props.actionProps))
+  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_/.test(k)))
+  c=c.map(obj => Object.values(obj).filter(v => !!v))
+  c=lodash.flattenDeep(c)
+  c=lodash.uniq(c)
+  return c
 }
 
 const buildBlock = ({
@@ -146,8 +164,11 @@ const buildBlock = ({
   forceBuildBlock = false,
   pages,
   models,
+  singleDataPage,
+  noAutoSaveComponents
 }: BuildBlockParams) => {
   let content = ''
+  const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let childComponent = components[key]
     if (childComponent.type === 'DataProvider') {
@@ -157,7 +178,10 @@ const buildBlock = ({
       throw new Error(`invalid component ${key}`)
     } else if (forceBuildBlock || !childComponent.componentName) {
       const dataProvider = components[childComponent.props.dataSource]
+      const isDpValid=getValidDataProviders(components).find(dp => dp.id==childComponent.props.dataSource)
       const paramProvider = dataProvider?.id.replace(/comp-/, '')
+      const subDataProvider = components[childComponent.props.subDataSource]
+      const paramSubProvider = subDataProvider?.id.replace(/comp-/, '')
       const componentName = isDynamicComponent(childComponent)
         ? `Dynamic${capitalize(childComponent.type)}`
         : isMaskableComponent(childComponent)
@@ -165,48 +189,71 @@ const buildBlock = ({
         : capitalize(childComponent.type)
       let propsContent = ''
 
+      // DIRTY: stateValue for RAdioGroup to get value
+      if ((['RadioGroup', 'Input', 'Select']).includes(childComponent.type)) {
+        propsContent += ` setComponentValue={setComponentValue} `
+      }
+      propsContent += ` getComponentValue={getComponentValue} `
+
       // Set component id
       propsContent += ` id='${childComponent.id}' `
       // Set reload function
       propsContent += ` reload={reload} `
       // Provide page data context
-      if (dataProvider) {
-        propsContent += ` context={root?.[0]?._id}`
+      if (dataProvider && isDpValid) {
+        if (singleDataPage) {
+          propsContent += ` context={root?._id}`
+        }
+        else {
+          propsContent += ` context={root?.[0]?._id}`
+        }
+      }
+
+      if (noAutoSaveComponents.includes(childComponent.id)) {
+        propsContent += ` noautosave={true} `
       }
 
       if (isDynamicComponent(childComponent)) {
         propsContent += ` backend='/'`
-        try {
-          let tp = getDataProviderDataType(
+          let tp = null
+            try {
+              tp =getDataProviderDataType(
             components[childComponent.parent],
             components,
             childComponent.props.dataSource,
             models,
           )
+        } catch (err) {
+          console.error(err)
+        }
           if (!tp) {
+            try {
             tp = {
               type: components[childComponent.props.dataSource].props.model,
               multiple: true,
               ref: true,
             }
+          } catch (err) {
+            console.error(err)
+          }
           }
 
-          if (tp?.type && childComponent.props?.attribute) {
-            const att=models.find(m => m.name==tp.type).attributes[childComponent.props?.attribute]
-            if (att?.enumValues) {
+          if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
+            const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
+            if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
               propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
             }
+            if (att?.suggestions) {
+              propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
+            }
           }
-          if (tp.type) {
+          if (tp?.type) {
             propsContent += ` dataModel='${tp.type}' `
           } else {
             console.error(
               `No data provider data type found for ${childComponent.parent}`,
             )
           }
-        } catch (err) {
-          console.error(err)
-        }
       }
       // Set if dynamic container
       if (
@@ -239,13 +286,24 @@ const buildBlock = ({
               page: propsValue.page
                 ? getPageUrl(propsValue.page, pages)
                 : undefined,
+              redirect: propsValue.redirect
+                ? getPageUrl(propsValue.redirect, pages)
+                : undefined,
             }
             propsContent += ` ${propName}='${JSON.stringify(valuesCopy)}'`
             return
           }
 
           if (propName === 'dataSource') {
-            propsContent += ` dataSourceId='${propsValue}'`
+            if (!isDpValid) {
+              return
+            }
+            propsContent += ` dataSourceId={'${propsValue}'}`
+            if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
+          }
+
+          if (propName === 'subDataSource') {
+            propsContent += ` subDataSourceId={'${propsValue}'}`
           }
 
           if (propName === 'contextFilter') {
@@ -262,6 +320,10 @@ const buildBlock = ({
             propsContent += ` hiddenRoles='${JSON.stringify(propsValue)}'`
             propsContent += ` user={user} `
             return
+          }
+
+          if (propName === 'filterValue') {
+            propsContent += ` upd={componentsValues} `
           }
 
           if (propName === 'textFilter' && !!propsValue) {
@@ -299,8 +361,11 @@ const buildBlock = ({
             propsValue
           ) {
             let operand =
-              propName === 'dataSource' && paramProvider
+              (propName === 'dataSource' && paramProvider)
                 ? `={${paramProvider}}`
+                :
+                propName === 'subDataSource' && paramSubProvider
+                  ? `={${paramSubProvider}}`
                 : `='${propsValue}'`
 
             if (propsValue === true || propsValue === 'true') {
@@ -329,10 +394,10 @@ const buildBlock = ({
         const { page } = isJsonString(childComponent.props.actionProps)
           ? JSON.parse(childComponent.props.actionProps)
           : childComponent.props.actionProps
-        if (page) {
-          const destPageUrl = getPageUrl(page, pages)
-          propsContent += ` pageName={'${destPageUrl}'} `
-          propsContent += `onClick={() => window.location='/${destPageUrl}'}`
+          if (page) {
+            const destPageUrl = getPageUrl(page, pages)
+            propsContent += ` pageName={'${destPageUrl}'} `
+            propsContent += `onClick={() => window.location='/${destPageUrl}'}`
         }
       }
 
@@ -351,6 +416,8 @@ const buildBlock = ({
         forceBuildBlock,
         pages,
         models,
+        singleDataPage,
+        noAutoSaveComponents,
       })}
       </${componentName}>`
       } else {
@@ -367,6 +434,8 @@ const buildBlock = ({
 const buildComponents = (
   components: IComponents,
   pages: { [key: string]: PageState },
+  singleDataPage: boolean,
+  noAutoSaveComponents: string[]
 ) => {
   const codes = filter(components, comp => !!comp.componentName).map(comp => {
     return generateComponentCode({
@@ -375,6 +444,8 @@ const buildComponents = (
       forceBuildBlock: true,
       componentName: comp.componentName,
       pages,
+      singleDataPage,
+      noAutoSaveComponents
     })
   })
 
@@ -393,7 +464,9 @@ type GenerateComponentCode = {
   componentName?: string
   forceBuildBlock?: boolean
   pages: { [key: string]: PageState }
-  models: any[]
+  models: any[],
+  singleDataPage: boolean,
+  noAutoSaveComponents: string[]
 }
 
 export const generateComponentCode = ({
@@ -403,6 +476,8 @@ export const generateComponentCode = ({
   forceBuildBlock,
   pages,
   models,
+  singleDataPage,
+  noAutoSaveComponents
 }: GenerateComponentCode) => {
   let code = buildBlock({
     component,
@@ -410,6 +485,8 @@ export const generateComponentCode = ({
     forceBuildBlock,
     pages,
     models,
+    singleDataPage,
+    noAutoSaveComponents,
   })
 
   code = `
@@ -432,7 +509,9 @@ const getIconsImports = (components: IComponents) => {
 const buildFilterStates = (components: IComponents) => {
   const filterComponents: IComponent[] = lodash(components)
     .pickBy(c =>
-      Object.values(components).some(other => other?.props?.textFilter == c.id),
+      Object.values(components).some(other => other?.props?.textFilter == c.id)
+      ||
+      Object.values(components).some(other => other?.props?.filterValue == c.id)
     )
     .values()
 
@@ -444,6 +523,13 @@ const buildFilterStates = (components: IComponents) => {
     .join('\n')
 }
 
+const getValidDataProviders = (components:IComponents): IComponent[] => {
+  const result = lodash(components)
+    .pickBy(c => (c.type=='DataProvider' || c.id=='root') && c.props?.model)
+    .values()
+  return result
+}
+
 const buildHooks = (components: IComponents) => {
   // Returns attributes names used in this dataProvider for 'dataProvider'
   const getDataProviderFields = (dataProvider: IComponent) => {
@@ -451,12 +537,12 @@ const buildHooks = (components: IComponents) => {
     return fields
   }
 
-  const dataProviders: IComponent[] = lodash(components)
-    .pickBy(c => c.props?.model)
-    .values()
+  const dataProviders=getValidDataProviders(components)
   if (dataProviders.length === 0) {
     return ''
   }
+
+  const singlePage=isSingleDataPage(components)
 
   const isIdInDependencyArray = dataProviders.reduce((acc, curr, i) => {
     if (curr.id === 'root') {
@@ -471,7 +557,7 @@ const buildHooks = (components: IComponents) => {
     dataProviders
       .map(dp => {
         const dataId = dp.id.replace(/^comp-/, '')
-        return `const [${dataId}, set${capitalize(dataId)}]=useState([])`
+        return `const [${dataId}, set${capitalize(dataId)}]=useState(${singlePage ? 'null':'[]'})`
       })
       .join(`\n`)
   code += `\n
@@ -490,9 +576,18 @@ const buildHooks = (components: IComponents) => {
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
           dpFields ? `?fields=${dpFields}` : ''
         }`
-        return `get(\`${apiUrl}\`)
-        .then(res => set${capitalize(dataId)}(res.data))
+        let thenClause=dp.id=='root' && singlePage ?
+         `.then(res => set${capitalize(dataId)}(res.data[0]))`
+         :
+         `.then(res => set${capitalize(dataId)}(res.data))`
+
+        let query= `get(\`${apiUrl}\`)
+        ${thenClause}
         .catch(err => alert(err?.response?.data || err))`
+        if (dp.id=='root' && singlePage) {
+          query=`// For single data page\nif (id) {\n${query}\n}`
+        }
+        return query
       })
       .join('\n')}
   }, [get, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
@@ -567,13 +662,18 @@ export const generateCode = async (
   let filterStates = buildFilterStates(components)
   let dynamics = buildDynamics(components, extraImports)
   let maskable = buildMaskable(components, extraImports)
+  const singleDataPage=isSingleDataPage(components)
+  const noAutoSaveComponents=getNoAutoSaveComponents(components)
+
   let code = buildBlock({
     component: components.root,
     components,
     pages,
     models,
+    singleDataPage,
+    noAutoSaveComponents
   })
-  let componentsCodes = buildComponents(components, pages)
+  let componentsCodes = buildComponents(components, pages, singleDataPage, noAutoSaveComponents)
   const iconImports = [...new Set(getIconsImports(components))]
 
   const imports = [
@@ -624,6 +724,7 @@ import { ${iconImports.join(',')} } from "@chakra-ui/icons";`
 import Fonts from './dependencies/theme/Fonts'
 import {useLocation} from "react-router-dom"
 import { useUserContext } from './dependencies/context/user'
+import { getComponentDataValue } from './dependencies/utils/values'
 ${extraImports.join('\n')}
 
 ${dynamics || ''}
@@ -632,7 +733,24 @@ ${componentsCodes}
 
 const ${componentName} = () => {
   const query = new URLSearchParams(useLocation().search)
-  const id=${rootIgnoreUrlParams ? 'null' : `query.get('${rootIdQuery}')`}
+  const id=${rootIgnoreUrlParams ? 'null' : `query.get('${rootIdQuery}') || query.get('id')`}
+  const [componentsValues, setComponentsValues]=useState({})
+
+  const setComponentValue = (compId, value) => {
+    setComponentsValues(s=> ({...s, [compId]: value}))
+  }
+
+  const getComponentValue = (compId, index) => {
+    let value=componentsValues[compId]
+    if (!value) {
+      value=componentsValues[\`\$\{compId\}\$\{index\}\`]
+    }
+    if (!value) {
+      value=getComponentDataValue(compId, index)
+    }
+    return value
+  }
+
   const {user}=useUserContext()
   ${hooksCode}
   ${filterStates}

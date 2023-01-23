@@ -1,3 +1,5 @@
+import lodash from 'lodash'
+
 type IActions = {
   [key: string]: {
     label: string
@@ -7,11 +9,12 @@ type IActions = {
     next?: string[]
   }
 }
+
 export const ACTIONS: IActions = {
   create: {
     label: 'Create new data',
     options: {
-      model: ({ models }) => models.map(m => ({ key: m.name, label: m.name })),
+      model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
     },
     next: ['openPage'],
   },
@@ -124,6 +127,21 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
   },
+  save: {
+    label: 'Save/create',
+    options: {
+      model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
+      ...Object.fromEntries(lodash.range(10).map((idx:number) => {
+      return [
+        `component_${idx}`,
+        ({ components }) => components
+          .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+
+      ]})),
+    },
+    next: ['openPage'],
+  },
   // Mettre un warning si les composants ne sont pas dans le même flex
   registerToEvent: {
     label: 'Register to event',
@@ -132,14 +150,82 @@ export const ACTIONS: IActions = {
   },
   // FUMOIR
   // Mettre un warning si les composants ne sont pas dans le même flex
-  pay: {
-    label: 'Pay',
+  payEvent: {
+    label: 'Pay event',
     options: {
+      redirect: ({ pages }) =>
+        Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
+      color: ({ pages }) => {
+        const colors=lodash(pages).values()
+          .map(page => page.components).map(components => Object.values(components)).flatten()
+          .map(component => ['color', 'backgroundColor', 'focusBorderColor'].map(color => component.props[color])).flatten()
+          .filter(color => !!color && /^#/.test(color))
+          .map(color => color.toLowerCase())
+          .uniq().sort()
+          .map(color => ({key: color, label: color}))
+          .value()
+        return colors
+      }
+    },
+  },
+  payOrder: {
+    label: 'Pay order',
+    options: {
+      redirect: ({ pages }) =>
+        Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
+      color: ({ pages }) => {
+        const colors=lodash(pages).values()
+        .map(page => page.components).map(components => Object.values(components)).flatten()
+        .map(component => ['color', 'backgroundColor', 'focusBorderColor'].map(color => component.props[color])).flatten()
+        .filter(color => !!color && /^#/.test(color))
+        .map(color => color.toLowerCase())
+        .uniq().sort()
+        .map(color => ({key: color, label: color}))
+        .value()
+        return colors
+      }
+    },
+  },
+  cashOrder: {
+    label: 'Cash order',
+    options: {
+      guest: ({ components }) => components
+        .filter(comp => comp.type=='Select')
+        .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` })),
+      amount: ({ components }) => components
+        .filter(comp => comp.type=='Input')
+        .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` })),
       redirect: ({ pages }) =>
         Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
     },
   },
   // FUMOIR
+  // Mettre un warning si les composants ne sont pas dans le même flex
+  previous: {
+    label: 'Previous',
+    options: {},
+  },
+  // Register new User
+  register: {
+    label: 'Register new account',
+    options: {
+      ...Object.fromEntries(lodash.range(10).map((idx:number) => {
+      return [
+        `component_${idx}`,
+        ({ components }) => components
+          .filter(comp => (comp.props?.dataSource||comp.props?.model) && comp.props?.attribute)
+          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+
+      ]})),
+    },
+    next: ['openPage'],
+  },
+  logout: {
+    label: 'Logout',
+    options: {},
+    next: ['openPage'],
+  },
+
 }
 
 export const allowsActions = (component: IComponent) => {

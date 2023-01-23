@@ -1,7 +1,7 @@
-import React from 'react'
-
+import React, {useState, useEffect} from 'react'
+import axios from 'axios';
+import lodash from 'lodash'
 import { useLocation } from 'react-router-dom'
-
 import { ACTIONS } from '../utils/actions'
 import {
   extractFiltersFromProps,
@@ -11,7 +11,10 @@ import {
 const withDynamicButton = Component => {
   const Internal = props => {
     const query = new URLSearchParams(useLocation().search)
-    const value = props.dataSource
+    let value = props.dataSource
+    if (props.attribute) {
+      value=lodash.get(value, props.attribute)
+    }
     const action = props.action
     const nextAction = props.nextAction
     const context = props.context
@@ -22,6 +25,15 @@ const withDynamicButton = Component => {
       : {}
     const backend = props.backend
     let onClick = props.onClick
+
+    const [actionAllowed, setActionAllowed]=useState(true)
+
+    useEffect(()=> {
+      axios.get(`/myAlfred/api/studio/action-allowed/${action}/${value?._id}`)
+        .then(res => setActionAllowed(res.data))
+        .catch(err => console.error(err))
+    }, [action, value])
+
     if (action) {
       onClick = () => {
         if (!ACTIONS[action]) {
@@ -60,7 +72,7 @@ const withDynamicButton = Component => {
           })
           .catch(err => {
             console.error(err)
-            alert(err)
+            alert(err.response?.data || err)
           })
       }
     }
@@ -69,7 +81,7 @@ const withDynamicButton = Component => {
       props.dataSource,
     )
     return (
-      <Component
+      <Component disabled={!actionAllowed}
         {...props}
         onClick={onClick}
         {...conditionalProperties}

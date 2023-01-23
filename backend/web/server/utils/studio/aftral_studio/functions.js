@@ -1,15 +1,15 @@
+const url = require('url')
+const NodeCache = require('node-cache')
+const mongoose = require('mongoose')
+const lodash = require('lodash')
+const bcrypt = require('bcryptjs')
 const {
   RES_AVAILABLE,
   RES_CURRENT,
   RES_FINISHED,
   RES_TO_COME,
   STATUS,
-} = require('../../../../utils/aftral_studio/consts');
-const url = require('url')
-const NodeCache = require('node-cache')
-const mongoose = require('mongoose')
-const lodash = require('lodash')
-const bcrypt = require('bcryptjs')
+} = require('../../../../utils/aftral_studio/consts')
 const {
   cloneModel,
   declareComputedField,
@@ -110,7 +110,7 @@ const removeChildFromParent = (parent_id, child_id) => {
 const moveItem = (itemId, items, up) => {
   const index = items.findIndex(i => i._id.toString() == itemId.toString())
   if (index == -1) {
-    throw new Error(`${itemId}not found in ${items}`)
+    throw new Error(`Item ${itemId} not found amongst ${items.map(i => i._id)}`)
   }
   if ((up && index == 0) || (!up && index == items.length - 1)) {
     return items
@@ -252,12 +252,11 @@ const getSession = id => {
 
 const putAttribute = ({parent, attribute, value, user}) => {
   console.log(`Putting ${parent} ${attribute} to ${value}`)
-  let mongooseModel = null
   let model = null
   return getModel(parent)
     .then(res => {
       model = res
-      mongooseModel = mongoose.connection.models[model]
+      const mongooseModel = mongoose.connection.models[model]
       return mongooseModel.updateMany(
         {$or: [{_id: parent}, {origin: parent}]},
         {[attribute]: value},
@@ -335,6 +334,7 @@ const filterDataUser = ({model, data, user}) => {
 
 
 setFilterDataUser(filterDataUser)
+
 const getContacts = (user, id) => {
   return Session.find({
     origin: null,
@@ -759,7 +759,7 @@ declareVirtualField({model: 'theme', field: 'progress_percent', instance: 'Numbe
 declareVirtualField({model: 'theme', field: 'hidden', instance: 'Boolean', requires: 'name,code,picture'}) // TODO: name required ???
 declareVirtualField({model: 'theme', field: 'status', instance: 'String', requires: 'resources', enumValues: STATUS}) // TODO: name required ???
 
-declareVirtualField({model: 'resource', field: 'spent_time_str', instance: 'String', requires: 'spent_time'}) // TODO: name required ???
+declareVirtualField({model: 'resource', field: 'spent_time_str', instance: 'String', requires: ''}) // TODO: name required ???
 declareVirtualField({model: 'resource', field: 'status', instance: 'String', requires: 'finished', enumValues: STATUS}) // TODO: name required ???
 declareVirtualField({model: 'resource', field: 'annotation', instance: 'String', requires: ''}) // TODO: name required ???
 

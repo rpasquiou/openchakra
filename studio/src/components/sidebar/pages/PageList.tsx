@@ -1,4 +1,5 @@
 import React from 'react'
+import lodash from 'lodash'
 import {
   Box,
   Button,
@@ -14,6 +15,7 @@ import {
   getActivePageId,
 } from '~core/selectors/components'
 import useDispatch from '~hooks/useDispatch'
+
 import PageSettings from './PageSettings'
 
 const PageActions = ({ page }: { page: string }) => {
@@ -47,7 +49,7 @@ const PageActions = ({ page }: { page: string }) => {
       <Button {...buttonProps} onClick={onOpen}>
         <Image w={'30px'} title="Edit" src="/icons/edit.svg" />
       </Button>
-      <PageSettings isOpen={isOpen} onClose={onClose} page={page} />
+      {isOpen && <PageSettings isOpen={isOpen} onClose={onClose} page={page} key={page}/>}
 
       <Button {...buttonProps} onClick={() => deleteP(page)}>
         <Image w={'30px'} title="Edit" src="/icons/delete.svg" />
@@ -69,13 +71,15 @@ const PageList = ({ searchTerm }: { searchTerm: string }) => {
   const rootPage = useSelector(getRootPageId)
   const dispatch = useDispatch()
 
+  const sortedPages=lodash(pages).values().orderBy(params => lodash.kebabCase(params.pageName)).value()
+
   return (
     <List mb={8}>
-      {Object.entries(pages)
-        .filter(([page, params]) =>
+      {sortedPages
+        .filter(params =>
           params.pageName.toLowerCase().includes(searchTerm.toLowerCase()),
         )
-        .map(([page, params], i) => {
+        .map((params, i) => {
           const { pageId, pageName } = params
           const isIndexPage = pageId === rootPage
           const isSelectedPage = pageId === activePage
@@ -98,14 +102,14 @@ const PageList = ({ searchTerm }: { searchTerm: string }) => {
                 wordBreak={'break-all'}
                 overflow={'hidden'}
                 textAlign={'left'}
-                onClick={() => dispatch.project.setActivePage(page)}
+                onClick={() => dispatch.project.setActivePage(pageId)}
                 fontWeight={isSelectedPage ? 'bold' : 'normal'}
               >
                 {pageName}
                 {isIndexPage && '*'}
               </Button>
               <Box display={'flex'} alignItems="center">
-                <PageActions page={page} />
+                <PageActions page={pageId} />
               </Box>
             </ListItem>
           )

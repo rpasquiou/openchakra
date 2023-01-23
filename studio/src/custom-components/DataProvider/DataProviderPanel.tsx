@@ -11,13 +11,22 @@ const capitalize = (word: string) => {
 }
 
 const DataProviderPanel = () => {
-  const { setValueFromEvent, setValue } = useForm()
+  const { setValueFromEvent, setValue, removeValue } = useForm()
   const model = usePropsSelector('model')
+  const cardinality = usePropsSelector('cardinality')
   const ignoreUrlParams = usePropsSelector('ignoreUrlParams')
   const modelNames = useSelector(getModelNames)
 
-  const setIgnoreUrlParams = event => {
+  const setIgnoreUrlParams = (event:React.ChangeEvent<HTMLInputElement>) => {
     setValue('ignoreUrlParams', event.target.checked)
+  }
+
+  const onModelChange = (ev:React.ChangeEvent<HTMLSelectElement>) => {
+    const {value}=ev.target
+    setValueFromEvent(ev)
+    if (!value) {
+      removeValue('cardinality')
+    }
   }
 
   const cbLabel = `Ignore '${model}' param in URL`
@@ -26,7 +35,7 @@ const DataProviderPanel = () => {
       <FormControl htmlFor="model" label="Model">
         <Select
           id="model"
-          onChange={setValueFromEvent}
+          onChange={onModelChange}
           name="model"
           size="sm"
           value={model || ''}
@@ -49,6 +58,20 @@ const DataProviderPanel = () => {
           ></Checkbox>
         </FormControl>
       )}
+      {model && <FormControl htmlFor="model" label="Page requires">
+        <Select
+          id="cardinality"
+          onChange={setValueFromEvent}
+          name="cardinality"
+          size="sm"
+          value={cardinality || ''}
+        >
+          <option value={undefined}></option>
+          <option value={'single'}>single data</option>
+          <option value={'multiple'}>multiple data</option>
+        </Select>
+      </FormControl>
+      }
     </>
   )
 }

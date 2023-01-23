@@ -7,15 +7,10 @@ const Schema = mongoose.Schema
 const MessageSchema = new Schema({
   subject: {
     type: String,
-    required: true,
+    required: false,
   },
   content: {
     type: String,
-    required: true,
-  },
-  date: {
-    type: Date,
-    default: Date.now,
     required: true,
   },
   is_read: {
@@ -24,12 +19,20 @@ const MessageSchema = new Schema({
   receiver: {
     type: Schema.Types.ObjectId,
     ref: 'user',
+    required: true,
   },
   sender: {
     type: Schema.Types.ObjectId,
     ref: 'user',
+    required: true,
   },
 }, schemaOptions)
+
+MessageSchema.methods.getPartner = function(user) {
+  const userId=typeof(user)=='string' ? user : user._id.toString()
+  return this.sender._id.toString()==userId ?
+    this.receiver: this.sender
+}
 
 MessageSchema.plugin(mongooseLeanVirtuals)
 

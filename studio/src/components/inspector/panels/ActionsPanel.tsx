@@ -8,6 +8,8 @@ import { getComponents, getPages } from '../../../core/selectors/components'
 import { useForm } from '../../../hooks/useForm'
 import FormControl from '../controls/FormControl'
 import usePropsSelector from '../../../hooks/usePropsSelector'
+import { MultiSelect } from 'react-multi-select-component'
+import lodash from 'lodash'
 
 const ActionPanel = ({
   id,
@@ -18,6 +20,7 @@ const ActionPanel = ({
   optionsParams,
   onActionChange,
   onActionPropChange,
+  onActionPropSet,
 }) => {
   return (
     <>
@@ -30,7 +33,7 @@ const ActionPanel = ({
           value={action || ''}
         >
           <option value={undefined}></option>
-          {actions.map(action => (
+          {lodash.orderBy(actions, a => ACTIONS[a].label).map(action => (
             <option value={action}>{ACTIONS[action].label}</option>
           ))}
         </Select>
@@ -38,22 +41,37 @@ const ActionPanel = ({
       {action &&
         Object.keys(ACTIONS[action].options).map(k => {
           const optionValues: any[] = ACTIONS[action].options[k](optionsParams)
+          const optionValue = actionProps[k]
+          const isMultiple=(ACTIONS[action].multiple||[]).includes(k)
+          const multOptionValues=isMultiple && optionValues.map(o => ({value:o.key, ...o}))
+          const multOptionsValue=isMultiple && actionProps[k].map(o => ({value:o.key, ...o}))
           return (
             <FormControl htmlFor={k} label={k}>
-              <Select
-                id={k}
-                onChange={onActionPropChange}
-                name={k}
-                size="sm"
-                value={actionProps[k] || ''}
-              >
-                <option value={undefined}></option>
-                {optionValues.map((optionValue, i) => (
-                  <option key={`acp${i}`} value={optionValue.key}>
-                    {optionValue.label}
-                  </option>
-                ))}
-              </Select>
+              {isMultiple ?
+                <MultiSelect
+                  options={multOptionValues}
+                  name={k}
+                  value={multOptionsValue}
+                  onChange={values => onActionPropSet(k, values)}
+                  hasSelectAll={false}
+                  disableSearch={true}
+                />
+                :
+                <Select
+                  id={k}
+                  onChange={onActionPropChange}
+                  name={k}
+                  size="sm"
+                  value={optionValue}
+                >
+                  <option key={null} value={null}></option>
+                  {optionValues.map((optionValue, i) => (
+                    <option key={`acp${i}`} value={optionValue.key}>
+                      {optionValue.label}
+                    </option>
+                  ))}
+                </Select>
+              }
             </FormControl>
           )
         })}
@@ -62,7 +80,7 @@ const ActionPanel = ({
 }
 
 const ActionsPanel: React.FC = () => {
-  const { setValueFromEvent, setValue } = useForm()
+  const { setValueFromEvent, setValue, removeValue } = useForm()
   const action = usePropsSelector('action')
   const nextAction = usePropsSelector('nextAction')
   const actionProps = usePropsSelector('actionProps')
@@ -76,7 +94,12 @@ const ActionsPanel: React.FC = () => {
 
   const onActionPropChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = ev.target
-    setValue('actionProps', { ...actionProps, [name]: value })
+    setValue('actionProps', value ? { ...actionProps, [name]: value } : lodash.omit(actionProps, [name]))
+  }
+
+  const onActionPropSet = (name, values) => {
+    const vals=values.map(v => v.key)
+    setValue('actionProps', {...actionProps, [name]: vals})
   }
 
   const onNextActionPropChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
@@ -84,10 +107,13 @@ const ActionsPanel: React.FC = () => {
     setValue('nextActionProps', { ...nextActionProps, [name]: value })
   }
 
+  const onNextActionPropSet = (name, values) => {
+    const vals=values.map(v => v.key)
+    setValue('nextActionProps', {...actionProps, [name]: vals})
+  }
+
   const onActionChange = (ev: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(ev.target)
-    // Reset action props on action change
-    //setValue('actionProps', {})
+    removeValue(ev.target.name=='action' ? 'actionProps':'nextActionProps')
     setValueFromEvent(ev)
   }
 
@@ -103,6 +129,7 @@ const ActionsPanel: React.FC = () => {
           optionsParams={optionsParams}
           onActionChange={onActionChange}
           onActionPropChange={onActionPropChange}
+          onActionPropSet={onActionPropSet}
         />
         {ACTIONS[action]?.next?.length > 0 ? (
           <ActionPanel
@@ -114,6 +141,7 @@ const ActionsPanel: React.FC = () => {
             optionsParams={optionsParams}
             onActionChange={onActionChange}
             onActionPropChange={onNextActionPropChange}
+            onActionPropSet={onNextActionPropSet}
           />
         ) : null}
       </AccordionContainer>

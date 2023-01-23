@@ -1,75 +1,93 @@
-const moment = require('moment');
-const mongoose = require("mongoose");
-const { schemaOptions } = require("../../utils/schemas");
-const { ROLES } = require("../../../utils/fumoir/consts");
+const moment = require('moment')
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
+const {schemaOptions} = require('../../utils/schemas')
+const {ROLES} = require('../../../utils/fumoir/consts')
 
-const Schema = mongoose.Schema;
+const Schema = mongoose.Schema
 
 const UserSchema = new Schema(
   {
     firstname: {
       type: String,
-      required: true
+      required: true,
     },
     lastname: {
       type: String,
-      required: true
+      required: true,
     },
     dateOfBirth: {
-      type: Date
+      type: Date,
     },
     role: {
       type: String,
-      enum: Object.keys(ROLES)
+      enum: Object.keys(ROLES),
+      required: true,
+    },
+    // Locker #
+    locker: {
+      type: Number,
     },
     picture: {
-      type: String
+      type: String,
     },
     banner: {
-      type: String
+      type: String,
     },
     email: {
       type: String,
       required: true,
-      set: v => v.toLowerCase().trim()
+      set: v => v.toLowerCase().trim(),
     },
     linkedIn: {
       type: String,
-      set: v => v.toLowerCase().trim()
+      set: v => v.toLowerCase().trim(),
     },
     twitter: {
       type: String,
-      set: v => v.toLowerCase().trim()
+      set: v => v.toLowerCase().trim(),
     },
     phone: {
-      type: String
+      type: String,
     },
     job: {
-      type: String
-    },
-    company: {
-      type: Schema.Types.ObjectId,
-      ref: "company"
+      type: String,
     },
     description: {
-      type: String
+      type: String,
+    },
+    company_name: {
+      type: String,
+      required: false,
+    },
+    company_siret: {
+      type: String,
+    },
+    company_website: {
+      type: String,
+    },
+    company_address: {
+      type: String,
+    },
+    company_description: {
+      type: String,
     },
     cgv_validation_date: {
-      type: Date
+      type: Date,
+    },
+    favorite_cigar: {
+      type: Schema.Types.ObjectId,
+      ref: 'cigar',
     },
     password: {
       type: String,
-      default: "INVALID",
-      required: true
-    },
-    creation_date: {
-      type: Date,
-      default: Date.now
+      set: pass => bcrypt.hashSync(pass, 10),
+      required: true,
     },
     last_login: [
       {
-        type: Date
-      }
+        type: Date,
+      },
     ],
     subscription_start: {
       type: Date,
@@ -77,48 +95,50 @@ const UserSchema = new Schema(
     subscription_end: {
       type: Date,
     },
+    subscription_price: {
+      type: Number,
+    },
     resetToken: {
       type: Schema.Types.ObjectId,
-      ref: "resetToken"
-    }
+      ref: 'resetToken',
+    },
   },
-  schemaOptions
-);
+  schemaOptions,
+)
 
-UserSchema.virtual("full_name").get(function() {
-  return `${this.firstname} ${this.lastname}`;
-});
+UserSchema.virtual('full_name').get(function() {
+  return `${this.firstname} ${this.lastname}`
+})
 
-UserSchema.virtual("is_active").get(function() {
+UserSchema.virtual('is_active').get(function() {
   const active=moment().isBetween(moment(this.subscription_start), moment(this.subscription_end))
   return active
-});
+})
 
-UserSchema.virtual("is_active_str").get(function() {
+UserSchema.virtual('is_active_str').get(function() {
   const active=moment().isBetween(moment(this.subscription_start), moment(this.subscription_end))
   return active ? 'Actif':'Inactif'
-});
+})
 
 // Returns my posts
-UserSchema.virtual("posts", {
-  ref: "post", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "author" // is equal to foreignField
-});
+UserSchema.virtual('posts', {
+  ref: 'post', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'author', // is equal to foreignField
+})
 
 // Returns my bookings
-UserSchema.virtual("bookings", {
-  ref: "booking", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "booking_user" // is equal to foreignField
-});
+UserSchema.virtual('bookings', {
+  ref: 'booking', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'booking_user', // is equal to foreignField
+})
 
 // Returns my bookings
-UserSchema.virtual("events", {
-  ref: "event", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "members", // is equal to foreignField
-  match: user => { console.log(`Testing with ${JSON.stringify(user)}`); return({members: user._id})}
-});
+UserSchema.virtual('events', {
+  ref: 'event', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'members', // is equal to foreignField
+})
 
-module.exports = UserSchema;
+module.exports = UserSchema

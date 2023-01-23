@@ -15,7 +15,7 @@ class SIB_V3 {
     this.smsInstance = new SibApiV3Sdk.TransactionalSMSApi()
   }
 
-  sendMail(index, email, ccs, data, attachment=null) {
+  sendMail({index, email, ccs, data, attachment=null}) {
     console.log(`Sending mail template #${index} to ${email} with data ${JSON.stringify(data)}, attachment:${attachment ? 'yes' : 'no'}`)
 
     let emailData = new SibApiV3Sdk.SendSmtpEmail()
@@ -31,13 +31,13 @@ class SIB_V3 {
     }
     Object.assign(emailData.params, data)
 
-    this.smtpInstance.sendTransacEmail(emailData)
+    return this.smtpInstance.sendTransacEmail(emailData)
       .then(data => {
         console.log(`SMTP called successfully with params ${JSON.stringify({...emailData, attachment: !!emailData.attachment})}. Result: ${JSON.stringify(data)}`)
         return true
       })
       .catch(err => {
-        console.error(err)
+        console.error(err.response?.text || err)
         console.error(`Error while sending ${JSON.stringify(lodash.omit(emailData, 'attachment'))}:${JSON.stringify(err.response.body)}`)
         return false
       })

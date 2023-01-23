@@ -47,7 +47,7 @@ export const ACTIONS = {
         return res
       })
   },
-  openPage: ({ value, model, query, props }) => {
+  openPage: ({ value, model, query, props, getComponentValue }) => {
     const queryParams = query
 
     console.log('OpenPageQuery', queryParams)
@@ -66,7 +66,7 @@ export const ACTIONS = {
       return Promise.resolve((window.location = url))
     }
   },
-  create: ({ value, context, props }) => {
+  create: ({ value, context, props, getComponentValue }) => {
     let url = `${API_ROOT}/${props.model}?context=${context}`
     return axios.post(url).then(res => ({
       model: props.model,

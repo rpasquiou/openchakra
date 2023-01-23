@@ -1,4 +1,6 @@
-import { attributesComparator } from '../../../server/utils/database';
+const {forceDataModelDekuple}=require('../../utils')
+forceDataModelDekuple()
+const {attributesComparator} = require('../../../server/utils/database')
 
 describe('Attributes order test', () => {
 
@@ -9,9 +11,9 @@ describe('Attributes order test', () => {
   })
 
   test('Sort complex attributes', () => {
-    const attributes=['user.full_name', 'name.test', 'youyou', 'user.birthday']
+    const attributes=['aaa', 'user.full_name', 'name.test', 'youyou', 'user.birthday']
     let sorted=attributes.sort(attributesComparator)
-    expect(sorted).toStrictEqual(['youyou', 'name.test', 'user.birthday',  'user.full_name'])
+    expect(sorted).toEqual(['aaa', 'youyou', 'name.test', 'user.birthday', 'user.full_name'])
   })
 
 })

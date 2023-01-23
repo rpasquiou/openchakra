@@ -1,34 +1,24 @@
+const { sendNewMessage } = require('./fumoir/mailing');
+const {
+  buildPopulates,
+  getModel,
+  putAttribute,
+  removeData
+} = require('../database');
 const url = require('url')
+const mongoose=require('mongoose')
+const lodash=require('lodash')
+const User = require('../../models/User')
+const Message = require('../../models/Message')
 const Post = require('../../models/Post')
 const UserSessionData = require('../../models/UserSessionData')
 const {NotFoundError} = require('../errors')
 const Program = require('../../models/Program')
-const {
-  inviteGuest,
-  payOrder,
-  registerToEvent,
-  removeOrderItem,
-  setOrderItem,
-} = require('./fumoir/functions')
-const {
-  addChild,
-  moveChildInParent,
-  removeChildFromParent,
-  getNext,
-  getPrevious,
-  getSession,
-  login,
-  putAttribute,
-  sendMessage,
-} = require('./aftral_studio/functions')
 
-const ACTIONS = {
-  login: ({email, password}) => {
-    return login(email, password)
-  },
-
+let ACTIONS = {
   put: ({parent, attribute, value}, user) => {
-    return putAttribute({parent, attribute, value, user})
+    const parsedValue=value ? JSON.parse(value) : value
+    return putAttribute({parent, attribute, value: parsedValue, user})
   },
 
   publish: ({id}) => {
@@ -72,7 +62,10 @@ const ACTIONS = {
   },
 
   delete: ({parent, child}) => {
-    return removeChildFromParent(parent, child)
+    if (parent && child && parent!=child) {
+      return removeChildFromParent(parent, child)
+    }
+    return removeData(child)
   },
 
   addChild: ({parent, child}) => {
@@ -92,37 +85,47 @@ const ACTIONS = {
   },
 
   sendMessage: ({destinee, contents}, sender) => {
-    return sendMessage(sender, destinee, contents)
+    return Message.create({sender: sender._id, receiver: destinee, content: contents})
+      .then(m => Message.findById(m._id).populate('sender').populate('receiver'))
+      .then(m => {
+        sendNewMessage({member: m.receiver, partner: m.sender })
+        return  m
+      })
   },
 
   createPost: ({contents, media}, sender) => {
     return Post.create({contents, media, author: sender})
   },
 
-  inviteGuest: ({parent, email, phone}) => {
-    return inviteGuest({eventOrBooking: parent, email, phone})
+  register: props => {
+    console.log(`Register with ${JSON.stringify(props)}`)
+    return User.exists({email: props.email})
+      .then(exists => {
+        if (exists) {
+          return Promise.reject(`Un compte avec le mail ${props.email} existe déjà`)
+        }
+        return User.create({...props})
+      })
   },
-
-  addOrderItem: ({context, parent, quantity}) => {
-    return addOrderItem({order: context, product: parent, quantity})
-  },
-
-  setOrderItem: ({context, parent, quantity}) => {
-    return setOrderItem({order: context, product: parent, quantity})
-  },
-
-  removeOrderItem: ({context, parent}) => {
-    return removeOrderItem({order: context, item: parent})
-  },
-
-  registerToEvent: ({context}, user) => {
-    return registerToEvent({event: context, user})
-  },
-
-  pay: ({context}, user) => {
-    return payOrder({order: context, user})
-  },
-
 }
 
-module.exports = {ACTIONS}
+let ALLOW_ACTION= () => Promise.resolve(true)
+
+const setAllowActionFn = fn => {
+  ALLOW_ACTION = fn
+}
+
+const callAllowedAction = ({action, dataId, user}) => {
+  return ALLOW_ACTION({action, dataId, user})
+}
+
+const addAction= (action, fn) => {
+  ACTIONS[action]=fn
+}
+
+module.exports = {
+  ACTIONS,
+  setAllowActionFn,
+  callAllowedAction,
+  addAction,
+}

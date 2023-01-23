@@ -1,5 +1,3 @@
-import React, { useState, memo, useEffect, useMemo } from 'react'
-import lodash from 'lodash'
 import { CheckIcon, CopyIcon, EditIcon, WarningIcon, SearchIcon } from '@chakra-ui/icons';
 import { FiTrash2 } from 'react-icons/fi'
 import { GoRepo, GoCode } from 'react-icons/go'
@@ -27,6 +25,8 @@ import {
   Flex,
 } from '@chakra-ui/react';
 import { useSelector } from 'react-redux'
+import React, { useState, memo, useEffect, useMemo, useRef } from 'react'
+import lodash from 'lodash'
 import styled from '@emotion/styled'
 
 import { componentsList } from '~componentsList'
@@ -45,6 +45,7 @@ import useClipboard from '~hooks/useClipboard'
 import useDispatch from '~hooks/useDispatch'
 
 import {
+  getActivePage,
   getComponentWarnings,
   getPages,
 } from '../../core/selectors/components';
@@ -65,18 +66,19 @@ const ComponentLink = ({componentid, children, closeFn}) => {
   )
 }
 
-const TreeRenderer = ({componentid, components, level, closeFn}) => {
-  console.log(`closeFn:${closeFn}`)
+const TreeRenderer = ({componentid, components, level, closeFn, filter}) => {
   componentid = componentid || 'root'
   level = level || 0
   const node=components[componentid]
   if (node) {
+    const title=`${node.type}/${node.id}`
+    const re=new RegExp(filter || '', 'i')
     return (
       <Box ml={level}>
-        <ComponentLink componentid={componentid} closeFn={closeFn}>{node.type}/{node.id}</ComponentLink>
+        {re?.test(title) && <ComponentLink componentid={componentid} closeFn={closeFn}>{title}</ComponentLink>}
         <>
         {node.children.map(c =>
-          <TreeRenderer componentid={c} components={components} level={level+1} closeFn={closeFn} />
+          <TreeRenderer componentid={c} components={components} level={level+1} closeFn={closeFn} filter={filter}/>
         )}
         </>
       </Box>
@@ -130,8 +132,11 @@ const Inspector = () => {
   const [componentName, onChangeComponentName] = useState('')
   const componentsNames = useSelector(getComponentNames)
   const components = useSelector(getComponents)
+  const activePage = useSelector(getActivePage)
 
   const [isModalSearchOpen, setModalSearchOpen] = useState(false)
+  const [treeFilter, setTreeFilter] = useState(null)
+  const initialRef = useRef(null)
 
   const warnings = []//useSelector(getComponentWarnings(component)) TODO reimplement
 
@@ -167,6 +172,11 @@ const Inspector = () => {
     clearActiveProps()
   }, [clearActiveProps])
 
+  const onTreeFilterChange = ev => {
+    const value=ev.target.value
+    setTreeFilter(value || null)
+  }
+
   return (
     //@ts-ignore
     <RightPanel show={showRightPanel}>
@@ -183,7 +193,9 @@ const Inspector = () => {
           justifyContent="space-between"
           flexDir="column"
         >
-          <Flex justifyContent="space-between">
+          <Flex justifyContent="space-between" flexDirection='column'>
+          <p>{activePage?.pageName}</p>
+          <Flex justifyContent="space-between" flexDirection='row'>
           {isRoot ? 'Document' : type}<br/>{component.id}
           <SearchIcon
             onClick={() => {
@@ -195,6 +207,7 @@ const Inspector = () => {
               <WarningIcon color='red.500' />
             </Tooltip>:null
           }
+          </Flex>
           </Flex>
           {!!component.componentName && (
             <Text fontSize="xs" fontWeight="light">
@@ -261,7 +274,7 @@ const Inspector = () => {
         showChildren={componentHasChildren}
         parentIsRoot={parentIsRoot}
       />
-      <Modal onClose={onClose} isOpen={isOpen} isCentered>
+      <Modal onClose={onClose} isOpen={isOpen} isCentered >
         <ModalOverlay>
           <ModalContent>
             <form onSubmit={saveComponent}>
@@ -311,16 +324,18 @@ const Inspector = () => {
           </ModalContent>
         </ModalOverlay>
       </Modal>
-      <Modal isOpen={isModalSearchOpen} onClose={() => setModalSearchOpen(false)}>
+      {isModalSearchOpen &&
+      <Modal isOpen={isModalSearchOpen} onClose={() => {setModalSearchOpen(false);setTreeFilter(null)}} initialFocusRef={initialRef} >
         <ModalContent maxW="50%">
           <ModalHeader>Select component</ModalHeader>
           <ModalCloseButton />
           <ModalBody flexDirection='row'>
-            <TreeRenderer components={components} closeFn={()=>setModalSearchOpen(false)} />
+            <Input onChange={onTreeFilterChange} ref={initialRef}/>
+            <TreeRenderer components={components} closeFn={()=>setModalSearchOpen(false)} filter={treeFilter}/>
           </ModalBody>
         </ModalContent>
       </Modal>
-
+    }
     </RightPanel>
   )
 }

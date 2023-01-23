@@ -34,6 +34,15 @@ require('./models/Order')
 require('./models/OrderItem')
 require('./models/Booking')
 require('./models/Guest')
+require('./models/CigarCategory')
+require('./models/DrinkCategory')
+require('./models/MealCategory')
+require('./models/Message')
+require('./models/Conversation')
+require('./models/Measure')
+require('./models/Reminder')
+require('./models/Appointment')
+require('./models/Payment')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
@@ -74,9 +83,12 @@ checkConfig()
   })
   .then(() => {
     // Body parser middleware
-    app.use(bodyParser.urlencoded({extended: false}))
+    app.use(bodyParser.urlencoded({extended: true}))
     app.use(bodyParser.json())
 
+    // Body POST limit
+    app.use(express.json({limit: '1mb'}))
+    app.use(express.urlencoded({limit: '1mb'}))
     // Passport middleware
     app.use(passport.initialize())
 
@@ -156,9 +168,8 @@ checkConfig()
     // HTTPS server using certificates
     const httpsServer = https.createServer(
       {
-        cert: fs.readFileSync(`${process.env.HOME}/.ssh/Main.txt`),
-        key: fs.readFileSync(`${process.env.HOME}/.ssh/Key.txt`),
-        ca: fs.readFileSync(`${process.env.HOME}/.ssh/Intermediate.txt`),
+        cert: fs.readFileSync(`${process.env.HOME}/.ssh/fullchain.pem`),
+        key: fs.readFileSync(`${process.env.HOME}/.ssh/privkey.pem`),
       },
       app,
     )
