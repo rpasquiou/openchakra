@@ -8,11 +8,22 @@ import { Platform } from 'react-native'
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native'
 
+export function isJsonString(str: string) {
+  try {
+    JSON.parse(str)
+  } catch (e) {
+    return false
+  }
+  return true
+}
+
+
 
 /* TODO
   Responsive
   => Génération à la volée à tester à la suite
   Select
+  Voir pour changer les icones
   Input Radio (histoire d'enum)
   IconButton (voir l'icone après)
   UploadFile
@@ -22,6 +33,7 @@ import { useFocusEffect } from '@react-navigation/native'
 const WithResponsive = ({...props}) => {
   /** HOC to consider backgroundColor, color, height...
    * 1. Prendre en compte les propriétés qui ont du JSON en value
+   
    * 2. passer en revue chaque breakpoint pris en compte (
    *   base => xs
    *   sm   => $gtXs 
@@ -34,6 +46,19 @@ const WithResponsive = ({...props}) => {
    * console.log(props)
    * const prepareForTamagui = props.reduce
    */
+
+  let responsiveProps = {}
+  let otherProps = {}
+
+  const jsonProps = Object.entries(props).forEach(([key, val]) => {
+    if (isJsonString(val)) {
+      responsiveProps[key] = val
+    } else {
+      otherProps[key] = val
+    }
+  })
+    
+
 }
 
 export const Box = ({
