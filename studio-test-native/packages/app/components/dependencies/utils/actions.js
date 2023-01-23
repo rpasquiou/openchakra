@@ -9,8 +9,8 @@ export const ACTIONS = {
     // const completeRef = 
     console.log('valeurRefMail', refs[`${props.email}${level}`].current.value)
     console.log(refs[`${props.email}`])
-    const email = getComponentDataValue(props.email, level)
-    const password = getComponentDataValue(props.password, level)
+    const email = refs[`${props.email}${level}`].current.value
+    const password = refs[`${props.password}${level}`].current.value
     let url = `${API_ROOT}/login`
     return axios.post(url, { email, password }).catch(err => {
       throw new Error(err.response?.data || err)

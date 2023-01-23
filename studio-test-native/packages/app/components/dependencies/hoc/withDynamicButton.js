@@ -1,7 +1,7 @@
 import {useState, useEffect} from 'react'
 import axios from 'axios'
 import { useParams } from 'app/utils/useParams'
-import { ACTIONS } from 'app/components/dependencies/utils/actions'
+import { ACTIONS, API_ROOT } from 'app/components/dependencies/utils/actions'
 import {
   extractFiltersFromProps,
   getConditionalProperties,
@@ -31,7 +31,7 @@ const withDynamicButton = Component => {
     const [actionAllowed, setActionAllowed]=useState(true)
 
     useEffect(()=> {
-      axios.get(`/myAlfred/api/studio/action-allowed/${action}/${value?._id}`)
+      axios.get(`${API_ROOT}/action-allowed/${action}/${value?._id}`)
         .then(res => setActionAllowed(res.data))
         .catch(err => console.error(err))
     }, [action, value])

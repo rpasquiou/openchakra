@@ -39,7 +39,7 @@ const {
   ROLES,
   RES_TO_COME,
 } = require(`../../../utils/${getDataModel()}/consts`)
-const {sendCookie} = require('../../config/passport')
+const {getToken} = require('../../config/passport')
 const {
   HTTP_CODES,
   NotFoundError,
@@ -207,20 +207,30 @@ router.post('/action', passport.authenticate('cookie', {session: false}), (req, 
 },
 )
 
-router.post('/login', (req, res) => {
-  const {email, password} = req.body
-
-  return login(email, password)
+router.post("/login", (req, res) => {
+  const { email, password } = req.body;
+ 
+  return Promise.resolve(login(email, password))
     .then(user => {
-      return sendCookie(user, res).json(user)
+      Promise.resolve(getToken(user))
+        .then(token => {
+          res.header('Access-Control-Allow-Credentials', true)
+          res.header('Access-Control-Allow-Origin', req.headers.origin)
+          res.header('access-control-expose-headers', '*')
+          const cookieParams = {
+            httpOnly: true,
+            secure: true,
+          }
+          res.cookie('token', token, cookieParams)
+          res.send(token)
+        })
+        .catch(err => console.log(err))
     })
     .catch(err => {
       console.log(err)
-      return res
-        .status(err.status || HTTP_CODES.SYSTEM_ERROR)
-        .json(err.message || err)
+      return res.status(err.status || HTTP_CODES.SYSTEM_ERROR).json(err.message || err)
     })
-})
+});
 
 // router.post('/scormupdate', passport.authenticate('cookie', {session: false}), (req, res) => {
 router.post('/scormupdate', (req, res) => {
