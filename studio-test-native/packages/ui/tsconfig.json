@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base",
+  "include": [
+    "src",
+    "../../app/components/Chakra",
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "esModuleInterop": true,
+    "jsx": "preserve"
+  },
+  "references": []
+}
