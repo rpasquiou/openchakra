@@ -1,7 +1,8 @@
 import React, { memo, useState, useEffect } from 'react'
 import Highlight, { defaultProps } from 'prism-react-renderer'
 import { Box, Button, useClipboard } from '@chakra-ui/react'
-import { generateCode } from '~utils/code_native'
+import { generateCode } from '~utils/code'
+import { generateCode as generateNative } from '~utils/code_native'
 import theme from 'prism-react-renderer/themes/nightOwl'
 import { useSelector } from 'react-redux'
 import {
@@ -11,23 +12,37 @@ import {
 } from '~core/selectors/components'
 import { getModels } from '~core/selectors/dataSources'
 
+type generatedCode = 'chakra' | 'native'
+
 const CodePanel = () => {
   const components = useSelector(getComponents)
   const pageId = useSelector(getActivePageId)
   const pages = useSelector(getPages)
+  const [viewedCode, setViewedCode] = useState<generatedCode>('chakra')
   const [code, setCode] = useState<string | undefined>(undefined)
+  const [nativecode, setNativecode] = useState<string | undefined>(undefined)
   const models = useSelector(getModels)
 
   useEffect(() => {
     const getCode = async () => {
       const code = await generateCode(pageId, pages, models)
+      const nativecode = await generateNative(pageId, pages, models)
       setCode(code)
+      setNativecode(nativecode)
     }
 
     getCode()
   }, [components, models, pageId, pages])
 
   const { onCopy, hasCopied } = useClipboard(code!)
+
+  const toggleViewCode = () => {
+    if (viewedCode === 'chakra') {
+      setViewedCode('native')
+    } else {
+      setViewedCode('chakra')
+    }
+  }
 
   return (
     <Box
@@ -55,10 +70,23 @@ const CodePanel = () => {
       >
         {hasCopied ? 'copied' : 'copy'}
       </Button>
+      <Button
+        onClick={toggleViewCode}
+        size="sm"
+        position="absolute"
+        textTransform="uppercase"
+        colorScheme="teal"
+        fontSize="xs"
+        height="24px"
+        top={12}
+        right="1.25em"
+      >
+        {viewedCode}
+      </Button>
       <Highlight
         {...defaultProps}
         theme={theme}
-        code={code || '// Formatting code… please wait ✨'}
+        code={((viewedCode === 'chakra' && code) || nativecode) || '// Formatting code… please wait ✨'}
         language="jsx"
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
