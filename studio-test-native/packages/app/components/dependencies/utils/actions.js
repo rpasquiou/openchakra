@@ -3,11 +3,12 @@ import axios from 'axios'
 
 import { getComponent, getComponentDataValue, clearComponentValue } from './values'
 
-const API_ROOT = 'https://localhost:4002/myAlfred/api/studio'
+export const API_ROOT = 'https://localhost:4002/myAlfred/api/studio'
 export const ACTIONS = {
-  login: ({ props, level, refs }) => {
-    const completeRef = 
+  login: ({ props, level = '', refs }) => {
+    // const completeRef = 
     console.log('valeurRefMail', refs[`${props.email}${level}`].current.value)
+    console.log(refs[`${props.email}`])
     const email = getComponentDataValue(props.email, level)
     const password = getComponentDataValue(props.password, level)
     let url = `${API_ROOT}/login`
