@@ -89,7 +89,6 @@ export const Box = ({
       // }}
     >
       <XStack
-      $gtXs={{width: 100}}
       nativeID={id}
       data-reload={reload}
       backgroundColor={bgColor}

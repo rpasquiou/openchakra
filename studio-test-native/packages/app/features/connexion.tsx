@@ -15,8 +15,9 @@ import withDynamicButton from 'app/components/dependencies/hoc/withDynamicButton
 // import { useLocation } from 'react-router-dom'
 // import { useUserContext } from './dependencies/context/user'
 import {createParam} from 'solito'
+import { API_ROOT } from 'app/components/dependencies/utils/actions'
 
-const {useParam} = createParam<{ user: string }>()
+const {useParam} = createParam()
 
 const DynamicButton = withDynamicButton(Button)
 
@@ -28,8 +29,11 @@ const Connexion = () => {
   // const query = new URLSearchParams(useLocation().search) /* DEPRECATED */
   
   const [user] = useParam('user')
-  console.log('useParam', user)
+  const myAll = useParam('loggedUser') || useParam('id')
+  console.log(myAll)
+  console.log('useParam', myAll)
   const id = user
+  console.log(id)
 
   // const id = query.get('user') || query.get('id')
   // const { user } = useUserContext()
@@ -43,9 +47,9 @@ const Connexion = () => {
   }
 
   useEffect(() => {
-    get(`https://localhost:4002/myAlfred/api/studio/user/${id ? `${id}/` : ``}`)
+    get(`${API_ROOT}/user/${id ? `${id}/` : ``}`)
       .then(res => setRoot(res.data))
-      .catch(err => console.log(err?.response?.data || err))
+      .catch(err => {})
   }, [get, id, refresh])
 
   return (
@@ -165,7 +169,8 @@ const Connexion = () => {
                   color="#ffffff"
                   backgroundColor="#DAB679"
                   p='3%'
-                  width='70%'
+                  $base={{width: '70%'}}
+                  $sm={{width: '50%', mt: 50}}
                   border="2px solid white"
                   page="page-L9Q1U7EQH4UE3"
                   action="login"
@@ -176,7 +181,7 @@ const Connexion = () => {
                   nextAction="openPage"
                   nextActionProps='{"page":"mes-reservations","open":"false"}'
                   pageName={'feed'}
-                  onClick={() => (window.location = '/feed')}
+                  // onClick={() => (window.location = '/feed')}
                 >
             Se connecter
                 </DynamicButton>
@@ -200,7 +205,7 @@ const Connexion = () => {
                   pl='4%'
                   pr='4%'
                   pageName={'dashboard'}
-                  onClick={() => (window.location = '/dashboard')}
+                  // onClick={() => (window.location = '/dashboard')}
                 >
             Connexion gestionnaire
                 </DynamicButton>

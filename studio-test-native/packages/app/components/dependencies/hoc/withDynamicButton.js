@@ -75,8 +75,8 @@ const withDynamicButton = Component => {
             typeof reload === 'function' && reload()
           })
           .catch(err => {
-            console.error(err)
-            alert(err.response?.data || err)
+            // console.error(err)
+            // alert(err.response?.data || err)
           })
       }
     }
