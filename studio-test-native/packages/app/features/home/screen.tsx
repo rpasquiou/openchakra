@@ -49,7 +49,6 @@ export function HomeScreen() {
             <Paragraph>Coucou, c'est nous</Paragraph>
             <Text
               mt={2}
-              fontWeight="semibold"
             >
           Modern, Chic Penthouse with Mountain, City & Sea Views
             </Text>
