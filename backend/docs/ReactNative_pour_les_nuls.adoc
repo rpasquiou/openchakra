@@ -1,0 +1,62 @@
+# Rule the world
+
+## Java
+
+On commence l'ascension en installant la `version 11 of the Java SE Development Kit (JDK)``
+
+## Android Studio
+
+* Installer Android Studio 😅, avec les éléments suivants : 
+
+📦 Android SDK
+📦 Android SDK Platform
+📦 Android Virtual Device
+
+Puis, créer un device, Pixel 4a par exemple, avec l'api level en 31 (RN recommandation), qui vient accompagné de `Intel x86 Atom_64 System Image`.
+
+## Config React Native
+
+### ENV VAR
+
+ref : https://reactnative.dev/docs/environment-setup
+
+Inscrire les variables d'environnement ANDROID_HOME dans son .bash_profile, ou .bashrc
+
+[code, config]
+----
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+----
+
+### Watchman (hautement recommandé, mais je l'ai pas mis)
+
+Outil de Facebook qui scrute tous les changements de fichiers.
+
+## Expo
+
+Expo, c'est un peu le framework qui est là, pour la magie ✨
+
+[code, bash]
+----
+npm install -g expo-cli
+----
+
+## C'est quand qu'on build ?
+
+🏎 Gentlemen, start your engines. Après tout, on est là pour ça. Faut que ça sorte.
+
+* Se rendre dans `studio-test-native/apps/expo`
+* yarn android
+
+Les sources sont là, dans le dossier `android`, pour aller jouer avec.
+
+
+## Divers
+
+C'est déjà beau d'être arrivé jusqu'ici. 
+
+### jlink manque à l'appel ?
+
+La réponse https://stackoverflow.com/questions/73107234/how-to-fix-jlink-does-not-exist#answer-73146019
+
