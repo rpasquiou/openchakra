@@ -44,12 +44,93 @@ npm install -g expo-cli
 
 ## C'est quand qu'on build ?
 
+Quelques fichiers à modifier 
+
+[source, pro]
+.studio-test-native/apps/expo/android/app/proguard-rules.pro
+----
+# Add project specific ProGuard rules here.
+# By default, the flags in this file are appended to flags specified
+# in /usr/local/Cellar/android-sdk/24.3.3/tools/proguard/proguard-android.txt
+# You can edit the include path and order by changing the proguardFiles
+# directive in build.gradle.
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
+
+# react-native-reanimated
+-keep class com.swmansion.reanimated.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
+
+# Add any project specific keep options here:
+
+# Add hermes support by adding these two lines
+-keep class com.facebook.hermes.unicode.** { *; }
+-keep class com.facebook.jni.** { *; }
+----
+
+
+[source, properties]
+.studio-test-native/apps/expo/android/gradle.properties
+----
+...
+# define hermes 
+expo.jsEngine=hermes
+...
+----
+
+
+[source, gradle]
+.studio-test-native/apps/expo/android/settings.gradle
+----
+rootProject.name = 'NAME_PROJECT'
+
+apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle");
+useExpoModules()
+
+apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json')"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
+applyNativeModulesSettingsGradle(settings)
+
+include ':app'
+includeBuild(new File(["node", "--print", "require.resolve('react-native-gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile())
+
+if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true") {
+  include(":ReactAndroid")
+  project(":ReactAndroid").projectDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../ReactAndroid");
+  include(":ReactAndroid:hermes-engine")
+  project(":ReactAndroid:hermes-engine").projectDir = new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../ReactAndroid/hermes-engine");
+}
+
+----
+
 🏎 Gentlemen, start your engines. Après tout, on est là pour ça. Faut que ça sorte.
 
 * Se rendre dans `studio-test-native/apps/expo`
 * yarn android
 
 Les sources sont là, dans le dossier `android`, pour aller jouer avec.
+
+
+## SDK Withings
+
+[source, xml]
+.studio-test-native/apps/expo/android/app/src/main/AndroidManifest.xml
+----
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.pasquiou.testapp">
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+  <uses-permission android:name="android.permission.VIBRATE"/>
+  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.BLUETOOTH" />
+  <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  
+
+  ...
+----
+
+
 
 
 ## Divers
