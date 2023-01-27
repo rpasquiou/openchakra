@@ -19,22 +19,21 @@ const CodePanel = () => {
   const pageId = useSelector(getActivePageId)
   const pages = useSelector(getPages)
   const [viewedCode, setViewedCode] = useState<generatedCode>('chakra')
-  const [code, setCode] = useState<string | undefined>(undefined)
-  const [nativecode, setNativecode] = useState<string | undefined>(undefined)
+  const [code, setCode] = useState<string>('')
   const models = useSelector(getModels)
 
   useEffect(() => {
     const getCode = async () => {
-      const code = await generateCode(pageId, pages, models)
-      const nativecode = await generateNative(pageId, pages, models)
+      alert(viewedCode)
+      const fn=viewedCode=='native' ? generateNative : generateCode
+      const code = await fn(pageId, pages, models)
       setCode(code)
-      setNativecode(nativecode)
     }
 
     getCode()
-  }, [components, models, pageId, pages])
+  }, [components, models, pageId, pages, viewedCode])
 
-  const { onCopy, hasCopied } = useClipboard(code!)
+  const { onCopy, hasCopied } = useClipboard(code)
 
   const toggleViewCode = () => {
     if (viewedCode === 'chakra') {
@@ -86,7 +85,7 @@ const CodePanel = () => {
       <Highlight
         {...defaultProps}
         theme={theme}
-        code={((viewedCode === 'chakra' && code) || nativecode) || '// Formatting code… please wait ✨'}
+        code={code || '// Formatting code… please wait ✨'}
         language="jsx"
       >
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
