@@ -6,7 +6,7 @@ On commence l'ascension en installant la `version 11 of the Java SE Development 
 
 ## Android Studio
 
-* Installer Android Studio 😅, avec les éléments suivants : 
+* Installer Android Studio 😅, avec les éléments suivants :
 
 📦 Android SDK
 📦 Android SDK Platform
@@ -37,14 +37,16 @@ Outil de Facebook qui scrute tous les changements de fichiers.
 
 Expo, c'est un peu le framework qui est là, pour la magie ✨
 
+IMPORTANT: Attention, installer spécialement cette version.
+Une plus récente forcerait le build par eas-cli qui impose la création d'un compte chez eas.
 [code, bash]
 ----
-npm install -g expo-cli
+npm install -g expo-cli@6.0.8
 ----
 
 ## C'est quand qu'on build ?
 
-Quelques fichiers à modifier 
+Quelques fichiers à modifier
 
 [source, pro]
 .studio-test-native/apps/expo/android/app/proguard-rules.pro
@@ -74,7 +76,7 @@ Quelques fichiers à modifier
 .studio-test-native/apps/expo/android/gradle.properties
 ----
 ...
-# define hermes 
+# define hermes
 expo.jsEngine=hermes
 ...
 ----
@@ -106,7 +108,7 @@ if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true")
 🏎 Gentlemen, start your engines. Après tout, on est là pour ça. Faut que ça sorte.
 
 * Se rendre dans `studio-test-native/apps/expo`
-* yarn android pour lancer le projet 
+* yarn android pour lancer le projet
 * expo run:android pour builder => dossier android
 
 
@@ -129,7 +131,7 @@ Quelques permissions nécessaires pour le SDK withings
   <uses-permission android:name="android.permission.BLUETOOTH" />
   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-  
+
 
   ...
 ----
@@ -139,9 +141,8 @@ Quelques permissions nécessaires pour le SDK withings
 
 ## Divers
 
-C'est déjà beau d'être arrivé jusqu'ici. 
+C'est déjà beau d'être arrivé jusqu'ici.
 
 ### jlink manque à l'appel ?
 
 La réponse https://stackoverflow.com/questions/73107234/how-to-fix-jlink-does-not-exist#answer-73146019
-

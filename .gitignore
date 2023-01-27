@@ -194,7 +194,7 @@ ios
 
 # Touched host file
 host.txt
-android/
+#android/
 
 # Python
 **/__pycache__

@@ -1,4 +1,3 @@
-/node_modules
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -18,6 +17,8 @@
 
 # production
 /build
+apps/expo/android/app/build/intermediates
+**/fileChanges/last-build.bin
 
 # debug
 npm-debug.log*
