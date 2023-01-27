@@ -106,12 +106,16 @@ if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true")
 🏎 Gentlemen, start your engines. Après tout, on est là pour ça. Faut que ça sorte.
 
 * Se rendre dans `studio-test-native/apps/expo`
-* yarn android
+* yarn android pour lancer le projet 
+* expo run:android pour builder => dossier android
+
 
 Les sources sont là, dans le dossier `android`, pour aller jouer avec.
 
 
 ## SDK Withings
+
+Quelques permissions nécessaires pour le SDK withings
 
 [source, xml]
 .studio-test-native/apps/expo/android/app/src/main/AndroidManifest.xml
