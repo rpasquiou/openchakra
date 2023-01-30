@@ -108,6 +108,36 @@ router.post('/file', (req, res) => {
     })
 })
 
+router.post('/native/file', (req, res) => {
+  const {projectName, filePath, contents} = req.body
+  if (!(projectName && filePath && contents)) {
+    return res.status(HTTP_CODES.BAD_REQUEST).json()
+  }
+  const destpath = path.join(PRODUCTION_ROOT, projectName, 'packages', 'app', 'features', filePath)
+  const unzippedContents=zlib.inflateSync(new Buffer(contents, 'base64')).toString()
+  console.log(`Copying in ${destpath}`)
+  return fs
+    .writeFile(destpath, unzippedContents)
+    .then(() => {
+      return res.json()
+    })
+})
+
+router.post('/native/native-navigation', (req, res) => {
+  const {projectName, contents} = req.body
+  if (!(projectName && contents)) {
+    return res.status(HTTP_CODES.BAD_REQUEST).json()
+  }
+  const destpath = path.join(PRODUCTION_ROOT, projectName, 'packages', 'app', 'navigation', 'native', 'index.tsx')
+  const unzippedContents=zlib.inflateSync(new Buffer(contents, 'base64')).toString()
+  console.log(`Copying in ${destpath}`)
+  return fs
+    .writeFile(destpath, unzippedContents)
+    .then(() => {
+      return res.json()
+    })
+})
+
 router.post('/install', (req, res) => {
   const {projectName} = req.body
   if (!projectName) {

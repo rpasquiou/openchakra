@@ -108,8 +108,7 @@ if (settings.hasProperty("newArchEnabled") && settings.newArchEnabled == "true")
 🏎 Gentlemen, start your engines. Après tout, on est là pour ça. Faut que ça sorte.
 
 * Se rendre dans `studio-test-native/apps/expo`
-* yarn android pour lancer le projet
-* expo run:android pour builder => dossier android
+* expo run:android pour builder => dossier android puis démarrer
 
 
 Les sources sont là, dans le dossier `android`, pour aller jouer avec.

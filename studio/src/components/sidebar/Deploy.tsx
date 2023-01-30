@@ -7,7 +7,7 @@ import { getFullComponents } from '~core/selectors/components'
 import { deploy } from '../../utils/deploy'
 import { getModels } from '../../core/selectors/dataSources';
 
-const deployComponents = (state: ProjectState, models: any, toast: any) => {
+const deployComponents = (state: ProjectState, models: any, toast: any, native: boolean) => {
   toast({
     title: 'Starting publishing',
     status: 'success',
@@ -15,7 +15,7 @@ const deployComponents = (state: ProjectState, models: any, toast: any) => {
     duration: 2000,
     isClosable: true,
   })
-  return deploy(state, models)
+  return deploy(state, models, native)
     .then(() => {
       toast({
         title: 'Published on production',
@@ -45,16 +45,28 @@ const Deploy = () => {
   const models = useSelector(getModels)
 
   return (
+    <>
     <DeployButton
       onClick={() => {
         setIsDeploying(true)
-        deployComponents(state, models, toast)
+        deployComponents(state, models, toast, false)
           .finally(() => setIsDeploying(false))
       }}
       disabled={deploying}
     >
       {deploying ? 'Deploying...' : 'Deploy'}
     </DeployButton>
+    <DeployButton
+      onClick={() => {
+        setIsDeploying(true)
+        deployComponents(state, models, toast, true)
+          .finally(() => setIsDeploying(false))
+      }}
+      disabled={deploying}
+    >
+      {deploying ? 'Deploying native...' : 'Deploy native'}
+    </DeployButton>
+    </>
   )
 }
 

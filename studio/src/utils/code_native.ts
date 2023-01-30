@@ -26,7 +26,7 @@ import { isJsonString } from '../hooks/usePropsSelector'
 
 /* TODO move these breakpoints at root (in order to import them in tamagui.config) */
 export const breakpoints = {
-  base: { minWidth: 0},
+  base: { minWidth: 0 },
   sm: { minWidth: 480 },
   md: { minWidth: 768 },
   lg: { minWidth: 992 },
@@ -35,20 +35,20 @@ export const breakpoints = {
 }
 
 
-const cleanResponsiveValue = (val: string | number) => {  
+const cleanResponsiveValue = (val: string | number) => {
   // console.log(val)
 
   if (typeof val === 'string') {
-    const isViewportUnit =  val.endsWith('vh')
+    const isViewportUnit = val.endsWith('vh')
     if (isViewportUnit) {
       return `${parseInt(val)}%`
     }
-  
+
     const isPixels = val.endsWith('px')
     if (isPixels) {
       return parseInt(val)
     }
-    
+
     const isPercent = val.endsWith('%')
     if (isPercent) {
       return val
@@ -83,7 +83,7 @@ export const getPageUrl = (
   pages: { [key: string]: PageState },
 ) => {
   try {
-    return pages?.[pageId]?.pageName
+    return pages ?.[pageId] ?.pageName
       .toLowerCase()
       .replace(/ /i, '-')
       .normalize('NFD')
@@ -187,13 +187,13 @@ type BuildBlockParams = {
 
 // Wether component is linked to a save action, thus must not save during onChange
 const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
-  let c=Object.values(components)
-    .filter(c => c.props?.action=='save' && c.props?.actionProps)
+  let c = Object.values(components)
+    .filter(c => c.props ?.action == 'save' && c.props ?.actionProps)
     .map(c => JSON.parse(c.props.actionProps))
-  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_/.test(k)))
-  c=c.map(obj => Object.values(obj).filter(v => !!v))
-  c=lodash.flattenDeep(c)
-  c=lodash.uniq(c)
+  c = c.map(obj => lodash.pickBy(obj, (_, k) => /^component_/.test(k)))
+  c = c.map(obj => Object.values(obj).filter(v => !!v))
+  c = lodash.flattenDeep(c)
+  c = lodash.uniq(c)
   return c
 }
 
@@ -207,7 +207,7 @@ const buildBlock = ({
   noAutoSaveComponents
 }: BuildBlockParams) => {
   let content = ''
-  const singleData=isSingleDataPage(components)
+  const singleData = isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let childComponent = components[key]
     // console.log(childComponent)
@@ -218,15 +218,15 @@ const buildBlock = ({
       throw new Error(`invalid component ${key}`)
     } else if (forceBuildBlock || !childComponent.componentName) {
       const dataProvider = components[childComponent.props.dataSource]
-      const isDpValid=getValidDataProviders(components).find(dp => dp.id==childComponent.props.dataSource)
-      const paramProvider = dataProvider?.id.replace(/comp-/, '')
+      const isDpValid = getValidDataProviders(components).find(dp => dp.id == childComponent.props.dataSource)
+      const paramProvider = dataProvider ?.id.replace(/comp-/, '')
       const subDataProvider = components[childComponent.props.subDataSource]
-      const paramSubProvider = subDataProvider?.id.replace(/comp-/, '')
+      const paramSubProvider = subDataProvider ?.id.replace(/comp-/, '')
       const componentName = isDynamicComponent(childComponent)
         ? `Dynamic${capitalize(childComponent.type)}`
         : isMaskableComponent(childComponent)
-        ? `Maskable${capitalize(childComponent.type)}`
-        : capitalize(childComponent.type)
+          ? `Maskable${capitalize(childComponent.type)}`
+          : capitalize(childComponent.type)
       let propsContent = ''
 
       // DIRTY: stateValue for RAdioGroup to get value
@@ -255,9 +255,9 @@ const buildBlock = ({
 
       if (isDynamicComponent(childComponent)) {
         propsContent += ` backend='/'`
-          let tp = null
-            try {
-              tp =getDataProviderDataType(
+        let tp = null
+        try {
+          tp = getDataProviderDataType(
             components[childComponent.parent],
             components,
             childComponent.props.dataSource,
@@ -266,8 +266,8 @@ const buildBlock = ({
         } catch (err) {
           // console.error(err)
         }
-          if (!tp) {
-            try {
+        if (!tp) {
+          try {
             tp = {
               type: components[childComponent.props.dataSource].props.model,
               multiple: true,
@@ -276,24 +276,24 @@ const buildBlock = ({
           } catch (err) {
             console.error(err)
           }
-          }
+        }
 
-          if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
-            // const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
-            // if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-            //   propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
-            // }
-            // if (att?.suggestions) {
-            //   propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
-            // }
-          }
-          if (tp?.type) {
-            propsContent += ` dataModel='${tp.type}' `
-          } else {
-            console.error(
-              `No data provider data type found for ${childComponent.parent}`,
-            )
-          }
+        if (((childComponent.props.dataSource && tp ?.type) || childComponent.props.model) && childComponent.props ?.attribute) {
+          // const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
+          // if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
+          //   propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
+          // }
+          // if (att?.suggestions) {
+          //   propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
+          // }
+        }
+        if (tp ?.type) {
+          propsContent += ` dataModel='${tp.type}' `
+        } else {
+          console.error(
+            `No data provider data type found for ${childComponent.parent}`,
+          )
+        }
       }
       // Set if dynamic container
       if (
@@ -312,7 +312,7 @@ const buildBlock = ({
       })
 
       const responsiveProps = {}
-      /** Sur chaque propriété, si c'est une valeur json, 
+      /** Sur chaque propriété, si c'est une valeur json,
        * pour chaque breakpoint enregistré dans ce json, on l'attribue dans le breakpoint dédié
        */
 
@@ -344,7 +344,7 @@ const buildBlock = ({
               return
             }
             propsContent += ` dataSourceId={'${propsValue}'}`
-            if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
+            if (propsValue) { propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData ? '' : '[0]'}?._id}` }
           }
 
           if (propName === 'subDataSource') {
@@ -386,7 +386,7 @@ const buildBlock = ({
             Object.entries(propsValue)
               .forEach(([prop, value]) => {
                 if (value && value !== "0") {
-                  responsiveProps[prop] = {...responsiveProps[prop], [propName]: cleanResponsiveValue(value)}
+                  responsiveProps[prop] = { ...responsiveProps[prop], [propName]: cleanResponsiveValue(value) }
                 }
               })
 
@@ -409,7 +409,7 @@ const buildBlock = ({
                 :
                 propName === 'subDataSource' && paramSubProvider
                   ? `={${paramSubProvider}}`
-                : `='${propsValue}'`
+                  : `='${propsValue}'`
 
             if (propsValue === true || propsValue === 'true') {
               operand = ` `
@@ -428,10 +428,10 @@ const buildBlock = ({
       /* Apply responsive styles */
       for (const respProp in responsiveProps) {
         const gatheredProperties = Object.entries(responsiveProps[respProp])
-              .map(([prop, value]) => {
-                return ` ${prop}: '${value}' `
-              })
-              .join(', ')
+          .map(([prop, value]) => {
+            return ` ${prop}: '${value}' `
+          })
+          .join(', ')
 
         propsContent += `$${respProp}={{${gatheredProperties}}} `
       }
@@ -448,10 +448,10 @@ const buildBlock = ({
         const { page } = isJsonString(childComponent.props.actionProps)
           ? JSON.parse(childComponent.props.actionProps)
           : childComponent.props.actionProps
-          if (page) {
-            const destPageUrl = getPageUrl(page, pages)
-            propsContent += ` pageName={'${destPageUrl}'} `
-            propsContent += `onClick={() => window.location='/${destPageUrl}'}`
+        if (page) {
+          const destPageUrl = getPageUrl(page, pages)
+          propsContent += ` pageName={'${destPageUrl}'} `
+          propsContent += `onClick={() => window.location='/${destPageUrl}'}`
         }
       }
 
@@ -465,14 +465,14 @@ const buildBlock = ({
       } else if (childComponent.children.length) {
         content += `<${componentName} ${propsContent}>
       ${buildBlock({
-        component: childComponent,
-        components,
-        forceBuildBlock,
-        pages,
-        models,
-        singleDataPage,
-        noAutoSaveComponents,
-      })}
+            component: childComponent,
+            components,
+            forceBuildBlock,
+            pages,
+            models,
+            singleDataPage,
+            noAutoSaveComponents,
+          })}
       </${componentName}>`
       } else {
         content += `<${componentName} ${propsContent}  />`
@@ -563,9 +563,9 @@ const getIconsImports = (components: IComponents) => {
 const buildFilterStates = (components: IComponents) => {
   const filterComponents: IComponent[] = lodash(components)
     .pickBy(c =>
-      Object.values(components).some(other => other?.props?.textFilter == c.id)
+      Object.values(components).some(other => other ?.props ?.textFilter == c.id)
       ||
-      Object.values(components).some(other => other?.props?.filterValue == c.id)
+      Object.values(components).some(other => other ?.props ?.filterValue == c.id)
     )
     .values()
 
@@ -577,9 +577,9 @@ const buildFilterStates = (components: IComponents) => {
     .join('\n')
 }
 
-const getValidDataProviders = (components:IComponents): IComponent[] => {
+const getValidDataProviders = (components: IComponents): IComponent[] => {
   const result = lodash(components)
-    .pickBy(c => (c.type=='DataProvider' || c.id=='root') && c.props?.model)
+    .pickBy(c => (c.type == 'DataProvider' || c.id == 'root') && c.props ?.model)
     .values()
   return result
 }
@@ -591,12 +591,12 @@ const buildHooks = (components: IComponents) => {
     return fields
   }
 
-  const dataProviders=getValidDataProviders(components)
+  const dataProviders = getValidDataProviders(components)
   if (dataProviders.length === 0) {
     return ''
   }
 
-  const singlePage=isSingleDataPage(components)
+  const singlePage = isSingleDataPage(components)
 
   const isIdInDependencyArray = dataProviders.reduce((acc, curr, i) => {
     if (curr.id === 'root') {
@@ -611,7 +611,7 @@ const buildHooks = (components: IComponents) => {
     dataProviders
       .map(dp => {
         const dataId = dp.id.replace(/^comp-/, '')
-        return `const [${dataId}, set${capitalize(dataId)}]=useState(${singlePage ? 'null':'[]'})`
+        return `const [${dataId}, set${capitalize(dataId)}]=useState(${singlePage ? 'null' : '[]'})`
       })
       .join(`\n`)
   code += `\n
@@ -629,17 +629,17 @@ const buildHooks = (components: IComponents) => {
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
         const apiUrl = `$\{API_ROOT}/${dp.props.model}/${idPart}${
           dpFields ? `?fields=${dpFields}` : ''
-        }`
-        let thenClause=dp.id=='root' && singlePage ?
-         `.then(res => set${capitalize(dataId)}(res.data[0]))`
-         :
-         `.then(res => set${capitalize(dataId)}(res.data))`
+          }`
+        let thenClause = dp.id == 'root' && singlePage ?
+          `.then(res => set${capitalize(dataId)}(res.data[0]))`
+          :
+          `.then(res => set${capitalize(dataId)}(res.data))`
 
-        let query= `get(\`${apiUrl}\`)
+        let query = `get(\`${apiUrl}\`)
         ${thenClause}
         .catch(err => alert(err?.response?.data || err))`
-        if (dp.id=='root' && singlePage) {
-          query=`// For single data page\nif (id) {\n${query}\n}`
+        if (dp.id == 'root' && singlePage) {
+          query = `// For single data page\nif (id) {\n${query}\n}`
         }
         return query
       })
@@ -650,7 +650,7 @@ const buildHooks = (components: IComponents) => {
 
 const isFilterComponent = (component: IComponent, components: IComponents) => {
   return Object.values(components).some(
-    c => c.props?.textFilter == component.id,
+    c => c.props ?.textFilter == component.id,
   )
 }
 
@@ -716,8 +716,8 @@ export const generateCode = async (
   let filterStates = buildFilterStates(components)
   let dynamics = buildDynamics(components, extraImports)
   let maskable = buildMaskable(components, extraImports)
-  const singleDataPage=isSingleDataPage(components)
-  const noAutoSaveComponents=getNoAutoSaveComponents(components)
+  const singleDataPage = isSingleDataPage(components)
+  const noAutoSaveComponents = getNoAutoSaveComponents(components)
 
   let code = buildBlock({
     component: components.root,
@@ -751,29 +751,29 @@ export const generateCode = async (
     module[c] ? '@my/ui' : `app/components/dependencies/custom-components/${c}`,
   )
 
-  const rootIdQuery = components['root']?.props?.model
+  const rootIdQuery = components['root'] ?.props ?.model
   const rootIgnoreUrlParams =
-    components['root']?.props?.ignoreUrlParams == 'true'
+    components['root'] ?.props ?.ignoreUrlParams == 'true'
 
   code = `import React, {useState, useEffect} from 'react';
   import {Scrollview} from 'react-native';
   ${hooksCode ? `import axios from 'axios'` : ''}
 
   ${Object.entries(groupedComponents)
-    .map(([modName, components]) => {
-      const multiple = modName.includes('@my/ui')
-      return `import ${multiple ? '{' : ''}
+      .map(([modName, components]) => {
+        const multiple = modName.includes('@my/ui')
+        return `import ${multiple ? '{' : ''}
       ${components.join(',')}
     ${multiple ? '}' : ''} from "${modName}";
     `
-    })
-    .join('\n')}
+      })
+      .join('\n')}
 ${
-  iconImports.length
-    ? `
+    iconImports.length
+      ? `
 import { ${iconImports.join(',')} } from "@chakra-ui/icons";`
-    : ''
-}
+      : ''
+    }
 
 
 import { useUserContext } from 'app/components/dependencies/context/user'
@@ -821,23 +821,18 @@ export default ${componentName};`
 }
 
 export const generateApp = async (state: ProjectState) => {
-  /**
-  <ul>
-${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
-</ul>
-*/
   const { pages, rootPage } = state
   let code = `import {BrowserRouter, Routes, Route} from 'react-router-dom'
   import { UserWrapper } from 'app/components/dependencies/context/user';
   ${Object.values(pages)
-    .map(
-      page =>
-        `import ${getPageComponentName(
-          page.pageId,
-          pages,
-        )} from './${getPageFileName(page.pageId, pages)}'`,
+      .map(
+        page =>
+          `import ${getPageComponentName(
+            page.pageId,
+            pages,
+          )} from './${getPageFileName(page.pageId, pages)}'`,
     )
-    .join('\n')}
+      .join('\n')}
 
   const App = () => (
     <UserWrapper>
@@ -845,14 +840,14 @@ ${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
     <Routes>
       <Route path='/' element={<${getPageComponentName(rootPage, pages)}/>} />
       ${Object.values(pages)
-        .map(
-          page =>
-            `<Route path='/${getPageUrl(
-              page.pageId,
-              pages,
-            )}' element={<${getPageComponentName(page.pageId, pages)}/>} />`,
-        )
-        .join('\n')}
+      .map(
+        page =>
+          `<Route path='/${getPageUrl(
+            page.pageId,
+            pages,
+          )}' element={<${getPageComponentName(page.pageId, pages)}/>} />`,
+    )
+      .join('\n')}
     </Routes>
     </BrowserRouter>
     </UserWrapper>
@@ -862,4 +857,38 @@ ${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
   `
   code = await formatCode(code)
   return code
+}
+
+export const generateNativeNavigation = async (state: ProjectState) => {
+  const {pages} = state
+  let code=`
+    import React from 'react'
+    import { createNativeStackNavigator } from '@react-navigation/native-stack'
+    ${Object.values(pages).map(p => {
+      const compName = getPageComponentName(p.pageId, pages)
+      return `import ${compName} from 'app/features/${compName}'`
+    }).join('\n')}
+
+    /** TODO remind to declare URL params
+    const Stack = createNativeStackNavigator<{
+      'user-detail': {
+        id: string
+      }
+    }>()*/
+    const Stack = createNativeStackNavigator()
+
+    export function NativeNavigation() {
+      return (
+        <Stack.Navigator>
+          ${Object.values(pages).map(p => {
+            const compName = getPageComponentName(p.pageId, pages)
+            return `<Stack.Screen name="${compName}" component={${compName}} options={{}}/>`
+          }).join('\n')}
+        </Stack.Navigator>
+      )
+    }
+    `
+  code = await formatCode(code)
+  return code
+
 }

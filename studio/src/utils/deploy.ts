@@ -1,20 +1,24 @@
-import { ProjectState } from '~/core/models/project'
 import lodash from 'lodash'
-import { build, copyFile, install, start } from './http'
+
+import { ProjectState } from '~/core/models/project'
+
+import { build, copyFile, copyNativeNavigation, install, start } from './http';
 import { generateCode, generateApp, normalizePageName } from './code'
+import { generateNativeNavigation } from './code_native';
 import { validate } from './validation'
 
 // If true, build target project when compliaiton fixed
 const TARGET_BUILD = false
 
-const copyCode = (pageName: string, contents: Buffer) => {
+const copyCode = (pageName: string, contents: Buffer, native: boolean) => {
   return copyFile({
     contents: contents,
     filePath: `${normalizePageName(pageName)}.js`,
+    native: native,
   })
 }
 
-export const deploy = (state: ProjectState, models: any) => {
+export const deploy = (state: ProjectState, models: any, native: boolean) => {
   const pages = Object.values(state.pages)
   return Promise.all(
     pages.map(({ pageName, components }) => validate(components)),
@@ -40,18 +44,13 @@ export const deploy = (state: ProjectState, models: any) => {
         codes,
       )
       return Promise.all(
-        namedCodes.map(([pageName, code]) => copyCode(pageName, code)),
+        namedCodes.map(([pageName, code]) => copyCode(pageName, code, native)),
       )
     })
-    .then(() => {
-      return generateApp(state)
-    })
-    .then(code => {
-      return copyCode('App', code)
-    })
-    .then(() => {
-      return install()
-    })
+    .then(() => generateApp(state))
+    .then(code => copyCode('App', code, native))
+    .then(() => native ? generateNativeNavigation(state).then(code => copyNativeNavigation({contents:code})) : Promise.resolve())
+    .then(() => install())
     .then(() => {
       return TARGET_BUILD ? build().then(() => start()) : true
     })
