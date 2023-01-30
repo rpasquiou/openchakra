@@ -6,7 +6,7 @@ import { getComponent, getComponentDataValue, clearComponentValue } from './valu
 export const API_ROOT = 'https://localhost:4002/myAlfred/api/studio'
 export const ACTIONS = {
   login: ({ props, level = '', refs }) => {
-    // const completeRef = 
+    // const completeRef =
     console.log('valeurRefMail', refs[`${props.email}${level}`].current.value)
     console.log(refs[`${props.email}`])
     const email = refs[`${props.email}${level}`].current.value
@@ -52,7 +52,7 @@ export const ACTIONS = {
     const queryParams = query
 
     console.log('OpenPageQuery', queryParams)
-    
+
     let url = `/${props.page}`
     if (value && value._id) {
         queryParams.set(model, value._id)
@@ -227,10 +227,20 @@ export const ACTIONS = {
         })
       })
   },
-  
+
   logout: () => {
     document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     return Promise.resolve()
   },
+
+  // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-setup-webview
+  openWithingsSetup: params => {
+    window.location='https://localhost/myAlfred/api/withings/setup'
+  },
+
+  // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-settings-webview
+  openWithingsSettings: params => {
+    window.location='https://localhost/myAlfred/api/withings/settings'
+  }
 
 }

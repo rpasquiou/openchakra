@@ -1,7 +1,6 @@
 import lodash from 'lodash'
 import axios from 'axios'
-
-import { getComponent, clearComponentValue } from './values'
+import {getComponent, clearComponentValue} from './values'
 
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
@@ -252,5 +251,15 @@ export const ACTIONS = {
     document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     return Promise.resolve()
   },
+
+  // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-setup-webview
+  openWithingsSetup: params => {
+    window.location='https://localhost/myAlfred/api/withings/setup'
+  },
+
+  // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-settings-webview
+  openWithingsSettings: params => {
+    window.location='https://localhost/myAlfred/api/withings/settings'
+  }
 
 }

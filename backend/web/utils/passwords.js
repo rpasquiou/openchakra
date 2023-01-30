@@ -1,4 +1,5 @@
 const PATTERN=/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})/
+const PATTERN_STR='8 caractères minimum dont une majuscule, une minuscule, un chiffre et un caractère spécial'
 const checkPasswordFormat = pass => PATTERN.test(pass)
 
 
@@ -10,11 +11,10 @@ const checkPass1 = pass => {
     return {check: true}
   }
   return {
-    error: '8 caractères minimum dont une majuscule, une minuscule, un chiffre et un caractère spécial',
+    error: PATTERN_STR,
     check: false,
   }
 }
-
 
 const checkPass2 = (pass1, pass2) => {
   if (pass1==pass2) {
@@ -26,7 +26,18 @@ const checkPass2 = (pass1, pass2) => {
   }
 }
 
+const validatePassword = ({password, password2}) => {
+  if (!PATTERN.test(password)) {
+    return Promise.reject(`Mot de passe incorrect:${PATTERN_STR}`)
+  }
+  if (password!=password2) {
+    return Promise.reject(`Les mots de passe saisis ne correspondent pas`)
+  }
+  return Promise.resolve()
+}
+
 module.exports = {
   checkPass1,
   checkPass2,
+  validatePassword,
 }

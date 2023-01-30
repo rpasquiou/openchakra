@@ -13,7 +13,7 @@ const {
   getHostUrl,
   getPort,
 } = require('../config/config')
-const {HTTP_CODES} = require('./utils/errors')
+const { HTTP_CODES, parseError } = require('./utils/errors')
 require('./models/ResetToken')
 require('./models/Program')
 require('./models/Theme')
@@ -30,14 +30,12 @@ require('./models/Company')
 require('./models/Drink')
 require('./models/Meal')
 require('./models/Cigar')
-require('./models/Order')
 require('./models/OrderItem')
 require('./models/Booking')
 require('./models/Guest')
 require('./models/CigarCategory')
 require('./models/DrinkCategory')
 require('./models/MealCategory')
-require('./models/Message')
 require('./models/Conversation')
 require('./models/Measure')
 require('./models/Reminder')
@@ -65,6 +63,7 @@ const http = require('http')
 const https = require('https')
 const fs = require('fs')
 const studio = require('./routes/api/studio')
+const withings = require('./routes/api/withings')
 const path = require('path')
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
@@ -135,6 +134,7 @@ checkConfig()
     // Check hostname is valid
     app.use('/testping', (req, res) => res.json(RANDOM_ID))
     app.use('/myAlfred/api/studio', studio)
+    app.use('/myAlfred/api/withings', withings)
 
     // const port = process.env.PORT || 5000;
     const rootPath = path.join(__dirname, '/..')
@@ -145,7 +145,6 @@ checkConfig()
         /* eslint-enable global-require */
       }
     })
-    // app.use(express.static("static"));
 
     if (!is_development_nossl() && !is_development()) {
       app.use((req, res, next) => {
@@ -157,6 +156,13 @@ checkConfig()
       })
     }
     app.get('*', routerHandler)
+
+    // Single error handler.YEAAAAAHHHHHH !!!
+    app.use((err, req, res, next) => {
+      console.error(err)
+      const {status, body}=parseError(err)
+      return res.status(status).json(body)
+    })
 
     // HTTP only handling redirect to HTTPS
     // http.createServer((req, res) => {

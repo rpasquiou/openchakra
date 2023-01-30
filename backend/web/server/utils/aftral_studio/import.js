@@ -3,7 +3,7 @@ const {
   APPRENANT,
   FORMATEUR,
   PASSWORD
-} = require('../../../utils/aftral_studio/consts');
+} = require('../../plugins/aftral/consts');
 const { TEXT_TYPE } = require('../../../utils/consts');
 const {promises: fs} = require('fs')
 const bcrypt=require('bcryptjs')

@@ -1,13 +1,3 @@
-const {
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS
-} = require('../../../utils/fumoir/consts');
-const {
-  HOOK_PAYMENT_FAILED,
-  HOOK_PAYMENT_SUCCESSFUL
-} = require('../../plugins/payment/vivaWallet');
-const Payment = require('../../models/Payment');
-
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -18,6 +8,15 @@ const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
+const Payment = require('../../models/Payment')
+const {
+  HOOK_PAYMENT_FAILED,
+  HOOK_PAYMENT_SUCCESSFUL,
+} = require('../../plugins/payment/vivaWallet')
+const {
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS,
+} = require('../../plugins/fumoir/consts')
 const {
   callFilterDataUser,
   callPostCreateData,
@@ -31,8 +30,8 @@ const {
   getProductionPort,
   getProductionRoot,
 } = require('../../../config/config')
-require(`../../utils/studio/${getDataModel()}/functions`)
-require(`../../utils/studio/${getDataModel()}/actions`)
+require(`../../plugins/${getDataModel()}/functions`)
+require(`../../plugins/${getDataModel()}/actions`)
 const User = require('../../models/User')
 
 const {
@@ -100,15 +99,12 @@ router.post('/file', (req, res) => {
     return res.status(HTTP_CODES.BAD_REQUEST).json()
   }
   const destpath = path.join(PRODUCTION_ROOT, projectName, 'src', filePath)
-  const unzippedContents=zlib.inflateSync(new Buffer(contents, 'base64')).toString();
+  const unzippedContents=zlib.inflateSync(new Buffer(contents, 'base64')).toString()
   console.log(`Copying in ${destpath}`)
   return fs
     .writeFile(destpath, unzippedContents)
     .then(() => {
       return res.json()
-    })
-    .catch(err => {
-      return res.status(HTTP_CODES.SYSTEM_ERROR).json(err)
     })
 })
 
@@ -198,18 +194,11 @@ router.post('/action', passport.authenticate('cookie', {session: false}), (req, 
     .then(result => {
       return res.json(result)
     })
-    .catch(err => {
-      console.error(err)
-      return res
-        .status(err.status || HTTP_CODES.SYSTEM_ERROR)
-        .json(err.message || err)
-    })
-},
-)
+})
 
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
- 
+
   return Promise.resolve(login(email, password))
     .then(user => {
       Promise.resolve(getToken(user))
@@ -226,11 +215,7 @@ router.post("/login", (req, res) => {
         })
         .catch(err => console.log(err))
     })
-    .catch(err => {
-      console.log(err)
-      return res.status(err.status || HTTP_CODES.SYSTEM_ERROR).json(err.message || err)
-    })
-});
+})
 
 // router.post('/scormupdate', passport.authenticate('cookie', {session: false}), (req, res) => {
 router.post('/scormupdate', (req, res) => {
@@ -276,11 +261,6 @@ router.post('/register', (req, res) => {
   const body=lodash.mapValues(req.body, v => JSON.parse(v))
   return ACTIONS.register(body)
     .then(result => res.json(result))
-    .catch(err => {
-      console.error(err)
-      return res.status(err.status||500).json(err.message || err)
-    })
-
 })
 
 // Validate webhook
@@ -329,14 +309,6 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
         .then(data => {
           return res.json(data)
         })
-        .catch(err => {
-          console.error(err)
-          return res.status(err.status||500).json(err.message || err)
-        })
-    })
-    .catch(err => {
-      console.error(err)
-      return res.status(err.status||500).json(err.message || err)
     })
 })
 
@@ -350,14 +322,11 @@ router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (re
   if (!model || !id) {
     return res.status(HTTP_CODE.BAD_REQUEST).json(`Model and id are required`)
   }
-  console.log(`UPdateing:${id} with ${JSON.stringify(params)}`)
+  console.log(`Updating:${id} with ${JSON.stringify(params)}`)
   return mongoose.connection.models[model]
     .findByIdAndUpdate(id, params, {new: true, runValidators: true})
     .then(data => {
       return res.json(data)
-    })
-    .catch(err => {
-      return res.status(500).json(err)
     })
 })
 
@@ -400,10 +369,6 @@ router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (r
           }
           console.log(`GET ${model}/${id} ${fields}: data sent`)
           return res.json(data)
-        })
-        .catch(err => {
-          console.error(err)
-          return res.status(err.status || 500).json(err.message || err)
         })
     })
 },

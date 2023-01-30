@@ -131,7 +131,7 @@ export const ACTIONS: IActions = {
     label: 'Save/create',
     options: {
       model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
-      ...Object.fromEntries(lodash.range(10).map((idx:number) => {
+      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
       return [
         `component_${idx}`,
         ({ components }) => components
@@ -209,7 +209,7 @@ export const ACTIONS: IActions = {
   register: {
     label: 'Register new account',
     options: {
-      ...Object.fromEntries(lodash.range(10).map((idx:number) => {
+      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
       return [
         `component_${idx}`,
         ({ components }) => components
@@ -225,7 +225,14 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
-
+  openWithingsSetup: {
+    label: 'Open withings setup',
+    options: {},
+  },
+  openWithingsSettings: {
+    label: 'Open withings settings',
+    options: {},
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
