@@ -37,7 +37,7 @@ const User = require('../../models/User')
 const {
   ROLES,
   RES_TO_COME,
-} = require(`../../../utils/${getDataModel()}/consts`)
+} = require(`../../plugins/${getDataModel()}/consts`)
 const {getToken} = require('../../config/passport')
 const {
   HTTP_CODES,
