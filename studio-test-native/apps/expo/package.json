@@ -11,7 +11,9 @@
     "build:ios": "TAMAGUI_TARGET=native eas build -p ios",
     "build": "TAMAGUI_TARGET=native eas build -p all",
     "web": "TAMAGUI_TARGET=web yarn expo start --web",
-    "eject": "expo eject"
+    "eject": "expo eject",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@babel/runtime": "^7.18.9",
