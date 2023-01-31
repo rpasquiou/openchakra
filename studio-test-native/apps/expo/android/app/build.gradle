@@ -274,6 +274,10 @@ android {
     }
 }
 
+repositories {
+    maven { url = "https://withings.jfrog.io/artifactory/androidsdk-mvn-prod/" }
+}
+
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
 
@@ -315,6 +319,8 @@ dependencies {
     }
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
         exclude group:'com.facebook.flipper'
+
+    implementation "com.withings.library:webble:6.1"
     }
 
     if (enableHermes) {
