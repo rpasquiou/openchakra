@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "myapp",
-    "slug": "myapp",
+    "slug": "tensiometre",
     "scheme": "myapp",
     "version": "1.0.0",
     "jsEngine": "hermes",
@@ -21,7 +21,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tamagui.myapp"
+      "bundleIdentifier": "com.ma-tension.dekuple"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,7 +34,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "061b4470-78c7-4d6a-b850-8167fb0a3434"
+        "projectId": "0d14d3e6-f3f9-45e6-85f4-edfd51d1392f"
       }
     }
   }
