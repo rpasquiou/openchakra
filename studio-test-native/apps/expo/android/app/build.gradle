@@ -320,7 +320,7 @@ dependencies {
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
         exclude group:'com.facebook.flipper'
 
-    implementation "com.withings.library:webble:6.1"
+    implementation "com.withings.library:webble:6.4.2"
     }
 
     if (enableHermes) {
