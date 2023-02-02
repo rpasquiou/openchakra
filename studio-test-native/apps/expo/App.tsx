@@ -3,6 +3,8 @@ import React, { useRef, useEffect } from 'react'
 import {
     SafeAreaView,
     StyleSheet,
+    NativeModules,
+    Text
 } from 'react-native';
 //import SplashScreen from 'react-native-splash-screen';
 
@@ -27,6 +29,7 @@ const App = () => {
           ref={webviewRef}
         />
         </SafeAreaView>
+        <Text>JS:{JSON.stringify(NativeModules)}:SJ</Text>
     </>
   )
 };
