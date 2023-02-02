@@ -8,6 +8,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Promise;
 import android.util.Log;
+import com.dekuple.tensiometre.WithingsActivity;
 
 class WithingsLink extends ReactContextBaseJavaModule {
 

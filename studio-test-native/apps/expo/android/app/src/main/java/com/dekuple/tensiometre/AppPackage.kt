@@ -15,5 +15,5 @@ class AppPackage : ReactPackage {
 
     override fun createNativeModules(
         reactContext: ReactApplicationContext
-    ): MutableList<NativeModule> = listOf(WithingsLink2(reactContext)).toMutableList()
+    ): MutableList<NativeModule> = listOf(WithingsLink(reactContext)).toMutableList()
 }

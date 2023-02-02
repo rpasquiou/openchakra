@@ -1,4 +1,4 @@
-package com.withings.sdk.sample
+package com.dekuple.tensiometre
 
 import android.app.Activity
 import android.content.Context
@@ -13,7 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.withings.library.webble.WithingsFragment
 
-clakjhjhkjss WithingsActivity : AppCompatActivity() {
+class WithingsActivity : AppCompatActivity() {
 
     companion object {
         fun createInstallIntent(context: Context): Intent {
