@@ -1,12 +1,13 @@
 import {WebView} from 'react-native-webview';
-import React, { useRef, useEffect } from 'react'
+import React, { useRef } from 'react'
 import {
     SafeAreaView,
     StyleSheet,
-    NativeModules,
-    Text
+    Text,
+    NativeModules
 } from 'react-native';
 //import SplashScreen from 'react-native-splash-screen';
+const {WithingsLink} = NativeModules;
 
 const App = () => {
 
@@ -15,9 +16,11 @@ const App = () => {
       SplashScreen.hide();
   });
   */
-  
+
   const webviewRef = useRef(null);
 
+  WithingsLink.sayHello()
+    .then(res => console.log(`Got ${res}`))
   return (
     <>
       <SafeAreaView style={styles.flexContainer}  >
@@ -29,7 +32,6 @@ const App = () => {
           ref={webviewRef}
         />
         </SafeAreaView>
-        <Text>JS:{JSON.stringify(NativeModules)}:SJ</Text>
     </>
   )
 };

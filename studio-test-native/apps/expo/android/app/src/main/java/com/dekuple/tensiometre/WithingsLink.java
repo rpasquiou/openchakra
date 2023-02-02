@@ -6,28 +6,29 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.Promise;
+import android.util.Log;
 
 class WithingsLink extends ReactContextBaseJavaModule {
 
     public WithingsLink(ReactApplicationContext reactContext) {
         super(reactContext);
     }
+
     @Override
     public String getName(){
         return "WithingsLink";
     }
 
-    /**
     @ReactMethod
     public void openInstall() {
-        startActivity(WithingsActivity.createInstallIntent(getCurrentActivity()));
+        getCurrentActivity().startActivity(WithingsActivity.createInstallIntent(getCurrentActivity()));
     }
-    */
 
     @ReactMethod
-    public String sayHello() {
-        //Log.d("WithongsLink", "sayHello called");
-        return "Hello";
+    public void sayHello(Promise promise) {
+        Log.e("WithingsLink", "sayHello called");
+        promise.resolve("Tagada");
     }
 
 }
