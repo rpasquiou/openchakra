@@ -42,7 +42,7 @@ class WithingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_withings)
+        //setContentView(R.layout.activity_withings)
         if (isOnline()) {
             showWithingsFragment()
         } else {
@@ -88,11 +88,13 @@ class WithingsActivity : AppCompatActivity() {
     }
 
     private fun showNoInternet() {
+        /**
         AlertDialog.Builder(this)
             .setTitle(R.string.noInternet)
             .setPositiveButton(R.string.ok) { _, _ -> finish() }
             .setOnDismissListener { finish() }
             .create().show()
+       */
     }
 
     override fun onBackPressed() {
