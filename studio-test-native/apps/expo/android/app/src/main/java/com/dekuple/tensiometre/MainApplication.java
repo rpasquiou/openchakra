@@ -36,9 +36,9 @@ public class MainApplication extends Application implements ReactApplication {
       @SuppressWarnings("UnnecessaryLocalVariable")
       List<ReactPackage> packages = new PackageList(this).getPackages();
       // Packages that cannot be autolinked yet can be added manually here, for example:
-      Log.e("MainApplication", "Before add package");
+      Log.d("DEKUPLE", "Before add package");
       packages.add(new AppPackage());
-      Log.e("MainApplication", "After add package");
+      Log.d("DEKUPLE", "After add package");
       return packages;
     }
 
@@ -63,7 +63,7 @@ public class MainApplication extends Application implements ReactApplication {
   @Override
   public void onCreate() {
     super.onCreate();
-    Log.e("MainApplication", "onCreate");
+    Log.d("DEKUPLE", "onCreate");
     // If you opted-in for the New Architecture, we enable the TurboModule system
     ReactFeatureFlags.useTurboModules = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
     SoLoader.init(this, /* native exopackage */ false);

@@ -7,23 +7,38 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
+import android.content.Intent
+import android.util.Log
 
 class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
+
     override fun getName() = "WithingsLink"
+
     @ReactMethod fun openInstall() {
-        if (getReactApplicationContextIfActiveOrWarn()!=null) {
-          getReactApplicationContextIfActiveOrWarn()!!.startActivity(WithingsActivity.createInstallIntent(getReactApplicationContextIfActiveOrWarn()!!));
+        try {
+          if (getReactApplicationContextIfActiveOrWarn()!=null) {
+            val context=getReactApplicationContextIfActiveOrWarn()!!
+            val intent=WithingsActivity.createInstallIntent(context);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            context.startActivity(intent);
+          }
+        }
+        catch(e: Throwable) {
+          Log.e("DEKUPLE", "Error: $e")
         }
     }
 
     @ReactMethod fun openSettings(accessToken: String) {
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
-          getReactApplicationContextIfActiveOrWarn()!!.startActivity(WithingsActivity.createSettingsIntent(getReactApplicationContextIfActiveOrWarn()!!, accessToken));
+          val context=getReactApplicationContextIfActiveOrWarn()!!
+          val intent=WithingsActivity.createSettingsIntent(context, accessToken)
+          intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
+          context.startActivity(intent);
         }
     }
 
     @ReactMethod fun sayHello(promise:Promise) {
-        //Log.d("WithongsLink", "sayHello called");
+        Log.d("DEKUPLE", "sayHello called");
         return promise.resolve("Bonjour")
     }
 
