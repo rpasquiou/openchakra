@@ -14,24 +14,25 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
 
     override fun getName() = "WithingsLink"
 
-    @ReactMethod fun openInstall() {
+    @ReactMethod fun openInstall(accessToken: String, csrfToken: String) {
         try {
           if (getReactApplicationContextIfActiveOrWarn()!=null) {
             val context=getReactApplicationContextIfActiveOrWarn()!!
-            val intent=WithingsActivity.createInstallIntent(context);
+            val intent=WithingsActivity.createInstallIntent(context, accessToken, csrfToken);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
             context.startActivity(intent);
           }
         }
         catch(e: Throwable) {
-          Log.e("DEKUPLE", "Error: $e")
+          Log.e("DEKUPLE", "openInstall error: $e")
+          throw e
         }
     }
 
-    @ReactMethod fun openSettings(accessToken: String) {
+    @ReactMethod fun openSettings(accessToken: String, csrfToken: String) {
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
           val context=getReactApplicationContextIfActiveOrWarn()!!
-          val intent=WithingsActivity.createSettingsIntent(context, accessToken)
+          val intent=WithingsActivity.createSettingsIntent(context, accessToken, csrfToken)
           intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
           context.startActivity(intent);
         }

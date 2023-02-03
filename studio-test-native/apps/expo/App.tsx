@@ -28,11 +28,14 @@ const App = () => {
       .then(res => {
         setCurrentUser(res.data)
       })
-      .catch(err => console.error(err))
+      .catch(err => {
+        //console.error(`Can not get current-user:${err}`)
+      })
     setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl])
 
-  const token='6d3d7bc59ab8b2753e77d0792ce5c48698b3a218'
+  const accessToken=currentUser?.access_token
+  const csrfToken=currentUser?.csrf_token
   WithingsLink.sayHello()
   return (
     <>
@@ -41,15 +44,19 @@ const App = () => {
           startInLoadingState={true}
           allowsBackForwardNavigationGestures
           mediaPlaybackRequiresUserAction={true}
-          source={{ uri: "https://dekuple.my-alfred.io/setup-appareils" }}
-          //source={{ uri: "https://dekuple.my-alfred.io" }}
+          //source={{ uri: "https://dekuple.my-alfred.io/setup-appareils" }}
+          source={{ uri: "https://dekuple.my-alfred.io" }}
           ref={webviewRef}
           onNavigationStateChange={({url}) => setCurrentUrl(url)}
         />
-        { displaySetup && currentUser &&
+        { (displaySetup || true) && currentUser &&
           <>
-            <Button title="open install" onPress={()=>WithingsLink.openInstall()}/>
-            <Button title="open settings" onPress={()=>WithingsLink.openSettings(token)}/>
+            <Button title="open install" onPress={
+              ()=>WithingsLink.openInstall(accessToken, csrfToken)
+            }/>
+            <Button title="open settings" onPress={
+              ()=>WithingsLink.openSettings(accessToken, csrfToken)
+            }/>
           </>
         }
         </SafeAreaView>

@@ -35,6 +35,6 @@
       </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>
-    <activity android:name="com.dekuple.tensiometre.WithingsActivity" android:exported="false"/>
+    <activity android:name=".WithingsActivity" android:exported="false"/>
   </application>
 </manifest>

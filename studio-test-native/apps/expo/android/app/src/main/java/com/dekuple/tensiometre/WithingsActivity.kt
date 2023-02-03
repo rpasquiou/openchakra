@@ -12,24 +12,44 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.withings.library.webble.WithingsFragment
+import android.util.Log
 
 class WithingsActivity : AppCompatActivity() {
 
     companion object {
-        fun createInstallIntent(context: Context): Intent {
-            val url = "https://your_redirection_url_for_install"
-            return createIntent(context, url)
+        fun createInstallIntent(context: Context, accessToken: String, csrfToken: String): Intent {
+          try {
+            val url = "https://inappviews.withings.com/sdk/setup?csrf_token=$csrfToken"
+            return createIntent(context, url, accessToken)
+            }
+            catch(e: Throwable) {
+              Log.d("DEKUPLE", "createInstallIntent $e")
+              throw e
+            }
         }
 
-        fun createSettingsIntent(context: Context, accessToken: String): Intent {
-            val url = "https://your_redirection_url_for_settings"
+        fun createSettingsIntent(context: Context, accessToken: String, csrfToken: String): Intent {
+          try {
+            val url = "https://inappviews.withings.com/sdk/settings?csrf_token=$csrfToken"
             return createIntent(context, url, accessToken)
+            }
+            catch(e: Throwable) {
+              Log.d("DEKUPLE", "createSettingsIntent $e")
+              throw e
+            }
         }
 
         private fun createIntent(context: Context, url: String, accessToken: String? = null): Intent {
-            return Intent(context, WithingsActivity::class.java)
-                .putExtra(EXTRA_KEY_URL, url)
-                .putExtra(EXTRA_KEY_ACCESS_TOKEN, accessToken)
+            try {
+              Log.d("DEKUPLE", "Opening with access token $accessToken")
+              return Intent(context, WithingsActivity::class.java)
+                  .putExtra(EXTRA_KEY_URL, url)
+                  .putExtra(EXTRA_KEY_ACCESS_TOKEN, accessToken)
+            }
+            catch(e: Throwable) {
+              Log.d("DEKUPLE", "createIntent $e")
+              throw e
+            }
         }
 
         private const val EXTRA_KEY_URL = "url"
@@ -42,7 +62,7 @@ class WithingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_withings)
+        setContentView(R.layout.activity_withings)
         if (isOnline()) {
             showWithingsFragment()
         } else {
