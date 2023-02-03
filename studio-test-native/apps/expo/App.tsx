@@ -1,5 +1,5 @@
 import {WebView} from 'react-native-webview';
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import {
     SafeAreaView,
     StyleSheet,
@@ -11,16 +11,15 @@ const {WithingsLink} = NativeModules;
 
 const App = () => {
 
-  /**
-  useEffect(()=>{
-      SplashScreen.hide();
-  });
-  */
+  const [hello, setHello]=useState('')
 
   const webviewRef = useRef(null);
 
-  WithingsLink.sayHello()
-    .then(res => console.log(`Got ${res}`))
+  useEffect(()=> {
+    WithingsLink.sayHello()
+      .then(res => setHello(res))
+  }, [])
+
   return (
     <>
       <SafeAreaView style={styles.flexContainer}  >
@@ -31,6 +30,7 @@ const App = () => {
           source={{ uri: "https://dekuple.my-alfred.io/" }}
           ref={webviewRef}
         />
+        <Text>Hello:{hello}</Text>
         </SafeAreaView>
     </>
   )

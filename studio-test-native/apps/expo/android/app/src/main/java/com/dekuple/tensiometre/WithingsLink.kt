@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.Promise
 
 class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
     override fun getName() = "WithingsLink"
@@ -21,9 +22,9 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
         }
     }
 
-    @ReactMethod fun sayHello():String {
+    @ReactMethod fun sayHello(promise:Promise) {
         //Log.d("WithongsLink", "sayHello called");
-        return "Hello"
+        return promise.resolve("Bonjour")
     }
 
 }
