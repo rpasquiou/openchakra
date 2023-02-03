@@ -19,7 +19,7 @@ class WithingsActivity : AppCompatActivity() {
     companion object {
         fun createInstallIntent(context: Context, accessToken: String, csrfToken: String): Intent {
           try {
-            val url = "https://inappviews.withings.com/sdk/setup?csrf_token=$csrfToken"
+            val url = "https://inappviews.withings.com/sdk/setup?csrf_token=$csrfToken&device_model=45"
             return createIntent(context, url, accessToken)
             }
             catch(e: Throwable) {
