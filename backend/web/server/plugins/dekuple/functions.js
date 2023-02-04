@@ -1,6 +1,21 @@
+const Measure = require('../../models/Measure')
+const {
+  getAccessToken,
+  getFreshAccessToken,
+  getMeasures
+} = require('../../utils/withings')
+const lodash=require('lodash')
+const {
+  APPOINTMENT_TYPE,
+  GENDER,
+  MEASURE_AUTO,
+  MEASURE_MANUAL,
+  MEASURE_SOURCE,
+  REMINDER_TYPE,
+  SMOKER_TYPE,
+} = require('./consts')
 const moment = require('moment')
 const cron = require('node-cron')
-const {getAccessToken, getFreshAccessToken} = require('../../utils/withings')
 const User = require('../../models/User')
 const {
   declareEnumField,
@@ -8,14 +23,6 @@ const {
   setPreCreateData,
   setPreprocessGet,
 } = require('../../utils/database')
-const {
-  APPOINTMENT_TYPE,
-  REMINDER_TYPE,
-  GENDER,
-  MEASURE_TYPE,
-  SMOKER_TYPE,
-} = require('./consts')
-
 
 const preCreate = ({model, params, user}) => {
   if (['measure', 'appointment', 'reminder'].includes(model)) {
@@ -60,8 +67,8 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'password2', instance: 'String'})
 })
 
-declareEnumField({model: 'measure', field: 'type', enumValues: MEASURE_TYPE})
 declareVirtualField({model: 'measure', field: 'recommandation', instance: 'String', requires: 'sys,dia'})
+declareVirtualField({model: 'measure', field: 'source', instance: 'String', requires: 'withings_group', enumValues: MEASURE_SOURCE})
 
 declareEnumField({model: 'appointment', field: 'type', instance: 'String', enumValues: APPOINTMENT_TYPE})
 declareVirtualField({model: 'appointment', field: 'type_str', instance: 'String', requires: 'type,otherTitle'})
@@ -106,6 +113,33 @@ cron.schedule('0 */30 * * * *', () => {
         console.error(`Errors:${JSON.stringify(nok)}`)
       }
     })
+})
+
+// Get all measures TODO should be notified by Withings
+cron.schedule('0 */10 * * * *', async () => {
+  const users=await User.find({}, {access_token:1, email:1})
+      .populate({path:'measures', select:'source date'})
+      .lean()
+  for (const user of users) {
+    const latestMeasure=lodash(user.measures)
+      .filter(m => m.source==MEASURE_AUTO)
+      .maxBy(m => m.date)
+    const since=latestMeasure?.date.add(1, 'second') || moment().add(-2, 'days')
+    if (user.access_token) {
+      const newMeasures=await getMeasures(user.access_token, since)
+      for (const grp of newMeasures.measuregrps) {
+        const dekMeasure={
+          user: user._id, date: grp.date, withings_group: grp.grpid,
+          sys: grp.measures.find(m => m.type==WITHINGS_MEASURE_SYS)?.value,
+          dia: grp.measures.find(m => m.type==WITHINGS_MEASURE_SYS)?.value,
+          heartbeat: grp.measures.find(m => m.type==WITHINGS_MEASURE_BPM)?.value,
+        }
+        console.log(`Creating ${JSON.Stringify(dekMeasure)}`)
+        await Measure.create(dekMeasure)
+          .catch(err => console.error(err))
+      }
+    }
+  }
 })
 
 module.exports={
