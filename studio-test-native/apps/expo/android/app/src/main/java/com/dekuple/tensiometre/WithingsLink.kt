@@ -19,7 +19,7 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
           if (getReactApplicationContextIfActiveOrWarn()!=null) {
             val context=getReactApplicationContextIfActiveOrWarn()!!
             val intent=WithingsActivity.createInstallIntent(context, accessToken, csrfToken);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
           }
         }
@@ -33,7 +33,7 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
           val context=getReactApplicationContextIfActiveOrWarn()!!
           val intent=WithingsActivity.createSettingsIntent(context, accessToken, csrfToken)
-          intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK);
+          intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
           context.startActivity(intent);
         }
     }
