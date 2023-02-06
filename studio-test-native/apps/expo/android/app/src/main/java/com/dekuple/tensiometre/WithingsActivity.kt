@@ -108,13 +108,11 @@ class WithingsActivity : AppCompatActivity() {
     }
 
     private fun showNoInternet() {
-        /**
         AlertDialog.Builder(this)
             .setTitle(R.string.noInternet)
             .setPositiveButton(R.string.ok) { _, _ -> finish() }
             .setOnDismissListener { finish() }
             .create().show()
-       */
     }
 
     override fun onBackPressed() {

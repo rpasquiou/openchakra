@@ -1,9 +1,12 @@
 package com.dekuple.tensiometre
 
+import android.util.Log
+
 sealed class WithingsSdkNotification {
 
     companion object {
         fun parse(type: Int, parameters: Map<String, String>): WithingsSdkNotification? {
+            Log.d("DEKUPLE", "Got notification type $type")
             return when (Type.values().find { it.id == type }) {
                 Type.INSTALLATION_SUCCESS -> InstallationSuccess(
                     parameters["device_id"] ?: return null,
