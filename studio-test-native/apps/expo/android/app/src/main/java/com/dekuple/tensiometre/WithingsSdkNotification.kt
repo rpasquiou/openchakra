@@ -6,7 +6,7 @@ sealed class WithingsSdkNotification {
 
     companion object {
         fun parse(type: Int, parameters: Map<String, String>): WithingsSdkNotification? {
-            Log.d("DEKUPLE", "Got notification type $type")
+            Log.d("DEKUPLE", "Parsing notification type $type and parameters $parameters")
             return when (Type.values().find { it.id == type }) {
                 Type.INSTALLATION_SUCCESS -> InstallationSuccess(
                     parameters["device_id"] ?: return null,
