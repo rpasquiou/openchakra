@@ -23,12 +23,25 @@ const App = () => {
     setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl])
 
+  const startSync = ({id, adv}) => {
+    console.log(`Starting sync for device ${id}/${adv}`)
+  }
+
   useEffect(()=> {
     axios.get('https://dekuple.my-alfred.io/myAlfred/api/studio/current-user')
-      .then(res => {
-        setCurrentUser(res.data)
+      .then(({data}) => {
+        const firstLogin=!currentUser
+        setCurrentUser(data)
+        axios.get(`https://dekuple.my-alfred.io/myAlfred/api/studio/user/${data._id}?fields=devices`)
+          .then(({data})=> {
+            const device=data[0].devices[0]
+            if (firstLogin && device) {
+              startSync({id:device.mac_address, adv:device.advertise_key})
+            }
+          })
       })
       .catch(err => {
+        setCurrentUser(null)
         //console.error(`Can not get current-user:${err}`)
       })
     setDisplaySetup(/setup-appareil/.test(currentUrl))
@@ -49,7 +62,9 @@ const App = () => {
           ref={webviewRef}
           onNavigationStateChange={({url}) => setCurrentUrl(url)}
         />
-        { (displaySetup || true) && currentUser &&
+        <Text>{JSON.stringify(accessToken)}</Text>
+        <Text>Devices:{currentUser?.devices}</Text>
+        { displaySetup && currentUser &&
           <>
             <Button title="open install" onPress={
               ()=>WithingsLink.openInstall(accessToken, csrfToken)
