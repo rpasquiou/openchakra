@@ -39,10 +39,10 @@ export function HomeScreen() {
           <Separator />
           <Box
             flexDirection="column"
-            $gtSm={{
+            $xs={{
               backgroundColor: 'blue',
             }}
-            $gtMd={{
+            $md={{
               backgroundColor: 'green',
             }}
           >
@@ -60,7 +60,7 @@ export function HomeScreen() {
 
           <TextLink {...linkToConnexion}><Text fontFamily="Radikal" color={'white'}>Hello World</Text></TextLink>
           <TextLink {...linkToTestComp}><Text fontFamily="Radikal">TEST ME IF YOU CAN</Text></TextLink>
-          <Button color='white' {...linkToConnexion}>Pret le 15 janvier </Button>
+          <Button backgroundColor="tomato" padding={"$6"} color='white' {...linkToConnexion}>Pret le 15 janvier </Button>
 
           <Paragraph ta="center">
           Made by{' '}

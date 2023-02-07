@@ -29,6 +29,7 @@ export const tokens = createTokens({
 
 export const breakpoints = {
   base: { minWidth: 0},
+  xs: { minWidth: 320 },
   sm: { minWidth: 480 },
   md: { minWidth: 768 },
   lg: { minWidth: 992 },

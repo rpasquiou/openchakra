@@ -4,16 +4,13 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "start": "expo start --dev-client",
+    "start": "expo start -c",
     "run:android": "TAMAGUI_TARGET=native yarn expo run:android",
     "run:ios": "TAMAGUI_TARGET=native yarn expo run:ios",
     "build:android": "TAMAGUI_TARGET=native eas build -p android",
     "build:ios": "TAMAGUI_TARGET=native eas build -p ios",
-    "build": "TAMAGUI_TARGET=native eas build -p all",
     "web": "TAMAGUI_TARGET=web yarn expo start --web",
-    "eject": "expo eject",
-    "android": "expo run:android",
-    "ios": "expo run:ios"
+    "eject": "expo eject"
   },
   "dependencies": {
     "@babel/runtime": "^7.18.9",
@@ -32,8 +29,8 @@
     "expo-splash-screen": "~0.17.5",
     "expo-status-bar": "^1.4.2",
     "expo-updates": "^0.15.6",
-    "react": "18.1.0",
-    "react-dom": "18.1.0",
+    "react": "18.0.0",
+    "react-dom": "^18.2.0",
     "react-native": "0.70.5",
     "react-native-gesture-handler": "^2.8.0",
     "react-native-safe-area-context": "^4.4.1",
@@ -45,7 +42,7 @@
   "devDependencies": {
     "@babel/core": "^7.17.9",
     "@expo/metro-config": "^0.3.21",
-    "@tamagui/babel-plugin": "1.0.22",
+    "@tamagui/babel-plugin": "1.2.12",
     "babel-plugin-transform-inline-environment-variables": "^0.4.4",
     "typescript": "^4.7.4"
   }
