@@ -41,7 +41,7 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
     }
 
     @ReactMethod fun synchronizeDevice(mac_address: String, advertise_key: String) {
-        Log.e("DEKUPLE", "Trying to launch synchronization on $mac_address")
+        Log.d("DEKUPLE", "Trying to launch synchronization on $mac_address")
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
           val deviceIdentity = WithingsDeviceIdentity(
             id = mac_address,
@@ -49,9 +49,11 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
           )
           // Know that if you start without (background) location permission, the service will never synchronize your devices
           val syncService = WithingsSyncService.get(getReactApplicationContextIfActiveOrWarn()!!)
-          syncService.start(listOf(deviceIdentity))
+          Log.d("DEKUPLE", "Sync service created $syncService")
           syncService.setListener(WithingsSyncListener())
-          Log.e("DEKUPLE", "Context found, launching synchronization on $mac_address")
+          Log.d("DEKUPLE", "Sync service added listener")
+          syncService.start(listOf(deviceIdentity))
+          Log.d("DEKUPLE", "Context found, launching synchronization on $mac_address")
         }
     }
 

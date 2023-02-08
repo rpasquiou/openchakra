@@ -1,22 +1,35 @@
 package com.dekuple.tensiometre;
 
+
+import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.pm.PackageManager;
+import android.util.Log;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
-
 import expo.modules.ReactActivityDelegateWrapper;
+
 
 public class MainActivity extends ReactActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    // Set the theme to AppTheme BEFORE onCreate to support 
+    // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null);
+    final String permission= Manifest.permission.ACCESS_FINE_LOCATION;
+    if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_DENIED) {
+      Log.d("DEKUPLE", "Fine location denied, requesting");
+       // Requesting the permission
+       ActivityCompat.requestPermissions(this, new String[]{permission}, 100);
+    }
+
   }
 
   /**

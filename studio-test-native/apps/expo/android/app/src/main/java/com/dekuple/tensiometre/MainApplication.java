@@ -4,6 +4,9 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
 
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;
@@ -36,9 +39,7 @@ public class MainApplication extends Application implements ReactApplication {
       @SuppressWarnings("UnnecessaryLocalVariable")
       List<ReactPackage> packages = new PackageList(this).getPackages();
       // Packages that cannot be autolinked yet can be added manually here, for example:
-      Log.d("DEKUPLE", "Before add package");
       packages.add(new AppPackage());
-      Log.d("DEKUPLE", "After add package");
       return packages;
     }
 
@@ -70,6 +71,28 @@ public class MainApplication extends Application implements ReactApplication {
 
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
+
+    // Check permissions
+    final String TO_CHECK[]={
+      "android.permission.INTERNET",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.VIBRATE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      "android.permission.BLUETOOTH",
+      "android.permission.BLUETOOTH_ADMIN",
+      "android.permission.ACCESS_FINE_LOCATION"
+    };
+
+    for (String  perm: TO_CHECK) {
+      final int res=ContextCompat.checkSelfPermission(this, perm);
+      if (res==PackageManager.PERMISSION_GRANTED) {
+        Log.d("DEKUPLE", String.format("Permission %s OK",perm));
+      }
+      if (res==PackageManager.PERMISSION_DENIED) {
+        Log.d("DEKUPLE", String.format("Permission %s NOK",perm));
+      }
+    }
   }
 
   @Override
