@@ -23,8 +23,9 @@ const App = () => {
     setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl])
 
-  const startSync = ({id, adv}) => {
-    console.log(`Starting sync for device ${id}/${adv}`)
+  const startSync = ({mac_address, advertise_key}) => {
+    console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
+    WithingsLink.synchronizeDevice(mac_address, advertise_key)
   }
 
   useEffect(()=> {
@@ -34,9 +35,9 @@ const App = () => {
         setCurrentUser(data)
         axios.get(`https://dekuple.my-alfred.io/myAlfred/api/studio/user/${data._id}?fields=devices`)
           .then(({data})=> {
-            const device=data[0].devices[0]
+            const device=data[0]?.devices[0]
             if (firstLogin && device) {
-              startSync({id:device.mac_address, adv:device.advertise_key})
+              startSync(device)
             }
           })
       })
@@ -49,7 +50,7 @@ const App = () => {
 
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
-  WithingsLink.sayHello()
+
   return (
     <>
       <SafeAreaView style={styles.flexContainer}  >
