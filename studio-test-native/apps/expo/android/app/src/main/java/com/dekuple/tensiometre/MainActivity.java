@@ -1,19 +1,24 @@
 package com.dekuple.tensiometre;
 
+/**
+import java.util.Arrays;
+import java.util.stream.Stream;
+*/
 
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import android.content.pm.PackageManager;
-import android.util.Log;
+//import androidx.core.app.ActivityCompat;
+//import androidx.core.content.ContextCompat;
+//import android.content.pm.PackageManager;
+//import android.util.Log;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
 
+import com.dekuple.tensiometre.Permissions;
 
 public class MainActivity extends ReactActivity {
   @Override
@@ -23,13 +28,16 @@ public class MainActivity extends ReactActivity {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null);
-    final String permission= Manifest.permission.ACCESS_FINE_LOCATION;
-    if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_DENIED) {
-      Log.d("DEKUPLE", "Fine location denied, requesting");
-       // Requesting the permission
-       ActivityCompat.requestPermissions(this, new String[]{permission}, 100);
-    }
 
+    /** TODO : when should permissions be asked for ?
+    Stream<String> deniedPermissions=Arrays.stream(Permissions.PERMISSIONS)
+      .filter(perm -> ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_DENIED);
+    if (deniedPermissions.count()>0) {
+      Log.d("DEKUPLE", "Locations denied, requesting");
+       // Requesting the permission
+       ActivityCompat.requestPermissions(this, deniedPermissions.toArray(String[]::new), 100);
+    }
+    */
   }
 
   /**

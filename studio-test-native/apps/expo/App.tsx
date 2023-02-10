@@ -5,7 +5,9 @@ import {
     StyleSheet,
     Text,
     Button,
-    NativeModules
+    TouchableHighlight,
+    NativeModules,
+    View
 } from 'react-native';
 //import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
@@ -20,6 +22,7 @@ const App = () => {
   const webviewRef = useRef(null);
 
   useEffect(()=> {
+    console.log(`WebView URL is ${currentUrl}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl])
 
@@ -43,7 +46,6 @@ const App = () => {
       })
       .catch(err => {
         setCurrentUser(null)
-        //console.error(`Can not get current-user:${err}`)
       })
     setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl])
@@ -58,24 +60,29 @@ const App = () => {
           startInLoadingState={true}
           allowsBackForwardNavigationGestures
           mediaPlaybackRequiresUserAction={true}
-          //source={{ uri: "https://dekuple.my-alfred.io/setup-appareils" }}
           source={{ uri: "https://dekuple.my-alfred.io" }}
           ref={webviewRef}
           onNavigationStateChange={({url}) => setCurrentUrl(url)}
         />
-        <Text>{JSON.stringify(accessToken)}</Text>
-        <Text>Devices:{currentUser?.devices}</Text>
+        </SafeAreaView>
         { displaySetup && currentUser &&
           <>
-            <Button title="open install" onPress={
-              ()=>WithingsLink.openInstall(accessToken, csrfToken)
-            }/>
-            <Button title="open settings" onPress={
-              ()=>WithingsLink.openSettings(accessToken, csrfToken)
-            }/>
+          <View style={{alignItems:'center', backgroundColor: '#f5f6fa'}}>
+            <TouchableHighlight style={{margin: '2%', padding:'4%', backgroundColor:'#172D4D', borderRadius:30}} >
+            <Text
+              style={{color: '#ffffff'}}
+              onPress={()=>WithingsLink.openInstall(accessToken, csrfToken)}
+            >Ajouter un appareil</Text>
+            </TouchableHighlight>
+            <TouchableHighlight style={{margin: '2%', padding:'4%', backgroundColor:'#43ABB1', borderRadius:30}} >
+            <Text
+              style={{color: '#ffffff'}}
+              onPress={()=>WithingsLink.openSettings(accessToken, csrfToken)}
+            >Modifier un appareil</Text>
+            </TouchableHighlight>
+          </View>
           </>
         }
-        </SafeAreaView>
     </>
   )
 };

@@ -11,6 +11,7 @@ import android.content.Intent
 import android.util.Log
 import com.withings.library.webble.background.WithingsDeviceIdentity
 import com.withings.library.webble.background.WithingsSyncService
+import com.withings.library.webble.background.ServiceState
 
 class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
 
@@ -43,16 +44,21 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
     @ReactMethod fun synchronizeDevice(mac_address: String, advertise_key: String) {
         Log.d("DEKUPLE", "Trying to launch synchronization on $mac_address")
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
+          Log.d("DEKUPLE", "Got app context ${getReactApplicationContextIfActiveOrWarn()}")
           val deviceIdentity = WithingsDeviceIdentity(
             id = mac_address,
             advertisingKey = advertise_key
           )
           // Know that if you start without (background) location permission, the service will never synchronize your devices
           val syncService = WithingsSyncService.get(getReactApplicationContextIfActiveOrWarn()!!)
+          val state=syncService.getState()
+          Log.d("DEKUPLE", "Sync state before:${state}")
           Log.d("DEKUPLE", "Sync service created $syncService")
-          syncService.setListener(WithingsSyncListener())
-          Log.d("DEKUPLE", "Sync service added listener")
+          val listener=WithingsSyncListener()
+          syncService.setListener(listener)
+          Log.d("DEKUPLE", "Sync service added listener $listener")
           syncService.start(listOf(deviceIdentity))
+          Log.d("DEKUPLE", "Sync state after:${syncService.getState()}")
           Log.d("DEKUPLE", "Context found, launching synchronization on $mac_address")
         }
     }
