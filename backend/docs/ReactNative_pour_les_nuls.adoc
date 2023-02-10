@@ -145,3 +145,9 @@ C'est déjà beau d'être arrivé jusqu'ici.
 ### jlink manque à l'appel ?
 
 La réponse https://stackoverflow.com/questions/73107234/how-to-fix-jlink-does-not-exist#answer-73146019
+
+## Customisation
+
+### Icône de l'application
+Générer avec l'excellent outil https://romannurik.github.io/AndroidAssetStudio/icons-launcher.htm !!
+Puis dézipper et copier sour apps/expo/android/app/src/main/res
