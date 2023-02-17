@@ -1,4 +1,4 @@
-package com.dekuple.tensiometre.newarchitecture.modules;
+package com.fumoirgeorge.fumoir.newarchitecture.modules;
 
 import com.facebook.jni.HybridData;
 import com.facebook.react.ReactPackage;

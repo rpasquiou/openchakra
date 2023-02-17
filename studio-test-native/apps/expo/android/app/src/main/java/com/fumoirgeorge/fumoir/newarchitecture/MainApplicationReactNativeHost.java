@@ -1,4 +1,4 @@
-package com.dekuple.tensiometre.newarchitecture;
+package com.fumoirgeorge.fumoir.newarchitecture;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
@@ -20,9 +20,9 @@ import com.facebook.react.fabric.EmptyReactNativeConfig;
 import com.facebook.react.fabric.FabricJSIModuleProvider;
 import com.facebook.react.fabric.ReactNativeConfig;
 import com.facebook.react.uimanager.ViewManagerRegistry;
-import com.dekuple.tensiometre.BuildConfig;
-import com.dekuple.tensiometre.newarchitecture.components.MainComponentsRegistry;
-import com.dekuple.tensiometre.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
+import com.fumoirgeorge.fumoir.BuildConfig;
+import com.fumoirgeorge.fumoir.newarchitecture.components.MainComponentsRegistry;
+import com.fumoirgeorge.fumoir.newarchitecture.modules.MainApplicationTurboModuleManagerDelegate;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.dekuple.tensiometre;
+package com.fumoirgeorge.fumoir;
 
 /**
 import java.util.Arrays;
@@ -18,7 +18,7 @@ import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
 
-import com.dekuple.tensiometre.Permissions;
+import com.fumoirgeorge.fumoir.Permissions;
 
 public class MainActivity extends ReactActivity {
   @Override
@@ -33,7 +33,7 @@ public class MainActivity extends ReactActivity {
     Stream<String> deniedPermissions=Arrays.stream(Permissions.PERMISSIONS)
       .filter(perm -> ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_DENIED);
     if (deniedPermissions.count()>0) {
-      Log.d("DEKUPLE", "Locations denied, requesting");
+      Log.d("FUMOIR", "Locations denied, requesting");
        // Requesting the permission
        ActivityCompat.requestPermissions(this, deniedPermissions.toArray(String[]::new), 100);
     }
