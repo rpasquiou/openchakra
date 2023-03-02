@@ -187,7 +187,7 @@ $RECYCLE.BIN/
 
 **/static/profile
 
-ios
+#ios
 
 # Vi swap files
 **/*.swp
