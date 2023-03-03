@@ -1,9 +1,5 @@
 import {WebView} from 'react-native-webview'
 import {useRef, useState} from 'react'
-import {
-  SafeAreaView,
-  StyleSheet,
-} from 'react-native'
 
 const App = () => {
 
@@ -24,11 +20,5 @@ const App = () => {
     </>
   )
 }
-
-const styles = StyleSheet.create({
-  flexContainer: {
-    flex: 1,
-  },
-})
 
 export default App
