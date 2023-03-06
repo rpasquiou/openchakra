@@ -12,7 +12,12 @@ import ComponentPreview from '~components/editor/ComponentPreview'
 import devices from '~config/devices'
 import useDispatch from '~hooks/useDispatch'
 
-import { getWarnings } from '../../core/selectors/components'
+import { generateSitemap } from '../../utils/sitemap';
+import {
+  getFullComponents,
+  getWarnings
+} from '../../core/selectors/components';
+import Sitemap from '../sitemap/Sitemap';
 import config from '../../../env.json'
 
 export const gridStyles = {
@@ -30,6 +35,7 @@ const Editor: React.FC = () => {
   const showOverview = useSelector(getShowOverview)
   const components = useSelector(getComponents)
   const dispatch = useDispatch()
+  const project=useSelector(getFullComponents)
 
   const { drop } = useDropComponent('root')
   const isEmpty = !components.root.children.length
@@ -82,6 +88,8 @@ const Editor: React.FC = () => {
       })
   }, [dispatch.roles])
 
+  const links=generateSitemap(project)
+
   const Playground = (
     <Box
       p={2}
@@ -115,9 +123,10 @@ const Editor: React.FC = () => {
         </Text>
       )}
 
-      {components.root.children.map((name: string) => (
+      {false && components.root.children.map((name: string) => (
         <ComponentPreview id={name} key={name} componentName={name} />
       ))}
+      <Sitemap links={links}/>
     </Box>
   )
 
