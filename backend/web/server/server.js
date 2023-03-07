@@ -52,6 +52,7 @@ require('./models/Specificity')
 require('./models/Contents')
 require('./models/Key')
 require('./models/Group')
+require('./models/KeyScore')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

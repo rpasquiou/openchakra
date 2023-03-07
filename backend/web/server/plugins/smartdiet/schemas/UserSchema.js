@@ -52,6 +52,31 @@ UserSchema.virtual('fullname').get(function() {
   return `${this.firstname || ''} ${this.lastname || ''}`
 })
 
+UserSchema.virtual('scores').get(function() {
+  const allData=[...this.viewed_contents, this.registered_events].map(d => d.key)
+  const scores=lodash(allData)
+      .groupBy(d => d._id.toString())
+      .mapValues(v => v.length)
+      .value()
+  const mapped=scores.map(sc => {
+    const key=allData.find(k => k._id.toString()==sc)
+    return {...key, score: }
+  })
+  return scores
+})
+
+UserSchema.virtual('viewed_contents', {
+  ref: 'contents', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'viewed_by', // is equal to foreignField
+})
+
+UserSchema.virtual('registered_events', {
+  ref: 'event', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'registered_by', // is equal to foreignField
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
