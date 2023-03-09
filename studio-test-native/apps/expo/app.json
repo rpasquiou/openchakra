@@ -13,7 +13,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "version": "1.0.1",
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -22,8 +21,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dekuple.tensiometre",
-      "buildNumber": 3
+      "bundleIdentifier": "com.dekuple.tensiometre"
     },
     "android": {
       "adaptiveIcon": {
