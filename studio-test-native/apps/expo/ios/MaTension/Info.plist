@@ -15,7 +15,13 @@
       <dict/>
     </dict>
     <key>NSFaceIDUsageDescription</key>
-    <string>Le Fumoir George souhaite accéder à FaceId pour l&apos;authentification </string>
+    <string>Ma tension souhaite accéder à FaceId pour l&apos;authentification </string>
+    <key>NSCameraUsageDescription</key>
+    <string>Ma tension souhaite accéder à l&apos;appareil photo
+  Autorisez l&apos;accès à votre caméra pour capturer des photos. Vous pouvez utiliser celles-ci dans un post et sur votre profil.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Ma tension souhaite accéder à vos photos
+  Autorisez l&apos;accès à votre galerie pour charger des photos. Vous pouvez utiliser celles-ci dans un post et sur votre profil.</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -31,7 +37,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
