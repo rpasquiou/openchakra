@@ -10,6 +10,8 @@ import {
 import axios from 'axios'
 const {WithingsLink} = NativeModules
 
+const BASE_URL_TO_POINT = 'https://ma-tension.com/'
+
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
@@ -29,11 +31,11 @@ const App = () => {
   }
 
   useEffect(() => {
-    axios.get('https://dekuple.my-alfred.io/myAlfred/api/studio/current-user')
+    axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
       .then(({data}) => {
         const firstLogin=!currentUser
         setCurrentUser(data)
-        axios.get(`https://dekuple.my-alfred.io/myAlfred/api/studio/user/${data._id}?fields=devices`)
+        axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/user/${data._id}?fields=devices`)
           .then(({data}) => {
             const device=data[0]?.devices[0]
             if (firstLogin && device) {
@@ -56,7 +58,7 @@ const App = () => {
         startInLoadingState={true}
         allowsBackForwardNavigationGestures
         mediaPlaybackRequiresUserAction={true}
-        source={{uri: 'https://dekuple.my-alfred.io'}}
+        source={{uri: BASE_URL_TO_POINT}}
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />

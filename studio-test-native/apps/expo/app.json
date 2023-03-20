@@ -26,8 +26,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF",
-        "versionCode": 3
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.dekuple.tensiometre"
     },
