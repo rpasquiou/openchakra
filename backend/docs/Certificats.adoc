@@ -10,22 +10,32 @@ $ sudo dnf install certbot
 
 ## Génération du certificat (manual)
 
-[source, bash]
+Le ceertificat doir être valable à la fois pour le domaine principal
+(project_domain) et ses sous-domaines (*.project_domain)
+
+Arrêt nginx pour interrompre les redirections
+----
+$ sudo systemctl stop nginx
+----
+
+Création/renouvellement du certificat
 ----
 $ sudo certbot certonly --manual
 ----
 
-1. On est amené à renseigné les domaines (ex: *all-entrepreneurs.fr www.all-entrepreneurs.fr*)
+1. Domaines à certifier : "<project_domain> *.<project_domain>"
 2. Créer le fichier requis dans le dossier *web/static/.well-known/acme-challenge/*
 3. Génération des certificats
 
 [source, bash]
 ----
-Certificate is saved at: /etc/letsencrypt/live/all-entrepreneurs.fr/fullchain.pem
-Key is saved at:         /etc/letsencrypt/live/all-entrepreneurs.fr/privkey.pem
+Certificate is saved at: /etc/letsencrypt/live/<project_domain>/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/<project_domain>/privkey.pem
 ----
 
-NOTE: Je les ai copié dans le dossier .ssh de l'utilisateur puisque actuellement, le serveur vient les chercher ici. Un lien symbolique vers ce dossier à faire ? 
+Copier ces deux fichier dans ~/.ssh en vérifiant les permissions:
+
+644 (== rw-r--r--)
 
 ## Config serveur
 
@@ -33,10 +43,9 @@ Modification en conséquence du fichier _server.js_
 
 IMPORTANT: Le fichier n'est pas versionné actuellement
 
-[source, bash]
 .web/server/server.js
-----
 
+----
 // HTTPS server using certificates
 const httpsServer = https.createServer({
   cert: fs.readFileSync(`${process.env.HOME}/.ssh/fullchain.pem`),
@@ -46,10 +55,17 @@ app)
 
 ----
 
-## Rédémarrage serveur
-
+## Redémarrage serveurs
+backend
+----
 pm2 restart all
+----
+nginx
 
-## TODO 
+----
+$ sudo systemctl restart nginx
+----
+
+## TODO
 
 Je l'ai fait avec l'option --manual, mais il y a moyen de mettre en place le renouvellement auto du certificat.
