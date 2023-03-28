@@ -4,8 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 
 import com.facebook.react.PackageList;
@@ -17,6 +15,7 @@ import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.soloader.SoLoader;
 import com.dekuple.tensiometre.newarchitecture.MainApplicationReactNativeHost;
 import com.dekuple.tensiometre.AppPackage;
+import com.dekuple.tensiometre.Permissions;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
@@ -72,27 +71,7 @@ public class MainApplication extends Application implements ReactApplication {
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
 
-    // Check permissions
-    final String TO_CHECK[]={
-      "android.permission.INTERNET",
-      "android.permission.READ_EXTERNAL_STORAGE",
-      "android.permission.SYSTEM_ALERT_WINDOW",
-      "android.permission.VIBRATE",
-      "android.permission.WRITE_EXTERNAL_STORAGE",
-      "android.permission.BLUETOOTH",
-      "android.permission.BLUETOOTH_ADMIN",
-      "android.permission.ACCESS_FINE_LOCATION"
-    };
-
-    for (String  perm: TO_CHECK) {
-      final int res=ContextCompat.checkSelfPermission(this, perm);
-      if (res==PackageManager.PERMISSION_GRANTED) {
-        Log.d("DEKUPLE", String.format("Permission %s OK",perm));
-      }
-      if (res==PackageManager.PERMISSION_DENIED) {
-        Log.d("DEKUPLE", String.format("Permission %s NOK",perm));
-      }
-    }
+    Permissions.getInstance(this);
   }
 
   @Override

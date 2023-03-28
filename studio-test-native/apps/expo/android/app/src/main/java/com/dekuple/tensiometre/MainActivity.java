@@ -1,26 +1,28 @@
 package com.dekuple.tensiometre;
 
-/**
 import java.util.Arrays;
 import java.util.stream.Stream;
-*/
 
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
-//import androidx.core.app.ActivityCompat;
-//import androidx.core.content.ContextCompat;
-//import android.content.pm.PackageManager;
-//import android.util.Log;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.util.Log;
+import androidx.appcompat.app.AlertDialog;
+import android.widget.Toast;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
+import com.dekuple.tensiometre.PermissionUtil;
 
-import com.dekuple.tensiometre.Permissions;
-
-public class MainActivity extends ReactActivity {
+public class MainActivity extends ReactActivity
+  implements PermissionUtil.PermissionsCallBack {
+    
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
@@ -28,16 +30,6 @@ public class MainActivity extends ReactActivity {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null);
-
-    /** TODO : when should permissions be asked for ?
-    Stream<String> deniedPermissions=Arrays.stream(Permissions.PERMISSIONS)
-      .filter(perm -> ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_DENIED);
-    if (deniedPermissions.count()>0) {
-      Log.d("DEKUPLE", "Locations denied, requesting");
-       // Requesting the permission
-       ActivityCompat.requestPermissions(this, deniedPermissions.toArray(String[]::new), 100);
-    }
-    */
   }
 
   /**
@@ -79,6 +71,32 @@ public class MainActivity extends ReactActivity {
     // Use the default back button implementation on Android S
     // because it's doing more than {@link Activity#moveTaskToBack} in fact.
     super.invokeDefaultOnBackPressed();
+  }
+
+  public void requestPermissions(View view) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      if (PermissionUtil.checkAndRequestPermissions(this,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.SEND_SMS)) {
+          Log.i(TAG, "Permissions are granted. Good to go!");
+      }
+    }
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+      PermissionUtil.onRequestPermissionsResult(this, requestCode, permissions, grantResults, this);
+  }
+
+  @Override
+  public void permissionsGranted() {
+      Toast.makeText(this, "Permissions granted!", Toast.LENGTH_SHORT).show();
+  }
+
+  @Override
+  public void permissionsDenied() {
+      Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
   }
 
   public static class MainActivityDelegate extends ReactActivityDelegate {
