@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.Toast;
+import android.view.View;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
@@ -22,12 +23,16 @@ import com.dekuple.tensiometre.PermissionUtil;
 
 public class MainActivity extends ReactActivity
   implements PermissionUtil.PermissionsCallBack {
-    
+
+  public static MainActivity instance=null;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
+    Log.d("DEKUPLE", "MainActivity setting singleton instance");
+    MainActivity.instance=this;
     setTheme(R.style.AppTheme);
     super.onCreate(null);
   }
@@ -73,20 +78,35 @@ public class MainActivity extends ReactActivity
     super.invokeDefaultOnBackPressed();
   }
 
-  public void requestPermissions(View view) {
+  public void requestPermissions() {
+    //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 50);
+    //for (String permission: PermissionUtil.PERMISSIONS) {
+    String[] permissions=new String[]{PermissionUtil.PERMISSIONS[8], PermissionUtil.PERMISSIONS[4]};
+    Log.d("DEKUPLE", String.format("MainActivity.requsetingPermission %s", permissions));
+    ActivityCompat.requestPermissions(this, permissions, 50);
+    /**
+    Log.d("DEKUPLE", "MainActivity request permissions");
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       if (PermissionUtil.checkAndRequestPermissions(this,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.SEND_SMS)) {
-          Log.i(TAG, "Permissions are granted. Good to go!");
+            Manifest.permission.SEND_SMS))
+             {
+          Log.i("DEKUPLE", "Permissions are granted. Good to go!");
       }
     }
+    */
   }
 
   @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+  public void onRequestPermissionsResult(int requestCode, /**@NonNull*/ String[] permissions, /**@NonNull*/ int[] grantResults) {
+      Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
+      for (int i : grantResults) {
+        Log.d("DEKUPLE", String.format("Granted %d",i));
+      }
+      /**
       super.onRequestPermissionsResult(requestCode, permissions, grantResults);
       PermissionUtil.onRequestPermissionsResult(this, requestCode, permissions, grantResults, this);
+      */
   }
 
   @Override

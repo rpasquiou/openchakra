@@ -12,10 +12,16 @@ import android.util.Log
 import com.withings.library.webble.background.WithingsDeviceIdentity
 import com.withings.library.webble.background.WithingsSyncService
 import com.withings.library.webble.background.ServiceState
+import com.dekuple.tensiometre.MainActivity
 
 class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
 
     override fun getName() = "WithingsLink"
+
+    @ReactMethod fun requestPermissions() {
+      Log.i("DEKUPLE", "request permissions")
+      MainActivity.instance.requestPermissions()
+    }
 
     @ReactMethod fun openInstall(accessToken: String, csrfToken: String) {
         try {

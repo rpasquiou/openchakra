@@ -10,8 +10,7 @@ import {
 import axios from 'axios'
 const {WithingsLink} = NativeModules
 
-//const BASE_URL_TO_POINT = 'https://ma-tension.com/'
-const BASE_URL_TO_POINT = 'https://www.pagesjaunes.fr/'
+const BASE_URL_TO_POINT = 'https://ma-tension.com/'
 
 const App = () => {
 
@@ -23,7 +22,8 @@ const App = () => {
 
   useEffect(() => {
     console.log(`WebView URL is ${currentUrl}`)
-    setDisplaySetup(/setup-appareil/.test(currentUrl))
+    //setDisplaySetup(/setup-appareil/.test(currentUrl))
+    setDisplaySetup(/^https:\/\/ma-tension.com\/$/.test(currentUrl))
   }, [currentUrl])
 
   const startSync = ({mac_address, advertise_key}) => {
@@ -47,7 +47,8 @@ const App = () => {
       .catch(err => {
         setCurrentUser(null)
       })
-    setDisplaySetup(/setup-appareil/.test(currentUrl))
+    //setDisplaySetup(/setup-appareil/.test(currentUrl))
+    setDisplaySetup(/^https:\/\/ma-tension.com\/$/.test(currentUrl))
   }, [currentUrl, currentUser])
 
   const accessToken=currentUser?.access_token
@@ -63,13 +64,16 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
-      { displaySetup && currentUser &&
+      { displaySetup && /** currentUser &&*/
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#172D4D', borderRadius: 30}} >
                 <Text
                   style={{color: '#ffffff'}}
-                  onPress={() => WithingsLink.openInstall(accessToken, csrfToken)}
+                  onPress={() => {
+                    WithingsLink.requestPermissions()
+                    //WithingsLink.openInstall(accessToken, csrfToken)
+                  }}
                 >Ajouter un appareil</Text>
               </TouchableHighlight>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#43ABB1', borderRadius: 30}} >
