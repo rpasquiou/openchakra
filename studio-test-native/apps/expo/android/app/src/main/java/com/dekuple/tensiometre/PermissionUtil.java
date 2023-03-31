@@ -22,17 +22,31 @@ public final class PermissionUtil {
 
   public static final int REQUEST_CODE_PERMISSIONS = 100;
 
-  final static String[] PERMISSIONS={
+  final static String[] OWN_PERMISSIONS={
+    Manifest.permission.READ_EXTERNAL_STORAGE, // Dangerous
+    Manifest.permission.WRITE_EXTERNAL_STORAGE, // Dangerous
     Manifest.permission.INTERNET,
-    Manifest.permission.READ_EXTERNAL_STORAGE,
-    Manifest.permission.SYSTEM_ALERT_WINDOW,
-    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+  };
+
+  final static String[] WITHINGS_PERMISSIONS={
+    Manifest.permission.INTERNET,
     Manifest.permission.BLUETOOTH,
     Manifest.permission.BLUETOOTH_ADMIN,
-    Manifest.permission.BLUETOOTH_SCAN,
-    Manifest.permission.ACCESS_COARSE_LOCATION,
-    Manifest.permission.ACCESS_FINE_LOCATION,
-    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+    Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
+    Manifest.permission.ACCESS_FINE_LOCATION, // Dangerous
+    Manifest.permission.ACCESS_BACKGROUND_LOCATION // Dangerous
+  };
+
+  final static String[] ALL_PERMISSIONS={
+    Manifest.permission.READ_EXTERNAL_STORAGE, // Dangerous
+    Manifest.permission.WRITE_EXTERNAL_STORAGE, // Dangerous
+    Manifest.permission.INTERNET,
+    Manifest.permission.INTERNET,
+    Manifest.permission.BLUETOOTH,
+    Manifest.permission.BLUETOOTH_ADMIN,
+    //Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
+    Manifest.permission.ACCESS_FINE_LOCATION, // Dangerous
+    Manifest.permission.ACCESS_BACKGROUND_LOCATION // Dangerous
   };
 
       /**

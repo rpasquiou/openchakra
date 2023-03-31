@@ -17,14 +17,22 @@ const App = () => {
   const [currentUrl, setCurrentUrl]=useState('')
   const [displaySetup, setDisplaySetup]=useState(false)
   const [currentUser, setCurrentUser]=useState(null)
+  const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
 
   const webviewRef = useRef(null)
 
+  // Display permissions dialogs once when user is logged
   useEffect(() => {
-    console.log(`WebView URL is ${currentUrl}`)
-    //setDisplaySetup(/setup-appareil/.test(currentUrl))
-    setDisplaySetup(/^https:\/\/ma-tension.com\/$/.test(currentUrl))
-  }, [currentUrl])
+    if (currentUser && shouldAskPermissions) {
+      console.log(`Calling askAllPermission()`)
+      WithingsLink.askAllPermissions()
+      setShouldAskPermissions(false)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
+  }, [currentUrl, currentUser])
 
   const startSync = ({mac_address, advertise_key}) => {
     console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
@@ -45,10 +53,9 @@ const App = () => {
           })
       })
       .catch(err => {
+        console.error(err)
         setCurrentUser(null)
       })
-    //setDisplaySetup(/setup-appareil/.test(currentUrl))
-    setDisplaySetup(/^https:\/\/ma-tension.com\/$/.test(currentUrl))
   }, [currentUrl, currentUser])
 
   const accessToken=currentUser?.access_token
@@ -64,16 +71,13 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
-      { displaySetup && /** currentUser &&*/
+      { displaySetup && currentUser &&
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#172D4D', borderRadius: 30}} >
                 <Text
                   style={{color: '#ffffff'}}
-                  onPress={() => {
-                    WithingsLink.requestPermissions()
-                    //WithingsLink.openInstall(accessToken, csrfToken)
-                  }}
+                  onPress={() => WithingsLink.openInstall(accessToken, csrfToken)}
                 >Ajouter un appareil</Text>
               </TouchableHighlight>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#43ABB1', borderRadius: 30}} >

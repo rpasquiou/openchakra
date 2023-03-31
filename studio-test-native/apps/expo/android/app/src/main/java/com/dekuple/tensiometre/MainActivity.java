@@ -14,6 +14,7 @@ import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.Toast;
 import android.view.View;
+//import android.app.AlertDialog;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
@@ -22,7 +23,12 @@ import expo.modules.ReactActivityDelegateWrapper;
 import com.dekuple.tensiometre.PermissionUtil;
 
 public class MainActivity extends ReactActivity
-  implements PermissionUtil.PermissionsCallBack {
+  implements ActivityCompat.OnRequestPermissionsResultCallback {
+  //implements PermissionUtil.PermissionsCallBack {
+
+  public static interface Callback {
+    void run();
+  }
 
   public static MainActivity instance=null;
 
@@ -78,45 +84,42 @@ public class MainActivity extends ReactActivity
     super.invokeDefaultOnBackPressed();
   }
 
-  public void requestPermissions() {
+  void checkPermissionsAndLaunch(String[] permissions, Callback callback) {
+    String[] deniedPermissions=getDeniedPermissions(permissions);
+    if (deniedPermissions.length>0) {
+      requestPermissions(deniedPermissions, callback);
+    }
+    else {
+      callback.run();
+    }
+  }
+
+  public String[] getDeniedPermissions(String[] permissions) {
+    String[] deniedPermissions=Arrays.stream(permissions)
+     .filter(perm -> ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED)
+     .toArray(String[]::new);
+    Log.i("DEKUPLE", String.format("Denied permissions:%d:%s", deniedPermissions.length, String.join(",", deniedPermissions)));
+    return deniedPermissions;
+  }
+
+  public void requestPermissions(String[] permissions, Callback callback) {
+    Log.d("DEKUPLE", String.format("ManiActivity.requestPermissions:%s", String.join(",", permissions)));
     //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 50);
     //for (String permission: PermissionUtil.PERMISSIONS) {
-    String[] permissions=new String[]{PermissionUtil.PERMISSIONS[8], PermissionUtil.PERMISSIONS[4]};
-    Log.d("DEKUPLE", String.format("MainActivity.requsetingPermission %s", permissions));
-    ActivityCompat.requestPermissions(this, permissions, 50);
-    /**
-    Log.d("DEKUPLE", "MainActivity request permissions");
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      if (PermissionUtil.checkAndRequestPermissions(this,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.SEND_SMS))
-             {
-          Log.i("DEKUPLE", "Permissions are granted. Good to go!");
-      }
+    String[] deniedPermissions=getDeniedPermissions(permissions);
+    for (int i=0; i<deniedPermissions.length; i++) {
+      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, deniedPermissions[i]);
+      Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
+      ActivityCompat.requestPermissions(this, new String[]{deniedPermissions[i]}, 100);
     }
-    */
   }
 
   @Override
   public void onRequestPermissionsResult(int requestCode, /**@NonNull*/ String[] permissions, /**@NonNull*/ int[] grantResults) {
-      Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
-      for (int i : grantResults) {
-        Log.d("DEKUPLE", String.format("Granted %d",i));
-      }
-      /**
-      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-      PermissionUtil.onRequestPermissionsResult(this, requestCode, permissions, grantResults, this);
-      */
-  }
-
-  @Override
-  public void permissionsGranted() {
-      Toast.makeText(this, "Permissions granted!", Toast.LENGTH_SHORT).show();
-  }
-
-  @Override
-  public void permissionsDenied() {
-      Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
+    Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
+    for (int i=0; i<grantResults.length; i++) {
+      Log.d("DEKUPLE", String.format("Granted %s:%s", permissions[i], grantResults[i]==PackageManager.PERMISSION_GRANTED ? "true": "false"));
+    }
   }
 
   public static class MainActivityDelegate extends ReactActivityDelegate {
