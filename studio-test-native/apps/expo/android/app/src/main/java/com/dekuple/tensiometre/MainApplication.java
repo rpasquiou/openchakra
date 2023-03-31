@@ -15,7 +15,6 @@ import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.soloader.SoLoader;
 import com.dekuple.tensiometre.newarchitecture.MainApplicationReactNativeHost;
 import com.dekuple.tensiometre.AppPackage;
-import com.dekuple.tensiometre.Permissions;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
@@ -71,7 +70,6 @@ public class MainApplication extends Application implements ReactApplication {
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
     ApplicationLifecycleDispatcher.onApplicationCreate(this);
 
-    Permissions.getInstance(this);
   }
 
   @Override

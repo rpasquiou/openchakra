@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import androidx.annotation.NonNull;
 import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.Toast;
@@ -18,10 +19,10 @@ import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
-import com.dekuple.tensiometre.PermissionUtil;
 
-public class MainActivity extends ReactActivity
-  implements PermissionUtil.PermissionsCallBack {
+public class MainActivity extends ReactActivity {
+
+  private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;    
     
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +30,15 @@ public class MainActivity extends ReactActivity
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
-    super.onCreate(null);
+    super.onCreate(savedInstanceState);
+
+     // Request location permissions
+     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        ActivityCompat.requestPermissions(this,
+          new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
+          Manifest.permission.ACCESS_BACKGROUND_LOCATION },
+          LOCATION_PERMISSION_REQUEST_CODE);
+      }
   }
 
   /**
@@ -73,28 +82,30 @@ public class MainActivity extends ReactActivity
     super.invokeDefaultOnBackPressed();
   }
 
-  public void requestPermissions(View view) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      if (PermissionUtil.checkAndRequestPermissions(this,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.SEND_SMS)) {
-          Log.i(TAG, "Permissions are granted. Good to go!");
-      }
-    }
-  }
-
+  /**
+   * @param requestCode
+   * @param permissions
+   * @param grantResults
+   */
   @Override
   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
       super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-      PermissionUtil.onRequestPermissionsResult(this, requestCode, permissions, grantResults, this);
+
+      if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+          // Location permissions granted
+          permissionsGranted();
+        } else {
+          // Location permissions not granted
+          permissionsDenied();
+        }
+      }
   }
 
-  @Override
   public void permissionsGranted() {
       Toast.makeText(this, "Permissions granted!", Toast.LENGTH_SHORT).show();
   }
 
-  @Override
   public void permissionsDenied() {
       Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
   }

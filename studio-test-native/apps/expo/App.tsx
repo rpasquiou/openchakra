@@ -10,7 +10,7 @@ import {
 import axios from 'axios'
 const {WithingsLink} = NativeModules
 
-//const BASE_URL_TO_POINT = 'https://ma-tension.com/'
+// const BASE_URL_TO_POINT = 'https://ma-tension.com/'
 const BASE_URL_TO_POINT = 'https://www.pagesjaunes.fr/'
 
 const App = () => {
@@ -60,6 +60,8 @@ const App = () => {
         allowsBackForwardNavigationGestures
         mediaPlaybackRequiresUserAction={true}
         source={{uri: BASE_URL_TO_POINT}}
+        geolocationEnabled={true}
+        sharedCookiesEnabled={true}
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
