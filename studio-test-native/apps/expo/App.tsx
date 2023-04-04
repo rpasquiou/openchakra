@@ -8,6 +8,7 @@ import {
 } from 'react-native'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
+import moment from 'moment'
 const {WithingsLink} = NativeModules
 
 const BASE_URL_TO_POINT = 'https://ma-tension.com/'
@@ -31,6 +32,7 @@ const App = () => {
   }, [currentUser])
 
   useEffect(() => {
+    console.log(`Logged:${!!currentUser} ${moment()}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
@@ -53,8 +55,9 @@ const App = () => {
           })
       })
       .catch(err => {
-        console.error(err)
-        setCurrentUser(null)
+        if (err.response?.status==401) {
+          setCurrentUser(null)
+        }
       })
   }, [currentUrl, currentUser])
 
@@ -71,6 +74,7 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
+
       { displaySetup && currentUser &&
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>

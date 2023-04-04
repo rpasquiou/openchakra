@@ -2,6 +2,9 @@ package com.dekuple.tensiometre;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Hashtable;
+import java.util.concurrent.ThreadLocalRandom;
 
 import android.Manifest;
 import android.os.Build;
@@ -31,6 +34,8 @@ public class MainActivity extends ReactActivity
   }
 
   public static MainActivity instance=null;
+
+  private Map<String, Callback> permissionsCallbacks=new Hashtable<String, Callback>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -84,10 +89,27 @@ public class MainActivity extends ReactActivity
     super.invokeDefaultOnBackPressed();
   }
 
+  private void displayRationale(String permission, Callback callback) {
+    if (permission.contains("LOCATION")) {
+      AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+      alertBuilder.setCancelable(true);
+      alertBuilder.setTitle("Autorisation nécessaire");
+      alertBuilder.setMessage(PermissionUtil.LOC_MESSAGE);
+      alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int which) {
+          requestPermissions(new String[]{permission}, callback, false);
+        }
+      });
+
+      AlertDialog alert = alertBuilder.create();
+      alert.show();
+    }
+  }
+
   void checkPermissionsAndLaunch(String[] permissions, Callback callback) {
     String[] deniedPermissions=getDeniedPermissions(permissions);
     if (deniedPermissions.length>0) {
-      requestPermissions(deniedPermissions, callback);
+      requestPermissions(deniedPermissions, callback, true);
     }
     else {
       callback.run();
@@ -102,15 +124,24 @@ public class MainActivity extends ReactActivity
     return deniedPermissions;
   }
 
-  public void requestPermissions(String[] permissions, Callback callback) {
+  public void requestPermissions(String[] permissions, Callback callback, Boolean rationales) {
+    for (String p: permissions) {
+      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, p);
+      Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", p, requiresRationale ? "true": "false"));
+    }
     Log.d("DEKUPLE", String.format("ManiActivity.requestPermissions:%s", String.join(",", permissions)));
-    //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 50);
-    //for (String permission: PermissionUtil.PERMISSIONS) {
     String[] deniedPermissions=getDeniedPermissions(permissions);
     for (int i=0; i<deniedPermissions.length; i++) {
+      int requestCode=ThreadLocalRandom.current().nextInt(1, 10000);
+      if (callback!=null) {
+        permissionsCallbacks.put(deniedPermissions[i], callback);
+      }
       boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, deniedPermissions[i]);
-      Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
-      ActivityCompat.requestPermissions(this, new String[]{deniedPermissions[i]}, 100);
+      if (rationales && requiresRationale) {
+        displayRationale(deniedPermissions[i], callback);
+      }
+      //Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
+      ActivityCompat.requestPermissions(this, new String[]{deniedPermissions[i]}, requestCode);
     }
   }
 
@@ -118,7 +149,12 @@ public class MainActivity extends ReactActivity
   public void onRequestPermissionsResult(int requestCode, /**@NonNull*/ String[] permissions, /**@NonNull*/ int[] grantResults) {
     Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
     for (int i=0; i<grantResults.length; i++) {
-      Log.d("DEKUPLE", String.format("Granted %s:%s", permissions[i], grantResults[i]==PackageManager.PERMISSION_GRANTED ? "true": "false"));
+      String permission=permissions[i];
+      boolean granted=grantResults[i]==PackageManager.PERMISSION_GRANTED;
+      Log.d("DEKUPLE", String.format("Granted %s:%s", permission, granted ? "true": "false"));
+      if (granted && permissionsCallbacks.containsKey(permission)) {
+        permissionsCallbacks.remove(permissions[i]).run();
+      }
     }
   }
 

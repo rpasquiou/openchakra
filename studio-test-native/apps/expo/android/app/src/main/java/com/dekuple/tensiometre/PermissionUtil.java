@@ -22,16 +22,21 @@ public final class PermissionUtil {
 
   public static final int REQUEST_CODE_PERMISSIONS = 100;
 
+  public static final String LOC_MESSAGE =
+  "L'application ma Tension collecte vos données de localisation pour l'appareillage "+
+  "de votre tensiomètre Withings et la remontée des mesures de tension, y compris "+
+  "lorsque l'application est fermée ou non utilisée.";
+
   final static String[] OWN_PERMISSIONS={
     Manifest.permission.READ_EXTERNAL_STORAGE, // Dangerous
     Manifest.permission.WRITE_EXTERNAL_STORAGE, // Dangerous
-    Manifest.permission.INTERNET,
+    //Manifest.permission.INTERNET,
   };
 
   final static String[] WITHINGS_PERMISSIONS={
-    Manifest.permission.INTERNET,
-    Manifest.permission.BLUETOOTH,
-    Manifest.permission.BLUETOOTH_ADMIN,
+    // Manifest.permission.INTERNET,
+    // Manifest.permission.BLUETOOTH,
+    // Manifest.permission.BLUETOOTH_ADMIN,
     Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_FINE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_BACKGROUND_LOCATION // Dangerous
@@ -40,10 +45,9 @@ public final class PermissionUtil {
   final static String[] ALL_PERMISSIONS={
     Manifest.permission.READ_EXTERNAL_STORAGE, // Dangerous
     Manifest.permission.WRITE_EXTERNAL_STORAGE, // Dangerous
-    Manifest.permission.INTERNET,
-    Manifest.permission.INTERNET,
-    Manifest.permission.BLUETOOTH,
-    Manifest.permission.BLUETOOTH_ADMIN,
+    // Manifest.permission.INTERNET,
+    // Manifest.permission.BLUETOOTH,
+    // Manifest.permission.BLUETOOTH_ADMIN,
     //Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_FINE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_BACKGROUND_LOCATION // Dangerous
