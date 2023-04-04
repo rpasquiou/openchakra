@@ -19,9 +19,9 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
 
     override fun getName() = "WithingsLink"
 
-    @ReactMethod fun askAllPermissions() {
-      Log.d("DEKUPLE", "WithingsLink.askAllPermissions")
-      MainActivity.instance.requestPermissions(PermissionUtil.ALL_PERMISSIONS, null, true)
+    @ReactMethod fun askOwnPermissions() {
+      Log.d("DEKUPLE", "WithingsLink.askOwnPermissions")
+      MainActivity.instance.requestPermissions(PermissionUtil.OWN_PERMISSIONS, null, true)
     }
 
     @ReactMethod fun openInstall(accessToken: String, csrfToken: String) {

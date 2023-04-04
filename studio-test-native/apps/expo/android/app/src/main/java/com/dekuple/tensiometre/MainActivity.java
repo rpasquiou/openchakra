@@ -132,16 +132,19 @@ public class MainActivity extends ReactActivity
     Log.d("DEKUPLE", String.format("ManiActivity.requestPermissions:%s", String.join(",", permissions)));
     String[] deniedPermissions=getDeniedPermissions(permissions);
     for (int i=0; i<deniedPermissions.length; i++) {
+      String permission=deniedPermissions[i];
       int requestCode=ThreadLocalRandom.current().nextInt(1, 10000);
       if (callback!=null) {
-        permissionsCallbacks.put(deniedPermissions[i], callback);
+        permissionsCallbacks.put(permission, callback);
       }
-      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, deniedPermissions[i]);
-      if (rationales && requiresRationale) {
-        displayRationale(deniedPermissions[i], callback);
+      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, permission);
+      if (rationales && (requiresRationale || permission.contains("LOCATION"))) {
+        displayRationale(permission, callback);
       }
-      //Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
-      ActivityCompat.requestPermissions(this, new String[]{deniedPermissions[i]}, requestCode);
+      else {
+        //Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
+        ActivityCompat.requestPermissions(this, new String[]{permission}, requestCode);
+      }
     }
   }
 

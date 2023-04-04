@@ -25,7 +25,7 @@ public final class PermissionUtil {
   public static final String LOC_MESSAGE =
   "L'application ma Tension collecte vos données de localisation pour l'appareillage "+
   "de votre tensiomètre Withings et la remontée des mesures de tension, y compris "+
-  "lorsque l'application est fermée ou non utilisée.";
+  "lorsque l'application est fermée ou non utilisée. Autorisez la localisation précise 'toujours'.";
 
   final static String[] OWN_PERMISSIONS={
     Manifest.permission.READ_EXTERNAL_STORAGE, // Dangerous
@@ -37,7 +37,7 @@ public final class PermissionUtil {
     // Manifest.permission.INTERNET,
     // Manifest.permission.BLUETOOTH,
     // Manifest.permission.BLUETOOTH_ADMIN,
-    Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
+    //Manifest.permission.ACCESS_COARSE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_FINE_LOCATION, // Dangerous
     Manifest.permission.ACCESS_BACKGROUND_LOCATION // Dangerous
   };

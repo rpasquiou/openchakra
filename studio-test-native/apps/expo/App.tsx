@@ -25,8 +25,8 @@ const App = () => {
   // Display permissions dialogs once when user is logged
   useEffect(() => {
     if (currentUser && shouldAskPermissions) {
-      console.log(`Calling askAllPermission()`)
-      WithingsLink.askAllPermissions()
+      console.log(`Calling askOwnPermission()`)
+      WithingsLink.askOwnPermissions()
       setShouldAskPermissions(false)
     }
   }, [currentUser])
