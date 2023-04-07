@@ -8,23 +8,33 @@ import {
 } from 'react-native'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
+import moment from 'moment'
 const {WithingsLink} = NativeModules
 
-// const BASE_URL_TO_POINT = 'https://ma-tension.com/'
-const BASE_URL_TO_POINT = 'https://www.pagesjaunes.fr/'
+const BASE_URL_TO_POINT = 'https://ma-tension.com/'
 
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
   const [displaySetup, setDisplaySetup]=useState(false)
   const [currentUser, setCurrentUser]=useState(null)
+  const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
 
   const webviewRef = useRef(null)
 
+  // Display permissions dialogs once when user is logged
   useEffect(() => {
-    console.log(`WebView URL is ${currentUrl}`)
-    setDisplaySetup(/setup-appareil/.test(currentUrl))
-  }, [currentUrl])
+    if (currentUser && shouldAskPermissions) {
+      console.log(`Calling askOwnPermission()`)
+      WithingsLink.askOwnPermissions()
+      setShouldAskPermissions(false)
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    console.log(`Logged:${!!currentUser} ${moment()}`)
+    setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
+  }, [currentUrl, currentUser])
 
   const startSync = ({mac_address, advertise_key}) => {
     console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
@@ -45,9 +55,10 @@ const App = () => {
           })
       })
       .catch(err => {
-        setCurrentUser(null)
+        if (err.response?.status==401) {
+          setCurrentUser(null)
+        }
       })
-    setDisplaySetup(/setup-appareil/.test(currentUrl))
   }, [currentUrl, currentUser])
 
   const accessToken=currentUser?.access_token
@@ -65,6 +76,7 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
+
       { displaySetup && currentUser &&
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>

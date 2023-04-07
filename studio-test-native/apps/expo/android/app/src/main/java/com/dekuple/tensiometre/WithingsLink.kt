@@ -12,12 +12,33 @@ import android.util.Log
 import com.withings.library.webble.background.WithingsDeviceIdentity
 import com.withings.library.webble.background.WithingsSyncService
 import com.withings.library.webble.background.ServiceState
+import com.dekuple.tensiometre.MainActivity
+import com.dekuple.tensiometre.PermissionUtil
 
 class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
 
     override fun getName() = "WithingsLink"
 
+    @ReactMethod fun askOwnPermissions() {
+      Log.d("DEKUPLE", "WithingsLink.askOwnPermissions")
+      MainActivity.instance.requestPermissions(PermissionUtil.OWN_PERMISSIONS, null, true)
+    }
+
     @ReactMethod fun openInstall(accessToken: String, csrfToken: String) {
+      val cb= object: MainActivity.Callback {
+        override fun run() {openInstallInternal(accessToken, csrfToken)}
+      }
+      MainActivity.instance.checkPermissionsAndLaunch(PermissionUtil.WITHINGS_PERMISSIONS, cb)
+    }
+
+    @ReactMethod fun openSettings(accessToken: String, csrfToken: String) {
+      val cb= object: MainActivity.Callback {
+        override fun run() {openSettingsInternal(accessToken, csrfToken)}
+      }
+      MainActivity.instance.checkPermissionsAndLaunch(PermissionUtil.WITHINGS_PERMISSIONS, cb)
+    }
+
+    @ReactMethod fun openInstallInternal(accessToken: String, csrfToken: String) {
         try {
           if (getReactApplicationContextIfActiveOrWarn()!=null) {
             val context=getReactApplicationContextIfActiveOrWarn()!!
@@ -32,7 +53,7 @@ class WithingsLink(reactContext: ReactApplicationContext): ReactContextBaseJavaM
         }
     }
 
-    @ReactMethod fun openSettings(accessToken: String, csrfToken: String) {
+    @ReactMethod fun openSettingsInternal(accessToken: String, csrfToken: String) {
         if (getReactApplicationContextIfActiveOrWarn()!=null) {
           val context=getReactApplicationContextIfActiveOrWarn()!!
           val intent=WithingsActivity.createSettingsIntent(context, accessToken, csrfToken)

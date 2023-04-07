@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "expo start --dev-client",
-    "run:android": "TAMAGUI_TARGET=native yarn expo run:android",
+    "run:android": "TAMAGUI_TARGET=native  TAMAGUI_DISABLE_WARN_DYNAMIC_LOAD=1 yarn expo run:android",
     "run:ios": "TAMAGUI_TARGET=native yarn expo run:ios",
     "build:android": "TAMAGUI_TARGET=native eas build -p android",
     "build:android:dev:local": "TAMAGUI_TARGET=native eas build -p android --local --profile development",

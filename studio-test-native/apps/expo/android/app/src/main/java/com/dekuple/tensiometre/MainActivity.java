@@ -2,6 +2,9 @@ package com.dekuple.tensiometre;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
+import java.util.Map;
+import java.util.Hashtable;
+import java.util.concurrent.ThreadLocalRandom;
 
 import android.Manifest;
 import android.os.Build;
@@ -14,21 +17,33 @@ import androidx.annotation.NonNull;
 import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.Toast;
+import android.view.View;
+//import android.app.AlertDialog;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
 
-public class MainActivity extends ReactActivity {
+public class MainActivity extends ReactActivity
+  implements ActivityCompat.OnRequestPermissionsResultCallback {
+  //implements PermissionUtil.PermissionsCallBack {
 
-  private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;    
-    
+  public static interface Callback {
+    void run();
+  }
+
+  public static MainActivity instance=null;
+
+  private Map<String, Callback> permissionsCallbacks=new Hashtable<String, Callback>();
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
+    Log.d("DEKUPLE", "MainActivity setting singleton instance");
+    MainActivity.instance=this;
     setTheme(R.style.AppTheme);
     super.onCreate(savedInstanceState);
 
@@ -82,32 +97,76 @@ public class MainActivity extends ReactActivity {
     super.invokeDefaultOnBackPressed();
   }
 
-  /**
-   * @param requestCode
-   * @param permissions
-   * @param grantResults
-   */
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-      if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-          // Location permissions granted
-          permissionsGranted();
-        } else {
-          // Location permissions not granted
-          permissionsDenied();
+  private void displayRationale(String permission, Callback callback) {
+    if (permission.contains("LOCATION")) {
+      AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+      alertBuilder.setCancelable(true);
+      alertBuilder.setTitle("Autorisation nécessaire");
+      alertBuilder.setMessage(PermissionUtil.LOC_MESSAGE);
+      alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+        public void onClick(DialogInterface dialog, int which) {
+          requestPermissions(new String[]{permission}, callback, false);
         }
+      });
+
+      AlertDialog alert = alertBuilder.create();
+      alert.show();
+    }
+  }
+
+  void checkPermissionsAndLaunch(String[] permissions, Callback callback) {
+    String[] deniedPermissions=getDeniedPermissions(permissions);
+    if (deniedPermissions.length>0) {
+      requestPermissions(deniedPermissions, callback, true);
+    }
+    else {
+      callback.run();
+    }
+  }
+
+  public String[] getDeniedPermissions(String[] permissions) {
+    String[] deniedPermissions=Arrays.stream(permissions)
+     .filter(perm -> ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED)
+     .toArray(String[]::new);
+    Log.i("DEKUPLE", String.format("Denied permissions:%d:%s", deniedPermissions.length, String.join(",", deniedPermissions)));
+    return deniedPermissions;
+  }
+
+  public void requestPermissions(String[] permissions, Callback callback, Boolean rationales) {
+    for (String p: permissions) {
+      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, p);
+      Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", p, requiresRationale ? "true": "false"));
+    }
+    Log.d("DEKUPLE", String.format("ManiActivity.requestPermissions:%s", String.join(",", permissions)));
+    String[] deniedPermissions=getDeniedPermissions(permissions);
+    for (int i=0; i<deniedPermissions.length; i++) {
+      String permission=deniedPermissions[i];
+      int requestCode=ThreadLocalRandom.current().nextInt(1, 10000);
+      if (callback!=null) {
+        permissionsCallbacks.put(permission, callback);
       }
+      boolean requiresRationale=ActivityCompat.shouldShowRequestPermissionRationale(this, permission);
+      if (rationales && (requiresRationale || permission.contains("LOCATION"))) {
+        displayRationale(permission, callback);
+      }
+      else {
+        //Log.d("DEKUPLE", String.format("Permissions %s rationale required : %s", deniedPermissions[i], requiresRationale ? "true": "false"));
+        ActivityCompat.requestPermissions(this, new String[]{permission}, requestCode);
+      }
+    }
   }
 
-  public void permissionsGranted() {
-      Toast.makeText(this, "Permissions granted!", Toast.LENGTH_SHORT).show();
-  }
-
-  public void permissionsDenied() {
-      Toast.makeText(this, "Permissions Denied!", Toast.LENGTH_SHORT).show();
+  @Override
+  public void onRequestPermissionsResult(int requestCode, /**@NonNull*/ String[] permissions, /**@NonNull*/ int[] grantResults) {
+    Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
+    for (int i=0; i<grantResults.length; i++) {
+      String permission=permissions[i];
+      boolean granted=grantResults[i]==PackageManager.PERMISSION_GRANTED;
+      Log.d("DEKUPLE", String.format("Granted %s:%s", permission, granted ? "true": "false"));
+      if (granted && permissionsCallbacks.containsKey(permission)) {
+        permissionsCallbacks.remove(permissions[i]).run();
+      }
+    }
   }
 
   public static class MainActivityDelegate extends ReactActivityDelegate {
