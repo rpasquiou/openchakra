@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
 const express = require('express')
 const next = require('next')
+const admin = require("firebase-admin");
 const bodyParser = require('body-parser')
 const passport = require('passport')
 const glob = require('glob')
@@ -67,6 +68,12 @@ const withings = require('./routes/api/withings')
 const path = require('path')
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
+const serviceAccount = require("../config/firebaseAccountKey.json");
+
+// Init Firebase
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 // TODO Terminer les notifications
 // throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)

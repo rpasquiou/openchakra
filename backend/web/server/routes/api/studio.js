@@ -247,6 +247,24 @@ router.post("/login", (req, res) => {
     })
 })
 
+router.post('/firebasetoken', async (req, res) => {
+  const { userid, token } = req.body;
+
+  try {
+    const user = await User.findById(userid)
+    if (!user) {
+      return res.status(404).send({ message: 'Utilisateur non trouvé' });
+    }
+    user.token = token
+    await user.save()
+    return res.send({ message: 'Token Firebase updated' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: 'Server Error' });
+  }
+})
+
+
 // router.post('/scormupdate', passport.authenticate('cookie', {session: false}), (req, res) => {
 router.post('/scormupdate', (req, res) => {
   const value = req.body
