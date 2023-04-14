@@ -20,6 +20,8 @@ backend/web/mode_*.js
 # misc
 **/.env
 **/env.json
+**/firebaseAccountKey.json
+**/google-services.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

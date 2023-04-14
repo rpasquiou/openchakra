@@ -3,8 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 
 import { HomeScreen } from 'app/features/home/screen'
 import { UserDetailScreen } from 'app/features/user/detail-screen'
-import {Connexion} from 'app/features/connexion'
-import {Testcomponents} from 'app/features/testcomponents'
 
 const Stack = createNativeStackNavigator<{
   home: undefined
@@ -30,20 +28,6 @@ export function NativeNavigation() {
         component={UserDetailScreen}
         options={{
           title: 'User',
-        }}
-      />
-      <Stack.Screen
-        name="connexion"
-        component={Connexion}
-        options={{
-          title: 'Connexion',
-        }}
-      />
-      <Stack.Screen
-        name="testcomponents"
-        component={Testcomponents}
-        options={{
-          title: 'Test components',
         }}
       />
     </Stack.Navigator>
