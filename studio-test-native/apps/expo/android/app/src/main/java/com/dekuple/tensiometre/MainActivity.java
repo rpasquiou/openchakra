@@ -23,6 +23,8 @@ import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.dekuple.tensiometre.PermissionUtil;
 
 public class MainActivity extends ReactActivity
