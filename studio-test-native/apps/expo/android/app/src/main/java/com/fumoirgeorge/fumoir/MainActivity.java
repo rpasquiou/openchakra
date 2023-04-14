@@ -6,8 +6,10 @@ import java.util.stream.Stream;
 */
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 //import androidx.core.app.ActivityCompat;
 //import androidx.core.content.ContextCompat;
 //import android.content.pm.PackageManager;
@@ -21,12 +23,16 @@ import expo.modules.ReactActivityDelegateWrapper;
 import com.fumoirgeorge.fumoir.Permissions;
 
 public class MainActivity extends ReactActivity {
+
+  public static MainActivity instance=null;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
+    MainActivity.instance=this;
     super.onCreate(null);
 
     /** TODO : when should permissions be asked for ?
@@ -79,6 +85,12 @@ public class MainActivity extends ReactActivity {
     // Use the default back button implementation on Android S
     // because it's doing more than {@link Activity#moveTaskToBack} in fact.
     super.invokeDefaultOnBackPressed();
+  }
+
+  public void setCurrentUser(String userId) {
+    SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
+    Log.d("USERID", sharedPreferences.toString());
+    Log.d("USERID", userId);
   }
 
   public static class MainActivityDelegate extends ReactActivityDelegate {
