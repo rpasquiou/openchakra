@@ -88,9 +88,19 @@ public class MainActivity extends ReactActivity {
   }
 
   public void setCurrentUser(String userId) {
+
     SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
-    Log.d("USERID", sharedPreferences.toString());
-    Log.d("USERID", userId);
+    String hasId = sharedPreferences.getString("userid", "");
+    if (hasId.isEmpty()) {
+      SharedPreferences.Editor editor = sharedPreferences.edit();
+      editor.putString("userid", userId);
+      editor.apply();
+      /* Go write */
+      Log.i("USERID", "has id " + sharedPreferences);
+    }
+
+    Log.i("USERID", hasId);
+    Log.i("USERID", userId);
   }
 
   public static class MainActivityDelegate extends ReactActivityDelegate {

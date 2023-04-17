@@ -7,7 +7,7 @@ import android.util.Log
 
 class RNLinkModule(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
 
-    override fun getName() = "CommunicateModule"
+    override fun getName() = "RNLinkModule"
     private val idea: String = "COMMUNI"
 
     @ReactMethod fun setCurrentUser(userId: String) {

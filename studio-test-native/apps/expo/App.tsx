@@ -16,11 +16,10 @@ const App = () => {
   const webviewRef = useRef(null)
 
   useEffect(() => {
-    if (currentUser === null && currentUrl !== BASE_URL_TO_POINT) {
+    if (currentUrl !== BASE_URL_TO_POINT) {
       axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
         .then(({data}) => {
           setCurrentUser(data)
-          console.log(data)
           // send userId to app in order to handle notifications
           RNLinkModule.setCurrentUser(data.id)
         })
@@ -30,7 +29,7 @@ const App = () => {
           }
         })
     }
-  }, [currentUrl, currentUser])
+  }, [currentUrl])
 
   return (
     <>
