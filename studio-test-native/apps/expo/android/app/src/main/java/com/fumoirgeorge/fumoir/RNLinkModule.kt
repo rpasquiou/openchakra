@@ -8,11 +8,9 @@ import android.util.Log
 class RNLinkModule(reactContext: ReactApplicationContext): ReactContextBaseJavaModule(reactContext) {
 
     override fun getName() = "RNLinkModule"
-    private val idea: String = "COMMUNI"
 
-    @ReactMethod fun setCurrentUser(userId: String) {
-        Log.d(idea, "WithingsLink.askOwnPermissions")
-        MainActivity.instance.setCurrentUser(userId)
+    @ReactMethod fun isUserHasSubscribed(userId: String) {
+        MainActivity.instance.isUserHasSubscribed(userId)
     }
     /**
     @ReactMethod fun subscribeToTopic(topic: String, userId: String) {
