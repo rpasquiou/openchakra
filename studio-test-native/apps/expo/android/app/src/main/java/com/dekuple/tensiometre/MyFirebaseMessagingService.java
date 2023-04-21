@@ -91,6 +91,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void sendRegistrationToServer(String token) {
+        // NOT USED : we're based on topics related to userID
         // TODO: Implement this method to send token to your app server.
     }
 
