@@ -5,8 +5,6 @@ import {View} from 'react-native'
 import React, {useState} from 'react'
 import {TextLink, useLink} from 'solito/link'
 
-import * as DocumentPicker from 'expo-document-picker'
-
 export function HomeScreen() {
   const linkProps = useLink({
     href: '/user/nate',
@@ -19,12 +17,6 @@ export function HomeScreen() {
     href: '/testcomponents',
   })
 
-
-  const _pickDocument = async() => {
-    let result = await DocumentPicker.getDocumentAsync({})
-    alert(result.uri)
-    console.log(result)
-  }
 
   return (
     <View style={{flex: 1, height: '100%'}}>

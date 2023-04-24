@@ -9,7 +9,7 @@
     "esModuleInterop": true,
     "preserveSymlinks": true,
     "incremental": true,
-    "jsx": "react-jsx",
+    "jsx": "react",
     "module": "ESNext",
     "moduleResolution": "node",
     "noEmitOnError": false,

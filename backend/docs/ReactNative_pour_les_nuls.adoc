@@ -149,5 +149,14 @@ La réponse https://stackoverflow.com/questions/73107234/how-to-fix-jlink-does-n
 ## Customisation
 
 ### Icône de l'application
+
+#### Android
+
 Générer avec l'excellent outil https://icon.kitchen !!
 Puis dézipper et copier sour apps/expo/android/app/src/main/res
+
+#### iOS
+
+https://www.appicon.co/
+
+Dézipper dans Images.xcassets/AppIcon.appiconset les images accompagnées du Contents.json
