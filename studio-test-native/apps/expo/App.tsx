@@ -8,6 +8,8 @@ import {
 const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
 const {RNLinkModule} = NativeModules
 
+// TODO: subscribe on login & unsubscribe on logout using previous hook value : https://blog.logrocket.com/accessing-previous-props-state-react-hooks/
+
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
