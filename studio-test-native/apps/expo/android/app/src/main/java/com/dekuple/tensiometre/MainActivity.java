@@ -209,6 +209,21 @@ public class MainActivity extends ReactActivity
       Log.d("USERID", "has id " + sharedPreferences);
     }
   }
+  
+  public void unsubscribeUser(String userId) {
+
+    SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
+    String hasId = sharedPreferences.getString("userid", "");
+    if (!hasId.isEmpty()) {
+      /* Use of preferences to avoid subscribing topic multiple times */
+      SharedPreferences.Editor editor = sharedPreferences.edit();
+      editor.remove("userid");
+      editor.apply();
+
+      unsubscribeToTopic("user", userId);
+      Log.d("USERID", "has id " + sharedPreferences);
+    }
+  }
 
     public void requestNotifPermission() {
 

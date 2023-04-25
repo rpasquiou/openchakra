@@ -9,6 +9,7 @@ import {
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
 import moment from 'moment'
+import { usePrevious } from './hooks/usePrevious.hook'
 const {WithingsLink, RNLinkModule} = NativeModules
 
 const BASE_URL_TO_POINT = 'https://ma-tension.com/'
@@ -62,18 +63,12 @@ const App = () => {
   }, [currentUrl])
 
   useEffect(() => {
-    if (currentUrl !== BASE_URL_TO_POINT) {
-      axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
-        .then(({data}) => {
-          // send userId to app in order to subscribe to topic (Firebase notifications)
-          RNLinkModule.isUserHasSubscribed(data.id)
-        })
-        .catch(err => {
-          if (err.response?.status==401) { 
-          }
-        })
+    if (currentUser) {
+      RNLinkModule.isUserHasSubscribed(currentUser?.id)
+    } else {
+      RNLinkModule.unsubscribeUser()
     }
-  }, [currentUrl])
+  }, [currentUser])
 
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token

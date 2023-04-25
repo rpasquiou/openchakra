@@ -12,4 +12,8 @@ class RNLinkModule(reactContext: ReactApplicationContext): ReactContextBaseJavaM
     @ReactMethod fun isUserHasSubscribed(userId: String) {
         MainActivity.instance.isUserHasSubscribed(userId)
     }
+
+    @ReactMethod fun unsubscribeUser() {
+        MainActivity.instance.unsubscribeUser()
+    }
 }
