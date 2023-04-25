@@ -210,7 +210,7 @@ public class MainActivity extends ReactActivity
     }
   }
   
-  public void unsubscribeUser(String userId) {
+  public void unsubscribeUser() {
 
     SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
     String hasId = sharedPreferences.getString("userid", "");
@@ -219,8 +219,6 @@ public class MainActivity extends ReactActivity
       SharedPreferences.Editor editor = sharedPreferences.edit();
       editor.remove("userid");
       editor.apply();
-
-      unsubscribeToTopic("user", userId);
       Log.d("USERID", "has id " + sharedPreferences);
     }
   }
