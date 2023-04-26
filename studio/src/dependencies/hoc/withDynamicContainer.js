@@ -1,6 +1,5 @@
 import React from 'react'
 import lodash from 'lodash'
-import {getComponentDataValue} from '../utils/values'
 
 const normalize = str => {
   str = str
@@ -61,6 +60,7 @@ const setRecurseDataSource = (
   }
 }
 const withDynamicContainer = Component => {
+  // TODO vomi
   const FILTER_ATTRIBUTES = ['code', 'name', 'short_name', 'description', 'title']
 
   const internal = ({hiddenRoles, user, ...props}) => {
@@ -69,7 +69,6 @@ const withDynamicContainer = Component => {
     // TODO: in code.ts, generate withMaskability(withDynamic()) ...
     if (hiddenRoles) {
       const rolesToHide = JSON.parse(hiddenRoles)
-      console.log(`Roles to hide:${rolesToHide}`)
       const roleUser = user?.role
 
       // When roleUser is available, reveal
@@ -105,7 +104,7 @@ const withDynamicContainer = Component => {
       )
     }
     if (props.filterAttribute && props.filterValue) {
-      const value=getComponentDataValue(props.filterValue, props.index)
+      const value=props.getComponentValue(props.filterValue, props.level)
       // TODO Check why value "null" comes as string
       if (!(lodash.isNil(value) || value=="null")) {
         const regExp = new RegExp(normalize(value).trim(), 'i')
@@ -136,7 +135,7 @@ const withDynamicContainer = Component => {
             <>
               {React.cloneElement(
                 firstChild,
-                { id: newId, level: index, dataSource: d },
+                { id: newId, level: index, dataSource: d, _id: d?._id },
                 setRecurseDataSource(
                   firstChild,
                   d,

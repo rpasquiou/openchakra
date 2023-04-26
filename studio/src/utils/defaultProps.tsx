@@ -197,7 +197,6 @@ let DEFAULT_PROPS: PreviewDefaultProps = {
   },
   Checkbox: {
     children: 'Label checkbox',
-    isReadOnly: true,
     isChecked: false,
   },
   CircularProgress: {
@@ -295,11 +294,13 @@ let DEFAULT_PROPS: PreviewDefaultProps = {
     isChecked: false,
   },
   Tab: { children: 'Tab' },
+  Tabs: { children: '', size: 'md' },
   TabPanel: { children: 'Tab' },
   Tag: {
     children: 'Tag name',
   },
   Text: { children: 'Text value' },
+  VisuallyHidden: { children: '' },
 }
 
 //@ts-ignore

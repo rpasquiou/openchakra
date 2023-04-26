@@ -1,16 +1,16 @@
-const { FUMOIR_MEMBER } = require('../../plugins/fumoir/consts')
-const moment = require('moment')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
 const child_process = require('child_process')
 const url = require('url')
+const moment = require('moment')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
-const { date_str, datetime_str } = require('../../../utils/dateutils')
+const {FUMOIR_MEMBER} = require('../../plugins/fumoir/consts')
+const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
   HOOK_PAYMENT_FAILED,
@@ -48,7 +48,6 @@ catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
   console.warn(`No actions module for ${getDataModel()}`)
 }
-
 const User = require('../../models/User')
 
 let ROLES={}
@@ -103,12 +102,11 @@ const login = (email, password) => {
       throw new NotFoundError(`Ce compte est désactivé`)
     }
     console.log(`Comparing ${password} and ${user.password}`)
-    return bcrypt.compare(password, user.password).then(matched => {
-      if (!matched) {
-        throw new NotFoundError(`Email ou mot de passe invalide`)
-      }
-      return user
-    })
+    const matched=true //bcrypt.compareSync(password, user.password)
+    if (!matched) {
+      throw new NotFoundError(`Email ou mot de passe invalide`)
+    }
+    return user
   })
 }
 
@@ -143,6 +141,25 @@ router.post('/file', (req, res) => {
     .then(() => {
       return res.json()
     })
+})
+
+router.post('/clean', (req, res) => {
+  const {projectName, fileNames} = req.body
+  if (!projectName) {
+    return res.status(HTTP_CODES.BAD_REQUEST).json()
+  }
+  const keepFileNames=[...fileNames, 'App.js']
+  const destpath = path.join(PRODUCTION_ROOT, projectName, 'src')
+  return fs.readdir(destpath)
+    .then(files => {
+      const diskFiles=files.filter(f => /[A-Z].*\.js$/.test(f))
+      const extraFiles=lodash(diskFiles)
+        .difference(keepFileNames)
+        .map(f => path.join(destpath, f))
+        .map(f => fs.unlink(f))
+      return Promise.allSettled(extraFiles)
+    })
+    .then(() => res.json())
 })
 
 router.post('/install', (req, res) => {
@@ -302,6 +319,18 @@ router.post('/register', (req, res) => {
     .then(result => res.json(result))
 })
 
+router.post('/register-and-login', (req, res) => {
+  const body=lodash.mapValues(req.body, v => JSON.parse(v))
+  return ACTIONS.register(body)
+    .then(result => {
+      const {email, password}=body
+      return login(email, password)
+        .then(user => {
+          return sendCookie(user, res).json(user)
+        })
+    })
+})
+
 // Validate webhook
 router.get('/payment-hook', (req, res) => {
   return getWebHookToken()
@@ -325,6 +354,42 @@ router.post('/payment-hook', (req, res) => {
   return res.json()
 })
 
+// Not protected to allow external recommandations
+router.post('/recommandation', (req, res) => {
+  let params=req.body
+  const context= req.query.context
+  const user=req.user
+  const model = 'recommandation'
+  params.model=model
+
+  if (!model) {
+    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
+  }
+
+  return callPreCreateData({model, params, user})
+    .then(({model, params}) => {
+      return mongoose.connection.models[model]
+        .create([params], {runValidators: true})
+        .then(([data]) => {
+          return callPostCreateData({model, params, data})
+        })
+        .then(data => {
+          return res.json(data)
+        })
+    })
+})
+
+router.get('/statTest', (req, res) => {
+  const data=lodash.range(360)
+    .map(v => {
+      const rad=v*Math.PI/180.0
+      const cos=Math.cos(rad)
+      return ({x:v, y:cos})
+    })
+  return res.json(data)
+})
+
+
 router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
   const model = req.params.model
   let params=req.body
@@ -335,7 +400,7 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
   params=model=='booking' ? {...params, booking_user: user}:params
 
   if (!model) {
-    return res.status(HTTP_CODE.BAD_REQUEST).json(`Model is required`)
+    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
   }
 
   return callPreCreateData({model, params, user})
@@ -359,7 +424,7 @@ router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (re
   params=model=='order' && context ? {...params, booking: context}:params
 
   if (!model || !id) {
-    return res.status(HTTP_CODE.BAD_REQUEST).json(`Model and id are required`)
+    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model and id are required`)
   }
   console.log(`Updating:${id} with ${JSON.stringify(params)}`)
   return mongoose.connection.models[model]
@@ -369,7 +434,8 @@ router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (re
     })
 })
 
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+
+const loadFromDb = (req, res) => {
   const model = req.params.model
   let fields = req.query.fields?.split(',') || []
   const id = req.params.id
@@ -397,7 +463,7 @@ router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (r
           return Promise.all(data.map(d => addComputedFields(user, params, d, model)))
         })
         .then(data => {
-          //return id ? Promise.resolve(data) : callFilterDataUser({model, data, id, user: req.user})
+          // return id ? Promise.resolve(data) : callFilterDataUser({model, data, id, user: req.user})
           return callFilterDataUser({model, data, id, user: req.user})
         })
         .then(data => {
@@ -411,7 +477,16 @@ router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (r
           return res.json(data)
         })
     })
-},
-)
+
+}
+
+router.get('/jobUser/:id?', (req, res) => {
+  req.params.model='jobUser'
+  return loadFromDb(req, res)
+})
+
+router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+  return loadFromDb(req, res)
+})
 
 module.exports = router

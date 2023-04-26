@@ -52,6 +52,7 @@ type ComponentType =
   | 'InputRightAddon'
   | 'InputLeftElement'
   | 'InputRightElement'
+  | 'Lexical'
   | 'Link'
   | 'List'
   | 'ListItem'
@@ -83,6 +84,7 @@ type ComponentType =
   | 'Text'
   | 'Textarea'
   | 'Timer'
+  | 'VisuallyHidden'
 
 type MetaComponentType =
   | 'FormControlMeta'
@@ -94,6 +96,7 @@ type MetaComponentType =
   | 'NumberInputMeta'
   | 'UploadFileMeta'
   | 'BreadcrumbMeta'
+  | 'TabsMeta'
 
 interface IComponent {
   children: string[]

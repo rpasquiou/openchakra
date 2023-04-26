@@ -177,6 +177,15 @@ let menuItems: MenuItems = {
   Switch: {
     group: 'form',
   },
+  Tabs: {
+    children: {
+      Tabs: {},
+      Tab: {},
+      TabList: {},
+      TabPanel: {},
+      TabPanels: {},
+    },
+  },
   Tag: {},
   Text: {
     group: 'typography',
@@ -185,7 +194,17 @@ let menuItems: MenuItems = {
     group: 'form',
   },
   Menu: { soon: true },
-  Tab: { soon: true },
+  Tabs: {
+    children: {
+      Tabs: {},
+      Tab: {},
+      TabList: {},
+      TabPanel: {},
+      TabPanels: {},
+    },
+  },
+  VisuallyHidden: {},
+  
   /*"Tabs",
   "TabList",
   "TabPanel",

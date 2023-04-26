@@ -1,10 +1,12 @@
-const bcrypt = require('bcryptjs')
-const { generatePassword } = require('../../../utils/passwords')
-const url = require('url')
+const mongoose = require('mongoose')
+const { getModel, putAttribute, removeData } = require('../database')
+const { getDataModel } = require('../../../config/config')
 const {
-  putAttribute,
-  removeData,
-} = require('../database')
+  generatePassword,
+  validatePassword
+} = require('../../../utils/passwords')
+const bcrypt = require('bcryptjs')
+const url = require('url')
 const User = require('../../models/User')
 const Message = require('../../models/Message')
 const Post = require('../../models/Post')
@@ -12,6 +14,8 @@ const UserSessionData = require('../../models/UserSessionData')
 const {NotFoundError} = require('../errors')
 const Program = require('../../models/Program')
 const {sendNewMessage} = require('../../plugins/fumoir/mailing')
+
+const {DEFAULT_ROLE} = require(`../../plugins/${getDataModel()}/consts`)
 
 let ACTIONS = {
   put: ({parent, attribute, value}, user) => {
@@ -99,12 +103,42 @@ let ACTIONS = {
         if (exists) {
           return Promise.reject(`Un compte avec le mail ${props.email} existe déjà`)
         }
-        if (!props.password) {
-          props.password=generatePassword()
+
+        let promise
+        if (props.password) {
+          promise=validatePassword({...props})
         }
-        return User.create({...props, password: bcrypt.hashSync(pass, 10)})
+        else {
+          props.password=generatePassword()
+          promise=Promise.resolve()
+        }
+
+        if (DEFAULT_ROLE && !props.role) {
+          props.role=DEFAULT_ROLE
+        }
+
+        return promise
+          .then(()=> {
+            return User.create({...props, password: bcrypt.hashSync(props.password, 10)})
+          })
+    })
+  },
+
+  addTarget: ({value, context, append}) => {
+    console.log(`${append ? 'Adding':'Removing'} target ${value} to context ${context}`)
+    return getModel(context)
+      .then(modelName => {
+        const model=mongoose.connection.models[modelName]
+        return append ?
+          model.findByIdAndUpdate(context, {$addToSet: {targets: value}})
+          :
+          model.findByIdAndUpdate(context, {$pull: {targets: value}})
+      })
+      .catch(err => {
+        console.error(err)
       })
   },
+
 }
 
 let ALLOW_ACTION= () => Promise.resolve(true)

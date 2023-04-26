@@ -15,7 +15,7 @@ const {
   getHostUrl,
   getPort,
 } = require('../config/config')
-const { HTTP_CODES, parseError } = require('./utils/errors')
+const {HTTP_CODES, parseError} = require('./utils/errors')
 require('./models/ResetToken')
 require('./models/Program')
 require('./models/Theme')
@@ -46,6 +46,35 @@ require('./models/Payment')
 require('./models/Accessory')
 require('./models/AccessoryCategory')
 require('./models/Review')
+require('./models/Offer')
+require('./models/Content')
+require('./models/Key')
+require('./models/Group')
+require('./models/Target')
+require('./models/PartnerApplication')
+require('./models/Trophy')
+require('./models/Spoon')
+require('./models/CollectiveChallenge')
+require('./models/PartnerApplication')
+require('./models/Gift')
+require('./models/SpoonGain')
+require('./models/UserSpoon')
+require('./models/Content')
+require('./models/Menu')
+require('./models/Webinar')
+require('./models/IndividualChallenge')
+require('./models/JobUser')
+require('./models/Comment')
+require('./models/Recommandation')
+require('./models/Quotation')
+require('./models/Skill')
+require('./models/Activity')
+require('./models/Experience')
+require('./models/Request')
+require('./models/Pip')
+require('./models/Diploma')
+require('./models/Photo')
+require('./models/Mission')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
@@ -181,10 +210,8 @@ checkConfig()
       console.log(`Checking correct hostname`)
       axios
         .get(new URL('/testping', getHostUrl()).toString())
-        .then(res => {
-          const result = res.data
-          const expected = RANDOM_ID
-          if (result != expected) {
+        .then(({data}) => {
+          if (data != RANDOM_ID) {
             throw new Error(`Host ${getHostUrl()} is wrong`)
           }
         })

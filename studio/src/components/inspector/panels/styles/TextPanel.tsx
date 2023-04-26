@@ -2,6 +2,7 @@ import React, { memo } from 'react'
 import { IconButton, ButtonGroup, useTheme, Box, Input } from '@chakra-ui/react'
 import ColorsControl from '~components/inspector/controls/ColorsControl'
 import { GoBold, GoItalic } from 'react-icons/go'
+import { MdFormatUnderlined as Underline } from 'react-icons/md'
 import {
   MdFormatAlignLeft,
   MdFormatAlignRight,
@@ -10,6 +11,7 @@ import {
 } from 'react-icons/md'
 import FormControl from '~components/inspector/controls/FormControl'
 import useBreakpoints from '~hooks/useBreakpoints'
+import { fontsName } from '~/dependencies/theme/Fonts'
 
 const TextPanel = () => {
   const theme = useTheme()
@@ -18,6 +20,7 @@ const TextPanel = () => {
     'fontWeight',
     'fontStyle',
     'textAlign',
+    'textDecoration',
     'fontFamily',
     'fontSize',
     'lineHeight',
@@ -82,6 +85,32 @@ const TextPanel = () => {
               }
               variant={
                 responsiveValues['fontStyle']?.[breakpoint] === 'italic'
+                  ? 'solid'
+                  : 'outline'
+              }
+            >
+              Italic
+            </IconButton>
+            <IconButton
+              aria-label="underline"
+              icon={<Underline />}
+              onClick={() => {
+                handleBreakpoints(
+                  'textDecoration',
+                  breakpoint,
+                  responsiveValues['textDecoration']?.[breakpoint] === 'underline'
+                    ? null
+                    : 'underline',
+                )
+              }}
+              size="xs"
+              colorScheme={
+                responsiveValues['textDecoration']?.[breakpoint] === 'underline'
+                  ? 'whatsapp'
+                  : 'gray'
+              }
+              variant={
+                responsiveValues['textDecoration']?.[breakpoint] === 'underline'
                   ? 'solid'
                   : 'outline'
               }
@@ -192,6 +221,7 @@ const TextPanel = () => {
               {Object.keys(theme.fonts).map(option => (
                 <option key={option} value={option} />
               ))}
+              {fontsName.map((font) => <option key={font} value={font} />)}
             </datalist>
           </FormControl>
 

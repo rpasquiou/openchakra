@@ -22,7 +22,7 @@ export const DATE_TYPE: ComponentType[] = ['Date']
 export const SELECT_TYPE: ComponentType[] = ['Select']
 export const SOURCE_TYPE: ComponentType[] = ['Timer']
 export const CHECKBOX_TYPE: ComponentType[] = ['Checkbox', 'Radio', 'Switch']
-export const INPUT_TYPE: ComponentType[] = ['Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat']
+export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat']
 export const UPLOAD_TYPE: ComponentType[] = ['UploadFile']
 export const ENUM_TYPE: ComponentType[] = ['RadioGroup']
 //export const ENUM_TYPE: ComponentType[] = ['RadioGroup','Select']
@@ -89,19 +89,16 @@ export const getDataProviderDataType = (
   if ((component.type=='DataProvider' && component.id==dataSource)
       || (component.id=='root' && dataSource=='root')) {
     const result={ type: component.props.model, multiple: true, ref: true}
-    console.log(`Getting datatype for ${component.id}:${JSON.stringify(result)}`)
     return result
   }
   if (component.id === 'root') {
     const result=getDataProviderDataType(components[dataSource], components, dataSource, models)
-    console.log(`Getting datatype for ${component.id}:${JSON.stringify(result)}`)
     return result
   }
 
   const parent = components[component.parent]
   let pdt = getDataProviderDataType(parent, components, dataSource, models)
   if (!pdt) {
-    console.log(`Getting datatype for ${component.id}:${JSON.stringify(null)}`)
     return null
   }
   let parentDataProviderType = { ...pdt }
@@ -114,7 +111,6 @@ export const getDataProviderDataType = (
       parentDataProviderType = { ...parentDataProviderType, multiple: false }
     }
   }
-  console.log(`Getting datatype for ${component.id}:${JSON.stringify(parentDataProviderType)}`)
   return parentDataProviderType
 }
 
