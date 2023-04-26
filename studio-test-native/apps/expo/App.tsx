@@ -71,7 +71,10 @@ const saveLoginScript = `
     }
 
     const updateToLocalStorage = (e) => {
-      const item = {[e.currentTarget.type]: e.currentTarget.value}
+
+      const name = e.currentTarget.type === 'text' ? 'password' : e.currentTarget.type
+
+      const item = {[name]: e.currentTarget.value}
       var logItems = localStorage.getItem(localStorageId);
 
       if (!logItems) {
