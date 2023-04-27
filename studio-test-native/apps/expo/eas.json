@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true,
+        "image": "latest"
+      },
+      "env": {
+        "TAMAGUI_TARGET": "native"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "TAMAGUI_TARGET": "native"
+      }
+    }
+  }
+}
