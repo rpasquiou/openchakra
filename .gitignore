@@ -189,7 +189,6 @@ $RECYCLE.BIN/
 
 **/static/profile
 
-
 # Vi swap files
 **/*.swp
 

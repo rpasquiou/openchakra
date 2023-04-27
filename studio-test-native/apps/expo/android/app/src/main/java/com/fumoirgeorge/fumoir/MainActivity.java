@@ -110,6 +110,7 @@ public class MainActivity extends ReactActivity {
       editor.apply();
 
       subscribeToTopic("user", userId);
+      subscribeToTopic("user", "all");
       Log.i("USERID", "has id " + sharedPreferences);
     }
   }
