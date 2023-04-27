@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Ma Tension",
-    "slug": "tensiometre",
+    "name": "Fumoir George",
+    "slug": "fumoir",
     "scheme": "myapp",
     "version": "1.0.0",
     "jsEngine": "hermes",
@@ -21,21 +21,27 @@
     ],
     "ios": {
       "supportsTablet": true,
+<<<<<<< HEAD
       "bundleIdentifier": "com.dekuple.tensiometre"
+||||||| e45293b32
+      "bundleIdentifier": "com.ma-tension.dekuple"
+=======
+      "bundleIdentifier": "com.fumoirgeorge.fumoir"
+>>>>>>> solito-fumoir
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.dekuple.tensiometre"
+      "package": "com.fumoirgeorge.fumoir"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "0d14d3e6-f3f9-45e6-85f4-edfd51d1392f"
+        "projectId": "4bdf33a4-903e-4d13-b745-9fbf97dd9600"
       }
     }
   }

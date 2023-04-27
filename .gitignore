@@ -22,6 +22,8 @@ backend/web/mode_*.js
 **/firebaseAccountKey.json
 **/google-services.json
 **/env.json
+**/firebaseAccountKey.json
+**/google-services.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -188,8 +190,6 @@ $RECYCLE.BIN/
 *.lnk
 
 **/static/profile
-
-#ios
 
 # Vi swap files
 **/*.swp
