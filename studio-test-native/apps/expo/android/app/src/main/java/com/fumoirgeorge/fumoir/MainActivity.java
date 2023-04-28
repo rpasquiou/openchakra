@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 */
 
 import android.Manifest;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,9 +26,6 @@ import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
 
 import com.fumoirgeorge.fumoir.Permissions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends ReactActivity {
 
@@ -99,22 +95,6 @@ public class MainActivity extends ReactActivity {
     super.invokeDefaultOnBackPressed();
   }
 
-  public void isUserHasSubscribed(String userId) {
-
-    SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
-    String hasId = sharedPreferences.getString("userid", "");
-    if (hasId.isEmpty()) {
-      /* Use of preferences to avoid subscribing topic multiple times */
-      SharedPreferences.Editor editor = sharedPreferences.edit();
-      editor.putString("userid", userId);
-      editor.apply();
-
-      subscribeToTopic("user", userId);
-      subscribeToTopic("user", "all");
-      Log.i("USERID", "has id " + sharedPreferences);
-    }
-  }
-
     public void requestPermission() {
 
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS)
@@ -139,42 +119,6 @@ public class MainActivity extends ReactActivity {
             }
         }
     }
-
-  public void subscribeToTopic(String topic, String userId) {
-    
-    String definedTopic = topic + "_" + userId;
-
-    FirebaseMessaging.getInstance().subscribeToTopic(definedTopic)
-        .addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                String msg = "Notifications pour " + topic;
-                if (!task.isSuccessful()) {
-                    msg = "Enregistrement notification refusé";
-                }
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-            }
-        });
-  }
-
-  public void unsubscribeToTopic(String topic, String userId) {
-
-    String definedTopic = topic + "_" + userId;
-    Log.d("TOPIC", definedTopic);
-
-    FirebaseMessaging.getInstance().unsubscribeFromTopic(definedTopic)
-      .addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                String msg = "Notifications " + topic + "";
-                if (!task.isSuccessful()) {
-                    msg = "Enregistrement notification refusé";
-                }
-                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
 
   public static class MainActivityDelegate extends ReactActivityDelegate {
     public MainActivityDelegate(ReactActivity activity, String mainComponentName) {

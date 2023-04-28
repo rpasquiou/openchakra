@@ -9,9 +9,6 @@ class RNLinkModule(reactContext: ReactApplicationContext): ReactContextBaseJavaM
 
     override fun getName() = "RNLinkModule"
 
-    @ReactMethod fun isUserHasSubscribed(userId: String) {
-        MainActivity.instance.isUserHasSubscribed(userId)
-    }
     /**
     @ReactMethod fun subscribeToTopic(topic: String, userId: String) {
         Log.d("DEKUPLE", "WithingsLink.askOwnPermissions")

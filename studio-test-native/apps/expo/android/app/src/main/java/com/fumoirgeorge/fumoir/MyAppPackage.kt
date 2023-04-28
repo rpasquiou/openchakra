@@ -15,5 +15,5 @@ class MyAppPackage : ReactPackage {
 
     override fun createNativeModules(
         reactContext: ReactApplicationContext
-    ): MutableList<NativeModule> = listOf(RNLinkModule(reactContext)).toMutableList()
+    ): MutableList<NativeModule> = listOf(RNLinkModule(reactContext), RNNotificationsModule(reactContext)).toMutableList()
 }
