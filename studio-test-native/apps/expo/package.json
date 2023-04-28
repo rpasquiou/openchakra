@@ -5,13 +5,13 @@
   "private": true,
   "scripts": {
     "start": "expo start --dev-client",
-    "run:android": "TAMAGUI_TARGET=native yarn expo run:android",
-    "run:ios": "TAMAGUI_TARGET=native yarn expo run:ios",
-    "build:android": "TAMAGUI_TARGET=native eas build -p android",
-    "build:android:dev:local": "TAMAGUI_TARGET=native eas build -p android --local --profile development",
-    "build:android:prod:local": "TAMAGUI_TARGET=native eas build -p android --local --profile production",
-    "build:ios": "TAMAGUI_TARGET=native eas build -p ios",
-    "web": "TAMAGUI_TARGET=web yarn expo start --web",
+    "run:android": "yarn expo run:android",
+    "run:ios": "yarn expo run:ios",
+    "build:android": "eas build -p android",
+    "build:android:dev:local": "eas build -p android --local --profile development",
+    "build:android:prod:local": "eas build -p android --local --profile production",
+    "build:ios": "eas build -p ios",
+    "web": "yarn expo start --web",
     "eject": "expo eject",
     "android": "expo run:android",
     "ios": "expo run:ios"
@@ -22,7 +22,6 @@
     "@react-navigation/native": "^6.0.11",
     "@react-navigation/native-stack": "^6.7.0",
     "@types/react-native": "^0.71.3",
-    "app": "*",
     "babel-plugin-module-resolver": "^4.1.0",
     "eas-cli-local-build-plugin": "^0.0.128",
     "burnt": "^0.10.0",
@@ -50,7 +49,6 @@
   "devDependencies": {
     "@babel/core": "^7.17.9",
     "@expo/metro-config": "^0.3.21",
-    "@tamagui/babel-plugin": "1.11.0",
     "babel-plugin-transform-inline-environment-variables": "^0.4.4",
     "metro-minify-terser": "^0.74.1",
     "typescript": "^4.7.4"

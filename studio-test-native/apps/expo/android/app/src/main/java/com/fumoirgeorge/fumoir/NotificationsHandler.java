@@ -22,13 +22,14 @@ public class NotificationsHandler {
   }
 
   private static final String TOPIC_PREFIX="user";
-  private static final String ALL_TOPIC="ALL";
+  private static final String ALL_SUFFIX="ALL";
+  private static final String ALL_TOPIC=String.format("%s_%s", TOPIC_PREFIX, ALL_SUFFIX);
 
   private List<String> registeredTopics=new ArrayList<String>();
 
   public void subscribeToNotifications(String userId) {
     subscribeToTopic(TOPIC_PREFIX, userId);
-    subscribeToTopic(TOPIC_PREFIX, ALL_TOPIC);
+    subscribeToTopic(TOPIC_PREFIX, ALL_SUFFIX);
   }
 
   private void subscribeToTopic(String topic, String userId) {

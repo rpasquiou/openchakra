@@ -10,7 +10,6 @@
         "image": "latest"
       },
       "env": {
-        "TAMAGUI_TARGET": "native"
       }
     },
     "production": {
@@ -19,7 +18,6 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "TAMAGUI_TARGET": "native"
       }
     }
   }

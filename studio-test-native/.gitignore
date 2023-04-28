@@ -13,9 +13,6 @@
 **/.next/*
 /out/
 
-# tamagui
-**/.tamagui/*
-
 # production
 /build
 apps/expo/android/app/build/intermediates

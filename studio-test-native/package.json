@@ -11,7 +11,6 @@
     "fix": "manypkg fix",
     "postinstall": "yarn build",
     "build": "yarn workspaces foreach --exclude next-app -pi run build",
-    "upgrade:tamagui": "manypkg upgrade tamagui && manypkg upgrade @tamagui && manypkg upgrade tamagui-loader && manypkg upgrade react-native-web-lite",
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios"
