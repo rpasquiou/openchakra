@@ -4,16 +4,25 @@ import axios from 'axios'
 import {
   NativeModules,
 } from 'react-native'
-
-const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
 const {RNNotificationsModule} = NativeModules
 
-// TODO: subscribe on login & unsubscribe on logout using previous hook value : https://blog.logrocket.com/accessing-previous-props-state-react-hooks/
+const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
 
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
   const [user, setUser]=useState(null)
+
+  useEffect(() => {
+    axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
+      .then(({data}) => {
+        if (!user) { setUser(data) }
+      })
+      .catch(err => {
+        if (err.response?.status==401 && user) { setUser(null) }
+      })
+  }, [currentUrl])
+
 
   useEffect(()=> {
     if (user) {
@@ -23,22 +32,6 @@ const App = () => {
       RNNotificationsModule.unsubscribeFromNotifications()
     }
   }, [user])
-
-  useEffect(() => {
-    axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
-      .then(({data}) => {
-        if (!user) {
-          setUser(data)
-        }
-      })
-      .catch(err => {
-        if (err.response?.status==401) {
-          if (user) {
-            setUser(null)
-          }
-        }
-      })
-  }, [currentUrl])
 
   return (
     <>
