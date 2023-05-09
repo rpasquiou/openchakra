@@ -24,6 +24,7 @@ import '~custom-components/Lexical/LexicalInit'
 import Menu from '~components/sidebar/Menu'
 import MediasContainer from '~components/MediasContainer'
 import { getMediasLayout } from '../core/selectors/app'
+import {Diagram} from "~/components/diagram/Diagram"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -32,6 +33,11 @@ const App = () => {
 
   const mediasLayout = useSelector(getMediasLayout)
 
+  return (
+    <div display='flex' height={'100vh'} width={'100vh'}>
+    <Diagram/>
+    </div>
+  )
   return (
     <>
       <Global
