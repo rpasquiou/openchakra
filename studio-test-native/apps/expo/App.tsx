@@ -1,12 +1,15 @@
+import { Button, View, Text } from 'react-native';
 import {WebView} from 'react-native-webview'
-import {useEffect, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import axios from 'axios'
-import {
-  NativeModules,
-} from 'react-native'
-const {RNNotificationsModule} = NativeModules
+import messaging from '@react-native-firebase/messaging';
 
 const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
+
+const TOPIC_PREFIX="user"
+const ALL_SUFFIX ="ALL";
+
+const registeredTopics = []
 
 const App = () => {
 
@@ -24,14 +27,27 @@ const App = () => {
   }, [currentUrl])
 
 
-  useEffect(()=> {
+  useEffect(() => {
+    // TODO set and unset registeredTopics
+    async function wholeStory() {
+      const permissionenabled = await requestUserPermission()
+      if (permissionenabled) {
+        messaging()
+          .subscribeToTopic('weather')
+          .then(() => console.log('Subscribed to topic!'));
+      }
+    }
+    
     if (user) {
-      RNNotificationsModule.subscribeToNotifications(user._id)
+      wholeStory()
+    } else {
+      messaging()
+        .unsubscribeFromTopic('weather')
     }
-    else {
-      RNNotificationsModule.unsubscribeFromNotifications()
-    }
+    
+  
   }, [user])
+
 
   return (
     <>
@@ -47,6 +63,19 @@ const App = () => {
       />
     </>
   )
+}
+
+async function requestUserPermission() {
+  const authStatus = await messaging().requestPermission();
+  const enabled =
+    authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+  if (enabled) {
+    console.log('Authorization status:', authStatus);
+  }
+
+  return enabled
 }
 
 

@@ -21,18 +21,29 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fumoirgeorge.fumoir"
+      "bundleIdentifier": "com.fumoirgeorge.fumoir",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+         "UIBackgroundModes": [
+           "fetch",
+           "remote-notification"
+         ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.fumoirgeorge.fumoir"
+      "package": "com.fumoirgeorge.fumoir",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "@react-native-firebase/app"
+    ],
     "extra": {
       "eas": {
         "projectId": "4bdf33a4-903e-4d13-b745-9fbf97dd9600"
