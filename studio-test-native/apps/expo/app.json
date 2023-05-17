@@ -21,18 +21,29 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dekuple.tensiometre"
+      "bundleIdentifier": "com.dekuple.tensiometre",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+         "UIBackgroundModes": [
+           "fetch",
+           "remote-notification"
+         ]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.dekuple.tensiometre"
+      "package": "com.dekuple.tensiometre",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      "@react-native-firebase/app"
+    ],
     "extra": {
       "eas": {
         "projectId": "0d14d3e6-f3f9-45e6-85f4-edfd51d1392f"

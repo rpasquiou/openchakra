@@ -5,12 +5,14 @@ import {
   TouchableHighlight,
   NativeModules,
   View,
+  Platform,
 } from 'react-native'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
-import moment from 'moment'
-import { usePrevious } from './hooks/usePrevious.hook'
-const {WithingsLink, RNLinkModule} = NativeModules
+import { handleSubscription, Topics } from './modules/notifications'
+import { TOPIC_PREFIX, SEPARATOR, ALL_SUFFIX } from './modules/notifications/config';
+
+const {WithingsLink} = Platform.OS === 'android' ? NativeModules : {WithingsLink: null}
 
 const BASE_URL_TO_POINT = 'https://ma-tension.com/'
 
@@ -20,6 +22,7 @@ const App = () => {
   const [displaySetup, setDisplaySetup]=useState(false)
   const [currentUser, setCurrentUser]=useState(null)
   const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
+  const [topicsToHandle, setTopicsToHandle] = useState<Topics>([])
 
   const webviewRef = useRef(null)
 
@@ -27,19 +30,21 @@ const App = () => {
   useEffect(() => {
     if (currentUser && shouldAskPermissions) {
       console.log(`Calling askOwnPermission()`)
-      WithingsLink.askOwnPermissions()
+      if (Platform.OS === 'android') {
+        WithingsLink?.askOwnPermissions()
+      }
       setShouldAskPermissions(false)
     }
   }, [currentUser])
 
   useEffect(() => {
-    console.log(`Logged:${!!currentUser} ${moment()}`)
+    console.log(`Logged:${!!currentUser} ${Date.now()}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
   const startSync = ({mac_address, advertise_key}) => {
     console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
-    WithingsLink.synchronizeDevice(mac_address, advertise_key)
+    WithingsLink?.synchronizeDevice(mac_address, advertise_key)
   }
 
   useEffect(() => {
@@ -51,7 +56,11 @@ const App = () => {
           .then(({data}) => {
             const device=data[0]?.devices[0]
             if (firstLogin && device) {
-              startSync(device)
+              
+              // Currently no code about Withings on iOS
+              if (Platform.OS === 'android') {
+                startSync(device)
+              }
             }
           })
       })
@@ -63,12 +72,18 @@ const App = () => {
   }, [currentUrl])
 
   useEffect(() => {
-    if (currentUser) {
-      RNLinkModule.isUserHasSubscribed(currentUser?.id)
-    } else {
-      RNLinkModule.unsubscribeUser()
-    }
+    currentUser 
+      ? handleSubscription({topicsToHandle, back: false}) 
+      : handleSubscription({topicsToHandle, back: true})
   }, [currentUser])
+
+    // Handle topics 
+    useEffect(() => {
+      if (currentUser) {
+        const topicsToRegister = gentopics({userid: currentUser?._id})
+        setTopicsToHandle(topicsToRegister)
+      }
+    }, [currentUser])
 
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
@@ -111,6 +126,27 @@ const App = () => {
     </>
   )
 }
+
+const gentopics = ({userid}: {userid: string}): Topics => {
+
+  const currentSuffixTopics = [
+    {
+      name: userid, 
+      permanent: false 
+    }, 
+    {
+      name: ALL_SUFFIX, 
+      permanent: true
+    }
+  ]
+  
+  // @ts-ignore
+  return currentSuffixTopics.reduce((acc, topic) => [...acc, {
+      permanent: topic?.permanent,
+      name: TOPIC_PREFIX + SEPARATOR + topic?.name
+    }], [])
+}
+
 
 const saveLoginScript = `
   
