@@ -11,9 +11,6 @@ export type Topics = Topic[] | []
 export async function handleSubscription({topicsToHandle, back = false}: {topicsToHandle: Topics, back: boolean}) {
     const permissionenabled = await requestUserPermission()
     if (permissionenabled) {
-
-      console.log({topicsToHandle})
-
       topicsToHandle.forEach(async (topic: Topic) => {
         if (!back) {
           await messaging()
