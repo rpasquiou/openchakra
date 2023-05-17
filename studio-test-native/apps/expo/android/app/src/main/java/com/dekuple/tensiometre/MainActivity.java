@@ -7,8 +7,10 @@ import java.util.Hashtable;
 import java.util.concurrent.ThreadLocalRandom;
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.content.DialogInterface;
@@ -25,6 +27,11 @@ import com.facebook.react.ReactActivityDelegate;
 import com.facebook.react.ReactRootView;
 import expo.modules.ReactActivityDelegateWrapper;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.dekuple.tensiometre.PermissionUtil;
+
 public class MainActivity extends ReactActivity
   implements ActivityCompat.OnRequestPermissionsResultCallback {
   //implements PermissionUtil.PermissionsCallBack {
@@ -34,6 +41,7 @@ public class MainActivity extends ReactActivity
   }
 
   public static MainActivity instance=null;
+  private static final int NOTIFICATION_REQUEST_CODE = 12345;
 
   private Map<String, Callback> permissionsCallbacks=new Hashtable<String, Callback>();
 
@@ -45,15 +53,9 @@ public class MainActivity extends ReactActivity
     Log.d("DEKUPLE", "MainActivity setting singleton instance");
     MainActivity.instance=this;
     setTheme(R.style.AppTheme);
-    super.onCreate(savedInstanceState);
+    super.onCreate(null);
 
-     // Request location permissions
-     if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-        ActivityCompat.requestPermissions(this,
-          new String[] { Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION,
-          Manifest.permission.ACCESS_BACKGROUND_LOCATION },
-          LOCATION_PERMISSION_REQUEST_CODE);
-      }
+    requestNotifPermission();
   }
 
   /**
@@ -158,11 +160,12 @@ public class MainActivity extends ReactActivity
 
   @Override
   public void onRequestPermissionsResult(int requestCode, /**@NonNull*/ String[] permissions, /**@NonNull*/ int[] grantResults) {
-    Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:"+String.join(",", permissions));
-    for (int i=0; i<grantResults.length; i++) {
-      String permission=permissions[i];
-      boolean granted=grantResults[i]==PackageManager.PERMISSION_GRANTED;
-      Log.d("DEKUPLE", String.format("Granted %s:%s", permission, granted ? "true": "false"));
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    Log.d("DEKUPLE", "MainActivity.onRequestPermissionsResult:" + String.join(",", permissions));
+    for (int i = 0; i < grantResults.length; i++) {
+      String permission = permissions[i];
+      boolean granted = grantResults[i] == PackageManager.PERMISSION_GRANTED;
+      Log.d("DEKUPLE", String.format("Granted %s:%s", permission, granted ? "true" : "false"));
       if (granted && permissionsCallbacks.containsKey(permission)) {
         permissionsCallbacks.remove(permissions[i]).run();
       }
@@ -189,4 +192,96 @@ public class MainActivity extends ReactActivity
       return BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
     }
   }
+
+
+  /** handle notification with topics */
+
+  public void isUserHasSubscribed(String userId) {
+
+    SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
+    String hasId = sharedPreferences.getString("userid", "");
+    if (hasId.isEmpty()) {
+      /* Use of preferences to avoid subscribing topic multiple times */
+      SharedPreferences.Editor editor = sharedPreferences.edit();
+      editor.putString("userid", userId);
+      editor.apply();
+
+      subscribeToTopic("user", userId);
+      Log.d("USERID", "has id " + sharedPreferences);
+    }
+  }
+  
+  public void unsubscribeUser() {
+
+    SharedPreferences sharedPreferences = getSharedPreferences("my_preferences", MODE_PRIVATE);
+    String hasId = sharedPreferences.getString("userid", "");
+    if (!hasId.isEmpty()) {
+      /* Use of preferences to avoid subscribing topic multiple times */
+      SharedPreferences.Editor editor = sharedPreferences.edit();
+      editor.remove("userid");
+      editor.apply();
+      Log.d("USERID", "has id " + sharedPreferences);
+    }
+  }
+
+    public void requestNotifPermission() {
+
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.i("NOTIF", "Permissions are granted. Good to go!");
+            // L'autorisation est déjà accordée, faites ce que vous voulez ici
+        } else {
+            // L'autorisation n'est pas accordée
+            Log.i("NOTIF", "Permissions not granted !");
+            // Vérifiez si l'utilisateur a déjà refusé l'autorisation
+            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                    Manifest.permission.POST_NOTIFICATIONS)) {
+                // L'utilisateur a déjà refusé l'autorisation, expliquez pourquoi vous en avez besoin
+                Toast.makeText(MainActivity.this, "Nous avons besoin de votre autorisation pour afficher les notifications", Toast.LENGTH_LONG).show();
+            } else {
+
+                Log.i("NOTIF", "Old android, here we go !");
+                // Demandez l'autorisation
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_REQUEST_CODE);
+            }
+        }
+    }
+
+  public void subscribeToTopic(String topic, String userId) {
+    
+    String definedTopic = topic + "_" + userId;
+
+    FirebaseMessaging.getInstance().subscribeToTopic(definedTopic)
+        .addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                String msg = "Notifications pour " + topic;
+                if (!task.isSuccessful()) {
+                    msg = "Enregistrement notification refusé";
+                }
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+  }
+
+  public void unsubscribeToTopic(String topic, String userId) {
+
+    String definedTopic = topic + "_" + userId;
+    Log.d("TOPIC", definedTopic);
+
+    FirebaseMessaging.getInstance().unsubscribeFromTopic(definedTopic)
+      .addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                String msg = "Notifications " + topic + "";
+                if (!task.isSuccessful()) {
+                    msg = "Enregistrement notification refusé";
+                }
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 }

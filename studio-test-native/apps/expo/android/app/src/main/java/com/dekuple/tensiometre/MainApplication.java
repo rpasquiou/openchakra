@@ -14,7 +14,6 @@ import com.facebook.react.ReactPackage;
 import com.facebook.react.config.ReactFeatureFlags;
 import com.facebook.soloader.SoLoader;
 import com.dekuple.tensiometre.newarchitecture.MainApplicationReactNativeHost;
-import com.dekuple.tensiometre.AppPackage;
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
@@ -38,6 +37,7 @@ public class MainApplication extends Application implements ReactApplication {
       List<ReactPackage> packages = new PackageList(this).getPackages();
       // Packages that cannot be autolinked yet can be added manually here, for example:
       packages.add(new AppPackage());
+      packages.add(new PermissionPackage());
       return packages;
     }
 
