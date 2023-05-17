@@ -41,7 +41,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.2</string>
+    <string>1.0.3</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -49,8 +49,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>Ma tension</string>
           <string>com.dekuple.tensiometre</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>com.googleusercontent.apps.27021384589-vc18odhqdo1bj2jc3isma93durdbq3b3</string>
         </array>
       </dict>
       <dict>
@@ -61,7 +67,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>
