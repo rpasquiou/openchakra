@@ -1,5 +1,6 @@
 import {WebView} from 'react-native-webview'
 import {useEffect, useState} from 'react'
+import KeyboardAvoidingView from './components/KeyboardAvoidingView'
 import axios from 'axios'
 import { handleSubscription, Topics } from './modules/notifications'
 import { TOPIC_PREFIX, SEPARATOR, ALL_SUFFIX } from './modules/notifications/config';
@@ -44,16 +45,18 @@ const App = () => {
 
   return (
     <>
-      <WebView
-        startInLoadingState={true}
-        allowsBackForwardNavigationGestures
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        onMessage={event => {}}
-        mediaPlaybackRequiresUserAction={true}
-        source={{uri: BASE_URL_TO_POINT}}
-        onNavigationStateChange={({url}) => setCurrentUrl(url)}
-      />
+      <KeyboardAvoidingView>
+        <WebView
+          startInLoadingState={true}
+          allowsBackForwardNavigationGestures
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          onMessage={event => {}}
+          mediaPlaybackRequiresUserAction={true}
+          source={{uri: BASE_URL_TO_POINT}}
+          onNavigationStateChange={({url}) => setCurrentUrl(url)}
+        />
+      </KeyboardAvoidingView>
     </>
   )
 }
