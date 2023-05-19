@@ -45,7 +45,7 @@ Autorisez l&apos;accès à votre galerie pour charger des photos. Vous pouvez ut
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>fumoir</string>
           <string>com.fumoirgeorge.fumoir</string>
         </array>
       </dict>

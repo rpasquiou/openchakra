@@ -2,7 +2,7 @@
   "expo": {
     "name": "Fumoir George",
     "slug": "fumoir",
-    "scheme": "myapp",
+    "scheme": "fumoir",
     "version": "1.0.0",
     "jsEngine": "hermes",
     "orientation": "portrait",
