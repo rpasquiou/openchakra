@@ -72,18 +72,20 @@ const App = () => {
   }, [currentUrl])
 
   useEffect(() => {
-    currentUser 
-      ? handleSubscription({topicsToHandle, back: false}) 
-      : handleSubscription({topicsToHandle, back: true})
-  }, [currentUser])
+    if (topicsToHandle.length > 0) {
+      currentUser 
+        ? handleSubscription({topicsToHandle, back: false}) 
+        : handleSubscription({topicsToHandle, back: true})
+    }
+  }, [currentUser, topicsToHandle])
 
-    // Handle topics 
-    useEffect(() => {
-      if (currentUser) {
-        const topicsToRegister = gentopics({userid: currentUser?._id})
-        setTopicsToHandle(topicsToRegister)
-      }
-    }, [currentUser])
+  // Handle topics 
+  useEffect(() => {
+    if (currentUser && topicsToHandle.length === 0) {
+      const topicsToRegister = gentopics({userid: currentUser?._id})
+      setTopicsToHandle(topicsToRegister)
+    }
+  }, [currentUser])
 
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
