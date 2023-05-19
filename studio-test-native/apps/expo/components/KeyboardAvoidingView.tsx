@@ -9,13 +9,15 @@ import {
 
 const KeyboardAvoidingComponent = ({children}) => {
   return (
+    Platform.OS === 'android' ?
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={'height'}
       style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         {children}
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
+    : children
   );
 };
 
