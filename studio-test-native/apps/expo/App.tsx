@@ -11,33 +11,35 @@ const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
-  const [user, setUser]=useState(null)
+  const [currentUser, setCurrentUser]=useState(null)
   const [topicsToHandle, setTopicsToHandle] = useState<Topics>([])
 
   useEffect(() => {
     axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
       .then(({data}) => {
-        if (!user) { setUser(data) }
+        if (!currentUser) { setCurrentUser(data) }
       })
       .catch(err => {
-        if (err.response?.status==401 && user) { setUser(null) }
+        if (err.response?.status==401 && currentUser) { setCurrentUser(null) }
       })
   }, [currentUrl])
 
 
   useEffect(() => {
-    user 
-      ? handleSubscription({topicsToHandle, back: false}) 
-      : handleSubscription({topicsToHandle, back: true})
-  }, [user])
+    if (topicsToHandle.length > 0) {
+      currentUser 
+        ? handleSubscription({topicsToHandle, back: false}) 
+        : handleSubscription({topicsToHandle, back: true})
+    }
+  }, [currentUser, topicsToHandle])
 
   // Handle topics 
   useEffect(() => {
-    if (user) {
-      const topicsToRegister = gentopics({userid: user?._id})
+    if (currentUser && topicsToHandle.length === 0) {
+      const topicsToRegister = gentopics({userid: currentUser?._id})
       setTopicsToHandle(topicsToRegister)
     }
-  }, [user])
+  }, [currentUser])
   
 
   return (
