@@ -18,7 +18,7 @@ const App = () => {
   useEffect(() => {
     axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
       .then(({data}) => {
-        if (!currentUser) { setCurrentUser(data) }
+        setCurrentUser(data)
       })
       .catch(err => {
         if (err.response?.status==401 && currentUser) { setCurrentUser(null) }
