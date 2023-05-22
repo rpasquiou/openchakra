@@ -7,6 +7,7 @@ import {
   View,
   Platform,
 } from 'react-native'
+import KeyboardAvoidingComponent from './components/KeyboardAvoidingView'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
 import { handleSubscription, Topics } from './modules/notifications'
@@ -92,6 +93,7 @@ const App = () => {
 
   return (
     <>
+      <KeyboardAvoidingComponent>
       <WebView
         startInLoadingState={true}
         injectedJavaScript={saveLoginScript}
@@ -106,6 +108,7 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
+      </KeyboardAvoidingComponent>
 
       { displaySetup && currentUser &&
           <>
