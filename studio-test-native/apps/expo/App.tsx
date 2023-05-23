@@ -15,16 +15,17 @@ const App = () => {
   const [currentUser, setCurrentUser]=useState(null)
   const [topicsToHandle, setTopicsToHandle] = useState<Topics>([])
 
-  useEffect(() => {
-    axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
-      .then(({data}) => {
-        setCurrentUser(data)
-      })
+  const getCurrentUser = async () => {
+    await axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
+      .then(res => setCurrentUser(res?.data) )
       .catch(err => {
         if (err.response?.status==401 && currentUser) { setCurrentUser(null) }
       })
-  }, [currentUrl])
+  }
 
+  useEffect(() => {
+    getCurrentUser()
+  }, [currentUrl])
 
   useEffect(() => {
     if (topicsToHandle.length > 0) {
@@ -54,6 +55,7 @@ const App = () => {
           onMessage={event => {}}
           mediaPlaybackRequiresUserAction={true}
           source={{uri: BASE_URL_TO_POINT}}
+          sharedCookiesEnabled={true}
           onNavigationStateChange={({url}) => setCurrentUrl(url)}
         />
       </KeyboardAvoidingView>
