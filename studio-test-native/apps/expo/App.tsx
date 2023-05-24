@@ -8,10 +8,9 @@ import {
   Platform,
 } from 'react-native'
 import KeyboardAvoidingComponent from './components/KeyboardAvoidingView'
+import NotifContainer from './modules/notifications/NotifContainer'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
-import { handleSubscription, Topics } from './modules/notifications'
-import { TOPIC_PREFIX, SEPARATOR, ALL_SUFFIX } from './modules/notifications/config';
 
 const {WithingsLink} = Platform.OS === 'android' ? NativeModules : {WithingsLink: null}
 
@@ -23,7 +22,6 @@ const App = () => {
   const [displaySetup, setDisplaySetup]=useState(false)
   const [currentUser, setCurrentUser]=useState(null)
   const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
-  const [topicsToHandle, setTopicsToHandle] = useState<Topics>([])
 
   const webviewRef = useRef(null)
 
@@ -72,28 +70,13 @@ const App = () => {
       })
   }, [currentUrl])
 
-  useEffect(() => {
-    if (topicsToHandle.length > 0) {
-      currentUser 
-        ? handleSubscription({topicsToHandle, back: false}) 
-        : handleSubscription({topicsToHandle, back: true})
-    }
-  }, [currentUser, topicsToHandle])
-
-  // Handle topics 
-  useEffect(() => {
-    if (currentUser && topicsToHandle.length === 0) {
-      const topicsToRegister = gentopics({userid: currentUser?._id})
-      setTopicsToHandle(topicsToRegister)
-    }
-  }, [currentUser])
-
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
 
   return (
     <>
       <KeyboardAvoidingComponent>
+       <NotifContainer user={currentUser} allOnStart>
       <WebView
         startInLoadingState={true}
         injectedJavaScript={saveLoginScript}
@@ -108,6 +91,7 @@ const App = () => {
         ref={webviewRef}
         onNavigationStateChange={({url}) => setCurrentUrl(url)}
       />
+      </NotifContainer>
       </KeyboardAvoidingComponent>
 
       { displaySetup && currentUser &&
@@ -131,27 +115,6 @@ const App = () => {
     </>
   )
 }
-
-const gentopics = ({userid}: {userid: string}): Topics => {
-
-  const currentSuffixTopics = [
-    {
-      name: userid, 
-      permanent: false 
-    }, 
-    {
-      name: ALL_SUFFIX, 
-      permanent: true
-    }
-  ]
-  
-  // @ts-ignore
-  return currentSuffixTopics.reduce((acc, topic) => [...acc, {
-      permanent: topic?.permanent,
-      name: TOPIC_PREFIX + SEPARATOR + topic?.name
-    }], [])
-}
-
 
 const saveLoginScript = `
   
