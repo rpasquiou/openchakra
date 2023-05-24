@@ -8,10 +8,10 @@ const INITIAL_TOPIC = {
   permanent: true
 }
 
-const NotifContainer = ({user: currentUser, all, start, children, ...rest}:{
+const NotifContainer = ({user: currentUser, all, allOnStart, children, ...rest}:{
   user?: object | null,
   all?: boolean,
-  start?: boolean, /** notifications to all users on start */
+  allOnStart?: boolean, /** notifications to all users on start */
   rest?: any,
   children?: React.ReactChildren
 }) => {
@@ -41,7 +41,7 @@ const NotifContainer = ({user: currentUser, all, start, children, ...rest}:{
 
   // Notifications for all users on start
   useEffect(() => {
-    if (start) {
+    if (allOnStart) {
       handleSubscription({topicsToHandle: gentopics({user: currentUser?._id}), back: false}) 
     }
   }, [])
