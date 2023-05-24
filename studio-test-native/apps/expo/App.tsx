@@ -2,8 +2,7 @@ import {WebView} from 'react-native-webview'
 import {useEffect, useState} from 'react'
 import KeyboardAvoidingView from './components/KeyboardAvoidingView'
 import axios from 'axios'
-import { handleSubscription, Topics } from './modules/notifications'
-import { TOPIC_PREFIX, SEPARATOR, ALL_SUFFIX } from './modules/notifications/config';
+import NotifContainer from './modules/notifications/NotifContainer'
 
 
 const BASE_URL_TO_POINT = 'https://fumoir.my-alfred.io'
@@ -13,7 +12,6 @@ const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
   const [currentUser, setCurrentUser]=useState(null)
-  const [topicsToHandle, setTopicsToHandle] = useState<Topics>([])
 
   const getCurrentUser = async () => {
     await axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
@@ -26,27 +24,12 @@ const App = () => {
   useEffect(() => {
     getCurrentUser()
   }, [currentUrl])
-
-  useEffect(() => {
-    if (topicsToHandle.length > 0) {
-      currentUser 
-        ? handleSubscription({topicsToHandle, back: false}) 
-        : handleSubscription({topicsToHandle, back: true})
-    }
-  }, [currentUser, topicsToHandle])
-
-  // Handle topics 
-  useEffect(() => {
-    if (currentUser && topicsToHandle.length === 0) {
-      const topicsToRegister = gentopics({userid: currentUser?._id})
-      setTopicsToHandle(topicsToRegister)
-    }
-  }, [currentUser])
   
 
   return (
     <>
       <KeyboardAvoidingView>
+        <NotifContainer user={currentUser} allOnStart>
         <WebView
           startInLoadingState={true}
           allowsBackForwardNavigationGestures
@@ -58,29 +41,10 @@ const App = () => {
           sharedCookiesEnabled={true}
           onNavigationStateChange={({url}) => setCurrentUrl(url)}
         />
+        </NotifContainer>
       </KeyboardAvoidingView>
     </>
   )
-}
-
-export const gentopics = ({userid}: {userid: string}): Topics => {
-
-  const currentSuffixTopics = [
-    {
-      name: userid, 
-      permanent: false 
-    }, 
-    {
-      name: ALL_SUFFIX, 
-      permanent: true
-    }
-  ]
-  
-  // @ts-ignore
-  return currentSuffixTopics.reduce((acc, topic) => [...acc, {
-      permanent: topic?.permanent,
-      name: TOPIC_PREFIX + SEPARATOR + topic?.name
-    }], [])
 }
 
 
