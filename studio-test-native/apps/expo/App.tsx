@@ -24,6 +24,7 @@ const App = () => {
   const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
 
   const webviewRef = useRef(null)
+  const onContentProcessDidTerminate = () => webviewRef.current?.reload()
 
   // Display permissions dialogs once when user is logged
   useEffect(() => {
@@ -76,22 +77,23 @@ const App = () => {
   return (
     <>
       <KeyboardAvoidingComponent>
-       <NotifContainer user={currentUser} allOnStart>
-      <WebView
-        startInLoadingState={true}
-        injectedJavaScript={saveLoginScript}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        onMessage={event => {}}
-        allowsBackForwardNavigationGestures
-        mediaPlaybackRequiresUserAction={true}
-        source={{uri: BASE_URL_TO_POINT}}
-        geolocationEnabled={true}
-        sharedCookiesEnabled={true}
-        ref={webviewRef}
-        onNavigationStateChange={({url}) => setCurrentUrl(url)}
-      />
-      </NotifContainer>
+        <NotifContainer user={currentUser} allOnStart>
+          <WebView
+            startInLoadingState={true}
+            injectedJavaScript={saveLoginScript}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onMessage={event => {}}
+            allowsBackForwardNavigationGestures
+            mediaPlaybackRequiresUserAction={true}
+            source={{uri: BASE_URL_TO_POINT}}
+            geolocationEnabled={true}
+            sharedCookiesEnabled={true}
+            ref={webviewRef}
+            onContentProcessDidTerminate={onContentProcessDidTerminate}
+            onNavigationStateChange={({url}) => setCurrentUrl(url)}
+          />
+        </NotifContainer>
       </KeyboardAvoidingComponent>
 
       { displaySetup && currentUser &&
