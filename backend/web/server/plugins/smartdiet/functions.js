@@ -128,14 +128,14 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'individualChallenge'}}
   })
-  declareVirtualField({model: m, field: '_all_menus', instance: 'Menu',
+  declareVirtualField({model: m, field: '_all_menus', instance: 'menu',
     multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'menu'}}
   })
-  declareVirtualField({model: m, field: 'menu', instance: 'Menu',
-    multiple: false,
+  declareVirtualField({model: m, field: 'available_menus', instance: 'Array',
+    multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'menu'}}
@@ -315,6 +315,7 @@ declareVirtualField({model: 'comment', field: 'children', instance: 'Array',
 })
 
 declareVirtualField({model: 'key', field: 'user_survey_average', instance: 'Number'})
+declareVirtualField({model: 'key', field: 'trophy_picture', instance: 'String', requires:'spoons_count_for_trophy,trophy_on_picture,trophy_off_picture'})
 
 declareVirtualField({model: 'userSurvey', field: 'questions', instance: 'Array',
   multiple: true,
