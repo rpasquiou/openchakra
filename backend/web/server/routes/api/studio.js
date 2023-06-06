@@ -200,6 +200,8 @@ router.post('/build', (req, res) => {
   }
 
   const destpath = path.join(PRODUCTION_ROOT, projectName)
+
+  console.log(`Starting building project ${projectName} in ${destpath}`)
   const result = child_process.execSync(
     'yarn build',
     {
