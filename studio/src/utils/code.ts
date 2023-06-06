@@ -594,7 +594,7 @@ const buildHooks = (components: IComponents) => {
 
         let query= `get(\`${apiUrl}\`)
         ${thenClause}
-        .catch(err => !(err.response?.status==401) && err.code!='ERR_NETWORK' && alert(err?.response?.data || err))`
+        .catch(err => !(err.response?.status==401) && err.code!='ERR_NETWORK' && console.log(err?.response?.data || err))`
         if (dp.id=='root' && singlePage) {
           query=`// For single data page\nif (id) {\n${query}\n}`
         }
@@ -622,7 +622,7 @@ const buildDynamics = (components: IComponents, extraImports: string[]) => {
   const groups = lodash.groupBy(dynamicComps, c => getDynamicType(c))
   Object.keys(groups).forEach(g =>
     extraImports.push(
-      `import withDynamic${g} from './dependencies/hoc/withDynamic${g}'`,
+      `import withDynamic${g} from '../dependencies/hoc/withDynamic${g}'`,
     ),
   )
 
@@ -651,7 +651,7 @@ const buildMaskable = (components: IComponents, extraImports: string[]) => {
     .uniq()
 
   extraImports.push(
-    `import withMaskability from './dependencies/hoc/withMaskability'`,
+    `import withMaskability from '../dependencies/hoc/withMaskability'`,
   )
   let code = types
     .map(type => `const Maskable${type}=withMaskability(${type})`)
@@ -709,7 +709,7 @@ export const generateCode = async (
   )
   */
   const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `./dependencies/custom-components/${c}`,
+    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
   )
 
   const rootIdQuery = components['root']?.props?.model
@@ -724,7 +724,7 @@ export const generateCode = async (
   :
   ''
   code = `import React, {useState, useEffect} from 'react';
-  import Metadata from './dependencies/Metadata';
+  import Metadata from '../dependencies/Metadata';
   ${hooksCode ? `import axios from 'axios'` : ''}
   import {ChakraProvider} from "@chakra-ui/react";
   ${Object.entries(groupedComponents)
@@ -749,12 +749,11 @@ import { ${lucideIconImports.join(',')} } from "lucide-react";`
     : ''
 }
 
-import Fonts from './dependencies/theme/Fonts'
-import {ensureToken} from './dependencies/utils/token'
-import {useLocation} from "react-router-dom"
-import { useUserContext } from './dependencies/context/user'
-import { getComponentDataValue } from './dependencies/utils/values'
-import theme from './dependencies/theme/theme'
+import {ensureToken} from '../dependencies/utils/token'
+import {useRouter} from 'next/router'
+import { useUserContext } from '../dependencies/context/user'
+import { getComponentDataValue } from '../dependencies/utils/values'
+
 ${extraImports.join('\n')}
 
 ${dynamics || ''}
@@ -762,7 +761,8 @@ ${maskable || ''}
 ${componentsCodes}
 
 const ${componentName} = () => {
-  const query = new URLSearchParams(useLocation().search)
+  const router = useRouter();
+  const query = new URLSearchParams(router?.asPath)
   const id=${rootIgnoreUrlParams ? 'null' : `query.get('${rootIdQuery}') || query.get('id')`}
   const [componentsValues, setComponentsValues]=useState({})
 
@@ -793,15 +793,14 @@ const ${componentName} = () => {
   ${filterStates}
 
   return ${redirectPage ? 'user===null && ': ''} (
-  <ChakraProvider resetCSS theme={theme}>
-    <Fonts />
+  <>
     <Metadata
       metaTitle={'${addBackslashes(metaTitle)}'}
       metaDescription={'${addBackslashes(metaDescription)}'}
       metaImageUrl={'${metaImageUrl}'}
     />
     ${code}
-  </ChakraProvider>
+  </>
 )};
 
 export default ${componentName};`
