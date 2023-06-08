@@ -37,7 +37,7 @@ const EventSchema = new Schema({
   },
 }, schemaOptions)
 
-EventSchema.virtual('type').get(function () {
+EventSchema.virtual('type', {localField: 'tagada', foreignDield:'tagada'}).get(function () {
   return null
 })
 

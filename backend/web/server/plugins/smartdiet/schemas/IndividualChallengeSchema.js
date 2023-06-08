@@ -38,7 +38,7 @@ const IndividualChallengeSchema = new Schema({
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
 
-IndividualChallengeSchema.virtual('type').get(function() {
+IndividualChallengeSchema.virtual('type', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return EVENT_IND_CHALLENGE
 })
 

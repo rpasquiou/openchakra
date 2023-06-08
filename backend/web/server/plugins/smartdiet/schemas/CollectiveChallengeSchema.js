@@ -34,7 +34,7 @@ const CollectiveChallengeSchema = new Schema({
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
 
-CollectiveChallengeSchema.virtual('type').get(function() {
+CollectiveChallengeSchema.virtual('type', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return EVENT_COLL_CHALLENGE
 })
 

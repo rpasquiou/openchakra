@@ -30,7 +30,7 @@ const MenuSchema = new Schema({
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
 
-MenuSchema.virtual('type').get(function() {
+MenuSchema.virtual('type', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return EVENT_MENU
 })
 

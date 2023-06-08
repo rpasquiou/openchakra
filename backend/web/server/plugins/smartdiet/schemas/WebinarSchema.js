@@ -27,7 +27,7 @@ const WebinarSchema = new Schema({
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
 
-WebinarSchema.virtual('type').get(function() {
+WebinarSchema.virtual('type', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return EVENT_WEBINAR
 })
 
