@@ -3,12 +3,10 @@
 /.pnp
 .pnp.js
 
-**/studio-test/src/[A-Z]*.js
-**/studio-test/src/[A-Z]*.css
+**/studio-test/src/pages/[a-z]*.js
 # Mac .gitignore is case unsensitive :-|
-!studio-test/src/token.js
-!studio-test/src/index.js
-!studio-test/src/index.css
+!studio-test/src/pages/_*.js
+!studio-test/src/pages/_*.tsx
 
 # testing
 /coverage
