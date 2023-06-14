@@ -56,12 +56,3 @@ const forgotPasswordAction=({context, parent, email}) => {
 addAction('register', registerAction)
 addAction('openWithingsSettings', openWithingsSettingsAction)
 addAction('forgotPassword', forgotPasswordAction)
-
-const changePassword=({password, password2}, user) => {
-  return validatePassword({password, password2})
-    .then(()=> {
-      return User.findByIdAndUpdate(user._id, {password})
-    })
-}
-
-addAction('changePassword', changePassword)

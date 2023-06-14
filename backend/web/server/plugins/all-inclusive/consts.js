@@ -2,14 +2,12 @@ const ROLE_TI='TI'
 const ROLE_COMPANY_BUYER='COMPANY_BUYER'
 const ROLE_COMPANY_ADMIN='COMPANY_ADMIN'
 const ROLE_ALLE_ADMIN='ALLE_ADMIN'
-const ROLE_ALLE_SUPER_ADMIN='ALLE_SUPER_ADMIN'
 
 const ROLES={
   [ROLE_TI]: 'TI',
   [ROLE_COMPANY_BUYER]: 'Acheteur entreprise',
   [ROLE_COMPANY_ADMIN]: 'Admin. entreprise',
   [ROLE_ALLE_ADMIN]: 'Admin. All-E',
-  [ROLE_ALLE_SUPER_ADMIN]: 'Super admin. All-E',
 }
 
 const DEFAULT_ROLE=ROLE_TI
@@ -19,9 +17,9 @@ const COACH_OTHER='COACH_OTHER'
 const COACH_NONE='COACH_NONE'
 
 const COACHING={
-  COACH_ALLE: 'Accompagné.e par All-Inclusive',
-  COACH_OTHER: 'Accompagné.e par un autre organisme',
-  COACH_NONE: 'Pas accompagné.e',
+  COACH_ALLE: 'Par All-Inclusive',
+  COACH_OTHER: 'Par un autre organisme',
+  COACH_NONE: 'Pas accompagné',
 }
 
 const COMPANY_STATUS_EI="COMPANY_STATUS_EI"
@@ -260,14 +258,12 @@ const UNACTIVE_REASON={
   UNACTIVE_REASON_OTHER:'Autre',
 }
 
-const CONTACT_STATUS_OTHER='CONTACT_STATUS_OTHER'
 const CONTACT_STATUS_TIPI='CONTACT_STATUS_TIPI'
 const CONTACT_STATUS_COMPANY='CONTACT_STATUS_COMPANY'
 
 const CONTACT_STATUS={
   CONTACT_STATUS_TIPI: 'Je suis un .e indépendant.e',
   CONTACT_STATUS_COMPANY: 'Je recherche des prestataires',
-  CONTACT_STATUS_AUTRE: 'Autre',
 }
 
 const PAYMENT_STATUS_REQUIRES_PAYMENT_METHOD="PAYMENT_STATUS_REQUIRES_PAYMENT_METHOD"
@@ -290,15 +286,9 @@ const PAYMENT_STATUS={
 
 const DEPARTEMENTS=require('../../../utils/departements.json')
 
-// Days
-const MISSION_REMINDER_DELAY=3
-const PENDING_QUOTATION_DELAY=2
-const MISSING_QUOTATION_DELAY=2
-
 module.exports={
   ROLES,
   ROLE_ALLE_ADMIN,
-  ROLE_ALLE_SUPER_ADMIN,
   ROLE_COMPANY_ADMIN,
   ROLE_TI,
   COACHING,
@@ -333,7 +323,4 @@ module.exports={
   CONTACT_STATUS,
   PAYMENT_STATUS,
   DEPARTEMENTS,
-  MISSION_REMINDER_DELAY,
-  PENDING_QUOTATION_DELAY,
-  MISSING_QUOTATION_DELAY,
 }
