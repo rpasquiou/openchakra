@@ -1,3 +1,11 @@
+const {
+  getUserIndChallengeTrophy,
+  getUserKeyProgress,
+  getUserKeySpoons,
+  getUserKeyTrophy,
+  getUserKeyReadContents,
+  getUserSpoons
+} = require('./spoons')
 const mongoose = require('mongoose')
 const lodash=require('lodash')
 const moment = require('moment')
@@ -39,7 +47,6 @@ const {
   TARGET_TYPE,
   UNIT,
 } = require('./consts')
-const {getUserIndChallengeTrophy, getUserKeyTrophy, getUserSpoons}=require('./spoons')
 
 const preprocessGet = ({model, fields, id, user}) => {
   if (model=='loggedUser') {
@@ -133,9 +140,8 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'menu'}},
   })
-  declareVirtualField({model: m, field: 'available_menus', instance: 'Array',
-  requires: '_all_menus.recipes.recipe.ingredients.ingredient.label,_all_menus.recipes.recipe.instruments',
-    multiple: true,
+  declareVirtualField({model: m, field: 'available_menu', instance: 'menu',
+    multiple: false,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'menu'}},
@@ -326,6 +332,8 @@ declareVirtualField({model: 'comment', field: 'children', instance: 'Array',
 declareVirtualField({model: 'key', field: 'user_survey_average', instance: 'Number'})
 declareVirtualField({model: 'key', field: 'trophy_picture', instance: 'String', requires: 'spoons_count_for_trophy,trophy_on_picture,trophy_off_picture'})
 declareVirtualField({model: 'key', field: 'user_spoons', instance: 'Number'})
+declareVirtualField({model: 'key', field: 'user_progress', instance: 'Number'})
+declareVirtualField({model: 'key', field: 'user_read_contents', instance: 'Number'})
 
 declareVirtualField({model: 'userSurvey', field: 'questions', instance: 'Array',
   multiple: true,
@@ -411,8 +419,6 @@ const getUserSurveyAverage = (user, params, data) => {
     .then(([survey]) => {
       const result=lodash(survey.questions)
       // TODO: take into account questions with no answer ??
-        // .filter(q => !lodash.isNil(q.answer))
-        .map(q => { console.log(`${q._id}-${q.question.key._id}`); return q })
         .filter(q => idEqual(q.question.key._id, key_id))
         .meanBy('answer') || 0
       console.log(JSON.stringify(result, null, 2))
@@ -443,6 +449,9 @@ declareComputedField('group', 'pinned_messages', getPinnedMessages)
 declareComputedField('key', 'user_survey_average', getUserSurveyAverage)
 declareComputedField('individualChallenge', 'trophy_picture', getUserIndChallengeTrophy)
 declareComputedField('key', 'trophy_picture', getUserKeyTrophy)
+declareComputedField('key', 'user_spoons', getUserKeySpoons)
+declareComputedField('key', 'user_progress', getUserKeyProgress)
+declareComputedField('key', 'user_read_contents', getUserKeyReadContents)
 declareComputedField('user', 'spoons_count', getUserSpoons)
 declareComputedField('loggedUser', 'spoons_count', getUserSpoons)
 declareComputedField('menu', 'shopping_list', getMenuShoppingList)

@@ -144,8 +144,27 @@ const getUserSpoons = (user) => {
   return countUserSpoons(user, null, null)
 }
 
+const getUserKeySpoons = (user, params, key) => {
+  return countUserSpoons(user, key)
+}
+
+const getUserKeyReadContents = (user, params, key) => {
+  return computeSourceSpoonCount({source: SPOON_SOURCE_CONTENT_READ, key, user})
+}
+
+const getUserKeyProgress = (user, params, key) => {
+  return Promise.all([
+    getUserKeyReadContents(user, params, key),
+    Content.count({key})
+  ])
+    .then(([spoons, total]) => parseInt(spoons*100/total))
+}
+
 module.exports={
   getUserIndChallengeTrophy,
   getUserKeyTrophy,
   getUserSpoons,
+  getUserKeySpoons,
+  getUserKeyProgress,
+  getUserKeyReadContents,
 }
