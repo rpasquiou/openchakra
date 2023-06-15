@@ -155,9 +155,9 @@ const getUserKeyReadContents = (user, params, key) => {
 const getUserKeyProgress = (user, params, key) => {
   return Promise.all([
     getUserKeyReadContents(user, params, key),
-    Content.count({key})
+    Content.countDocuments({key})
   ])
-    .then(([spoons, total]) => parseInt(spoons*100/total))
+    .then(([spoons, total]) => total ? parseInt(spoons*100/total) : 0)
 }
 
 module.exports={
