@@ -137,7 +137,7 @@ if (!isDevelopment()) {
 cron.schedule('*/10 * * * * *', () => {
   const expirationMoment=moment().add(1, 'hour')
   User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
-    .limit(10)
+    .limit(100)
     .then(users => {
       console.log(`Users requiring token update : ${users.map(u => u.email)}`)
       if (users.length==0) {
