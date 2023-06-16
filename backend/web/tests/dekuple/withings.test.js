@@ -106,5 +106,10 @@ describe.only('Test withings calls on actual DB', () => {
     expect(devices).toBeTruthy()
   })
 
+  it.only('must select update tokens', () => {
+    const expirationMoment=moment().add(1, 'hour')
+    return User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
+      .then(users => console.log(users))
+  })
 
 })
