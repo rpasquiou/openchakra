@@ -83,8 +83,8 @@ describe.only('Test withings calls on actual DB', () => {
   })
 
   it('must return the measures)', async() => {
-    await User.update({email: /sebas/}, {$set: {access_token: null}})
-    let user=await User.findOne({email: /sebas/})
+    await User.update({email: /wapp/}, {$set: {access_token: null}})
+    let user=await User.findOne({email: /wapp/})
     user.withings_usercode=(await getAuthorizationCode(user.email))
     user=await updateTokens(user)
     const since=moment().add(-4, 'days')
@@ -97,8 +97,8 @@ describe.only('Test withings calls on actual DB', () => {
   })
 
   it('must return the devices)', async() => {
-    await User.update({email: /sebas/}, {$set: {access_token: null}})
-    let user=await User.findOne({email: /sebas/})
+    await User.update({email: /wapp/}, {$set: {access_token: null}})
+    let user=await User.findOne({email: /wapp/})
     user.withings_usercode=(await getAuthorizationCode(user.email))
     user=await updateTokens(user)
     const devices=await getDevices(user.access_token)
