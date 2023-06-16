@@ -419,6 +419,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  can_setup_devices: {
+    label: 'Autoriser withings',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

@@ -15,7 +15,7 @@ const UserSchema = new Schema({
   lastname: {
     type: String,
     set: v => v?.trim(),
-    required: [true, 'Le nom de famille est obligatoire'],
+    required: false,
   },
   email: {
     type: String,
@@ -51,13 +51,12 @@ const UserSchema = new Schema({
   },
   birthday: {
     type: Date,
-    required: [true, 'La date de naissance est obligatoire'],
+    reqired: false,
   },
   gender: {
     type: String,
     enum: Object.keys(GENDER),
-    default: null,
-    required: [true, `La civilité est obligatoire (${Object.values(GENDER)})`],
+    required: false,
   },
   cguAccepted: {
     type: Boolean,

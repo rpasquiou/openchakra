@@ -15,7 +15,7 @@ require('../../models/Theme')
 require('../../models/Resource')
 const {extractData, guessFileType} = require('../../../utils/import')
 
-const upsertUser = ({firstname, lastname, email, password, role}) => {
+const createUser = ({firstname, lastname, email, password, role}) => {
   const hashedPassword=bcrypt.hashSync(password, 10)
   return User.findOneAndUpdate(
     {email},
@@ -74,7 +74,7 @@ const upsertSession = ({programCode, sessionCode, newTrainee, newTrainer, sessio
 
 const importTrainee = record => {
   let user=null
-  return upsertUser({
+  return createUser({
     firstname: record.PRENOM_STAGIAIRE, lastname: record.NOM_STAGIAIRE,
     email: record.EMAIL_STAGIAIRE, password: record.REF_STAGIAIRE, role: APPRENANT,
   })
@@ -104,7 +104,7 @@ const importTrainees = filePath => {
 
 const importTrainer = record => {
   let formateur, program, session
-  return upsertUser({
+  return createUser({
     firstname: record.PRENOM_FORMATEUR, lastname: record.NOM_FORMATEUR,
     email: record.EMAIL_FORMATEUR, password: PASSWORD, role: FORMATEUR,
   })

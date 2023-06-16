@@ -541,4 +541,13 @@ export const ACTIONS = {
     }
     return axios.post(url, body)
   },
+
+  can_setup_devices: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'can_setup_devices',
+    }
+    return axios.post(url, body)
+  },
+
 }

@@ -1,3 +1,4 @@
+const { setPostPutData } = require('../../utils/database')
 const User = require('../../models/User')
 const { BadRequestError } = require('../../utils/errors')
 const {
@@ -8,6 +9,17 @@ const {updateTokens} = require('./functions')
 const {createUser} = require('../../utils/withings')
 const {addAction} = require('../../utils/studio/actions')
 const { sendForgotPassword, sendWelcomeRegister } = require('./mailing')
+
+const postPutData = ({model, data}) => {
+  if (model=='user') {
+    return createUser(data)
+      .then(withingsCode => {data.withings_usercode=withingsCode; return data.save()})
+      .then(user => updateTokens(user))
+  }
+  return data
+}
+
+setPostPutData(postPutData)
 
 const registerAction = props => {
   console.log(`Dekuple Register with ${JSON.stringify(props)}`)
@@ -56,6 +68,16 @@ const forgotPasswordAction=({context, parent, email}) => {
 addAction('register', registerAction)
 addAction('openWithingsSettings', openWithingsSettingsAction)
 addAction('forgotPassword', forgotPasswordAction)
+
+const canSetupDevices = (props, user) => {
+  if (!user.withings_id) {
+    throw new BadRequestError(`Merci de compléter votre profil pour connecter un tensiomètre`)
+  }
+  return Promise.resolve(true)
+}
+
+addAction('can_setup_devices', canSetupDevices)
+
 
 const changePassword=({password, password2}, user) => {
   return validatePassword({password, password2})
