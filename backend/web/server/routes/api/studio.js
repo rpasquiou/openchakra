@@ -483,7 +483,17 @@ router.get('/jobUser/:id?', (req, res) => {
   return loadFromDb(req, res)
 })
 
+var requested=[]
+
 router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+  if (req.params.id && req.params.model=='user' && req.query.fields=='devices') {
+    if (requested.includes(req.params.id)) {
+      console.log('*********   skipping')
+      return res.json([])
+    }
+    console.log('************** returning')
+    requested=[...requested, req.params.id]
+  }
   return loadFromDb(req, res)
 })
 
