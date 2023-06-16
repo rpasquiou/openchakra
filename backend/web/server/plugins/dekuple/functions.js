@@ -125,18 +125,25 @@ const updateTokens = user => {
           user.withings_usercode=null
           return user.save()
         })
-        .catch(err => console.error(err))
+        .catch(err => {
+	  console.error(err)
+	  return user
+	})
     })
-    .catch(err => console.error(err))
+    .catch(err => {
+      console.error(err)
+      return user
+    })
 }
 
 if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
 cron.schedule('0 */30 * * * *', () => {
-  const expirationMoment=moment().add(1, 'hour')
+  const expirationMoment=moment().add(40, 'minute')
   return User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
-    .limit(100)
+    .limit(30)
+    .sort({creation_date: -1})
     .then(users => {
       console.log(`Users requiring token update : ${users.map(u => u.email)}`)
       if (lodash.isEmpty(users)) {
@@ -148,10 +155,10 @@ cron.schedule('0 */30 * * * *', () => {
       if (!res) { return }
       const ok=res.filter(r => r.status=='fulfilled').map(r => r.value.email)
       const nok=res.filter(r => r.status=='rejected').map(r => r.reason)
-      if (ok.length>0) {
+      if (!lodash.isEmpty(ok)) {
         console.log(`Updated tokens for ${ok.join(',')}`)
       }
-      if (nok) {
+      if (!lodash.isEmpty(nok)) {
         console.error(`Errors:${JSON.stringify(nok)}`)
       }
     })
