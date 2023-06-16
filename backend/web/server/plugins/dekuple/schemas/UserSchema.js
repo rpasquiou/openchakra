@@ -1,3 +1,5 @@
+const { GENDER_UNKOWN } = require('../consts')
+
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
 const lodash=require('lodash')
@@ -56,7 +58,8 @@ const UserSchema = new Schema({
   gender: {
     type: String,
     enum: Object.keys(GENDER),
-    required: false,
+    default: GENDER_UNKOWN,
+    required: true,
   },
   cguAccepted: {
     type: Boolean,
