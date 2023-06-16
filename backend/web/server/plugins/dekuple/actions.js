@@ -72,7 +72,7 @@ addAction('deactivateAccount', deactivateAccount)
 
 const canSetupDevices = (props, user) => {
   if (!user.withings_id) {
-    throw new BadRequestError(`Merci de compléter votre profil pour connecter un tensiomètre`)
+    throw new BadRequestError(`Données manquantes pour connecter un tensiomètre, merci de compléter dans la rubrique Profil/Mes informations`)
   }
   return Promise.resolve(true)
 }

@@ -147,6 +147,18 @@ UserSchema.virtual('devices', {
 UserSchema.virtual('tip').get(function() {
   return TIPS[lodash.random(0, TIPS.length)]
 })
+
+UserSchema.virtual('missing_attributes').get(function() {
+  const required={firstname:'prénom', lastname:'nom', height:'taille',weight:'poids',birthday:'date de naissance',gender:'civilité'}
+  const missing=Object.entries(required)
+      .filter(([att, name]) =>  lodash.isEmpty(this[att]) && !lodash.isNumber(this[att]) && !lodash.isDate(this[att]))
+      .map(([att, name]) => name)
+  if (lodash.isEmpty(missing)) {
+    return null
+  }
+  return `Attributs manquants : ${missing.join(', ').replace(/, ([^,]*)$/, ' et $1')}`
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
