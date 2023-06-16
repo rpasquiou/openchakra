@@ -156,7 +156,7 @@ UserSchema.virtual('missing_attributes').get(function() {
   if (lodash.isEmpty(missing)) {
     return null
   }
-  return `Attributs manquants : ${missing.join(', ').replace(/, ([^,]*)$/, ' et $1')}`
+  return `Veuillez compléter les éléments suivants : ${missing.join(', ').replace(/, ([^,]*)$/, ' et $1')}`
 })
 
 /* eslint-enable prefer-arrow-callback */
