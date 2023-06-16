@@ -133,14 +133,13 @@ const updateTokens = user => {
 if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
-//cron.schedule('0 */30 * * * *', () => {
-cron.schedule('*/10 * * * * *', () => {
+cron.schedule('0 */30 * * * *', () => {
   const expirationMoment=moment().add(1, 'hour')
-  User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
+  return User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
     .limit(100)
     .then(users => {
       console.log(`Users requiring token update : ${users.map(u => u.email)}`)
-      if (users.length==0) {
+      if (lodash.isEmpty(users)) {
         return null
       }
       return Promise.allSettled(users.map(u => updateTokens(u)))
