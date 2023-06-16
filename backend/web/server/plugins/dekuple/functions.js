@@ -110,9 +110,6 @@ declareVirtualField({model: 'reminder', field: 'type_str', instance: 'String', r
 declareVirtualField({model: 'reminder', field: 'reccurency_str', instance: 'String', requires: 'monday,tuesday,wednesday,thursday,friday,saturday,sunday'})
 
 const updateTokens = user => {
-  if (!user.withings_usercode && !user.withings_usercode && !user.refresh_token) {
-    return user
-  }
   return getAuthorizationCode(user.email)
     .then(authCode => {
       user.withings_usercode=authCode
