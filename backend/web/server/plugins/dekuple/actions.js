@@ -68,6 +68,7 @@ const forgotPasswordAction=({context, parent, email}) => {
 addAction('register', registerAction)
 addAction('openWithingsSettings', openWithingsSettingsAction)
 addAction('forgotPassword', forgotPasswordAction)
+addAction('deactivateAccount', deactivateAccount)
 
 const canSetupDevices = (props, user) => {
   if (!user.withings_id) {
