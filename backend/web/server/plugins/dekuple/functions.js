@@ -1,3 +1,4 @@
+const { isDevelopment } = require('../../../config/config')
 const lodash=require('lodash')
 const moment = require('moment')
 const cron = require('node-cron')
@@ -128,12 +129,14 @@ const updateTokens = user => {
     })
 }
 
+if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
 cron.schedule('0 */30 * * * *', () => {
   const expirationMoment=moment().add(1, 'hour')
   User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
     .then(users => {
+      console.log(`Users requiring token update : ${users.map(u => u.email)}`)
       if (users.length==0) {
         return null
       }
@@ -232,6 +235,7 @@ cron.schedule('15 * * * * *', async() => {
     console.log(`Appointment ${appointments.map(r => `${r.type_str} for ${r.user.email}`)}`)
   }
 })
+}
 
 module.exports={
   updateTokens,
