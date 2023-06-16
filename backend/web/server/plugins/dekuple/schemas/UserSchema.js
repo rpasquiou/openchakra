@@ -1,3 +1,5 @@
+const { GENDER_UNKOWN } = require('../consts')
+
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
 const lodash=require('lodash')
@@ -15,7 +17,7 @@ const UserSchema = new Schema({
   lastname: {
     type: String,
     set: v => v?.trim(),
-    required: [true, 'Le nom de famille est obligatoire'],
+    required: false,
   },
   email: {
     type: String,
@@ -51,13 +53,13 @@ const UserSchema = new Schema({
   },
   birthday: {
     type: Date,
-    required: [true, 'La date de naissance est obligatoire'],
+    reqired: false,
   },
   gender: {
     type: String,
     enum: Object.keys(GENDER),
-    default: null,
-    required: [true, `La civilité est obligatoire (${Object.values(GENDER)})`],
+    default: GENDER_UNKOWN,
+    required: true,
   },
   cguAccepted: {
     type: Boolean,
@@ -145,6 +147,19 @@ UserSchema.virtual('devices', {
 UserSchema.virtual('tip').get(function() {
   return TIPS[lodash.random(0, TIPS.length)]
 })
+
+UserSchema.virtual('missing_attributes').get(function() {
+  const required={firstname:'prénom', lastname:'nom', height:'taille',weight:'poids',birthday:'date de naissance',gender:'civilité'}
+  const missing=Object.entries(required)
+      .filter(([att, name]) =>  lodash.isEmpty(this[att]) && !lodash.isNumber(this[att]) && !lodash.isDate(this[att]))
+      .map(([att, name]) => name)
+  if (lodash.isEmpty(missing)) {
+    return null
+  }
+  const elementLabel=missing.length==1 ? "l'élément suivant" : 'les éléments suivants'
+  return `Veuillez compléter ${elementLabel} : ${missing.join(', ').replace(/, ([^,]*)$/, ' et $1')}`
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 

@@ -79,11 +79,6 @@ const createUser = org_user => {
   user.height=user.height || WITHINGS_DEFAULT_HEIGHT
   user.weight=user.weight || WITHINGS_DEFAULT_WEIGHT
 
-  const errors=Object.entries(VALIDS).filter(([att, fn]) => !fn(lodash.get(user, att))).map(([att]) => att)
-  if (errors.length>0) {
-    return Promise.reject(`Invalid user fields:${errors.join(',')}`)
-  }
-
   const action='createuser'
 
   return getNonce()
@@ -91,7 +86,7 @@ const createUser = org_user => {
       const hashedSignature=generateNonceSignature({action, clientId: wConfig.clientId, clientSecret: wConfig.clientSecret, nonce})
 
       const measures=JSON.stringify([{value: user.height, unit: -2, type: 4}, {value: user.weight, unit: 0, type: 1}])
-      const shortname=normalize(`${user.firstname[0]}${user.lastname.slice(0, 2)}`).toUpperCase()
+      const shortname=normalize(`${user.firstname[0]}${(user.lastname||'').slice(0, 2)}`).toUpperCase()
       const gender=user.gender==GENDER_MALE ? 0:1
       const birthdate=moment(user.birthday).unix().toString()
 
@@ -108,13 +103,14 @@ const createUser = org_user => {
     })
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        console.error(`Withings createUser:${JSON.stringify(res.data)}`)
+        return null
       }
       return res.data.body.user.code
     })
     .catch(err => {
-      console.error(err)
-      throw err
+      console.error(`Withings createUser:${err}`)
+      return null
     })
 
 }
@@ -145,7 +141,7 @@ const getAuthorizationCode = email => {
 const getAccessToken = usercode => {
 
   const redirect_uri=`https://${getHostName()}`
-  
+
   const body={
     action: 'requesttoken',
     client_id: wConfig.clientId, client_secret: wConfig.clientSecret,

@@ -1,3 +1,16 @@
+const {
+  FUMOIR_MEMBER,
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS
+} = require('../../plugins/fumoir/consts')
+const {
+  callFilterDataUser,
+  callPostCreateData,
+  callPostPutData,
+  callPreCreateData,
+  callPreprocessGet,
+  retainRequiredFields,
+} = require('../../utils/database')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -9,30 +22,19 @@ const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
-const {FUMOIR_MEMBER} = require('../../plugins/fumoir/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
   HOOK_PAYMENT_FAILED,
   HOOK_PAYMENT_SUCCESSFUL,
 } = require('../../plugins/payment/vivaWallet')
-const {
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS,
-} = require('../../plugins/fumoir/consts')
-const {
-  callFilterDataUser,
-  callPostCreateData,
-  callPreCreateData,
-  callPreprocessGet,
-  retainRequiredFields,
-} = require('../../utils/database')
 const {callAllowedAction} = require('../../utils/studio/actions')
 const {
   getDataModel,
   getProductionPort,
   getProductionRoot,
 } = require('../../../config/config')
+
 try {
   require(`../../plugins/${getDataModel()}/functions`)
 }
@@ -428,9 +430,8 @@ router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (re
   console.log(`Updating:${id} with ${JSON.stringify(params)}`)
   return mongoose.connection.models[model]
     .findByIdAndUpdate(id, params, {new: true, runValidators: true})
-    .then(data => {
-      return res.json(data)
-    })
+    .then(data => callPostPutData({model, data}))
+    .then(data => res.json(data))
 })
 
 
@@ -447,7 +448,7 @@ const loadFromDb = (req, res) => {
 
   callPreprocessGet({model, fields, id, user: req.user})
     .then(({model, fields, id, data}) => {
-      console.log(`POSTGET ${model}/${id} ${fields}`)
+      console.log(`PREGET ${model}/${id} ${fields}`)
       if (data) {
         return res.json(data)
       }

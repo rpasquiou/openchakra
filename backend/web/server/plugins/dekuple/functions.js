@@ -59,7 +59,6 @@ const filterDataUser = ({model, data, id, user}) => {
 
   // List mode
   if (['user', 'loggedUser'].includes(model)) {
-    console.log(`Calling filter with ${JSON.stringify(data)}`)
     return data.map(d => ({
       ...d,
       measures: d.measures && lodash.orderBy(d.measures, ['date'], ['desc']),
@@ -95,8 +94,9 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'device'}}})
   declareVirtualField({model: m, field: 'tip', instance: 'String'})
-
+  declareVirtualField({model: m, field: 'missing_attributes', instance: 'String', requires:'firstname,lastname,height,weight,birthday,gender'})
 })
+
 
 declareVirtualField({model: 'measure', field: 'recommandation', instance: 'String', requires: 'sys,dia'})
 declareVirtualField({model: 'measure', field: 'source', instance: 'String', requires: 'withings_group', enumValues: MEASURE_SOURCE})
@@ -110,6 +110,9 @@ declareVirtualField({model: 'reminder', field: 'type_str', instance: 'String', r
 declareVirtualField({model: 'reminder', field: 'reccurency_str', instance: 'String', requires: 'monday,tuesday,wednesday,thursday,friday,saturday,sunday'})
 
 const updateTokens = user => {
+  if (!user.withings_usercode && !user.withings_usercode && !user.refresh_token) {
+    return user
+  }
   return getAuthorizationCode(user.email)
     .then(authCode => {
       user.withings_usercode=authCode
@@ -124,6 +127,7 @@ const updateTokens = user => {
           user.withings_usercode=null
           return user.save()
         })
+        .catch(err => console.error(err))
     })
 }
 
@@ -152,7 +156,7 @@ cron.schedule('0 */30 * * * *', () => {
 })
 
 // Get all measures TODO should be notified by Withings
-cron.schedule('*/30 * * * * *', async() => {
+cron.schedule('0 */2 * * * *', async() => {
   console.log(`Getting measures`)
   const users=await User.find({}, {access_token: 1, email: 1})
     .populate({path: 'measures'})

@@ -537,6 +537,17 @@ const callPostCreateData = data => {
   return postCreateData(data)
 }
 
+// Post create data, allows to create extra data, etc, etc
+let postPutData = data => Promise.resolve(data.data)
+
+const setPostPutData = fn => {
+  postPutData = fn
+}
+
+const callPostPutData = data => {
+  return postPutData(data)
+}
+
 const putAttribute = ({parent, attribute, value, user}) => {
   let model = null
   return getModel(parent)
@@ -643,4 +654,6 @@ module.exports = {
   idEqual,
   getExposedModels,
   simpleCloneModel,
+  setPostPutData,
+  callPostPutData,
 }

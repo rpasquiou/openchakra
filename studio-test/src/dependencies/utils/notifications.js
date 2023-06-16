@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react'
 
 // TODO configure error color in project
-export const Error = ({title='Erreur', message, onClose}) => {
+export const Error = ({title='Information', message, onClose}) => {
 
   return (
     <AlertDialog
