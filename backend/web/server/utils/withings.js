@@ -53,8 +53,10 @@ const getNonce = () => {
   return axios.post(NONCE_DOMAIN, body)
     .then(res => {
       const nonce=res.data.body.nonce
+      console.log(`Got nonce ${nonce}`)
       return nonce
     })
+    .catch(err => console.error(err))
 }
 
 // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/required-web-services#user-creation-api
@@ -106,6 +108,7 @@ const createUser = org_user => {
         console.error(`Withings createUser:${JSON.stringify(res.data)}`)
         return null
       }
+      console.log(`Got user_code:${res.data.body.user.code}`)
       return res.data.body.user.code
     })
     .catch(err => {
