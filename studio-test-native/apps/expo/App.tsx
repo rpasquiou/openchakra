@@ -1,3 +1,4 @@
+import { StyleSheet, SafeAreaView } from 'react-native'
 import {WebView} from 'react-native-webview'
 import {useEffect, useState} from 'react'
 import axios from 'axios'
@@ -28,24 +29,32 @@ const App = () => {
 
   return (
     <>
-      <KeyboardAvoidingView>
-        <NotifContainer user={currentUser} allOnStart>
-          <WebView
-            startInLoadingState={true}
-            allowsBackForwardNavigationGestures
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            onMessage={event => {}}
-            mediaPlaybackRequiresUserAction={true}
-            source={{uri: BASE_URL_TO_POINT}}
-            sharedCookiesEnabled={true}
-            onNavigationStateChange={({url}) => setCurrentUrl(url)}
-          />
-        </NotifContainer>
-      </KeyboardAvoidingView>
+      <SafeAreaView style={styles.container}>
+        <KeyboardAvoidingView>
+          <NotifContainer user={currentUser} allOnStart>
+            <WebView
+              startInLoadingState={true}
+              allowsBackForwardNavigationGestures
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              onMessage={event => {}}
+              mediaPlaybackRequiresUserAction={true}
+              source={{uri: BASE_URL_TO_POINT}}
+              sharedCookiesEnabled={true}
+              onNavigationStateChange={({url}) => setCurrentUrl(url)}
+            />
+          </NotifContainer>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  }
+});
 
 
 export default App
