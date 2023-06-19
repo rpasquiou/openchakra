@@ -142,7 +142,7 @@ const updateTokens = user => {
 const postLogin = user => {
   console.log(`Post login ${user}`)
   if (user.withings_id) {
-    subscribe(user.withings_id)
+    subscribe(user)
   }
   return user
 }

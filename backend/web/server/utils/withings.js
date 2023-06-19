@@ -21,6 +21,7 @@ const SDK_DOMAIN='https://wbsapi.withings.net/v2/sdk'
 const OAUTH2_DOMAIN='https://wbsapi.withings.net/v2/oauth2'
 const MEASURE_DOMAIN='https://wbsapi.withings.net/measure'
 const USER_DOMAIN='https://wbsapi.withings.net/v2/user'
+const NOTIFY_DOMAIN='https://wbsapi.withings.net/v2/notify'
 
 
 const generateTSSignature=({action, clientId, clientSecret, timestamp}) => {
@@ -217,8 +218,21 @@ const getUsers = () => {
     })
 }
 
-const subscribe = withings_id => {
-
+const subscribe = user => {
+  console.log(`Trying to subscribe ${user.email}`)
+  const body={
+    action: 'subscribe',
+    callbackurl: `https://${getHostName()}/myAlfred/api/withings/measures`,
+    appli: '4', //SYS/DIA/BPM
+  }
+  console.log(`Body is ${JSON.stringify(body)}`)
+  return axios.post(NOTIFY_DOMAIN, body,
+    {headers: {
+      Authorization: `Bearer ${user.access_token}`,
+    }},
+  )
+  .then(() => console.log(`${user.email} succesfully subscribed`))
+  .catch(err => console.error(`${user.email} subscribe error:${err}`))
 }
 
 const getMeasures = (access_token, since) => {
