@@ -62,8 +62,12 @@ const getNonce = () => {
 // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/required-web-services#user-creation-api
 const createUser = org_user => {
 
+  if (org_user.withings_id) {
+    return null
+  }
+
   // Use "local copy"
-  user={...org_user.toObject()}
+  const user={...org_user.toObject()}
 
   console.log(`Creating Dekuple user ${JSON.stringify(user)}`)
   // Validate user data
@@ -88,7 +92,8 @@ const createUser = org_user => {
       const hashedSignature=generateNonceSignature({action, clientId: wConfig.clientId, clientSecret: wConfig.clientSecret, nonce})
 
       const measures=JSON.stringify([{value: user.height, unit: -2, type: 4}, {value: user.weight, unit: 0, type: 1}])
-      const shortname=normalize(`${user.firstname[0]}${(user.lastname||'').slice(0, 2)}`).toUpperCase()
+      const shortname=normalize(user.fullname.replace(/ /g, '').slice(0, 3)).toUpperCase()
+      console.log(`Shortname:${shortname}`)
       const gender=user.gender==GENDER_MALE ? 0:1
       const birthdate=moment(user.birthday).unix().toString()
 
