@@ -1,3 +1,4 @@
+const express = require('express')
 const {
   getAccessToken,
   getAuthorizationCode,
@@ -149,6 +150,14 @@ const postLogin = user => {
 
 setPostLogin(postLogin)
 
+const router = express.Router()
+
+router.post('/withings/measures', (req, res) => {
+  const data=req.body
+  console.log(`Got measures:${JSON.stringify(data)}`)
+  return res.status(200).send("ok")
+})
+
 if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
@@ -261,4 +270,5 @@ cron.schedule('15 * * * * *', async() => {
 
 module.exports={
   updateTokens,
+  router,
 }

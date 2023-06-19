@@ -1,3 +1,11 @@
+const {
+  RANDOM_ID,
+  checkConfig,
+  getDataModel,
+  getDatabaseUri,
+  getHostUrl,
+  getPort,
+} = require('../config/config')
 const axios = require('axios')
 const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
@@ -8,13 +16,6 @@ const passport = require('passport')
 const glob = require('glob')
 const cors = require('cors')
 const autoIncrement = require('mongoose-auto-increment')
-const {
-  RANDOM_ID,
-  checkConfig,
-  getDatabaseUri,
-  getHostUrl,
-  getPort,
-} = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
 require('./models/ResetToken')
 require('./models/Program')
@@ -55,11 +56,9 @@ require('./models/PartnerApplication')
 require('./models/Trophy')
 require('./models/Spoon')
 require('./models/CollectiveChallenge')
-require('./models/PartnerApplication')
 require('./models/Gift')
 require('./models/SpoonGain')
 require('./models/UserSpoon')
-require('./models/Content')
 require('./models/Menu')
 require('./models/Webinar')
 require('./models/IndividualChallenge')
@@ -99,6 +98,7 @@ const https = require('https')
 const fs = require('fs')
 const studio = require('./routes/api/studio')
 const withings = require('./routes/api/withings')
+const {router} = require(`./plugins/${getDataModel()}/functions`)
 const path = require('path')
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
@@ -161,6 +161,9 @@ checkConfig()
     app.use('/testping', (req, res) => res.json(RANDOM_ID))
     app.use('/myAlfred/api/studio', studio)
     app.use('/myAlfred/api/withings', withings)
+    if (router) {
+      app.use('/myAlfred/api/studio', router)
+    }
 
     // const port = process.env.PORT || 5000;
     const rootPath = path.join(__dirname, '/..')
