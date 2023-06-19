@@ -33,4 +33,9 @@ router.get('/settings', passport.authenticate('cookie', {session: false}), (req,
   )
 })
 
+router.post('/measures', (req, res) => {
+  const data=req.body
+  console.log(`Got measures:${JSON.stringify(data)}`)
+})
+
 module.exports = router

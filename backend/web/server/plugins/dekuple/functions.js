@@ -1,3 +1,19 @@
+const {
+  getAccessToken,
+  getAuthorizationCode,
+  getDevices,
+  getFreshAccessToken,
+  getMeasures,
+  subscribe,
+} = require('../../utils/withings')
+const {
+  declareEnumField,
+  declareVirtualField,
+  setFilterDataUser,
+  setPostLogin,
+  setPreCreateData,
+  setPreprocessGet,
+} = require('../../utils/database')
 const { isDevelopment } = require('../../../config/config')
 const lodash=require('lodash')
 const moment = require('moment')
@@ -5,22 +21,8 @@ const cron = require('node-cron')
 const Measure = require('../../models/Measure')
 const Appointment = require('../../models/Appointment')
 const Reminder = require('../../models/Reminder')
-const {
-  getAccessToken,
-  getAuthorizationCode,
-  getDevices,
-  getFreshAccessToken,
-  getMeasures,
-} = require('../../utils/withings')
 const User = require('../../models/User')
 const Device = require('../../models/Device')
-const {
-  declareEnumField,
-  declareVirtualField,
-  setPreCreateData,
-  setPreprocessGet,
-  setFilterDataUser,
-} = require('../../utils/database')
 const {
   APPOINTMENT_TYPE,
   APPOINTMENT_STATUS,
@@ -135,6 +137,17 @@ const updateTokens = user => {
       return user
     })
 }
+
+// Post login: subscribe to withings hook
+const postLogin = user => {
+  console.log(`Post login ${user}`)
+  if (user.withings_id) {
+    subscribe(user.withings_id)
+  }
+  return user
+}
+
+setPostLogin(postLogin)
 
 if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour

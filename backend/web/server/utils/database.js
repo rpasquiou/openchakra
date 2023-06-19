@@ -548,6 +548,17 @@ const callPostPutData = data => {
   return postPutData(data)
 }
 
+// Post login
+let postLogin = user => Promise.resolve(user)
+
+const setPostLogin = fn => {
+  postLogin = fn
+}
+
+const callPostLogin = data => {
+  return postLogin(data)
+}
+
 const putAttribute = ({parent, attribute, value, user}) => {
   let model = null
   return getModel(parent)
@@ -656,4 +667,6 @@ module.exports = {
   simpleCloneModel,
   setPostPutData,
   callPostPutData,
+  setPostLogin,
+  callPostLogin,
 }

@@ -217,6 +217,10 @@ const getUsers = () => {
     })
 }
 
+const subscribe = withings_id => {
+
+}
+
 const getMeasures = (access_token, since) => {
 
   if (!access_token) { return Promise.reject(`Invalid token:${access_token}`) }
@@ -275,5 +279,6 @@ module.exports={
   getFreshAccessToken,
   getUsers,
   getMeasures,
-  getDevices
+  getDevices,
+  subscribe,
 }

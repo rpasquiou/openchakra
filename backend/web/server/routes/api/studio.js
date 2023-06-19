@@ -1,16 +1,17 @@
 const {
-  FUMOIR_MEMBER,
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS
-} = require('../../plugins/fumoir/consts')
-const {
   callFilterDataUser,
   callPostCreateData,
+  callPostLogin,
   callPostPutData,
   callPreCreateData,
   callPreprocessGet,
   retainRequiredFields,
 } = require('../../utils/database')
+const {
+  FUMOIR_MEMBER,
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS
+} = require('../../plugins/fumoir/consts')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -108,7 +109,7 @@ const login = (email, password) => {
     if (!matched) {
       throw new NotFoundError(`Email ou mot de passe invalide`)
     }
-    return user
+    return callPostLogin(user)
   })
 }
 
@@ -332,6 +333,10 @@ router.post('/register-and-login', (req, res) => {
         })
     })
 })
+
+/************************************************************
+        HOOKS
+************************************************************/
 
 // Validate webhook
 router.get('/payment-hook', (req, res) => {
