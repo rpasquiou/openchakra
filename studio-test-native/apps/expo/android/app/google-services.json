@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "474588757569",
+    "project_id": "smartdiet-7ebb4",
+    "storage_bucket": "smartdiet-7ebb4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:474588757569:android:9b47fb17ada27cfe5ad0c0",
+        "android_client_info": {
+          "package_name": "com.smartdiet.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "474588757569-55phtgj7nkrttpe5eutfkub1vk0dn450.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIh_Z-atkds1GLLp3hbW2p1MuctY1f0p8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "474588757569-55phtgj7nkrttpe5eutfkub1vk0dn450.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "474588757569-hj0ttdvnc76jlrujercjh3sgtukjnjav.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.smartdiet.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
