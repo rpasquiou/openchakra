@@ -346,7 +346,7 @@ router.post('/recommandation', (req, res) => {
       return mongoose.connection.models[model]
         .create([params], {runValidators: true})
         .then(([data]) => {
-          return callPostCreateData({model, params, data})
+          return callPostCreateData({model, params, data, user})
         })
         .then(data => res.json(data))
     })
@@ -380,7 +380,7 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
       return mongoose.connection.models[model]
         .create([params], {runValidators: true})
         .then(([data]) => {
-          return callPostCreateData({model, params, data})
+          return callPostCreateData({model, params, data, user})
         })
         .then(data => res.json(data))
     })

@@ -87,6 +87,8 @@ require('./models/MenuRecipe')
 require('./models/Team')
 require('./models/Association')
 require('./models/ChartPoint')
+require('./models/TeamMember')
+require('./models/ChallengePip')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

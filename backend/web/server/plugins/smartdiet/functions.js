@@ -1,3 +1,9 @@
+const CollectiveChallenge = require('../../models/CollectiveChallenge')
+const Pip = require('../../models/Pip')
+const ChallengeUserPip = require('../../models/ChallengeUserPip')
+const ChallengeUserPipSchema = require('./schemas/ChallengeUserPipSchema')
+const ChallengePip = require('../../models/ChallengePip')
+const {BadRequestError} = require('../../utils/errors')
 const {
   declareComputedField,
   declareEnumField,
@@ -19,6 +25,7 @@ const {
   getUserSpoons
 } = require('./spoons')
 const mongoose = require('mongoose')
+require('lodash.product')
 const lodash=require('lodash')
 const moment = require('moment')
 const UserSurvey = require('../../models/UserSurvey')
@@ -27,6 +34,8 @@ const Offer = require('../../models/Offer')
 const Content = require('../../models/Content')
 const Company = require('../../models/Company')
 const User = require('../../models/User')
+const Team = require('../../models/Team')
+const TeamMember = require('../../models/TeamMember')
 const {
   ACTIVITY,
   COMPANY_ACTIVITY,
@@ -71,6 +80,13 @@ const preCreate = ({model, params, user}) => {
   }
   if (['message'].includes(model)) {
     params.sender=user
+  }
+  if (['team'].includes(model)) {
+    return Team.exists({name: params.name?.trim(), collectiveChallenge: params.collectiveChallenge})
+      .then(exists => {
+        if (exists) { throw new BadRequestError(`L'équipe ${params.name} existe déjà pour ce challenge`)}
+        return {model, params}
+      })
   }
   return Promise.resolve({model, params})
 }
@@ -148,6 +164,7 @@ USER_MODELS.forEach(m => {
       options: {ref: 'menu'}},
   })
   declareVirtualField({model: m, field: 'collective_challenges', instance: 'Array', multiple: true,
+    requires:'company.collective_challenges',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'collectiveChallenge'}},
@@ -221,6 +238,11 @@ declareVirtualField({model: 'company', field: 'children', instance: 'Array', mul
   caster: {
     instance: 'ObjectID',
     options: {ref: 'company'}},
+})
+declareVirtualField({model: 'company', field: 'collective_challenges', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'collectiveChallenge'}},
 })
 
 
@@ -364,6 +386,33 @@ declareVirtualField({model: 'pip', field: 'comments', instance: 'Array', multipl
 })
 declareVirtualField({model: 'pip', field: 'comments_count', instance: 'Number', requires: 'comments'})
 
+declareVirtualField({model: 'team', field: 'members', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'teamMember'}},
+})
+
+declareVirtualField({model: 'teamMember', field: 'spoons', instance: 'Number'})
+
+declareVirtualField({model: 'collectiveChallenge', field: 'teams', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'team'}},
+})
+
+declareVirtualField({model: 'collectiveChallenge', field: 'pips', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengePip'}},
+})
+
+declareVirtualField({model: 'challengePip', field: 'userPips', instance: 'Array', multiple: true,
+  requires: 'userPips.valid,pip.spoons',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'challengeUserPip'}},
+})
+declareVirtualField({model: 'challengePip', field: 'spoons', instance: 'Number'})
 
 const getAvailableContents = (user, params, data) => {
   return Content.find()
@@ -483,7 +532,7 @@ declareComputedField('menu', 'shopping_list', getMenuShoppingList)
 declareComputedField('key', 'user_surveys_progress', getUserSurveysProgress)
 
 
-const postCreate = ({model, params, data}) => {
+const postCreate = ({model, params, data,user}) => {
   // Create company => duplicate offer
   if (model=='company') {
     return Offer.findById(data.offer)
@@ -497,11 +546,71 @@ const postCreate = ({model, params, data}) => {
     User.find({role: FUMOIR_MANAGER})
       .then(managers => Promise.allSettled(managers.map(manager => sendNewBookingToManager({booking: data, manager}))))
   }
+  if (model=='team') {
+    return TeamMember.create({team: data, user})
+      .then(()=> {
+        ensureChallengePipsConsistency()
+        return data
+      })
+  }
+  if (model=='collectiveChallenge') {
+    return Pip.find()
+      .then (pips => Promise.all(pips.map(p => ChallengePip.create({pip:p, collectiveChallenge:data}))))
+      .then(()=> {
+        ensureChallengePipsConsistency()
+        return data
+      })
+  }
+  if (model=='pip') {
+    ensureChallengePipsConsistency()
+  }
+  if (model=='teamMember') {
+    ensureChallengePipsConsistency()
+  }
 
   return Promise.resolve(data)
 }
 
 setPostCreateData(postCreate)
+
+const ensureChallengePipsConsistency = () => {
+  // Does every challenge have all pips ?
+  return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
+    TeamMember.find().populate('team'), ChallengeUserPip.find()])
+    .then(([pips, challenges, teamMembers, challengeUserPips]) => {
+      // Ensure all challenge pips exist
+      const updateChallengePips=lodash.product(pips, challenges)
+        .map(([pip, challenge]) => ChallengePip.updateMany(
+          {pip:pip, collectiveChallenge:challenge},
+          {pip:pip, collectiveChallenge:challenge},
+          {upsert: true}
+        ))
+      Promise.all(updateChallengePips)
+        .then(res => console.log(`Upsert challenge pips ok:${JSON.stringify(res)}`))
+        .catch(err => console.error(`Upsert challenge pips error:${err}`))
+
+      // Ensure all team mebers pips exist
+      const updateMembersPips=ChallengePip.find()
+        .then(challengePips => {
+          return teamMembers.map(member => {
+            const pips=challengePips.filter(p =>idEqual(p.collectiveChallenge, member.team.collectiveChallenge))
+            return Promise.all(pips.map(p => {
+              return ChallengeUserPip.update(
+                {pip:p, user: member},
+                {pip:p, user: member },
+                {upsert: true}
+              )
+            }))
+          })
+        })
+
+      Promise.all(updateMembersPips)
+        .then(res => console.log(`Upsert member pips ok:${JSON.stringify(res)}`))
+        .catch(err => console.error(`Upsert member pips error:${err}`))
+    })
+}
+
+ensureChallengePipsConsistency()
 
 /** Upsert PARTICULARS company */
 Company.findOneAndUpdate(
@@ -514,4 +623,5 @@ Company.findOneAndUpdate(
 
 module.exports={
   getAvailableContents,
+  ensureChallengePipsConsistency,
 }
