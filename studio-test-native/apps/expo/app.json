@@ -41,6 +41,10 @@
       "package": "com.smartdiet.app",
       "googleServicesFile": "./google-services.json"
     },
+    "androidStatusBar": {
+      "backgroundColor": "#FFFFFF",
+      "translucent": true
+    },
     "plugins": [
       "@react-native-firebase/app",
       [

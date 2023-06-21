@@ -1,6 +1,7 @@
-import { StyleSheet, SafeAreaView } from 'react-native'
+import React, {useCallback, useEffect, useState} from 'react'
+import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from 'react-native-safe-area-context';
 import {WebView} from 'react-native-webview'
-import {useEffect, useState} from 'react'
+import { StatusBar } from 'expo-status-bar';
 import axios from 'axios'
 import KeyboardAvoidingView from './components/KeyboardAvoidingView'
 import NotifContainer from './modules/notifications/NotifContainer'
@@ -8,30 +9,33 @@ import NotifContainer from './modules/notifications/NotifContainer'
 
 const BASE_URL_TO_POINT = 'https://smartdiet.app'
 
-
 const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
-  const [currentUser, setCurrentUser]=useState(null)
+  const [currentUser, setCurrentUser]=useState(null)  
 
-  const getCurrentUser = async() => {
+  const getCurrentUser = useCallback(async() => {
     await axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
       .then(res => setCurrentUser(res?.data))
       .catch(err => {
         if (err.response?.status==401 && currentUser) { setCurrentUser(null) }
       })
-  }
+  }, [currentUser])
 
   useEffect(() => {
     getCurrentUser()
-  }, [currentUrl, getCurrentUser])
+  }, [currentUrl])
   
 
   return (
-    <>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView>
-          <NotifContainer user={currentUser} allOnStart>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>   
+      <NotifContainer user={currentUser} allOnStart>
+        <StatusBar style={"dark"} />
+        <SafeAreaView 
+          style={{flex: 1,}} 
+          edges={['top', 'left', 'right']}
+        >
+          <KeyboardAvoidingView>
             <WebView
               startInLoadingState={true}
               allowsBackForwardNavigationGestures
@@ -43,18 +47,13 @@ const App = () => {
               sharedCookiesEnabled={true}
               onNavigationStateChange={({url}) => setCurrentUrl(url)}
             />
-          </NotifContainer>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </NotifContainer>
+    </SafeAreaProvider>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  }
-});
 
 
 export default App
