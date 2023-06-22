@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "382261885583",
+    "project_id": "hellotipi-27a66",
+    "storage_bucket": "hellotipi-27a66.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:382261885583:android:979ea789d4d9183a3e8efa",
+        "android_client_info": {
+          "package_name": "com.hellotipi.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "382261885583-p3n6ec33hqrgrn17t6lqd5qmqtou7pa6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqlwtv7gxV-Iv8Y4S_UiLa6d6aY6SAHwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "382261885583-p3n6ec33hqrgrn17t6lqd5qmqtou7pa6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
