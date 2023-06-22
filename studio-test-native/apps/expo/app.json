@@ -35,7 +35,7 @@
     "android": {
       "permissions": ["android.permission.POST_NOTIFICATIONS"],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.jpg",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.smartdiet.app",
