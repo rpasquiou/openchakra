@@ -55,12 +55,18 @@ const Lexical = (
       const rawHTML = $generateHtmlFromNodes(editor, null)
       setHtml(rawHTML);
       // Protect against change event if no name defined
-      /**
+       /**
       if (onChange && name) {
         const event = { target: { name: name, value: rawHTML } }
         onChange(event)
       }
       */
+
+      if (onChange) {
+        const event = { target: { name: name, value: rawHTML } }
+        onChange(event)
+      }
+      
     })
   }
 
@@ -90,6 +96,7 @@ const editorConfig = {
 
 // TODO add all properties to root returned component
 const props={id, attribute, value: html, ...rest}
+
 return (
   <Flex {...props}>
     <LexicalComposer initialConfig={editorConfig} >
@@ -105,7 +112,7 @@ return (
           <AutoFocusPlugin />
           <ListPlugin />
           <LinkPlugin />
-          <AutoLinkPlugin />
+          {/* <AutoLinkPlugin /> */}
           <ListMaxIndentLevelPlugin maxDepth={7} />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <OnChangePlugin onChange={onChangeFn} />
