@@ -112,16 +112,19 @@ function dropDownActiveClass(active: boolean) {
 function FontDropDown({
   editor,
   value,
+  setValue,
   style,
   disabled = false,
 }: {
   editor: LexicalEditor;
   value: string;
+  setValue: Function;
   style: string;
   disabled?: boolean;
 }): JSX.Element {
   const handleClick = useCallback(
     (option: string) => {
+      setValue(option)
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
@@ -705,11 +708,13 @@ export default function ToolbarPlugin() {
           <FontDropDown
             style={'font-family'}
             value={fontFamily}
+            setValue={setFontFamily}
             editor={editor}
           />
           <FontDropDown
             style={'font-size'}
             value={fontSize}
+            setValue={setFontSize}
             editor={editor}
           />
           <Divider />
