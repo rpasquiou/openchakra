@@ -1,6 +1,17 @@
 const AdminDashboard = require('../../models/AdminDashboard')
 const { sendTipiSearch } = require('./mailing')
 const {
+  sendAskContact,
+  sendCommentReceived,
+  sendMissionAskedReminder,
+  sendMissionAskedSummary,
+  sendMissionReminderCustomer,
+  sendMissionReminderTI,
+  sendNewMission,
+  sendProfileOnline,
+  sendTipiSearch
+} = require('./mailing')
+const {
   declareComputedField,
   declareEnumField,
   declareVirtualField,
@@ -140,18 +151,25 @@ const preCreate = ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
-const postPut = ({model, params, data, user}) => {
-  console.log(`postPut ${model} with ${JSON.stringify(data)}`)
-  if (model=='user' && user?.role==ROLE_TI) {
-    return paymentPlugin.upsertProvider(data)
-  }
-  if (model=='user' && user?.role==ROLE_COMPANY_BUYER) {
-    return paymentPlugin.upsertCustomer(data)
+const postPutData = ({model, id, attribute, value, user}) => {
+  if (model=='user') {
+    return User.findById(id)
+      .then(account => {
+        if (attribute=='hidden' && value==false) {
+          sendProfileOnline(account)
+        }
+        if (account?.role==ROLE_TI) {
+          return paymentPlugin.upsertProvider(account)
+        }
+        if (account?.role==ROLE_COMPANY_BUYER) {
+          return paymentPlugin.upsertCustomer(account)
+        }
+      })
   }
   return Promise.resolve(data)
 }
 
-setPostPutData(postPut)
+setPostPutData(postPutData)
 
 
 const USER_MODELS=['user', 'loggedUser']
@@ -190,7 +208,7 @@ USER_MODELS.forEach(m => {
       options: {ref: 'mission'}}
   })
   declareVirtualField({model: m, field: 'missions', instance: 'Array', multiple: true,
-    requires: '_missions,_missions.user,_missions.job,_missions.job.user,_missions.quotations,_missions.comments',
+    requires: '_missions,_missions.user,_missions.job,_missions.job.user,_missions.quotations,_missions.quotations.details,_missions.comments,missions,missions.user,missions.job,missions.job.user,missions.quotations,missions.comments',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'mission'}}
@@ -211,9 +229,20 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'recommandations_note', instance: 'Number', requires: 'jobs'})
   declareVirtualField({model: m, field: 'comments_count', instance: 'Number', requires: 'jobs'})
   declareVirtualField({model: m, field: 'comments_note', instance: 'Number', requires: 'jobs'})
-  declareVirtualField({model: m, field: 'revenue', instance: 'Number', requires: 'missions.quotations'})
-  declareVirtualField({model: m, field: 'revenue_to_come', instance: 'Number', requires: 'missions.quotations'})
-  declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'missions.quotations'})
+
+  declareVirtualField({model: m, field: 'revenue', instance: 'Number',
+    requires: 'role,_missions.quotations.ti_total,_missions.status,missions.quotations.ti_total,missions.status'})
+  declareVirtualField({model: m, field: 'revenue_to_come', instance: 'Number',
+    requires: 'role,_missions.quotations.ti_total,_missions.status,missions.quotations.ti_total,missions.status'})
+  declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,_missions.status,missions.status'})
+
+  declareVirtualField({model: m, field: 'spent', instance: 'Number',
+    requires: 'role,_missions.quotations.customer_total,_missions.status,missions.quotations.customer_total,missions.status'})
+  declareVirtualField({model: m, field: 'spent_to_come', instance: 'Number',
+    requires: 'role,_missions.quotations.customer_total,_missions.status,missions.quotations.customer_total,missions.status'})
+  declareVirtualField({model: m, field: 'pending_bills', instance: 'Number',
+    requires: 'role,_missions.status,_missions.quotations.customer_total,missions.status,missions.quotations.customer_total'})
+
   declareVirtualField({model: m, field: 'profile_shares_count', instance: 'Number', requires: ''})
   declareEnumField({model: m, field: 'unactive_reason', enumValues: UNACTIVE_REASON})
   declareVirtualField({model: m, field: 'missing_attributes', instance: 'String', requires: 'firstname,lastname,email,phone,birthday,nationality,picture,identity_proof_1,iban,company_name,company_status,siret,status_report,insurance_type,insurance_report,company_picture'})
@@ -305,6 +334,12 @@ declareVirtualField({model: 'mission', field: 'comments', instance: 'Array', req
     options: {ref: 'comment'}}
 })
 declareEnumField({model: 'mission', field: 'payin_status', enumValues: PAYMENT_STATUS})
+declareVirtualField({model: 'mission', field: 'customer_total', instance: 'Number', requires: 'quotations.customer_total'})
+declareVirtualField({model: 'mission', field: 'mer', instance: 'Number', requires: 'quotations.mer'})
+declareVirtualField({model: 'mission', field: 'gross_total', instance: 'Number', requires: 'quotations.gross_total'})
+declareVirtualField({model: 'mission', field: 'aa', instance: 'Number', requires: 'quotations.aa'})
+declareVirtualField({model: 'mission', field: 'ti_total', instance: 'Number', requires: 'quotations.ti_total'})
+declareVirtualField({model: 'mission', field: 'vat_total', instance: 'Number', requires: 'quotations.vat_total'})
 
 
 declareVirtualField({model: 'quotation', field: 'details', instance: 'Array', requires: '', multiple: true,
@@ -313,10 +348,18 @@ declareVirtualField({model: 'quotation', field: 'details', instance: 'Array', re
     options: {ref: 'quotationDetail'}}
 })
 declareVirtualField({model: 'quotation', field: 'total', instance: 'Number', requires: 'details'})
-declareVirtualField({model: 'quotation', field: 'vat_total', instance: 'Number', requires: 'details'})
+declareVirtualField({model: 'quotation', field: 'vat_total', instance: 'Number', requires: 'details.vat_total'})
+declareVirtualField({model: 'quotation', field: 'ht_total', instance: 'Number', requires: 'details.ht_total'})
+declareVirtualField({model: 'quotation', field: 'customer_total', instance: 'Number', requires: 'gross_total,mer,ht_total'})
+//declareVirtualField({model: 'quotation', field: 'mer', instance: 'Number', requires: 'mission.job.user.qualified,ht_total'})
+declareVirtualField({model: 'quotation', field: 'mer', instance: 'Number', requires: 'ht_total'})
+declareVirtualField({model: 'quotation', field: 'gross_total', instance: 'Number', requires: 'details.total'})
+declareVirtualField({model: 'quotation', field: 'aa', instance: 'Number', requires: 'ht_total'})
+declareVirtualField({model: 'quotation', field: 'ti_total', instance: 'Number', requires: 'gross_total,aa'})
 
 declareVirtualField({model: 'quotationDetail', field: 'total', instance: 'Number', requires: 'quantity,ht_price,vat'})
 declareVirtualField({model: 'quotationDetail', field: 'vat_total', instance: 'Number', requires: 'quantity,ht_price,vat'})
+declareVirtualField({model: 'quotationDetail', field: 'ht_total', instance: 'Number', requires: 'quantity,ht_price,vat'})
 
 declareEnumField({model: 'contact', field: 'status', enumValues: CONTACT_STATUS})
 
@@ -379,6 +422,114 @@ const setDataPinned = ({id, attribute, value, user}) => {
 }
 
 declareComputedField('jobUser', 'pinned', getDataPinned, setDataPinned)
+
+
+declareComputedField('adminDashboard', 'contact_sent', () => Contact.countDocuments())
+declareComputedField('adminDashboard', 'refused_bills', () =>
+  Mission.countDocuments({customer_refuse_bill_date: {$ne: null}})
+)
+declareComputedField('adminDashboard', 'accepted_bills', () =>
+  Mission.countDocuments({customer_accept_bill_date: {$ne: null}})
+)
+declareComputedField('adminDashboard', 'visible_ti',
+  () => User.countDocuments({role: ROLE_TI, hidden:false})
+)
+declareComputedField('adminDashboard', 'hidden_ti',
+  () => User.countDocuments({role: ROLE_TI, hidden:true})
+)
+declareComputedField('adminDashboard', 'qualified_ti',
+  () => User.countDocuments({role: ROLE_TI, qualified:true})
+)
+declareComputedField('adminDashboard', 'visible_tipi',
+  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:false})
+)
+declareComputedField('adminDashboard', 'hidden_tipi',
+  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:true})
+)
+declareComputedField('adminDashboard', 'qualified_tipi',
+  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, qualified:true})
+)
+declareComputedField('adminDashboard', 'missions_requests', () =>
+  loadFromDb({model: 'mission', fields:['status']})
+    .then(missions => missions.filter(m => m.status==MISSION_STATUS_ASKING).length)
+)
+declareComputedField('adminDashboard', 'refused_missions', () =>
+loadFromDb({model: 'mission', fields:['status']})
+  .then(missions => missions.filter(m => m.status==MISSION_STATUS_TI_REFUSED).length)
+)
+declareComputedField('adminDashboard', 'sent_quotations', () =>
+  Mission.countDocuments({quotation_sent_date: {$ne: null}})
+)
+
+declareComputedField('adminDashboard', 'quotation_ca_total',
+  () => {
+    return loadFromDb({model: 'mission', fields:['status','quotations.customer_total']})
+      .then(missions => {
+        return lodash(missions)
+          .filter(m => m.status==MISSION_STATUS_QUOT_SENT)
+          .sumBy(m => m.quotations[0].gross_total)
+      })
+  }
+)
+
+//*****************************************************************
+// TODO: Compute actual AA & MER commissions
+//*****************************************************************
+
+// TODO: WTF is that value ??
+declareComputedField('adminDashboard', 'commission_ca_total',
+() => {
+  return loadFromDb({model: 'mission', fields:['status','quotations.aa']})
+    .then(missions => {
+      return lodash(missions)
+        .filter(m => m.status==MISSION_STATUS_FINISHED)
+        .sumBy(m => m.quotations[0].aa)
+    })
+}
+)
+
+declareComputedField('adminDashboard', 'tipi_commission_ca_total',
+() => {
+  return loadFromDb({model: 'mission', fields:['name','status','quotations.aa','job.user.coaching','job.user.coaching']})
+    .then(missions => {
+      return lodash(missions)
+        .filter(m => m.status==MISSION_STATUS_FINISHED)
+        .filter(m => m.job?.user?.coaching==COACH_ALLE)
+        .sumBy(m => m.quotations[0].aa)
+    })
+}
+)
+
+declareComputedField('adminDashboard', 'tini_commission_ca_total',
+() => {
+  return loadFromDb({model: 'mission', fields:['status','quotations.aa','job.user.coaching']})
+    .then(missions => {
+      return lodash(missions)
+        .filter(m => m.status==MISSION_STATUS_FINISHED)
+        .filter(m => m.job?.user?.coaching!=COACH_ALLE)
+        .sumBy(m => m.quotations[0].aa)
+    })
+}
+)
+
+declareComputedField('adminDashboard', 'customer_commission_ca_total',
+() => {
+  return loadFromDb({model: 'mission', fields:['status','quotations.mer']})
+    .then(missions => {
+      return lodash(missions)
+        .filter(m => m.status==MISSION_STATUS_FINISHED)
+        .sumBy(m => m.quotations[0].mer)
+    })
+}
+)
+
+declareComputedField('adminDashboard', 'ti_registered_today', () =>
+  User.find({role:ROLE_TI}, {[CREATED_AT_ATTRIBUTE]:1})
+    .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length))
+declareComputedField('adminDashboard', 'customers_registered_today', () =>
+  User.find({role:ROLE_COMPANY_BUYER}, {[CREATED_AT_ATTRIBUTE]:1})
+  .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length))
+
 
 /** Upsert ONLY adminDashboard */
 AdminDashboard.exists({})

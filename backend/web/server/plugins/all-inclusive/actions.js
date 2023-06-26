@@ -1,4 +1,9 @@
 const {
+  getHostName,
+  getProductionUrl,
+  paymentPlugin
+} = require('../../../config/config')
+const {
   sendAccountCreatedToAdmin,
   sendAccountCreatedToCustomer,
   sendAccountCreatedToTIPI,
@@ -8,6 +13,8 @@ const {
   sendForgotPassword,
   sendQuotationSentToCustomer
 } = require('./mailing')
+const Contact = require('../../models/Contact')
+const axios = require('axios')
 const {
   getHostUrl,
   getProductionUrl,
@@ -80,12 +87,11 @@ const alle_accept_quotation = ({value, paymentSuccess, paymentFailure}, user) =>
   return isActionAllowed({action:'alle_accept_quotation', dataId:value, user})
     .then(ok => {
       if (!ok) {return false}
-      return loadFromDb({model: 'mission', id:value, fields:['job.user','quotations.total']})
+      return loadFromDb({model: 'mission', id:value, fields:['job.user','customer_total']})
     })
     .then(([mission]) => {
-      console.log(JSON.stringify(mission.quotations, null, 2))
-      const [success_url, failure_url]=[paymentSuccess, paymentFailure].map(p => `${getHostUrl()}${p}`)
-      return paymentPlugin.createPayment({source_user: user, amount:mission.quotations[0].total, fee:0,
+      const [success_url, failure_url]=[paymentSuccess, paymentFailure].map(p => `https://${getHostName()}/${p}`)
+      return paymentPlugin.createPayment({source_user: user, amount:mission.customer_total, fee:0,
         destination_user: mission.job.user, description: 'Un test',
         success_url, failure_url,
     })
@@ -99,6 +105,12 @@ const alle_accept_quotation = ({value, paymentSuccess, paymentFailure}, user) =>
 }
 
 addAction('alle_accept_quotation', alle_accept_quotation)
+
+const alle_can_accept_quotation = ({value, paymentSuccess, paymentFailure}, user) => {
+  return isActionAllowed({action:'alle_accept_quotation', dataId:value, user})
+}
+
+addAction('alle_can_accept_quotation', alle_can_accept_quotation)
 
 const alle_refuse_quotation = ({value}, user) => {
   return isActionAllowed({action:'alle_refuse_quotation', dataId:value?._id, user})
@@ -121,6 +133,12 @@ addAction('alle_show_quotation', alle_show_quotation)
 
 const alle_edit_quotation = ({value}, user) => {
   return isActionAllowed({action:'alle_edit_quotation', dataId:value?._id, user})
+    .then(allowed => {
+      if (!allowed) {
+        return false
+      }
+      return Quotation.findOne({mission: value?._id})
+    })
 }
 addAction('alle_edit_quotation', alle_edit_quotation)
 

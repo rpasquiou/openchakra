@@ -1,9 +1,10 @@
 const { isEmailOk } = require('../../../../utils/sms')
-
 const Validator = require('validator')
-
 const { isPhoneOk } = require('../../../../utils/sms')
 const { idEqual } = require('../../../utils/database')
+const { MIN_AGE } = require('../consts')
+const moment = require('moment')
+
 const {
   AVAILABILITY,
   COACHING,
@@ -27,6 +28,12 @@ const bcrypt=require('bcryptjs')
 const { schemaOptions } = require('../../../utils/schemas')
 const lodash=require('lodash')
 const IBANValidator = require('iban-validator-js')
+
+const isBirthdayOk = birthday => {
+  if (!birthday) return false
+  const years=moment().diff(moment(birthday), 'years')
+  return years>=MIN_AGE
+}
 
 const Schema = mongoose.Schema;
 
@@ -69,6 +76,7 @@ const UserSchema = new Schema({
   },
   birthday: {
     type: Date,
+    validate: [value => isBirthdayOk(value), `Vous devez avoir au moins ${MIN_AGE} ans pour vous inscrire`],
     required: [function() { return this.role==ROLE_TI}, 'La date de naissance est obligatoire'],
   },
   picture: {
@@ -340,15 +348,53 @@ UserSchema.virtual("comments_note").get(function() {
 })
 
 UserSchema.virtual("revenue").get(function() {
-  return 0
+  if (this.role!=ROLE_TI) {
+    return 0
+  }
+  return lodash(this.missions)
+      .filter(m => [MISSION_STATUS_FINISHED].includes(m.status))
+      .sumBy(m => m.quotations[0].ti_total)
 })
 
 UserSchema.virtual("revenue_to_come").get(function() {
-  return 0
+  if (this.role!=ROLE_TI) {
+    return 0
+  }
+  return lodash(this.missions)
+      .filter(m => m.status==MISSION_STATUS_QUOT_ACCEPTED)
+      .sumBy(m => m.quotations[0].ti_total)
 })
 
 UserSchema.virtual("accepted_quotations_count").get(function() {
   return 0
+})
+
+// Customer spent
+UserSchema.virtual("spent").get(function() {
+  if (this.role!=ROLE_COMPANY_BUYER) {
+    return 0
+  }
+  return lodash(this.missions)
+      .filter(m => m.status==MISSION_STATUS_FINISHED)
+      // TODO: finished mission should have a quotations
+      .sumBy(m => m.quotations[0]?.customer_total || 0)
+})
+
+UserSchema.virtual("spent_to_come").get(function() {
+  if (this.role!=ROLE_COMPANY_BUYER) {
+    return 0
+  }
+  return lodash(this.missions)
+    .filter(m => [MISSION_STATUS_QUOT_ACCEPTED].includes(m.status))
+    // TODO: finished mission should have a quotations
+    .sumBy(m => m.quotations[0]?.customer_total || 0)
+})
+
+UserSchema.virtual("pending_bills").get(function() {
+  return lodash(this.missions)
+    .filter(m => [MISSION_STATUS_BILL_SENT].includes(m.status))
+    // TODO: finished mission should have a quotations
+    .sumBy(m => m.quotations[0]?.customer_total || 0)
 })
 
 UserSchema.virtual("profile_shares_count").get(function() {
