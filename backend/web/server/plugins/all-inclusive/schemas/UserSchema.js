@@ -413,4 +413,8 @@ UserSchema.virtual('pinned_jobs', {localField: 'tagada', foreignField: 'tagada'}
 })
 
 
+UserSchema.virtual('offer', {localField:'tagada', foreignField: 'tagada'}).get(function() {
+  return this.company?.offers?.[0] || null
+})
+
 module.exports = UserSchema;
