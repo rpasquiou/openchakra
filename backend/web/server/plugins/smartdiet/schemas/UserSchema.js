@@ -193,10 +193,18 @@ UserSchema.virtual("_all_contents", {
   foreignField: "dummy" // is equal to foreignField
 });
 
-
-// Computed virtual
-UserSchema.virtual('contents', {localField: '_id', foreignField: '_id'}).get(function () {
-  return null
+UserSchema.virtual('contents', {
+  ref: "content", // The Model to use
+  localField: "dummy", // Find in Model, where localField
+  foreignField: "dummy", // is equal to foreignField
+  options: {
+    match: function() {
+      const all_targets=[...this.activity_targets,...this.health_targets,this.home_target,...this.objective_targets,...this.specificity_targets]
+      return {
+        $or: [{default: true}, {targets: {$in: all_targets}}]
+      }
+    }
+  }
 })
 
 UserSchema.virtual("available_groups", {localField: 'id', foreignField: 'id'}).get(function () {

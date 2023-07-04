@@ -14,9 +14,6 @@ const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const MONGOOSE_OPTIONS = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  // poolSize: 10,
-  useCreateIndex: true,
-  useFindAndModify: false,
 }
 
 // Utilities
@@ -71,6 +68,7 @@ const getAttributeCaracteristics = (modelName, att) => {
   const multiple = att.instance == 'Array'
   const suggestions = att.options?.suggestions
   const baseData = att.caster || att
+  // TODO: fix type ObjectID => Object
   const type =
     baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
   const ref = baseData.instance == 'ObjectID'
