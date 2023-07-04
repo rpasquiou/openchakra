@@ -166,7 +166,7 @@ const postPutData = ({model, id, attribute, value, user}) => {
         }
       })
   }
-  return Promise.resolve(data)
+  return Promise.resolve(null)
 }
 
 setPostPutData(postPutData)
