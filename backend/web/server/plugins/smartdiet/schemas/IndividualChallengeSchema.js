@@ -47,8 +47,9 @@ IndividualChallengeSchema.virtual('type', {localField: 'tagada', foreignField: '
   return EVENT_IND_CHALLENGE
 })
 
-IndividualChallengeSchema.virtual('trophy_picture').get(() => {
+IndividualChallengeSchema.virtual('trophy_picture').get(function()  {
   return ''
 })
+/* eslint-enable prefer-arrow-callback */
 
 module.exports = IndividualChallengeSchema
