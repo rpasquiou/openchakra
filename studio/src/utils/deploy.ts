@@ -20,8 +20,8 @@ const cleanPages = (pages:PageSettings[]) => {
   return clean(pages.map(page => `${normalizePageName(page.pageName)}.js`))
 }
 
-export const deploy = (state: ProjectState, models: any) => {
-  const pages = Object.values(state.pages)
+export const deploy = (pageIds, state: ProjectState, models: any) => {
+  const pages = Object.values(state.pages).filter(p => pageIds.includes(p.pageId))
   return Promise.resolve(validateProject(state))
     .then(res => {
       if (res) {
