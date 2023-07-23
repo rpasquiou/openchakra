@@ -75,6 +75,18 @@ export const forceDataModelAllInclusive = () => {
   })
 }
 
+export const forceDataModelDeck = () => {
+  jest.mock('../config/config', () => {
+    const originalModule = jest.requireActual('../config/config')
+
+    return {
+      __esModule: true,
+      ...originalModule,
+      getDataModel: jest.fn(() => 'deck'),
+    }
+  })
+}
+
 // Creates the regular expression matching model attributes validation fail
 export const buildAttributesException = attributes => {
   return new RegExp(attributes.map(att => `(?=.*${att})`).join(''))

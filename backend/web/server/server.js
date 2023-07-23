@@ -93,6 +93,7 @@ require('./models/Coaching')
 require('./models/Consultation')
 require('./models/CoachingQuestion')
 require('./models/UserCoachingQuestion')
+const DECK=require('./models/Deck')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

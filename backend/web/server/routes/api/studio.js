@@ -123,6 +123,26 @@ router.get('/roles', (req, res) => {
   return res.json(ROLES)
 })
 
+router.get('/contents/:model/:id/:field', (req, res) => {
+  const model = req.params.model
+  const id = req.params.id
+  let field = req.params.field
+  const user=req.user
+
+  console.log(`GET contents for ${model}/${id}/${field}`)
+
+  return loadFromDb({model, fields:[field], id, user, params:{}})
+    .then(data => {
+      console.log(`GET contents ${model}/${id}/${field}: data sent`)
+      res.setHeader('Content-Type', 'image/svg+xml')
+      return res.send(data[0][field])
+    })
+    .catch(err => {
+      console.error(err)
+      return res.send('')
+    })
+})
+
 router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
   const {action}=req.params
   const query=lodash.mapValues(req.query, v => {try{return JSON.parse(v)} catch(e) {return v}})
@@ -240,7 +260,7 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const action = req.body.action
   const actionFn = ACTIONS[action]
   if (!actionFn) {
@@ -375,7 +395,8 @@ router.post('/contact', (req, res) => {
     })
 })
 
-router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
+//router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/:model', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
@@ -443,6 +464,11 @@ const loadFromRequest = (req, res) => {
 
 router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   req.params.model='jobUser'
+  return loadFromRequest(req, res)
+})
+
+router.get('/deck/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='deck'
   return loadFromRequest(req, res)
 })
 
