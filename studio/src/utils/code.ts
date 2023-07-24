@@ -51,9 +51,11 @@ export const getPageComponentName = (
 }
 
 const isDynamicComponent = (comp: IComponent) => {
-  return !!comp.props.dataSource || !!comp.props.subDataSource
+  return (
+    !!comp.props.dataSource || !!comp.props.subDataSource
     || (!!comp.props.action && !CONTAINER_TYPE.includes(comp.type))
     || (comp.props.model && comp.props.attribute)
+  ) && comp.type != 'Filter'
 }
 
 const isMaskableComponent = (comp: IComponent) => {

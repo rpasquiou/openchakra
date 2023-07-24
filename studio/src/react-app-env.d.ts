@@ -36,6 +36,7 @@ type ComponentType =
   | 'DataProvider'
   | 'Divider'
   | 'Editable'
+  | 'Filter'
   | 'Flex'
   | 'FormControl'
   | 'FormLabel'

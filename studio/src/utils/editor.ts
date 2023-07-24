@@ -25,6 +25,7 @@ export const COMPONENTS: (ComponentType | MetaComponentType)[] = [
   'Date',
   'DataProvider',
   'Divider',
+  'Filter',
   'Flex',
   'FormControl',
   'FormLabel',

@@ -18,6 +18,7 @@ import AvatarPreview, {
 } from '~components/editor/previews/AvatarPreview'
 import ButtonPreview from '~components/editor/previews/ButtonPreview'
 import NumberInputPreview from '~components/editor/previews/NumberInputPreview'
+import FilterPreview from '~components/editor/previews/FilterPreview'
 import IconCheckPreview from '~components/editor/previews/IconCheckPreview'
 import RadioGroupPreview from '~components/editor/previews/RadioGroupPreview'
 import CheckboxGroupPreview from '~components/editor/previews/CheckboxGroupPreview'
@@ -199,6 +200,8 @@ const ComponentPreview: React.FC<{
       return <NumberInputPreview component={component} />
     case 'IconCheck':
       return <IconCheckPreview component={component} />
+    case 'Filter':
+      return <FilterPreview component={component} />
     default:
       return null
   }

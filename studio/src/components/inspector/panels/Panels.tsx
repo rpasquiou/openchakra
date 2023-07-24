@@ -85,9 +85,9 @@ const Panels: React.FC<{ component: IComponent; isRoot: boolean }> = ({
   if (compPanel) {
     return (
       <>
-        {React.createElement(compPanel)}
         <VisibilityPanel />
-        <DataSourcePanel />
+        {React.createElement(compPanel)}
+        {allowsDataSource(component) && <DataSourcePanel />}
       </>
     )
   }
