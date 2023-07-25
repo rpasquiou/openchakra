@@ -22,12 +22,11 @@ const FilterPanel: React.FC = () => {
       removeValue('filterType')
     }
     else {
+      setValue('filterType', attr.type)
       if (attr.enumValues) {
-        setValue('filterType', 'Enum')
         setValue('enumValues', attr.enumValues)
       }
       else {
-        setValue('filterType', attr.type)
         removeValue('enumValues')
       }
     }

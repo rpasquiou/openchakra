@@ -32,6 +32,14 @@ const BooleanFilter = props => {
   )
 }
 
+const NumberFilter = props => {
+  return (
+    <>
+      <h1>Number filter</h1>
+    </>
+  )
+}
+
 const DateFilter = props => {
   return (
     <>
@@ -54,8 +62,15 @@ const Filter = ({
       {...props}
       >
       <h1>Filter for {model}.{attribute}</h1>
-    {children}
-    {filterType=='Enum' && <EnumFilter {...props} />}
+      {children}
+      {props.enumValues?
+        <EnumFilter {...props} />
+        : filterType=='String' ? <StringFilter {...props} />
+        : filterType=='Number' ? <NumberFilter {...props} />
+        : filterType=='Boolean' ? <BooleanFilter {...props} />
+        : filterType=='Date' ? <DateFilter {...props} />
+        : <h1>Unknown filter type:${filterType}</h1>
+    }
     </FormLabel>
 }
 
