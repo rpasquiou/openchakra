@@ -13,13 +13,14 @@ const Deck = require('../../server/models/Deck')
 
 const DATA={
   name: 'Test',
-  length: 680,
+  length: 650,
   width: 470,
   quincunx: false,
-  beams_length: 240,
+  beam_length: 240,
+  beam_width: 14.5,
   piers_spacing: 50,
   planks_spacing: 0.8,
-  plank_length: 240, 
+  plank_length: 240,
   plank_width: 14.4,
 }
 

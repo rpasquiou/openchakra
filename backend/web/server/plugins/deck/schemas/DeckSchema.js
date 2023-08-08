@@ -85,7 +85,7 @@ DeckSchema.virtual('beams_svg_contents').get(function() {
 })
 
 DeckSchema.methods.toString = function() {
-  return `${this.name}:L${this.length}xl${this.width},lames L${this.plank_length}xl${this.plank_width}, ${this.planks_spacing} entre les lames, ${this.piers_spacing} entre les plots ${this.quincunx ? 'en quinconce': 'en carré'}
+  return `${this.name}:L ${this.length} x l ${this.width},lames L ${this.plank_length} x l ${this.plank_width}, ${this.planks_spacing} entre les lames, ${this.piers_spacing} entre les plots ${this.quincunx ? 'en quinconce': 'en carré'}
  lames nécessaires:${this.planks_count}
  lambourdes nécessaires:${this.beams_count}
  plots nécessaires:${this.piers_count}`
