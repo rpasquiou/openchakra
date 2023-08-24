@@ -17,7 +17,7 @@ const formatDate = date => {
 }
 
 mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
-  .then(() => User.find())
+  .then(() => User.find({}, 'creation_date firstname lastname email phone gender birthday active'))
   .then(users => {
     const res=users.map(m => {
       return `${formatDate(m.creation_date)};${m.firstname};${m.lastname};${m.email};${m.phone};${GENDER[m.gender]};${formatDate(m.birthday)};${m.active}`
@@ -27,6 +27,6 @@ mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
     process.exit(0)
   })
   .catch(err => {
-     process.exit(1)
      console.error(err)
+     process.exit(1)
   })
