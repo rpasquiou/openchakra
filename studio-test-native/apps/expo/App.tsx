@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react'
+import React, {useCallback, useEffect, useState, useRef} from 'react'
 import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from 'react-native-safe-area-context';
 import {WebView} from 'react-native-webview'
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +13,8 @@ const App = () => {
 
   const [currentUrl, setCurrentUrl]=useState('')
   const [currentUser, setCurrentUser]=useState(null)  
+  const webViewRef = React.useRef(null)
+  const onContentProcessDidTerminate = () => webViewRef.current?.reload()
 
   const getCurrentUser = useCallback(async() => {
     await axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
@@ -45,6 +47,7 @@ const App = () => {
               mediaPlaybackRequiresUserAction={true}
               source={{uri: BASE_URL_TO_POINT}}
               sharedCookiesEnabled={true}
+              onContentProcessDidTerminate={onContentProcessDidTerminate}
               onNavigationStateChange={({url}) => setCurrentUrl(url)}
             />
           </KeyboardAvoidingView>
