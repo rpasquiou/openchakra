@@ -5,7 +5,8 @@ const {
   ISSUE_STATUS,
   ROLES
 } = require('./consts')
-const {declareVirtualField, declareEnumField, setPreprocessGet}=require('../../utils/database')
+const {ForbiddenError}=require('../../utils/errors')
+const {declareVirtualField, declareEnumField, setPreprocessGet, setPreCreateData}=require('../../utils/database')
 
 declareVirtualField({model: 'loggedUser', field: 'password2', type: 'String'})
 declareVirtualField({model: 'user', field: 'password2', type: 'String'})
@@ -33,3 +34,10 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 }
 
 setPreprocessGet(preprocessGet)
+
+const preCreate = ({model, params, user}) => {
+  return Promise.reject('interdit')
+  return Promise.resolve({model, params})
+}
+
+setPreCreateData(preCreate)

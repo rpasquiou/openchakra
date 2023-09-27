@@ -709,6 +709,17 @@ const loadFromDb = ({model, fields, id, user, params}) => {
 
 }
 
+const createInDb = ({model, params, user}) => {
+  return callPreCreateData({model, params, user})
+    .then(({model, params}) => {
+      return mongoose.connection.models[model]
+        .create([params], {runValidators: true})
+        .then(([data]) => {
+          return callPostCreateData({model, params, data, user})
+        })
+    })
+}
+
 const DATA_IMPORT_FN={}
 
 // Imports data for model. Delegated to plugins
@@ -773,4 +784,5 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  createInDb,
 }

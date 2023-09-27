@@ -437,25 +437,10 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
 router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
-  const context= req.query.context
   const user=req.user
 
-  params=model=='order' && context ? {...params, booking: context}:params
-  params=model=='booking' ? {...params, booking_user: user}:params
-
-  if (!model) {
-    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
-  }
-
-  return callPreCreateData({model, params, user})
-    .then(({model, params}) => {
-      return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
-        .then(([data]) => {
-          return callPostCreateData({model, params, data, user})
-        })
-        .then(data => res.json(data))
-    })
+  return createInDb({model, params, user})
+    .then(data => res.json(data))
 })
 
 const putFromRequest = (req, res) => {
