@@ -29,6 +29,7 @@ const DataSourcePanel: React.FC = () => {
   const dataSource = usePropsSelector('dataSource')
   const model = usePropsSelector('model')
   const attribute = usePropsSelector('attribute')
+  const groupByAttribute = usePropsSelector('groupByAttribute')
   const subDataSource = usePropsSelector('subDataSource')
   const subAttribute = usePropsSelector('subAttribute')
   const subAttributeDisplay = usePropsSelector('subAttributeDisplay')
@@ -48,6 +49,7 @@ const DataSourcePanel: React.FC = () => {
   const [providers, setProviders] = useState<IComponent[]>([])
   const [contextProviders, setContextProviders] = useState<IComponent[]>([])
   const [attributes, setAttributes] = useState({})
+  const [groupByAttributes, setGroupByAttributes] = useState({})
   const [subAttributes, setSubAttributes] = useState({})
   const [subAttributesDisplay, setSubAttributesDisplay] = useState({})
   const [filterAttributes, setFilterAttributes] = useState({})
@@ -160,6 +162,24 @@ const DataSourcePanel: React.FC = () => {
     }
   }, [components])
 
+  // Available "group by" attribtes
+  useEffect(() => {
+    if ((lodash.isEmpty(groupByAttributes)) && !lodash.isEmpty(groupByAttribute)) {
+      removeValue('groupByAttribute')
+    }
+  }, [groupByAttributes])
+
+  useEffect(() => {
+    const def=attributes[attribute]
+    if (def && def.multiple && def.ref) {
+      const allAttributes=models[def.type].attributes
+      const selected=lodash.pickBy(allAttributes,
+        (att, attName) => !att.ref && !att.multiple && !attName.includes('.')
+      )
+      setGroupByAttributes(selected)
+    }
+  }, [attribute, attributes])
+
   const onDataSourceOrModelChange = ev => {
     const {name, value}=ev.target
     console.log(name, value)
@@ -268,6 +288,24 @@ const DataSourcePanel: React.FC = () => {
               {Object.keys(attributes).map((attribute, i) => (
                 <option key={`attr${i}`} value={attribute}>
                   {attribute}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+        {groupByAttributes && (
+          <FormControl htmlFor="groupByAttribute" label="Group by">
+            <Select
+              id="groupByAttribute"
+              onChange={setValueFromEvent}
+              name="groupByAttribute"
+              size="xs"
+              value={groupByAttribute || ''}
+            >
+              <option value={undefined}></option>
+              {Object.keys(groupByAttributes).map((attr, i) => (
+                <option key={`attr${i}`} value={attr}>
+                  {attr}
                 </option>
               ))}
             </Select>

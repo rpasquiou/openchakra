@@ -178,11 +178,15 @@ const buildBlock = ({
       // Force TabList && TabPanel's dataSource if parent Tabs has one
       if (['TabList', 'TabPanels'].includes(childComponent.type)) {
         const tabParent=getParentOfType(components, childComponent, 'Tabs')
+        const groupByAttribute=tabParent?.props.groupByAttribute
         if (tabParent?.props.dataSource) {
           childComponent.props.dataSource=tabParent?.props.dataSource
         }
         if (tabParent?.props.attribute) {
           childComponent.props.attribute=tabParent?.props.attribute
+        }
+        if (tabParent?.props.groupByAttribute) {
+          childComponent.props[childComponent.type=='TabList' ? 'groupByKeys' : 'groupByValues']=tabParent?.props.groupByAttribute
         }
       }
       const dataProvider = components[childComponent.props.dataSource]
