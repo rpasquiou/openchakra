@@ -5,7 +5,7 @@ let ShopSchema=null
 
 try {
   ShopSchema=require(`../plugins/${getDataModel()}/schemas/ShopSchema`)
-  ShopSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ShopSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

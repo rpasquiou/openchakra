@@ -5,7 +5,7 @@ let CommissionSchema=null
 
 try {
   CommissionSchema=require(`../plugins/${getDataModel()}/schemas/CommissionSchema`)
-  CommissionSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(CommissionSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

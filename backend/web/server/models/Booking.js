@@ -5,7 +5,7 @@ let BookingSchema=null
 
 try {
   BookingSchema=require(`../plugins/${getDataModel()}/schemas/BookingSchema`)
-  BookingSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(BookingSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

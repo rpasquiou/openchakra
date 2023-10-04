@@ -5,7 +5,7 @@ let PaymentSchema=null
 
 try {
   PaymentSchema=require(`../plugins/${getDataModel()}/schemas/PaymentSchema`)
-  PaymentSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(PaymentSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

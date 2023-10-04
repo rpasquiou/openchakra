@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let OfferSchema=null
 
 try {
   OfferSchema=require(`../plugins/${getDataModel()}/schemas/OfferSchema`)
-  OfferSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(OfferSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

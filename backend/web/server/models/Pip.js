@@ -1,12 +1,12 @@
-const mongooseLeanVirtuals=require('mongoose-lean-virtuals')
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let PipSchema=null
 
 try {
   PipSchema=require(`../plugins/${getDataModel()}/schemas/PipSchema`)
-  PipSchema.plugin(mongooseLeanVirtuals)
+  customizeSchema(PipSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

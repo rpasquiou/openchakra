@@ -5,7 +5,7 @@ let BillingSchema=null
 
 try {
   BillingSchema=require(`../plugins/${getDataModel()}/schemas/BillingSchema`)
-  BillingSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(BillingSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

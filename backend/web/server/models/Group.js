@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let GroupSchema=null
 
 try {
   GroupSchema=require(`../plugins/${getDataModel()}/schemas/GroupSchema`)
-  GroupSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(GroupSchema)
 }
 catch(err) {
   GroupSchema=null

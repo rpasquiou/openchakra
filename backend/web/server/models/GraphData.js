@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let GraphDataSchema=null
 
 try {
   GraphDataSchema=require(`../plugins/${getDataModel()}/schemas/GraphDataSchema`)
-  GraphDataSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(GraphDataSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

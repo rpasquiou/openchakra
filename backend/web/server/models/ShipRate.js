@@ -5,7 +5,7 @@ let ShipRateSchema=null
 
 try {
   ShipRateSchema=require(`../plugins/${getDataModel()}/schemas/ShipRateSchema`)
-  ShipRateSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ShipRateSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

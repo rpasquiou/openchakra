@@ -5,7 +5,7 @@ let GuestSchema=null
 
 try {
   GuestSchema=require(`../plugins/${getDataModel()}/schemas/GuestSchema`)
-  GuestSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(GuestSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

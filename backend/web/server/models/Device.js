@@ -5,7 +5,7 @@ let DeviceSchema=null
 
 try {
   DeviceSchema=require(`../plugins/${getDataModel()}/schemas/DeviceSchema`)
-  DeviceSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(DeviceSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

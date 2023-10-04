@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let RangeSchema=null
 
 try {
   RangeSchema=require(`../plugins/${getDataModel()}/schemas/RangeSchema`)
-  RangeSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(RangeSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

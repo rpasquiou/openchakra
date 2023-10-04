@@ -5,7 +5,7 @@ let ChatRoomSchema=null
 
 try {
   ChatRoomSchema=require(`../plugins/${getDataModel()}/schemas/ChatRoomSchema`)
-  ChatRoomSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ChatRoomSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

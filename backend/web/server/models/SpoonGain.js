@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let SpoonGainSchema=null
 
 try {
   SpoonGainSchema=require(`../plugins/${getDataModel()}/schemas/SpoonGainSchema`)
-  SpoonGainSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(SpoonGainSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

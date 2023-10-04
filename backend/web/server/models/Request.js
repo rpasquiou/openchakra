@@ -5,7 +5,7 @@ let RequestSchema=null
 
 try {
   RequestSchema=require(`../plugins/${getDataModel()}/schemas/RequestSchema`)
-  RequestSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(RequestSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

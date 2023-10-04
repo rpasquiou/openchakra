@@ -5,7 +5,7 @@ let ExperienceSchema=null
 
 try {
   ExperienceSchema=require(`../plugins/${getDataModel()}/schemas/ExperienceSchema`)
-  ExperienceSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ExperienceSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

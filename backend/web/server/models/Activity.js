@@ -5,7 +5,7 @@ let ActivitySchema=null
 
 try {
   ActivitySchema=require(`../plugins/${getDataModel()}/schemas/ActivitySchema`)
-  ActivitySchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ActivitySchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

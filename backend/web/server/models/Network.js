@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let NetworkSchema=null
 
 try {
   NetworkSchema=require(`../plugins/${getDataModel()}/schemas/NetworkSchema`)
-  NetworkSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(NetworkSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

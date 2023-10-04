@@ -5,7 +5,7 @@ let ReviewSchema=null
 
 try {
   ReviewSchema=require(`../plugins/${getDataModel()}/schemas/ReviewSchema`)
-  ReviewSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ReviewSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -5,7 +5,7 @@ let SpoonSchema=null
 
 try {
   SpoonSchema=require(`../plugins/${getDataModel()}/schemas/SpoonSchema`)
-  SpoonSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(SpoonSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

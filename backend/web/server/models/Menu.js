@@ -1,12 +1,12 @@
-const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
 const Event = require(`./Event`)
+const {customizeSchema}=require('../../server/utils/database')
 
 let Menu = null
 try {
   if (Event) {
     const MenuSchema = require(`../plugins/${getDataModel()}/schemas/MenuSchema`)
-    MenuSchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(MenuSchema)
     Menu = Event.discriminator('menu', MenuSchema)
   }
 }

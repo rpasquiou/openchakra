@@ -7,8 +7,40 @@ const {
   getAgenda,
   getAppointmentTypes,
   getAppointmentVisioLink,
-  upsertAccount
+  upsertAccount,
 } = require('../agenda/smartagenda')
+const Category = require('../../models/Category')
+const {delayPromise} = require('../../utils/concurrency')
+const {
+  getSmartAgendaConfig,
+  isDevelopment,
+} = require('../../../config/config')
+const {
+  declareComputedField,
+  declareEnumField,
+  declareVirtualField,
+  differenceSet,
+  getModel,
+  idEqual,
+  loadFromDb,
+  setFilterDataUser,
+  setImportDataFunction,
+  setIntersects,
+  setPostCreateData,
+  setPostDeleteData,
+  setPostPutData,
+  setPreCreateData,
+  setPreprocessGet,
+  simpleCloneModel,
+} = require('../../utils/database')
+const AppointmentType = require('../../models/AppointmentType')
+const Quizz = require('../../models/Quizz')
+const CoachingLogbook = require('../../models/CoachingLogbook')
+const {
+  CREATED_AT_ATTRIBUTE,
+  UPDATED_AT_ATTRIBUTE,
+} = require('../../../utils/consts')
+const UserQuizzQuestion = require('../../models/UserQuizzQuestion')
 const {
   ACTIVITY,
   ANSWER_STATUS,
@@ -58,49 +90,17 @@ const {
   TARGET_COACHING,
   TARGET_SPECIFICITY,
   TARGET_TYPE,
-  UNIT
+  UNIT,
 } = require('./consts')
 
-const Category = require('../../models/Category')
-const { delayPromise } = require('../../utils/concurrency')
-const {
-  getSmartAgendaConfig,
-  isDevelopment
-} = require('../../../config/config')
 const {
   sendDietPreRegister2Admin,
   sendDietPreRegister2Diet,
 } = require('./mailing')
-const {
-  declareComputedField,
-  declareEnumField,
-  declareVirtualField,
-  differenceSet,
-  getModel,
-  idEqual,
-  loadFromDb,
-  setFilterDataUser,
-  setImportDataFunction,
-  setIntersects,
-  setPostCreateData,
-  setPostDeleteData,
-  setPostPutData,
-  setPreCreateData,
-  setPreprocessGet,
-  simpleCloneModel,
-} = require('../../utils/database')
-const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
-const { importLeads } = require('./leads')
-const Quizz = require('../../models/Quizz')
-const CoachingLogbook = require('../../models/CoachingLogbook')
-const {
-  CREATED_AT_ATTRIBUTE,
-  UPDATED_AT_ATTRIBUTE
-} = require('../../../utils/consts')
-const UserQuizzQuestion = require('../../models/UserQuizzQuestion')
+const {importLeads} = require('./leads')
 const QuizzQuestion = require('../../models/QuizzQuestion')
-const { BadRequestError, ForbiddenError, NotFoundError } = require('../../utils/errors')
+const {BadRequestError, ForbiddenError, NotFoundError} = require('../../utils/errors')
 const SpoonGain = require('../../models/SpoonGain')
 const CoachingQuestion = require('../../models/CoachingQuestion')
 const CollectiveChallenge = require('../../models/CollectiveChallenge')
@@ -114,7 +114,7 @@ const {
   getUserKeySpoons,
   getUserKeyTrophy,
   getUserKeyReadContents,
-  getUserSpoons
+  getUserSpoons,
 } = require('./spoons')
 const mongoose = require('mongoose')
 require('lodash.product')
@@ -166,17 +166,17 @@ const preprocessGet = ({model, fields, id, user, params}) => {
   }
   if (model=='adminDashboard') {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
-      return Promise.resolve({model, fields, id, data:[]})
+      return Promise.resolve({model, fields, id, data: []})
     }
     if (user.role==ROLE_RH) {
       id=user.company._id
     }
     return computeStatistics({id, fields})
-      .then(stats => ({model, fields, id, data:[stats]}))
+      .then(stats => ({model, fields, id, data: [stats]}))
 
   }
   if (model=='menu' && params?.people_count) {
-    return loadFromDb({model:'menu', id, fields:[...(fields||[]), 'people_count']})
+    return loadFromDb({model: 'menu', id, fields: [...(fields||[]), 'people_count']})
       .then(menus => {
         const people_count=parseInt(params.people_count)
         const ratio=people_count/2
@@ -192,12 +192,12 @@ const preprocessGet = ({model, fields, id, user, params}) => {
                 ingredients: recipe.recipe.ingredients.map(ing => ({
                   ...ing,
                   quantity: ing.quantity*ratio,
-                }))
-              }
-            }))
+                })),
+              },
+            })),
           }
         })
-        return ({model, fields, id, data:computed})
+        return ({model, fields, id, data: computed})
       })
   }
   if (model=='conversation') {
@@ -206,7 +206,7 @@ const preprocessGet = ({model, fields, id, user, params}) => {
     }
 
     // Get non-group messages (i.e. no group attribute)
-    return Message.find({$and:[{$or: [{sender: user._id}, {receiver: user._id}]},{group: null}]})
+    return Message.find({$and: [{$or: [{sender: user._id}, {receiver: user._id}]}, {group: null}]})
       .populate({path: 'sender', populate: {path: 'company'}})
       .populate({path: 'receiver', populate: {path: 'company'}})
       .sort({CREATED_AT_ATTRIBUTE: 1})
@@ -247,12 +247,12 @@ const preCreate = ({model, params, user}) => {
   if (['team'].includes(model)) {
     return Team.findOne({name: params.name?.trim(), collectiveChallenge: params.collectiveChallenge}).populate('collectiveChallenge')
       .then(team => {
-        if (team) { throw new BadRequestError(`L'équipe ${params.name} existe déjà pour ce challenge`)}
+        if (team) { throw new BadRequestError(`L'équipe ${params.name} existe déjà pour ce challenge`) }
         return CollectiveChallenge.findById(params.collectiveChallenge)
       })
       .then(challenge => {
-        if (!challenge) { throw new BadRequestError(`Le challenge ${params.collectiveChallenge} n'existe pas`)}
-        if (moment().isAfter(moment(challenge.start_date))) { throw new BadRequestError(`Le challenge a déjà démarré`)}
+        if (!challenge) { throw new BadRequestError(`Le challenge ${params.collectiveChallenge} n'existe pas`) }
+        if (moment().isAfter(moment(challenge.start_date))) { throw new BadRequestError(`Le challenge a déjà démarré`) }
         return {model, params}
       })
   }
@@ -267,13 +267,13 @@ const preCreate = ({model, params, user}) => {
     }
     let customer_id
     if (user.role==ROLE_EXTERNAL_DIET) {
-      if (!params.user) {throw new BadRequestError(`L'id du patent doit être fourni`)}
+      if (!params.user) { throw new BadRequestError(`L'id du patent doit être fourni`) }
       customer_id=params.user
     }
-    else { //CUSTOMER
+    else { // CUSTOMER
       customer_id=user._id
     }
-    return loadFromDb({model: 'user', id: customer_id, fields:['latest_coachings.appointments', 'latest_coachings.remaining_credits','latest_coachings.appointment_type']})
+    return loadFromDb({model: 'user', id: customer_id, fields: ['latest_coachings.appointments', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type']})
       .then(([usr]) => {
         // Check remaining credits
         const latest_coaching=usr.latest_coachings[0]
@@ -287,7 +287,7 @@ const preCreate = ({model, params, user}) => {
         if (latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))) {
           throw new ForbiddenError(`Il existe déjà un rendez-vous à venir`)
         }
-        return {model, params:{coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params }}
+        return {model, params: {coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params}}
       })
   }
   return Promise.resolve({model, params})
@@ -301,21 +301,20 @@ const postPutData = ({model, params, id, value, data, user}) => {
       .then(appointment => logbooksConsistency(appointment.coaching._id))
       .then(() => params)
   }
-  if (model=='coaching' && params.quizz_templates)
-  {
+  if (model=='coaching' && params.quizz_templates) {
     const tpl_attribute='quizz_templates'
     const inst_attribute='quizz'
     return mongoose.models.coaching.findById(id).populate([
-        {path: tpl_attribute, populate:'questions'},
-        {path: inst_attribute, populate:{path: 'quizz', populate:'questions'}},
-      ])
+      {path: tpl_attribute, populate: 'questions'},
+      {path: inst_attribute, populate: {path: 'quizz', populate: 'questions'}},
+    ])
       .then(coaching => {
         const extraUserQuizz=coaching[inst_attribute].filter(uq => !coaching[tpl_attribute].some(q => idEqual(q._id, uq.quizz._id)))
         const missingUserQuizz=differenceSet(coaching[tpl_attribute], coaching[inst_attribute].map(uq => uq.quizz))
         const addQuizzs=Promise.all(missingUserQuizz.map(q => q.cloneAsUserQuizz(coaching)))
         return addQuizzs
-          .then(quizzs => mongoose.models.coaching.findByIdAndUpdate(id, {$addToSet:{[inst_attribute]: quizzs}}))
-          .then(() => mongoose.models.coaching.findByIdAndUpdate(id, {$pull:{[inst_attribute]: {$in: extraUserQuizz}}}))
+          .then(quizzs => mongoose.models.coaching.findByIdAndUpdate(id, {$addToSet: {[inst_attribute]: quizzs}}))
+          .then(() => mongoose.models.coaching.findByIdAndUpdate(id, {$pull: {[inst_attribute]: {$in: extraUserQuizz}}}))
           .then(() => Promise.all(extraUserQuizz.map(q => q.delete())))
           .then(() => mongoose.models.coaching.findById(id))
       })
@@ -341,8 +340,8 @@ USER_MODELS.forEach(m => {
       options: {ref: 'content'}},
   })
   declareVirtualField({model: m, field: 'contents', instance: 'Array',
-  requires: '_all_contents.comments_count,_all_targets,targets,_all_contents.targets,objective_targets,health_targets,activity_target,specificity_targets,home_target,_all_contents.search_text,_all_contents.key',
-  multiple: true,
+    requires: '_all_contents.comments_count,_all_targets,targets,_all_contents.targets,objective_targets,health_targets,activity_target,specificity_targets,home_target,_all_contents.search_text,_all_contents.key',
+    multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'content'}},
@@ -415,7 +414,7 @@ USER_MODELS.forEach(m => {
       options: {ref: 'menu'}},
   })
   declareVirtualField({model: m, field: 'collective_challenges', instance: 'Array', multiple: true,
-    requires:'company,company.collective_challenges',
+    requires: 'company,company.collective_challenges',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'collectiveChallenge'}},
@@ -496,9 +495,9 @@ USER_MODELS.forEach(m => {
       options: {ref: 'dietComment'}},
   })
   declareVirtualField({model: m, field: 'diet_average_note', instance: 'Number',
-    requires:'diet_comments._defined_notes'})
+    requires: 'diet_comments._defined_notes'})
   declareVirtualField({model: m, field: 'profile_progress', instance: 'Number',
-    requires:'diploma,adeli,siret,signed_charter'
+    requires: 'diploma,adeli,siret,signed_charter',
   })
   declareVirtualField({model: m, field: 'diet_objectives', instance: 'Array',
     multiple: true,
@@ -513,9 +512,8 @@ USER_MODELS.forEach(m => {
       options: {ref: 'coaching'}},
   })
   declareVirtualField({model: m, field: 'latest_coachings', instance: 'Array',
-  relies_on: 'coachings',
-  requires: 'coachings.all_logbooks.logbook.quizz.questions,coachings.all_logbooks.logbook.questions,coachings.all_logbooks.logbook.questions.quizz_question.available_answers,coachings.all_logbooks.logbook.questions.multiple_answers,\
-coachings.diet.availability_ranges.appointment_type',
+    relies_on: 'coachings',
+    requries: 'coachings',
     multiple: true,
     caster: {
       instance: 'ObjectID',
@@ -531,7 +529,7 @@ coachings.diet.availability_ranges.appointment_type',
     multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'coaching'}
+      options: {ref: 'coaching'},
     },
   })
   declareVirtualField({model: m, field: 'diet_appointments', instance: 'Array',
@@ -539,7 +537,7 @@ coachings.diet.availability_ranges.appointment_type',
     multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'appointment'}
+      options: {ref: 'appointment'},
     },
   })
   declareVirtualField({model: m, field: 'diet_patients', instance: 'Array',
@@ -547,7 +545,7 @@ coachings.diet.availability_ranges.appointment_type',
     multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'user'}
+      options: {ref: 'user'},
     },
   })
   declareEnumField({model: m, field: 'registration_warning', enumValues: REGISTRATION_WARNING})
@@ -556,10 +554,10 @@ coachings.diet.availability_ranges.appointment_type',
     multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'range'}
+      options: {ref: 'range'},
     },
   })
-  declareVirtualField({model: m, field: 'imc', instance: 'Number', requires:'measures,height'})
+  declareVirtualField({model: m, field: 'imc', instance: 'Number', requires: 'measures,height'})
 })
 // End user/loggedUser
 
@@ -623,27 +621,27 @@ declareVirtualField({model: 'dietComment', field: '_defined_notes', instance: 'N
 
 const getEventStatus = (user, params, data) => {
   return getModel(data._id, ['event', 'menu', 'webinar', 'individualChallenge', 'collectiveChallenge'])
-   .then(modelName => {
-     console.log(data._id, modelName)
-     if (modelName=='individualChallenge') {
-       // Past if failed or passed or skipped or routine
-       console.log(JSON.stringify(user, null, 2))
-       if (['passed_events','failed_events', 'skipped_events', 'routine_events'].some(att => {
-         return user[att].some(e => idEqual(e._d, data._id))
-       })) {
-         return APPOINTMENT_PAST
-       }
-       if (user.registered_events.some(e => idEqual(e.event._id, data._id))) {
-         return APPOINTMENT_CURRENT
-       }
-       return APPOINTMENT_TO_COME
-     }
-     const now=moment()
-     return now.isAfter(data.end_date) ? APPOINTMENT_PAST:
-     now.isBefore(data.start_date) ? APPOINTMENT_TO_COME:
-     APPOINTMENT_CURRENT
-   })
-   .catch(console.error)
+    .then(modelName => {
+      console.log(data._id, modelName)
+      if (modelName=='individualChallenge') {
+        // Past if failed or passed or skipped or routine
+        console.log(JSON.stringify(user, null, 2))
+        if (['passed_events', 'failed_events', 'skipped_events', 'routine_events'].some(att => {
+          return user[att].some(e => idEqual(e._d, data._id))
+        })) {
+          return APPOINTMENT_PAST
+        }
+        if (user.registered_events.some(e => idEqual(e.event._id, data._id))) {
+          return APPOINTMENT_CURRENT
+        }
+        return APPOINTMENT_TO_COME
+      }
+      const now=moment()
+      return now.isAfter(data.end_date) ? APPOINTMENT_PAST:
+        now.isBefore(data.start_date) ? APPOINTMENT_TO_COME:
+          APPOINTMENT_CURRENT
+    })
+    .catch(console.error)
   /**
   console.log(data._id)
   */
@@ -652,8 +650,8 @@ const getEventStatus = (user, params, data) => {
 const EVENT_MODELS=['event', 'collectiveChallenge', 'individualChallenge', 'menu', 'webinar']
 EVENT_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'type', instance: 'String', enumValues: EVENT_TYPE})
-  declareVirtualField({model: m, field: 'duration', instance: 'Number', requires:'start_date,end_date'})
-  declareVirtualField({model: m, field: 'status', instance: 'String', requires:'start_date,end_date', enumValues: APPOINTMENT_STATUS})
+  declareVirtualField({model: m, field: 'duration', instance: 'Number', requires: 'start_date,end_date'})
+  declareVirtualField({model: m, field: 'status', instance: 'String', requires: 'start_date,end_date', enumValues: APPOINTMENT_STATUS})
   declareComputedField(m, 'status', getEventStatus)
 })
 
@@ -776,8 +774,8 @@ declareEnumField({model: 'menuRecipe', field: 'day', enumValues: DAYS})
 declareEnumField({model: 'menuRecipe', field: 'period', enumValues: PERIOD})
 declareEnumField({model: 'menuRecipe', field: 'position', enumValues: MEAL_POSITION})
 
-declareVirtualField({model: 'userQuestion', field: 'index', instance: 'Number', requires:'survey.questions'})
-declareVirtualField({model: 'userQuestion', field: 'total', instance: 'Number', requires:'survey.questions'})
+declareVirtualField({model: 'userQuestion', field: 'index', instance: 'Number', requires: 'survey.questions'})
+declareVirtualField({model: 'userQuestion', field: 'total', instance: 'Number', requires: 'survey.questions'})
 
 declareVirtualField({model: 'pip', field: 'comments', instance: 'Array', multiple: true,
   caster: {
@@ -832,7 +830,7 @@ declareVirtualField({model: 'coaching', field: 'appointments', instance: 'Array'
     options: {ref: 'appointment'}},
 })
 declareVirtualField({model: 'coaching', field: 'remaining_credits', instance: 'Number',
-  requires: 'user.offer.coaching_credit,spent_credits,user.company.offers.coaching_credit,user.role'}
+  requires: 'user.offer.coaching_credit,spent_credits,user.company.offers.coaching_credit,user.role'},
 )
 declareVirtualField({model: 'coaching', field: 'spent_credits', instance: 'Number', requires: 'appointments'})
 declareVirtualField({model: 'coaching', field: 'questions', instance: 'Array', multiple: true,
@@ -851,40 +849,40 @@ declareVirtualField({model: 'coaching', field: 'available_diets', instance: 'Arr
 user.company,appointment_type,_all_diets.diet_coaching_enabled`,
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'user'}
+    options: {ref: 'user'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'current_objectives', instance: 'Array', multiple: true,
   requires: 'appointments.objectives',
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'quizzQuestion'}
+    options: {ref: 'quizzQuestion'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'quizz', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'userQuizz'}
+    options: {ref: 'userQuizz'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'progress', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'userQuizz'}
+    options: {ref: 'userQuizz'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'all_logbooks', instance: 'Array', multiple: true,
   requires: 'appointments.status',
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'coachingLogbook'}
+    options: {ref: 'coachingLogbook'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'logbooks', instance: 'Array', multiple: true,
   requires: 'appointments.status',
   caster: {
     instance: 'ObjectID',
-    options: {ref: 'logbookDay'}
+    options: {ref: 'logbookDay'},
   },
 })
 declareVirtualField({model: 'coaching', field: 'diet_availabilities', instance: 'Array',
@@ -910,31 +908,31 @@ declareVirtualField({model: 'adminDashboard', field: 'company', instance: 'compa
     instance: 'ObjectID',
     options: {ref: 'company'}},
 })
-declareVirtualField({model: 'adminDashboard', field:'webinars_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'average_webinar_registar', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'webinars_replayed_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'groups_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'group_active_members_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'average_group_answers', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'messages_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'users_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'active_users_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'leads_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'users_men_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'user_women_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'users_no_gender_count', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'weight_lost_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'weight_lost_average', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'centimeters_lost_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'centimeters_lost_average', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'age_average', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'webinars_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'average_webinar_registar', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'webinars_replayed_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'groups_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'group_active_members_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'average_group_answers', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'messages_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'users_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'active_users_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'leads_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'users_men_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'user_women_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'users_no_gender_count', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'weight_lost_total', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'weight_lost_average', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'centimeters_lost_total', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'centimeters_lost_average', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'age_average', instance: 'Number'})
 declareVirtualField({model: 'adminDashboard', field: `measures_evolution`, instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: {ref: 'measure'}},
 })
-declareVirtualField({model: 'adminDashboard', field:'imc_average', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field:'started_coachings', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'imc_average', instance: 'Number'})
+declareVirtualField({model: 'adminDashboard', field: 'started_coachings', instance: 'Number'})
 declareVirtualField({model: 'adminDashboard', field: `specificities_users`, instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
@@ -947,7 +945,7 @@ declareVirtualField({model: 'adminDashboard', field: `reasons_users`, instance: 
 })
 
 declareEnumField({model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE})
-declareVirtualField({model: 'foodDocument', field: 'url', type: 'String', requires:'manual_url,document'})
+declareVirtualField({model: 'foodDocument', field: 'url', type: 'String', requires: 'manual_url,document'})
 
 declareVirtualField({model: 'quizz', field: 'questions', instance: 'company', multiple: false,
   caster: {
@@ -963,14 +961,14 @@ declareVirtualField({model: 'quizzQuestion', field: 'available_answers', instanc
     options: {ref: 'item'}},
 })
 
-declareVirtualField({model: 'appointment', field:'order', instance: 'Number',
+declareVirtualField({model: 'appointment', field: 'order', instance: 'Number',
   requires: 'coaching.appointments',
 })
-declareVirtualField({model: 'appointment', field:'status', instance: 'String',
+declareVirtualField({model: 'appointment', field: 'status', instance: 'String',
   requires: 'start_date,end_date', enumValues: APPOINTMENT_STATUS,
 })
 
-declareVirtualField({model: 'userQuizzQuestion', field:'order', instance: 'Number',
+declareVirtualField({model: 'userQuizzQuestion', field: 'order', instance: 'Number',
   requires: 'userQuizz.questions',
 })
 declareVirtualField({model: 'userQuizzQuestion', field: 'multiple_answers',
@@ -979,28 +977,28 @@ declareVirtualField({model: 'userQuizzQuestion', field: 'multiple_answers',
     instance: 'ObjectID',
     options: {ref: 'item'}},
 })
-declareVirtualField({model: 'userQuizzQuestion', field:'answer_status', instance: 'String',
+declareVirtualField({model: 'userQuizzQuestion', field: 'answer_status', instance: 'String',
   requires: 'single_enum_answer,quizz_question.correct_answer', enumValues: ANSWER_STATUS,
 })
-declareVirtualField({model: 'userQuizzQuestion', field:'answer_message', instance: 'String',
-  requires: 'answer_status,quizz_question.success_message,quizz_question.error_message'
+declareVirtualField({model: 'userQuizzQuestion', field: 'answer_message', instance: 'String',
+  requires: 'answer_status,quizz_question.success_message,quizz_question.error_message',
 })
 
 
 declareEnumField({model: 'userQuizz', field: 'type', enumValues: QUIZZ_TYPE})
 
-declareVirtualField({model: 'range', field:'day', instance: 'Date',requires: 'start_date'})
-declareVirtualField({model: 'range', field:'range_str', instance: 'String',
+declareVirtualField({model: 'range', field: 'day', instance: 'Date', requires: 'start_date'})
+declareVirtualField({model: 'range', field: 'range_str', instance: 'String',
   requires: 'start_date,end_date',
 })
-declareVirtualField({model: 'range', field:'duration', instance: 'String',
+declareVirtualField({model: 'range', field: 'duration', instance: 'String',
   requires: 'appointment_type',
 })
-declareVirtualField({model: 'range', field:'end_date', instance: 'String',
+declareVirtualField({model: 'range', field: 'end_date', instance: 'String',
   requires: 'start_date,duration',
 })
 
-declareVirtualField({model: 'lead', field:'fullname', instance: 'String',
+declareVirtualField({model: 'lead', field: 'fullname', instance: 'String',
   requires: 'firstname,lastname',
 })
 declareVirtualField({model: 'lead', field: 'company',
@@ -1056,7 +1054,7 @@ const getMenuShoppingList = (user, params, data) => {
   const ingredients=lodash.flatten(data?.recipes.map(r => r.recipe?.ingredients).filter(v => !!v))
   const ingredientsGroup=lodash.groupBy(ingredients, i => i.ingredient._id)
   const result=lodash(ingredientsGroup)
-    .mapValues(ingrs=>({ingredient:ingrs[0].ingredient, quantity: lodash.sumBy(ingrs, 'quantity')}))
+    .mapValues(ingrs => ({ingredient: ingrs[0].ingredient, quantity: lodash.sumBy(ingrs, 'quantity')}))
     .values()
     .value()
   return Promise.resolve(result)
@@ -1065,7 +1063,7 @@ const getMenuShoppingList = (user, params, data) => {
 const getUserKeySpoonsStr = (user, params, data) => {
   return getUserKeySpoons(user, params, data)
     .then(count => {
-      return  `${count} cuillère${count > 1 ? 's' :''}`
+      return `${count} cuillère${count > 1 ? 's' :''}`
     })
 }
 
@@ -1074,7 +1072,7 @@ const getUserSurveysProgress = (user, params, data) => {
   const maxAnswer=lodash.maxBy(Object.keys(SURVEY_ANSWER), v => parseInt(v))
   return UserSurvey.find({user: user})
     .sort({[CREATED_AT_ATTRIBUTE]: -1})
-    .populate({path: 'questions', populate:{path: 'question'}})
+    .populate({path: 'questions', populate: {path: 'question'}})
     .lean({virtuals: true})
     // Keep surveys questions depending on current ky (==data)
     // TODO: try to filter in populate section above
@@ -1083,15 +1081,15 @@ const getUserSurveysProgress = (user, params, data) => {
     .then(surveys => surveys.filter(s => !lodash.isEmpty(s.questions)))
     // Keep questions progress
     .then(surveys => surveys.map(s => ({
-        date: s[CREATED_AT_ATTRIBUTE],
-        value_1: (lodash.sumBy(s.questions, q => parseInt(q.answer)||0)*100.0/(s.questions.length*maxAnswer)),
-      })))
+      date: s[CREATED_AT_ATTRIBUTE],
+      value_1: (lodash.sumBy(s.questions, q => parseInt(q.answer)||0)*100.0/(s.questions.length*maxAnswer)),
+    })))
     .catch(err => console.error(err))
 }
 
 const getUserContents = (user, params, data) => {
-  const user_targets=lodash([data.objective_targets,data.health_targets,
-    data.activity_target,data.specificity_targets,data.home_target])
+  const user_targets=lodash([data.objective_targets, data.health_targets,
+    data.activity_target, data.specificity_targets, data.home_target])
     .flatten()
     .filter(v => !!v)
     .value()
@@ -1100,7 +1098,7 @@ const getUserContents = (user, params, data) => {
 
 const getUserPassedChallenges = (user, params, data) => {
   return User.findById(user._id, 'passed_events')
-    .populate({path: 'passed_events', match:{"__t": "individualChallenge", key: data._id}})
+    .populate({path: 'passed_events', match: {'__t': 'individualChallenge', key: data._id}})
     .then(res => {
       return res.passed_events?.length || 0
     })
@@ -1108,7 +1106,7 @@ const getUserPassedChallenges = (user, params, data) => {
 
 const getUserPassedWebinars = (user, params, data) => {
   return User.findById(user._id, 'passed_events')
-    .populate({path: 'passed_events', match:{"__t": "webinar", key: data._id}})
+    .populate({path: 'passed_events', match: {'__t': 'webinar', key: data._id}})
     .then(res => {
       return res.passed_events?.length || 0
     })
@@ -1136,11 +1134,11 @@ declareComputedField('menu', 'shopping_list', getMenuShoppingList)
 declareComputedField('key', 'user_surveys_progress', getUserSurveysProgress)
 
 
-const postCreate = ({model, params, data,user}) => {
+const postCreate = ({model, params, data, user}) => {
   // Create company => duplicate offer
   if (model=='company') {
     return Offer.findById(params.offer)
-      .then(offer => Offer.create( {...simpleCloneModel(offer), company: data._id}))
+      .then(offer => Offer.create({...simpleCloneModel(offer), company: data._id}))
       .then(offer => data)
   }
   if (model=='booking') {
@@ -1151,8 +1149,8 @@ const postCreate = ({model, params, data,user}) => {
   }
   if (model=='collectiveChallenge') {
     return Pip.find()
-      .then (pips => Promise.all(pips.map(p => ChallengePip.create({pip:p, collectiveChallenge:data}))))
-      .then(()=> {
+      .then(pips => Promise.all(pips.map(p => ChallengePip.create({pip: p, collectiveChallenge: data}))))
+      .then(() => {
         ensureChallengePipsConsistency()
         return data
       })
@@ -1174,11 +1172,11 @@ const postCreate = ({model, params, data,user}) => {
   }
   if (['user'].includes(model) && data.role==ROLE_EXTERNAL_DIET) {
     return Promise.allSettled([
-      sendDietPreRegister2Diet({user:data}),
+      sendDietPreRegister2Diet({user: data}),
       User.find({role: {$in: [ROLE_ADMIN, ROLE_SUPER_ADMIN]}})
-        .then(admins => Promise.allSettled(admins.map(admin => sendDietPreRegister2Admin({user:data, admin}))))
+        .then(admins => Promise.allSettled(admins.map(admin => sendDietPreRegister2Admin({user: data, admin})))),
     ])
-    .then(() => data)
+      .then(() => data)
   }
   // Create coaching.progress if not present
   if (model=='appointment') {
@@ -1189,21 +1187,21 @@ const postCreate = ({model, params, data,user}) => {
         }
         return Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
           .then(q => {
-            if (!q)  {return console.error(`No progress quizz found`)}
+            if (!q) { return console.error(`No progress quizz found`) }
             return q.cloneAsUserQuizz()
           })
-          .then(uq => {coaching.progress=uq?._id; return coaching.save()})
-          .then(()=> data)
+          .then(uq => { coaching.progress=uq?._id; return coaching.save() })
+          .then(() => data)
       })
 
     const createSmartagendaAppointment=Appointment.findById(data._id)
-      .populate({path: 'coaching', populate:['user', 'diet']})
+      .populate({path: 'coaching', populate: ['user', 'diet']})
       .populate('appointment_type')
       .then(appt => {
         return createAppointment(appt.coaching.diet.smartagenda_id, appt.coaching.user.smartagenda_id,
           appt.appointment_type.smartagenda_id, appt.start_date, appt.end_date)
           .then(smart_appt => {
-            appt.smartagenda_id=smart_appt.id;
+            appt.smartagenda_id=smart_appt.id
             return getAppointmentVisioLink(smart_appt.id)
           })
           .then(url => {
@@ -1232,37 +1230,37 @@ setPostDeleteData(postDelete)
 
 const ensureChallengePipsConsistency = () => {
   // Does every challenge have all pips ?
-  return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
+  return Promise.all([Pip.find({}, '_id'), CollectiveChallenge.find({}, '_id'),
     TeamMember.find().populate('team'), ChallengeUserPip.find()])
     .then(([pips, challenges, teamMembers, challengeUserPips]) => {
       // Ensure all challenge pips exist
       const updateChallengePips=lodash.product(pips, challenges)
         .map(([pip, challenge]) => ChallengePip.updateMany(
-          {pip:pip, collectiveChallenge:challenge},
-          {pip:pip, collectiveChallenge:challenge},
-          {upsert: true}
+          {pip: pip, collectiveChallenge: challenge},
+          {pip: pip, collectiveChallenge: challenge},
+          {upsert: true},
         ))
       Promise.all(updateChallengePips)
         .then(res => {
           console.log(`Upsert challenge pips ok:${JSON.stringify(res)}`)
           // Ensure all team mebers pips exist
           const updateMembersPips=ChallengePip.find()
-          .then(challengePips => {
-            return teamMembers.map(member => {
-              const pips=challengePips.filter(p =>idEqual(p.collectiveChallenge, member.team.collectiveChallenge))
-              return Promise.all(pips.map(p => {
-                return ChallengeUserPip.update(
-                  {pip:p, user: member},
-                  {pip:p, user: member },
-                  {upsert: true}
-                )
-              }))
+            .then(challengePips => {
+              return teamMembers.map(member => {
+                const pips=challengePips.filter(p => idEqual(p.collectiveChallenge, member.team.collectiveChallenge))
+                return Promise.all(pips.map(p => {
+                  return ChallengeUserPip.update(
+                    {pip: p, user: member},
+                    {pip: p, user: member},
+                    {upsert: true},
+                  )
+                }))
+              })
             })
-          })
 
           Promise.all(updateMembersPips)
-          .then(res => console.log(`Upsert member pips ok:${JSON.stringify(res)}`))
-          .catch(err => console.error(`Upsert member pips error:${err}`))
+            .then(res => console.log(`Upsert member pips ok:${JSON.stringify(res)}`))
+            .catch(err => console.error(`Upsert member pips error:${err}`))
         })
         .catch(err => console.error(`Upsert challenge pips error:${err}`))
 
@@ -1274,13 +1272,13 @@ const computeStatistics= ({id, fields}) => {
   const company_filter=id ? {_id: id} : {}
   return Promise.all([
     Company.find(company_filter)
-      .populate([{path: 'webinars', select:'type'},{path: 'groups', populate: 'messages' }])
-      .populate({path: 'users', populate:[{path:'registered_events'},{path: 'replayed_events'},{path:'measures'}, {path: 'coachings', populate:{path: 'appointments'}}]}),
+      .populate([{path: 'webinars', select: 'type'}, {path: 'groups', populate: 'messages'}])
+      .populate({path: 'users', populate: [{path: 'registered_events'}, {path: 'replayed_events'}, {path: 'measures'}, {path: 'coachings', populate: {path: 'appointments'}}]}),
     Lead.find(),
     Category.find({type: TARGET_SPECIFICITY}).populate({path: 'targets'}),
     Category.find({type: TARGET_COACHING}).populate({path: 'targets'}),
   ])
-    .then(([comps,leads, specif_categories, reasons_categories]) => {
+    .then(([comps, leads, specif_categories, reasons_categories]) => {
       const companies=lodash(comps)
       const allUsers=companies
         .map('users').flatten().filter(u => u.role==ROLE_CUSTOMER)
@@ -1305,7 +1303,7 @@ const computeStatistics= ({id, fields}) => {
       const users_count=allUsers.size()
       const companyCodes=companies.map('code').filter(v => !!v).value()
       const leads_count=leads.filter(l => companyCodes.includes(l.company_code)).length
-      const [users_men_count, user_women_count, users_no_gender_count]=[GENDER_MALE,GENDER_FEMALE,GENDER_NON_BINARY].map(gender => {
+      const [users_men_count, user_women_count, users_no_gender_count]=[GENDER_MALE, GENDER_FEMALE, GENDER_NON_BINARY].map(gender => {
         return allUsers.filter(u => u.gender==gender).size()
       })
 
@@ -1349,11 +1347,11 @@ const computeStatistics= ({id, fields}) => {
       const started_coachings=allUsers.filter(u => u.coachings.some(c => c.appointments.length>0)).size()
 
       const specificities_users=specificity_targets.map(target => {
-        return ({x: target.name, y:allUsers.filter(u => u.specificity_targets.some(t => t._id.equals(target._id))).size()})
+        return ({x: target.name, y: allUsers.filter(u => u.specificity_targets.some(t => t._id.equals(target._id))).size()})
       })
 
       const reasons_users=reasons_targets.map(target => {
-        return ({x: target.name, y:allUsers.filter(u => u.coachings.some(c =>  c.reasons.some(r => r._id.equals(target._id)))).size()})
+        return ({x: target.name, y: allUsers.filter(u => u.coachings.some(c => c.reasons.some(r => r._id.equals(target._id)))).size()})
       })
 
       return ({
@@ -1378,10 +1376,10 @@ Company.findOneAndUpdate(
 
 // Create missings coachings for any CUSTOMER
 User.find({role: ROLE_CUSTOMER}).populate('coachings')
- .then(users => users.filter(user => lodash.isEmpty(user.coachings)))
- .then(users => Promise.all(users.map(user => Coaching.create({user}))))
- .then(coachings => coachings.map(coaching => console.log(`Created missing coaching for ${coaching.user.email}`)))
- .catch(err => console.error(err))
+  .then(users => users.filter(user => lodash.isEmpty(user.coachings)))
+  .then(users => Promise.all(users.map(user => Coaching.create({user}))))
+  .then(coachings => coachings.map(coaching => console.log(`Created missing coaching for ${coaching.user.email}`)))
+  .catch(err => console.error(err))
 
 // Ensure coaching logbooks consistency
 const logbooksConsistency = coaching_id => {
@@ -1390,7 +1388,7 @@ const logbooksConsistency = coaching_id => {
   return Coaching.find(filter).populate([
     {path: 'appointments', populate: {path: 'logbooks', populate: {path: 'questions'}}},
     {path: 'all_logbooks', populate: {path: 'logbook'}},
-    ])
+  ])
     .then(coachings => {
       return Promise.all(coachings.map(coaching => {
         const getLogbooksForDay = date => {
@@ -1399,7 +1397,7 @@ const logbooksConsistency = coaching_id => {
             .filter(a => a.end_date < date)
             .maxBy(a => a.start_date)
           const appt_logbooks=previous_appt ? [...previous_appt.logbooks] : []
-          return Quizz.find({type:QUIZZ_TYPE_LOGBOOK, default: true}).populate('questions')
+          return Quizz.find({type: QUIZZ_TYPE_LOGBOOK, default: true}).populate('questions')
             .then(defaultQuizzs => {
               appt_logbooks.push(...defaultQuizzs)
               return lodash.uniqBy(appt_logbooks, q => q._id.toString())
@@ -1418,7 +1416,7 @@ const logbooksConsistency = coaching_id => {
               const extraQuizz=coachingLogbooks.filter(l => !expectedQuizz.some(q => idEqual(q._id, l.logbook.quizz._id)))
               // Add missing quizz
               return Promise.all(missingQuizz.map(q => q.cloneAsUserQuizz()))
-                .then(quizzs => Promise.all(quizzs.map(q => CoachingLogbook.create({day, logbook:q, coaching}))))
+                .then(quizzs => Promise.all(quizzs.map(q => CoachingLogbook.create({day, logbook: q, coaching}))))
                 // remove extra quizz
                 .then(quizzs => Promise.all(extraQuizz.map(q => {
                   // Remove user quizz
@@ -1435,12 +1433,12 @@ const logbooksConsistency = coaching_id => {
 
 const getRegisterCompany = props => {
   // No email : FUCK YOU
-  if (!props.email) { return Promise.resolve({})}
+  if (!props.email) { return Promise.resolve({}) }
   const NO_COMPANY_NAME='NEVER'.repeat(10000)
   const code_re=props.company_code ? new RegExp(`^${props.company_code.replace(/[\t ]/g, '')}$`, 'i') : NO_COMPANY_NAME
   const mail_re=new RegExp(`^${props.email.replace(/[\t ]/g, '').toLowerCase()}$`, 'i')
   const result={}
-  return Promise.all([Lead.findOne({email: mail_re}), Company.findOne({code:code_re})])
+  return Promise.all([Lead.findOne({email: mail_re}), Company.findOne({code: code_re})])
     .then(([lead, company]) => {
       // If company not found, get form lead company code if any
       if (!company && lead?.company_code) {
@@ -1463,7 +1461,7 @@ const getRegisterCompany = props => {
       }
       if (company?.code && lead?.company_code && (company.code==lead.company_code)) {
         // Code & lead match
-        return ({...result, company:company._id})
+        return ({...result, company: company._id})
       }
       // Code & lead match
       if (!company && !lead) {
@@ -1510,7 +1508,7 @@ cron.schedule('0 0 1 * * *', async() => {
             }
             // Create only customers, not allowed to create diets through API
             else if (user.role==ROLE_CUSTOMER) {
-              const attrs=lodash.pick(user, ['email', 'firstname','lastname'])
+              const attrs=lodash.pick(user, ['email', 'firstname', 'lastname'])
               return upsertAccount(attrs)
                 .then(id => {
                   console.log(`User ${user.email}/${user.role} created in smartagenda under id ${id}`)
@@ -1528,7 +1526,7 @@ cron.schedule('0 0 1 * * *', async() => {
 const agendaHookFn = received => {
   // Check validity
   console.log(`Received hook ${JSON.stringify(received)}`)
-  const {senderSite, action, objId, objClass, data:{presta_id, equipe_id, client_id}} = received
+  const {senderSite, action, objId, objClass, data: {presta_id, equipe_id, client_id}} = received
   const AGENDA_NAME=getSmartAgendaConfig().SMARTAGENDA_URL_PART
   if (!AGENDA_NAME==senderSite) {
     throw new BadRequestError(`Got senderSite ${senderSite}, expected ${AGENDA_NAME}`)
@@ -1546,12 +1544,12 @@ const agendaHookFn = received => {
     return Promise.all([
       User.find({smartagenda_id: equipe_id, role: ROLE_EXTERNAL_DIET}),
       User.find({smartagenda_id: equipe_id, role: ROLE_CUSTOMER}),
-      AppointmentType.find({smartagenda_id: presta_id})
+      AppointmentType.find({smartagenda_id: presta_id}),
     ])
-    .then(([diet, user, appType]) => {
-      console.log(`Insert appointment with ${!!diet}, ${!!user}, ${appType}`)
+      .then(([diet, user, appType]) => {
+        console.log(`Insert appointment with ${!!diet}, ${!!user}, ${appType}`)
 
-    })
+      })
   }
 }
 
@@ -1570,7 +1568,7 @@ const WORKFLOWS={
     filter: (lead, user) => {
       return !!lead && !user &&
         !(lead.company?.offers?.[0].coaching_credit>0) &&
-        !! lead.company?.groups_count
+        !!lead.company?.groups_count
         && lead
     },
   },
@@ -1582,7 +1580,7 @@ const WORKFLOWS={
       !!lead.company?.offers?.[0].coaching_credit &&
       !lead.company?.groups_count
       && lead
-    }
+    },
   },
   CL_LEAD_NOCOA_GROUP: {
     id: '2414828',
@@ -1593,7 +1591,7 @@ const WORKFLOWS={
       !!lead.company?.groups_count
       && lead
 
-    }
+    },
   },
   CL_LEAD_COA_GROUP: {
     id: '2414830',
@@ -1604,7 +1602,7 @@ const WORKFLOWS={
       !!lead.company?.groups_count
       && lead
 
-    }
+    },
   },
   // Registered
   CL_REGISTERED: {
@@ -1612,7 +1610,7 @@ const WORKFLOWS={
     name: 'inscrits motiv usage',
     filter: (lead, user) => {
       return user
-    }
+    },
   },
   // 1 month before coll chall
   CL_REGISTERED_COLL_CHALL: {
@@ -1620,7 +1618,7 @@ const WORKFLOWS={
     name: 'TEIRA challenge co',
     filter: (lead, user) => {
       return !!user?.company?.collective_challenges?.some(c => moment(c.start_date).diff(moment(), 'days')<30) && user
-    }
+    },
   },
   // After 1 week
   CL_REGISTERED_FIRST_COA_APPT: {
@@ -1628,7 +1626,7 @@ const WORKFLOWS={
     name: 'inscrits CAO démarré',
     filter: (lead, user) => {
       return !!user?.latest_coachings[0]?.appointments?.some(a => moment().isAfter(moment(a.end_date))) && user
-    }
+    },
   },
 }
 
@@ -1638,7 +1636,7 @@ const mapContactToMailJet = contact => ({
     credit_consult: contact.company?.offers?.[0].coaching_credit,
     client: contact.company?.name,
     logo: contact.company?.picture,
-  }
+  },
 })
 
 const computeWorkflowLists = () => {
@@ -1654,25 +1652,25 @@ const computeWorkflowLists = () => {
     loadFromDb({model: 'user', fields:['latest_coachings.appointments', 'company.collective_challenges']}),
     */
   ])
-  .then(([leads, users]) => {
-    const allemails=lodash([...leads, ...users]).groupBy('email').mapValues(v => ([v.find(c => !c.role), v.find(c => !!c.role)]))
-    // Filter for each workflow
-    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, filter}])=> {
+    .then(([leads, users]) => {
+      const allemails=lodash([...leads, ...users]).groupBy('email').mapValues(v => ([v.find(c => !c.role), v.find(c => !!c.role)]))
+      // Filter for each workflow
+      const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, filter}]) => {
       // Map mail to false or lead or user
-      const retained=allemails.mapValues(([lead, user]) => filter(lead, user))
+        const retained=allemails.mapValues(([lead, user]) => filter(lead, user))
         // Retain only emails having truthy value
-        .pickBy(v => !!v)
-      const removed=allemails.keys().difference(retained.keys().value()).map(k => ({email:k}))
-      return [workflow_id, {id, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
+          .pickBy(v => !!v)
+        const removed=allemails.keys().difference(retained.keys().value()).map(k => ({email: k}))
+        return [workflow_id, {id, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
+      })
+      return Object.fromEntries(entries)
     })
-    return Object.fromEntries(entries)
-  })
 }
 
 const updateWorkflows= () => {
   return computeWorkflowLists()
     .then(lists => {
-      let promises=Object.values(lists).map(({id, add, remove})=> {
+      let promises=Object.values(lists).map(({id, add, remove}) => {
         const result=[]
         if (!lodash.isEmpty(add)) {
           result.push(MAILJET_HANDLER.addContactsToList({list: id, contacts: add}))

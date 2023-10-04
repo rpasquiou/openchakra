@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let RecipeIngredientSchema=null
 
 try {
   RecipeIngredientSchema=require(`../plugins/${getDataModel()}/schemas/RecipeIngredientSchema`)
-  RecipeIngredientSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(RecipeIngredientSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

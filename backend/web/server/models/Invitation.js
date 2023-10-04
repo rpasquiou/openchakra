@@ -5,7 +5,7 @@ let InvitationSchema=null
 
 try {
   InvitationSchema=require(`../plugins/${getDataModel()}/schemas/InvitationSchema`)
-  InvitationSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(InvitationSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

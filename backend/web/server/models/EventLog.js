@@ -5,7 +5,7 @@ let EventLogSchema=null
 
 try {
   EventLogSchema=require(`../plugins/${getDataModel()}/schemas/EventLogSchema`)
-  EventLogSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(EventLogSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

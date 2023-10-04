@@ -1,12 +1,12 @@
-const mongooseLeanVirtuals=require('mongoose-lean-virtuals')
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let UserQuizzQuestionsSchema=null
 
 try {
   UserQuizzQuestionsSchema=require(`../plugins/${getDataModel()}/schemas/UserQuizzQuestionSchema`)
-  UserQuizzQuestionsSchema.plugin(mongooseLeanVirtuals)
+  customizeSchema(UserQuizzQuestionsSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

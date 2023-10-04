@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let LoggedUserSchema=null
 
 try {
   LoggedUserSchema=require(`../plugins/${getDataModel()}/schemas/UserSchema`)
-  LoggedUserSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(LoggedUserSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

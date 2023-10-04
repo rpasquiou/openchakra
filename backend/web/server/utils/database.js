@@ -23,6 +23,13 @@ const MONGOOSE_OPTIONS = {
 mongoose.set('useFindAndModify', false)
 mongoose.set('useCreateIndex', true)
 
+// Plugins required for each model
+const MODELS_PLUGINS=['mongooseLeanVirtuals', 'selectVirtuals']
+
+const customizeSchema = model => {
+  model.plugin(require('mongoose-lean-virtuals'))
+  model.plugin(require('mongoose-select-virtuals'))
+}
 /**
 Retourne true si field (model.attribute) contient id
 req fournit le contexte permettant de trouver le modèle dans la bonne BD
@@ -149,7 +156,7 @@ const getModelAttributes = (modelName, level=MODEL_ATTRIBUTES_DEPTH) => {
   ]
 
   // Auto-create _count attribute for all multiple attributes
-  const multipleAttrs=[] //attrs.filter(att => !att[0].includes('.') && att[1].multiple===true).map(att => att[0])
+  const multipleAttrs=[] // attrs.filter(att => !att[0].includes('.') && att[1].multiple===true).map(att => att[0])
   const multiple_name=name => `${name}_count`
   multipleAttrs.forEach(name => {
     const multName=multiple_name(name)
@@ -178,10 +185,21 @@ const getModelAttributes = (modelName, level=MODEL_ATTRIBUTES_DEPTH) => {
 const getModels = () => {
   const modelNames = lodash.sortBy(mongoose.modelNames())
   const result = {}
+  const errors=[]
   modelNames.forEach(name => {
+    const mongooseModel=mongoose.models[name]
+    // Check that the model has the required plugins
+    const pluginsNames=mongooseModel.schema.plugins.map(p => p.fn.name)
+    const missingPlugins=lodash.difference(MODELS_PLUGINS, pluginsNames)
+    if (name!='IdentityCounter' && missingPlugins.length>0) {
+      errors.push(`${name} requires plugin(s) ${missingPlugins}, call customizeSchema`)
+    }
     const attrs = getModelAttributes(name)
     result[name]={name, attributes: Object.fromEntries(attrs)}
   })
+  if (!lodash.isEmpty(errors)) {
+    throw new Error(errors.join('\n'))
+  }
   return result
 }
 
@@ -203,6 +221,26 @@ const getExposedModels = () => {
   return models.value()
 }
 
+const getRequiredFields = (modelName, fields) => {
+  if (fields.some(f => f.includes('.'))) {
+    throw new Error(`getRequiredFields only computes 1st level atributes:${fields}`)
+  }
+  let result=new Set()
+  const queue=[...fields]
+  while (queue.length>0) {
+    const att=queue.shift()
+    result.add(att)
+    const required=lodash.get(DECLARED_VIRTUALS, `${modelName}.${att}.requires`)?.split(',') || []
+    required.forEach(requiredAtt => {
+      if (!result.has(requiredAtt) && !queue.includes(requiredAtt)) {
+        queue.push(requiredAtt)
+      }
+    })
+  }
+  console.log(`Required for ${modelName}/${fields}:${[...result]}`)
+  return [...result]
+}
+
 // TODO query.populates accepts an array of populates !!!!
 const buildPopulates = (modelName, fields) => {
   // Retain all ref fields
@@ -211,7 +249,7 @@ const buildPopulates = (modelName, fields) => {
     throw new Error(`Unkown model ${modelName}`)
   }
   const attributes=model.attributes
-  let requiredFields=[...fields]
+  let requiredFields=getRequiredFields(modelName, fields.map(f => f.split('.')[0])) // [...fields]
   // Add declared required fields for virtuals
   let added=true
   while (added) {
@@ -267,8 +305,8 @@ const getMongooseModels = () => {
 const getModel = (id, expectedModel) => {
   return Promise.all(getMongooseModels()
     .map(model => model.exists({_id: id})
-        .then(exists => (exists ? model.modelName : false)),
-    )
+      .then(exists => (exists ? model.modelName : false)),
+    ),
   )
     .then(res => {
       const model=res.find(v => !!v)
@@ -285,26 +323,33 @@ const getModel = (id, expectedModel) => {
 
 const buildQuery = (model, id, fields) => {
   const modelAttributes = Object.fromEntries(getModelAttributes(model))
-
-  const select = lodash(fields)
+  console.time('Compute required fields')
+  const requiredFields=getRequiredFields(model, fields.map(f => f.split('.')[0]))
+  console.timeEnd('Compute required fields')
+  const selectObject = lodash(requiredFields)
     .map(att => att.split('.')[0])
     .uniq()
     .filter(att => {
       if (!modelAttributes[att]) {
         throw new Error(`Unknown attribute ${model}.${att}`)
       }
-      return modelAttributes[att].ref == false
+      return true // modelAttributes[att].ref == false
     })
     .map(att => [att, true])
     .fromPairs()
     .value()
 
+  console.log(`Select object is ${JSON.stringify(selectObject)}`)
   const criterion = id ? {_id: id} : {}
-  let query = mongoose.connection.models[model].find(criterion) //, select)
+  let query = mongoose.connection.models[model].find(criterion, selectObject)
+  console.time('build populates')
   const populates=buildPopulates(model, fields)
-  //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  console.timeEnd('build populates')
+  console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
-  return query
+  console.log(JSON.stringify(selectObject))
+  return query.lean({virtuals: true})
+
 }
 
 const simpleCloneModel = data => {
@@ -412,6 +457,9 @@ const addComputedFields = async(
 
   const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
+  if (!lodash.isEmpty(requiredCompFields)) {
+    console.log(`Compute ${requiredCompFields}`)
+  }
   // Compute direct attributes
   const x = await Promise.allSettled(
     Object.keys(requiredCompFields).map(f =>
@@ -574,7 +622,7 @@ const putAttribute = ({id, attribute, value, user}) => {
             object[attribute]=value
             return object.save()
               .then(obj => {
-                return callPostPutData({model, id, attribute, value, params:{[attribute]:value}, user, data: obj})
+                return callPostPutData({model, id, attribute, value, params: {[attribute]: value}, user, data: obj})
                   .then(() => obj)
               })
           })
@@ -602,8 +650,8 @@ const putAttribute = ({id, attribute, value, user}) => {
                 const subData=lodash.get(object, paths.slice(0, -1).join('.'))
                 const subId=subData._id.toString()
                 const subAttr=paths.slice(-1)
-                callPostPutData({model:subModel, id: subId, attribute:subAttr, value,
-                  params:{[subAttr]:value},
+                callPostPutData({model: subModel, id: subId, attribute: subAttr, value,
+                  params: {[subAttr]: value},
                   user, data: subData})
                 return obj
               })
@@ -642,7 +690,7 @@ const removeData = dataId => {
           .then(() => data.delete())
       }
       return data.delete()
-        .then(d => callPostDeleteData({model, data:d}))
+        .then(d => callPostDeleteData({model, data: d}))
     })
 }
 
@@ -679,7 +727,7 @@ const putToDb = ({model, id, params, user}) => {
   return mongoose.connection.models[model]
     .findById(id)
     .then(data => {
-      if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
+      if (!data) { throw new NotFoundError(`${model}/${id} not found`) }
       Object.keys(params).forEach(k => { data[k]=params[k] })
       return data.save()
     })
@@ -687,24 +735,40 @@ const putToDb = ({model, id, params, user}) => {
 }
 
 const loadFromDb = ({model, fields, id, user, params}) => {
+  console.time('preprocess')
   return callPreprocessGet({model, fields, id, user, params})
     .then(({model, fields, id, data}) => {
+      console.timeEnd('preprocess')
       if (data) {
         return data
       }
+      console.time('build query')
       return buildQuery(model, id, fields)
         .then(data => {
+          console.timeEnd('build query')
           // Lean all objects
-          data=data.map(d => d.toObject({virtuals: true}))
+          /**
+          console.time('toObject')
+          console.log(data[20])
+          data=data.map(d => d.toObject({virtuals: fields}))
+          console.log(data[20])
+          console.timeEnd('toObject')
+          */
           // Force to plain object
+          console.time('parse stringify')
           data=JSON.parse(JSON.stringify(data))
+          console.timeEnd('parse stringify')
           // Remove extra virtuals
-          //data = retainRequiredFields({data, fields})
+          // data = retainRequiredFields({data, fields})
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return Promise.all(data.map(d => addComputedFields(fields,user, params, d, model)))
+          console.time('addComputed')
+          return Promise.all(data.map(d => addComputedFields(fields, user, params, d, model)))
         })
-        .then(data => callFilterDataUser({model, data, id, user}))
-        //.then(data =>  retainRequiredFields({data, fields}))
+        .then(data => {
+          console.timeEnd('addComputed')
+          return callFilterDataUser({model, data, id, user})
+        })
+        .then(data => retainRequiredFields({data, fields}))
     })
 
 }
@@ -723,7 +787,7 @@ const setImportDataFunction = ({model, fn}) => {
   if (!model || !fn) {
     throw new Error(`Import data function: expected model and function`)
   }
-  if (!!DATA_IMPORT_FN[model]) {
+  if (DATA_IMPORT_FN[model]) {
     throw new Error(`Import funciton already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
@@ -773,4 +837,5 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  customizeSchema,
 }

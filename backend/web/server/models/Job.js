@@ -5,7 +5,7 @@ let JobSchema=null
 
 try {
   JobSchema=require(`../plugins/${getDataModel()}/schemas/JobSchema`)
-  JobSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(JobSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

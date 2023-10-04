@@ -46,6 +46,6 @@ AddressSchema.methods.match = function(rhs) {
   return match
 }
 
-AddressSchema.plugin(require('mongoose-lean-virtuals'))
+customizeSchema(AddressSchema)
 
 module.exports=AddressSchema

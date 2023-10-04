@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let ChartPointSchema=null
 
 try {
   ChartPointSchema=require(`../plugins/${getDataModel()}/schemas/ChartPointSchema`)
-  ChartPointSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ChartPointSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -1,12 +1,12 @@
-const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 const Event = require(`./Event`)
 
 let Webinar = null
 try {
   if (Event) {
     const WebinarSchema = require(`../plugins/${getDataModel()}/schemas/WebinarSchema`)
-    WebinarSchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(WebinarSchema)
     Webinar = Event.discriminator('webinar', WebinarSchema)
   }
 }

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let AvailabilitySchema=null
 
 try {
   AvailabilitySchema=require(`../plugins/${getDataModel()}/schemas/AvailabilitySchema`)
-  AvailabilitySchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(AvailabilitySchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

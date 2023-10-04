@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let AdminDashboardSchema=null
 
 try {
   AdminDashboardSchema=require(`../plugins/${getDataModel()}/schemas/AdminDashboardSchema`)
-  AdminDashboardSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(AdminDashboardSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

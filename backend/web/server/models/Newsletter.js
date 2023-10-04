@@ -5,7 +5,7 @@ let NewsletterSchema=null
 
 try {
   NewsletterSchema=require(`../plugins/${getDataModel()}/schemas/NewsletterSchema`)
-  NewsletterSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(NewsletterSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

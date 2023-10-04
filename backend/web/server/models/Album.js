@@ -5,7 +5,7 @@ let AlbumSchema=null
 
 try {
   AlbumSchema=require(`../plugins/${getDataModel()}/schemas/AlbumSchema`)
-  AlbumSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(AlbumSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

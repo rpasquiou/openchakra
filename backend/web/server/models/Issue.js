@@ -5,7 +5,7 @@ let IssueSchema=null
 
 try {
   IssueSchema=require(`../plugins/${getDataModel()}/schemas/IssueSchema`)
-  IssueSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(IssueSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

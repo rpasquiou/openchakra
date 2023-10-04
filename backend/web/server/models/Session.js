@@ -5,7 +5,7 @@ let SessionSchema=null
 
 try {
   SessionSchema=require(`../plugins/${getDataModel()}/schemas/SessionSchema`)
-  SessionSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(SessionSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

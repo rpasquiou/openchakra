@@ -1,36 +1,31 @@
-const { createMemoryMulter } = require('../../utils/filesystem')
-const {
-  FUMOIR_MEMBER,
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS
-} = require('../../plugins/fumoir/consts')
-const {
-  callFilterDataUser,
-  callPostCreateData,
-  callPostPutData,
-  callPreCreateData,
-  callPreprocessGet,
-  loadFromDb,
-  putToDb,
-  retainRequiredFields,
-  importData,
-} = require('../../utils/database')
 
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
 const child_process = require('child_process')
-const url = require('url')
 const moment = require('moment')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
+const {
+  callPostCreateData,
+  callPreCreateData,
+  loadFromDb,
+  putToDb,
+  importData,
+} = require('../../utils/database')
+const {
+  FUMOIR_MEMBER,
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS,
+} = require('../../plugins/fumoir/consts')
+const {createMemoryMulter} = require('../../utils/filesystem')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
 const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
-const {date_str, datetime_str} = require('../../../utils/dateutils')
+const {date_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
   HOOK_PAYMENT_FAILED,
@@ -165,9 +160,13 @@ router.get('/action-allowed/:action', passport.authenticate('cookie', {session: 
     catch(e) { return v }
   })
   const user=req.user
-
+  const msg=`${action}/${JSON.stringify(query)}`
+  console.log('start', msg)
   return callAllowedAction({action, user, ...query})
-    .then(allowed => res.json(allowed))
+    .then(allowed => {
+      console.log('end', msg)
+      return res.json(allowed)
+    })
 })
 
 router.post('/file', (req, res) => {
@@ -429,7 +428,7 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
   const {model}=req.params
   const {file}=req
   console.log(`Import ${model}:${file.buffer.length} bytes`)
-  return importData({model, data:file.buffer})
+  return importData({model, data: file.buffer})
     .then(result => res.json(result))
 })
 

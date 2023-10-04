@@ -5,7 +5,7 @@ let FilterPresentationSchema=null
 
 try {
   FilterPresentationSchema=require(`../plugins/${getDataModel()}/schemas/FilterPresentationSchema`)
-  FilterPresentationSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(FilterPresentationSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

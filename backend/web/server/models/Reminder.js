@@ -5,7 +5,7 @@ let ReminderSchema=null
 
 try {
   ReminderSchema=require(`../plugins/${getDataModel()}/schemas/ReminderSchema`)
-  ReminderSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ReminderSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

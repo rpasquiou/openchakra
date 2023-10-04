@@ -6,7 +6,7 @@ try {
   const Product = require(`./Product`)
   if (Product) {
     const CigarSchema=require(`../plugins/${getDataModel()}/schemas/CigarSchema`)
-    CigarSchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(CigarSchema)
     Cigar = Product.discriminator('cigar', CigarSchema)
   }
 }

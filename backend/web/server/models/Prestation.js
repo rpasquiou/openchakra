@@ -5,7 +5,7 @@ let PrestationSchema=null
 
 try {
   PrestationSchema=require(`../plugins/${getDataModel()}/schemas/PrestationSchema`)
-  PrestationSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(PrestationSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

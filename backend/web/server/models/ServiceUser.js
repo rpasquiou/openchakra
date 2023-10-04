@@ -5,7 +5,7 @@ let ServiceUserSchema=null
 
 try {
   ServiceUserSchema=require(`../plugins/${getDataModel()}/schemas/ServiceUserSchema`)
-  ServiceUserSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ServiceUserSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

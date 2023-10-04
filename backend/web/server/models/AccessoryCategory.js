@@ -6,7 +6,7 @@ try {
   const Category = require(`./Category`)
   if (Category) {
     const AccessoryCategorySchema=require(`../plugins/${getDataModel()}/schemas/AccessoryCategorySchema`)
-    AccessoryCategorySchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(AccessoryCategorySchema)
     AccessoryCategory = Category.discriminator('accessoryCategory', AccessoryCategorySchema)
   }
 }

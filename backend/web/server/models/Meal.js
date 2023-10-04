@@ -6,7 +6,7 @@ try {
   const Product = require(`./Product`)
   if (Product) {
     const MealSchema=require(`../plugins/${getDataModel()}/schemas/MealSchema`)
-    MealSchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(MealSchema)
     Meal = Product.discriminator('meal', MealSchema)
   }
 }

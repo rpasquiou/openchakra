@@ -5,7 +5,7 @@ let PostSchema=null
 
 try {
   PostSchema=require(`../plugins/${getDataModel()}/schemas/PostSchema`)
-  PostSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(PostSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

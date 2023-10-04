@@ -5,7 +5,7 @@ let EquipmentSchema=null
 
 try {
   EquipmentSchema=require(`../plugins/${getDataModel()}/schemas/EquipmentSchema`)
-  EquipmentSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(EquipmentSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

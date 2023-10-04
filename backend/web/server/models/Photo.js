@@ -5,7 +5,7 @@ let PhotoSchema=null
 
 try {
   PhotoSchema=require(`../plugins/${getDataModel()}/schemas/PhotoSchema`)
-  PhotoSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(PhotoSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

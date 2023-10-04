@@ -5,7 +5,7 @@ let ResourceSchema=null
 
 try {
   ResourceSchema=require(`../plugins/${getDataModel()}/schemas/ResourceSchema`)
-  ResourceSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ResourceSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

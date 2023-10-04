@@ -4,7 +4,7 @@ const {getDataModel} = require('../../config/config')
 let QuotationDetailSchema=null
 try {
   QuotationDetailSchema=require(`../plugins/${getDataModel()}/schemas/QuotationDetailSchema`)
-  QuotationDetailSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(QuotationDetailSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let InstrumentSchema=null
 
 try {
   InstrumentSchema=require(`../plugins/${getDataModel()}/schemas/InstrumentSchema`)
-  InstrumentSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(InstrumentSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

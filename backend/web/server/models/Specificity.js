@@ -5,7 +5,7 @@ let SpecificitySchema=null
 
 try {
   SpecificitySchema=require(`../plugins/${getDataModel()}/schemas/SpecificitySchema`)
-  SpecificitySchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(SpecificitySchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -1,11 +1,12 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let GiftSchema=null
 
 try {
   GiftSchema=require(`../plugins/${getDataModel()}/schemas/GiftSchema`)
-  GiftSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(GiftSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

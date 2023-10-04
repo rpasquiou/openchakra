@@ -5,7 +5,7 @@ let OrderItemSchema=null
 
 try {
   OrderItemSchema=require(`../plugins/${getDataModel()}/schemas/OrderItemSchema`)
-  OrderItemSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(OrderItemSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

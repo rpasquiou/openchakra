@@ -5,7 +5,7 @@ let ConsultationSchema=null
 
 try {
   ConsultationSchema=require(`../plugins/${getDataModel()}/schemas/ConsultationSchema`)
-  ConsultationSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ConsultationSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -5,7 +5,7 @@ let ResetTokenSchema=null
 
 try {
   ResetTokenSchema=require(`../plugins/${getDataModel()}/schemas/ResetTokenSchema`)
-  ResetTokenSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ResetTokenSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

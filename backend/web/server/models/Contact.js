@@ -5,7 +5,7 @@ let ContactSchema=null
 
 try {
   ContactSchema=require(`../plugins/${getDataModel()}/schemas/ContactSchema`)
-  ContactSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ContactSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

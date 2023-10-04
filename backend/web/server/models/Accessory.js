@@ -6,7 +6,7 @@ try {
   const Product = require(`./Product`)
   if (Product) {
     const AccessorySchema=require(`../plugins/${getDataModel()}/schemas/AccessorySchema`)
-    AccessorySchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(AccessorySchema)
     Accessory = Product.discriminator('accessory', AccessorySchema)
   }
 }

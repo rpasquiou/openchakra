@@ -1,12 +1,12 @@
-const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
+const {customizeSchema}=require('../../server/utils/database')
 
 let IndividualChallenge = null
 try {
   const Event = require(`./Event`)
   if (Event) {
     const IndividualChallengeSchema = require(`../plugins/${getDataModel()}/schemas/IndividualChallengeSchema`)
-    IndividualChallengeSchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(IndividualChallengeSchema)
     IndividualChallenge = Event.discriminator('individualChallenge', IndividualChallengeSchema)
   }
 }

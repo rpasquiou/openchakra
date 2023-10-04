@@ -6,7 +6,7 @@ try {
   const Category = require(`./Category`)
   if (Category) {
     const DrinkCategorySchema=require(`../plugins/${getDataModel()}/schemas/DrinkCategorySchema`)
-    DrinkCategorySchema.plugin(require('mongoose-lean-virtuals'))
+    customizeSchema(DrinkCategorySchema)
     DrinkCategory = Category.discriminator('drinkCategory', DrinkCategorySchema)
   }
 }

@@ -5,7 +5,7 @@ let TrainingCenterSchema=null
 
 try {
   TrainingCenterSchema=require(`../plugins/${getDataModel()}/schemas/TrainingCenterSchema`)
-  TrainingCenterSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(TrainingCenterSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

@@ -5,7 +5,7 @@ let ProjectSchema=null
 
 try {
   ProjectSchema=require(`../plugins/${getDataModel()}/schemas/ProjectSchema`)
-  ProjectSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ProjectSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

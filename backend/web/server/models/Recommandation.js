@@ -5,7 +5,7 @@ let RecommandationSchema=null
 
 try {
   RecommandationSchema=require(`../plugins/${getDataModel()}/schemas/RecommandationSchema`)
-  RecommandationSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(RecommandationSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

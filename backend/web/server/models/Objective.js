@@ -5,7 +5,7 @@ let ObjectiveSchema=null
 
 try {
   ObjectiveSchema=require(`../plugins/${getDataModel()}/schemas/ObjectiveSchema`)
-  ObjectiveSchema.plugin(require('mongoose-lean-virtuals'))
+  customizeSchema(ObjectiveSchema)
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {

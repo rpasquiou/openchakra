@@ -9906,6 +9906,11 @@ mongoose-legacy-pluralize@1.0.2:
   resolved "https://registry.yarnpkg.com/mongoose-legacy-pluralize/-/mongoose-legacy-pluralize-1.0.2.tgz#3ba9f91fa507b5186d399fb40854bff18fb563e4"
   integrity sha512-Yo/7qQU4/EyIS8YDFSeenIvXxZN+ld7YdV9LqFVQJzTLye8unujAWPZ4NWKfFA+RNjh+wvTWKY9Z3E5XM6ZZiQ==
 
+mongoose-select-virtuals@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/mongoose-select-virtuals/-/mongoose-select-virtuals-3.0.3.tgz#6907b4ebe7085431ae01e1cf029e6f1bbdc94077"
+  integrity sha512-Ub4TOI0pacTW3pzFzJHUttoXApf6uD5JzobocqJBg07stULIAcyL1f3HT3wD0T6bj1/tqjtr7EiOm83VqrSh8Q==
+
 mongoose@5.11.17:
   version "5.11.17"
   resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.11.17.tgz#260b1e669d07a65f96c00b2d22f556f1f5771741"
