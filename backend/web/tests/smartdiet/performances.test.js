@@ -1,15 +1,15 @@
 const mongoose = require('mongoose')
-const {MONGOOSE_OPTIONS, loadFromDb} = require('../../../server/utils/database')
-const {forceDataModelSmartdiet}=require('../../utils')
+const {MONGOOSE_OPTIONS, loadFromDb, getRequiredFields} = require('../../server/utils/database')
+const {forceDataModelSmartdiet}=require('../utils')
 forceDataModelSmartdiet()
-require('../../../server/plugins/smartdiet/functions')
-const User=require('../../../server/models/User')
-require('../../../server/models/Target')
-require('../../../server/models/UserQuizz')
-require('../../../server/models/Key')
-require('../../../server/models/Association')
-require('../../../server/models/Item')
-require('../../../server/models/Question')
+require('../../server/plugins/smartdiet/functions')
+const User=require('../../server/models/User')
+require('../../server/models/Target')
+require('../../server/models/UserQuizz')
+require('../../server/models/Key')
+require('../../server/models/Association')
+require('../../server/models/Item')
+require('../../server/models/Question')
 
 jest.setTimeout(60000)
 
@@ -25,7 +25,6 @@ describe('Measure model ', () => {
 
   const checkResult = users => {
     const user=users.find(u => /caro q/i.test(u.fullname))
-    console.log(JSON.stringify(user, null, 2))
     expect(user).toBeTruthy()
     expect(user.latest_coachings).toHaveLength(1)
     expect(user.latest_coachings[0].diet).toBeTruthy()
