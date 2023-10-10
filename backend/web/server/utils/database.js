@@ -221,12 +221,13 @@ const getExposedModels = () => {
   return models.value()
 }
 
+const getFirstLevelAttributes = fields => {
+  return lodash(fields).map(f => f.split('.')[0]).uniq().value()
+}
+
 const getRequiredFields = (modelName, fields) => {
-  if (fields.some(f => f.includes('.'))) {
-    throw new Error(`getRequiredFields only computes 1st level atributes:${fields}`)
-  }
   let result=new Set()
-  const queue=[...fields]
+  const queue=[...getFirstLevelAttributes(fields)]
   while (queue.length>0) {
     const att=queue.shift()
     result.add(att)
@@ -236,8 +237,16 @@ const getRequiredFields = (modelName, fields) => {
         queue.push(requiredAtt)
       }
     })
+    const relies=lodash.get(DECLARED_VIRTUALS, `${modelName}.${att}.relies_on`)
+    if (relies) {
+      queue.push(relies)
+    }
   }
-  console.log(`Required for ${modelName}/${fields}:${[...result]}`)
+  const attributesDefinition=getModels()[modelName].attributes
+  console.log(attributesDefinition)
+  const refAttributes=[...result].filter(field => !!attributesDefinition[field].ref)
+  // const subRequiredFields=
+  // console.log(`Required for ${modelName}/${fields}:${[...result]}`)
   return [...result]
 }
 
@@ -249,7 +258,7 @@ const buildPopulates = (modelName, fields) => {
     throw new Error(`Unkown model ${modelName}`)
   }
   const attributes=model.attributes
-  let requiredFields=getRequiredFields(modelName, fields.map(f => f.split('.')[0])) // [...fields]
+  let requiredFields=getRequiredFields(modelName, fields) // [...fields]
   // Add declared required fields for virtuals
   let added=true
   while (added) {
@@ -345,7 +354,7 @@ const buildQuery = (model, id, fields) => {
   console.time('build populates')
   const populates=buildPopulates(model, fields)
   console.timeEnd('build populates')
-  console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
   console.log(JSON.stringify(selectObject))
   return query.lean({virtuals: true})
@@ -838,4 +847,5 @@ module.exports = {
   importData,
   setPostDeleteData,
   customizeSchema,
+  getRequiredFields,
 }
