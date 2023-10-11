@@ -1,12 +1,12 @@
-const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts')
+const mongoose = require('mongoose')
+const {CREATED_AT_ATTRIBUTE} = require('../../utils/consts')
 const {
   MONGOOSE_OPTIONS,
   getModels,
   getRequiredFields,
   loadFromDb,
-  replaceReliesOn
+  replaceReliesOn,
 } = require('../../server/utils/database')
-const mongoose = require('mongoose')
 const {forceDataModelSmartdiet}=require('../utils')
 
 forceDataModelSmartdiet()
@@ -31,34 +31,16 @@ describe('Measure model ', () => {
     await mongoose.connection.close()
   })
 
-  const checkResult = users => {
-    const user=users.find(u => /caro q/i.test(u.fullname))
-    expect(user).toBeTruthy()
-    console.log(user)
-    expect(user.latest_coachings).toHaveLength(1)
-    expect(user.latest_coachings[0].diet).toBeTruthy()
-    expect(user.latest_coachings[0].diet.fullname).toEqual('Anne-Laure Meunier')
-  }
-
-  it.only('mongoose loading', async() => {
-    console.time('DB')
-    const users=await User.find({}, {fullname: 1, lastname: 1, firstname: 1}).populate([
-      {path: 'coachings', select:{diet:1, [CREATED_AT_ATTRIBUTE]:1}, populate: {path: 'diet', select: ['firstname', 'lastname', 'fullname']}},
-    ]).lean({virtuals: true})
-    console.timeEnd('DB')
-    checkResult(users)
-  })
-
   it(`Test fields replacement`, async() => {
     const org='latest_coachings'
     const dest='coachings'
     const fields=[
       ['latest_coachings', 'coachings'],
-      ['a.latest_coachings.hop','a.coachings.hop'],
-      ['latest_coachingsu', 'latest_coachingsu']
+      ['a.latest_coachings.hop', 'a.coachings.hop'],
+      ['latest_coachingsu', 'latest_coachingsu'],
     ]
     fields.forEach(([field, expected]) => {
-      expect(replaceReliesOn('latest_coachings', 'coachings', field)).toBe(expected)
+      expect(replaceReliesOn(org, dest, field)).toBe(expected)
     })
   })
 
@@ -68,11 +50,25 @@ describe('Measure model ', () => {
     console.log('result', fields)
   })
 
-  it('custom loading', async() => {
+  const checkResult = users => {
+    const user=users.find(u => /caro q/i.test(u.fullname))
+    expect(user).toBeTruthy()
+    expect(user.latest_coachings).toHaveLength(1)
+    expect(user.latest_coachings[0].diet).toBeTruthy()
+    expect(user.latest_coachings[0].diet.fullname).toEqual('Anne-Laure Meunier')
+  }
+
+  it.only('mongoose loading', async() => {
+    console.time('DB')
+    const dbUsers=await User.find({}, {latest_coachings: 1, fullname: 1, lastname: 1, firstname: 1}).populate([
+      {path: 'coachings', select: {diet: 1, [CREATED_AT_ATTRIBUTE]: 1}, populate: {path: 'diet', select: ['firstname', 'lastname', 'fullname']}},
+    ]).lean({virtuals: true})
+    console.timeEnd('DB')
+    checkResult(dbUsers)
     console.time('Custom')
-    const users=await loadFromDb({model: 'user', fields: ['fullname', 'company.name', 'latest_coachings.diet.fullname']})
+    const customUsers=await loadFromDb({model: 'user', fields: ['fullname', 'company.name', 'latest_coachings.diet.fullname']})
     console.timeEnd('Custom')
-    checkResult(users)
+    checkResult(customUsers)
   })
 
 })

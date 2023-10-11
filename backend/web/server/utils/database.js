@@ -236,7 +236,7 @@ const getFirstLevelAttributes = fields => {
  Returns select criterion
  Retain non-ref 1st level attributes
 */
-const buildSelectCriterion = (modelName, fields, allModels)  => {
+const buildSelectCriterion = (modelName, fields, allModels) => {
   const attributes=allModels[modelName].attributes
   const res=lodash(getFirstLevelAttributes(fields))
     .map(f => [f, 1])
@@ -245,7 +245,7 @@ const buildSelectCriterion = (modelName, fields, allModels)  => {
   return res
 }
 
-const isFirstLevelAttribute = field  => {
+const isFirstLevelAttribute = field => {
   return !field.includes('.')
 }
 
@@ -256,7 +256,7 @@ const replaceReliesOn = (orgField, relyField, field) => {
   if (field==orgField) {
     return relyField
   }
-  return field.replace(new RegExp(`${orgField}([\\.$])`, 'g'), `${relyField}$1`);
+  return field.replace(new RegExp(`${orgField}([\\.$])`, 'g'), `${relyField}$1`)
 }
 // End attributes utility functions
 
@@ -298,7 +298,7 @@ const getRequiredFields = (modelName, fields, allModels) => {
   getFirstLevelAttributes(result)
     .map(f => [f, lodash.get(DECLARED_VIRTUALS, `${modelName}.${f}.relies_on`)])
     .filter(([f, relies]) => !!relies)
-    .forEach(([f, relies]) => {result=result.map(att => replaceReliesOn(f, relies, att))})
+    .forEach(([f, relies]) => { result=result.map(att => replaceReliesOn(f, relies, att)) })
 
   return result
 }
@@ -333,7 +333,7 @@ const buildPopulates = (modelName, fields, allModels) => {
       allModels,
     )
     const selectCriterion=buildSelectCriterion(subModel, subFields, allModels)
-    const res={path: attributeName, select: selectCriterion,  populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    const res={path: attributeName, select: selectCriterion, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
     return res
   })
   return pops.value()
@@ -375,7 +375,6 @@ const getModel = (id, expectedModel) => {
 
 const buildQuery = (model, id, fields) => {
   const allModels=getModels()
-  const modelAttributes = allModels[model].attributes
   const requiredFields=getRequiredFields(model, fields, allModels)
   const selectCriterion = buildSelectCriterion(model, [...fields, ...requiredFields], allModels)
   const criterion = id ? {_id: id} : {}
@@ -486,7 +485,7 @@ const addComputedFields = async(
   }
 
   const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-  const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+  const presentCompFields = lodash(fields).map(f => getFirstLevelAttribute(f)).filter(v => !!v).uniq().value()
 
   const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
@@ -503,7 +502,7 @@ const addComputedFields = async(
 
   // Handle references => sub
   const refAttributes = getModelAttributes(model).filter(
-    att => !att[0].includes('.') && att[1].ref,
+    att => isFirstLevelAttribute(att[0]) && att[1].ref,
   )
   for (const refAttribute of refAttributes) {
     const [attName, attParams]=refAttribute
