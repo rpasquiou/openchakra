@@ -40,10 +40,4 @@ module.exports={
     description: 'Challenge collectif',
     spoons: 12,
   },
-  COACHING_DATA: {
-
-  },
-  APPOINTMENT_DATA: {
-
-  },
 }

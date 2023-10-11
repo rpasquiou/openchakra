@@ -222,10 +222,14 @@ const getExposedModels = () => {
 }
 
 const getFirstLevelAttributes = fields => {
-  return lodash(fields).map(f => f.split('.')[0]).uniq().value()
+  return lodash(fields).map(f => splitRemaining(f)[0]).uniq().value()
 }
 
-const getRequiredFields = (modelName, fields) => {
+const getRequiredFields = (modelName, fields, allModels) => {
+  if (!allModels) {
+    throw new Error(`allModels is required`)
+  }
+  console.log('Computing required for', modelName, fields)
   let result=new Set()
   const queue=[...getFirstLevelAttributes(fields)]
   while (queue.length>0) {
@@ -239,58 +243,58 @@ const getRequiredFields = (modelName, fields) => {
     })
     const relies=lodash.get(DECLARED_VIRTUALS, `${modelName}.${att}.relies_on`)
     if (relies) {
+      console.log('*********************************************************')
       queue.push(relies)
+      queue.push(...required.map(f => `${relies}.${f}`))
     }
   }
-  const attributesDefinition=getModels()[modelName].attributes
-  console.log(attributesDefinition)
-  const refAttributes=[...result].filter(field => !!attributesDefinition[field].ref)
-  // const subRequiredFields=
-  // console.log(`Required for ${modelName}/${fields}:${[...result]}`)
+
+  // Required sub fields are the ref ones with subfields
+  result=[...result]
+  console.log('Computing direct required for', modelName, fields, 'is', result)
+
+  const subRequired=lodash(result)
+    .filter(f => f.includes('.'))
+    .groupBy(f => f.split('.')[0])
+    .pickBy((v, k) => !!allModels[modelName].attributes[k].ref)
+    .mapValues(v => v.map(f => splitRemaining(f, '.')[1]))
+    // .mapValues((v, k) => { console.log(k, v); return v })
+    .mapValues((v, k) => getRequiredFields(allModels[modelName].attributes[k].type, v, allModels).map(f => `${k}.${f}`))
+    .values()
+    .flatten()
+  result=lodash([...result, ...subRequired]).uniq().value()
+  console.log('Computing required for', modelName, fields, 'is', result)
   return [...result]
 }
 
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = (modelName, fields) => {
+const buildPopulates = (modelName, fields, allModels) => {
+  console.log(`Build populate for`, modelName, 'fields', fields)
+  if (!allModels || !fields) {
+    throw new Error(`allModels and fields are required`)
+  }
+
   // Retain all ref fields
-  const model=getModels()[modelName]
+  const model=allModels[modelName]
   if (!model) {
     throw new Error(`Unkown model ${modelName}`)
   }
   const attributes=model.attributes
-  let requiredFields=getRequiredFields(modelName, fields) // [...fields]
-  // Add declared required fields for virtuals
-  let added=true
-  while (added) {
-    added=false
-    lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
-      let required=lodash.get(DECLARED_VIRTUALS, `${modelName}.${directAttribute}.requires`) || null
-      if (required) {
-        required=required.split(',')
-        if (lodash.difference(required, requiredFields).length>0) {
-          requiredFields=lodash.uniq([...requiredFields, ...required])
-          added=true
-        }
-      }
-      let relies_on=lodash.get(DECLARED_VIRTUALS, `${modelName}.${directAttribute}.relies_on`) || null
-      if (relies_on) {
-        const search=new RegExp(`^${directAttribute}(\.|$)`)
-        const replace=(match, group1) => `${relies_on}${group1=='.'?'.':''}`
-	      requiredFields=requiredFields.map(f => f.replace(search, replace))
-      }
-    })
-  }
-
   // Retain ref attributes only
-  const groupedAttributes=lodash(requiredFields)
+  const groupedAttributes=lodash(fields)
     .groupBy(att => att.split('.')[0])
     .pickBy((_, attName) => { if (!attributes[attName]) { throw new Error(`Attribute ${modelName}.${attName} unknown`) } return attributes[attName].ref===true })
-    .mapValues(attributes => attributes.map(att => att.split('.').slice(1).join('.')).filter(v => !lodash.isEmpty(v)))
+    .mapValues(attributes => attributes.map(att => splitRemaining(att, '.')[1]).filter(v => !lodash.isEmpty(v)))
 
+  console.log('grouped attributes', groupedAttributes.value())
   // / Build populate using att and subpopulation
-  const pops=groupedAttributes.entries().map(([attributeName, fields]) => {
-    const attType=attributes[attributeName].type
-    const subPopulate=buildPopulates(attType, fields)
+  const pops=groupedAttributes.entries().map(([attributeName, subFields]) => {
+    const subModel=attributes[attributeName].type
+    const subPopulate=buildPopulates(
+      subModel,
+      subFields,
+      allModels,
+    )
     return {path: attributeName, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
   })
   return pops.value()
@@ -331,12 +335,13 @@ const getModel = (id, expectedModel) => {
 }
 
 const buildQuery = (model, id, fields) => {
-  const modelAttributes = Object.fromEntries(getModelAttributes(model))
+  const allModels=getModels()
+  const modelAttributes = allModels[model].attributes
   console.time('Compute required fields')
-  const requiredFields=getRequiredFields(model, fields.map(f => f.split('.')[0]))
+  const requiredFields=getRequiredFields(model, fields, allModels)
   console.timeEnd('Compute required fields')
   const selectObject = lodash(requiredFields)
-    .map(att => att.split('.')[0])
+    .map(att => splitRemaining(att, '.')[0])
     .uniq()
     .filter(att => {
       if (!modelAttributes[att]) {
@@ -344,7 +349,7 @@ const buildQuery = (model, id, fields) => {
       }
       return true // modelAttributes[att].ref == false
     })
-    .map(att => [att, true])
+    .map(att => [att, 1])
     .fromPairs()
     .value()
 
@@ -352,9 +357,9 @@ const buildQuery = (model, id, fields) => {
   const criterion = id ? {_id: id} : {}
   let query = mongoose.connection.models[model].find(criterion, selectObject)
   console.time('build populates')
-  const populates=buildPopulates(model, fields)
+  const populates=buildPopulates(model, requiredFields, allModels)
   console.timeEnd('build populates')
-  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
   console.log(JSON.stringify(selectObject))
   return query.lean({virtuals: true})
@@ -636,7 +641,7 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           })
       }
-      const populates=buildPopulates(model, [attribute])
+      const populates=buildPopulates(model, [attribute], getModels())
 
       let query=mongooseModel.find({$or: [{_id: id}, {origin: id}]})
       query = populates.reduce((q, key) => q.populate(key), query)

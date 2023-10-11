@@ -192,7 +192,7 @@ const formatDeadline = dl => {
   return dl.replace('jours', 'jour(s)').replace('semaines', 'semaine(s)').replace('heures', 'heure(s)')
 }
 
-const splitRemaining = (pattern, delimiter) => {
+const splitRemaining = (pattern, delimiter='.') => {
   if (lodash.isEmpty(pattern)) {
     return string
   }

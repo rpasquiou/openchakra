@@ -1365,7 +1365,7 @@ const computeStatistics= ({id, fields}) => {
 }
 
 /** Upsert PARTICULARS company */
-!isDevelopment() &&  Company.findOneAndUpdate(
+!isDevelopment() && Company.findOneAndUpdate(
   {name: PARTICULAR_COMPANY_NAME},
   {name: PARTICULAR_COMPANY_NAME, activity: COMPANY_ACTIVITY_SERVICES_AUX_ENTREPRISES},
   {upsert: true},
@@ -1485,7 +1485,7 @@ const getRegisterCompany = props => {
 setImportDataFunction({model: 'lead', fn: importLeads})
 
 // Ensure logbooks consistency each morning
-cron.schedule('0 0 1 * * *', async() => {
+!isDevelopment() && cron.schedule('0 0 1 * * *', async() => {
   logbooksConsistency()
     .then(() => console.log(`Logbooks consistency OK `))
     .catch(err => console.error(`Logbooks consistency error:${err}`))
