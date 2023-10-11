@@ -1,6 +1,14 @@
+const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts')
+const {
+  MONGOOSE_OPTIONS,
+  getModels,
+  getRequiredFields,
+  loadFromDb,
+  replaceReliesOn
+} = require('../../server/utils/database')
 const mongoose = require('mongoose')
-const {MONGOOSE_OPTIONS, loadFromDb, getRequiredFields, getModels} = require('../../server/utils/database')
 const {forceDataModelSmartdiet}=require('../utils')
+
 forceDataModelSmartdiet()
 require('../../server/plugins/smartdiet/functions')
 const User=require('../../server/models/User')
@@ -32,16 +40,35 @@ describe('Measure model ', () => {
     expect(user.latest_coachings[0].diet.fullname).toEqual('Anne-Laure Meunier')
   }
 
-  it('mongoose loading', async() => {
+  it.only('mongoose loading', async() => {
     console.time('DB')
     const users=await User.find({}, {fullname: 1, lastname: 1, firstname: 1}).populate([
-      {path: 'coachings', populate: {path: 'diet', select: ['firstname', 'lastname', 'fullname']}},
-    ])
-    checkResult(users)
+      {path: 'coachings', select:{diet:1, [CREATED_AT_ATTRIBUTE]:1}, populate: {path: 'diet', select: ['firstname', 'lastname', 'fullname']}},
+    ]).lean({virtuals: true})
     console.timeEnd('DB')
+    checkResult(users)
   })
 
-  it.only('custom loading', async() => {
+  it(`Test fields replacement`, async() => {
+    const org='latest_coachings'
+    const dest='coachings'
+    const fields=[
+      ['latest_coachings', 'coachings'],
+      ['a.latest_coachings.hop','a.coachings.hop'],
+      ['latest_coachingsu', 'latest_coachingsu']
+    ]
+    fields.forEach(([field, expected]) => {
+      expect(replaceReliesOn('latest_coachings', 'coachings', field)).toBe(expected)
+    })
+  })
+
+  it('must compute required fields', async() => {
+    const allModels=await getModels()
+    const fields=await getRequiredFields('user', ['fullname', 'company.name', 'latest_coachings.diet.fullname'], allModels)
+    console.log('result', fields)
+  })
+
+  it('custom loading', async() => {
     console.time('Custom')
     const users=await loadFromDb({model: 'user', fields: ['fullname', 'company.name', 'latest_coachings.diet.fullname']})
     console.timeEnd('Custom')

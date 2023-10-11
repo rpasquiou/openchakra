@@ -221,15 +221,49 @@ const getExposedModels = () => {
   return models.value()
 }
 
-const getFirstLevelAttributes = fields => {
-  return lodash(fields).map(f => splitRemaining(f)[0]).uniq().value()
+// Attributes utility functions
+
+const getFirstLevelAttribute = field => {
+  return splitRemaining(field)[0]
 }
+
+// Returns first level attributes (['att.sub', 'att2'] => ['att', 'att2'])
+const getFirstLevelAttributes = fields => {
+  return lodash(fields).map(f => getFirstLevelAttribute(f)).uniq().value()
+}
+
+/**
+ Returns select criterion
+ Retain non-ref 1st level attributes
+*/
+const buildSelectCriterion = (modelName, fields, allModels)  => {
+  const attributes=allModels[modelName].attributes
+  const res=lodash(getFirstLevelAttributes(fields))
+    .map(f => [f, 1])
+    .fromPairs()
+    .value()
+  return res
+}
+
+const isFirstLevelAttribute = field  => {
+  return !field.includes('.')
+}
+
+/**
+Replaces occurrences of orgField by relyField anywhere in field
+*/
+const replaceReliesOn = (orgField, relyField, field) => {
+  if (field==orgField) {
+    return relyField
+  }
+  return field.replace(new RegExp(`${orgField}([\\.$])`, 'g'), `${relyField}$1`);
+}
+// End attributes utility functions
 
 const getRequiredFields = (modelName, fields, allModels) => {
   if (!allModels) {
     throw new Error(`allModels is required`)
   }
-  console.log('Computing required for', modelName, fields)
   let result=new Set()
   const queue=[...getFirstLevelAttributes(fields)]
   while (queue.length>0) {
@@ -241,61 +275,66 @@ const getRequiredFields = (modelName, fields, allModels) => {
         queue.push(requiredAtt)
       }
     })
-    const relies=lodash.get(DECLARED_VIRTUALS, `${modelName}.${att}.relies_on`)
-    if (relies) {
-      console.log('*********************************************************')
-      queue.push(relies)
-      queue.push(...required.map(f => `${relies}.${f}`))
-    }
   }
 
   // Required sub fields are the ref ones with subfields
-  result=[...result]
-  console.log('Computing direct required for', modelName, fields, 'is', result)
+  result=lodash.uniq([...fields, ...result])
 
   const subRequired=lodash(result)
-    .filter(f => f.includes('.'))
-    .groupBy(f => f.split('.')[0])
+    .filter(f => !isFirstLevelAttribute(f))
+    // Group by 1st level
+    .groupBy(f => getFirstLevelAttribute(f))
+    // Only keep ref attributes
     .pickBy((v, k) => !!allModels[modelName].attributes[k].ref)
+    // Extract subPaths
     .mapValues(v => v.map(f => splitRemaining(f, '.')[1]))
-    // .mapValues((v, k) => { console.log(k, v); return v })
+    // Get required subPaths
     .mapValues((v, k) => getRequiredFields(allModels[modelName].attributes[k].type, v, allModels).map(f => `${k}.${f}`))
     .values()
     .flatten()
-  result=lodash([...result, ...subRequired]).uniq().value()
-  console.log('Computing required for', modelName, fields, 'is', result)
-  return [...result]
+  result=lodash([...result, ...subRequired]).uniq().sort().value()
+
+  // Handle relies on attributes
+  getFirstLevelAttributes(result)
+    .map(f => [f, lodash.get(DECLARED_VIRTUALS, `${modelName}.${f}.relies_on`)])
+    .filter(([f, relies]) => !!relies)
+    .forEach(([f, relies]) => {result=result.map(att => replaceReliesOn(f, relies, att))})
+
+  return result
 }
 
 // TODO query.populates accepts an array of populates !!!!
 const buildPopulates = (modelName, fields, allModels) => {
-  console.log(`Build populate for`, modelName, 'fields', fields)
+
   if (!allModels || !fields) {
     throw new Error(`allModels and fields are required`)
   }
-
   // Retain all ref fields
   const model=allModels[modelName]
   if (!model) {
     throw new Error(`Unkown model ${modelName}`)
   }
-  const attributes=model.attributes
-  // Retain ref attributes only
-  const groupedAttributes=lodash(fields)
-    .groupBy(att => att.split('.')[0])
-    .pickBy((_, attName) => { if (!attributes[attName]) { throw new Error(`Attribute ${modelName}.${attName} unknown`) } return attributes[attName].ref===true })
-    .mapValues(attributes => attributes.map(att => splitRemaining(att, '.')[1]).filter(v => !lodash.isEmpty(v)))
 
-  console.log('grouped attributes', groupedAttributes.value())
+  const attributes=model.attributes
+
+  // Retain ref attributes only
+  const groupedSubPaths=lodash(fields)
+    .filter(att => !isFirstLevelAttribute(att))
+    .groupBy(att => getFirstLevelAttribute(att))
+    .pickBy((_, attName) => { if (!attributes[attName]) { throw new Error(`Attribute ${modelName}.${attName} unknown`) } return attributes[attName].ref===true })
+    .mapValues(attributes => attributes.map(att => splitRemaining(att, '.')[1]))
+
   // / Build populate using att and subpopulation
-  const pops=groupedAttributes.entries().map(([attributeName, subFields]) => {
+  const pops=groupedSubPaths.entries().map(([attributeName, subFields]) => {
     const subModel=attributes[attributeName].type
     const subPopulate=buildPopulates(
       subModel,
       subFields,
       allModels,
     )
-    return {path: attributeName, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    const selectCriterion=buildSelectCriterion(subModel, subFields, allModels)
+    const res={path: attributeName, select: selectCriterion,  populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    return res
   })
   return pops.value()
 }
@@ -337,33 +376,13 @@ const getModel = (id, expectedModel) => {
 const buildQuery = (model, id, fields) => {
   const allModels=getModels()
   const modelAttributes = allModels[model].attributes
-  console.time('Compute required fields')
   const requiredFields=getRequiredFields(model, fields, allModels)
-  console.timeEnd('Compute required fields')
-  const selectObject = lodash(requiredFields)
-    .map(att => splitRemaining(att, '.')[0])
-    .uniq()
-    .filter(att => {
-      if (!modelAttributes[att]) {
-        throw new Error(`Unknown attribute ${model}.${att}`)
-      }
-      return true // modelAttributes[att].ref == false
-    })
-    .map(att => [att, 1])
-    .fromPairs()
-    .value()
-
-  console.log(`Select object is ${JSON.stringify(selectObject)}`)
+  const selectCriterion = buildSelectCriterion(model, [...fields, ...requiredFields], allModels)
   const criterion = id ? {_id: id} : {}
-  let query = mongoose.connection.models[model].find(criterion, selectObject)
-  console.time('build populates')
+  let query = mongoose.connection.models[model].find(criterion, selectCriterion)
   const populates=buildPopulates(model, requiredFields, allModels)
-  console.timeEnd('build populates')
-  console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
-  console.log(JSON.stringify(selectObject))
   return query.lean({virtuals: true})
-
 }
 
 const simpleCloneModel = data => {
@@ -472,16 +491,16 @@ const addComputedFields = async(
   const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
   if (!lodash.isEmpty(requiredCompFields)) {
-    console.log(`Compute ${requiredCompFields}`)
+    // Compute direct attributes
+    const x = await Promise.allSettled(
+      Object.keys(requiredCompFields).map(f =>
+        requiredCompFields[f](newUser, queryParams, data).then(res => {
+          data[f] = res
+        }),
+      ),
+    )
   }
-  // Compute direct attributes
-  const x = await Promise.allSettled(
-    Object.keys(requiredCompFields).map(f =>
-      requiredCompFields[f](newUser, queryParams, data).then(res => {
-        data[f] = res
-      }),
-    ),
-  )
+
   // Handle references => sub
   const refAttributes = getModelAttributes(model).filter(
     att => !att[0].includes('.') && att[1].ref,
@@ -749,37 +768,17 @@ const putToDb = ({model, id, params, user}) => {
 }
 
 const loadFromDb = ({model, fields, id, user, params}) => {
-  console.time('preprocess')
   return callPreprocessGet({model, fields, id, user, params})
     .then(({model, fields, id, data}) => {
-      console.timeEnd('preprocess')
       if (data) {
         return data
       }
-      console.time('build query')
       return buildQuery(model, id, fields)
         .then(data => {
-          console.timeEnd('build query')
-          // Lean all objects
-          /**
-          console.time('toObject')
-          console.log(data[20])
-          data=data.map(d => d.toObject({virtuals: fields}))
-          console.log(data[20])
-          console.timeEnd('toObject')
-          */
-          // Force to plain object
-          console.time('parse stringify')
-          data=JSON.parse(JSON.stringify(data))
-          console.timeEnd('parse stringify')
-          // Remove extra virtuals
-          // data = retainRequiredFields({data, fields})
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          console.time('addComputed')
           return Promise.all(data.map(d => addComputedFields(fields, user, params, d, model)))
         })
         .then(data => {
-          console.timeEnd('addComputed')
           return callFilterDataUser({model, data, id, user})
         })
         .then(data => retainRequiredFields({data, fields}))
@@ -853,4 +852,5 @@ module.exports = {
   setPostDeleteData,
   customizeSchema,
   getRequiredFields,
+  replaceReliesOn,
 }

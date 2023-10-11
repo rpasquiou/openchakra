@@ -194,7 +194,7 @@ const formatDeadline = dl => {
 
 const splitRemaining = (pattern, delimiter='.') => {
   if (lodash.isEmpty(pattern)) {
-    return string
+    return pattern
   }
   const [first, ...rest]=pattern.split(delimiter)
   return [first, rest.join(delimiter)]

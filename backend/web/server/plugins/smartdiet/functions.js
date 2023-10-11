@@ -513,6 +513,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'latest_coachings', instance: 'Array',
     relies_on: 'coachings',
+    requires: `coachings.${CREATED_AT_ATTRIBUTE}`,
     multiple: true,
     caster: {
       instance: 'ObjectID',
