@@ -42,13 +42,13 @@ QuizzQuestionSchema.virtual('available_answers', {
   foreignField: 'question', // is equal to foreignField
 })
 
-QuizzQuestionSchema.virtual('user_choice_answers', function() {
+QuizzQuestionSchema.virtual('user_choice_answers').get(function() {
 })
 
-QuizzQuestionSchema.virtual('user_text_answer', function() {
+QuizzQuestionSchema.virtual('user_text_answer').get(function() {
 })
 
-QuizzQuestionSchema.virtual('user_numeric_answer', function() {
+QuizzQuestionSchema.virtual('user_numeric_answer').get(function() {
 })
 
 /** Was the answer correct ? */
