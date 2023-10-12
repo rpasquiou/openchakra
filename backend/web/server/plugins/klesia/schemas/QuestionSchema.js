@@ -42,13 +42,13 @@ QuizzQuestionSchema.virtual('available_answers', {
   foreignField: 'question', // is equal to foreignField
 })
 
-QuizzQuestionSchema.virtual('user_choice_answers').get(function() {
+QuizzQuestionSchema.virtual('user_choice_answers', {localField:'tagada', foreignField:'tagada'}).get(function() {
 })
 
-QuizzQuestionSchema.virtual('user_text_answer').get(function() {
+QuizzQuestionSchema.virtual('user_text_answer', {localField:'tagada', foreignField:'tagada'}).get(function() {
 })
 
-QuizzQuestionSchema.virtual('user_numeric_answer').get(function() {
+QuizzQuestionSchema.virtual('user_numeric_answer', {localField:'tagada', foreignField:'tagada'}).get(function() {
 })
 
 /** Was the answer correct ? */
