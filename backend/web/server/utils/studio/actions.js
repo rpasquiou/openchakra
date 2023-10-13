@@ -1,5 +1,12 @@
+const { callPostCreateData } = require('../database')
+
+const {
+  getModel,
+  loadFromDb,
+  putAttribute,
+  removeData
+} = require('../database')
 const mongoose = require('mongoose')
-const { getModel, putAttribute, removeData } = require('../database')
 const { getDataModel } = require('../../../config/config')
 const {
   generatePassword,
@@ -13,14 +20,15 @@ const Post = require('../../models/Post')
 const UserSessionData = require('../../models/UserSessionData')
 const {NotFoundError} = require('../errors')
 const Program = require('../../models/Program')
-const {sendNewMessage} = require('../../plugins/fumoir/mailing')
+const fumoirMailing = require('../../plugins/fumoir/mailing')
+const tipiMailing = require('../../plugins/all-inclusive/mailing')
 
 const {DEFAULT_ROLE} = require(`../../plugins/${getDataModel()}/consts`)
 
 let ACTIONS = {
   put: ({parent, attribute, value}, user) => {
     const parsedValue=value ? JSON.parse(value) : value
-    return putAttribute({parent, attribute, value: parsedValue, user})
+    return putAttribute({id:parent, attribute, value: parsedValue, user})
   },
 
   publish: ({id}) => {
@@ -83,11 +91,16 @@ let ACTIONS = {
     return getSession(id)
   },
 
-  sendMessage: ({destinee, contents}, sender) => {
-    return Message.create({sender: sender._id, receiver: destinee, content: contents})
+  sendMessage: ({destinee, contents, attachment}, sender) => {
+    return Message.create({sender: sender._id, receiver: destinee, content: contents, attachment})
       .then(m => Message.findById(m._id).populate('sender').populate('receiver'))
       .then(m => {
-        sendNewMessage({member: m.receiver, partner: m.sender})
+        getDataModel()=='fumoir' && fumoirMailing && fumoirMailing.sendNewMessage({member: m.receiver, partner: m.sender})
+        loadFromDb({model: 'message', id:m._id, fields:['receiver.email','receiver.firstname']})
+          .then(([message]) => {
+            console.log(`Message:${JSON.stringify(message)}`)
+            getDataModel()=='all-inclusive' && tipiMailing && tipiMailing.sendNewMessage(message.receiver)
+          })
         return m
       })
   },
@@ -119,20 +132,21 @@ let ACTIONS = {
 
         return promise
           .then(()=> {
-            return User.create({...props, password: bcrypt.hashSync(props.password, 10)})
+            return User.create({...props})
           })
+          .then(user => callPostCreateData({model: 'user', data:user}))
     })
   },
 
-  addTarget: ({value, context, append}) => {
-    console.log(`${append ? 'Adding':'Removing'} target ${value} to context ${context}`)
+  addToContext: ({value, context, contextAttribute, append}) => {
+    console.log(`${append ? 'Adding':'Removing'} target ${value} to context ${context}/${contextAttribute}`)
     return getModel(context)
       .then(modelName => {
         const model=mongoose.connection.models[modelName]
         return append ?
-          model.findByIdAndUpdate(context, {$addToSet: {targets: value}})
+          model.findByIdAndUpdate(context, {$addToSet: {[contextAttribute]: value}})
           :
-          model.findByIdAndUpdate(context, {$pull: {targets: value}})
+          model.findByIdAndUpdate(context, {$pull: {[contextAttribute]: value}})
       })
       .catch(err => {
         console.error(err)
@@ -147,8 +161,8 @@ const setAllowActionFn = fn => {
   ALLOW_ACTION = fn
 }
 
-const callAllowedAction = ({action, dataId, user}) => {
-  return ALLOW_ACTION({action, dataId, user})
+const callAllowedAction = (params) => {
+  return ALLOW_ACTION(params)
 }
 
 const addAction= (action, fn) => {

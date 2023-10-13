@@ -15,7 +15,7 @@ class FullExport(object):
 
     def format(self, value):
       return value.strftime('%d/%m/%Y') if isinstance(value, datetime) else value
-      
+
     def export(self, documents, columns, directory):
       for doc in sorted(self.db.get_collections()):
         if documents and not doc in documents:
@@ -23,7 +23,6 @@ class FullExport(object):
         d = None
         out = open(os.path.join(directory, "{}.csv".format(doc)), "w", encoding='utf-8')
         keys=[]
-        #items = self.db.get_items(doc, exclude_fields=['birthday'])
         items = self.db.get_items(doc)
         for it in items:
           keys += [i for i in it.keys() if not i.startswith("__") and not i in keys]
@@ -51,6 +50,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print(args)
-    
+
     exp=FullExport(args.database)
     exp.export(args.doc, args.col, args.output)

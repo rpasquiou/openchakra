@@ -1,8 +1,14 @@
 import axios from 'axios'
 import lodash from 'lodash'
-import {jsPDF} from 'jspdf'
+import html2canvas from 'html2canvas'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+
+import {
+  clearComponentValue,
+  getComponent,
+  getComponentDataValue
+} from './values';
 import { clearToken } from './token';
-import {getComponent, clearComponentValue} from './values'
 
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
@@ -15,16 +21,19 @@ export const ACTIONS = {
   sendMessage: ({ value, props, level, getComponentValue }) => {
     const destinee = props.destinee ? getComponentValue(props.destinee, level) : value._id
     const contents = getComponentValue(props.contents, level)
+    const attachment = getComponentValue(props.attachment, level)
     let url = `${API_ROOT}/action`
     return axios
       .post(url, {
         action: 'sendMessage',
         destinee,
         contents,
+        attachment,
       })
       .then(res => {
         clearComponentValue(props.destinee, level)
         clearComponentValue(props.contents, level)
+        clearComponentValue(props.attachment, level)
         return res
       })
   },
@@ -44,38 +53,48 @@ export const ACTIONS = {
         return res
       })
   },
-  openPage: ({ value, model, query, props, getComponentValue }) => {
-    const queryParams = query
+  openPage: ({ value, level, model, props, getComponentValue }) => {
+    const queryParams = new URLSearchParams()
     let url = `/${props.page}`
-    if (value && value._id) {
-      queryParams.set(model, value._id)
+    if ('sourceId' in props) {
+      const compValue=getComponentValue(props.sourceId, level)
+      if (compValue?._id || compValue) {
+        queryParams.set('id', compValue?._id || compValue)
+      }
+    }
+    else if (value && value._id) {
       queryParams.set('id', value._id)
     }
     url = `${url}?${queryParams.toString()}`
     // new page
     if (props.open && !(props.open === 'false')) {
-      return Promise.resolve(window.open(url, 'blank'))
+      window.open(url, 'blank')
     } else {
-      return Promise.resolve((window.location = url))
+      window.location = url
     }
+    return Promise.resolve()
   },
+
   create: ({ value, context, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
         getComponentValue(c, level)||null]
     ))
-    'job,mission,quotation'.split(',').forEach(property => {
+    'job,mission,quotation,group,parent,content,recipe,menu,pip,collectiveChallenge,quizzQuestion,userQuizzQuestion,user'.split(',').forEach(property => {
       if (props[property]) {
-        const dataId=document.getElementById(`${props[property]}${level}`)?.getAttribute('_id')
+        //const dataId=document.getElementById(`${props[property]}${level}`)?.getAttribute('_id')
+        const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
         body[property]=dataId
       }
     })
+    const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     let url = `${API_ROOT}/${props.model}?context=${context}`
-    return axios.post(url, body).then(res => ({
-      model: props.model,
-      value: res.data,
-    }))
+    return axios.post(url, bodyJson)
+      .then(res => ({
+        model: props.model,
+        value: res.data,
+      }))
   },
   levelUp: ({ value, props, context }) => {
     let url = `${API_ROOT}/action`
@@ -202,8 +221,9 @@ export const ACTIONS = {
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'), getComponentValue(c, level)||null]
     ))
+    const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     const httpAction=dataSource?._id ? axios.put : axios.post
-    return httpAction(url, body)
+    return httpAction(url, bodyJson)
     .then(res => {
       components.forEach(c => clearComponentValue(c, level))
       return ({
@@ -221,7 +241,7 @@ export const ACTIONS = {
         if (res.data.redirect) {
           let redirect=res.data.redirect
           redirect = /^http/.test(redirect) ? redirect : `/${redirect}`
-          window.location=redirect
+          return window.location=redirect
         }
       })
   },
@@ -234,7 +254,7 @@ export const ACTIONS = {
         if (res.data.redirect) {
           let url=res.data.redirect
           url=/^http/.test(url) ? url : `/${url}`
-          window.location=url
+          return window.location=url
         }
       })
   },
@@ -344,19 +364,59 @@ export const ACTIONS = {
   },
 
   savePagePDF: () => {
-    /** TODO Prints white pages
-    var doc = new jsPDF('p', 'pt','a4',true)
-    var elementHTML = document.querySelector("#root")
-    doc.html(document.body, {
-        callback: function(doc) {
-            // Save the PDF
-            doc.save('facture.pdf');
-        },
-    });
-    */
-    return window.print()
-  },
+    //return window.print()
 
+const images = document.getElementsByTagName('img');
+const imagePromises = [];
+
+for (let i = 0; i < images.length; i++) {
+  const image = images[i];
+  const imagePromise = new Promise((resolve, reject) => {
+       if (image.complete) {
+          resolve();
+        } else {
+          image.onload = resolve;
+          image.onerror = reject;
+        }
+
+  });
+  imagePromises.push(imagePromise);
+}
+
+return Promise.allSettled(imagePromises)
+  .then(res => {
+    return PDFDocument.create().then(pdfDoc => {
+
+    const page = pdfDoc.addPage();
+    const element = document.getElementById('root');
+    html2canvas(element, {ignoreElements: element => element.tagName.toLowerCase()=='button'}).then(canvas => {
+
+    const imgData = canvas.toDataURL('image/jpeg');
+    pdfDoc.embedJpg(imgData).then(jpgImage => {
+
+    const x_ratio=page.getWidth()/jpgImage.width
+    const { width, height } = jpgImage.scale(x_ratio);
+    page.drawImage(jpgImage, {
+      x: (page.getWidth() - width)/2,
+      y: page.getHeight() - height,
+      width,
+      height,
+    });
+
+    pdfDoc.save().then(pdfBytes => {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'document2.pdf';
+      link.click();
+      return null
+    })
+  })
+  })
+  })
+  })
+
+  },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
     let url = `${API_ROOT}/action`
@@ -368,26 +428,25 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  addTarget: ({ value, context, append }) => {
+  addToContext: ({ value, context, contextAttribute, append }) => {
     let url = `${API_ROOT}/action`
     const body = {
-      action: 'addTarget',
+      action: 'addToContext',
       value,
       context,
+      contextAttribute,
       append,
     }
     return axios.post(url, body)
   },
 
-  createRecommandation: ({ value, context, props, level, getComponentValue }) => {
+  createRecommandation: ({ value, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
         getComponentValue(c, level)||null]
     ))
-
-    const jobId=document.getElementById(`${props.job}${level}`)?.getAttribute('_id')
-    body.job=require('url').parse(window.location.href, true).query?.jobUser
+    body.job=value._id
 
     let url = `${API_ROOT}/recommandation`
     return axios.post(url, body).then(res => ({
@@ -435,13 +494,32 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  alle_accept_quotation: ({value}) => {
+  alle_accept_quotation: ({value, props}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_accept_quotation',
-      value,
+      paymentSuccess: props.paymentSuccess,
+      paymentFailure: props.paymentFailure,
+      value: value._id,
     }
     return axios.post(url, body)
+      .then(res => {
+        if (res.data.redirect) {
+          let redirect=res.data.redirect
+          redirect = /^http/.test(redirect) ? redirect : `/${redirect}`
+          return window.location=redirect
+        }
+      })
+  },
+
+  alle_can_accept_quotation: ({value, props}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'alle_can_accept_quotation',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(() => value)
   },
 
   alle_refuse_quotation: ({value}) => {
@@ -471,6 +549,10 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
+      .then(res => ({
+        model: props.model,
+        value: res.data,
+      }))
   },
 
   alle_finish_mission: ({ value, context, props, level, getComponentValue }) => {
@@ -481,6 +563,7 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
+      .then(res => res.data)
   },
 
   alle_store_bill: ({ value, context, props, level, getComponentValue }) => {
@@ -491,16 +574,7 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
-  },
-
-  alle_show_bill: ({ value, context, props, level, getComponentValue }) => {
-    let url = `${API_ROOT}/action`
-    const body = {
-      action: 'alle_show_bill',
-      value,
-      context,
-    }
-    return axios.post(url, body)
+      .then(res => res.data)
   },
 
   alle_accept_bill: ({ value, context, props, level, getComponentValue }) => {
@@ -511,6 +585,7 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
+    .then(res => res.data)
   },
 
   alle_refuse_bill: ({ value, context, props, level, getComponentValue }) => {
@@ -521,6 +596,7 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
+    .then(res => res.data)
   },
 
   alle_leave_comment: ({ value, context, props, level, getComponentValue }) => {
@@ -531,6 +607,7 @@ export const ACTIONS = {
       context,
     }
     return axios.post(url, body)
+      .then(res => res.data)
   },
 
   alle_send_bill: ({value}) => {
@@ -540,6 +617,20 @@ export const ACTIONS = {
       value,
     }
     return axios.post(url, body)
+    .then(res => res.data)
+  },
+
+  smartdiet_join_group: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_group',
+      value: value._id,
+      join: true,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
   },
 
   can_setup_devices: () => {
@@ -549,5 +640,304 @@ export const ACTIONS = {
     }
     return axios.post(url, body)
   },
+
+  smartdiet_leave_group: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_group',
+      value: value._id,
+      join: false,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data}
+      })
+  },
+
+  smartdiet_skip_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_skip_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data?._id}
+      })
+  },
+
+  smartdiet_join_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data?._id}
+      })
+  },
+
+  smartdiet_pass_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_pass_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => res.data)
+  },
+
+  smartdiet_fail_event: ({ value }) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_fail_event',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        return {_id: res.data?._id}
+      })
+  },
+
+  alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
+    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
+    const body = Object.fromEntries(components.map(c =>
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+        getComponentValue(c, level)||null]
+    ))
+
+    body.action='alle_ask_contact'
+    let url = `${API_ROOT}/anonymous-action`
+    return axios.post(url, body)
+  },
+
+  smartdiet_set_company_code: ({value, props, level, getComponentValue}) => {
+    const code = getComponentValue(props.code, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_set_company_code',
+      code,
+    }
+    return axios.post(url, body)
+  },
+
+  openUrl: ({value, props}) => {
+    try { props=JSON.parse(props) } catch(e) {}
+    const {url, open}=props
+    const urlValue=lodash.get(value, url)
+    // new page
+    if (open && !(props.open === 'false')) {
+      return Promise.resolve(window.open(urlValue, 'blank'))
+    } else {
+      return Promise.resolve((window.location = urlValue))
+    }
+  },
+
+  download: ({value, props}) => {
+      const a = document.createElement('a');
+      a.download = value;
+      a.href = value;
+      // For Firefox https://stackoverflow.com/a/32226068
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+  },
+
+  payMission: ({ context, props }) => {
+    let url = `${API_ROOT}/action`
+    const body = {action: 'payMission', context,...props}
+    return axios.post(url, body)
+      .then(res => {
+        if (res.data.redirect) {
+          let url=res.data.redirect
+          url=/^http/.test(url) ? url : `/${url}`
+          return window.location=url
+        }
+      })
+  },
+
+  hasChildren: ({ value, actionProps}) => {
+    const body={
+      action: 'hasChildren',
+      value: value._id,
+      actionProps,
+    }
+    let url = `${API_ROOT}/action`
+    return axios.post(url, body)
+  },
+
+  askRecommandation: ({ value, context, props, level, getComponentValue }) => {
+    const body={
+      action: 'askRecommandation',
+      value: value._id,
+      email: getComponentValue(props.email, level)||null,
+      message: getComponentValue(props.message, level)||null,
+      page: props.page,
+    }
+    let url = `${API_ROOT}/action`
+    return axios.post(url, body)
+  },
+
+  smartdiet_start_survey: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_start_survey',
+    }
+    return axios.post(url, body).then(res => ({
+      model: 'userQuestion',
+      value: res.data,
+    }))
+  },
+
+  smartdiet_next_question: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_next_question',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        var searchParams = new URLSearchParams(window.location.search);
+        searchParams.set('id', res.data._id)
+        window.location.search=searchParams.toString()
+      })
+  },
+
+  smartdiet_finish_survey: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_finish_survey',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => res.data)
+  },
+
+  smartdiet_join_team: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_join_team',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  smartdiet_leave_team: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_leave_team',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  smartdiet_find_team_member: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_find_team_member',
+      value: value._id,
+    }
+    return axios.post(url, body).then(res => ({
+      model: 'teamMember',
+      value: res.data,
+    }))
+  },
+
+  smartdiet_open_team_page: ({value, props}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_open_team_page',
+      value: value._id,
+      page: props.page,
+    }
+
+    return axios.post(url, body)
+    .then(res => {
+      if (res.data.redirect) {
+        let redirect=res.data.redirect
+        redirect = /^http/.test(redirect) ? redirect : `/${redirect}`
+        return window.location=redirect
+      }
+      return {
+        model: 'teamMember',
+        value: res.data,
+      }
+    })
+  },
+
+  smartdiet_routine_challenge: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_routine_challenge',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  smartdiet_shift_challenge: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_shift_challenge',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  smartdiet_read_content: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_read_content',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => ({model: 'content',value: res.data}))
+  },
+
+  smartdiet_compute_shopping_list: ({props, level, getComponentValue}) => {
+    const people_count = getComponentValue(props.people, level)
+    const thisUrl=new URL(window.location)
+    if (people_count) {
+      thisUrl.searchParams.set('people_count', people_count)
+    } else {
+      thisUrl.searchParams.delete('people_count', null)
+    }
+    window.location=thisUrl.toString()
+  },
+
+  import_model_data: props => {
+    const prevResults=document.getElementById('import_results')
+    if (prevResults) {
+      prevResults.parentNode.removeChild(prevResults)
+    }
+    const prevInput=document.getElementById('import_data')
+    if (prevInput) {
+      prevInput.parentNode.removeChild(prevInput)
+    }
+
+    const container=document.getElementById(props.id).parentNode
+
+    const form=document.createElement('form');
+    container.appendChild(form)
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'file';
+    fileInput.style='display:none'
+    fileInput.id='import_data'
+    form.appendChild(fileInput)
+
+    fileInput.addEventListener('change', event => {
+      const formData = new FormData(form);
+      axios.post(`${API_ROOT}/import-data/${props.props.model}`, formData)
+         .then(response => {
+           alert(response.data.join('\n'))
+         })
+         .catch(error => alert('Error:', error))
+
+    })
+    fileInput.click()
+    return Promise.resolve(true)
+  }
 
 }

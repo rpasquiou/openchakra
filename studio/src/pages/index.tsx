@@ -21,9 +21,11 @@ import '~custom-components/NumberFormat/NumberFormatInit'
 import '~custom-components/DataProvider/DataProviderInit'
 import '~custom-components/IconCheck/IconCheckInit'
 import '~custom-components/Lexical/LexicalInit'
+import '~custom-components/Chart/ChartInit'
 import Menu from '~components/sidebar/Menu'
 import MediasContainer from '~components/MediasContainer'
 import { getMediasLayout } from '../core/selectors/app'
+import WarningEnv from '~components/warnings/WarningEnv'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -49,7 +51,7 @@ const App = () => {
               {mediasLayout ? <MediasContainer /> : <Editor />}
             </Box>
           </EditorErrorBoundary>
-
+          <WarningEnv />
           <Box
             bg="#f7fafc"
             overflowY="auto"
@@ -59,7 +61,7 @@ const App = () => {
             <InspectorProvider>
               <Inspector />
             </InspectorProvider>
-          </Box>
+          </Box> 
           <Box
             bg="#f7fafc"
             overflowY="auto"

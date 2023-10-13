@@ -1,17 +1,24 @@
 const {
-  callFilterDataUser,
-  callPostCreateData,
   callPostLogin,
-  callPostPutData,
-  callPreCreateData,
-  callPreprocessGet,
-  retainRequiredFields,
 } = require('../../utils/database')
+const { createMemoryMulter } = require('../../utils/filesystem')
 const {
   FUMOIR_MEMBER,
   PAYMENT_FAILURE,
   PAYMENT_SUCCESS
 } = require('../../plugins/fumoir/consts')
+const {
+  callFilterDataUser,
+  callPostCreateData,
+  callPostPutData,
+  callPreCreateData,
+  callPreprocessGet,
+  loadFromDb,
+  putToDb,
+  retainRequiredFields,
+  importData,
+} = require('../../utils/database')
+
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -23,6 +30,9 @@ const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
+const {resizeImage} = require('../../middlewares/resizeImage')
+const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
+const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -32,15 +42,16 @@ const {
 const {callAllowedAction} = require('../../utils/studio/actions')
 const {
   getDataModel,
-  getProductionPort,
   getProductionRoot,
 } = require('../../../config/config')
 
+let agendaHookFn=null
 try {
   require(`../../plugins/${getDataModel()}/functions`)
+  agendaHookFn=require(`../../plugins/${getDataModel()}/functions`).agendaHookFn
 }
 catch(err) {
-  if (err.code !== 'MODULE_NOT_FOUND') {throw err}
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
   console.warn(`No functions module for ${getDataModel()}`)
 }
 
@@ -59,9 +70,10 @@ try{
   RES_TO_COME=require(`../../plugins/${getDataModel()}/consts`).RES_TO_COME
 }
 catch(err) {
-  if (err.code !== 'MODULE_NOT_FOUND') {throw err}
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
   console.warn(`No consts module for ${getDataModel()}`)
 }
+const {NEEDED_VAR} = require('../../../utils/consts')
 
 const {sendCookie} = require('../../config/passport')
 const {
@@ -77,7 +89,7 @@ const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
 const router = express.Router()
 
 const PRODUCTION_ROOT = getProductionRoot()
-const PRODUCTION_PORT = getProductionPort()
+const PROJECT_CONTEXT_PATH = 'src/pages'
 
 
 const login = (email, password) => {
@@ -123,11 +135,41 @@ router.get('/roles', (req, res) => {
   return res.json(ROLES)
 })
 
-router.get('/action-allowed/:action/:dataId', passport.authenticate('cookie', {session: false}), (req, res) => {
-  const {action, dataId}=req.params
+router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
+  const srcFiles = req?.body?.result
+  // filter image original file
+  const imageSource = Array.isArray(req.body.result) && req?.body?.result.filter(s3obj => s3obj.Location.includes(encodeURIComponent(IMAGE_SIZE_MARKER)))
+  const srcFile = Array.isArray(imageSource) && imageSource.length >= 1 ? imageSource[0] : srcFiles[0]
+
+  return srcFile ? res.status(201).json(srcFile?.Location || '') : res.status(444).json(srcFile)
+})
+
+router.get('/s3getfiles', getFilesFromAWS, async(req, res) => {
+  return req.body.files ? res.status(200).json(req.body.files) : res.status(444)
+})
+
+router.post('/s3deletefile', deleteFileFromAWS, (req, res) => {
+  return req.body?.filedeleted ? res.status(200).json(req.body.filedeleted) : res.status(400)
+})
+
+// Hooks agenda modifications
+router.post('/agenda-hook', (req, res) => {
+  console.log(`Agenda hook received ${JSON.stringify(req.body)}`)
+  if (agendaHookFn) {
+    agendaHookFn(req.body)
+  }
+  return res.json()
+})
+
+router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
+  const {action}=req.params
+  const query=lodash.mapValues(req.query, v => {
+    try{ return JSON.parse(v) }
+    catch(e) { return v }
+  })
   const user=req.user
 
-  return callAllowedAction({action, dataId, user})
+  return callAllowedAction({action, user, ...query})
     .then(allowed => res.json(allowed))
 })
 
@@ -136,8 +178,8 @@ router.post('/file', (req, res) => {
   if (!(projectName && filePath && contents)) {
     return res.status(HTTP_CODES.BAD_REQUEST).json()
   }
-  const destpath = path.join(PRODUCTION_ROOT, projectName, 'src', filePath)
-  const unzippedContents=zlib.inflateSync(new Buffer(contents, 'base64')).toString()
+  const destpath = path.join(PRODUCTION_ROOT, projectName, PROJECT_CONTEXT_PATH, filePath)
+  const unzippedContents=zlib.inflateSync(Buffer.from(contents, 'base64')).toString()
   console.log(`Copying in ${destpath}`)
   return fs
     .writeFile(destpath, unzippedContents)
@@ -151,11 +193,11 @@ router.post('/clean', (req, res) => {
   if (!projectName) {
     return res.status(HTTP_CODES.BAD_REQUEST).json()
   }
-  const keepFileNames=[...fileNames, 'App.js']
-  const destpath = path.join(PRODUCTION_ROOT, projectName, 'src')
+  const keepFileNames=[...fileNames, '_app.tsx', '_document.js', 'index.js']
+  const destpath = path.join(PRODUCTION_ROOT, projectName, PROJECT_CONTEXT_PATH)
   return fs.readdir(destpath)
     .then(files => {
-      const diskFiles=files.filter(f => /[A-Z].*\.js$/.test(f))
+      const diskFiles=files.filter(f => /[a-z].*\.js$/.test(f))
       const extraFiles=lodash(diskFiles)
         .difference(keepFileNames)
         .map(f => path.join(destpath, f))
@@ -225,7 +267,7 @@ router.post('/start', (req, res) => {
 
   const destpath = path.join(PRODUCTION_ROOT, projectName)
   const result = child_process.exec(
-    `serve -p ${PRODUCTION_PORT} build/`,
+    `pm2 restart ecosystem.config.js`,
     {
       cwd: destpath,
     },
@@ -276,54 +318,22 @@ router.post('/login', (req, res) => {
     })
 })
 
-// router.post('/scormupdate', passport.authenticate('cookie', {session: false}), (req, res) => {
-router.post('/scormupdate', (req, res) => {
-  const value = req.body
-  const idRessource = req?.body?.cmi?.entry
-  const user = req.user
-
-  // console.log(value, idRessource, user)
-  console.log(value)
-
-  // const updateScorm = UserSessionData.findOneAndUpdate({
-  //   user: user._id,
-  // }, {
-  //   user: user._id,
-  // }, {
-  //   upsert: true,
-  //   new: true,
-  // })
-  //   .then(data => {
-  //     const scormProgress = data?.modules_progress?.find(a => a.resource._id.toString() == idRessource.toString())
-  //     if (scormProgress) {
-  //       scormProgress.module_progress = value
-  //     }
-  //     else {
-  //       data.modules_progress.push({
-  //         resource: parent,
-  //         module_progress: value,
-  //       })
-  //     }
-  //     return data.save()
-  //   })
-  //   .catch(e => console.error(e))
-
-  // return res.json(updateScorm)
-  return res.json({})
-})
-
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
   return res.json(req.user)
 })
 
 router.post('/register', (req, res) => {
-  const body=lodash.mapValues(req.body, v => JSON.parse(v))
+  const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body)
     .then(result => res.json(result))
 })
 
 router.post('/register-and-login', (req, res) => {
-  const body=lodash.mapValues(req.body, v => JSON.parse(v))
+  const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
+  const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  console.log(`Registering & login on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body)
     .then(result => {
       const {email, password}=body
@@ -378,11 +388,9 @@ router.post('/recommandation', (req, res) => {
       return mongoose.connection.models[model]
         .create([params], {runValidators: true})
         .then(([data]) => {
-          return callPostCreateData({model, params, data})
+          return callPostCreateData({model, params, data, user})
         })
-        .then(data => {
-          return res.json(data)
-        })
+        .then(data => res.json(data))
     })
 })
 
@@ -391,14 +399,50 @@ router.get('/statTest', (req, res) => {
     .map(v => {
       const rad=v*Math.PI/180.0
       const cos=Math.cos(rad)
-      return ({x:v, y:cos})
+      return ({x: v, y: cos})
     })
   return res.json(data)
 })
 
+router.get('/checkenv', (req, res) => {
+  let missingVars = []
+  NEEDED_VAR.forEach(varname => {
+    const isMissing = typeof process.env[varname] === 'undefined' || process.env[varname] === ''
+    if (isMissing) {
+      missingVars.push(varname)
+    }
+  })
+
+  return res.json(missingVars)
+})
+
+router.post('/contact', (req, res) => {
+  const model = 'contact'
+  let params=req.body
+  const context= req.query.context
+
+  return callPreCreateData({model, params})
+    .then(({model, params}) => {
+      return mongoose.connection.models[model]
+        .create([params], {runValidators: true})
+        .then(([data]) => {
+          return callPostCreateData({model, params, data})
+        })
+        .then(data => res.json(data))
+    })
+})
+
+router.post('/import-data/:model', createMemoryMulter().single('file'), passport.authenticate('cookie', {session: false}), (req, res) => {
+  const {model}=req.params
+  const {file}=req
+  console.log(`Import ${model}:${file.buffer.length} bytes`)
+  return importData({model, data:file.buffer})
+    .then(result => res.json(result))
+})
+
 router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
   const model = req.params.model
-  let params=req.body
+  let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
   const user=req.user
 
@@ -414,79 +458,55 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
       return mongoose.connection.models[model]
         .create([params], {runValidators: true})
         .then(([data]) => {
-          return callPostCreateData({model, params, data})
+          return callPostCreateData({model, params, data, user})
         })
-        .then(data => {
-          return res.json(data)
-        })
+        .then(data => res.json(data))
     })
 })
 
-router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+const putFromRequest = (req, res) => {
   const model = req.params.model
   const id = req.params.id
-  let params=req.body
+  let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
+  const user=req.user
   params=model=='order' && context ? {...params, booking: context}:params
 
   if (!model || !id) {
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model and id are required`)
   }
-  console.log(`Updating:${id} with ${JSON.stringify(params)}`)
-  return mongoose.connection.models[model]
-    .findByIdAndUpdate(id, params, {new: true, runValidators: true})
-    .then(data => callPostPutData({model, data}))
-    .then(data => res.json(data))
+
+  return putToDb({model, id, params, user})
+    .then(data => {
+      return res.json(data)
+    })
+}
+
+router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+  return putFromRequest(req, res)
 })
 
 
-const loadFromDb = (req, res) => {
+const loadFromRequest = (req, res) => {
   const model = req.params.model
   let fields = req.query.fields?.split(',') || []
   const id = req.params.id
-  const params = req.get('Referrer')
-    ? {...url.parse(req.get('Referrer'), true).query}
-    : {}
+  const params=lodash.omit({...req.query}, ['fields', 'id'])
   const user = req.user
 
-  console.log(`GET ${model}/${id} ${fields}`)
+  const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
+  console.log(logMsg)
 
-  callPreprocessGet({model, fields, id, user: req.user})
-    .then(({model, fields, id, data}) => {
-      console.log(`PREGET ${model}/${id} ${fields}`)
-      if (data) {
-        return res.json(data)
-      }
-      return buildQuery(model, id, fields)
-        .then(data => {
-          // Force duplicate children
-          data = JSON.parse(JSON.stringify(data))
-          // Remove extra virtuals
-          data = retainRequiredFields({data, fields})
-          if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return Promise.all(data.map(d => addComputedFields(user, params, d, model)))
-        })
-        .then(data => {
-          // return id ? Promise.resolve(data) : callFilterDataUser({model, data, id, user: req.user})
-          return callFilterDataUser({model, data, id, user: req.user})
-        })
-        .then(data => {
-          if (['theme', 'resource'].includes(model) && !id) {
-            data = data.filter(t => t.name)
-          }
-          if (id && model == 'resource' && data[0]?.status == RES_TO_COME) {
-            throw new ForbiddenError(`Ressource non encore disponible`)
-          }
-          console.log(`GET ${model}/${id} ${fields}: data sent`)
-          return res.json(data)
-        })
+  return loadFromDb({model, fields, id, user, params})
+    .then(data => {
+      console.log(`${logMsg}: data sent`)
+      res.json(data)
     })
-
 }
 
-router.get('/jobUser/:id?', (req, res) => {
+router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   req.params.model='jobUser'
-  return loadFromDb(req, res)
+  return loadFromRequest(req, res)
 })
 
 var requested=[]
@@ -500,7 +520,7 @@ router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (r
     console.log('************** returning')
     requested=[...requested, req.params.id]
   }
-  return loadFromDb(req, res)
+  return loadFromRequest(req, res)
 })
 
 module.exports = router

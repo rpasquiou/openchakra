@@ -1,16 +1,16 @@
 import {encode} from 'html-entities'
 import filter from 'lodash/filter'
 import isBoolean from 'lodash/isBoolean'
-import lodash from 'lodash';
-
+import lodash from 'lodash'
 import icons from '~iconsList'
+import lucidicons from '~lucideiconsList'
 
 import {
   ACTION_TYPE,
   CHECKBOX_TYPE,
   CONTAINER_TYPE,
   DATE_TYPE,
-  ENUM_TYPE,
+  GROUP_TYPE,
   IMAGE_TYPE,
   INPUT_TYPE,
   PROGRESS_TYPE,
@@ -20,19 +20,31 @@ import {
   UPLOAD_TYPE,
   getDataProviderDataType,
   getFieldsForDataProvider,
+  getParentOfType,
+  hasParentType,
   isSingleDataPage,
 } from './dataSources';
-import { ProjectState, PageState } from '../core/models/project'
 import {
+  DEFAULT_REDIRECT_PAGE,
+  REDIRECT_COUNT,
+  REDIRECT_PAGE,
+  REDIRECT_ROLE,
+  addBackslashes,
   capitalize,
   getPageFileName,
   getPageUrl,
-  normalizePageName
+  normalizePageName,
+  whatTheHexaColor,
 } from './misc';
+import { ProjectState, PageState } from '../core/models/project'
 import { isJsonString } from '../dependencies/utils/misc'
+import { key } from '../tests/utils/smartdiet_model.json';
+
 
 //const HIDDEN_ATTRIBUTES=['dataSource', 'attribute']
 const HIDDEN_ATTRIBUTES: string[] = []
+
+const isProduction = process?.env?.NEXT_PUBLIC_MODE === 'production'
 
 export const getPageComponentName = (
   pageId: string,
@@ -41,14 +53,23 @@ export const getPageComponentName = (
   return normalizePageName(pages[pageId].pageName)
 }
 
-const isDynamicComponent = (comp: IComponent) => {
-  return !!comp.props.dataSource || !!comp.props.subDataSource
+const isDynamicComponent = (components:IComponents, comp: IComponent): boolean => {
+  let isDynamic=(!!comp.props.dataSource || !!comp.props.subDataSource
     || (!!comp.props.action && !CONTAINER_TYPE.includes(comp.type))
-    || (comp.props.model && comp.props.attribute)
+    || (comp.props.model && comp.props.attribute)) && !(comp.type=='Flex' && comp.props.isFilterComponent)
+  // Tabs: has dataSource but only TabList and TabPanels children must get the datasource
+  if (comp.type=='Tabs') {
+    return false
+  }
+  if (['TabList', 'TabPanels'].includes(comp.type)) {
+    const tabParent=getParentOfType(components, comp, 'Tabs')
+    return tabParent ? tabParent.props.dataSource : false
+  }
+  return isDynamic
 }
 
 const isMaskableComponent = (comp: IComponent) => {
-  return !!comp.props.hiddenRoles
+  return !!comp.props.hiddenRoles || !!comp.props.conditionsvisibility
 }
 
 const getDynamicType = (comp: IComponent) => {
@@ -77,7 +98,7 @@ const getDynamicType = (comp: IComponent) => {
     return 'Source'
   }
   if (CHECKBOX_TYPE.includes(comp.type)) {
-    return 'Checkbox'
+    return ['IconCheck','Switch'].includes(comp.type) ? 'Checkbox': comp.type
   }
   if (INPUT_TYPE.includes(comp.type)) {
     return 'Input'
@@ -85,8 +106,8 @@ const getDynamicType = (comp: IComponent) => {
   if (UPLOAD_TYPE.includes(comp.type)) {
     return 'UploadFile'
   }
-  if (ENUM_TYPE.includes(comp.type)) {
-    return 'Enum'
+  if (GROUP_TYPE.includes(comp.type)) {
+    return comp.type
   }
   throw new Error(`No dynamic found for ${comp.type}`)
 }
@@ -120,9 +141,9 @@ type BuildBlockParams = {
 // Wether component is linked to a save action, thus must not save during onChange
 const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
   let c=Object.values(components)
-    .filter(c => c.props?.action=='save' && c.props?.actionProps)
+    .filter(c => ['save', 'create', 'smartdiet_set_company_code'].includes(c.props?.action) && c.props?.actionProps)
     .map(c => JSON.parse(c.props.actionProps))
-  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_/.test(k)))
+  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_|^code$/.test(k)))
   c=c.map(obj => Object.values(obj).filter(v => !!v))
   c=lodash.flattenDeep(c)
   c=lodash.uniq(c)
@@ -141,30 +162,49 @@ const buildBlock = ({
   let content = ''
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
-    let childComponent = components[key]
-    if (childComponent.type === 'DataProvider') {
+    let child = components[key]
+    if (child.type === 'DataProvider') {
       return
     }
-    if (!childComponent) {
+    if (!child) {
       throw new Error(`invalid component ${key}`)
-    } else if (forceBuildBlock || !childComponent.componentName) {
+    } else if (forceBuildBlock || !child.componentName) {
+
+      const childComponent={
+        ...lodash.cloneDeep(child),
+        props: lodash.cloneDeep(child.type=='Tabs' ? lodash.omit(child.props, ['dataSource']) : child.props),
+      }
+
+      // Force TabList && TabPanel's dataSource if parent Tabs has one
+      if (['TabList', 'TabPanels'].includes(childComponent.type)) {
+        const tabParent=getParentOfType(components, childComponent, 'Tabs')
+        if (tabParent?.props.dataSource) {
+          childComponent.props.dataSource=tabParent?.props.dataSource
+        }
+        if (tabParent?.props.attribute) {
+          childComponent.props.attribute=tabParent?.props.attribute
+        }
+      }
       const dataProvider = components[childComponent.props.dataSource]
       const isDpValid=getValidDataProviders(components).find(dp => dp.id==childComponent.props.dataSource)
       const paramProvider = dataProvider?.id.replace(/comp-/, '')
       const subDataProvider = components[childComponent.props.subDataSource]
       const paramSubProvider = subDataProvider?.id.replace(/comp-/, '')
-      const componentName = isDynamicComponent(childComponent)
+      const componentName = isDynamicComponent(components, childComponent)
         ? `Dynamic${capitalize(childComponent.type)}`
         : isMaskableComponent(childComponent)
         ? `Maskable${capitalize(childComponent.type)}`
-        : capitalize(childComponent.type)
+        : (childComponent.type==='Flex' && JSON.parse(childComponent?.props?.isFilterComponent || 'false'))
+        ? 'Filter'
+        : capitalize(getWappType(childComponent.type))
       let propsContent = ''
 
-      // DIRTY: stateValue for RAdioGroup to get value
-      if ((['RadioGroup', 'Input', 'Select']).includes(childComponent.type)) {
+      propsContent += ` getComponentValue={getComponentValue} `
+
+      // Forces refresh is this compnent's value is changed
+      if (isFilterComponent(childComponent, components)) {
         propsContent += ` setComponentValue={setComponentValue} `
       }
-      propsContent += ` getComponentValue={getComponentValue} `
 
       // Set component id
       propsContent += ` id='${childComponent.id}' `
@@ -184,7 +224,13 @@ const buildBlock = ({
         propsContent += ` noautosave={true} `
       }
 
-      if (isDynamicComponent(childComponent)) {
+      if (['Checkbox', 'IconCheck', 'Radio'].includes(childComponent.type) && hasParentType(childComponent, components, 'RadioGroup')) {
+        propsContent += ` insideGroup `
+      }
+      if (['Checkbox', 'IconCheck', 'Radio'].includes(childComponent.type) && hasParentType(childComponent, components, 'CheckboxGroup')) {
+        propsContent += ` insideGroup `
+      }
+      if (isDynamicComponent(components, childComponent)) {
         propsContent += ` backend='/'`
           let tp = null
             try {
@@ -239,6 +285,10 @@ const buildBlock = ({
         if (childComponent.type === 'Icon') {
           return propName !== 'icon'
         }
+        // No index on Accordion => Unfolded by defautl
+        if (childComponent.type === 'Accordion') {
+          return propName !== 'index'
+        }
         return true
       })
 
@@ -259,6 +309,12 @@ const buildBlock = ({
                 : undefined,
               redirect: propsValue.redirect
                 ? getPageUrl(propsValue.redirect, pages)
+                : undefined,
+              paymentSuccess: propsValue.paymentSuccess
+                ? getPageUrl(propsValue.paymentSuccess, pages)
+                : undefined,
+              paymentFailure: propsValue.paymentFailure
+                ? getPageUrl(propsValue.paymentFailure, pages)
                 : undefined,
             }
             propsContent += ` ${propName}='${JSON.stringify(valuesCopy)}'`
@@ -320,14 +376,19 @@ const buildBlock = ({
             propName.toLowerCase().includes('icon') &&
             childComponent.type !== 'Icon'
           ) {
-            if (Object.keys(icons).includes(propsValue)) {
-              let operand = `={<${propsValue} />}`
+            const iconSets = {...icons, ...lucidicons}
+            if (Object.keys(iconSets).includes(propsValue)) {
+              const {color, fill} = childComponent.props
+              const iconColor = whatTheHexaColor(color || 'black')
+              const fillIconColor = whatTheHexaColor(fill || 'black')
+
+              let operand = `={<${propsValue} color={'${iconColor}'} ${fill ? `fill={'${fillIconColor}'}` : ''} />}`
               propsContent += `${propName}${operand} `
             }
           } else if (
             propName !== 'children' &&
             typeof propsValue !== 'object' &&
-            propsValue
+            (propsValue || propsValue===0)
           ) {
             let operand =
               (propName === 'dataSource' && paramProvider)
@@ -335,20 +396,25 @@ const buildBlock = ({
                 :
                 propName === 'subDataSource' && paramSubProvider
                   ? `={${paramSubProvider}}`
-                : `='${encode(propsValue)}'`
+                : `='${propsValue===0 ? '0' : encode(propsValue)}'`
 
             if (propsValue === true || propsValue === 'true') {
               operand = ` `
             } else if (
-              propsValue === 'false' ||
+              childComponent.type!='Radio' &&
+              (propsValue === 'false' ||
               isBoolean(propsValue) ||
-              !isNaN(propsValue)
+              !isNaN(propsValue) )
             ) {
               operand = `={${propsValue}}`
             }
 
             if (propName=='href') {
               operand=`="${getPageUrl(propsValue, pages)}"`
+            }
+
+            if (['color', 'fill'].includes(propName)) {
+              operand=`="${whatTheHexaColor(propsValue)}"`
             }
 
             propsContent += ` ${propName}${operand}`
@@ -367,14 +433,11 @@ const buildBlock = ({
         propsContent += ` displayEye`
       }
 
-      if (childComponent.props.actionProps) {
-        const { page } = isJsonString(childComponent.props.actionProps)
-          ? JSON.parse(childComponent.props.actionProps)
-          : childComponent.props.actionProps
-          if (page) {
-            const destPageUrl = getPageUrl(page, pages)
-            propsContent += ` pageName={'${destPageUrl}'} `
-            propsContent += `onClick={() => window.location='/${destPageUrl}'}`
+      if (childComponent.type === 'Flex' && childComponent.props.isFilterComponent) {
+        const {props}=childComponent
+        const enums=models[props?.model]?.attributes?.[props.attribute]?.enumValues
+        if (enums) {
+          propsContent += ` enumValues='${JSON.stringify(enums)}'`
         }
       }
 
@@ -474,10 +537,17 @@ const ${componentName} = () => (
   return code
 }
 
-const getIconsImports = (components: IComponents) => {
+const getIconsImports = (components: IComponents, lib?: string | null) => {
   return Object.keys(components).flatMap(name => {
     return Object.keys(components[name].props)
       .filter(prop => prop.toLowerCase().includes('icon'))
+      .filter(() => {
+        if (components[name].props?.['data-lib']) {
+          return components[name].props?.['data-lib'].includes(lib ?? "chakra")
+        } else {
+          return !lib
+        }
+      })
       .filter(prop => !!components[name].props[prop])
       .map(prop => components[name].props[prop])
   })
@@ -545,14 +615,16 @@ const buildHooks = (components: IComponents) => {
   }
 
   useEffect(() => {
+    if (!process.browser) { return }
     ${dataProviders
       .map(dp => {
         const dataId = dp.id.replace(/comp-/, '')
         const dpFields = getDataProviderFields(dp).join(',')
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
+        const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}` : ''
-        }`
+          dpFields ? `?fields=${dpFields}&` : '?'
+        }${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -572,30 +644,45 @@ const buildHooks = (components: IComponents) => {
 }
 
 const isFilterComponent = (component: IComponent, components: IComponents) => {
-  return Object.values(components).some(
-    c => c.props?.textFilter == component.id,
+
+  let result=Object.values(components).some(
+    c => (c.props?.textFilter == component.id || c.props?.filterValue == component.id
+      || c.props?.filterValue2 == component.id
+    )
   )
+
+  // Check if any compoennt has this component has a filter attribute
+  result = result ||Object.values(components).some(cmp => {
+    return Object.entries(cmp.props).some(([propName, propvalue]) => {
+      if (/^conditions/.test(propName)) {
+        const value=typeof(propvalue)=='string' ? JSON.parse(propvalue):propvalue
+        return Object.values(value).some((v:any) => v.attribute==component.id)
+      }
+    })
+  })
+  return result
 }
 
 const buildDynamics = (components: IComponents, extraImports: string[]) => {
   const dynamicComps = lodash.uniqBy(
-    Object.values(components).filter(c => isDynamicComponent(c)),
+    Object.values(components).filter(c => isDynamicComponent(components, c)),
     c => c.type,
   )
   if (dynamicComps.length === 0) {
     return null
   }
+
   const groups = lodash.groupBy(dynamicComps, c => getDynamicType(c))
   Object.keys(groups).forEach(g =>
     extraImports.push(
-      `import withDynamic${g} from './dependencies/hoc/withDynamic${g}'`,
+      `import withDynamic${g} from '../dependencies/hoc/withDynamic${g}'`,
     ),
   )
 
   let code = `${Object.keys(groups)
     .map(g => {
       return groups[g]
-        .map(comp => `const Dynamic${comp.type}=withDynamic${g}(${comp.type})`)
+        .map(comp => `const Dynamic${comp.type}=withDynamic${g}(${getWappType(comp.type)})`)
         .join('\n')
     })
     .join('\n')}
@@ -617,7 +704,7 @@ const buildMaskable = (components: IComponents, extraImports: string[]) => {
     .uniq()
 
   extraImports.push(
-    `import withMaskability from './dependencies/hoc/withMaskability'`,
+    `import withMaskability from '../dependencies/hoc/withMaskability'`,
   )
   let code = types
     .map(type => `const Maskable${type}=withMaskability(${type})`)
@@ -625,16 +712,43 @@ const buildMaskable = (components: IComponents, extraImports: string[]) => {
   return code
 }
 
+const getWappType = type => {
+  return `Wapp${type}`
+}
+
+const reloadOnBackScript = `
+useEffect(() => {
+   const handlePopstate = () => {
+     // This code will run when the user navigates back
+     window.location.reload(); // Reload the component
+   };
+   window.addEventListener('popstate', handlePopstate);
+   return () => {
+     // Cleanup: Remove the event listener when the component unmounts
+     window.removeEventListener('popstate', handlePopstate);
+   };
+ }, []);`
+
 export const generateCode = async (
   pageId: string,
   pages: {
     [key: string]: PageState
   },
   models: any,
+  project: ProjectState
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
+  const { settings } = project
+  const {description, metaImage, name, url, favicon32, gaTag} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
   const extraImports: string[] = []
+  const wappComponentsDeclaration = lodash(components)
+    .values()
+    .filter(v => v.id!='root')
+    .filter(v => v.type!='DataProvider')
+    .map(v => v.type)
+    .uniq()
+    .map(type => `const ${getWappType(type)}=withWappizy(${type})`)
   let hooksCode = buildHooks(components)
   let filterStates = buildFilterStates(components)
   let dynamics = buildDynamics(components, extraImports)
@@ -651,7 +765,12 @@ export const generateCode = async (
     noAutoSaveComponents
   })
   let componentsCodes = buildComponents(components, pages, singleDataPage, noAutoSaveComponents)
+
+  const lucideIconImports = [...new Set(getIconsImports(components, 'lucid'))]
   const iconImports = [...new Set(getIconsImports(components))]
+
+
+
 
   const imports = [
     ...new Set(
@@ -671,24 +790,45 @@ export const generateCode = async (
   )
   */
   const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `./dependencies/custom-components/${c}`,
+    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
   )
 
-  const rootIdQuery = components['root']?.props?.model
+  const rootIdQuery = components.root?.props?.model
   const rootIgnoreUrlParams =
     components['root']?.props?.ignoreUrlParams == 'true'
 
+  var usedRoles=[]
+  var autoRedirect=lodash.range(REDIRECT_COUNT)
+    .map(idx => {
+      const [role, page]=[REDIRECT_ROLE, REDIRECT_PAGE].map(att => components?.root.props[`${att}${idx}`])
+      if (role && page) {
+        usedRoles.push(role)
+        return   `useEffect(()=>{
+            if (user?.role=='${role}') {window.location='/${getPageUrl(page, pages)  }'}
+          }, [user])`
+      }
+    })
+    .filter(v => !!v)
+    .join('\n')
+
+    const defaultRedirectPage=components?.root.props[DEFAULT_REDIRECT_PAGE]
+  if (defaultRedirectPage) {
+    const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
+    autoRedirect+=`\nuseEffect(()=>{
+        if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
+      }, [user])`
+  }
+  /**
   const redirectPage=components?.root.props?.autoRedirectPage
   const autoRedirect =  redirectPage?
-  `useEffect(()=>{
-    if (user) {window.location='/${getPageUrl(redirectPage, pages)  }'}
-  }, [user])`
   :
   ''
+  */
   code = `import React, {useState, useEffect} from 'react';
-  import Metadata from './dependencies/Metadata';
+  import Filter from '../dependencies/custom-components/Filter/Filter';
+  import omit from 'lodash/omit';
+  import Metadata from '../dependencies/Metadata';
   ${hooksCode ? `import axios from 'axios'` : ''}
-  import {ChakraProvider} from "@chakra-ui/react";
   ${Object.entries(groupedComponents)
     .map(([modName, components]) => {
       const multiple = modName.includes('chakra-ui')
@@ -704,22 +844,35 @@ ${
 import { ${iconImports.join(',')} } from "@chakra-ui/icons";`
     : ''
 }
+${
+  lucideIconImports.length
+    ? `
+import { ${lucideIconImports.join(',')} } from "lucide-react";`
+    : ''
+}
 
-import Fonts from './dependencies/theme/Fonts'
-import {ensureToken} from './dependencies/utils/token'
-import {useLocation} from "react-router-dom"
-import { useUserContext } from './dependencies/context/user'
-import { getComponentDataValue } from './dependencies/utils/values'
-import theme from './dependencies/theme/theme'
+import {ensureToken} from '../dependencies/utils/token'
+import {useRouter} from 'next/router'
+import { useUserContext } from '../dependencies/context/user'
+import { getComponentDataValue } from '../dependencies/utils/values'
+import withWappizy from '../dependencies/hoc/withWappizy'
+
 ${extraImports.join('\n')}
+${wappComponentsDeclaration.join('\n')}
 
 ${dynamics || ''}
 ${maskable || ''}
 ${componentsCodes}
 
+
 const ${componentName} = () => {
-  const query = new URLSearchParams(useLocation().search)
-  const id=${rootIgnoreUrlParams ? 'null' : `query.get('${rootIdQuery}') || query.get('id')`}
+
+
+  /** Force reload on history.back */
+  ${reloadOnBackScript}
+  const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
+  const id=${rootIgnoreUrlParams ? 'null' : 'query.id'}
+  const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
 
   const setComponentValue = (compId, value) => {
@@ -748,16 +901,19 @@ const ${componentName} = () => {
   ${hooksCode}
   ${filterStates}
 
-  return ${redirectPage ? 'user===null && ': ''} (
-  <ChakraProvider resetCSS theme={theme}>
-    <Fonts />
+  return ${autoRedirect ? 'user===null && ': ''} (
+    <>
     <Metadata
-      metaTitle={'${metaTitle}'}
-      metaDescription={'${metaDescription}'}
-      metaImageUrl={'${metaImageUrl}'}
+      metaTitle={'${metaTitle && addBackslashes(metaTitle)}'}
+      metaDescription={'${metaDescription ? addBackslashes(metaDescription) : addBackslashes(description)}'}
+      metaImageUrl={'${metaImageUrl ? addBackslashes(metaImageUrl) : addBackslashes(metaImage)}'}
+      metaName={'${name && addBackslashes(name)}'}
+      metaUrl={'${url}'}
+      metaFavicon32={'${favicon32 && addBackslashes(favicon32)}'}
+      metaGaTag={${isProduction ? `'${gaTag}'` : null}}
     />
     ${code}
-  </ChakraProvider>
+    </>
 )};
 
 export default ${componentName};`
@@ -773,7 +929,10 @@ ${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
 */
   const { pages, rootPage } = state
   let code = `import {BrowserRouter, Routes, Route} from 'react-router-dom'
-  import { UserWrapper } from './dependencies/context/user';
+  import { UserWrapper } from './dependencies/context/user'
+  import theme from './dependencies/theme/theme'
+  import Fonts from './dependencies/theme/Fonts'
+  import {ChakraProvider} from "@chakra-ui/react"
   ${Object.values(pages)
     .map(
       page =>
@@ -786,6 +945,8 @@ ${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
 
   const App = () => (
     <UserWrapper>
+    <ChakraProvider resetCSS theme={theme}>
+      <Fonts />
     <BrowserRouter>
     <Routes>
       <Route path='/' element={<${getPageComponentName(rootPage, pages)}/>} />
@@ -800,6 +961,7 @@ ${pageNames.map(name => `<li><a href='/${name}'>${name}</a></li>`).join('\n')}
         .join('\n')}
     </Routes>
     </BrowserRouter>
+    </ChakraProvider>
     </UserWrapper>
   )
 

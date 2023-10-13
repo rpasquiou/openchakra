@@ -1,7 +1,11 @@
 import lodash from 'lodash'
+
 import { ProjectState } from '~/core/models/project'
+
 import { getPageUrl } from './misc';
+import { getParentOfType, hasParentType } from './dataSources';
 import projectSchema from './projectSchema.json'
+
 const Validator = require('jsonschema').Validator
 import { CONTAINER_TYPE } from './dataSources'
 import {ACTIONS} from './actions'
@@ -12,10 +16,16 @@ const checkEmptyDataAttribute = (
 ) => {
   if (
     !CONTAINER_TYPE.includes(comp.type) &&
+    comp.props.dataSource &&
+    !comp.props.attribute &&
     comp.type != 'Button' &&
     comp.type != 'IconButton' &&
-    comp.props.dataSource &&
-    !comp.props.attribute
+    (comp.type!='Radio' || !hasParentType(comp, icomponents, 'RadioGroup')) &&
+    (comp.type!='Checkbox' || !hasParentType(comp, icomponents, 'RadioGroup')) &&
+    (comp.type!='IconCheck' || !hasParentType(comp, icomponents, 'RadioGroup')) &&
+    (comp.type!='Radio' || !hasParentType(comp, icomponents, 'CheckboxGroup')) &&
+    (comp.type!='Checkbox' || !hasParentType(comp, icomponents, 'CheckboxGroup')) &&
+    (comp.type!='IconCheck' || !hasParentType(comp, icomponents, 'CheckboxGroup'))
   ) {
     throw new Error(`Datasource attribute is not set`)
   }
@@ -35,9 +45,6 @@ const checkActionsProperties = (
         actionProps=JSON.parse(actionProps)
       }
       catch(err){}
-      if (required.length>0) {
-        console.log(`Actionprops:${Object.keys(actionProps)}`)
-      }
       const missing=required.filter(r => lodash.isEmpty(actionProps[r]))
       if (!lodash.isEmpty(missing)) {
         throw new Error(`Action ${actionName} requires attributes ${missing}`)
@@ -62,7 +69,7 @@ const checkDispatcherManyChildren = (
   if (
     CONTAINER_TYPE.includes(parent.type) &&
     parent.props.dataSource &&
-    parent.children.slice(1).includes(comp.id)
+    parent.children.slice(2).includes(comp.id)
   ) {
     throw new Error(
       `Extra child ${comp.type} of dynamic ${parent.type} will not appear at runtime`,
@@ -116,6 +123,19 @@ const checkCardinality = (
   }
 }
 
+// In dynamic Tabs (i.e. having dataSource), maskability must be
+// managed in the Tab instead of the TabPanel
+const checkTabPanelMaskability = (
+  comp: IComponent,
+  icomponents: IComponents,
+) => {
+  if (comp.type=='TabPanel' && (comp.props.hiddenRoles || comp.props.conditionsvisibility)) {
+    if (getParentOfType(icomponents, comp, 'Tabs')?.props.dataSource) {
+      throw new Error(`Dynamic TabPanel's maskability must be managed by the corresponding Tab`)
+    }
+  }
+}
+
 export const validateComponent = (
   component: IComponent,
   components: IComponents,
@@ -129,6 +149,7 @@ export const validateComponent = (
     checkUnlinkedDataProvider,
     checkCardinality,
     checkActionsProperties,
+    checkTabPanelMaskability,
   ])
     .map(v => {
       try {
@@ -155,6 +176,7 @@ export const validateComponents = (icomponents: IComponents): IWarning[] => {
     checkUnlinkedDataProvider,
     checkCardinality,
     checkActionsProperties,
+    checkTabPanelMaskability,
   ])
     .map(v => {
       return components.map(c => {

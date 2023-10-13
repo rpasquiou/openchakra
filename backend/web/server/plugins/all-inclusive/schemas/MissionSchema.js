@@ -1,4 +1,6 @@
 const {
+  BOOLEAN,
+  BOOLEAN_YES,
   CUSTOMER_TIPS,
   MISSION_FREQUENCY,
   MISSION_FREQUENCY_UNKNOWN,
@@ -8,11 +10,13 @@ const {
   MISSION_STATUS_CUST_CANCELLED,
   MISSION_STATUS_DISPUTE,
   MISSION_STATUS_FINISHED,
+  MISSION_STATUS_PAYMENT_PENDING,
   MISSION_STATUS_QUOT_ACCEPTED,
   MISSION_STATUS_QUOT_REFUSED,
   MISSION_STATUS_QUOT_SENT,
   MISSION_STATUS_TI_REFUSED,
   MISSION_STATUS_TO_BILL,
+  PAYMENT_STATUS,
   ROLE_COMPANY_BUYER,
   ROLE_TI,
   TI_TIPS
@@ -58,23 +62,29 @@ const MissionSchema = new Schema({
   customer_location: {
     type: Boolean,
     default: false,
-    required: true,
+    required: [true, `Chez le client O/N est obligatoire`],
   },
   foreign_location: {
     type: Boolean,
     default: false,
-    required: true,
+    required: [true, `A distance O/N est obligatoire`],
+  },
+  recurrent: {
+    type: String,
+    enum: Object.keys(BOOLEAN),
+    required: [true, 'La récurrence (oui/non) est obligatoire']
   },
   frequency: {
     type: String,
+    set: v => v || undefined, // To allow `null` value as empty
     enum: Object.keys(MISSION_FREQUENCY),
-    default: MISSION_FREQUENCY_UNKNOWN,
-    required: [true, 'La fréquence de mission est obligatoire']
+    required: [function() { return this.recurrent==BOOLEAN_YES}, 'La fréquence de mission est obligatoire']
   },
+  // Customer
   user: {
     type: Schema.Types.ObjectId,
     ref: "user",
-    required: true,
+    required: [true, `Le client est obligatoire`],
   },
   job: {
     type: Schema.Types.ObjectId,
@@ -112,6 +122,32 @@ const MissionSchema = new Schema({
   bill: {
     type: String,
   },
+  // Payment process
+  payin_id: {
+    type: String,
+  },
+  // Null: pending, true: ok
+  payin_achieved: {
+    type: Boolean,
+    required: false,
+  },
+  transfer_id: {
+    type: String,
+  },
+  transfer_status: {
+    type: String,
+  },
+  payout_id: {
+    type: String,
+  },
+  payout_status: {
+    type: String,
+  },
+  dummy: {
+    type: Number,
+    default: 0,
+    required: [true, `Dummy est obligatoire`],
+  },
 }, schemaOptions
 );
 
@@ -131,8 +167,11 @@ MissionSchema.virtual('status').get(function() {
   if (this.customer_refuse_quotation_date) {
     return MISSION_STATUS_QUOT_REFUSED
   }
-  if (this.customer_accept_quotation_date) {
+  if (this.payin_id && this.payin_achieved==true) {
     return MISSION_STATUS_QUOT_ACCEPTED
+  }
+  if (this.payin_id && this.payin_achieved==null) {
+    return MISSION_STATUS_PAYMENT_PENDING
   }
   if (this.customer_cancel_date) {
     return MISSION_STATUS_CUST_CANCELLED
@@ -149,7 +188,7 @@ MissionSchema.virtual('status').get(function() {
   return MISSION_STATUS_ASKING_ALLE
 })
 
-
+/* eslint-disable prefer-arrow-callback */
 MissionSchema.virtual("ti_tip").get(function() {
   return TI_TIPS[this.status] || ''
 })
@@ -194,6 +233,7 @@ MissionSchema.methods.canCreateQuotation = function(user) {
 
 // TODO: fsm
 MissionSchema.methods.canAcceptQuotation = function(user) {
+  console.log(`Role:${user.role} ${ROLE_COMPANY_BUYER},status:${this.status} ${MISSION_STATUS_QUOT_SENT}`)
   return user.role==ROLE_COMPANY_BUYER && this.status==MISSION_STATUS_QUOT_SENT
 }
 
@@ -246,5 +286,35 @@ MissionSchema.methods.canLeaveComment = function(user) {
   return user.role==ROLE_COMPANY_BUYER && !!this.bill
   && this.status==MISSION_STATUS_FINISHED
 }
+
+// Got from quotation
+// TODO: must use this.mer instead of direct computation
+MissionSchema.virtual('customer_total').get(function() {
+  return this.quotations?.[0]?.customer_total
+})
+
+// TODO: Compute properly fro non qualified TI
+MissionSchema.virtual('mer').get(function() {
+  return this.quotations?.[0]?.mer
+})
+
+MissionSchema.virtual('gross_total').get(function() {
+  return this.quotations?.[0]?.gross_total
+})
+
+MissionSchema.virtual('aa').get(function() {
+  return this.quotations?.[0]?.aa
+})
+
+MissionSchema.virtual('ti_total').get(function() {
+  return this.quotations?.[0]?.ti_total
+})
+
+MissionSchema.virtual('vat_total').get(function() {
+  return this.quotations?.[0]?.vat_total
+})
+
+/* eslint-enable prefer-arrow-callback */
+
 
 module.exports = MissionSchema;
