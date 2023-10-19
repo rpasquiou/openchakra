@@ -1,3 +1,13 @@
+const { VERB } = require('../../utils/consts')
+
+const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  NotLoggedError,
+  SystemError
+} = require('./errors')
+
 const lodash = require('lodash')
 const mongoose = require('mongoose')
 const formatDuration = require('format-duration')
@@ -6,7 +16,6 @@ const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = req
 const UserSessionData = require('../models/UserSessionData')
 const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
-const {BadRequestError, NotFoundError} = require('./errors')
 
 // const { ROLES, STATUS } = require("../../utils/aftral_studio/consts");
 // TODO: Omporting Theme makes a cyclic import. Why ?
@@ -729,6 +738,27 @@ const setImportDataFunction = ({model, fn}) => {
   DATA_IMPORT_FN[model]=fn
 }
 
+let customCheckRequest=null
+
+const setCustomCheckRequest = fn => {
+  customCheckRequest=fn
+}
+/**
+Not connected requests are disabled by default
+*/
+const checkRequest = ({verb, model, id, user}) => {
+  if (!(verb && model && !!VERB[verb])) {
+    throw new SystemError(`verb and model are required`)
+  }
+  if (customCheckRequest) {
+    return customCheckRequest({verb, model, id, user})
+  }
+  if (!user) {
+    throw new NotLoggedError(`Accès interdit`)
+  }
+  return Promise.resolve(true)
+}
+
 module.exports = {
   hasRefs,
   MONGOOSE_OPTIONS,
@@ -773,4 +803,6 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  checkRequest,
+  setCustomCheckRequest,
 }

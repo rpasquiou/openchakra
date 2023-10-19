@@ -1,6 +1,8 @@
+const { NotLoggedError } = require('../../utils/errors')
 const {
   declareEnumField,
   declareVirtualField,
+  setCustomCheckRequest,
   setPreCreateData,
   setPreprocessGet,
 } = require('../../utils/database')
@@ -37,6 +39,16 @@ const preCreate = ({model, params, user}) => {
 }
 
 setPreCreateData(preCreate)
+
+const klesiaCheckRequest = ({verb, model, id, user}) => {
+  const allowed=!!user || !['loggedUser', 'user'].includes(model)
+  if (!allowed) {
+    throw new NotLoggedError(`Accès au modèle ${model} interdit en non-connecté`)
+  }
+  return Promise.resolve()
+}
+
+setCustomCheckRequest(klesiaCheckRequest)
 
 const USER_ALIASES=['user', 'loggedUser']
 USER_ALIASES.forEach(alias => {

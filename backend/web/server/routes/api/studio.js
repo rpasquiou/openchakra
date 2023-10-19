@@ -1,20 +1,22 @@
-const { createMemoryMulter } = require('../../utils/filesystem')
-const {
-  FUMOIR_MEMBER,
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS
-} = require('../../plugins/fumoir/consts')
+const { IMAGE_SIZE_MARKER, VERB_GET } = require('../../../utils/consts')
 const {
   callFilterDataUser,
   callPostCreateData,
   callPostPutData,
   callPreCreateData,
   callPreprocessGet,
+  checkRequest,
+  importData,
   loadFromDb,
   putToDb,
   retainRequiredFields,
-  importData,
 } = require('../../utils/database')
+const { createMemoryMulter } = require('../../utils/filesystem')
+const {
+  FUMOIR_MEMBER,
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS
+} = require('../../plugins/fumoir/consts')
 
 const path = require('path')
 const zlib=require('zlib')
@@ -29,7 +31,6 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -490,7 +491,8 @@ const loadFromRequest = (req, res) => {
   const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
   console.log(logMsg)
 
-  return loadFromDb({model, fields, id, user, params})
+  return checkRequest({model, verb: VERB_GET, id, user})
+    .then(() =>loadFromDb({model, fields, id, user, params}))
     .then(data => {
       console.log(`${logMsg}: data sent`)
       res.json(data)
@@ -502,7 +504,7 @@ router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {sess
   return loadFromRequest(req, res)
 })
 
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   return loadFromRequest(req, res)
 })
 
