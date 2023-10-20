@@ -1,11 +1,14 @@
-
-
+const {
+  CREATED_AT_ATTRIBUTE,
+  MODEL_ATTRIBUTES_DEPTH,
+  UPDATED_AT_ATTRIBUTE,
+  VERB
+} = require('../../utils/consts')
+const { runPromisesWithDelay } = require('./concurrency')
 const lodash = require('lodash')
 const mongoose = require('mongoose')
 const formatDuration = require('format-duration')
-const {VERB} = require('../../utils/consts')
 const {splitRemaining} = require('../../utils/text')
-const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
 const UserSessionData = require('../models/UserSessionData')
 const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
@@ -311,7 +314,7 @@ const buildQuery = (model, id, fields) => {
   const criterion = id ? {_id: id} : {}
   let query = mongoose.connection.models[model].find(criterion) // , select)
   const populates=buildPopulates(model, fields)
-  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
   return query
 }
@@ -407,6 +410,8 @@ const addComputedFields = async(
   session,
 ) => {
 
+  fields=lodash.uniq([...fields, ...Object.keys(data)])
+
   if (lodash.isEmpty(fields)) {
     return data
   }
@@ -415,19 +420,6 @@ const addComputedFields = async(
     newUser = await mongoose.connection.models.user.findById(data._id)
   }
 
-  const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-  const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
-
-  const requiredCompFields = lodash.pick(compFields, presentCompFields)
-
-  // Compute direct attributes
-  const x = await Promise.allSettled(
-    Object.keys(requiredCompFields).map(f =>
-      requiredCompFields[f](newUser, queryParams, data, session).then(res => {
-        data[f] = res
-      }),
-    ),
-  )
   // Handle references => sub
   const refAttributes = getModelAttributes(model).filter(
     att => !att[0].includes('.') && att[1].ref,
@@ -435,14 +427,14 @@ const addComputedFields = async(
   for (const refAttribute of refAttributes) {
     const [attName, attParams]=refAttribute
     const requiredSubFields=fields
-      .filter(f => f.startsWith(`${attName}.`))
-      .map(f => splitRemaining(f, '.')[1])
+          .filter(f => f.startsWith(`${attName}.`))
+          .map(f => splitRemaining(f, '.')[1])
 
     const children = data[attName]
-    if (children && !['program', 'origin'].includes(attName)) {
+    if (children) {
       if (attParams.multiple) {
         if (children.length > 0) {
-          await Promise.allSettled(
+          await Promise.all(
             children.map(child =>
               addComputedFields(
                 requiredSubFields,
@@ -468,6 +460,21 @@ const addComputedFields = async(
       }
     }
   }
+
+  const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
+  const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+  const requiredCompFields = lodash.pick(compFields, presentCompFields)
+
+  console.log('compputing direct', model, data._id)
+  // Compute direct attributes
+  const x = await runPromisesWithDelay(
+    Object.keys(requiredCompFields).map(f =>
+      () => requiredCompFields[f](newUser, queryParams, data, session).then(res => {
+        data[f] = res
+      }),
+    ), 0
+  )
+
   return data
 }
 
