@@ -29,13 +29,13 @@ QuizzSchema.virtual('questions', {
 /**
 Right answers ratio. If a question has no answer, it is considered false
 */
-QuizzSchema.virtual('percent_success', function(){
+QuizzSchema.virtual('percent_success').get(function(){
 })
 
 /**
 Message depending on the percent success
 */
-QuizzSchema.virtual('percent_message', function(){
+QuizzSchema.virtual('percent_message').get(function(){
 })
 
 /* eslint-enable prefer-arrow-callback */

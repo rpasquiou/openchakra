@@ -4,7 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const QuizzQuestionSchema = new Schema({
+const QuestionSchema = new Schema({
   quizz: {
     type: Schema.Types.ObjectId,
     ref: 'quizz',
@@ -36,31 +36,36 @@ const QuizzQuestionSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
-QuizzQuestionSchema.virtual('available_answers', {
+QuestionSchema.virtual('available_answers', {
   ref: 'answer', // The Model to use
   localField: '_id', // Find in Model, where localField
   foreignField: 'question', // is equal to foreignField
 })
 
-QuizzQuestionSchema.virtual('user_choice_answers', {localField: 'tagada', foreignField: 'tagada'}, function() {
+QuestionSchema.virtual('user_choice_answers', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
+  return []
 })
 
-QuizzQuestionSchema.virtual('user_text_answer', function() {
+QuestionSchema.virtual('user_text_answer').get(function() {
+  return ''
 })
 
-QuizzQuestionSchema.virtual('user_numeric_answer', function() {
+QuestionSchema.virtual('user_numeric_answer').get(function() {
+  return 0
 })
 
 /** Was the answer correct ? */
-QuizzQuestionSchema.virtual('correct', function() {
+QuestionSchema.virtual('correct').get(function() {
+  return true
 })
 
 /** Success or error message depending on correctness */
-QuizzQuestionSchema.virtual('message', function() {
+QuestionSchema.virtual('message').get(function() {
+  return ''
 })
 
 
 /* eslint-enable prefer-arrow-callback */
 
 
-module.exports = QuizzQuestionSchema
+module.exports = QuestionSchema
