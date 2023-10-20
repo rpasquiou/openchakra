@@ -1,10 +1,12 @@
-const { NotLoggedError } = require('../../utils/errors')
+const lodash=require('lodash')
+const {NotLoggedError} = require('../../utils/errors')
 const {
   declareEnumField,
   declareVirtualField,
   setCustomCheckRequest,
   setPreCreateData,
   setPreprocessGet,
+  declareComputedField,
 } = require('../../utils/database')
 const {CONTENT_TYPE, QUESTION_TYPE, SEASON}=require('./consts')
 
@@ -92,17 +94,38 @@ declareVirtualField({model: 'question', field: 'user_choice_answers',
 })
 declareVirtualField({model: 'question', field: 'user_text_answer', instance: 'String'})
 declareVirtualField({model: 'question', field: 'user_numeric_answer', instance: 'Number'})
-declareVirtualField({model: 'question', field: 'correct', instance: 'Boolean', requires:'user_choice_answers,user_text_answer,user_numeric_answer,type,correct_answers'})
-declareVirtualField({model: 'question', field: 'message', instance: 'String', requires:'correct,success_message,error_message'})
+declareVirtualField({model: 'question', field: 'correct', instance: 'Boolean', requires: 'user_choice_answers,user_text_answer,user_numeric_answer,type,correct_answers'})
+declareVirtualField({model: 'question', field: 'message', instance: 'String', requires: 'correct,success_message,error_message'})
 
+const setUserAnswers = ({model, attribute}) => (user, params, data, session) => {
+  const value=lodash.get(session.models, `${model}.${data._id}.${attribute}`)
+  console.log('setting data', value, 'for', model, attribute, data?._id)
+  return Promise.resolve(value)
+}
+
+declareComputedField('question', 'user_choice_answers', setUserAnswers({model: 'question', attribute:'user_choice_answers'}))
+declareComputedField('question', 'user_numeric_answer', setUserAnswers({model: 'question', attribute:'user_numeric_answer'}))
+declareComputedField('question', 'user_text_answer', setUserAnswers({model: 'question', attribute:'user_text_answer'}))
+
+const setCorrectness = (user, params, data, session) => {
+  console.log('setting correctness')
+  return Promise.resolve(true)
+}
+
+declareComputedField('question', 'correct', setCorrectness)
+
+/**
+user_text_answer
+user_numeric_answer
+*/
 declareVirtualField({model: 'quizz', field: 'questions',
   instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: {ref: 'question'}},
 })
-declareVirtualField({model: 'quizz', field: 'percent_success', instance: 'Number', requires:'question.correct'})
-declareVirtualField({model: 'quizz', field: 'percent_message', instance: 'String', requires:'percent_success,message_under_33,message_under_66,message_under_100,message_100'})
+declareVirtualField({model: 'quizz', field: 'percent_success', instance: 'Number', requires: 'question.correct'})
+declareVirtualField({model: 'quizz', field: 'percent_message', instance: 'String', requires: 'percent_success,message_under_33,message_under_66,message_under_100,message_100'})
 
 declareVirtualField({model: 'category', field: 'children',
   instance: 'Array', multiple: true,

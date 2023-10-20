@@ -1,19 +1,20 @@
-const { callPostCreateData } = require('../database')
+const url = require('url')
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
+const lodash=require('lodash')
+const {callPostCreateData} = require('../database')
 
 const {
   getModel,
   loadFromDb,
   putAttribute,
-  removeData
+  removeData,
 } = require('../database')
-const mongoose = require('mongoose')
-const { getDataModel } = require('../../../config/config')
+const {getDataModel} = require('../../../config/config')
 const {
   generatePassword,
-  validatePassword
+  validatePassword,
 } = require('../../../utils/passwords')
-const bcrypt = require('bcryptjs')
-const url = require('url')
 const User = require('../../models/User')
 const Message = require('../../models/Message')
 const Post = require('../../models/Post')
@@ -22,19 +23,27 @@ const {NotFoundError} = require('../errors')
 const Program = require('../../models/Program')
 let fumoirMailing=null
 if (getDataModel()=='fumoir') {
- fumoirMailing=require('../../plugins/fumoir/mailing')
+  fumoirMailing=require('../../plugins/fumoir/mailing')
 }
 let tipiMailing=null
 if (getDataModel()=='all-inclusive') {
- tipiMailing = require('../../plugins/all-inclusive/mailing')
+  tipiMailing = require('../../plugins/all-inclusive/mailing')
 }
 
 const {DEFAULT_ROLE} = require(`../../plugins/${getDataModel()}/consts`)
 
 let ACTIONS = {
-  put: ({parent, attribute, value}, user) => {
+  put: ({parent, attribute, value}, user, session) => {
     const parsedValue=value ? JSON.parse(value) : value
-    return putAttribute({id:parent, attribute, value: parsedValue, user})
+    // Set value in session
+    if (!session) {
+      return putAttribute({id: parent, attribute, value: parsedValue, user, session})
+    }
+    return getModel(parent)
+      .then(model => {
+        lodash.set(session, `models.${model}.${parent}.${attribute}`, parsedValue)
+        return putAttribute({id: parent, attribute, value: parsedValue, user, session})
+      })
   },
 
   publish: ({id}) => {
@@ -59,8 +68,7 @@ let ACTIONS = {
     return moveChildInParent(parent, child, false)
   },
 
-  addSpentTime: ({id, duration}, user, referrer) => {
-    const params = url.parse(referrer, true).query
+  addSpentTime: ({id, duration}, user) => {
     return UserSessionData.findOneAndUpdate(
       {user: user._id},
       {user: user._id},
@@ -85,8 +93,8 @@ let ACTIONS = {
     return addChild(parent, child)
   },
 
-  next: ({id}, user, referrer) => {
-    return getNext(id, user, referrer)
+  next: ({id}, user) => {
+    return getNext(id, user)
   },
 
   previous: ({id}) => {
@@ -102,7 +110,7 @@ let ACTIONS = {
       .then(m => Message.findById(m._id).populate('sender').populate('receiver'))
       .then(m => {
         getDataModel()=='fumoir' && fumoirMailing && fumoirMailing.sendNewMessage({member: m.receiver, partner: m.sender})
-        loadFromDb({model: 'message', id:m._id, fields:['receiver.email','receiver.firstname']})
+        loadFromDb({model: 'message', id: m._id, fields: ['receiver.email', 'receiver.firstname']})
           .then(([message]) => {
             console.log(`Message:${JSON.stringify(message)}`)
             getDataModel()=='all-inclusive' && tipiMailing && tipiMailing.sendNewMessage(message.receiver)
@@ -137,11 +145,11 @@ let ACTIONS = {
         }
 
         return promise
-          .then(()=> {
+          .then(() => {
             return User.create({...props})
           })
-          .then(user => callPostCreateData({model: 'user', data:user}))
-    })
+          .then(user => callPostCreateData({model: 'user', data: user}))
+      })
   },
 
   addToContext: ({value, context, contextAttribute, append}) => {
@@ -167,7 +175,7 @@ const setAllowActionFn = fn => {
   ALLOW_ACTION = fn
 }
 
-const callAllowedAction = (params) => {
+const callAllowedAction = params => {
   return ALLOW_ACTION(params)
 }
 

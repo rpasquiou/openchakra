@@ -44,8 +44,7 @@ let ACTIONS = {
     return moveChildInParent(parent, child, false)
   },
 
-  addSpentTime: ({id, duration}, user, referrer) => {
-    const params = url.parse(referrer, true).query
+  addSpentTime: ({id, duration}, user) => {
     return UserSessionData.findOneAndUpdate(
       {user: user._id},
       {user: user._id},
@@ -73,8 +72,8 @@ let ACTIONS = {
     return addChild(parent, child)
   },
 
-  next: ({id}, user, referrer) => {
-    return getNext(id, user, referrer)
+  next: ({id}, user) => {
+    return getNext(id, user)
   },
 
   previous: ({id}) => {

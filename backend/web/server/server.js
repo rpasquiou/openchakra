@@ -7,6 +7,7 @@ dotenvExpand.expand(myEnv)
 const axios = require('axios')
 const mongoose = require('mongoose')
 const cookieParser = require('cookie-parser')
+const session=require('express-session')
 const express = require('express')
 const next = require('next')
 const bodyParser = require('body-parser')
@@ -164,6 +165,12 @@ checkConfig()
     app.use(passport.initialize())
 
     app.use(cookieParser())
+
+    app.use(session({
+      secret: 'your-secret-key', // Change this to a strong, random string
+      resave: false,
+      saveUninitialized: true,
+    }))
     // Passport config
     /* eslint-disable global-require */
     require('./config/passport')
