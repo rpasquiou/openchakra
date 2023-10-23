@@ -71,6 +71,22 @@ let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
 
+
+const dependenciesComparator = model => (att1, att2) => {
+  const dependencies_1=lodash.get(DECLARED_VIRTUALS, `${model}.${att1}.requires`)?.split(',')||[]
+  const dependencies_2=lodash.get(DECLARED_VIRTUALS, `${model}.${att2}.requires`)?.split(',')||[]
+  const dependsOn= (att, dependencies) => {
+    return dependencies.some(d => d.includes(att))
+  }
+  if (dependsOn(att1, dependencies_2)) {
+    return -1
+  }
+  if (dependsOn(att2, dependencies_1)) {
+    return 1
+  }
+  return 0
+}
+
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
     !(modelName in DECLARED_VIRTUALS) ||
@@ -465,10 +481,10 @@ const addComputedFields = async(
   const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
   const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
-  console.log('compputing direct', model, data._id)
+  const sortedRequiredFields=[...Object.keys(requiredCompFields)].sort(dependenciesComparator(model))
   // Compute direct attributes
   const x = await runPromisesWithDelay(
-    Object.keys(requiredCompFields).map(f =>
+    sortedRequiredFields.map(f =>
       () => requiredCompFields[f](newUser, queryParams, data, session).then(res => {
         data[f] = res
       }),
