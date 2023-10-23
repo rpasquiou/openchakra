@@ -23,7 +23,7 @@ const QuestionSchema = new Schema({
   correct_answers: [{
     type: Schema.Types.ObjectId,
     ref: 'answer',
-    required: false,
+    required: true,
   }],
   success_message: {
     type: String,
@@ -55,8 +55,8 @@ QuestionSchema.virtual('user_numeric_answer').get(function() {
 })
 
 /** Was the answer correct ? */
-QuestionSchema.virtual('correct').get(function() {
-  return true
+QuestionSchema.virtual('percent_success').get(function() {
+  return 0
 })
 
 /** Success or error message depending on correctness */
