@@ -500,7 +500,6 @@ router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {sess
 })
 
 router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
-  console.log('session data', JSON.stringify(req.session.models))
   return loadFromRequest(req, res)
 })
 
