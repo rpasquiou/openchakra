@@ -6,6 +6,8 @@ const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
 const axios = require('axios')
 const mongoose = require('mongoose')
+const session=require('express-session')
+const MongoStore = require('connect-mongodb-session')(session)
 const cookieParser = require('cookie-parser')
 const express = require('express')
 const next = require('next')
@@ -164,6 +166,16 @@ checkConfig()
     app.use(passport.initialize())
 
     app.use(cookieParser())
+
+    app.use(session({
+      secret: 'your-secret-key', // Change this to a strong, random string
+      resave: false,
+      saveUninitialized: true,
+      store: new MongoStore({
+        mongooseConnection: getDatabaseUri(),
+        collection: 'sessions',
+      }),
+    }))
     // Passport config
     /* eslint-disable global-require */
     require('./config/passport')

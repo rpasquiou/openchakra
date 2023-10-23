@@ -21,6 +21,7 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "ced": "^2.0.0",
+    "connect-mongodb-session": "^3.1.1",
     "console-stamp": "^0.2.9",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
@@ -32,6 +33,7 @@
     "dotenv-expand": "^10.0.0",
     "exceljs": "^4.3.0",
     "express": ">=5.0.0-beta.1",
+    "express-session": "^1.17.3",
     "find-cycle": "^1.0.0",
     "firebase-admin": "^11.7.0",
     "format-duration": "^2.0.0",
@@ -118,5 +120,6 @@
     "systemjs-plugin-json": "^0.3.0",
     "tree-traversal": "^1.1.2"
   },
-  "version": "0.0.0"
+  "version": "0.0.0",
+  "packageManager": "yarn@3.6.4"
 }

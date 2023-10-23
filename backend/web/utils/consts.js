@@ -235,6 +235,16 @@ const IMAGES_WIDTHS_FOR_RESIZE = [2000, 1000, 500]
 const IMAGE_SIZE_MARKER = '_srcset:'
 const THUMBNAILS_DIR = 'thumbnails'
 
+const VERB_GET="VERB_GET"
+const VERB_PUT="VERB_PUT"
+const VERB_POST="VERB_POST"
+
+const VERB={
+  [VERB_GET]:"get",
+  [VERB_PUT]:"put",
+  [VERB_POST]:"post",
+}
+
 module.exports = {
   ALL_SERVICES, ALF_CONDS, CANCEL_MODE, CUSTOM_PRESTATIONS_FLTR,
   generate_id, GID_LEN, CESU,
@@ -257,4 +267,5 @@ module.exports = {
   IMAGES_WIDTHS_FOR_RESIZE,
   IMAGE_SIZE_MARKER,
   THUMBNAILS_DIR,
+  VERB, VERB_GET, VERB_PUT, VERB_POST,
 }

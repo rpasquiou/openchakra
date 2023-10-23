@@ -12,7 +12,7 @@ const ModuleSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
-ModuleSchema.virtual('contents_count', function() {
+ModuleSchema.virtual('contents_count').get(function() {
   return this.contents.length
 })
 /* eslint-enable prefer-arrow-callback */

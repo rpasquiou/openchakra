@@ -1,36 +1,32 @@
-const { createMemoryMulter } = require('../../utils/filesystem')
-const {
-  FUMOIR_MEMBER,
-  PAYMENT_FAILURE,
-  PAYMENT_SUCCESS
-} = require('../../plugins/fumoir/consts')
-const {
-  callFilterDataUser,
-  callPostCreateData,
-  callPostPutData,
-  callPreCreateData,
-  callPreprocessGet,
-  loadFromDb,
-  putToDb,
-  retainRequiredFields,
-  importData,
-} = require('../../utils/database')
 
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
 const child_process = require('child_process')
-const url = require('url')
 const moment = require('moment')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
 const express = require('express')
 const mongoose = require('mongoose')
 const passport = require('passport')
+const {
+  FUMOIR_MEMBER,
+  PAYMENT_FAILURE,
+  PAYMENT_SUCCESS,
+} = require('../../plugins/fumoir/consts')
+const {createMemoryMulter} = require('../../utils/filesystem')
+const {
+  callPostCreateData,
+  callPreCreateData,
+  checkRequest,
+  importData,
+  loadFromDb,
+  putToDb,
+} = require('../../utils/database')
+const {IMAGE_SIZE_MARKER, VERB_GET} = require('../../../utils/consts')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
-const {date_str, datetime_str} = require('../../../utils/dateutils')
+const {date_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
   HOOK_PAYMENT_FAILED,
@@ -80,7 +76,6 @@ const {
 } = require('../../utils/errors')
 const {getExposedModels} = require('../../utils/database')
 const {ACTIONS} = require('../../utils/studio/actions')
-const {buildQuery, addComputedFields} = require('../../utils/database')
 const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
 
 const router = express.Router()
@@ -278,15 +273,17 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+// router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/action', (req, res) => {
   const action = req.body.action
+  const session=req.session
   const actionFn = ACTIONS[action]
   if (!actionFn) {
     console.error(`Unkown action:${action}`)
     return res.status(404).json(`Unkown action:${action}`)
   }
 
-  return actionFn(req.body, req.user, req.get('Referrer'))
+  return actionFn(req.body, req.user, session)
     .then(result => {
       return res.json(result)
     })
@@ -332,7 +329,7 @@ router.post('/register-and-login', (req, res) => {
   const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
   console.log(`Registering & login on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body)
-    .then(result => {
+    .then(() => {
       const {email, password}=body
       return login(email, password)
         .then(user => {
@@ -367,7 +364,6 @@ router.post('/payment-hook', (req, res) => {
 // Not protected to allow external recommandations
 router.post('/recommandation', (req, res) => {
   let params=req.body
-  const context= req.query.context
   const user=req.user
   const model = 'recommandation'
   params.model=model
@@ -412,7 +408,6 @@ router.get('/checkenv', (req, res) => {
 router.post('/contact', (req, res) => {
   const model = 'contact'
   let params=req.body
-  const context= req.query.context
 
   return callPreCreateData({model, params})
     .then(({model, params}) => {
@@ -429,7 +424,7 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
   const {model}=req.params
   const {file}=req
   console.log(`Import ${model}:${file.buffer.length} bytes`)
-  return importData({model, data:file.buffer})
+  return importData({model, data: file.buffer})
     .then(result => res.json(result))
 })
 
@@ -486,11 +481,13 @@ const loadFromRequest = (req, res) => {
   const id = req.params.id
   const params=lodash.omit({...req.query}, ['fields', 'id'])
   const user = req.user
+  const session = req.session
 
   const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
   console.log(logMsg)
 
-  return loadFromDb({model, fields, id, user, params})
+  return checkRequest({model, verb: VERB_GET, id, user})
+    .then(() => loadFromDb({model, fields, id, user, params, session}))
     .then(data => {
       console.log(`${logMsg}: data sent`)
       res.json(data)
@@ -502,7 +499,7 @@ router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {sess
   return loadFromRequest(req, res)
 })
 
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   return loadFromRequest(req, res)
 })
 

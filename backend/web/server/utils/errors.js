@@ -73,7 +73,7 @@ const parseError = err => {
 }
 
 module.exports={
-  StatusError, NotFoundError, ForbiddenError, BadRequestError,
+  StatusError, NotFoundError, ForbiddenError, BadRequestError, SystemError,
   NotLoggedError, SystemError,
   HTTP_CODES,
   parseError,

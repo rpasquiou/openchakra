@@ -1,12 +1,24 @@
+const {
+  CREATED_AT_ATTRIBUTE,
+  MODEL_ATTRIBUTES_DEPTH,
+  UPDATED_AT_ATTRIBUTE,
+  VERB
+} = require('../../utils/consts')
+const { runPromisesWithDelay } = require('./concurrency')
 const lodash = require('lodash')
 const mongoose = require('mongoose')
 const formatDuration = require('format-duration')
 const {splitRemaining} = require('../../utils/text')
-const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
 const UserSessionData = require('../models/UserSessionData')
 const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
-const {BadRequestError, NotFoundError} = require('./errors')
+const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  NotLoggedError,
+  SystemError,
+} = require('./errors')
 
 // const { ROLES, STATUS } = require("../../utils/aftral_studio/consts");
 // TODO: Omporting Theme makes a cyclic import. Why ?
@@ -58,6 +70,22 @@ let COMPUTED_FIELDS_SETTERS = {}
 let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
+
+
+const dependenciesComparator = model => (att1, att2) => {
+  const dependencies_1=lodash.get(DECLARED_VIRTUALS, `${model}.${att1}.requires`)?.split(',')||[]
+  const dependencies_2=lodash.get(DECLARED_VIRTUALS, `${model}.${att2}.requires`)?.split(',')||[]
+  const dependsOn= (att, dependencies) => {
+    return dependencies.some(d => d.includes(att))
+  }
+  if (dependsOn(att1, dependencies_2)) {
+    return -1
+  }
+  if (dependsOn(att2, dependencies_1)) {
+    return 1
+  }
+  return 0
+}
 
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
@@ -149,7 +177,7 @@ const getModelAttributes = (modelName, level=MODEL_ATTRIBUTES_DEPTH) => {
   ]
 
   // Auto-create _count attribute for all multiple attributes
-  const multipleAttrs=[] //attrs.filter(att => !att[0].includes('.') && att[1].multiple===true).map(att => att[0])
+  const multipleAttrs=[] // attrs.filter(att => !att[0].includes('.') && att[1].multiple===true).map(att => att[0])
   const multiple_name=name => `${name}_count`
   multipleAttrs.forEach(name => {
     const multName=multiple_name(name)
@@ -267,8 +295,8 @@ const getMongooseModels = () => {
 const getModel = (id, expectedModel) => {
   return Promise.all(getMongooseModels()
     .map(model => model.exists({_id: id})
-        .then(exists => (exists ? model.modelName : false)),
-    )
+      .then(exists => (exists ? model.modelName : false)),
+    ),
   )
     .then(res => {
       const model=res.find(v => !!v)
@@ -300,7 +328,7 @@ const buildQuery = (model, id, fields) => {
     .value()
 
   const criterion = id ? {_id: id} : {}
-  let query = mongoose.connection.models[model].find(criterion) //, select)
+  let query = mongoose.connection.models[model].find(criterion) // , select)
   const populates=buildPopulates(model, fields)
   //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
@@ -395,31 +423,19 @@ const addComputedFields = async(
   queryParams,
   data,
   model,
-  prefix = '',
+  session,
 ) => {
+
+  fields=lodash.uniq([...fields, ...Object.keys(data)])
 
   if (lodash.isEmpty(fields)) {
     return data
   }
-  const newPrefix = `${prefix}/${model}/${data._id}`
   let newUser = user
   if (model == 'user') {
     newUser = await mongoose.connection.models.user.findById(data._id)
   }
 
-  const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-  const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
-
-  const requiredCompFields = lodash.pick(compFields, presentCompFields)
-
-  // Compute direct attributes
-  const x = await Promise.allSettled(
-    Object.keys(requiredCompFields).map(f =>
-      requiredCompFields[f](newUser, queryParams, data).then(res => {
-        data[f] = res
-      }),
-    ),
-  )
   // Handle references => sub
   const refAttributes = getModelAttributes(model).filter(
     att => !att[0].includes('.') && att[1].ref,
@@ -427,14 +443,14 @@ const addComputedFields = async(
   for (const refAttribute of refAttributes) {
     const [attName, attParams]=refAttribute
     const requiredSubFields=fields
-      .filter(f => f.startsWith(`${attName}.`))
-      .map(f => splitRemaining(f, '.')[1])
+          .filter(f => f.startsWith(`${attName}.`))
+          .map(f => splitRemaining(f, '.')[1])
 
     const children = data[attName]
-    if (children && !['program', 'origin'].includes(attName)) {
+    if (children) {
       if (attParams.multiple) {
         if (children.length > 0) {
-          await Promise.allSettled(
+          await Promise.all(
             children.map(child =>
               addComputedFields(
                 requiredSubFields,
@@ -442,7 +458,7 @@ const addComputedFields = async(
                 queryParams,
                 child,
                 attParams.type,
-                `${newPrefix}/${attName}`,
+                session,
               ),
             ),
           )
@@ -455,11 +471,26 @@ const addComputedFields = async(
           queryParams,
           children,
           attParams.type,
-          `${newPrefix}/${attName}`,
+          session,
         )
       }
     }
   }
+
+  const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
+  const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+  const requiredCompFields = lodash.pick(compFields, presentCompFields)
+
+  const sortedRequiredFields=[...Object.keys(requiredCompFields)].sort(dependenciesComparator(model))
+  // Compute direct attributes
+  const x = await runPromisesWithDelay(
+    sortedRequiredFields.map(f =>
+      () => requiredCompFields[f](newUser, queryParams, data, session).then(res => {
+        data[f] = res
+      }),
+    ), 0
+  )
+
   return data
 }
 
@@ -574,7 +605,7 @@ const putAttribute = ({id, attribute, value, user}) => {
             object[attribute]=value
             return object.save()
               .then(obj => {
-                return callPostPutData({model, id, attribute, value, params:{[attribute]:value}, user, data: obj})
+                return callPostPutData({model, id, attribute, value, params: {[attribute]: value}, user, data: obj})
                   .then(() => obj)
               })
           })
@@ -602,8 +633,8 @@ const putAttribute = ({id, attribute, value, user}) => {
                 const subData=lodash.get(object, paths.slice(0, -1).join('.'))
                 const subId=subData._id.toString()
                 const subAttr=paths.slice(-1)
-                callPostPutData({model:subModel, id: subId, attribute:subAttr, value,
-                  params:{[subAttr]:value},
+                callPostPutData({model: subModel, id: subId, attribute: subAttr, value,
+                  params: {[subAttr]: value},
                   user, data: subData})
                 return obj
               })
@@ -642,7 +673,7 @@ const removeData = dataId => {
           .then(() => data.delete())
       }
       return data.delete()
-        .then(d => callPostDeleteData({model, data:d}))
+        .then(d => callPostDeleteData({model, data: d}))
     })
 }
 
@@ -679,14 +710,14 @@ const putToDb = ({model, id, params, user}) => {
   return mongoose.connection.models[model]
     .findById(id)
     .then(data => {
-      if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
+      if (!data) { throw new NotFoundError(`${model}/${id} not found`) }
       Object.keys(params).forEach(k => { data[k]=params[k] })
       return data.save()
     })
     .then(data => callPostPutData({model, id, params, data, user}))
 }
 
-const loadFromDb = ({model, fields, id, user, params}) => {
+const loadFromDb = ({model, fields, id, user, params, session}) => {
   return callPreprocessGet({model, fields, id, user, params})
     .then(({model, fields, id, data}) => {
       if (data) {
@@ -699,12 +730,12 @@ const loadFromDb = ({model, fields, id, user, params}) => {
           // Force to plain object
           data=JSON.parse(JSON.stringify(data))
           // Remove extra virtuals
-          //data = retainRequiredFields({data, fields})
+          // data = retainRequiredFields({data, fields})
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return Promise.all(data.map(d => addComputedFields(fields,user, params, d, model)))
+          return Promise.all(data.map(d => addComputedFields(fields, user, params, d, model, session)))
         })
         .then(data => callFilterDataUser({model, data, id, user}))
-        //.then(data =>  retainRequiredFields({data, fields}))
+        // .then(data =>  retainRequiredFields({data, fields}))
     })
 
 }
@@ -723,10 +754,31 @@ const setImportDataFunction = ({model, fn}) => {
   if (!model || !fn) {
     throw new Error(`Import data function: expected model and function`)
   }
-  if (!!DATA_IMPORT_FN[model]) {
+  if (DATA_IMPORT_FN[model]) {
     throw new Error(`Import funciton already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
+}
+
+let customCheckRequest=null
+
+const setCustomCheckRequest = fn => {
+  customCheckRequest=fn
+}
+/**
+Not connected requests are disabled by default
+*/
+const checkRequest = ({verb, model, id, user}) => {
+  if (!(verb && model && !!VERB[verb])) {
+    throw new SystemError(`verb and model are required`)
+  }
+  if (customCheckRequest) {
+    return customCheckRequest({verb, model, id, user})
+  }
+  if (!user) {
+    throw new NotLoggedError(`Accès interdit`)
+  }
+  return Promise.resolve(true)
 }
 
 module.exports = {
@@ -773,4 +825,6 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  checkRequest,
+  setCustomCheckRequest,
 }
