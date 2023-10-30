@@ -139,6 +139,7 @@ const deleteProvider = id => {
 }
 
 const createPayment = ({source_user, amount, fee, destination_user, description, success_url, failure_url}) => {
+  console.log(`Payment from ${source_user.payment_account_id} to ${destination_user.payment_account_id} using ${amount} commission ${fee}`)
   if (!description) {
     throw new Error(`Description is required`)
   }
