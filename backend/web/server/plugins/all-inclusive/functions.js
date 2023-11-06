@@ -158,7 +158,7 @@ setPreprocessGet(preprocessGet)
 
 const preCreate = ({model, params, user}) => {
   if (['jobUser', 'request', 'mission', 'comment'].includes(model)) {
-    params.user=user
+    params.user=params.user || user
   }
   if (model=='quotation' && 'mission' in params) {
     return Mission.findById(params.mission)
