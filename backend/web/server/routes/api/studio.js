@@ -470,7 +470,7 @@ const putFromRequest = (req, res) => {
       if (session) {
         Object.entries(params).map(([attribute, value]) => {
           lodash.set(session, `models.${model}.${id}.${attribute}`, value)
-        }
+        })
       }
     })
     .then(() => putToDb({model, id, params, user}))
