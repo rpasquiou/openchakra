@@ -215,11 +215,11 @@ export const ACTIONS = {
         return {_id: res.data}
       })
   },
-  save: ({ value, props, context, dataSource, level, getComponentValue }) => {
+  save: ({ value, props, context, dataSource, level, getComponentValue, getComponentAttribute }) => {
     let url = `${API_ROOT}/${props.model}${dataSource?._id ? `/${dataSource._id}`:''}`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'), getComponentValue(c, level)||null]
+      [getComponentAttribute(c, level), getComponentValue(c, level)||null]
     ))
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     const httpAction=dataSource?._id ? axios.put : axios.post

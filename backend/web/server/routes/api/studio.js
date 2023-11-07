@@ -23,7 +23,7 @@ const {
   loadFromDb,
   putToDb,
 } = require('../../utils/database')
-const {IMAGE_SIZE_MARKER, VERB_GET} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, VERB_GET, VERB_PUT} = require('../../../utils/consts')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
 const {date_str} = require('../../../utils/dateutils')
@@ -458,19 +458,28 @@ const putFromRequest = (req, res) => {
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
   const user=req.user
+  const session=req.session
   params=model=='order' && context ? {...params, booking: context}:params
 
   if (!model || !id) {
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model and id are required`)
   }
 
-  return putToDb({model, id, params, user})
+  return checkRequest({model, verb: VERB_PUT, id, user})
+    .then(() => {
+      if (session) {
+        Object.entries(params).map(([attribute, value]) => {
+          lodash.set(session, `models.${model}.${id}.${attribute}`, value)
+        }
+      }
+    })
+    .then(() => putToDb({model, id, params, user}))
     .then(data => {
       return res.json(data)
     })
 }
 
-router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.put('/:model/:id', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   return putFromRequest(req, res)
 })
 

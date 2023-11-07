@@ -202,8 +202,13 @@ const buildBlock = ({
       propsContent += ` getComponentValue={getComponentValue} `
 
       // Forces refresh is this compnent's value is changed
-      if (isFilterComponent(childComponent, components)) {
+      if (isFilterComponent(childComponent, components)
+        || childComponent.type=='CheckboxGroup'
+        || childComponent.type=='Button'
+      ) {
         propsContent += ` setComponentValue={setComponentValue} `
+        propsContent += ` setComponentAttribute={setComponentAttribute} `
+        propsContent += ` getComponentAttribute={getComponentAttribute} `
       }
 
       // Set component id
@@ -854,7 +859,7 @@ import { ${lucideIconImports.join(',')} } from "lucide-react";`
 import {ensureToken} from '../dependencies/utils/token'
 import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
-import { getComponentDataValue } from '../dependencies/utils/values'
+import { getComponentDataValue, getComponentDataAttribute } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
 
 ${extraImports.join('\n')}
@@ -874,6 +879,7 @@ const ${componentName} = () => {
   const id=${rootIgnoreUrlParams ? 'null' : 'query.id'}
   const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
+  const [componentsAttributes, setComponentsAttributes]=useState({})
 
   const setComponentValue = (compId, value) => {
     setComponentsValues(s=> ({...s, [compId]: value}))
@@ -888,6 +894,21 @@ const ${componentName} = () => {
       value=getComponentDataValue(compId, index)
     }
     return value
+  }
+
+  const setComponentAttribute = (compId, attribute) => {
+    setComponentsAttributes(s=> ({...s, [compId]: attribute}))
+  }
+
+  const getComponentAttribute = (compId, index) => {
+    let att=componentsAttributes[compId]
+    if (!att) {
+      att=componentsAttributes[\`\$\{compId\}\$\{index\}\`]
+    }
+    if (!att) {
+      att=getComponentDataAttribute(compId, index)
+    }
+    return att
   }
 
   // ensure token set if lost during domain change

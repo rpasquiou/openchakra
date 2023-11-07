@@ -35,6 +35,24 @@ export const getComponentDataValue = (componentId, suffix) => {
   return
 }
 
+export const getComponentDataAttribute = (componentId, suffix) => {
+  let suffixes=suffix?.split('_') || []
+  while (true) {
+    const subCompId=`${componentId}${suffixes.join('_')}`
+    if (typeof window === "object") {
+      const component = document && document.getElementById(subCompId)
+      if (component) {
+        const att=component.getAttribute('attribute') || component.getAttribute('data-attribute')
+        if (att!==undefined) {
+          return att
+        }
+      }
+    }
+    if (!suffixes.pop()) { break}
+  }
+  return
+}
+
 export const clearComponentValue = (componentId, suffix) => {
   let component = document.getElementById(componentId)
   if (!component) {

@@ -14,6 +14,7 @@ const withDynamicCheckboxGroup = Component => {
     const onChange = evValue => {
       setInternalValue(evValue)
       props.setComponentValue && props.setComponentValue(props.id, evValue)
+      props.setComponentAttribute &&  props.setComponentAttribute(props.id, props.attribute)
 
       if (!noautosave) {
         ACTIONS.putValue({
