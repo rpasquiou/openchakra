@@ -47,6 +47,12 @@ CategorySchema.virtual('contents', {
     match: {$or: [{season: null}, {season: getSeason()}]},
   },
 })
+
+// Unique category name
+CategorySchema.index(
+  {name: 1, parent: 1},
+  {unique: true, message: 'Une catégorie de même nom existe déjà'})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CategorySchema
