@@ -233,7 +233,6 @@ checkConfig()
 
     // Single error handler.YEAAAAAHHHHHH !!!
     app.use((err, req, res, next) => {
-      console.error(err)
       const {status, body}=parseError(err)
       return res.status(status).json(body)
     })
