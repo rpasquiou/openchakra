@@ -7,7 +7,6 @@ const User = require('../models/User')
 // Requires connection
 const cookieStrategy=new CookieStrategy(
   (token, done) => {
-    console.log('token', token)
     const user=jwt.decode(token)
     User.findById(user.id)
       .then(user => {
