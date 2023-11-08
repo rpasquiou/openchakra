@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const {getSeason}=require('../utils')
 
 const Schema = mongoose.Schema
 
@@ -42,6 +43,9 @@ CategorySchema.virtual('contents', {
   ref: 'content', // The Model to use
   localField: '_id', // Find in Model, where localField
   foreignField: 'categories', // is equal to foreignField
+  options: {
+    match: {$or: [{season: null}, {season: getSeason()}]},
+  },
 })
 /* eslint-enable prefer-arrow-callback */
 
