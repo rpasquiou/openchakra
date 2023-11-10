@@ -10,8 +10,8 @@ module.exports = {
     script: 'server/server.js',
 
     // Options reference: https://pm2.io/doc/en/runtime/reference/ecosystem-file/
-    args: 'one two',
-    instances: 1,
+    //args: 'one two',
+    instances: 10,
     autorestart: true,
     watch: false,
     max_memory_restart: '2G',
