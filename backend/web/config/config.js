@@ -2,7 +2,7 @@ const path=require('path')
 const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../.env')})
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
-const isEmpty = require('../server/validation/is-empty')
+const lodash=require('lodash')
 
 const SITE_MODES = {
   MARKETPLACE: 'marketplace',
@@ -252,38 +252,38 @@ const checkConfig = () => {
       reject(`PORT: obligatoire en mode ${process.env.MODE}`)
     }
 
-    if (isEmpty(process.env.DATABASE_NAME)) {
+    if (lodash.isEmpty(process.env.DATABASE_NAME)) {
       reject(`DATABASE_NAME non renseigné`)
     }
-    if (isEmpty(process.env.PRODUCTION_ROOT)) {
+    if (lodash.isEmpty(process.env.PRODUCTION_ROOT)) {
       reject(`PRODUCTION_ROOT non renseigné`)
     }
-    if (isEmpty(process.env.FRONTEND_APP_PORT)) {
+    if (lodash.isEmpty(process.env.FRONTEND_APP_PORT)) {
       reject(`env var FRONTEND_APP_PORT non renseigné`)
     }
     // TODO check database name correctness
-    if (isEmpty(process.env.SIB_APIKEY)) {
+    if (lodash.isEmpty(process.env.SIB_APIKEY)) {
       reject(`SIB_APIKEY non renseigné`)
     }
-    if (isEmpty(process.env.DATA_MODEL)) {
+    if (lodash.isEmpty(process.env.DATA_MODEL)) {
       reject(`DATA_MODEL non renseigné`)
     }
-    if (isEmpty(process.env.S3_ID)) {
+    if (lodash.isEmpty(process.env.S3_ID)) {
       reject(`S3_ID non renseigné`)
     }
-    if (isEmpty(process.env.S3_SECRET)) {
+    if (lodash.isEmpty(process.env.S3_SECRET)) {
       reject(`S3_SECRET non renseigné`)
     }
-    if (isEmpty(process.env.S3_BUCKET)) {
+    if (lodash.isEmpty(process.env.S3_BUCKET)) {
       reject(`S3_BUCKET non renseigné`)
     }
-    if (isEmpty(process.env.S3_REGION)) {
+    if (lodash.isEmpty(process.env.S3_REGION)) {
       reject(`S3_REGION non renseigné`)
     }
-    if (isEmpty(process.env.S3_PROD_ROOTPATH)) {
+    if (lodash.isEmpty(process.env.S3_PROD_ROOTPATH)) {
       reject(`S3_PROD_ROOTPATH non renseigné`)
     }
-    if (isEmpty(process.env.S3_STUDIO_ROOTPATH)) {
+    if (lodash.isEmpty(process.env.S3_STUDIO_ROOTPATH)) {
       reject(`S3_STUDIO_ROOTPATH non renseigné`)
     }
     if (!!getMailProvider() && !['mailjet', 'sendInBlue'].includes(getMailProvider())) {
