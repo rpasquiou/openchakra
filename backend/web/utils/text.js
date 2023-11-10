@@ -48,34 +48,6 @@ const matches = (str, keywords) => {
   return ok
 }
 
-const formatIban = iban => {
-  const result = iban.split('').map((l, idx) => ((idx + 1) % 4 == 0 ? `${l } ` : l)).join('')
-  return result
-}
-
-const maskIban = iban => {
-  const len = iban.length
-  const masked = iban.slice(0, 4) + 'X'.repeat(len - 8) + iban.slice(-4)
-  return masked
-}
-
-const frenchFormat = str => {
-  const reg = /de ([éèêàaeiou])/i
-  const result = str.replace(reg, 'd\'$1')
-  return result
-}
-
-const normalizePhone = p => {
-  if (p) {
-    p=p.trim()
-    const not_number=/[^\d]/
-    while (p.match(not_number)) {
-      p = p.replace(not_number, '')
-    }
-  }
-  return p
-}
-
 const bufferToString = buff => {
   const encoding=ced(buff)
   let text = buff.toString(encoding)
@@ -95,13 +67,6 @@ const hideIllegal = text => {
   return text
 }
 
-const formatAddress = addr => {
-  if (!addr) {
-    return null
-  }
-  return `${addr.address}, ${addr.city} ${addr.zip_code}`
-}
-
 const compact = string => {
   const result = string.replace(/ /g, '')
   return result
@@ -118,7 +83,7 @@ const to_siren = siretOrSiret => {
   return ''
 }
 
-const compute_vat_number = siren => {
+const computeVatNumber = siren => {
   if (!siren) {
     return ''
   }
@@ -136,40 +101,6 @@ const compute_vat_number = siren => {
   return result
 }
 
-const isSiretSirenLength = value => {
-  if (!value) {
-    return false
-  }
-  value=parseInt(compact(value))
-  if (isNaN(value)) {
-    return false
-  }
-  const lengthOk =[SIRET_LENGTH, SIREN_LENGTH].includes(value.toString().length)
-  return lengthOk
-}
-
-const insensitiveComparator = (a, b) => {
-  return (a||'').localeCompare(b, 'fr')
-}
-
-const getWordAt = (text, position) => {
-  const patBefore=/\w*$/
-  const patAfter=/^\w*/
-  const before=text.substring(0, position)
-  const after=text.substring(position)
-  const matchBefore=before.match(patBefore)[0]
-  const matchAfter=after.match(patAfter)[0]
-  const start=position-matchBefore.length
-  const end=position+matchAfter.length
-  const length=end-start
-  return {start: start, end: end, word: matchBefore+matchAfter}
-}
-
-const computeBookingReference = (user, alfred) => {
-  let reference = `${user.avatar_letters}${alfred.avatar_letters }_${ moment().format('DDMMYYYY')}`
-  return reference
-}
-
 const capitalize = text => {
   return text ? text[0].toUpperCase()+text.slice(1).toLowerCase() : text
 }
@@ -177,18 +108,6 @@ const capitalize = text => {
 const guessDelimiter = text => {
   const delimiter=csv_string.detect(text)
   return delimiter
-}
-
-const formatPercent = value => {
-  if (!value) { return null }
-  return `${parseInt(value*100)}%`
-}
-
-const formatDeadline = dl => {
-  if (!dl) {
-    return dl
-  }
-  return dl.replace('jours', 'jour(s)').replace('semaines', 'semaine(s)').replace('heures', 'heure(s)')
 }
 
 const splitRemaining = (pattern, delimiter) => {
@@ -206,25 +125,14 @@ const formatDateTime = datetime => {
 module.exports = {
   normalize,
   matches,
-  formatIban,
-  maskIban,
   createRegExpOR,
   createRegExpAND,
-  frenchFormat,
-  normalizePhone,
   bufferToString,
   hideIllegal,
-  formatAddress,
   compact,
-  compute_vat_number,
-  isSiretSirenLength,
-  insensitiveComparator,
-  computeBookingReference,
+  computeVatNumber,
   capitalize,
-  getWordAt,
   guessDelimiter,
-  formatPercent,
-  formatDeadline,
   splitRemaining,
   formatDateTime,
 }
