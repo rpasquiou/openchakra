@@ -193,8 +193,8 @@ const withDynamicContainer = Component => {
     if (autoScrollToBottom) {
       props={...props, overflowY: 'scroll'  }
       setTimeout(() => {
-        const me=document.getElementById(props.id)
-        me.scrollTop=me.scrollHeight
+        const myself=document.getElementById(props.id)
+        myself.scrollTop=myself.scrollHeight
       }, 500)
     }
 
