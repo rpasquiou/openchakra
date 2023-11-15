@@ -345,6 +345,22 @@ const preCreate = ({model, params, user}) => {
   if (model=='post') {
     params={...params, author: user}
   }
+  if (model=='orderItem') {
+    return Product.findById(params.product)
+      .populate('category')
+      .then(product => {
+        if (!product) {
+          throw new BadRequestError(`Produit inconnu`)
+        }
+        if (product.category?.__t!= 'accessoryCategory'){
+          throw new BadRequestError(`Commande impossible hors d'une réservation`)
+        }
+        params.price=product.price
+        params.vat_rate=product.vat_rate
+        params.user=params.user || user
+        return ({model, params})
+      })
+  }
   return Promise.resolve({model, params})
 }
 
