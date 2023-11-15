@@ -1,5 +1,5 @@
 const moment = require('moment')
-const { BadRequestError, NotFoundError } = require('../../utils/errors')
+const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { sendForgotPassword } = require('./mailing')
 const bcryptjs = require('bcryptjs')
 const { generatePassword } = require('../../../utils/passwords')
@@ -22,7 +22,13 @@ const {addAction, setAllowActionFn} = require('../../utils/studio/actions')
 const {
   FUMOIR_MANAGER,
   FUMOIR_MEMBER,
+  FUMOIR_CHEF,
+  FUMOIR_ADMIN,
   PAYMENT_SUCCESS,
+  CONFIRMATION_STATUS_CONFIRMED,
+  CONFIRMATION_STATUS_WAITING,
+  CONFIRMATION_STATUS_REFUSED,
+  CONFIRMATION_STATUS_CANCELED,
 } = require('./consts')
 const {idEqual}=require('../../utils/database')
 
@@ -68,6 +74,30 @@ addAction('unregisterFromEvent', unregisterFromEventAction)
 addAction('removeOrderItem', removeOrderItemAction)
 addAction('setOrderItem', setOrderItemAction)
 addAction('forgotPassword', forgotPasswordAction)
+
+const confirmBookingAction=({value}, user) => {
+  return isActionAllowed({action: 'confirmBooking', dataId: value, user})
+   .then(() => Booking.findByIdAndUpdate(value, {confirmation_status: CONFIRMATION_STATUS_CONFIRMED}))
+}
+addAction('confirmBooking', confirmBookingAction)
+
+const refuseBookingAction=({value, reason}, user) => {
+  return isActionAllowed({action: 'refuseBooking', dataId: value, user})
+  .then(() => Booking.findByIdAndUpdate(value,{
+    confirmation_status:CONFIRMATION_STATUS_REFUSED,
+    refused_reason:reason
+  }))
+}
+addAction('refuseBooking', refuseBookingAction)
+
+const cancelBookingAction=({value, reason}, user) => {
+  return isActionAllowed({action: 'cancelBooking', dataId: value, user})
+   .then(() => Booking.findByIdAndUpdate(value, {
+     confirmation_status: CONFIRMATION_STATUS_CANCELED,
+     reason
+   }))
+}
+addAction('cancelBooking', cancelBookingAction)
 
 const isActionAllowed = ({action, dataId, user}) => {
   if (action=='payEvent') {
@@ -140,6 +170,30 @@ const isActionAllowed = ({action, dataId, user}) => {
         if (moment(ev.start_date).isBefore(moment())) { return false }
         return ev.invitations?.some(i => idEqual(i.member._id, user._id))
       })
+  }
+  if (action=='confirmBooking') {
+    if (!([FUMOIR_CHEF, FUMOIR_ADMIN, FUMOIR_MANAGER].includes(user?.role))) {
+      return Promise.reject(new ForbiddenError(`Vous n'êtes pas autorisé à confirmer une réservation`))
+    }
+    return Booking.findById(dataId)
+      .then(booking => booking.confirmation_status==CONFIRMATION_STATUS_WAITING)
+  }
+  if (action=='refuseBooking') {
+    if (!([FUMOIR_CHEF, FUMOIR_ADMIN, FUMOIR_MANAGER].includes(user?.role))) {
+      return Promise.reject(new ForbiddenError(`Vous n'êtes pas autorisé à refuser une réservation`))
+    }
+    return Booking.findById(dataId)
+      .then(booking => booking.confirmation_status==CONFIRMATION_STATUS_WAITING)
+  }
+  if (action=='cancelBooking') {
+    if (user?.role!=FUMOIR_MEMBER) {
+      return Promise.reject(new ForbiddenError(`Vous n'êtes pas autorisé à confirmer une réservation`))
+    }
+    return Booking.findById(dataId)
+      .then(booking =>
+        booking.booking_user._id==user._id
+        && [CONFIRMATION_STATUS_WAITING, CONFIRMATION_STATUS_CONFIRMED].includes(booking.confirmation_status)
+      )
   }
   return Promise.resolve(true)
 }

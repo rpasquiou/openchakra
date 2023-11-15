@@ -645,6 +645,43 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  confirmBooking: {
+    label: 'Confirm booking',
+    options: {
+      booking: ({ components }) =>
+        components
+          .filter(c => c.type == 'Flex')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required:['booking']
+  },
+  refuseBooking: {
+    label: 'Refuse booking',
+    options: {
+      booking: ({ components }) =>
+        components
+          .filter(c => c.type == 'Flex')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
+      ,
+      reason: ({ components }) =>
+        components
+          .filter(c => ['Input', 'Text', 'Textarea'].includes(c.type))
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
+      ,
+    },
+    required:['booking', 'reason']
+  },
+  cancelBooking: {
+    label: 'Cancel booking',
+    options: {
+      booking: ({ components }) =>
+        components
+          .filter(c => c.type == 'Flex')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
+      ,
+    },
+    required:['booking']
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

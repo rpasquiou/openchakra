@@ -26,6 +26,7 @@ const {
   PAYMENT_SUCCESS,
   PLACES,
   ROLES,
+  CONFIRMATION_STATUS,
 } = require('./consts')
 const { CREATED_AT_ATTRIBUTE, generate_id } = require('../../../utils/consts')
 const {
@@ -526,6 +527,7 @@ declareVirtualField({model: 'booking', field: 'payments', instance: 'Array', req
 declareVirtualField({model: 'booking', field: 'total_vat_amount', instance: 'Number', requires: 'items,payments'})
 declareVirtualField({model: 'booking', field: 'total_net_price', instance: 'Number', requires: 'items'})
 declareVirtualField({model: 'booking', field: 'remaining_vat_amount', instance: 'Number', requires: 'items,payments'})
+declareEnumField({model: 'booking', field: 'confirmation_status', enumValues: CONFIRMATION_STATUS})
 
 
 declareVirtualField({model: 'payment', field: 'net_amount', instance: 'Number', requires: 'amount,vat_amount'})

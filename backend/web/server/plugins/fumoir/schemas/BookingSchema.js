@@ -11,6 +11,9 @@ const {
   PLACES,
   TO_COME,
   TO_PAY_STR,
+  CONFIRMATION_STATUS,
+  CONFIRMATION_STATUS_WAITING,
+  CONFIRMATION_STATUS_REFUSED,
 } = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 
@@ -80,6 +83,16 @@ const BookingSchema = new Schema(
     booking_number: {
       type: Number,
       required: true,
+    },
+    confirmation_status: {
+      type: String,
+      enum: [...Object.keys(CONFIRMATION_STATUS)],
+      default: CONFIRMATION_STATUS_WAITING,
+      required: false, // required: true,
+    },
+    refused_reason: {
+      type: String,
+      required: false,
     }
   },
   schemaOptions,

@@ -930,6 +930,35 @@ return Promise.allSettled(imagePromises)
     })
     fileInput.click()
     return Promise.resolve(true)
-  }
+  },
+
+  confirmBooking: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'confirmBooking',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  refuseBooking: ({ value, props, level, getComponentValue }) => {
+    const reason = getComponentValue(props.reason, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'refuseBooking',
+      value: value._id,
+      reason,
+    }
+    return axios.post(url, body)
+  },
+
+  cancelBooking: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'cancelBooking',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
 
 }
