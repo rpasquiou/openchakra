@@ -70,7 +70,7 @@ const withDynamicContainer = Component => {
   // TODO vomi
   const FILTER_ATTRIBUTES = ['code', 'name', 'short_name', 'description', 'title']
 
-  const internal = ({hiddenRoles, user, shuffle, limit, hidePagination, ...props}) => {
+  const internal = ({hiddenRoles, user, shuffle, limit, hidePagination, autoScrollToBottom, ...props}) => {
 
     limit = limit || DEFAULT_LIMIT
 
@@ -189,6 +189,15 @@ const withDynamicContainer = Component => {
       </Flex>
       :
       null
+
+    if (autoScrollToBottom) {
+      props={...props, overflowY: 'scroll'  }
+      setTimeout(() => {
+        const me=document.getElementById(props.id)
+        me.scrollTop=me.scrollHeight
+      }, 500)
+    }
+
     return (
       <Component {...lodash.omit(props, ['children'])}>
         {navigation}
