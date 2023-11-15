@@ -34,6 +34,11 @@ const OrderItemSchema = new Schema(
       max: 1,
       required: [true, `La TVA est obligatoire`],
     },
+    archived: {
+      type: Boolean,
+      default: false,
+      required: true,
+    }
   },
   schemaOptions,
 )

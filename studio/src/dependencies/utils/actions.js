@@ -961,4 +961,13 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  archiveOrder: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'archiveOrder',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
 }

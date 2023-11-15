@@ -647,42 +647,29 @@ export const ACTIONS: IActions = {
 
   confirmBooking: {
     label: 'Confirm booking',
-    options: {
-      booking: ({ components }) =>
-        components
-          .filter(c => c.type == 'Flex')
-          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
-    },
-    required:['booking'],
+    options: {},
     next: ['openPage'],
   },
   refuseBooking: {
     label: 'Refuse booking',
     options: {
-      booking: ({ components }) =>
-        components
-          .filter(c => c.type == 'Flex')
-          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
-      ,
       reason: ({ components }) =>
         components
           .filter(c => ['Input', 'Text', 'Textarea'].includes(c.type))
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
       ,
     },
-    required:['booking', 'reason'],
+    required:['reason'],
     next: ['openPage'],
   },
   cancelBooking: {
     label: 'Cancel booking',
-    options: {
-      booking: ({ components }) =>
-        components
-          .filter(c => c.type == 'Flex')
-          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
-      ,
-    },
-    required:['booking'],
+    options: {},
+    next: ['openPage'],
+  },
+  archiveOrder: {
+    label: 'Archive order',
+    options: {},
     next: ['openPage'],
   },
 }

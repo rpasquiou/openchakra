@@ -18,6 +18,7 @@ const Payment = require('../../models/Payment')
 const Event = require('../../models/Event')
 const Booking = require('../../models/Booking')
 const UserSessionData = require('../../models/UserSessionData')
+const OrderItem = require('../../models/OrderItem')
 const {addAction, setAllowActionFn} = require('../../utils/studio/actions')
 const {
   FUMOIR_MANAGER,
@@ -98,6 +99,12 @@ const cancelBookingAction=({value, reason}, user) => {
    }))
 }
 addAction('cancelBooking', cancelBookingAction)
+
+const archiveOrderAction=({value}, user) => {
+  return isActionAllowed({action: 'archiveOrder', dataId: value, user})
+   .then(() => OrderItem.findByIdAndUpdate(value, {archived: true}))
+}
+addAction('archiveOrder', archiveOrderAction)
 
 const isActionAllowed = ({action, dataId, user}) => {
   console.log('action allowed?', action, dataId)
@@ -192,6 +199,10 @@ const isActionAllowed = ({action, dataId, user}) => {
         return (user?.role!=FUMOIR_MEMBER || idEqual(booking.booking_user._id, user._id))
         && [CONFIRMATION_STATUS_WAITING, CONFIRMATION_STATUS_CONFIRMED].includes(booking.confirmation_status)
       })
+  }
+  if (action=='archiveOrder') {
+    return OrderItem.findById(dataId)
+      .then(order => !order.archived)
   }
   return Promise.resolve(true)
 }
