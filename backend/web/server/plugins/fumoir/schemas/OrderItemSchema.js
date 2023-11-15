@@ -7,25 +7,32 @@ const OrderItemSchema = new Schema(
     product: {
       type: Schema.Types.ObjectId,
       ref: 'product',
-      required: true,
+      required: [true, `L'article est obligatoire`],
     },
     quantity: {
       type: Number,
       get: v => Math.round(v),
       set: v => Math.round(v),
-      min: 1,
-      required: true,
+      min: [1, `La commande doit contenir au moins un produit`],
+      required: [true, `La quantité est obligatoire`],
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: [true, `Le client est obligatoire`],
     },
     price: {
       // Price including tax for one item
       type: Number,
       min: 0,
+      required: [true, `Le prix est obligatoire`],
     },
     vat_rate: {
       // VAT rate (0.0 => 1.0)
       type: Number,
       min: 0,
       max: 1,
+      required: [true, `La TVA est obligatoire`],
     },
   },
   schemaOptions,
