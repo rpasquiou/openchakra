@@ -653,7 +653,8 @@ export const ACTIONS: IActions = {
           .filter(c => c.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    required:['booking']
+    required:['booking'],
+    next: ['openPage'],
   },
   refuseBooking: {
     label: 'Refuse booking',
@@ -669,7 +670,8 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
       ,
     },
-    required:['booking', 'reason']
+    required:['booking', 'reason'],
+    next: ['openPage'],
   },
   cancelBooking: {
     label: 'Cancel booking',
@@ -680,7 +682,8 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` }))
       ,
     },
-    required:['booking']
+    required:['booking'],
+    next: ['openPage'],
   },
 }
 
