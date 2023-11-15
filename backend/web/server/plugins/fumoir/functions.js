@@ -608,6 +608,23 @@ declareVirtualField({model: 'invitation', field: 'paid_str', instance: 'String'}
 // TODO :fix declareVirtualField to allow single ref
 declareVirtualField({model: 'invitation', field: 'event', instance: 'String'})
 
+
+const getDataLiked = (userId, params, data) => {
+  const liked=data?.likes?.some(l => idEqual(l._id, userId))
+  return Promise.resolve(liked)
+}
+
+const setDataLiked= ({id, attribute, value, user}) => {
+  if (value) {
+    return Post.findByIdAndUpdate(id, {$addToSet: {likes: user._id}})
+  }
+  // Remove liked
+  return Post.findByIdAndUpdate(id, {$pullAll: {likes: [user._id]}})
+}
+
+declareVirtualField({model: 'post', field: 'liked', instance: 'Boolean', requires: 'likes'})
+declareComputedField('post', 'liked', getDataLiked, setDataLiked)
+
 const getEventGuests = (userId, params, data) => {
   return Event.findById(data._id)
     .populate({path: 'invitations', populate: 'member guest'})

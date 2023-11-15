@@ -19,7 +19,15 @@ const PostSchema = new Schema({
     ref: 'user',
     required: [true, "L'auteur est obligatoire"],
   },
-
+  likes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false,
+  }],
 }, schemaOptions)
+
+PostSchema.virtual('liked').get(function() {
+  return false
+})
 
 module.exports = PostSchema
