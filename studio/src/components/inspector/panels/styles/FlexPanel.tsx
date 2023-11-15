@@ -68,6 +68,8 @@ const FlexPanel = ({ bkpt = 'base' }: { bkpt?: string }) => {
       </FormControl>
 
       <SwitchControl label={'Use as a filter'} name={'isFilterComponent'}/>
+
+      <SwitchControl label={'Auto scroll to bottom'} name={'autoScrollToBottom'}/>
     </>
   )
 }
