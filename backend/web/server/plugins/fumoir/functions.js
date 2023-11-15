@@ -634,6 +634,7 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     instance: 'ObjectID',
     options: {ref: 'comment'}}
 })
+declareVirtualField({model:'post', field:'likes_count', instance: 'Number', requires: 'likes'})
 
 const getEventGuests = (userId, params, data) => {
   return Event.findById(data._id)

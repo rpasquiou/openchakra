@@ -36,5 +36,8 @@ PostSchema.virtual('comments', {
   foreignField: "post", // is equal to foreignField
 });
 
+PostSchema.virtual('likes_count').get(function() {
+  return this.likes?.length || 0
+})
 
 module.exports = PostSchema
