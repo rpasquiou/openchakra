@@ -29,6 +29,8 @@ const BookingSchema = new Schema(
       type: Date,
       required: [true, "La date/heure de réservation est obligatoire"],
       min: [moment(), "Date antérieure à la date d'aujourd'hui"],
+      validate: [value => moment(value).hour()>=14, `Réservation impossible avant 14h`],
+
     },
     duration: {
       type: Number,
