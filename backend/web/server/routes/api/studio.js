@@ -168,6 +168,7 @@ router.get('/action-allowed/:action', passport.authenticate('cookie', {session: 
 
   return callAllowedAction({action, user, ...query})
     .then(allowed => res.json(allowed))
+    .catch(err => res.json(false))
 })
 
 router.post('/file', (req, res) => {
