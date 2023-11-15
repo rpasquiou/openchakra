@@ -346,6 +346,11 @@ const preCreate = ({model, params, user}) => {
   if (model=='post') {
     params={...params, author: user}
   }
+
+  // Parent param is the post
+  if (model=='comment') {
+    params={...params, post: params.parent, user: params.user || user}
+  }
   if (model=='orderItem') {
     return Product.findById(params.product)
       .populate('category')
@@ -624,6 +629,11 @@ const setDataLiked= ({id, attribute, value, user}) => {
 
 declareVirtualField({model: 'post', field: 'liked', instance: 'Boolean', requires: 'likes'})
 declareComputedField('post', 'liked', getDataLiked, setDataLiked)
+declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'comment'}}
+})
 
 const getEventGuests = (userId, params, data) => {
   return Event.findById(data._id)

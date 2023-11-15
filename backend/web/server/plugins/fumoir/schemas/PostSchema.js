@@ -30,4 +30,11 @@ PostSchema.virtual('liked').get(function() {
   return false
 })
 
+PostSchema.virtual('comments', {
+  ref: "comment", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "post", // is equal to foreignField
+});
+
+
 module.exports = PostSchema
