@@ -363,7 +363,7 @@ const preCreate = ({model, params, user}) => {
       })
   }
   if (model=='booking') {
-    if (user?.role==FUMOIR_ADMIN && !params.booking_user) {
+    if ([FUMOIR_ADMIN, FUMOIR_CHEF, FUMOIR_MANAGER].includes(user?.role) && !params.booking_user) {
       throw new BadRequestError(`Indiquer un client pour la réservation`)
     }
     params.booking_user=params.booking_user || loggedUser
