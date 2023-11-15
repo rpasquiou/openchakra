@@ -107,7 +107,6 @@ const archiveOrderAction=({value}, user) => {
 addAction('archiveOrder', archiveOrderAction)
 
 const isActionAllowed = ({action, dataId, user}) => {
-  console.log('action allowed?', action, dataId)
   if (action=='payEvent') {
     return Promise.all([
       Event.findById(dataId),
