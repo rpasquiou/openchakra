@@ -48,6 +48,12 @@ const ProductSchema = new Schema(
       ref: 'category',
       required: [true, 'La catégorie est obligatoire'],
     },
+    original_price: {
+      // Price including tax
+      type: Number,
+      min: 0,
+      required: [true, 'Le prix est obligatoire'],
+    },
     price: {
       // Price including tax
       type: Number,
