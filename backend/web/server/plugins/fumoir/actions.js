@@ -100,6 +100,7 @@ const cancelBookingAction=({value, reason}, user) => {
 addAction('cancelBooking', cancelBookingAction)
 
 const isActionAllowed = ({action, dataId, user}) => {
+  console.log('action allowed?', action, dataId)
   if (action=='payEvent') {
     return Promise.all([
       Event.findById(dataId),
@@ -186,14 +187,11 @@ const isActionAllowed = ({action, dataId, user}) => {
       .then(booking => booking.confirmation_status==CONFIRMATION_STATUS_WAITING)
   }
   if (action=='cancelBooking') {
-    if (user?.role!=FUMOIR_MEMBER) {
-      return Promise.reject(new ForbiddenError(`Vous n'êtes pas autorisé à confirmer une réservation`))
-    }
     return Booking.findById(dataId)
-      .then(booking =>
-        booking.booking_user._id==user._id
+      .then(booking => {
+        return (user?.role!=FUMOIR_MEMBER || idEqual(booking.booking_user._id, user._id))
         && [CONFIRMATION_STATUS_WAITING, CONFIRMATION_STATUS_CONFIRMED].includes(booking.confirmation_status)
-      )
+      })
   }
   return Promise.resolve(true)
 }
