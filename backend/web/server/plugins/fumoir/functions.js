@@ -362,6 +362,19 @@ const preCreate = ({model, params, user}) => {
         return ({model, params})
       })
   }
+  if (model=='booking') {
+    if (user?.role==FUMOIR_ADMIN && !params.booking_user) {
+      throw new BadRequestError(`Indiquer un client pour la réservation`)
+    }
+    params.booking_user=params.booking_user || loggedUser
+    return User.findById(params.booking_user)
+      .then(user => {
+        if (user?.role!=FUMOIR_MEMBER) {
+          throw new BadRequestError(`Le client doit être un membre`)
+        }
+        return Promise.resolve({model, params})
+      })
+  }
   return Promise.resolve({model, params})
 }
 

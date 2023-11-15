@@ -440,9 +440,6 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
   const context= req.query.context
   const user=req.user
 
-  params=model=='order' && context ? {...params, booking: context}:params
-  params=model=='booking' ? {...params, booking_user: user}:params
-
   if (!model) {
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
   }
