@@ -366,7 +366,7 @@ const preCreate = ({model, params, user}) => {
     if ([FUMOIR_ADMIN, FUMOIR_CHEF, FUMOIR_MANAGER].includes(user?.role) && !params.booking_user) {
       throw new BadRequestError(`Indiquer un client pour la réservation`)
     }
-    params.booking_user=params.booking_user || loggedUser
+    params.booking_user=params.booking_user || user
     return User.findById(params.booking_user)
       .then(user => {
         if (user?.role!=FUMOIR_MEMBER) {
