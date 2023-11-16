@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "SmartDiet",
+    "slug": "smartdiet",
+    "scheme": "smartdiet",
+    "version": "0.0.5",
+    "jsEngine": "hermes",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smartdiet.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) souhaite accéder à l&apos;appareil photo. Autorisez l&apos;accès à votre caméra pour capturer des photos. Vous pouvez utiliser celles-ci pour votre profil et votre journal alimentaire.",
+        "NSPhotoLibraryUsageDescription": "$(PRODUCT_NAME) souhaite accéder à vos photos. Autorisez l&apos;accès à votre galerie pour charger des photos. Vous pouvez utiliser celles-ci dans votre profil et votre journal alimentaire.",
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.smartdiet.app",
+      "googleServicesFile": "./google-services.json",
+      "versionCode": 3
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#FFFFFF",
+      "translucent": true
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bfdb399e-44d0-48ef-9a21-0cb4f63b90a9"
+      }
+    }
+  }
+}
