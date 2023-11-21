@@ -17,7 +17,7 @@ export async function handleSubscription({topicsToHandle, back = false}: {topics
         await messaging()
           .subscribeToTopic(topic?.name)
           .then(() => console.log(`Subscribed to topic ${topic?.name}!`))
-          .catch(e => console.error('subscribe to topic', e))
+          .catch(e => console.log('subscribe to topic', e))
         } else {
           if (!topic?.permanent) {
             await messaging()
