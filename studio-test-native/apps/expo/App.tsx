@@ -46,7 +46,7 @@ const App = () => {
 
   useEffect(() => {
     alert(`Url is ${currentUrl}`)
-  }, [currentUrl)
+  }, [currentUrl])
 
   const startSync = ({mac_address, advertise_key}) => {
     console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
