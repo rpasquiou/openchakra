@@ -106,7 +106,7 @@ const App = () => {
                 <Text
                   style={{color: '#ffffff'}}
                   onPress={() => WithingsLink.openInstall(accessToken, csrfToken)}
-                >Ajouter un bel appareil</Text>
+                >Ajouter un appareil</Text>
               </TouchableHighlight>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#43ABB1', borderRadius: 30}} >
                 <Text
