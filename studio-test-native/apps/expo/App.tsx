@@ -40,7 +40,7 @@ const App = () => {
   }, [currentUser])
 
   useEffect(() => {
-    alert(`Module is ${WithingsLink}`)
+    alert(`Modules are ${Object.keys(NativeModules)}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
