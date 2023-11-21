@@ -90,7 +90,7 @@ const App = () => {
             onMessage={event => {}}
             allowsBackForwardNavigationGestures
             mediaPlaybackRequiresUserAction={true}
-            source={{uri: `${BASE_URL_TO_POINT}/setup-appareil`}}
+            source={{uri: `${BASE_URL_TO_POINT}/profil`}}
             geolocationEnabled={true}
             sharedCookiesEnabled={true}
             ref={webviewRef}
