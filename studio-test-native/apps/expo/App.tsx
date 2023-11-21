@@ -44,10 +44,6 @@ const App = () => {
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
-  useEffect(() => {
-    alert(`Url is ${currentUrl}`)
-  }, [currentUrl])
-
   const startSync = ({mac_address, advertise_key}) => {
     console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
     WithingsLink?.synchronizeDevice(mac_address, advertise_key)
