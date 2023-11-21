@@ -13,7 +13,8 @@ import Spinner from './components/Spinner/Spinner'
 // import SplashScreen from 'react-native-splash-screen';
 import axios from 'axios'
 
-const {WithingsLink} = Platform.OS === 'android' ? NativeModules : {WithingsLink: null}
+//const {WithingsLink} = Platform.OS === 'android' ? NativeModules : {WithingsLink: null}
+const {WithingsLink} = NativeModules
 
 const BASE_URL_TO_POINT = 'https://ma-tension.com'
 
