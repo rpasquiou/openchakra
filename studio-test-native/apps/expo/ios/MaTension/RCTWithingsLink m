@@ -1,7 +1,7 @@
 // RCTWithingsLink.m
 #import "RCTWithingsLink.h"
 
-@implementation RCTCalendarModule
+@implementation RCTWithingsLink
 
 RCT_EXPORT_MODULE(WithingsLink);
 
