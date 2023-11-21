@@ -41,7 +41,6 @@ const App = () => {
 
   useEffect(() => {
     alert(`Changed to ${currentUrl}`)
-    console.log(`Logged:${!!currentUser} ${Date.now()}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
