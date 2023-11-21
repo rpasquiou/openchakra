@@ -3,7 +3,6 @@
 
 @implementation RCTCalendarModule
 
-// To export a module named RCTCalendarModule
 RCT_EXPORT_MODULE(WithingsLink);
 
 @end
