@@ -3,8 +3,15 @@
 
 @implementation RCTWithingsLink
 
-RCT_EXPORT_METHOD(openINstall:(NSString *)name location:(NSString *)location)
+// accessToken: String, csrfToken: String
+RCT_EXPORT_METHOD(openInstall:(NSString *)accessToken csrfToken:(NSString *)csrfToken)
 {
+ RCTLogInfo(@"Pretending to create an event %@ at %@", accessToken, csrfToken);
+}
+
+RCT_EXPORT_METHOD(openSettings:(NSString *)accessToken csrfToken:(NSString *)csrfToken)
+{
+ RCTLogInfo(@"Pretending to create an event %@ at %@", accessToken, csrfToken);
 }
 
 RCT_EXPORT_MODULE(WithingsLink);
