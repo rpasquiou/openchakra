@@ -1,4 +1,9 @@
-//  RCTCalendarModule.h
-#import <React/RCTBridgeModule.h>
-@interface RCTWithingsLink : NSObject <RCTBridgeModule>
+// RCTCalendarModule.m
+#import "RCTCalendarModule.h"
+
+@implementation RCTCalendarModule
+
+// To export a module named RCTCalendarModule
+RCT_EXPORT_MODULE();
+
 @end
