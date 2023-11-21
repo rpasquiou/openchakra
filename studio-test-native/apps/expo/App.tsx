@@ -40,7 +40,6 @@ const App = () => {
   }, [currentUser])
 
   useEffect(() => {
-    alert(`Changed to ${currentUrl}`)
     setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
   }, [currentUrl, currentUser])
 
