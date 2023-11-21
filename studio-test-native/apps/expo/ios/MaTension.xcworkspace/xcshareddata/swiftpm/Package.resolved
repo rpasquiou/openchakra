@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "withings-sdk-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/withings-sdk/withings-sdk-ios",
+      "state" : {
+        "revision" : "211bbb9c5fe7ff1e558e7ede17957e0c5ae5e608",
+        "version" : "4.1.0"
+      }
+    }
+  ],
+  "version" : 2
+}

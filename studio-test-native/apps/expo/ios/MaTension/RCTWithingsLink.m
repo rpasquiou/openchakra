@@ -1,3 +1,12 @@
+//
+//  RCTWithingsLink.m
+//  MaTension
+//
+//  Created by Wilfrid Albersdorfer on 21/11/2023.
+//
+
+#import <Foundation/Foundation.h>
+#import <React/RCTLog.h>
 // RCTWithingsLink.m
 #import "RCTWithingsLink.h"
 
