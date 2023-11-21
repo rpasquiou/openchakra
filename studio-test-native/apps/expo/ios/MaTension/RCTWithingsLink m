@@ -3,6 +3,10 @@
 
 @implementation RCTWithingsLink
 
+RCT_EXPORT_METHOD(openINstall:(NSString *)name location:(NSString *)location)
+{
+}
+
 RCT_EXPORT_MODULE(WithingsLink);
 
 @end
