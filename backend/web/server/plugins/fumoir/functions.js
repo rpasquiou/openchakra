@@ -11,6 +11,7 @@ const {
   sendNewEvent,
   sendNewPost,
   sendWelcomeRegister,
+  sendShopOrder2Member,
 } = require('./mailing')
 const Post = require('../../models/Post')
 const {
@@ -391,7 +392,6 @@ const postCreate = ({model, params, data}) => {
   }
   if (model=='booking') {
     return Promise.allSettled([
-      sendNewBookingToMember({booking:data}),
       // Send to admins also
       User.find({role: {$in: [FUMOIR_MANAGER, FUMOIR_ADMIN, FUMOIR_CHEF]}})
         .then(managers => Promise.allSettled(managers.map(manager => sendNewBookingToManager({booking:data, manager}))))
@@ -410,6 +410,10 @@ const postCreate = ({model, params, data}) => {
       .then(() => data)
   }
 
+  if (model=='orderItem') {
+    return OrderItem.findById(data._id).populate('user')
+      .then(orderItem => sendShopOrder2Member({orderItem}))
+  }
   return Promise.resolve(data)
 }
 

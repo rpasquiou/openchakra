@@ -16,10 +16,16 @@ const SIB_IDS={
   EVENT_UNREGISTER_2_GUEST: 13,
   EVENT_UNREGISTER_2_ADMIN: 14,
   NEW_POST: 16,
+  BOOKING_REFUSED_2_MEMBER: 17, // NOK
+  BOOKING_CANCELED_2_MEMBER: 18, // NOK
+  BOOKING_CANCELED_2_ADMIN: 19, // NOK
+  SHOP_ORDER_2_MEMBER: 20, // NOK
+  SHOP_ORDER_2_ADMIN: 21, // NOK
 }
 
 const SMS_CONTENTS={
   [SIB_IDS.NEW_BOOKING_2_MEMBER]: 'Bonjour, votre réservation au Fumoir George a été prise en compte',
+  [SIB_IDS.NEW_BOOKING_2_MANAGER]: 'Bonjour, une nouvelle réservation a été effectuée pour le {{params.booking_date}}',
   [SIB_IDS.NEW_EVENT_AVAILABLE]: 'Bonjour, un nouvel évènement est disponible sur votre application Fumoir George',
   [SIB_IDS.EVENT_REGISTER_2_MEMBER]: `Bonjour, votre participation à l'évènement du {{params.event_date}} a été prise en compte`,
   [SIB_IDS.FORGOT_PASSWORD]: 'Bonjour, votre mot de passe provisoire pour vous connecter au Fumoir George est le suivant : {{params.password}}',
@@ -33,6 +39,8 @@ const NOTIFICATIONS_CONTENTS={
   [SIB_IDS.NEW_BOOKING_2_MANAGER]: {title: 'Fumoir George', message: 'Une nouvelle réservation a été effectuée pour le {{params.booking_date}}'},
   [SIB_IDS.NEW_MESSAGE]: {title: 'Fumoir George', message: 'Vous avez reçu un nouveau message'},
   [SIB_IDS.NEW_POST]: {title: 'Fumoir George', message: '{{params.post_author_firstname}} a posté une actualité sur le Fumoir George'},
+  [SIB_IDS.BOOKING_REFUSED_2_MEMBER]: {title: 'Fumoir George', message: `Réservation du {{params.date}} non confirmée, n'hésitez pas à contactez le fumoir`},
+  [SIB_IDS.SHOP_ORDER_2_ADMIN]: {title: 'Fumoir George', message: `Une nouvelle commande vient d'être effectuée dans la boutique`},
 }
 
 setNotificationsContents(NOTIFICATIONS_CONTENTS)
@@ -52,6 +60,7 @@ const sendNewPost = ({post, user}) => {
 
 // #1
 const sendNewBookingToMember = ({booking}) => {
+  console.log(`new booking ${booking._id}`)
   return sendNotification({
     notification: SIB_IDS.NEW_BOOKING_2_MEMBER,
     destinee: booking.booking_user,
@@ -225,6 +234,61 @@ const sendEventUnregister2Admin = ({event, member, admin}) => {
   })
 }
 
+const sendBookingRefused2Member = ({booking}) => {
+  return sendNotification({
+    notification: SIB_IDS.BOOKING_REFUSED_2_MEMBER,
+    destinee: booking.booking_user,
+    params: {
+      firstname: booking.booking_user.firstname,
+      motif: booking.refused_reason,
+      date: datetime_str(booking.start_date),
+    },
+  })
+}
+
+const sendBookingCancelled2Member = ({booking}) => {
+  return sendNotification({
+    notification: SIB_IDS.BOOKING_CANCELED_2_MEMBER,
+    destinee: booking.booking_user,
+    params: {
+      firstname: booking.booking_user.firstname,
+      date: datetime_str(booking.start_date),
+    },
+  })
+}
+
+const sendBookingCancelled2Admin = ({booking, admin}) => {
+  return sendNotification({
+    notification: SIB_IDS.BOOKING_CANCELED_2_ADMIN,
+    destinee: admin,
+    params: {
+      booking_user_fullname: booking.booking_user.full_name,
+      firstname: admin.firstname,
+      date: datetime_str(booking.start_date),
+    },
+  })
+}
+
+const sendShopOrder2Member = ({orderItem}) => {
+  return sendNotification({
+    notification: SIB_IDS.SHOP_ORDER_2_MEMBER,
+    destinee: orderItem.user,
+    params: {
+      product_quantity: orderItem.quantity,
+    },
+  })
+}
+
+const sendShopOrder2Admin = ({orderItem, admin}) => {
+  return sendNotification({
+    notification: SIB_IDS.SHOP_ORDER_2_ADMIN,
+    destinee: admin,
+    params: {
+      member_fullname: orderItem.user.full_name,
+    },
+  })
+}
+
 module.exports = {
   sendNewPost,
   sendNewBookingToMember,
@@ -240,4 +304,9 @@ module.exports = {
   sendEventUnregister2Member,
   sendEventUnregister2Guest,
   sendEventUnregister2Admin,
+  sendBookingRefused2Member,
+  sendBookingCancelled2Member,
+  sendBookingCancelled2Admin,
+  sendShopOrder2Member,
+  sendShopOrder2Admin,
 }

@@ -1,6 +1,12 @@
 const moment = require('moment')
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
-const { sendForgotPassword } = require('./mailing')
+const {
+  sendForgotPassword,
+  sendBookingRefused2Member,
+  sendBookingCancelled2Member,
+  sendBookingCancelled2Admin,
+  sendNewBookingToMember,
+} = require('./mailing')
 const bcryptjs = require('bcryptjs')
 const { generatePassword } = require('../../../utils/passwords')
 const User = require('../../models/User')
@@ -79,6 +85,8 @@ addAction('forgotPassword', forgotPasswordAction)
 const confirmBookingAction=({value}, user) => {
   return isActionAllowed({action: 'confirmBooking', dataId: value, user})
    .then(() => Booking.findByIdAndUpdate(value, {confirmation_status: CONFIRMATION_STATUS_CONFIRMED}))
+   .then(() => Booking.findById(value).populate('booking_user'))
+   .then(booking => sendNewBookingToMember({booking}))
 }
 addAction('confirmBooking', confirmBookingAction)
 
@@ -88,6 +96,8 @@ const refuseBookingAction=({value, reason}, user) => {
     confirmation_status:CONFIRMATION_STATUS_REFUSED,
     refused_reason:reason
   }))
+  .then(() => Booking.findById(value).populate('booking_user'))
+  .then(booking => sendBookingRefused2Member({booking}))
 }
 addAction('refuseBooking', refuseBookingAction)
 
@@ -97,6 +107,12 @@ const cancelBookingAction=({value, reason}, user) => {
      confirmation_status: CONFIRMATION_STATUS_CANCELED,
      reason
    }))
+   .then(() => Booking.findById(value).populate('booking_user'))
+   .then(booking => {
+     sendBookingCancelled2Member({booking})
+     return User.find({role: {$in: [FUMOIR_CHEF, FUMOIR_ADMIN, FUMOIR_MANAGER]}})
+       .then(admins=>Promise.all(admins.map(admin => sendBookingCancelled2Admin({booking, admin}))))
+   })
 }
 addAction('cancelBooking', cancelBookingAction)
 
