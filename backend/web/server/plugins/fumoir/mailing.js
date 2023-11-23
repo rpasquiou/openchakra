@@ -275,6 +275,8 @@ const sendShopOrder2Member = ({orderItem}) => {
     destinee: orderItem.user,
     params: {
       product_quantity: orderItem.quantity,
+      product_name: orderItem.product.name,
+      firstname: orderItem.user.firstname,
     },
   })
 }

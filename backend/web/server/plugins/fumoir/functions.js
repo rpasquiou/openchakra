@@ -411,7 +411,8 @@ const postCreate = ({model, params, data}) => {
   }
 
   if (model=='orderItem') {
-    return OrderItem.findById(data._id).populate('user')
+    return OrderItem.findById(data._id)
+      .populate(['user', 'product'])
       .then(orderItem => sendShopOrder2Member({orderItem}))
   }
   return Promise.resolve(data)
