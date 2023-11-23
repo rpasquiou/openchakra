@@ -12,6 +12,7 @@ const {
   sendNewPost,
   sendWelcomeRegister,
   sendShopOrder2Member,
+  sendShopOrder2Admin,
 } = require('./mailing')
 const Post = require('../../models/Post')
 const {
@@ -413,7 +414,12 @@ const postCreate = ({model, params, data}) => {
   if (model=='orderItem') {
     return OrderItem.findById(data._id)
       .populate(['user', 'product'])
-      .then(orderItem => sendShopOrder2Member({orderItem}))
+      .then(orderItem => {
+        sendShopOrder2Member({orderItem})
+        return User.find({role: {$in: [FUMOIR_CHEF, FUMOIR_ADMIN, FUMOIR_MANAGER]}})
+        .then(admins=>Promise.all(admins.map(admin => sendShopOrder2Admin({orderItem, admin}))))
+ 
+      })
   }
   return Promise.resolve(data)
 }

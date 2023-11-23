@@ -40,6 +40,7 @@ const NOTIFICATIONS_CONTENTS={
   [SIB_IDS.NEW_MESSAGE]: {title: 'Fumoir George', message: 'Vous avez reçu un nouveau message'},
   [SIB_IDS.NEW_POST]: {title: 'Fumoir George', message: '{{params.post_author_firstname}} a posté une actualité sur le Fumoir George'},
   [SIB_IDS.BOOKING_REFUSED_2_MEMBER]: {title: 'Fumoir George', message: `Réservation du {{params.date}} non confirmée, n'hésitez pas à contactez le fumoir`},
+  [SIB_IDS.SHOP_ORDER_2_MEMBER]: {title: 'Fumoir George', message: `Votre commande à la boutique a bien été prise en compte`},
   [SIB_IDS.SHOP_ORDER_2_ADMIN]: {title: 'Fumoir George', message: `Une nouvelle commande vient d'être effectuée dans la boutique`},
 }
 
@@ -286,7 +287,10 @@ const sendShopOrder2Admin = ({orderItem, admin}) => {
     notification: SIB_IDS.SHOP_ORDER_2_ADMIN,
     destinee: admin,
     params: {
+      firstname: admin.firstname,
       member_fullname: orderItem.user.full_name,
+      product_name: orderItem.product.name,
+      product_quantity: orderItem.quantity,
     },
   })
 }
