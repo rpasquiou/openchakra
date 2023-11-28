@@ -15,7 +15,7 @@ const {
   setPreCreateData,
   setPreprocessGet,
 } = require('../../utils/database')
-const { isDevelopment } = require('../../../config/config')
+const { isDevelopment, isProduction } = require('../../../config/config')
 const lodash=require('lodash')
 const moment = require('moment')
 const cron = require('node-cron')
@@ -158,10 +158,9 @@ router.post('/withings/measures', (req, res) => {
   return res.status(200).send("ok")
 })
 
-if (!isDevelopment()) {
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
-cron.schedule('0 */30 * * * *', () => {
+isProduction() && cron.schedule('0 */30 * * * *', () => {
   const expirationMoment=moment().add(40, 'minute')
   return User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
     .limit(30)
@@ -187,7 +186,7 @@ cron.schedule('0 */30 * * * *', () => {
 })
 
 // Get all measures TODO should be notified by Withings
-cron.schedule('0 */2 * * * *', async() => {
+isProduction() && cron.schedule('0 */2 * * * *', async() => {
   console.log(`Getting measures`)
   const users=await User.find({}, {access_token: 1, email: 1})
     .populate({path: 'measures'})
@@ -222,7 +221,7 @@ cron.schedule('0 */2 * * * *', async() => {
 })
 
 // Get all devices TODO should be notified by Withings
-cron.schedule('24 */10 * * * *', async() => {
+isProduction() && cron.schedule('24 */10 * * * *', async() => {
   console.log(`Getting devices`)
   const users=await User.find({access_token: {$ne: null}})
     .populate('devices')
@@ -252,7 +251,7 @@ cron.schedule('24 */10 * * * *', async() => {
 
 // Send notifications for reminders & apppointments
 // Poll every minute
-cron.schedule('15 * * * * *', async() => {
+isProduction() && cron.schedule('15 * * * * *', async() => {
   let reminders=await Reminder.find({active: true}).populate('user')
   reminders=reminders.filter(r => r.shouldNotify())
   if (!lodash.isEmpty(reminders)) {
@@ -266,7 +265,6 @@ cron.schedule('15 * * * * *', async() => {
     console.log(`Appointment ${appointments.map(r => `${r.type_str} for ${r.user.email}`)}`)
   }
 })
-}
 
 module.exports={
   updateTokens,
