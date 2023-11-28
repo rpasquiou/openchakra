@@ -53,34 +53,23 @@ const getNonce = () => {
 
   return axios.post(NONCE_DOMAIN, body)
     .then(res => {
+      if (res.data.status!=0) {
+        throw new Error(JSON.stringify(res.data))
+      }
       const nonce=res.data.body.nonce
-      console.log(`Got nonce ${nonce}`)
       return nonce
     })
-    .catch(err => console.error(err))
 }
 
 // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/required-web-services#user-creation-api
-const createUser = org_user => {
+const createUser = user => {
 
-  if (org_user.withings_id) {
-    return null
+  if (user.withings_id) {
+    return Promise.reject('Already created')
   }
 
   // Use "local copy"
-  const user={...org_user.toObject()}
-
-  console.log(`Creating Dekuple user ${JSON.stringify(user)}`)
-  // Validate user data
-  const VALIDS={
-    birthday: v => moment(v).isValid(),
-    height: v => lodash.inRange(v, 10, 300),
-    weight: v => lodash.inRange(v, 1, 600),
-    gender: v => Object.keys(GENDER).includes(v),
-    email: v => !!v,
-    firstname: v => v?.toString().trim().length>0,
-    lastname: v => v?.toString().trim().length>0,
-  }
+  //console.log(`Creating Dekuple user ${JSON.stringify(user)}`)
 
   // Use default height/weight is user empty
   user.height=user.height || WITHINGS_DEFAULT_HEIGHT
@@ -94,7 +83,7 @@ const createUser = org_user => {
 
       const measures=JSON.stringify([{value: user.height, unit: -2, type: 4}, {value: user.weight, unit: 0, type: 1}])
       const shortname=normalize(user.fullname.replace(/ /g, '').slice(0, 3)).toUpperCase()
-      console.log(`Shortname:${shortname}`)
+      //console.log(`Shortname:${shortname}`)
       const gender=user.gender==GENDER_MALE ? 0:1
       const birthdate=moment(user.birthday).unix().toString()
 
@@ -104,24 +93,17 @@ const createUser = org_user => {
         firstname: user.firstname, lastname: user.lastname,
         mailingpref: 0, preflang: 'fr_FR', timezone: 'Europe/Paris',
         unit_pref: JSON.stringify({weight: 1, height: 6, distance: 6, temperature: 11}),
-        external_id: 'Tensiometre dev',
+        external_id: 'Dekuple',
       }
 
       return axios.post(SDK_DOMAIN, body)
     })
     .then(res => {
       if (res.data.status!=0) {
-        console.error(`Withings createUser:${JSON.stringify(res.data)}`)
-        return null
+        throw new Error(`Withings createUser:${JSON.stringify(res.data)}`)
       }
-      console.log(`Got user_code:${res.data.body.user.code}`)
       return res.data.body.user.code
     })
-    .catch(err => {
-      console.error(`Withings createUser:${err}`)
-      return null
-    })
-
 }
 
 const getAuthorizationCode = email => {
@@ -134,16 +116,12 @@ const getAuthorizationCode = email => {
 
       const body={action, client_id: wConfig.clientId, nonce, signature, email}
       return axios.post(OAUTH2_DOMAIN, body)
-        .then(res => {
-          if (res.data.status!=0) {
-            return Promise.reject(JSON.stringify(res.data))
-          }
-          return res.data.body.user.code
-        })
     })
-    .catch(err => {
-      console.error(err)
-      throw err
+    .then(res => {
+      if (res.data.status!=0) {
+        throw new Error(JSON.stringify(res.data))
+      }
+      return res.data.body.user.code
     })
 }
 
@@ -160,13 +138,9 @@ const getAccessToken = usercode => {
   return axios.post(OAUTH2_DOMAIN, body)
     .then(res => {
       if (res.data.status!=0) {
-        return Promise.reject(JSON.stringify(res.data))
+        throw new Error(JSON.stringify(res.data))
       }
       return res.data.body
-    })
-    .catch(err => {
-      console.error(err)
-      throw err
     })
 }
 
@@ -184,10 +158,6 @@ const getFreshAccessToken = refreshToken => {
         throw new Error(JSON.stringify(res.data))
       }
       return res.data.body
-    })
-    .catch(err => {
-      console.error(err)
-      throw err
     })
 }
 
@@ -211,10 +181,6 @@ const getUsers = () => {
           }
           return res.data.body
         })
-        .catch(err => {
-          console.error(err)
-          throw err
-        })
     })
 }
 
@@ -231,15 +197,13 @@ const subscribe = user => {
       Authorization: `Bearer ${user.access_token}`,
     }},
   )
-  .then(() => console.log(`${user.email} succesfully subscribed`))
-  .catch(err => console.error(`${user.email} subscribe error:${err}`))
 }
 
 const getMeasures = (access_token, since) => {
 
-  if (!access_token) { return Promise.reject(`Invalid token:${access_token}`) }
+  if (!access_token) { throw new Error(`Invalid token:${access_token}`) }
   const lastupdate=moment(since)
-  if (!lastupdate.isValid()) { return Promise.reject(`Invalid since:${since}`) }
+  if (!lastupdate.isValid()) { throw new Error(`Invalid since:${since}`) }
 
   const body= {
     action: 'getmeas',
@@ -267,11 +231,10 @@ const getMeasures = (access_token, since) => {
 
 const getDevices = access_token => {
 
-  if (!access_token) { return Promise.reject(`Invalid token:${access_token}`) }
+  if (!access_token) { throw new Error(`Invalid token:${access_token}`) }
 
   const body= {action: 'getdevice'}
 
-  //return axios.post(MEASURE_DOMAIN, new URLSearchParams(body),
   return axios.post(USER_DOMAIN, new URLSearchParams(body),
     {headers: {
       Authorization: `Bearer ${access_token}`,
