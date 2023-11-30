@@ -194,7 +194,6 @@ checkConfig()
     app.use(cors())
 
     // Check hostname is valid
-    app.use('/testping', (req, res) => res.json(RANDOM_ID))
     app.use('/myAlfred/api/studio', studio)
     app.use('/myAlfred/api/withings', withings)
 
@@ -244,19 +243,6 @@ checkConfig()
 
     httpsServer.listen(getPort(), () => {
       console.log(`${config.appName} running on ${getHostUrl()}`)
-      console.log(`Checking correct hostname`)
-      !isDevelopment() && axios
-        .get(new URL('/testping', getHostUrl()).toString())
-        .then(({data}) => {
-          if (data != RANDOM_ID) {
-            throw new Error(`Host ${getHostUrl()} is wrong`)
-          }
-          console.log(`Checked correct hostname OK`)
-        })
-        .catch(err => {
-          console.error(err)
-          process.exit(1)
-        })
     })
   })
   .catch(err => {
