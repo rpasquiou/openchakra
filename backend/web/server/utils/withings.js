@@ -54,7 +54,7 @@ const getNonce = () => {
   return axios.post(NONCE_DOMAIN, body)
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       const nonce=res.data.body.nonce
       return nonce
@@ -81,7 +81,7 @@ const createUser = user => {
     .then(nonce => {
       const hashedSignature=generateNonceSignature({action, clientId: wConfig.clientId, clientSecret: wConfig.clientSecret, nonce})
 
-      const measures=JSON.stringify([{value: user.height, unit: -2, type: 4}, {value: user.weight, unit: 0, type: 1}])
+      const measures=JSON.stringify([{value: Math.round(user.height), unit: -2, type: 4}, {value: Math.round(user.weight), unit: 0, type: 1}])
       const shortname=normalize(user.fullname.replace(/ /g, '').slice(0, 3)).toUpperCase()
       //console.log(`Shortname:${shortname}`)
       const gender=user.gender==GENDER_MALE ? 0:1
@@ -95,12 +95,12 @@ const createUser = user => {
         unit_pref: JSON.stringify({weight: 1, height: 6, distance: 6, temperature: 11}),
         external_id: 'Dekuple',
       }
-
+      console.log(`Creating ${JSON.stringify(body,null,2)}`)
       return axios.post(SDK_DOMAIN, body)
     })
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(`Withings createUser:${JSON.stringify(res.data)}`)
+        return Promise.reject(res.data)
       }
       return res.data.body.user.code
     })
@@ -119,7 +119,7 @@ const getAuthorizationCode = email => {
     })
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       return res.data.body.user.code
     })
@@ -138,7 +138,7 @@ const getAccessToken = usercode => {
   return axios.post(OAUTH2_DOMAIN, body)
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       return res.data.body
     })
@@ -155,7 +155,7 @@ const getFreshAccessToken = refreshToken => {
   return axios.post(OAUTH2_DOMAIN, body)
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       return res.data.body
     })
@@ -177,7 +177,7 @@ const getUsers = () => {
       return axios.post(OAUTH2_DOMAIN, body)
         .then(res => {
           if (res.data.status!=0) {
-            throw new Error(JSON.stringify(res.data))
+            return Promise.reject(res.data)
           }
           return res.data.body
         })
@@ -219,7 +219,7 @@ const getMeasures = (access_token, since) => {
   )
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       return res.data.body
     })
@@ -242,7 +242,7 @@ const getDevices = access_token => {
   )
     .then(res => {
       if (res.data.status!=0) {
-        throw new Error(JSON.stringify(res.data))
+        return Promise.reject(res.data)
       }
       return res.data.body.devices || []
     })

@@ -160,9 +160,14 @@ router.post('/withings/measures', (req, res) => {
 
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
-isProduction() && cron.schedule('0 */30 * * * *', () => {
+//isProduction() && cron.schedule('0 */30 * * * *', () => {
+isProduction() && cron.schedule('0 * * * * *', () => {
   const expirationMoment=moment().add(40, 'minute')
-  return User.find({$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]})
+  return User.find(
+	  {$and: [{withings_id: {$ne:null}},
+      {$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]}
+	  ]}
+     )
     .limit(30)
     .sort({creation_date: -1})
     .then(users => {
@@ -183,10 +188,11 @@ isProduction() && cron.schedule('0 */30 * * * *', () => {
         console.error(`Errors:${JSON.stringify(nok)}`)
       }
     })
+    .catch(console.error)
 })
 
 // Get all measures TODO should be notified by Withings
-isProduction() && cron.schedule('0 */2 * * * *', async() => {
+false && isProduction() && cron.schedule('0 */2 * * * *', async() => {
   console.log(`Getting measures`)
   const users=await User.find({}, {access_token: 1, email: 1})
     .populate({path: 'measures'})
