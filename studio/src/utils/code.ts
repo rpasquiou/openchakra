@@ -609,10 +609,29 @@ const buildHooks = (components: IComponents) => {
       .join(`\n`)
   code += `\n
   const [refresh, setRefresh]=useState(false)
+ 
+  // Am I hosted by a native WebView (i.e. mobile application) ?
+  const [inNative, setInNative]=useState(false)
 
   const reload = () => {
     setRefresh(!refresh)
   }
+
+  // Update inNative state
+  useEffect(()=> {
+    setInNative(window?.ReactNativeWebView)
+  },[])
+
+  useEffect(()=> {
+    // user===false ? no request yet
+    if (user===false) {
+      return
+    }
+    // Send user to native view
+    if (inNative) {
+      window.ReactNativeWebView.postMessage(JSON.stringify(user))
+    }
+  },[user])
 
   useEffect(() => {
     if (!process.browser) { return }
@@ -815,7 +834,7 @@ export const generateCode = async (
   if (defaultRedirectPage) {
     const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
     autoRedirect+=`\nuseEffect(()=>{
-        if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
+        if (!!user && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
       }, [user])`
   }
   /**
