@@ -11,33 +11,50 @@ import UIKit
 import Withings
 import WebKit
 
-class MainViewController: UIViewController {
+@objc class MainViewController: UIViewController {
     
     @IBOutlet var notificationLabel: UILabel!
-    
+    var csrfToken: String=""
+    var accessToken: String=""
+
+    @objc init(accessToken: String, csrfToken:String) {
+      super.init(nibName:nil, bundle:nil)
+      self.accessToken=accessToken
+      self.csrfToken=csrfToken
+    }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Sample app"
-        notificationLabel.text = ""
     }
     
-    @IBAction func customInstallWithingsDevice(_ sender: Any) {
-        notificationLabel.text = ""
-        guard let urlRequest = installWithingsDeviceUrlRequest else { return }
-        let customInstallViewController = CustomViewController(url: urlRequest) { [weak self] notification in
-            self?.notificationLabel.text = notification.description
-            self?.navigationController?.popViewController(animated: true)
-        }
-        navigationController?.pushViewController(customInstallViewController, animated: true)
+    func getNavigationController() -> UIViewController? {
+      return (UIApplication.shared.keyWindow?.rootViewController as? UIViewController)!
+    }
+      
+    @objc func showWithingsDeviceSetup() {
+
+      guard let urlRequest = installWithingsDeviceUrlRequest else { return }
+      print("***** URL is \(urlRequest)")
+      let customInstallViewController = CustomViewController(url: urlRequest,cookie: withingsDeviceSettingsCookie) { [weak self] notification in
+          self?.notificationLabel.text = notification.description
+          self?.navigationController?.popViewController(animated: true)
+      }
+      let controller = getNavigationController();
+      controller?.present(customInstallViewController, animated:true);
     }
     
-    @IBAction func showWithingsDeviceSettings() {
+    @objc func showWithingsDeviceSettings() {
         guard let urlRequest = withingsDeviceSettingsUrlRequest else { return }
         let customInstallViewController = CustomViewController(url: urlRequest, cookie: withingsDeviceSettingsCookie) { [weak self] notification in
-            self?.notificationLabel.text = notification.description
             self?.navigationController?.popViewController(animated: true)
         }
-        navigationController?.pushViewController(customInstallViewController, animated: true)
+      let controller = getNavigationController();
+      controller?.present(customInstallViewController, animated: true)
     }
     
     private var withingsDeviceSettingsCookie: HTTPCookie? {
@@ -45,7 +62,7 @@ class MainViewController: UIViewController {
             Here you should build your access token cookie which will be used to load the Withings Device Settings webview.
             Please refer to the documentation to get more info on how to do so.
         */
-        let accessToken = "YOUR_ACCESS_TOKEN"
+      let accessToken = self.accessToken
         return HTTPCookie(properties: [
             .domain: ".withings.com",
             .path: "/",
@@ -62,7 +79,7 @@ class MainViewController: UIViewController {
             and CSRF token.
             Please refer to the documentation to get more info on how to do so.
         */
-        guard let url = URL(string: "https://inappviews.withings.com/sdk/settings?consumer={YOUR_CONSUMER_ID}&csrf_token={YOUR_CSRF_TOKEN}") else {
+      guard let url = URL(string: "https://inappviews.withings.com/sdk/settings?csrf_token=\(self.csrfToken)") else {
             return nil
         }
         return URLRequest(url: url)
@@ -73,7 +90,7 @@ class MainViewController: UIViewController {
             Here you should set your backend URL which redirects to your Withings secured URL.
             Please refer to the documentation to get more info on how to do so.
         */
-        guard let url = URL(string: "https://mybackend.redirect.to.withings.url.com") else {
+      guard let url = URL(string: "https://inappviews.withings.com/sdk/setup?&csrf_token=\(self.csrfToken)&device_model=45") else {
             return nil
         }
         return URLRequest(url: url)

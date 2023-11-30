@@ -12,6 +12,8 @@
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		2660B2E62B0CF4AC00DDD5B5 /* Withings in Frameworks */ = {isa = PBXBuildFile; productRef = 2660B2E52B0CF4AC00DDD5B5 /* Withings */; };
 		2660B2EA2B0CFBAE00DDD5B5 /* RCTWithingsLink.m in Sources */ = {isa = PBXBuildFile; fileRef = 2660B2E92B0CFBAE00DDD5B5 /* RCTWithingsLink.m */; };
+		2678A05B2B17857000AD3A35 /* CustomViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2678A0592B17857000AD3A35 /* CustomViewController.swift */; };
+		2678A05C2B17857000AD3A35 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2678A05A2B17857000AD3A35 /* MainViewController.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		68EF080ECB9E42C4B0485B0C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 82A49C49A36449469B9B9926 /* GoogleService-Info.plist */; };
 		96905EF65AED1B983A6B3ABC /* libPods-MaTension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-MaTension.a */; };
@@ -29,6 +31,8 @@
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = MaTension/main.m; sourceTree = "<group>"; };
 		2660B2E92B0CFBAE00DDD5B5 /* RCTWithingsLink.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = RCTWithingsLink.m; path = MaTension/RCTWithingsLink.m; sourceTree = "<group>"; };
 		2660B2EB2B0CFC9A00DDD5B5 /* RCTWithingsLink.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCTWithingsLink.h; sourceTree = "<group>"; };
+		2678A0592B17857000AD3A35 /* CustomViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = CustomViewController.swift; path = MaTension/CustomViewController.swift; sourceTree = "<group>"; };
+		2678A05A2B17857000AD3A35 /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MainViewController.swift; path = MaTension/MainViewController.swift; sourceTree = "<group>"; };
 		56A26BF5D4004D288B2CA668 /* MaTension-Bridging-Header.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = "MaTension-Bridging-Header.h"; path = "MaTension/MaTension-Bridging-Header.h"; sourceTree = "<group>"; };
 		58EEBF8E8E6FB1BC6CAF49B5 /* libPods-MaTension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MaTension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C2E3173556A471DD304B334 /* Pods-MaTension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MaTension.debug.xcconfig"; path = "Target Support Files/Pods-MaTension/Pods-MaTension.debug.xcconfig"; sourceTree = "<group>"; };
@@ -57,6 +61,8 @@
 		13B07FAE1A68108700A75B9A /* MaTension */ = {
 			isa = PBXGroup;
 			children = (
+				2678A0592B17857000AD3A35 /* CustomViewController.swift */,
+				2678A05A2B17857000AD3A35 /* MainViewController.swift */,
 				2660B2E92B0CFBAE00DDD5B5 /* RCTWithingsLink.m */,
 				2660B2EB2B0CFC9A00DDD5B5 /* RCTWithingsLink.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
@@ -363,9 +369,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2678A05C2B17857000AD3A35 /* MainViewController.swift in Sources */,
 				2660B2EA2B0CFBAE00DDD5B5 /* RCTWithingsLink.m in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				2678A05B2B17857000AD3A35 /* CustomViewController.swift in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
 				E3982D8A51744EDF81F8FE13 /* noop-file.swift in Sources */,
 			);

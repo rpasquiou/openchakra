@@ -40,7 +40,7 @@ const App = () => {
   }, [currentUser])
 
   useEffect(() => {
-    setDisplaySetup(/setup-appareil/.test(currentUrl) && !!currentUser)
+    setDisplaySetup(/setup-appareil/.test(currentUrl) && currentUser?.access_token && currentUser?.csrf_token)
   }, [currentUrl, currentUser])
 
   const startSync = ({mac_address, advertise_key}) => {
@@ -48,9 +48,11 @@ const App = () => {
     WithingsLink?.synchronizeDevice(mac_address, advertise_key)
   }
 
+  /**
   useEffect(() => {
     axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
       .then(({data}) => {
+      alert('ok')
         const firstLogin=!currentUser
         setCurrentUser(data)
         axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/user/${data._id}?fields=devices`)
@@ -71,12 +73,23 @@ const App = () => {
         }
       })
   }, [currentUrl])
+  */
 
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
 
   const DekupleSpinner = () => <Spinner color={'#172D4D'}/>
 
+  const handleEvent = event => {
+    const data=event?.nativeEvent?.data
+    const user=data ? JSON.parse(data) : null
+    setCurrentUser(user)
+  }
+  
+  useEffect(()=> {
+    console.log('User', JSON.stringify(currentUser, null, 2))
+  }, [currentUser])
+  
   return (
     <>
       <KeyboardAvoidingComponent>
@@ -89,17 +102,18 @@ const App = () => {
             onMessage={event => {}}
             allowsBackForwardNavigationGestures
             mediaPlaybackRequiresUserAction={true}
-            source={{uri: `${BASE_URL_TO_POINT}/profil`}}
+            source={{uri: BASE_URL_TO_POINT}}
             geolocationEnabled={true}
             sharedCookiesEnabled={true}
             ref={webviewRef}
             onContentProcessDidTerminate={onContentProcessDidTerminate}
             onNavigationStateChange={({url}) => setCurrentUrl(url)}
+            onMessage={handleEvent}
           />
         </NotifContainer>
       </KeyboardAvoidingComponent>
 
-      { displaySetup && currentUser &&
+      { displaySetup &&
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#172D4D', borderRadius: 30}} >
