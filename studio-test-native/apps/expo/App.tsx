@@ -1,32 +1,47 @@
-import {WebView} from 'react-native-webview'
-import React, {useRef, useState, useEffect} from 'react'
-import {
-  Text,
-  TouchableHighlight,
-  NativeModules,
-  View,
-  Platform,
-} from 'react-native'
-import KeyboardAvoidingComponent from './components/KeyboardAvoidingView'
+import React, {useEffect, useState, useRef} from 'react'
+import {SafeAreaProvider, SafeAreaView, initialWindowMetrics} from 'react-native-safe-area-context'
+import {WebView,WebViewNavigation} from 'react-native-webview'
+import {StatusBar} from 'expo-status-bar'
+import KeyboardAvoidingView from './components/KeyboardAvoidingView'
 import NotifContainer from './modules/notifications/NotifContainer'
-import Spinner from './components/Spinner/Spinner'
-// import SplashScreen from 'react-native-splash-screen';
-import axios from 'axios'
+import { BackHandler } from 'react-native'
 
-//const {WithingsLink} = Platform.OS === 'android' ? NativeModules : {WithingsLink: null}
+// Dekuple specific
+import Spinner from './components/Spinner/Spinner'
+import {Text, TouchableHighlight, NativeModules, View, Platform} from 'react-native'
 const {WithingsLink} = NativeModules
+
 
 const BASE_URL_TO_POINT = 'https://ma-tension.com'
 
 const App = () => {
-
-  const [currentUrl, setCurrentUrl]=useState('')
+  const [currentUrl, setCurrentUrl] = useState('')
+  const [currentUser, setCurrentUser] = useState(null)
+  const webViewRef = useRef<WebView | null>(null);
+  const onContentProcessDidTerminate = () => webviewRef.current?.reload()
+  // Dekuple specific
   const [displaySetup, setDisplaySetup]=useState(false)
-  const [currentUser, setCurrentUser]=useState(null)
   const [shouldAskPermissions, setShouldAskPermissions]=useState(true)
 
-  const webviewRef = useRef(null)
-  const onContentProcessDidTerminate = () => webviewRef.current?.reload()
+  const handleBackPress = () => {
+    if (webViewRef.current) {
+      webViewRef.current.goBack();
+      return true
+    }
+    return false
+  }
+
+  useEffect(() => {
+    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    };
+  }, [])
+
+  const onShouldStartLoadWithRequest = (event: WebViewNavigation) => {
+    return true
+  };
+
 
   // Display permissions dialogs once when user is logged
   useEffect(() => {
@@ -43,38 +58,6 @@ const App = () => {
     setDisplaySetup(/setup-appareil/.test(currentUrl) && currentUser?.access_token && currentUser?.csrf_token)
   }, [currentUrl, currentUser])
 
-  const startSync = ({mac_address, advertise_key}) => {
-    console.log(`Starting sync for device ${mac_address}/${advertise_key}`)
-    WithingsLink?.synchronizeDevice(mac_address, advertise_key)
-  }
-
-  /**
-  useEffect(() => {
-    axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/current-user`)
-      .then(({data}) => {
-      alert('ok')
-        const firstLogin=!currentUser
-        setCurrentUser(data)
-        axios.get(`${BASE_URL_TO_POINT}/myAlfred/api/studio/user/${data._id}?fields=devices`)
-          .then(({data}) => {
-            const device=data[0]?.devices[0]
-            if (firstLogin && device) {
-              
-              // Currently no code about Withings on iOS
-              if (Platform.OS === 'android') {
-                startSync(device)
-              }
-            }
-          })
-      })
-      .catch(err => {
-        if (err.response?.status==401) {
-          setCurrentUser(null)
-        }
-      })
-  }, [currentUrl])
-  */
-
   const accessToken=currentUser?.access_token
   const csrfToken=currentUser?.csrf_token
 
@@ -86,34 +69,32 @@ const App = () => {
     setCurrentUser(user)
   }
   
-  useEffect(()=> {
-    console.log('User', JSON.stringify(currentUser, null, 2))
-  }, [currentUser])
-  
   return (
-    <>
-      <KeyboardAvoidingComponent>
-        <NotifContainer user={currentUser} allOnStart>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>   
+      <NotifContainer user={currentUser} allOnStart>
+      <StatusBar style="dark" />
+      <SafeAreaView 
+        style={{flex: 1,}} 
+        edges={['top', 'left', 'right']}
+      >
+        <KeyboardAvoidingView>
           <WebView
-            renderLoading={DekupleSpinner}
             startInLoadingState={true}
+            allowsBackForwardNavigationGestures
             javaScriptEnabled={true}
             domStorageEnabled={true}
-            onMessage={event => {}}
-            allowsBackForwardNavigationGestures
             mediaPlaybackRequiresUserAction={true}
-            source={{uri: BASE_URL_TO_POINT}}
-            geolocationEnabled={true}
+            source={{ uri: BASE_URL_TO_POINT }}
             sharedCookiesEnabled={true}
-            ref={webviewRef}
             onContentProcessDidTerminate={onContentProcessDidTerminate}
             onNavigationStateChange={({url}) => setCurrentUrl(url)}
+            ref={(ref) => (webViewRef.current = ref)}
+            onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+            renderLoading={DekupleSpinner}
+            geolocationEnabled={true}
             onMessage={handleEvent}
           />
-        </NotifContainer>
-      </KeyboardAvoidingComponent>
-
-      { displaySetup &&
+          { displaySetup &&
           <>
             <View style={{alignItems: 'center', backgroundColor: '#f5f6fa'}}>
               <TouchableHighlight style={{margin: '2%', padding: '4%', backgroundColor: '#172D4D', borderRadius: 30}} >
@@ -131,8 +112,11 @@ const App = () => {
             </View>
           </>
       }
-    </>
+        </KeyboardAvoidingView>
+        </SafeAreaView>
+      </NotifContainer>
+    </SafeAreaProvider>
   )
 }
 
-export default App
+export default App;
