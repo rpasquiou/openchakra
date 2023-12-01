@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.9</string>
+    <string>1.0.12</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -92,5 +92,11 @@
     <string>Light</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <key>NSCameraUsageDescription</key>
+    <string>$(PRODUCT_NAME) souhaite accéder à l'appareil photo. Autorisez l'accès à votre caméra pour compléter votre avatar et déposer des documents.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>$(PRODUCT_NAME) souhaite accéder à vos photos. Autorisez l'accès à votre galerie pour charger des photos. Vous pouvez utiliser celles-ci pour votre avatar et déposer des documents.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>$(PRODUCT_NAME) a besoin d'activer le bluetooth pour appairer votre tensiomètre.</string>
   </dict>
 </plist>
