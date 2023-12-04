@@ -230,7 +230,6 @@ const getMeasures = (access_token, since) => {
 }
 
 
-// Test
 const getDevices = access_token => {
 
   if (!access_token) { throw new Error(`Invalid token:${access_token}`) }
