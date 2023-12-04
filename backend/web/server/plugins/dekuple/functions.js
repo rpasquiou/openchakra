@@ -16,7 +16,7 @@ const {
   setPreprocessGet,
 } = require('../../utils/database')
 const { isDevelopment, isProduction } = require('../../../config/config')
-const lodash=require('lodash')
+const lodash = require('lodash')
 const moment = require('moment')
 const cron = require('node-cron')
 const Measure = require('../../models/Measure')
@@ -36,30 +36,31 @@ const {
   WITHINGS_MEASURE_DIA,
   WITHINGS_MEASURE_SYS,
 } = require('./consts')
+const { setMeasuresCallback } = require('../../routes/api/withings')
 
-const preCreate = ({model, params, user}) => {
+const preCreate = ({ model, params, user }) => {
   if (['measure', 'appointment', 'reminder'].includes(model)) {
-    params.user=user
+    params.user = user
   }
-  return Promise.resolve({model, params})
+  return Promise.resolve({ model, params })
 }
 
 setPreCreateData(preCreate)
 
 
-const preprocessGet = ({model, fields, id, user}) => {
-  if (model=='loggedUser') {
-    model='user'
+const preprocessGet = ({ model, fields, id, user }) => {
+  if (model == 'loggedUser') {
+    model = 'user'
     id = user?._id || 'INVALIDID'
   }
 
-  return Promise.resolve({model, fields, id})
+  return Promise.resolve({ model, fields, id })
 
 }
 
 setPreprocessGet(preprocessGet)
 
-const filterDataUser = ({model, data, id, user}) => {
+const filterDataUser = ({ model, data, id, user }) => {
 
   // List mode
   if (['user', 'loggedUser'].includes(model)) {
@@ -75,63 +76,75 @@ const filterDataUser = ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-const USER_MODELS=['user', 'loggedUser']
+const USER_MODELS = ['user', 'loggedUser']
 USER_MODELS.forEach(m => {
-  declareEnumField({model: m, field: 'gender', enumValues: GENDER})
-  declareEnumField({model: m, field: 'smoker', enumValues: SMOKER_TYPE})
-  declareVirtualField({model: m, field: 'fullname', instance: 'String', requires: 'firstname,lastname'})
-  declareVirtualField({model: m, field: 'measures', instance: 'Array', requires: '', multiple: true,
+  declareEnumField({ model: m, field: 'gender', enumValues: GENDER })
+  declareEnumField({ model: m, field: 'smoker', enumValues: SMOKER_TYPE })
+  declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires: 'firstname,lastname' })
+  declareVirtualField({
+    model: m, field: 'measures', instance: 'Array', requires: '', multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'measure'}}})
-  declareVirtualField({model: m, field: 'appointments', instance: 'Array', requires: '', multiple: true,
+      options: { ref: 'measure' }
+    }
+  })
+  declareVirtualField({
+    model: m, field: 'appointments', instance: 'Array', requires: '', multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'appointment'}}})
-  declareVirtualField({model: m, field: 'reminders', instance: 'Array', requires: '', multiple: true,
+      options: { ref: 'appointment' }
+    }
+  })
+  declareVirtualField({
+    model: m, field: 'reminders', instance: 'Array', requires: '', multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'reminder'}}})
-  declareVirtualField({model: m, field: 'password2', instance: 'String'})
-  declareVirtualField({model: m, field: 'devices', instance: 'Array', requires: '', multiple: true,
+      options: { ref: 'reminder' }
+    }
+  })
+  declareVirtualField({ model: m, field: 'password2', instance: 'String' })
+  declareVirtualField({
+    model: m, field: 'devices', instance: 'Array', requires: '', multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: {ref: 'device'}}})
-  declareVirtualField({model: m, field: 'tip', instance: 'String'})
-  declareVirtualField({model: m, field: 'missing_attributes', instance: 'String', requires:'firstname,lastname,height,weight,birthday,gender'})
+      options: { ref: 'device' }
+    }
+  })
+  declareVirtualField({ model: m, field: 'tip', instance: 'String' })
+  declareVirtualField({ model: m, field: 'missing_attributes', instance: 'String', requires: 'firstname,lastname,height,weight,birthday,gender' })
 })
 
 
-declareVirtualField({model: 'measure', field: 'recommandation', instance: 'String', requires: 'sys,dia'})
-declareVirtualField({model: 'measure', field: 'source', instance: 'String', requires: 'withings_group', enumValues: MEASURE_SOURCE})
+declareVirtualField({ model: 'measure', field: 'recommandation', instance: 'String', requires: 'sys,dia' })
+declareVirtualField({ model: 'measure', field: 'source', instance: 'String', requires: 'withings_group', enumValues: MEASURE_SOURCE })
 
-declareEnumField({model: 'appointment', field: 'type', instance: 'String', enumValues: APPOINTMENT_TYPE})
-declareVirtualField({model: 'appointment', field: 'type_str', instance: 'String', requires: 'type,otherTitle'})
-declareVirtualField({model: 'appointment', field: 'status', instance: 'String', requires: 'date', enumValues: APPOINTMENT_STATUS})
+declareEnumField({ model: 'appointment', field: 'type', instance: 'String', enumValues: APPOINTMENT_TYPE })
+declareVirtualField({ model: 'appointment', field: 'type_str', instance: 'String', requires: 'type,otherTitle' })
+declareVirtualField({ model: 'appointment', field: 'status', instance: 'String', requires: 'date', enumValues: APPOINTMENT_STATUS })
 
-declareEnumField({model: 'reminder', field: 'type', instance: 'String', enumValues: REMINDER_TYPE})
-declareVirtualField({model: 'reminder', field: 'type_str', instance: 'String', requires: 'type,otherTitle'})
-declareVirtualField({model: 'reminder', field: 'reccurency_str', instance: 'String', requires: 'monday,tuesday,wednesday,thursday,friday,saturday,sunday'})
+declareEnumField({ model: 'reminder', field: 'type', instance: 'String', enumValues: REMINDER_TYPE })
+declareVirtualField({ model: 'reminder', field: 'type_str', instance: 'String', requires: 'type,otherTitle' })
+declareVirtualField({ model: 'reminder', field: 'reccurency_str', instance: 'String', requires: 'monday,tuesday,wednesday,thursday,friday,saturday,sunday' })
 
 const updateTokens = user => {
   return getAuthorizationCode(user.email)
     .then(authCode => {
-      user.withings_usercode=authCode
-      const fn=!user.access_token ? getAccessToken(user.withings_usercode) : getFreshAccessToken(user.refresh_token)
+      user.withings_usercode = authCode
+      const fn = !user.access_token ? getAccessToken(user.withings_usercode) : getFreshAccessToken(user.refresh_token)
       return fn
         .then(tokens => {
-          user.withings_id=tokens.userid
-          user.access_token=tokens.access_token
-          user.refresh_token=tokens.refresh_token
-          user.csrf_token=tokens.csrf_token
-          user.expires_at=moment().add(tokens.expires_in, 'seconds')
-          user.withings_usercode=null
+          user.withings_id = tokens.userid
+          user.access_token = tokens.access_token
+          user.refresh_token = tokens.refresh_token
+          user.csrf_token = tokens.csrf_token
+          user.expires_at = moment().add(tokens.expires_in, 'seconds')
+          user.withings_usercode = null
           return user.save()
         })
         .catch(err => {
-	  console.error(err)
-	  return user
-	})
+          console.error(err)
+          return user
+        })
     })
     .catch(err => {
       console.error(err)
@@ -152,24 +165,20 @@ setPostLogin(postLogin)
 
 const router = express.Router()
 
-router.post('/withings/measures', (req, res) => {
-  const data=req.body
-  console.log(`Got measures:${JSON.stringify(data)}`)
-  return res.status(200).send("ok")
-})
-
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
 //isProduction() && cron.schedule('0 */30 * * * *', () => {
 isProduction() && cron.schedule('0 * * * * *', () => {
-  const expirationMoment=moment().add(40, 'minute')
+  const expirationMoment = moment().add(40, 'minute')
   return User.find(
-	  {$and: [{withings_id: {$ne:null}},
-      {$or: [{access_token: null}, {expires_at: {$lte: expirationMoment}}]}
-	  ]}
-     )
+    {
+      $and: [{ withings_id: { $ne: null } },
+      { $or: [{ access_token: null }, { expires_at: { $lte: expirationMoment } }] }
+      ]
+    }
+  )
     .limit(30)
-    .sort({creation_date: -1})
+    .sort({ creation_date: -1 })
     .then(users => {
       console.log(`Users requiring token update : ${users.map(u => u.email)}`)
       if (lodash.isEmpty(users)) {
@@ -179,8 +188,8 @@ isProduction() && cron.schedule('0 * * * * *', () => {
     })
     .then(res => {
       if (!res) { return }
-      const ok=res.filter(r => r.status=='fulfilled').map(r => r.value.email)
-      const nok=res.filter(r => r.status=='rejected').map(r => r.reason)
+      const ok = res.filter(r => r.status == 'fulfilled').map(r => r.value.email)
+      const nok = res.filter(r => r.status == 'rejected').map(r => r.reason)
       if (!lodash.isEmpty(ok)) {
         console.log(`Updated tokens for ${ok.join(',')}`)
       }
@@ -191,88 +200,85 @@ isProduction() && cron.schedule('0 * * * * *', () => {
     .catch(console.error)
 })
 
-// Get all measures TODO should be notified by Withings
-false && isProduction() && cron.schedule('0 */2 * * * *', async() => {
-  console.log(`Getting measures`)
-  const users=await User.find({}, {access_token: 1, email: 1})
-    .populate({path: 'measures'})
-    .lean({virtuals: true})
-  return Promise.all(users.map(async user => {
-    const latestMeasure=lodash(user.measures)
-      .filter(m => m.source==MEASURE_AUTO)
-      .maxBy(m => m.date)
-    if (user.access_token) {
-      const since=latestMeasure? moment(latestMeasure.date).add(5, 'seconds') : moment().add(-10, 'days')
-      console.log(`User ${user.email}:request measures since ${since}`)
-      const newMeasures=await getMeasures(user.access_token, since)
-      console.log(`User ${user.email}:got measures ${JSON.stringify(newMeasures)}`)
-      if (newMeasures.measuregrps.length>0) {
-        console.log(`User ${user.email}:got ${newMeasures.measuregrps.length} new measures since ${since}`)
+const getNewMeasures = ({userid, startdate}) => {
+  return User.findOne({ withings_id: userid })
+    .then(user => {
+      if (!user) {
+        throw new Error(`No user for withings id ${userid}`)
       }
-      return Promise.all(newMeasures.measuregrps.map(grp => {
-        const dekMeasure={
-          user: user._id, date: moment.unix(grp.date), withings_group: grp.grpid,
-          sys: grp.measures.find(m => m.type==WITHINGS_MEASURE_SYS)?.value,
-          dia: grp.measures.find(m => m.type==WITHINGS_MEASURE_DIA)?.value,
-          heartbeat: grp.measures.find(m => m.type==WITHINGS_MEASURE_BPM)?.value,
-        }
-        return Measure.findOneAndUpdate(
-          {withings_group: dekMeasure.withings_group},
-          {...dekMeasure},
-          {upsert: true},
-        )
-      }))
-    }
-  }))
-})
+      return getMeasures(user.access_token, startdate)
+        .then(newMeasures => {
+          console.log(`User ${user.email}:got measures ${JSON.stringify(newMeasures)}`)
+          if (newMeasures.measuregrps.length > 0) {
+            console.log(`User ${user.email}:got ${newMeasures.measuregrps.length} new measures since ${since}`)
+          }
+          return Promise.all(newMeasures.measuregrps.map(grp => {
+            const dekMeasure = {
+              user: user._id, date: moment.unix(grp.date), withings_group: grp.grpid,
+              sys: grp.measures.find(m => m.type == WITHINGS_MEASURE_SYS)?.value,
+              dia: grp.measures.find(m => m.type == WITHINGS_MEASURE_DIA)?.value,
+              heartbeat: grp.measures.find(m => m.type == WITHINGS_MEASURE_BPM)?.value,
+            }
+            return Measure.findOneAndUpdate(
+              { withings_group: dekMeasure.withings_group },
+              { ...dekMeasure },
+              { upsert: true }
+            )
+          }))
+        })
+    })
+}
+
+setMeasuresCallback(getNewMeasures)
 
 // Get all devices TODO should be notified by Withings
-isProduction() && cron.schedule('24 */10 * * * *', async() => {
+isProduction() && cron.schedule('24 */10 * * * *', async () => {
   console.log(`Getting devices`)
-  const users=await User.find({access_token: {$ne: null}})
+  const users = await User.find({ access_token: { $ne: null } })
     .populate('devices')
-    .lean({virtuals: true})
+    .lean({ virtuals: true })
   return Promise.allSettled(users.map(async user => {
-    const devices=await getDevices(user.access_token)
-    if (devices.length>0) {
+    const devices = await getDevices(user.access_token)
+    if (devices.length > 0) {
       console.log(`User ${user.email}: ${devices.length} devices found`)
     }
-    const mappedDevices=devices.map(device => ({
+    const mappedDevices = devices.map(device => ({
       user: user._id,
       ...device,
       last_session_date: moment.unix(device.last_session_date),
     }))
     // First remove all devices
-    await Device.deleteMany({user: user._id}).catch(err => { console.error(err) })
+    await Device.deleteMany({ user: user._id }).catch(err => { console.error(err) })
     // Then recreate devices
     await Device.create(mappedDevices).catch(err => { console.error(err) })
   }))
     .then(res => {
-      const errors=lodash.zip(res, users)
-        .filter(([r]) => r.status=='rejected')
+      const errors = lodash.zip(res, users)
+        .filter(([r]) => r.status == 'rejected')
         .map(([r, u]) => `User ${u.email}: ${r.reason}`)
-      errors.length>0 &&console.error(errors)
+      errors.length > 0 && console.error(errors)
     })
 })
 
 // Send notifications for reminders & apppointments
 // Poll every minute
-isProduction() && cron.schedule('15 * * * * *', async() => {
-  let reminders=await Reminder.find({active: true}).populate('user')
-  reminders=reminders.filter(r => r.shouldNotify())
+isProduction() && cron.schedule('15 * * * * *', async () => {
+  let reminders = await Reminder.find({ active: true }).populate('user')
+  reminders = reminders.filter(r => r.shouldNotify())
   if (!lodash.isEmpty(reminders)) {
     console.log(`Remind ${reminders.map(r => `${r.type_str} for ${r.user.email}`)}`)
   }
 
-  let appointments=await Appointment.find().populate('user')
-  appointments=appointments.filter(a => a.shouldNotify())
+  let appointments = await Appointment.find().populate('user')
+  appointments = appointments.filter(a => a.shouldNotify())
 
   if (!lodash.isEmpty(appointments)) {
     console.log(`Appointment ${appointments.map(r => `${r.type_str} for ${r.user.email}`)}`)
   }
 })
 
-module.exports={
+
+module.exports = {
   updateTokens,
   router,
 }
