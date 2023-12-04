@@ -1,9 +1,6 @@
 const express = require('express')
 const passport = require('passport')
-
 const router = express.Router()
-
-// const wConfig=getWithingsConfig()
 
 router.get('/', (req, res) => {
   res.json('ok')
@@ -33,4 +30,22 @@ router.get('/settings', passport.authenticate('cookie', {session: false}), (req,
   )
 })
 
-module.exports = router
+let MEASURES_CALLBACK = p => console.warn(`Implement callback ${JSON.stringify(p)}`)
+
+const getMeasuresCallback = data => MEASURES_CALLBACK(data)
+
+const setMeasuresCallback = fn => MEASURES_CALLBACK=fn
+
+router.post('/measures', (req, res) => {
+  const data=req.body
+  getMeasuresCallback(data)
+    .then(console.log)
+    .catch(console.error)
+  return res.status(200).send("ok")
+})
+
+
+module.exports = {
+  router,
+  setMeasuresCallback,
+}

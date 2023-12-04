@@ -195,7 +195,7 @@ checkConfig()
 
     // Check hostname is valid
     app.use('/myAlfred/api/studio', studio)
-    app.use('/myAlfred/api/withings', withings)
+    app.use('/myAlfred/api/withings', withings.router)
 
     // const port = process.env.PORT || 5000;
     const rootPath = path.join(__dirname, '/..')
