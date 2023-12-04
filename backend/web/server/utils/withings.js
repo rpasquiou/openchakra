@@ -185,31 +185,34 @@ const getUsers = () => {
 }
 
 const subscribe = user => {
-  console.log(`Trying to subscribe ${user.email}`)
+  const callback_url=`https://${getHostName()}/myAlfred/api/withings/measures`
+  console.log(`Trying to subscribe ${user.email} with callback ${callback_url}`)
   const body={
     action: 'subscribe',
-    callbackurl: `https://${getHostName()}/myAlfred/api/withings/measures`,
+    callbackurl: callback_url,
     appli: '4', //SYS/DIA/BPM
   }
   console.log(`Body is ${JSON.stringify(body)}`)
   return axios.post(NOTIFY_DOMAIN, body,
     {headers: {
       Authorization: `Bearer ${user.access_token}`,
-    }},
+    }}
   )
+  .then(res => console.log(`Subscribe ${user.email} result:${res.data.status}`))
+  .catch(console.error)
 }
 
+// Require access token and moment
 const getMeasures = (access_token, since) => {
 
   if (!access_token) { throw new Error(`Invalid token:${access_token}`) }
-  const lastupdate=moment(since)
-  if (!lastupdate.isValid()) { throw new Error(`Invalid since:${since}`) }
+  if (!since.isValid()) { throw new Error(`Invalid since:${since}`) }
 
   const body= {
     action: 'getmeas',
     meastypes: [WITHINGS_MEASURE_SYS, WITHINGS_MEASURE_DIA, WITHINGS_MEASURE_BPM].join(','),
     category: 1,
-    lastupdate: lastupdate.unix(),
+    lastupdate: since.unix(),
   }
 
   return axios.post(MEASURE_DOMAIN, new URLSearchParams(body),

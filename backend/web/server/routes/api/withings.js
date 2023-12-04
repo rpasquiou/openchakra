@@ -36,8 +36,13 @@ const getMeasuresCallback = data => MEASURES_CALLBACK(data)
 
 const setMeasuresCallback = fn => MEASURES_CALLBACK=fn
 
+router.head('/measures', (req, res) => {
+  return res.status(200).send("ok")
+})
+
 router.post('/measures', (req, res) => {
   const data=req.body
+  console.log(`Withings called /measures with ${JSON.stringify(data)}`)
   getMeasuresCallback(data)
     .then(console.log)
     .catch(console.error)

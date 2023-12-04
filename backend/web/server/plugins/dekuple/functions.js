@@ -206,11 +206,11 @@ const getNewMeasures = ({userid, startdate}) => {
       if (!user) {
         throw new Error(`No user for withings id ${userid}`)
       }
-      return getMeasures(user.access_token, startdate)
+      return getMeasures(user.access_token, moment.unix(startdate))
         .then(newMeasures => {
           console.log(`User ${user.email}:got measures ${JSON.stringify(newMeasures)}`)
           if (newMeasures.measuregrps.length > 0) {
-            console.log(`User ${user.email}:got ${newMeasures.measuregrps.length} new measures since ${since}`)
+            console.log(`User ${user.email}:got ${newMeasures.measuregrps.length} new measures since ${moment.unix(startdate)}`)
           }
           return Promise.all(newMeasures.measuregrps.map(grp => {
             const dekMeasure = {
