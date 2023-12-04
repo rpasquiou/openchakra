@@ -167,8 +167,7 @@ const router = express.Router()
 
 // Ensure Users tokens are up to date every hour
 // TODO It's a quick fix, should not have to request authorization each time
-//isProduction() && cron.schedule('0 */30 * * * *', () => {
-isProduction() && cron.schedule('0 * * * * *', () => {
+isProduction() && cron.schedule('40 */20 * * * *', () => {
   const expirationMoment = moment().add(40, 'minute')
   return User.find(
     {
