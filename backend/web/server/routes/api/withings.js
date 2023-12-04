@@ -37,6 +37,7 @@ const getMeasuresCallback = data => MEASURES_CALLBACK(data)
 const setMeasuresCallback = fn => MEASURES_CALLBACK=fn
 
 router.head('/measures', (req, res) => {
+  console.log('Called HEAD /measures')
   return res.status(200).send("ok")
 })
 
