@@ -11,11 +11,14 @@ const {addAction} = require('../../utils/studio/actions')
 const { sendForgotPassword, sendWelcomeRegister } = require('./mailing')
 
 const postPutData = ({model, data}) => {
+  // TODO update User if Withings API has this action
+  /**
   if (model=='user') {
     return createUser(data)
       .then(withingsCode => {data.withings_usercode=withingsCode; return data.save()})
       .then(user => updateTokens(user))
   }
+  */
   return data
 }
 
