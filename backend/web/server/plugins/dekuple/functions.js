@@ -231,11 +231,14 @@ const getNewMeasures = ({userid, startdate}) => {
 setMeasuresCallback(getNewMeasures)
 
 // Get all devices TODO should be notified by Withings
-isProduction() && cron.schedule('24 */10 * * * *', async () => {
+isProduction() && cron.schedule('24 */5 * * * *', async () => {
   console.log(`Getting devices`)
   const users = await User.find({ access_token: { $ne: null } })
     .populate('devices')
+    .sort({expires_at: -1})
+    .limit(30)
     .lean({ virtuals: true })
+  console.log(`Getting devices for ${users.map(u=>u.email)}`)
   return Promise.allSettled(users.map(async user => {
     const devices = await getDevices(user.access_token)
     if (devices.length > 0) {
