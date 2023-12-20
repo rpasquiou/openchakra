@@ -17,14 +17,7 @@ const Timer = ({
   dataSource: { _id: null } | null
   backend: string
 }) => {
-  const RESSOURCE_SENDING_PERIOD = 2000
-  // const TIME_BEFORE_LOGOUT = 10000
-  // const [coords, setCoords] = useState({ x: 0, y: 0 });
-  // const [lastCoords, setLastCoords] = useState({ x: 0, y: 0 });
-  // const [lastTyping, setLastTyping] = useState<Date>(new Date());
-  const [isVisible, setIsVisible] = useState<boolean>(
-    document?.visibilityState !== 'hidden' || false,
-  )
+
   const {
     seconds,
     minutes,
@@ -35,69 +28,80 @@ const Timer = ({
     //reset,
   } = useStopwatch({ autoStart: true })
 
-  // const handleMoves = useCallback(
-  //   ({ clientX, clientY }) => {
-  //     setCoords({ x: clientX, y: clientY });
-  //   },
-  //   [setCoords]
-  // );
+  // Brower code only
+  if (typeof window!=='undefined') {
+    const RESSOURCE_SENDING_PERIOD = 2000
+    // const TIME_BEFORE_LOGOUT = 10000
+    // const [coords, setCoords] = useState({ x: 0, y: 0 });
+    // const [lastCoords, setLastCoords] = useState({ x: 0, y: 0 });
+    // const [lastTyping, setLastTyping] = useState<Date>(new Date());
+    const [isVisible, setIsVisible] = useState<boolean>(
+      document?.visibilityState !== 'hidden' || false,
+    )
+    // const handleMoves = useCallback(
+    //   ({ clientX, clientY }) => {
+    //     setCoords({ x: clientX, y: clientY });
+    //   },
+    //   [setCoords]
+    // );
 
-  // const handleTyping = useCallback(
-  //   ({ keyCode }) => {
-  //     console.log(keyCode)
-  //     setLastTyping(new Date());
-  //   },
-  //   [setLastTyping]
-  // );
+    // const handleTyping = useCallback(
+    //   ({ keyCode }) => {
+    //     console.log(keyCode)
+    //     setLastTyping(new Date());
+    //   },
+    //   [setLastTyping]
+    // );
 
-  const handleVisibility = useCallback(
-    (e: EventListenerOrEventListenerObject) => {
-      if (document.visibilityState === 'hidden') {
-        setIsVisible(false)
-      } else {
-        setIsVisible(true)
-      }
-    },
-    [setIsVisible],
-  )
-
-  // useEventListener("mousemove", handleMoves);
-  // useEventListener("keyup", handleTyping);
-  useEventListener('visibilitychange', handleVisibility)
-
-  /* If counter is running, no more ping sent */
-  useInterval(
-    () => {
-      console.log(`Interval, dataSource:${JSON.stringify(dataSource)}`)
-      if (dataSource) {
-        try {
-          axios
-            .post(`/myAlfred/api/studio/action`, {
-              action: 'addSpentTime',
-              id: dataSource._id,
-              duration: RESSOURCE_SENDING_PERIOD,
-            })
-            .then(() => console.log(`sent data time for ${dataSource}`))
-            .catch(err =>
-              console.error(`erreur send data time for ${dataSource}:${err}`),
-            )
-        } catch (err) {
-          console.error(err)
+    const handleVisibility = useCallback(
+      (e: EventListenerOrEventListenerObject) => {
+        if (document.visibilityState === 'hidden') {
+          setIsVisible(false)
+        } else {
+          setIsVisible(true)
         }
-      }
-    },
-    isRunning ? RESSOURCE_SENDING_PERIOD : null,
-  )
+      },
+      [setIsVisible],
+    )
 
-  /* typing or mousemove or logout */
-  // useInterval(() => {
-  //   console.log('no interaction')
-  // }, isRunning ? TIME_BEFORE_LOGOUT : null)
+    // useEventListener("mousemove", handleMoves);
+    // useEventListener("keyup", handleTyping);
+    useEventListener('visibilitychange', handleVisibility)
 
-  useEffect(() => {
-    isRunning && !isVisible && pause()
-    !isRunning && isVisible && start()
-  }, [isRunning, isVisible, pause, start])
+    /* If counter is running, no more ping sent */
+    useInterval(
+      () => {
+        console.log(`Interval, dataSource:${JSON.stringify(dataSource)}`)
+        if (dataSource) {
+          try {
+            axios
+              .post(`/myAlfred/api/studio/action`, {
+                action: 'addSpentTime',
+                id: dataSource._id,
+                duration: RESSOURCE_SENDING_PERIOD,
+              })
+              .then(() => console.log(`sent data time for ${dataSource}`))
+              .catch(err =>
+                console.error(`erreur send data time for ${dataSource}:${err}`),
+              )
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      },
+      isRunning ? RESSOURCE_SENDING_PERIOD : null,
+    )
+
+    /* typing or mousemove or logout */
+    // useInterval(() => {
+    //   console.log('no interaction')
+    // }, isRunning ? TIME_BEFORE_LOGOUT : null)
+
+    useEffect(() => {
+      isRunning && !isVisible && pause()
+      !isRunning && isVisible && start()
+    }, [isRunning, isVisible, pause, start])
+  }
 
   return (
     <Text as={'span'} {...props}>
