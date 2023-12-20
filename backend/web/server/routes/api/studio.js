@@ -166,8 +166,17 @@ router.get('/action-allowed/:action', passport.authenticate('cookie', {session: 
   })
   const user=req.user
 
+  const msg=`allowing action ${action} ${JSON.stringify(query)}`
+  console.time(msg)
   return callAllowedAction({action, user, ...query})
     .then(allowed => res.json(allowed))
+    .catch(err => {
+      console.error(err)
+      return res.json(false)
+    })
+    .finally(() => {
+      console.timeEnd(msg)
+    })
 })
 
 router.post('/file', (req, res) => {
@@ -285,11 +294,11 @@ router.post('/action', passport.authenticate('cookie', {session: false}), (req, 
     console.error(`Unkown action:${action}`)
     return res.status(404).json(`Unkown action:${action}`)
   }
+  console.log('Starting action', action)
 
   return actionFn(req.body, req.user, req.get('Referrer'))
-    .then(result => {
-      return res.json(result)
-    })
+    .then(result => res.json(result))
+    .finally(() => console.log('Ending starting action', action))
 })
 
 router.post('/anonymous-action', (req, res) => {
@@ -446,6 +455,7 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
   }
 
+  console.log(`POST ${model} ${JSON.stringify(params)}`)
   return callPreCreateData({model, params, user})
     .then(({model, params}) => {
       return mongoose.connection.models[model]
@@ -489,11 +499,16 @@ const loadFromRequest = (req, res) => {
 
   const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
   console.log(logMsg)
+  console.time(logMsg)
 
   return loadFromDb({model, fields, id, user, params})
     .then(data => {
-      console.log(`${logMsg}: data sent`)
-      res.json(data)
+      console.time(`Sending ${model}`)
+      return res.json(data)
+    })
+    .finally(() => {
+      console.timeEnd(`Sending ${model}`)
+      console.timeEnd(logMsg)
     })
 }
 

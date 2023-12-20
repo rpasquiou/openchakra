@@ -21,6 +21,7 @@ const CompanySchema = new Schema(
     code: {
       type: String,
       required: false,
+      index: true,
     },
     picture: {
       type: String,
@@ -57,6 +58,11 @@ const CompanySchema = new Schema(
       ref: 'appointmentType',
       required: false,
     },
+    // Outbound call script
+    script: {
+      type: String,
+      required: false,
+    }
   },
   schemaOptions,
 )
@@ -144,6 +150,12 @@ CompanySchema.virtual("collective_challenges", {
   ref: "collectiveChallenge", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
+});
+
+CompanySchema.virtual('leads', {
+  ref: 'lead', // The Model to use
+  localField: "code", // Find in Model, where localField
+  foreignField: "company_code", // is equal to foreignField
 });
 
 module.exports = CompanySchema
