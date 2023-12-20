@@ -11,11 +11,9 @@ import axios from 'axios'
 
 const Timer = ({
   dataSource,
-  backend,
   ...props
 }: {
   dataSource: { _id: null } | null
-  backend: string
 }) => {
 
   const {
