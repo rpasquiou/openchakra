@@ -2,7 +2,6 @@ const path=require('path')
 const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../.env')})
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
-const isEmpty = require('../server/validation/is-empty')
 const pm2=require('pm2')
 const lodash=require('lodash')
 
@@ -263,7 +262,7 @@ const checkConfig = () => {
     if (lodash.isEmpty(process.env.FRONTEND_APP_PORT)) {
       reject(`env var FRONTEND_APP_PORT non renseigné`)
     }
-    if (isEmpty(process.env.DATA_MODEL)) {
+    if (lodash.isEmpty(process.env.DATA_MODEL)) {
       reject(`DATA_MODEL non renseigné`)
     }
     if (lodash.isEmpty(process.env.S3_ID)) {
