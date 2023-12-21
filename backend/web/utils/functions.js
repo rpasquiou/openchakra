@@ -1,3 +1,5 @@
+const crypto=require('crypto')
+
 const sanitizeFilename = name => {
   return name.toLowerCase()
     .replace(/ /gi, '-')
