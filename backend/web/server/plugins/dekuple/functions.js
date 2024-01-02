@@ -285,7 +285,7 @@ isProduction() && cron.schedule('15 * * * * *', async () => {
 isProduction() && cron.schedule('*/30 * * * * *', async () => {
   console.log(`Polling measures`)
   // Only get users having a device
-  const fromDate=moment().add(-1, 'hour')
+  const fromDate=moment().add(-1, 'hour').unix()
   return Device.find()
     .populate('user')
     .then(devices => Promise.allSettled(devices.map(device => getNewMeasures({userid: device.user?.withings_id, startdate: fromDate})
