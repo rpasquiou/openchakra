@@ -282,8 +282,7 @@ isProduction() && cron.schedule('15 * * * * *', async () => {
 
 
 // Poll measures while Withings does not callback
-//isProduction() && cron.schedule('*/30 * * * * *', async () => {
-cron.schedule('*/5 * * * * *', async () => {
+isProduction() && cron.schedule('*/30 * * * * *', async () => {
   console.log(`Polling measures`)
   // Only get users having a device
   const fromDate=moment().add(-1, 'hour')
