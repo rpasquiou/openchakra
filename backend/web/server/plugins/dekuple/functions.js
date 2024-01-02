@@ -282,13 +282,14 @@ isProduction() && cron.schedule('15 * * * * *', async () => {
 
 
 // Poll measures while Withings does not callback
-isProduction() && cron.schedule('*/30 * * * * *', async () => {
+//isProduction() && cron.schedule('*/30 * * * * *', async () => {
+cron.schedule('*/5 * * * * *', async () => {
   console.log(`Polling measures`)
   // Only get users having a device
   const fromDate=moment().add(-1, 'hour')
   return Device.find()
     .populate('user')
-    .then(devices => Promise.allSettled(devices.map(device => getNewMeasures({userid: device.user.withings_id, startdate: fromDate})
+    .then(devices => Promise.allSettled(devices.map(device => getNewMeasures({userid: device.user?.withings_id, startdate: fromDate})
       .then(console.log)
       .catch(console.error)
     )
