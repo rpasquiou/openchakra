@@ -277,6 +277,19 @@ isProduction() && cron.schedule('15 * * * * *', async () => {
 })
 
 
+// Poll measures while Withings does not callback
+//isProduction() && cron.schedule('*/30 * * * * *', async () => {
+cron.schedule('*/30 * * * * *', async () => {
+  console.log(`Polling measures`)
+  // Only get users having a device
+  const fromDate=moment().add(-1, 'hour')
+  return Device.find()
+    .then(devices => Promise.all(device => getNewMeasures(device.user._id, fromDate)
+      .then(console.log)
+      .catch(console.error)
+    ))
+})
+
 module.exports = {
   updateTokens,
   router,
