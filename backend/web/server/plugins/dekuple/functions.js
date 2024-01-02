@@ -287,7 +287,7 @@ isProduction() && cron.schedule('*/30 * * * * *', async () => {
   // Only get users having a device
   const fromDate=moment().add(-1, 'hour')
   return Device.find()
-    .then(devices => Promise.allSettled(devices.map(device => getNewMeasures(device.user._id, fromDate)
+    .then(devices => Promise.allSettled(devices.map(device => getNewMeasures({userid: device.user._id, startdate: fromDate})
       .then(console.log)
       .catch(console.error)
     )
