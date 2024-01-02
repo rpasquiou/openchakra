@@ -205,6 +205,7 @@ const getNewMeasures = ({userid, startdate}) => {
       if (!user) {
         throw new Error(`No user for withings id ${userid}`)
       }
+      console.log(`Getting measures for ${user.email} starting at ${startdate} (${moment.unix(startdate)})`)
       return getMeasures(user.access_token, moment.unix(startdate))
         .then(newMeasures => {
           console.log(`User ${user.email}:got measures ${JSON.stringify(newMeasures)}`)
@@ -281,15 +282,15 @@ isProduction() && cron.schedule('15 * * * * *', async () => {
 
 
 // Poll measures while Withings does not callback
-//isProduction() && cron.schedule('*/30 * * * * *', async () => {
-cron.schedule('*/30 * * * * *', async () => {
+isProduction() && cron.schedule('*/30 * * * * *', async () => {
   console.log(`Polling measures`)
   // Only get users having a device
   const fromDate=moment().add(-1, 'hour')
   return Device.find()
-    .then(devices => Promise.all(device => getNewMeasures(device.user._id, fromDate)
+    .then(devices => Promise.allSettled(devices.map(device => getNewMeasures(device.user._id, fromDate)
       .then(console.log)
       .catch(console.error)
+    )
     ))
 })
 
