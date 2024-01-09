@@ -1,16 +1,20 @@
-const mongoose = require('mongoose')
-const {getDataModel} = require('../../config/config')
+const {getDataModel}=require('../../config/config')
 
-let ResourceSchema=null
+let Resource = null
 
 try {
-  ResourceSchema=require(`../plugins/${getDataModel()}/schemas/ResourceSchema`)
-  ResourceSchema.plugin(require('mongoose-lean-virtuals'))
+  const Block = require(`./Block`)
+  if (Block) {
+    const ResourceSchema=require(`../plugins/${getDataModel()}/schemas/ResourceSchema`)
+    ResourceSchema.plugin(require('mongoose-lean-virtuals'))
+    Resource = Block.discriminator('resource', ResourceSchema)
+  }
 }
-catch(err) {
+catch (err) {
+  console.error(err)
   if (err.code !== 'MODULE_NOT_FOUND') {
     throw err
   }
 }
 
-module.exports = ResourceSchema ? mongoose.model('resource', ResourceSchema) : null
+module.exports = Resource
