@@ -23,7 +23,7 @@ const BlockSchema = new Schema({
   children: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'child',
+      ref: 'block',
       required:[true, `L'enfant est obligatoire`],
     }],
     required: true,
