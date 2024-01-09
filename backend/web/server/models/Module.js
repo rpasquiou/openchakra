@@ -3,16 +3,18 @@ const {getDataModel}=require('../../config/config')
 let Module = null
 
 try {
-  const Content = require(`./Content`)
-  if (Content) {
+  const Block = require(`./Block`)
+  if (Block) {
     const ModuleSchema=require(`../plugins/${getDataModel()}/schemas/ModuleSchema`)
     ModuleSchema.plugin(require('mongoose-lean-virtuals'))
-    Module = Content.discriminator('module', ModuleSchema)
+    Module = Block.discriminator('module', ModuleSchema)
   }
 }
 catch (err) {
+  console.error(err)
   if (err.code !== 'MODULE_NOT_FOUND') {
     throw err
   }
 }
+
 module.exports = Module

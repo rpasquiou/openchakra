@@ -30,7 +30,6 @@ const {
 const {HTTP_CODES, parseError} = require('./utils/errors')
 require('./models/Answer')
 require('./models/ResetToken')
-require('./models/Program')
 require('./models/Theme')
 require('./models/Resource')
 require('./models/Session')
@@ -131,6 +130,8 @@ require('./models/DeclineReason')
 require('./models/Interest')
 require('./models/Job')
 require('./models/NutritionAdvice')
+require('./models/Block')
+require('./models/Sequence')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
