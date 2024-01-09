@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const bcrypt = require('bcryptjs')
 const { isEmailOk } = require("../../../../utils/sms")
 const { ROLES } = require("../consts")
 const { schemaOptions } = require("../../../utils/schemas")
@@ -21,6 +22,11 @@ const UserSchema = new Schema({
     required: [true, 'L\'email est obligatoire'],
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, "L'email est invalide"],
+  },
+  password: {
+    type: String,
+    required: [true, 'Le mot de passe est obligatoire'],
+    set: pass => pass ? bcrypt.hashSync(pass, 10) : null,
   },
   role: {
     type: String,
