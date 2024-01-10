@@ -148,9 +148,10 @@ export const ACTIONS = {
       .then(res => res.data)
   },
   addChild: ({ value, props, context, level, getComponentValue }) => {
-    const childId = getComponentValue(props.child, level)
+    const child = getComponentValue(props.child, level)
+    parent=value._id
     let url = `${API_ROOT}/action`
-    const body = { action: 'addChild', parent: context, child: childId }
+    const body = { action: 'addChild', parent, child }
     return axios.post(url, body)
   },
   putValue: ({ value, props, context }) => {
