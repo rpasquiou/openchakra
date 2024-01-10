@@ -51,14 +51,6 @@ let ACTIONS = {
     })
   },
 
-  levelUp: ({parent, child}) => {
-    return moveChildInParent(parent, child, true)
-  },
-
-  levelDown: ({parent, child}) => {
-    return moveChildInParent(parent, child, false)
-  },
-
   addSpentTime: ({id, duration}, user, referrer) => {
     const params = url.parse(referrer, true).query
     return UserSessionData.findOneAndUpdate(

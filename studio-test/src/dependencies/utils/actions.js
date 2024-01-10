@@ -105,19 +105,39 @@ export const ACTIONS = {
       })
   },
 
-  levelUp: ({ value, props, context }) => {
+  levelUp: ({id, value, level }) => {
+    let parent=document.getElementById(id).parentNode
+    let parentValue=null
+    while (!parentValue && parent) {
+      const tempValue=getComponent(parent.id, level)?.getAttribute('_id')
+      if (tempValue && tempValue!=value._id) {
+        parentValue=tempValue
+        break
+      }
+      parent=document.getElementById(parent.id).parentNode
+    }
     let url = `${API_ROOT}/action`
     return axios.post(url, {
       action: 'levelUp',
-      parent: context,
+      parent: parentValue,
       child: value._id,
     })
   },
-  levelDown: ({ value, props, context }) => {
+  levelDown: ({ id, value, level }) => {
+    let parent=document.getElementById(id).parentNode
+    let parentValue=null
+    while (!parentValue && parent) {
+      const tempValue=getComponent(parent.id, level)?.getAttribute('_id')
+      if (tempValue && tempValue!=value._id) {
+        parentValue=tempValue
+        break
+      }
+      parent=document.getElementById(parent.id).parentNode
+    }
     let url = `${API_ROOT}/action`
     return axios.post(url, {
       action: 'levelDown',
-      parent: context,
+      parent: parentValue,
       child: value._id,
     })
   },

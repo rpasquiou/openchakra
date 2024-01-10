@@ -10,7 +10,7 @@ type IActions = {
   }
 }
 
-export const pagesList= ({pages}) => {
+export const pagesList = ({ pages }) => {
   return lodash(pages)
     .values()
     .orderBy(p => p.pageName.toLowerCase())
@@ -18,14 +18,14 @@ export const pagesList= ({pages}) => {
     .value()
 }
 
-export const colorsList = ({pages}) => {
+export const colorsList = ({ pages }) => {
   return lodash(pages).values()
     .map(page => page.components).map(components => Object.values(components)).flatten()
     .map(component => ['color', 'backgroundColor', 'focusBorderColor'].map(color => component.props[color])).flatten()
     .filter(color => !!color && /^#/.test(color))
     .map(color => color.toLowerCase())
     .uniq().sort()
-    .map(color => ({key: color, label: color}))
+    .map(color => ({ key: color, label: color }))
     .value()
 }
 
@@ -36,64 +36,65 @@ export const ACTIONS: IActions = {
       model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
       job: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       mission: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       quotation: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       group: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       parent: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       content: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       recipe: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       menu: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       pip: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       collectiveChallenge: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       quizzQuestion: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       user: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       userQuizzQuestion: ({ components }) =>
         components
-          .filter(comp => comp.type=='Flex')
+          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
-      ...Object.fromEntries(lodash.range(24).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(24).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage', 'previous'],
   },
@@ -110,7 +111,7 @@ export const ACTIONS: IActions = {
   openPage: {
     label: 'Open page',
     options: {
-      page: ({ pages }) => pagesList({pages}),
+      page: ({ pages }) => pagesList({ pages }),
       sourceId: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       open: () => [
         { key: true, label: 'In new page' },
@@ -159,7 +160,7 @@ export const ACTIONS: IActions = {
       child: ({ components }) =>
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    required:['child']
+    required: ['child']
   },
   sendMessage: {
     label: 'Send Message',
@@ -170,10 +171,10 @@ export const ACTIONS: IActions = {
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       attachment: ({ components }) =>
         components
-          .filter(c => c.type=='UploadFile')
+          .filter(c => c.type == 'UploadFile')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    required:['contents']
+    required: ['contents']
   },
   createPost: {
     label: 'Create post',
@@ -182,7 +183,7 @@ export const ACTIONS: IActions = {
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       media: ({ components }) =>
         components
-          .filter(c => c.type=='UploadFile')
+          .filter(c => c.type == 'UploadFile')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
   },
@@ -217,14 +218,15 @@ export const ACTIONS: IActions = {
     label: 'Save/create',
     options: {
       model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
-      ...Object.fromEntries(lodash.range(32).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(32).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage', 'previous'],
   },
@@ -247,7 +249,7 @@ export const ACTIONS: IActions = {
     options: {
       redirect: ({ pages }) =>
         Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
-      color: ({ pages }) => colorsList({pages})
+      color: ({ pages }) => colorsList({ pages })
     },
   },
   payOrder: {
@@ -255,35 +257,36 @@ export const ACTIONS: IActions = {
     options: {
       redirect: ({ pages }) =>
         Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
-      color: ({ pages }) => colorsList({pages}),
+      color: ({ pages }) => colorsList({ pages }),
     },
   },
   cashOrder: {
     label: 'Cash order',
     options: {
       guest: ({ components }) => components
-        .filter(comp => comp.type=='Select')
+        .filter(comp => comp.type == 'Select')
         .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` })),
       amount: ({ components }) => components
-        .filter(comp => comp.type=='Input')
+        .filter(comp => comp.type == 'Input')
         .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` })),
-      mode: () => [{ key: 'CASH', label: `Espèces` },{ key: 'CARD', label: `Carte bancaire` }],
+      mode: () => [{ key: 'CASH', label: `Espèces` }, { key: 'CARD', label: `Carte bancaire` }],
     },
     next: ['openPage'],
-    required:['amount', 'mode']
+    required: ['amount', 'mode']
   },
   // Register new User
   register: {
     label: 'Register new account',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource||comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(15).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage'],
   },
@@ -291,14 +294,15 @@ export const ACTIONS: IActions = {
   registerAndLogin: {
     label: 'Register new account+login',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource||comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(15).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage'],
   },
@@ -323,7 +327,7 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
     next: ['openPage'],
-    required:['email']
+    required: ['email']
   },
   getCigarReview: {
     label: 'Get cigar review',
@@ -343,11 +347,11 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
     next: ['openPage'],
-    required:['password', 'password2']
+    required: ['password', 'password2']
   },
   savePagePDF: {
     label: 'Save page as PDF',
-    options:{}
+    options: {}
   },
 
   deactivateAccount: {
@@ -363,14 +367,15 @@ export const ACTIONS: IActions = {
   createRecommandation: {
     label: 'Create recommandation',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(15).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage'],
   },
@@ -397,8 +402,8 @@ export const ACTIONS: IActions = {
   alle_accept_quotation: {
     label: 'AE Accept quotation',
     options: {
-      paymentSuccess: ({ pages }) => pagesList({pages}),
-      paymentFailure: ({ pages }) => pagesList({pages}),
+      paymentSuccess: ({ pages }) => pagesList({ pages }),
+      paymentFailure: ({ pages }) => pagesList({ pages }),
     },
     next: [],
   },
@@ -476,7 +481,7 @@ export const ACTIONS: IActions = {
   smartdiet_pass_event: {
     label: 'SM Passed event',
     options: {},
-    next: ['openPage','openUrl'],
+    next: ['openPage', 'openUrl'],
   },
   smartdiet_fail_event: {
     label: 'SM Failed event',
@@ -486,14 +491,15 @@ export const ACTIONS: IActions = {
   alle_ask_contact: {
     label: 'AE Ask contact',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
-      return [
-        `component_${idx}`,
-        ({ components }) => components
-          .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
-          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(15).map((idx: number) => {
+        return [
+          `component_${idx}`,
+          ({ components }) => components
+            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
+            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
-      ]})),
+        ]
+      })),
     },
     next: ['openPage'],
   },
@@ -502,7 +508,7 @@ export const ACTIONS: IActions = {
     options: {
       redirect: ({ pages }) =>
         Object.values(pages).map(p => ({ key: p.pageId, label: p.pageName })),
-      color: ({ pages }) => colorsList({pages}),
+      color: ({ pages }) => colorsList({ pages }),
     },
   },
   hasChildren: {
@@ -517,7 +523,7 @@ export const ACTIONS: IActions = {
     options: {
       email: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       message: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
-      page: ({ pages }) => pagesList({pages}),
+      page: ({ pages }) => pagesList({ pages }),
     },
     next: ['openPage'],
   },
@@ -532,7 +538,7 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
     next: ['openPage'],
-    required:['code']
+    required: ['code']
   },
 
   openUrl: {
@@ -589,7 +595,7 @@ export const ACTIONS: IActions = {
   smartdiet_open_team_page: {
     label: 'SM Open team page',
     options: {
-      page: ({ pages }) => pagesList({pages}),
+      page: ({ pages }) => pagesList({ pages }),
     },
     next: ['openPage'],
   },
@@ -651,6 +657,6 @@ export const ACTIONS: IActions = {
 
 export const allowsActions = (component: IComponent) => {
   return ['Button', 'IconButton', 'Flex'].includes(component.type)
-  && (!(component.type === 'Flex' && !!component.props.isFilterComponent))
+    && (!(component.type === 'Flex' && !!component.props.isFilterComponent))
 
 }
