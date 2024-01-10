@@ -81,10 +81,6 @@ let ACTIONS = {
     return removeData(id)
   },
 
-  addChild: ({parent, child}) => {
-    return addChild(parent, child)
-  },
-
   next: ({id}, user, referrer) => {
     return getNext(id, user, referrer)
   },
