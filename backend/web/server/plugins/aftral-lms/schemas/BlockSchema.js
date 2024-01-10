@@ -31,6 +31,7 @@ const BlockSchema = new Schema({
   },
   ordered_chilren: {
     type: Boolean,
+    default: false,
     required:[true, 'Indiquer si les enfants doivent être ordonnés']
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
