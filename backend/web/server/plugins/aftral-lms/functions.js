@@ -1,5 +1,5 @@
 const {
-  declareVirtualField,
+  declareVirtualField, setPreCreateData,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES } = require('./consts')
 
@@ -18,3 +18,11 @@ USER_MODELS.forEach(model => {
   declareVirtualField({model, field: 'role', instance: 'String', enumValues: ROLES})
 })
 
+const preCreate = ({model, params, user}) => {
+  if (['resource'].includes(model)) {
+    params.creator=params?.creator || user
+  }
+  return Promise.resolve({model, params})
+}
+
+setPreCreateData(preCreate)
