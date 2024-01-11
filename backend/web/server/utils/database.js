@@ -1,6 +1,5 @@
 const lodash = require('lodash')
 const mongoose = require('mongoose')
-const formatDuration = require('format-duration')
 const {splitRemaining} = require('../../utils/text')
 const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
 const UserSessionData = require('../models/UserSessionData')
@@ -461,10 +460,6 @@ const addComputedFields = (
   })
 }
 
-const formatTime = timeMillis => {
-  return formatDuration(timeMillis ? timeMillis / 60 : 0, {leading: true})
-}
-
 const declareComputedField = (model, field, getFn, setFn) => {
   if (getFn) {
     lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getFn)
@@ -756,7 +751,6 @@ module.exports = {
   declareComputedField,
   declareVirtualField,
   declareEnumField,
-  formatTime,
   retainRequiredFields,
   setFilterDataUser,
   callFilterDataUser,
