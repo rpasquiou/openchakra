@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR}=require('../consts')
+const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE}=require('../consts')
 
 const ResourceSchema = new Schema({
   shortName: {
@@ -26,8 +26,9 @@ const ResourceSchema = new Schema({
     default: false,
     required: [true, `Le caractère optionnel est obligatoire`],
   },
-  resourceType: {
+  resource_type: {
     type: String,
+    enum: Object.keys(RESOURCE_TYPE),
     required: [true, `Le type de ressource est obligatoire`],
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})

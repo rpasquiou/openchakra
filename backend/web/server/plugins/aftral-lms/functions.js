@@ -1,5 +1,5 @@
 const {
-  declareVirtualField, setPreCreateData,
+  declareVirtualField, setPreCreateData, declareEnumField,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES } = require('./consts')
 
@@ -12,7 +12,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
 })
 
-declareVirtualField({model:'resource', field: 'resourceType', instance: 'String', enumValues: RESOURCE_TYPE})
+declareEnumField({model:'resource', field: 'resource_type', enumValues: RESOURCE_TYPE})
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
 
 USER_MODELS=['user', 'loggedUser']
