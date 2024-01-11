@@ -162,6 +162,14 @@ export const ACTIONS: IActions = {
     },
     required: ['child']
   },
+  removeChild: {
+    label: 'Remove child',
+    options: {
+      child: ({ components }) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required: ['child']
+  },
   sendMessage: {
     label: 'Send Message',
     options: {

@@ -50,4 +50,8 @@ BlockSchema.virtual('order').get(function() {
   return 0
 })
 
+BlockSchema.virtual('children_count').get(function() {
+  return this.children?.length || 0
+})
+
 module.exports = BlockSchema
