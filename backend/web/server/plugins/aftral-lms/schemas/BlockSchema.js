@@ -54,4 +54,11 @@ BlockSchema.virtual('children_count').get(function() {
   return this.children?.length || 0
 })
 
+BlockSchema.virtual('resource_type').get(function() {
+  return this._resource_type
+})
+
+BlockSchema.virtual('resource_type').set(function(value) {
+})
+
 module.exports = BlockSchema
