@@ -26,11 +26,19 @@ const ResourceSchema = new Schema({
     default: false,
     required: [true, `Le caractère optionnel est obligatoire`],
   },
-  resource_type: {
+  _resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
     required: [true, `Le type de ressource est obligatoire`],
-  }
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+ResourceSchema.virtual('resource_type').get(function() {
+  return this._resource_type
+})
+
+ResourceSchema.virtual('resource_type').set(function(value) {
+  this._resource_type=value
+})
 
 module.exports = ResourceSchema
