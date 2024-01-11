@@ -18,7 +18,7 @@ const User = require('../../models/User')
 const Message = require('../../models/Message')
 const Post = require('../../models/Post')
 const UserSessionData = require('../../models/UserSessionData')
-const {NotFoundError} = require('../errors')
+const {NotFoundError, ForbiddenError} = require('../errors')
 const Program = require('../../models/Program')
 let fumoirMailing=null
 if (getDataModel()=='fumoir') {
@@ -70,6 +70,9 @@ let ACTIONS = {
   },
 
   delete: ({id}) => {
+    if (getDataModel()=='aftral-lms') {
+      throw new ForbiddenError(`NAN! Attends que Seb s'en occupe!!!`)
+    }
     return removeData(id)
   },
 
