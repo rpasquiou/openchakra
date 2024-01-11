@@ -8,11 +8,11 @@ const { formatDuration } = require('../../../../utils/text')
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [true, `Le nom est obligzatoire`],
+    required: [true, `Le nom est obligatoire`],
   },
   code: {
     type: [String],
-    required: [true, `Le nom est obligzatoire`],
+    required: [true, `Le code est obligatoire`],
   },
   description: {
     type: [String],
@@ -35,10 +35,10 @@ const BlockSchema = new Schema({
     required: true,
     default: [],
   },
-  ordered_chilren: {
+  open: {
     type: Boolean,
-    default: false,
-    required:[true, 'Indiquer si les enfants doivent être ordonnés']
+    default: true,
+    required:[true, `La notion d'ordre est obligatoire`]
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 BlockSchema.virtual('duration_str').get(function(value) {
