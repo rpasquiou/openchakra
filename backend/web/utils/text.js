@@ -3,7 +3,7 @@ const csv_string = require('csv-string')
 const stripBom = require('strip-bom')
 const moment=require('moment')
 const lodash=require('lodash')
-
+const externelFormatDuration=require('format-duration')
 const ARTICLES = 'le la les un une de des d l à'.split(/ /g)
 const SIREN_LENGTH=9
 const SIRET_LENGTH=14
@@ -122,6 +122,10 @@ const formatDateTime = datetime => {
   return moment(datetime).format(`[le] DD/MM/YY [à] HH:mm`)
 }
 
+const formatDuration = durationSeconds => {
+  return externelFormatDuration(durationSeconds*1000, {leading: true})
+}
+
 module.exports = {
   normalize,
   matches,
@@ -135,4 +139,5 @@ module.exports = {
   guessDelimiter,
   splitRemaining,
   formatDateTime,
+  formatDuration,
 }
