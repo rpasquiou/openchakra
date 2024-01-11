@@ -2,6 +2,8 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR}=require('../consts')
+const lodash=require('lodash')
+const { formatDuration } = require('../../../../utils/text')
 
 const BlockSchema = new Schema({
   name: {
@@ -20,6 +22,10 @@ const BlockSchema = new Schema({
     type: String,
     required: false,
   },
+  duration: {
+    type: Number,
+    required: false,
+  },
   children: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -35,10 +41,10 @@ const BlockSchema = new Schema({
     required:[true, 'Indiquer si les enfants doivent être ordonnés']
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
-
-BlockSchema.virtual('duration').get(function() {
-  return 0
+BlockSchema.virtual('duration_str').get(function(value) {
+  return formatDuration(this.duration)
 })
+
 
 BlockSchema.virtual('order').get(function() {
   return 0

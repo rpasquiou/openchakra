@@ -16,7 +16,7 @@ const ResourceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, 'Le créateur est obligatoire'],
-  }
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.virtual('resourceType').get(function(){
