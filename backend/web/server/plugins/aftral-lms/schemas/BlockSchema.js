@@ -61,4 +61,12 @@ BlockSchema.virtual('resource_type').get(function() {
 BlockSchema.virtual('resource_type').set(function(value) {
 })
 
+BlockSchema.virtual('evaluation').get(function() {
+  return this._evaluation
+})
+
+BlockSchema.virtual('evaluation').set(function(value) {
+})
+
+
 module.exports = BlockSchema

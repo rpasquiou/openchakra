@@ -11,6 +11,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'duration_str', instance: 'String'})
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE})
+  declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
