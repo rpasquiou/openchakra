@@ -41,6 +41,15 @@ const addChildAction = ({parent, child}, user) => {
 }
 addAction('addChild', addChildAction)
 
+const removeChildAction = ({parent, child}, user) => {
+  return Block.findById(parent)
+    .then(parent => {
+      if (!parent) { throw new NotFoundError(`Donnée ${parent} introuvable`)}
+      return Block.findByIdAndUpdate(parent, {$pull: {children: child}})
+    })
+}
+addAction('removeChild', removeChildAction)
+
 const levelUpAction = ({parent, child}, user) => {
   return moveChildInParent(parent, child, true)
 }

@@ -17,6 +17,15 @@ const ResourceSchema = new Schema({
     ref: 'user',
     required: [true, 'Le créateur est obligatoire'],
   },
+  evaluation: {
+    type: Boolean,
+    required: false,
+  },
+  optional: {
+    type: Boolean,
+    default: false,
+    required: [true, `Le caractère optionnel est obligatoire`],
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.virtual('resourceType').get(function(){

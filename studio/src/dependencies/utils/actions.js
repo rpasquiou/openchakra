@@ -174,6 +174,13 @@ export const ACTIONS = {
     const body = { action: 'addChild', parent, child }
     return axios.post(url, body)
   },
+  removeChild: ({ value, props, context, level, getComponentValue }) => {
+    const child = getComponentValue(props.child, level)
+    parent=value._id
+    let url = `${API_ROOT}/action`
+    const body = { action: 'removeChild', parent, child }
+    return axios.post(url, body)
+  },
   putValue: ({ value, props, context }) => {
     let url = `${API_ROOT}/action`
     const body = {
