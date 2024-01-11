@@ -33,8 +33,16 @@ const ResourceSchema = new Schema({
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
+ResourceSchema.virtual('resource_type').get(function() {
+  return this._resource_type
+})
+
 ResourceSchema.virtual('resource_type').set(function(value) {
   this._resource_type=value
+})
+
+ResourceSchema.virtual('evaluation').get(function(value) {
+  return this._evaluation
 })
 
 ResourceSchema.virtual('evaluation').set(function(value) {
