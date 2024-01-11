@@ -114,7 +114,7 @@ export const ACTIONS = {
         parentValue=tempValue
         break
       }
-      parent=document.getElementById(parent.id).parentNode
+      parent=parent.parentNode
     }
     let url = `${API_ROOT}/action`
     return axios.post(url, {
@@ -132,7 +132,7 @@ export const ACTIONS = {
         parentValue=tempValue
         break
       }
-      parent=document.getElementById(parent.id).parentNode
+      parent=parent.parentNode
     }
     let url = `${API_ROOT}/action`
     return axios.post(url, {
@@ -174,11 +174,20 @@ export const ACTIONS = {
     const body = { action: 'addChild', parent, child }
     return axios.post(url, body)
   },
-  removeChild: ({ value, props, context, level, getComponentValue }) => {
-    const child = getComponentValue(props.child, level)
-    parent=value._id
+  removeChild: ({ value, id, level}) => {
+    let parent=document.getElementById(id).parentNode
+    let parentValue=null
+    while (!parentValue && parent) {
+      const tempValue=getComponent(parent.id, level)?.getAttribute('_id')
+      if (tempValue && tempValue!=value._id) {
+        parentValue=tempValue
+        break
+      }
+      parent=parent.parentNode
+    }
+    const child=value._id
     let url = `${API_ROOT}/action`
-    const body = { action: 'removeChild', parent, child }
+    const body = { action: 'removeChild', parent: parentValue, child }
     return axios.post(url, body)
   },
   putValue: ({ value, props, context }) => {
