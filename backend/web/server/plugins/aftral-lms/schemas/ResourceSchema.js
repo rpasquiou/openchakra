@@ -10,7 +10,7 @@ const ResourceSchema = new Schema({
   },
   url: {
     type: String,
-    required: [function() {this.isTemplate()}, `l'url est obligatoire`]
+    required: [function() {return this.isTemplate()}, `L'url est obligatoire`]
   },
   creator: {
     type: Schema.Types.ObjectId,
