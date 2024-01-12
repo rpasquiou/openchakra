@@ -76,10 +76,8 @@ const updateAllDurations = async () => {
 }
 
 const filterDataUser = ({model, data, id, user}) => {
-  if (MODELS.includes(model)) {
-    console.log('filtering', JSON.stringify(data, null, 2))
-    data=data.filter(d => lodash.isEmpty(d.origin))
-    console.log('after filtering', JSON.stringify(data, null, 2))
+  if (MODELS.includes(model) && !id) {
+    data=data.filter(d => !d.origin)
   }
   return Promise.resolve(data)
 }
