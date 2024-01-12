@@ -269,11 +269,21 @@ export const ACTIONS = {
       return comp
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
-    const body = Object.fromEntries(components.map(c => {
+    const entries=components.map(c => {
       return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
-    }))
+    })
+    const groupedEntries=lodash(entries)
+      .groupBy(e => e[0])
+      .mapValues(values => values.map(v => v[1]).filter(v => !lodash.isNil(v)))
+      .mapValues(values => lodash.isEmpty(values) ? undefined: values)
+    const duplicatedEntries=groupedEntries.pickBy(values => values?.length>1).keys()
+    if (!duplicatedEntries.isEmpty()) {
+      console.log(duplicatedEntries)
+      return Promise.reject(`Le champ ${duplicatedEntries.value()[0]} est dupliqué`)
+    }
 
-    const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
+    console.log(groupedEntries.value())
+    const bodyJson=groupedEntries.mapValues(v => JSON.stringify(v?.[0]))
     const entityExists=!!dataSource?._id
     const httpAction=entityExists ? axios.put : axios.post
     return httpAction(url, bodyJson)
