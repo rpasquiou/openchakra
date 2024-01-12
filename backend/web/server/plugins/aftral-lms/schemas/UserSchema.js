@@ -23,6 +23,10 @@ const UserSchema = new Schema({
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, "L'email est invalide"],
   },
+  picture: {
+    type: String,
+    required: false,
+  },
   password: {
     type: String,
     required: [true, 'Le mot de passe est obligatoire'],
