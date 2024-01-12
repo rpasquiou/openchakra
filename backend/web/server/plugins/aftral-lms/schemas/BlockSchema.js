@@ -12,7 +12,7 @@ function getterTemplateFirst(attribute) {
     if (this.isTemplate()) {
       return v
     }
-    return this.origin[attribute]
+    return this.origin?.[attribute]
   }
   return getter
 }
@@ -20,7 +20,7 @@ function getterTemplateFirst(attribute) {
 function getterMeFirst(attribute) {
   function getter(v) {
     if (lodash.isNil(v)) {
-      return this.origin[attribute]
+      return this.origin?.[attribute]
     }
     return v
   }
