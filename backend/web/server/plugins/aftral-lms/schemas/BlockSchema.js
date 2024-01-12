@@ -13,8 +13,8 @@ const BlockSchema = new Schema({
     required: [true, `Le nom est obligatoire`],
   },
   code: {
-    type: [String],
-    required: [true, `Le code est obligatoire`],
+    type: String,
+    required: false,
   },
   description: {
     type: [String],

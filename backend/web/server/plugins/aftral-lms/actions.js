@@ -6,7 +6,7 @@ const {addAction}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR } = require('./consts')
 
 const ACCEPTS={
-  program: ['module', 'sequence'],
+  program: ['module', 'sequence', 'resource'],
   module: ['sequence', 'resource'],
   sequence: ['resource'],
 }
