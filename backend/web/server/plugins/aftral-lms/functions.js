@@ -2,7 +2,7 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth,
+  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH } = require('./consts')
 const cron=require('node-cron')
@@ -74,6 +74,17 @@ const updateAllDurations = async () => {
     await updateDuration(block)
   }
 }
+
+const filterDataUser = ({model, data, id, user}) => {
+  if (MODELS.includes(model)) {
+    console.log('filtering', JSON.stringify(data, null, 2))
+    data=data.filter(d => lodash.isEmpty(d.origin))
+    console.log('after filtering', JSON.stringify(data, null, 2))
+  }
+  return Promise.resolve(data)
+}
+
+setFilterDataUser(filterDataUser)
 
 cron.schedule('*/10 * * * * *', async() => {
   console.time('Updating all durations')
