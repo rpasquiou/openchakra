@@ -313,11 +313,6 @@ const skipFailedPayment = () => {
   return !isProduction() && !!process.env.SKIP_FAILED_PAYMENT
 }
 
-// DEV mode: allow https without certificate
-if (isDevelopment()) {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-}
-
 const RANDOM_ID = new Date().getTime()
 
 const DOC_PATH = `/static/assets/docs/${getDataModel()}`
@@ -375,14 +370,14 @@ const setMasterStatus = () => {
       const processName=`BACKEND-${process.env.DATA_MODEL}-${process.env.BACKEND_PORT}`.toUpperCase()
       const all_pids=lodash(list).filter(p => p.name==processName).map(p => p.pid)
       const lowest_group_pid=all_pids.min()
-      console.log('master, my pid', process.pid, 'all pids', JSON.stringify(all_pids.value()), 'min pid', lowest_group_pid)
+      // console.log('master, my pid', process.pid, 'all pids', JSON.stringify(all_pids.value()), 'min pid', lowest_group_pid)
       if (!lowest_group_pid) {
-        console.log(`No PM2 process ${processName}:I'm the master`)
+        // console.log(`No PM2 process ${processName}:I'm the master`)
         _isMaster=true
         return
       }
       _isMaster=process.pid==lowest_group_pid
-      console.log(`PM2 processes found: I'm ${_isMaster ? '': 'not ' }the master ()`)
+      // console.log(`PM2 processes found: I'm ${_isMaster ? '': 'not ' }the master ()`)
       pm2.disconnect();
     });
   })
