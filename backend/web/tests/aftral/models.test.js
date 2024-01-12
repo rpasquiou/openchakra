@@ -1,66 +1,38 @@
 const moment=require('moment')
 const mongoose = require('mongoose')
+const lodash=require('lodash')
 const {forceDataModelAftral}=require('../utils')
 forceDataModelAftral()
 const {MONGOOSE_OPTIONS} = require('../../server/utils/database')
-
-const Album=require('../../server/models/Album')
-const Appointment=require('../../server/models/Appointment')
-const Availability=require('../../server/models/Availability')
-const Billing=require('../../server/models/Billing')
-const Booking=require('../../server/models/Booking')
-const Category=require('../../server/models/Category')
-const ChatRoom=require('../../server/models/ChatRoom')
-const Cigar=require('../../server/models/Cigar')
-const CigarCategory=require('../../server/models/CigarCategory')
-const Commission=require('../../server/models/Commission')
-const Company=require('../../server/models/Company')
-const Contact=require('../../server/models/Contact')
-const Conversation=require('../../server/models/Conversation')
-const Drink=require('../../server/models/Drink')
-const DrinkCategory=require('../../server/models/DrinkCategory')
-const Equipment=require('../../server/models/Equipment')
-const Event=require('../../server/models/Event')
-const EventLog=require('../../server/models/EventLog')
-const FilterPresentation=require('../../server/models/FilterPresentation')
-const Group=require('../../server/models/Group')
-const Guest=require('../../server/models/Guest')
-const Job=require('../../server/models/Job')
-const LoggedUser=require('../../server/models/LoggedUser')
-const Meal=require('../../server/models/Meal')
-const MealCategory=require('../../server/models/MealCategory')
-const Measure=require('../../server/models/Measure')
-const Message=require('../../server/models/Message')
-const Newsletter=require('../../server/models/Newsletter')
-const OrderItem=require('../../server/models/OrderItem')
-const Payment=require('../../server/models/Payment')
-const Post=require('../../server/models/Post')
-const Prestation=require('../../server/models/Prestation')
-const PriceList=require('../../server/models/PriceList')
-const Product=require('../../server/models/Product')
-const Program=require('../../server/models/Program')
-const Quotation=require('../../server/models/Quotation')
-const Reminder=require('../../server/models/Reminder')
-const ResetToken=require('../../server/models/ResetToken')
-const Resource=require('../../server/models/Resource')
-const Review=require('../../server/models/Review')
-const Service=require('../../server/models/Service')
-const ServiceUser=require('../../server/models/ServiceUser')
-const Session=require('../../server/models/Session')
-const ShipRate=require('../../server/models/ShipRate')
-const Shop=require('../../server/models/Shop')
-const Theme=require('../../server/models/Theme')
-const TrainingCenter=require('../../server/models/TrainingCenter')
-const UIConfiguration=require('../../server/models/UIConfiguration')
 const User=require('../../server/models/User')
-const UserSessionData=require('../../server/models/UserSessionData')
+const Resource=require('../../server/models/Resource')
+const Sequence=require('../../server/models/Sequence')
+const Module=require('../../server/models/Module')
+const Program=require('../../server/models/Program')
+const { ROLE_CONCEPTEUR, RESOURCE_TYPE } = require('../../server/plugins/aftral-lms/consts')
+const { updateAllDurations, updateDuration } = require('../../server/plugins/aftral-lms/functions')
+const Block = require('../../server/models/Block')
+
 
 jest.setTimeout(20000)
 
-describe('Test virtual single ref', () => {
+describe('Test models computations', () => {
+
+  const RESOURCE_COUNT=3
+  const RESOURCE_DURATION=2
+  const SEQUENCE_COUNT=3
+  const MODULE_COUNT=3
 
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
+    const user=await User.create({firstname: 'concepteur', lastname: 'concepteur', email: 'hello+concpteur@wappizy.com', role: ROLE_CONCEPTEUR, password: 'p1'})
+    const resources=await Promise.all(lodash.range(RESOURCE_COUNT).map(idx => Resource.create(
+      {name: `R${idx}`, code: `R${idx}`, creator: user, url: 'hop', resource_type: Object.keys(RESOURCE_TYPE)[0], 
+      duration: RESOURCE_DURATION},
+      )))
+    const sequences=await Promise.all(lodash.range(SEQUENCE_COUNT).map(idx => Sequence.create({name: `S${idx}`, code: `S${idx}`, children: resources})))
+    const modules=await Promise.all(lodash.range(MODULE_COUNT).map(idx => Module.create({name: `M${idx}`, code: `M${idx}`, children:sequences})))
+    await Program.create({name: `P1`, code: `P1`, children:modules})
   })
 
   afterAll(async() => {
@@ -68,56 +40,55 @@ describe('Test virtual single ref', () => {
     await mongoose.connection.close()
   })
 
-  it('must know required models', async() => {
-    expect(Album).toBeNull()
-    expect(Appointment).toBeNull()
-    expect(Availability).toBeNull()
-    expect(Billing).toBeNull()
-    expect(Booking).toBeNull()
-    expect(Category).toBeNull()
-    expect(ChatRoom).toBeNull()
-    expect(Cigar).toBeNull()
-    expect(CigarCategory).toBeNull()
-    expect(Commission).toBeNull()
-    expect(Company).toBeNull()
-    expect(Contact).toBeTruthy()
-    expect(Conversation).toBeNull()
-    expect(Drink).toBeNull()
-    expect(DrinkCategory).toBeNull()
-    expect(Equipment).toBeNull()
-    expect(Event).toBeNull()
-    expect(EventLog).toBeNull()
-    expect(FilterPresentation).toBeNull()
-    expect(Group).toBeNull()
-    expect(Guest).toBeNull()
-    expect(Job).toBeNull()
-    expect(LoggedUser).toBeTruthy()
-    expect(Meal).toBeNull()
-    expect(MealCategory).toBeNull()
-    expect(Measure).toBeNull()
-    expect(Message).toBeTruthy()
-    expect(Newsletter).toBeNull()
-    expect(OrderItem).toBeNull()
-    expect(Payment).toBeNull()
-    expect(Post).toBeNull()
-    expect(Prestation).toBeNull()
-    expect(PriceList).toBeNull()
-    expect(Product).toBeNull()
-    expect(Program).toBeTruthy()
-    expect(Quotation).toBeNull()
-    expect(Reminder).toBeNull()
-    expect(ResetToken).toBeNull()
-    expect(Resource).toBeTruthy()
-    expect(Review).toBeNull()
-    expect(Service).toBeNull()
-    expect(ServiceUser).toBeNull()
-    expect(Session).toBeTruthy()
-    expect(ShipRate).toBeNull()
-    expect(Shop).toBeNull()
-    expect(Theme).toBeTruthy()
-    expect(TrainingCenter).toBeTruthy()
-    expect(UIConfiguration).toBeNull()
-    expect(User).toBeTruthy()
-    expect(UserSessionData).toBeTruthy()
+  const displayTree = data => {
+    console.log(data.name, data.type)
+    console.group()
+    data.children.forEach(displayTree)
+    console.groupEnd()
+  }
+
+  it('display', async() => {
+    const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
+    displayTree(program)
   })
+
+  it('must compute childrenCount', async() => {
+    const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
+    let data=[program]
+    while (data.length>0) {
+      let [first, ...rest]=data
+      if (first.type!='resource') {
+        expect(first.children.length).toEqual(3)
+      }
+      data=rest
+    }
+  })
+
+  it('must compute duration', async() => {
+    const program= await Program.findOne()
+    const duration=await program.updateDuration()
+    console.log(duration)
+  })
+
+  it.only('must compute durations', async() => {
+    await updateAllDurations()
+    const blocks=await Block.find()
+    const EXPECTED={
+      'resource': RESOURCE_DURATION,
+      'sequence': RESOURCE_COUNT*RESOURCE_DURATION,
+      'module': SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION,
+      'program': MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION,
+    }
+    const grouped=lodash(blocks).groupBy('type')
+    Object.entries(EXPECTED).forEach(([type, expected]) => expect(grouped[type].every(e => e==expected).toBe(true)))
+  })
+
+  it('must compute program durations', async() => {
+    const program = await Program.findOne()
+    const res=await updateDuration(program)
+    const programAfter = await Program.findOne()
+    expect(res).toEqual(programAfter.duration)
+    expect(programAfter.duration).toEqual(MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION)
+  })
+
 })
