@@ -1,9 +1,11 @@
 const mongoose = require('mongoose')
+const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR}=require('../consts')
-const lodash=require('lodash')
 const { formatDuration } = require('../../../../utils/text')
+const { THUMBNAILS_DIR } = require('../../../../utils/consts')
+const { childSchemas } = require('./ResourceSchema')
 
 const BlockSchema = new Schema({
   name: {
@@ -24,7 +26,7 @@ const BlockSchema = new Schema({
   },
   duration: {
     type: Number,
-    required: false,
+    required: [function(){return this.type=='resource'}, `La durée est obligatoire`]
   },
   children: {
     type: [{
@@ -67,6 +69,5 @@ BlockSchema.virtual('evaluation').get(function() {
 
 BlockSchema.virtual('evaluation').set(function(value) {
 })
-
 
 module.exports = BlockSchema

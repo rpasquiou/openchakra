@@ -46,7 +46,7 @@ export const forceDataModelAftral = () => {
     return {
       __esModule: true,
       ...originalModule,
-      getDataModel: jest.fn(() => 'aftral'),
+      getDataModel: jest.fn(() => 'aftral-lms'),
     }
   })
 }
