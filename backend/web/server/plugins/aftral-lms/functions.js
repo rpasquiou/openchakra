@@ -2,15 +2,19 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet,
+  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH } = require('./consts')
 const cron=require('node-cron')
+
+
+setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
 const MODELS=['block', 'program', 'module', 'sequence', 'resource']
 
 MODELS.forEach(model => {
-  declareVirtualField({model, field: 'duration', instance: 'Number'})
+  declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
+  declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.name'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
   declareVirtualField({model, field: 'duration_str', instance: 'String'})
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
@@ -47,14 +51,18 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const updateDuration = async block => {
+  console.log(block.isTemplate(), block.name, 'duration is', block.duration)
   if (block.type=='resource') {
+    console.log(block.isTemplate(), block.name, 'returns', block.duration)
     return block.duration
   }
   let total=0
-  const blocks=await Promise.all(block.children.map(child => child.updateDuration ? child : Block.findById(child)))
-  for (const block of blocks) {
-    total += await updateDuration(block)
+  const children=await Promise.all(block.children.map(child => child.updateDuration ? child : Block.findById(child).populate(['children', 'origin'])))
+  for (const child of children) {
+    console.log(child.isTemplate(), child.name, 'total', total)
+    total += await updateDuration(child)
   }
+  console.log(block.isTemplate(), block.name, 'full total is', total)
   block.duration=total
   await block.save()
   return total
@@ -69,7 +77,7 @@ const updateAllDurations = async () => {
 
 cron.schedule('*/10 * * * * *', async() => {
   console.time('Updating all durations')
-  updateAllDurations()
+  await updateAllDurations()
   console.timeEnd('Updating all durations')
 })
 

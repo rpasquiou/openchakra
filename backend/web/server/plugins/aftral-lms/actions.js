@@ -1,3 +1,4 @@
+const mongoose=require('mongoose')
 const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
 const { getModel, idEqual } = require('../../utils/database')
@@ -36,12 +37,14 @@ const addChildAction = ({parent, child}, user) => {
       const [pType, cType]=[parent?.type, child?.type]
       if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
       if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
-      return Block.findByIdAndUpdate(parent, {$addToSet: {children: child}})
+      return mongoose.model(cType).create({origin: child._id, creator: user})
     })
+    .then(linkedChild => Block.findByIdAndUpdate(parent, {$addToSet: {children: linkedChild}}))
 }
 addAction('addChild', addChildAction)
 
 const removeChildAction = ({parent, child}, user) => {
+  return Promise.reject(`En cours d'implémentation pour les templates`)
   return Block.findById(parent)
     .then(parent => {
       if (!parent) { throw new NotFoundError(`Donnée ${parent} introuvable`)}

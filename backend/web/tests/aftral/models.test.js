@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const lodash=require('lodash')
 const {forceDataModelAftral}=require('../utils')
 forceDataModelAftral()
-const {MONGOOSE_OPTIONS} = require('../../server/utils/database')
+const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
 const User=require('../../server/models/User')
 const Resource=require('../../server/models/Resource')
 const Sequence=require('../../server/models/Sequence')
@@ -82,6 +82,20 @@ describe('Test models computations', () => {
     const programAfter = await Program.findOne()
     expect(res).toEqual(programAfter.duration)
     expect(programAfter.duration).toEqual(MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION)
+  })
+
+  it('must check template name setting', async() => {
+    const NAME1='template'
+    const NAME2='template2'
+    const template=await Module.create({name: NAME1})
+    let linked=await Module.create({origin: template})
+    expect(linked.name).toEqual(NAME1)
+    template.name=NAME2
+    await template.save()
+    //linked=await Module.findById(linked._id)//.populate('origin')
+    const user=await User.findOne()
+    linked=await loadFromDb({model: 'module', id: linked._id, fields: ['name'], user})
+    expect(linked[0]?.name).toEqual(NAME2)
   })
 
 })

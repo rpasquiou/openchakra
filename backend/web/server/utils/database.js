@@ -23,6 +23,11 @@ const MONGOOSE_OPTIONS = {
 mongoose.set('useFindAndModify', false)
 mongoose.set('useCreateIndex', true)
 
+let MAX_POPULATE_DEPTH=Number.MAX_SAFE_INTEGER
+
+const setMaxPopulateDepth = depth => {
+  MAX_POPULATE_DEPTH=depth
+}
 /**
 Retourne true si field (model.attribute) contient id
 req fournit le contexte permettant de trouver le modèle dans la bonne BD
@@ -204,7 +209,12 @@ const getExposedModels = () => {
 }
 
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = (modelName, fields) => {
+const buildPopulates = (modelName, fields, depth) => {
+  // Limit recursion depth
+  if (depth===0) {
+    //console.warn(`Build populates max recursion depth reached`)
+    return undefined
+  }
   // Retain all ref fields
   const model=getModels()[modelName]
   if (!model) {
@@ -243,7 +253,7 @@ const buildPopulates = (modelName, fields) => {
   // / Build populate using att and subpopulation
   const pops=groupedAttributes.entries().map(([attributeName, fields]) => {
     const attType=attributes[attributeName].type
-    const subPopulate=buildPopulates(attType, fields)
+    const subPopulate=buildPopulates(attType, fields, depth-1)
     return {path: attributeName, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
   })
   return pops.value()
@@ -301,7 +311,7 @@ const buildQuery = (model, id, fields) => {
 
   const criterion = id ? {_id: id} : {}
   let query = mongoose.connection.models[model].find(criterion) //, select)
-  const populates=buildPopulates(model, fields)
+  const populates=buildPopulates(model, fields, MAX_POPULATE_DEPTH)
   //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates)
   return query
@@ -777,4 +787,5 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  setMaxPopulateDepth,
 }

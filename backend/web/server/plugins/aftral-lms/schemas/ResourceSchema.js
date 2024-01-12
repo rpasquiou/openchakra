@@ -10,7 +10,7 @@ const ResourceSchema = new Schema({
   },
   url: {
     type: String,
-    required: [true, `l'url est obligatoire`]
+    required: [function() {this.isTemplate()}, `l'url est obligatoire`]
   },
   creator: {
     type: Schema.Types.ObjectId,
@@ -29,7 +29,7 @@ const ResourceSchema = new Schema({
   _resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    required: [true, `Le type de ressource est obligatoire`],
+    required: [function(){ return this.isTemplate()}, `Le type de ressource est obligatoire`],
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 

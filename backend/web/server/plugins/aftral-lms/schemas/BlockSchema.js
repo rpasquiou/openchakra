@@ -3,30 +3,74 @@ const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR}=require('../consts')
-const { formatDuration } = require('../../../../utils/text')
+const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
+
+function getterTemplateFirst(attribute) {
+  function getter(v) {
+    if (this.isTemplate()) {
+      return v
+    }
+    return this.origin[attribute]
+  }
+  return getter
+}
+
+function getterMeFirst(attribute) {
+  function getter(v) {
+    if (lodash.isNil(v)) {
+      return this.origin[attribute]
+    }
+    return v
+  }
+  return getter
+}
+
+function setterTemplateOnly(attribute) {
+  function setter(v) {
+    if (this.isTemplate()) {
+      return v
+    }
+    throw new Error(`Setting ${attribute} forbidden`)
+  }
+  return setter
+}
 
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [true, `Le nom est obligatoire`],
+    required: [function()  {return this.isTemplate()}, `Le nom est obligatoire`],
+    get: getterTemplateFirst('name'),
+    set: setterTemplateOnly('name')
   },
   code: {
     type: String,
     required: false,
+    get: getterTemplateFirst('code'),
+    set: setterTemplateOnly('code')
   },
   description: {
     type: [String],
     required: false,
+    get: getterTemplateFirst('description'),
+    set: setterTemplateOnly('description')
   },
   picture: {
     type: String,
     required: false,
+    get: getterTemplateFirst('picture'),
+    set: setterTemplateOnly('picture')
   },
   duration: {
     type: Number,
-    required: [function(){return this.type=='resource'}, `La durée est obligatoire`]
+    required: [function(){return this.type=='resource' && this.isTemplate()}, `La durée est obligatoire`],
+    set: v => convertDuration(v),
+    get : getterMeFirst('duration'),
+  },
+  duration_str: {
+    type: String,
+    get: function() { return formatDuration(this.duration)},
   },
   children: {
     type: [{
@@ -39,14 +83,27 @@ const BlockSchema = new Schema({
   },
   open: {
     type: Boolean,
-    default: true,
-    required:[true, `La notion d'ordre est obligatoire`]
-  }
+    default: function() { return this.isTemplate() ? true : null},
+    required:[function() { return this.isTemplate()}, `L'état ouvert est obligatoire`],
+    get: getterMeFirst('open'),
+  },
+  masked: {
+    type: Boolean,
+    default: function() { return this.isTemplate() ? false : null},
+    required:[function() {return  this.isTemplate()}, `L'état masqué est obligatoire`],
+    get: getterMeFirst('masked'),
+  },
+  origin: {
+    type: Schema.Types.ObjectId,
+    ref: 'block',
+    required:false,
+}
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
-BlockSchema.virtual('duration_str').get(function(value) {
-  return formatDuration(this.duration)
-})
 
+BlockSchema.methods.isTemplate = function() {
+  // console.log(`I'm a template`, !this.origin)
+  return !this.origin
+}
 
 BlockSchema.virtual('order').get(function() {
   return 0

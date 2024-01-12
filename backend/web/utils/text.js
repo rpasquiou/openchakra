@@ -126,6 +126,26 @@ const formatDuration = durationSeconds => {
   return externelFormatDuration(durationSeconds*1000, {leading: true})
 }
 
+const convertDuration = value =>  {
+  console.log('convert', value)
+  if (typeof value === 'number') {
+    return value
+  }
+  if (typeof value === 'string') {
+    const timeRegex = /^(\d{1,2}):(\d{2})$/
+    const match = value.match(timeRegex)
+    if (match) {
+      const hours = parseInt(match[1], 10)
+      const minutes = parseInt(match[2], 10)
+      return hours * 3600 + minutes * 60
+    }
+    const parsedNumber = parseFloat(value);
+    if (!isNaN(parsedNumber)) {
+      return parsedNumber
+    }
+  }
+}
+
 module.exports = {
   normalize,
   matches,
@@ -140,4 +160,5 @@ module.exports = {
   splitRemaining,
   formatDateTime,
   formatDuration,
+  convertDuration,
 }
