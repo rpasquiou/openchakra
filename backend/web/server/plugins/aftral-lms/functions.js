@@ -68,8 +68,9 @@ const updateAllDurations = async () => {
 }
 
 cron.schedule('*/10 * * * * *', async() => {
-  console.log('Updating all durations')
+  console.time('Updating all durations')
   updateAllDurations()
+  console.timeEnd('Updating all durations')
 })
 
 module.exports={
