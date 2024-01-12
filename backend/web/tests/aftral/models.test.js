@@ -40,18 +40,6 @@ describe('Test models computations', () => {
     await mongoose.connection.close()
   })
 
-  const displayTree = data => {
-    console.log(data.name, data.type)
-    console.group()
-    data.children.forEach(displayTree)
-    console.groupEnd()
-  }
-
-  it('display', async() => {
-    const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
-    displayTree(program)
-  })
-
   it('must compute childrenCount', async() => {
     const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
     let data=[program]
@@ -65,12 +53,14 @@ describe('Test models computations', () => {
   })
 
   it('must compute duration', async() => {
-    const program= await Program.findOne()
-    const duration=await program.updateDuration()
-    console.log(duration)
+    const programBefore = await Program.findOne()
+    const duration=await updateDuration(programBefore)
+    const programAfter = await Program.findOne()
+    expect(programAfter.duration).toEqual(duration)
+    expect(programAfter.duration).toEqual(MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION)
   })
 
-  it.only('must compute durations', async() => {
+  it('must compute durations', async() => {
     await updateAllDurations()
     const blocks=await Block.find()
     const EXPECTED={
@@ -79,8 +69,11 @@ describe('Test models computations', () => {
       'module': SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION,
       'program': MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION,
     }
-    const grouped=lodash(blocks).groupBy('type')
-    Object.entries(EXPECTED).forEach(([type, expected]) => expect(grouped[type].every(e => e==expected).toBe(true)))
+    const durations=lodash(blocks)
+      .groupBy('type')
+      .mapValues(values => values.map(v => v.duration))
+      .value()
+    Object.entries(durations).forEach(([type, counts]) => expect(counts.every(e => e==EXPECTED[type])).toBe(true))
   })
 
   it('must compute program durations', async() => {
