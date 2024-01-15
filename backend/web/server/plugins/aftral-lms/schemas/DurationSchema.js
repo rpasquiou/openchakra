@@ -18,7 +18,11 @@ const DurationSchema = new Schema({
     type: Number,
     required: true,
   },
-
+  finished: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = DurationSchema
