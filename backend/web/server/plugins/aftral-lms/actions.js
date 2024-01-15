@@ -2,6 +2,7 @@ const mongoose=require('mongoose')
 const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
 const Duration = require('../../models/Duration')
+const Resource = require('../../models/Resource')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction}=require('../../utils/studio/actions')
@@ -66,6 +67,11 @@ const levelDownAction = ({parent, child}, user) => {
 }
 addAction('levelDown', levelDownAction)
 
+const upsertFinished = (id, user) => {
+  return Promise.all([Duration.findOne({user, block:id}), Block.findById(id)])
+    .then(([duration, block]) => Duration.findOneAndUpdate({user, block:id}, {finished: duration?.duration>=block?.duration}))
+}
+
 const addSpentTimeAction = async ({id, duration}, user) => {
   const allHierarchy=await getAncestors(id)
   return Promise.all(allHierarchy.map(id => Duration.findOneAndUpdate(
@@ -73,6 +79,7 @@ const addSpentTimeAction = async ({id, duration}, user) => {
     {$inc: {duration: duration/1000}},
     {upsert: true, new: true}
   )))
+  .then(() => Promise.all(allHierarchy.map(pId => upsertFinished(pId, user))))
 }
 addAction('addSpentTime', addSpentTimeAction)
 
