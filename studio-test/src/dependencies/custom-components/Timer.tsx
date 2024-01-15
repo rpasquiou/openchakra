@@ -4,6 +4,7 @@ import { useStopwatch } from 'react-timer-hook'
 import useEventListener from '../hooks/useEventListener'
 import useInterval from '../hooks/useInterval'
 import axios from 'axios'
+import moment from 'moment'
 /**
  * Timer autostarts on ressource loaded
  * Time sent every X seconds
@@ -11,20 +12,24 @@ import axios from 'axios'
 
 const Timer = ({
   dataSource,
+  attribute,
   ...props
 }: {
-  dataSource: { _id: null } | null
+  dataSource: object | null,
+  attribute: string | null,
 }) => {
-
+  
+  const offsetTimestamp=dataSource?.[attribute] ? moment().add(dataSource?.[attribute], 'second') : undefined
   const {
     seconds,
     minutes,
     hours,
+    days,
     isRunning,
     start,
     pause,
     //reset,
-  } = useStopwatch({ autoStart: true })
+  } = useStopwatch({ autoStart: true, offsetTimestamp })
 
   // Brower code only
   if (typeof window!=='undefined') {
@@ -102,9 +107,7 @@ const Timer = ({
   }
 
   return (
-    <Text as={'span'} {...props}>
-      {hours}:{minutes}:{seconds}
-    </Text>
+    <div {...props}>{days? `${days}j `: ''}{hours}:{minutes}:{seconds}</div>
   )
 }
 
