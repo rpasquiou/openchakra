@@ -2,11 +2,18 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser,
+  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH } = require('./consts')
 const cron=require('node-cron')
+const Duration = require('../../models/Duration')
+const { formatDuration } = require('../../../utils/text')
 
+const getAncestors = async id => {
+  const parents=await Block.find({$or: [{actual_children: id}, {origin: id}]}, {_id:1})
+  const parentsAncestors=await Promise.all(parents.map(p => getAncestors(p._id)))
+  return lodash.flattenDeep([id, parentsAncestors])
+}
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
@@ -37,6 +44,18 @@ MODELS.forEach(model => {
     caster: {
       instance: 'ObjectID',
       options: {ref: 'block'}},
+  })
+  declareVirtualField({model, field: 'spent_time', instance: 'Number'})
+  declareComputedField(model, 'spent_time', (userId, params, data) => {
+    console.log(userId, params, data)
+    return Duration.findOne({user: userId, block: data._id}, {duration:1})
+      .then(result => result?.duration || 0)
+  })
+  declareVirtualField({model, field: 'spent_time_str', instance: 'Number'})
+  declareComputedField(model, 'spent_time_str', (userId, params, data) => {
+    console.log(userId, params, data)
+    return Duration.findOne({user: userId, block: data._id}, {duration:1})
+      .then(result => formatDuration(result?.duration || 0))
   })
 })
 
@@ -110,4 +129,5 @@ cron.schedule('*/10 * * * * *', async() => {
 module.exports={
   updateDuration,
   updateAllDurations,
+  getAncestors,
 }

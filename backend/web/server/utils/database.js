@@ -199,7 +199,7 @@ const getExposedModels = () => {
   }
 
   const models=lodash(getModels())
-    .omitBy((v, k) => k=='IdentityCounter')
+    .omitBy((v, k) => k=='IdentityCounter' || k=='duration')
     .mapValues((v, modelName) => ({
       ...v,
       attributes: lodash(v.attributes).omitBy((v, k) => isHidddenAttributeName(modelName, k)),

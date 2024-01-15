@@ -132,6 +132,7 @@ require('./models/Job')
 require('./models/NutritionAdvice')
 require('./models/Block')
 require('./models/Sequence')
+require('./models/Duration')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
