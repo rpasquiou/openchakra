@@ -14,12 +14,30 @@ const MODELS=['block', 'program', 'module', 'sequence', 'resource']
 
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
-  declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.name'})
+  declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.duration'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareVirtualField({model, field: 'duration_str', instance: 'String'})
-  declareVirtualField({model, field: 'children_count', instance: 'Number'})
+  declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration'})
+  declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
   declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
+  declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children,origin.children,origin.actual_children,actual_children.origin',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'block'}},
+  })
+  declareVirtualField({model, field: 'actual_children', instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'block'}},
+  })
+  declareVirtualField({model, field: 'origin', instance: 'Block', requires: 'origin.actual_children,origin.children',
+    multiple: false,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'block'}},
+  })
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
