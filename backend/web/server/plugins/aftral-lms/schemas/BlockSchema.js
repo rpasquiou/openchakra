@@ -72,7 +72,7 @@ const BlockSchema = new Schema({
     type: String,
     get: function() { return formatDuration(this.duration)},
   },
-  children: {
+  actual_children: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'block',
@@ -126,5 +126,10 @@ BlockSchema.virtual('evaluation').get(function() {
 
 BlockSchema.virtual('evaluation').set(function(value) {
 })
+
+BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
+  return this.origin ? this.origin.children : this.actual_children
+})
+
 
 module.exports = BlockSchema

@@ -39,7 +39,7 @@ const addChildAction = ({parent, child}, user) => {
       if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
       return mongoose.model(cType).create({origin: child._id, creator: user})
     })
-    .then(linkedChild => Block.findByIdAndUpdate(parent, {$addToSet: {children: linkedChild}}))
+    .then(linkedChild => Block.findByIdAndUpdate(parent, {$addToSet: {actual_children: linkedChild}}))
 }
 addAction('addChild', addChildAction)
 
