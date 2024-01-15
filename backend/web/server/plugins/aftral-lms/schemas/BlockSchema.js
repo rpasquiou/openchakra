@@ -130,5 +130,13 @@ BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).
   return this.origin ? this.origin.children : this.actual_children
 })
 
+BlockSchema.virtual('spent_time').get(function() {
+  return 0
+})
+
+BlockSchema.virtual('spent_time_str').get(function() {
+  return 0
+})
+
 
 module.exports = BlockSchema

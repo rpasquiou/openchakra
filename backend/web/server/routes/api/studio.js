@@ -294,11 +294,12 @@ router.post('/action', passport.authenticate('cookie', {session: false}), (req, 
     console.error(`Unkown action:${action}`)
     return res.status(404).json(`Unkown action:${action}`)
   }
-  console.log('Starting action', action)
+  const msg=`Action ${action}`
+  console.time(msg)
 
   return actionFn(req.body, req.user, req.get('Referrer'))
     .then(result => res.json(result))
-    .finally(() => console.log('Ending starting action', action))
+    .finally(() => console.timeEnd(msg))
 })
 
 router.post('/anonymous-action', (req, res) => {

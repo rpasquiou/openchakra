@@ -1,12 +1,15 @@
 const mongoose=require('mongoose')
 const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
+const Duration = require('../../models/Duration')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR } = require('./consts')
+const { getAncestors } = require('./functions')
 
 const ACCEPTS={
+  session: ['program'],
   program: ['module', 'sequence', 'resource'],
   module: ['sequence', 'resource'],
   sequence: ['resource'],
@@ -63,10 +66,13 @@ const levelDownAction = ({parent, child}, user) => {
 }
 addAction('levelDown', levelDownAction)
 
-const addSpentTimeAction = ({id, duration}, user) => {
-  console.log(id, duration)
-
-  //return moveChildInParent(parent, child, false)
+const addSpentTimeAction = async ({id, duration}, user) => {
+  const allHierarchy=await getAncestors(id)
+  return Promise.all(allHierarchy.map(id => Duration.findOneAndUpdate(
+    {block: id, user},
+    {$inc: {duration: duration/1000}},
+    {upsert: true, new: true}
+  )))
 }
 addAction('addSpentTime', addSpentTimeAction)
 
