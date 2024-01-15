@@ -127,7 +127,6 @@ const formatDuration = durationSeconds => {
 }
 
 const convertDuration = value =>  {
-  console.log('convert', value)
   if (typeof value === 'number') {
     return value
   }
