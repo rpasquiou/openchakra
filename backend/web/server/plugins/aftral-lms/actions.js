@@ -63,6 +63,13 @@ const levelDownAction = ({parent, child}, user) => {
 }
 addAction('levelDown', levelDownAction)
 
+const addSpentTimeAction = ({id, duration}, user) => {
+  console.log(id, duration)
+
+  //return moveChildInParent(parent, child, false)
+}
+addAction('addSpentTime', addSpentTimeAction)
+
 const isActionAllowed = ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
