@@ -53,7 +53,6 @@ MODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'spent_time_str', instance: 'Number'})
   declareComputedField(model, 'spent_time_str', (userId, params, data) => {
-    console.log(userId, params, data)
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => formatDuration(result?.duration || 0))
   })
