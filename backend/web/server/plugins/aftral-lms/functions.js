@@ -69,25 +69,24 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const updateDuration = async block => {
-  console.log(block.isTemplate(), block.name, 'duration is', block.duration)
-  if (block.type=='resource') {
-    console.log(block.isTemplate(), block.name, 'returns', block.duration)
+  if (block.type=='resource' && block.isTemplate()) {
     return block.duration
   }
   let total=0
-  const children=await Promise.all(block.children.map(child => child.updateDuration ? child : Block.findById(child).populate(['actual_children', 'children', 'origin'])))
+  const all=[block.origin, ...block.actual_children].filter(v => !lodash.isNil(v))
+  const children=await Promise.all(all.map(child => child.updateDuration ? child : Block.findById(child).populate(['actual_children', 'children', 'origin'])))
   for (const child of children) {
-    console.log(child.isTemplate(), child.name, 'total', total)
+    console.group()
     total += await updateDuration(child)
+    console.groupEnd()
   }
-  console.log(block.isTemplate(), block.name, block.type, 'full total is', total)
   block.duration=total
   await block.save()
   return total
 }
 
 const updateAllDurations = async () => {
-  const blocks= await Block.find().populate('actual_children')
+  const blocks= await Block.find().populate(['actual_children', 'origin'])
   for(const block of blocks) {
     await updateDuration(block)
   }

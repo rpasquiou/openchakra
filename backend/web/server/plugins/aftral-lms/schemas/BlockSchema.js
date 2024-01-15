@@ -66,7 +66,6 @@ const BlockSchema = new Schema({
     type: Number,
     required: [function(){return this.type=='resource' && this.isTemplate()}, `La durée est obligatoire`],
     set: v => convertDuration(v),
-    get : getterMeFirst('duration'),
   },
   duration_str: {
     type: String,
