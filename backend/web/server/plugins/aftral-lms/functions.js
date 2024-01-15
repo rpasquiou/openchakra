@@ -16,7 +16,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
   declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.duration'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration'})
+  declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration,origin.duration'})
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
   declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
@@ -75,19 +75,19 @@ const updateDuration = async block => {
     return block.duration
   }
   let total=0
-  const children=await Promise.all(block.children.map(child => child.updateDuration ? child : Block.findById(child).populate(['children', 'origin'])))
+  const children=await Promise.all(block.children.map(child => child.updateDuration ? child : Block.findById(child).populate(['actual_children', 'children', 'origin'])))
   for (const child of children) {
     console.log(child.isTemplate(), child.name, 'total', total)
     total += await updateDuration(child)
   }
-  console.log(block.isTemplate(), block.name, 'full total is', total)
+  console.log(block.isTemplate(), block.name, block.type, 'full total is', total)
   block.duration=total
   await block.save()
   return total
 }
 
 const updateAllDurations = async () => {
-  const blocks= await Block.find()
+  const blocks= await Block.find().populate('actual_children')
   for(const block of blocks) {
     await updateDuration(block)
   }
