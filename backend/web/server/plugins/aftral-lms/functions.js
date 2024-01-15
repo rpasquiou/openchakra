@@ -10,7 +10,7 @@ const cron=require('node-cron')
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const MODELS=['block', 'program', 'module', 'sequence', 'resource']
+const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
