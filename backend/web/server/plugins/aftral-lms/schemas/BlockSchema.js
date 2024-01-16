@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME}=require('../consts')
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
@@ -92,11 +92,23 @@ const BlockSchema = new Schema({
     required:[function() {return  this.isTemplate()}, `L'état masqué est obligatoire`],
     get: getterMeFirst('masked'),
   },
+  optional: {
+    type: Boolean,
+    default: function() { return this.isTemplate() ? false : null},
+    required:[function() {return  this.isTemplate()}, `L'état optionnel est obligatoire`],
+    get: getterMeFirst('masked'),
+  },
   origin: {
     type: Schema.Types.ObjectId,
     ref: 'block',
     required:false,
-}
+  },
+  achievement_status: {
+    type: String,
+    enum: Object.keys(BLOCK_STATUS),
+    default: BLOCK_STATUS_TO_COME,
+    required: false[true, `Le status d'achèvement est obligaotire`],
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
