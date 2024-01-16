@@ -10,7 +10,7 @@ const Sequence=require('../../server/models/Sequence')
 const Module=require('../../server/models/Module')
 const Program=require('../../server/models/Program')
 const Session=require('../../server/models/Session')
-const { ROLE_CONCEPTEUR, RESOURCE_TYPE, ROLE_APPRENANT } = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_CONCEPTEUR, RESOURCE_TYPE, ROLE_APPRENANT, ROLE_FORMATEUR } = require('../../server/plugins/aftral-lms/consts')
 const { updateAllDurations, updateDuration } = require('../../server/plugins/aftral-lms/functions')
 require('../../server/plugins/aftral-lms/actions')
 const Block = require('../../server/models/Block')
@@ -28,13 +28,15 @@ describe('Test models computations', () => {
   const MODULE_COUNT=1
   const PROGRAM_COUNT=1
 
-  let user
+  let designer, trainer
   let templateResource, templateSequence, templateModule, templateProgram, templateSession
 
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
-    user=await User.create({firstname: 'concepteur', lastname: 'concepteur', 
+    designer=await User.create({firstname: 'concepteur', lastname: 'concepteur', 
       email: 'hello+concepteur@wappizy.com', role: ROLE_CONCEPTEUR, password: 'p1'})
+    trainer=await User.create({firstname: 'formateur', lastname: 'formateur', 
+      email: 'hello+formateur@wappizy.com', role: ROLE_FORMATEUR, password: 'p1'})
   })
 
   afterAll(async() => {
@@ -43,7 +45,7 @@ describe('Test models computations', () => {
   })
 
   it('must create blocks', async() => {
-    templateResource=await Resource.create({name: 'Ressource 1', duration:RESOURCE_DURATION, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: user, url: 'url'})
+    templateResource=await Resource.create({name: 'Ressource 1', duration:RESOURCE_DURATION, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: designer, url: 'url'})
     templateSequence=await Sequence.create({name: 'Séquence 1'})
     templateModule=await Module.create({name: 'Module 1'})
     templateProgram=await Program.create({name: 'Programme 1'})
@@ -57,10 +59,10 @@ describe('Test models computations', () => {
     const grouped=lodash(blocks).groupBy('type').mapValues(v => v.map(obj => obj._id)[0]).value()
     const countBefore=await Block.countDocuments()
     expect(countBefore).toEqual(5)
-    await ACTIONS.addChild({parent: templateSequence._id, child: templateResource._id}, user)
-    await ACTIONS.addChild({parent: templateModule._id, child: templateSequence}, user)
-    await ACTIONS.addChild({parent: templateProgram, child: templateModule}, user)
-    await ACTIONS.addChild({parent: templateSession, child: templateProgram}, user)
+    await ACTIONS.addChild({parent: templateSequence._id, child: templateResource._id}, designer)
+    await ACTIONS.addChild({parent: templateModule._id, child: templateSequence}, designer)
+    await ACTIONS.addChild({parent: templateProgram, child: templateModule}, designer)
+    await ACTIONS.addChild({parent: templateSession, child: templateProgram}, designer)
     const countAfter=await Block.countDocuments()
     expect(countAfter).toEqual(9)
   })
@@ -111,24 +113,41 @@ describe('Test models computations', () => {
     let program=await Program.findOne()
     const parentId=program._id
     const childId=program.children[0]._id
-    await ACTIONS.removeChild({parent: parentId, child: childId}, user)
+    await ACTIONS.removeChild({parent: parentId, child: childId}, designer)
     const countAfter=await Block.countDocuments()
     expect(countAfter).toEqual(8)
     program=await Program.findOne()
     expect(program.children).toHaveLength(0)
-    await ACTIONS.addChild({parent: templateProgram._id, child: templateModule._id}, user)
+    await ACTIONS.addChild({parent: templateProgram._id, child: templateModule._id}, designer)
     expect(await Block.countDocuments()).toEqual(9)
   })
 
   it('must count resources', async() => {
-    const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user})
+    const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user: designer})
     expect(program.resources_count).toEqual(1)
     expect(program.finished_resources_count).toEqual(0)
 
     const blocks=await Block.find()
-    await Promise.all(blocks.map(block => Duration.create({block, user, finished:true})))
-    const [programAfter]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user})
+    await Promise.all(blocks.map(block => Duration.create({block, user: designer, finished:true})))
+    const [programAfter]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user: designer})
     expect(programAfter.resources_count).toEqual(1)
     expect(programAfter.finished_resources_count).toEqual(1)
   })
+
+  it('must filter sessions', async() => {
+    const sessionsBefore=await loadFromDb({model: 'session', fields:['name'], user: designer})
+    expect(sessionsBefore).toHaveLength(0)
+    await Block.updateMany({type: 'session'}, {trainees:[designer]})
+    const sessionsAfter=await loadFromDb({model: 'session', fields:['name'], user: designer})
+    expect(sessionsAfter).toHaveLength(1)
+  })
+
+  it('must filter resources', async() => {
+    await Resource.create({name: 'Resource formateur', duration:1, url: 'hop', resource_type: Object.keys(RESOURCE_TYPE)[0], creator: trainer})
+    const designerResources=await loadFromDb({model: 'resource', fields:['name'], user: designer})
+    expect(designerResources).toHaveLength(1)
+    const trainerResources=await loadFromDb({model: 'resource', fields:['name'], user: trainer})
+    expect(trainerResources).toHaveLength(2)
+  })
+
 })

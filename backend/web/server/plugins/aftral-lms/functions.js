@@ -2,12 +2,14 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
+const mongoose = require('mongoose')
+const Resource = require('../../models/Resource')
 
 const getAncestors = async id => {
   const parents=await Block.find({$or: [{actual_children: id}, {origin: id}]}, {_id:1})
@@ -110,6 +112,10 @@ const preprocessGet = ({model, fields, id, user, params}) => {
     model='user'
     id = user?._id || 'INVALIDID'
   }
+  // Add resource.creator.role to filter after
+  if (model=='resource') {
+    fields=[...fields, 'creator.role']
+  }
 
   return Promise.resolve({model, fields, id})
 }
@@ -141,6 +147,18 @@ const updateAllDurations = async () => {
 const filterDataUser = ({model, data, id, user}) => {
   if (MODELS.includes(model) && !id) {
     data=data.filter(d => !d.origin)
+    // Filter my sessions
+    if (model=='session') {
+      data=data.filter(d => [...d.trainers, ...d.trainees].some(v => idEqual(v._id || v, user._id)))
+    }
+    if (model=='resource') {
+      const ressources_filter=user.role==ROLE_CONCEPTEUR ? r => r.creator.role==ROLE_CONCEPTEUR 
+        :
+        user.role==ROLE_FORMATEUR ? r => r.creator.role==ROLE_CONCEPTEUR || idEqual(r.creator._id, user._id)
+        :
+        () => false
+      return data.filter(ressources_filter)
+    }
   }
   return Promise.resolve(data)
 }
