@@ -77,13 +77,31 @@ addAction('levelDown', levelDownAction)
 const upsertFinished = (id, user) => {
   return Promise.all([Duration.findOne({user, block:id}), Block.findById(id)])
     .then(([duration, block]) => {
-      const status=duration?.finished? BLOCK_STATUS_FINISHED : duration.duration>0 ? BLOCK_STATUS_CURRENT : BLOCK_STATUS_TO_COME
-      return Promise.all([
-        Duration.findOneAndUpdate({user, block:id}, {finished: duration?.duration>=block?.duration}),
-        Block.findByIdAndUpdate(id, {status})
-      ])
-      
-  })
+      if (block.type=='resource') {
+        const status=(duration?.finished || duration?.duration > block.duration) ? BLOCK_STATUS_FINISHED 
+          : duration.duration>0 ? BLOCK_STATUS_CURRENT 
+          : BLOCK_STATUS_TO_COME
+        console.log('resource', id, duration, status)
+        return status
+      }
+      else {
+        const children=[block.origin, ...block.actual_children].filter(v => !!v)
+        console.log('***** children', children.map(c => c._id))
+        return Duration.find({block: {$in: children}})
+          .then(durations => {
+            const status= durations.length==0 ? BLOCK_STATUS_TO_COME
+              : durations.every(d => d?.finished) ? BLOCK_STATUS_FINISHED
+              : durations.some(d => d?.duration>0) ? BLOCK_STATUS_CURRENT
+              : BLOCK_STATUS_TO_COME
+            console.log('block', id, durations, status)
+            return status
+          })
+      }
+    })
+    .then(status => Promise.all([
+        Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
+        Block.findByIdAndUpdate(id, {achievement_status: status})
+    ]))
 }
 
 const addSpentTimeAction = async ({id, duration}, user) => {

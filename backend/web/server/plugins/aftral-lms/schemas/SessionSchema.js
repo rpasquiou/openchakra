@@ -10,7 +10,7 @@ const SessionSchema = new Schema({
   },
   end_date: {
     type: Date,
-    required: [true, `La date de début est obligatoire`],
+    required: [true, `La date de fin est obligatoire`],
   },
   location: {
     type: String,

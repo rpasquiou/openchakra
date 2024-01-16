@@ -108,7 +108,7 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(BLOCK_STATUS),
     default: BLOCK_STATUS_TO_COME,
-    required: false[true, `Le status d'achèvement est obligaotire`],
+    required: [true, `Le status d'achèvement est obligatoire`],
   },
   url: {
     type: String,
