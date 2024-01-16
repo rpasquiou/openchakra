@@ -80,7 +80,7 @@ const upsertFinished = (id, user) => {
       const status=duration?.finished? BLOCK_STATUS_FINISHED : duration.duration>0 ? BLOCK_STATUS_CURRENT : BLOCK_STATUS_TO_COME
       return Promise.all([
         Duration.findOneAndUpdate({user, block:id}, {finished: duration?.duration>=block?.duration}),
-        Block.findByIdAndUpdate(id, status)
+        Block.findByIdAndUpdate(id, {status})
       ])
       
   })
