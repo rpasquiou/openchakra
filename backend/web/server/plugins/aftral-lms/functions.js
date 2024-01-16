@@ -15,6 +15,31 @@ const getAncestors = async id => {
   return lodash.flattenDeep([id, parentsAncestors])
 }
 
+const count_resources = (userId, params, data) => {
+  return Block.findById(data._id)
+    .then(block => {
+      if (block.type=='resource') {
+        return 1
+      }
+      const children=[block.origin, ...block.actual_children].filter(v => !!v).map(v => v._id)
+      return Promise.all(children.map(c => count_resources(userId, params, {_id: c})))
+        .then(res => lodash.sum(res))
+    })
+}
+
+const count_finished_resources = (userId, params, data) => {
+  return Block.findById(data._id)
+  .then(block => {
+    if (block.type=='resource') {
+      return Duration.findOne({block: data._id, user: userId})
+        .then(duration => duration?.finished ? 1 : 0)
+    }
+    const children=[block.origin, ...block.actual_children].filter(v => !!v)
+    return Promise.all(children.map(c => count_finished_resources(userId, params, {_id: c})))
+      .then(res => lodash.sum(res))
+  })
+}
+
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
@@ -57,6 +82,10 @@ MODELS.forEach(model => {
       .then(result => formatDuration(result?.duration || 0))
   })
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
+  declareVirtualField({model, field: 'resources_count', instance: 'Number'})
+  declareComputedField(model, 'resources_count', count_resources)
+  declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
+  declareComputedField(model, 'finished_resources_count', count_finished_resources)
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})

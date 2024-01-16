@@ -15,6 +15,7 @@ const { updateAllDurations, updateDuration } = require('../../server/plugins/aft
 require('../../server/plugins/aftral-lms/actions')
 const Block = require('../../server/models/Block')
 const { ACTIONS } = require('../../server/utils/studio/actions')
+const Duration = require('../../server/models/Duration')
 
 
 jest.setTimeout(20000)
@@ -28,6 +29,8 @@ describe('Test models computations', () => {
   const PROGRAM_COUNT=1
 
   let user
+  let templateResource, templateSequence, templateModule, templateProgram, templateSession
+
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
     user=await User.create({firstname: 'concepteur', lastname: 'concepteur', 
@@ -40,11 +43,11 @@ describe('Test models computations', () => {
   })
 
   it('must create blocks', async() => {
-    await Resource.create({name: 'Ressource 1', duration:RESOURCE_DURATION, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: user, url: 'url'})
-    await Sequence.create({name: 'Séquence 1'})
-    await Module.create({name: 'Module 1'})
-    await Program.create({name: 'Programme 1'})
-    await Session.create({name: 'Session 1', start_date: moment(), end_date: moment()})
+    templateResource=await Resource.create({name: 'Ressource 1', duration:RESOURCE_DURATION, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: user, url: 'url'})
+    templateSequence=await Sequence.create({name: 'Séquence 1'})
+    templateModule=await Module.create({name: 'Module 1'})
+    templateProgram=await Program.create({name: 'Programme 1'})
+    templateSession=await Session.create({name: 'Session 1', start_date: moment(), end_date: moment()})
     const blocks=await Block.countDocuments()
     expect(blocks).toEqual(5)
   })
@@ -54,10 +57,10 @@ describe('Test models computations', () => {
     const grouped=lodash(blocks).groupBy('type').mapValues(v => v.map(obj => obj._id)[0]).value()
     const countBefore=await Block.countDocuments()
     expect(countBefore).toEqual(5)
-    await ACTIONS.addChild({parent: grouped.sequence, child: grouped.resource}, user)
-    await ACTIONS.addChild({parent: grouped.module, child: grouped.sequence}, user)
-    await ACTIONS.addChild({parent: grouped.program, child: grouped.module}, user)
-    await ACTIONS.addChild({parent: grouped.session, child: grouped.program}, user)
+    await ACTIONS.addChild({parent: templateSequence._id, child: templateResource._id}, user)
+    await ACTIONS.addChild({parent: templateModule._id, child: templateSequence}, user)
+    await ACTIONS.addChild({parent: templateProgram, child: templateModule}, user)
+    await ACTIONS.addChild({parent: templateSession, child: templateProgram}, user)
     const countAfter=await Block.countDocuments()
     expect(countAfter).toEqual(9)
   })
@@ -77,6 +80,7 @@ describe('Test models computations', () => {
   it('must compute durations', async() => {
     await updateAllDurations()
     const blocks=await Block.find()
+    expect(blocks).toHaveLength(9)
     const EXPECTED={
       'resource': RESOURCE_DURATION,
       'sequence': RESOURCE_COUNT*RESOURCE_DURATION,
@@ -89,6 +93,7 @@ describe('Test models computations', () => {
       .mapValues(values => values.map(v => v.duration))
       .value()
     Object.entries(durations).forEach(([type, counts]) => expect(counts.every(e => e==EXPECTED[type])).toBe(true))
+
   })
 
   it('must compute program durations', async() => {
@@ -97,22 +102,7 @@ describe('Test models computations', () => {
     const programAfter = await Program.findOne()
     expect(res).toEqual(programAfter.duration)
     expect(programAfter.duration).toEqual(MODULE_COUNT*SEQUENCE_COUNT*RESOURCE_COUNT*RESOURCE_DURATION)
-  })
-
-  it.skip('must check template name setting', async() => {
-    const NAME1='template'
-    const NAME2='template2'
-    const template=await Module.create({name: NAME1})
-    let linked=await Module.create({origin: template})
-    expect(linked.name).toEqual(NAME1)
-    template.name=NAME2
-    await template.save()
-    //linked=await Module.findById(linked._id)//.populate('origin')
-    const user=await User.findOne()
-    linked=await loadFromDb({model: 'module', id: linked._id, fields: ['name'], user})
-    await template.delete()
-    await linked.delete()
-    expect(linked[0]?.name).toEqual(NAME2)
+    expect(await Block.countDocuments()).toEqual(9)
   })
 
   it('must remove child properly', async() => {
@@ -126,5 +116,19 @@ describe('Test models computations', () => {
     expect(countAfter).toEqual(8)
     program=await Program.findOne()
     expect(program.children).toHaveLength(0)
+    await ACTIONS.addChild({parent: templateProgram._id, child: templateModule._id}, user)
+    expect(await Block.countDocuments()).toEqual(9)
+  })
+
+  it('must count resources', async() => {
+    const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user})
+    expect(program.resources_count).toEqual(1)
+    expect(program.finished_resources_count).toEqual(0)
+
+    const blocks=await Block.find()
+    await Promise.all(blocks.map(block => Duration.create({block, user, finished:true})))
+    const [programAfter]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user})
+    expect(programAfter.resources_count).toEqual(1)
+    expect(programAfter.finished_resources_count).toEqual(1)
   })
 })

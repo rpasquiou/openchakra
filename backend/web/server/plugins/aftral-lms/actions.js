@@ -11,7 +11,7 @@ const { getAncestors } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
-  program: ['module', 'sequence', 'resource'],
+  program: ['module', 'sequence'],
   module: ['sequence', 'resource'],
   sequence: ['resource'],
 }

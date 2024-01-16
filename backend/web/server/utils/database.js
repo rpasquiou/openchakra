@@ -698,28 +698,25 @@ const loadFromDb = ({model, fields, id, user, params}) => {
       console.time(`Loading model ${model}`)
       return buildQuery(model, id, fields)
         .then(data => {console.timeEnd(`Loading model ${model}`); return data})
-        /**
-        .then(data => {console.time(`Leaning model ${model}`); return data})
-        .then(data => data.map(d => d.toObject()))
-        .then(data => {console.timeEnd(`Leaning model ${model}`); return data})
-        */
+        .then(data => {
+          if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
+          return data
+        })
         .then(data => {console.time(`Leaning deep model ${model}`); return data})
         .then(data => JSON.parse(JSON.stringify(data)))
         .then(data => {console.timeEnd(`Leaning deep model ${model}`); return data})
-        .then(data => {console.time(`Compute model ${model}`); return data})
-        .then(data => {
-          if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model)))
-        })
-        .then(data => {console.timeEnd(`Compute model ${model}`); return data})
+
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))
         .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
-        /**
+
+        .then(data => {console.time(`Add computed fields ${model}`); return data})
+        .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
+        .then(data => {console.timeEnd(`Add computed fields ${model}`); return data})
+
         .then(data => {console.time(`Retain fields ${model}`); return data})
         .then(data =>  retainRequiredFields({data, fields}))
         .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
-        */
     })
 
 }
