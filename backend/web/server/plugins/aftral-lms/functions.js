@@ -92,11 +92,9 @@ const updateDuration = async block => {
   }
   let total=0
   const all=[block.origin, ...block.actual_children].filter(v => !lodash.isNil(v))
-  const children=await Promise.all(all.map(child => child.updateDuration ? child : Block.findById(child).populate(['actual_children', 'children', 'origin'])))
+  let children=await Promise.all(all.map(child => Block.findById(child).populate(['actual_children', 'children', 'origin'])))
   for (const child of children) {
-    console.group()
     total += await updateDuration(child)
-    console.groupEnd()
   }
   block.duration=total
   await block.save()
@@ -119,7 +117,7 @@ const filterDataUser = ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-cron.schedule('*/10 * * * * *', async() => {
+false && cron.schedule('*/10 * * * * *', async() => {
   console.time('Updating all durations')
   await updateAllDurations()
   console.timeEnd('Updating all durations')

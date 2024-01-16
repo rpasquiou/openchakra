@@ -6,7 +6,7 @@ const Resource = require('../../models/Resource')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR } = require('./consts')
+const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES } = require('./consts')
 const { getAncestors } = require('./functions')
 
 const ACCEPTS={
@@ -36,6 +36,9 @@ const moveChildInParent= (parentId, childId, up) => {
 }
 
 const addChildAction = ({parent, child}, user) => {
+  if (user.role!=ROLE_CONCEPTEUR) {
+    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
+  }
   return Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
     .then(([parent, child]) => {
       const [pType, cType]=[parent?.type, child?.type]
@@ -48,11 +51,15 @@ const addChildAction = ({parent, child}, user) => {
 addAction('addChild', addChildAction)
 
 const removeChildAction = ({parent, child}, user) => {
-  return Promise.reject(`En cours d'implémentation pour les templates`)
-  return Block.findById(parent)
-    .then(parent => {
-      if (!parent) { throw new NotFoundError(`Donnée ${parent} introuvable`)}
-      return Block.findByIdAndUpdate(parent, {$pull: {children: child}})
+  if (user.role!=ROLE_CONCEPTEUR) {
+    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
+  }
+  return Promise.all([Block.findById(parent),Block.findById(child)])
+    .then(([parentObj, childObj]) => {
+      if (!parentObj) { throw new NotFoundError(`Can not find parent ${parent}`)}
+      if (!childObj) { throw new NotFoundError(`Can not find child ${pchild}`)}
+      if (!parentObj.children.find(v => idEqual(v._id, child))) { throw new BadRequestError(`Parent ${parent} has not child ${child}`)}
+      return Promise.all([Block.deleteOne({_id: child}), Block.updateOne({_id: parent}, {$pull: {actual_children: child}})])
     })
 }
 addAction('removeChild', removeChildAction)
