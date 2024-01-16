@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME, RESOURCE_TYPE}=require('../consts')
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
@@ -115,7 +115,11 @@ const BlockSchema = new Schema({
     required: [function() {return this.type=='resource' && this.isTemplate()}, `L'url est obligatoire`],
     get: getterTemplateFirst('url'),
   },
-
+  _resource_type: {
+    type: String,
+    enum: Object.keys(RESOURCE_TYPE),
+    required: [function(){ return this.type=='resource' && this.isTemplate()}, `Le type de ressource est obligatoire`],
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
@@ -132,7 +136,7 @@ BlockSchema.virtual('children_count').get(function() {
 })
 
 BlockSchema.virtual('resource_type').get(function() {
-  return this._resource_type
+  return this._resource_type || this.origin?._resource_type
 })
 
 BlockSchema.virtual('resource_type').set(function(value) {

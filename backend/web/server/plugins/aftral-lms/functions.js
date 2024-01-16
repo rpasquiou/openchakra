@@ -17,6 +17,10 @@ const getAncestors = async id => {
   return lodash.flattenDeep([id, parentsAncestors])
 }
 
+const cloneStrructure = program_id => {
+  return Block.find()
+}
+
 const count_resources = (userId, params, data) => {
   return Block.findById(data._id)
     .then(block => {
@@ -60,7 +64,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'order', instance: 'Number'})
   declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration,origin.duration'})
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
-  declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE})
+  declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE, requires: 'origin'})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
   declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children,origin.children,origin.actual_children,actual_children.origin',
     multiple: true,
