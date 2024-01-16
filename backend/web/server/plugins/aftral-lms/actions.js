@@ -6,7 +6,7 @@ const Resource = require('../../models/Resource')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES } = require('./consts')
+const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME } = require('./consts')
 const { getAncestors } = require('./functions')
 
 const ACCEPTS={
@@ -76,7 +76,14 @@ addAction('levelDown', levelDownAction)
 
 const upsertFinished = (id, user) => {
   return Promise.all([Duration.findOne({user, block:id}), Block.findById(id)])
-    .then(([duration, block]) => Duration.findOneAndUpdate({user, block:id}, {finished: duration?.duration>=block?.duration}))
+    .then(([duration, block]) => {
+      const status=duration?.finished? BLOCK_STATUS_FINISHED : duration.duration>0 ? BLOCK_STATUS_CURRENT : BLOCK_STATUS_TO_COME
+      return Promise.all([
+        Duration.findOneAndUpdate({user, block:id}, {finished: duration?.duration>=block?.duration}),
+        Block.findByIdAndUpdate(id, status)
+      ])
+      
+  })
 }
 
 const addSpentTimeAction = async ({id, duration}, user) => {
