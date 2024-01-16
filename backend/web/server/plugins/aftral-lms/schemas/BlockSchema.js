@@ -103,12 +103,13 @@ const BlockSchema = new Schema({
     ref: 'block',
     required:false,
   },
+  // TODO Compute actual status
   achievement_status: {
     type: String,
     enum: Object.keys(BLOCK_STATUS),
     default: BLOCK_STATUS_TO_COME,
     required: false[true, `Le status d'achèvement est obligaotire`],
-  }
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
@@ -150,5 +151,12 @@ BlockSchema.virtual('spent_time_str').get(function() {
   return 0
 })
 
+BlockSchema.virtual('resources_count').get(function() {
+  return 0
+})
+
+BlockSchema.virtual('finished_resources_count').get(function() {
+  return 0
+})
 
 module.exports = BlockSchema
