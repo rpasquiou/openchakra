@@ -48,6 +48,7 @@ const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
+  declareVirtualField({model, field: 'url', instance: 'Number', requires: 'origin.url'})
   declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.duration'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
   declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration,origin.duration'})
