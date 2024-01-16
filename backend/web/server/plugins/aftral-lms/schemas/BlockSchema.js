@@ -165,4 +165,12 @@ BlockSchema.virtual('finished_resources_count').get(function() {
   return 0
 })
 
+BlockSchema.virtual('resources_progress').get(function() {
+  return 0
+})
+
+BlockSchema.virtual('search_text').get(function() {
+  return `${this.name} ${this.code}`
+})
+
 module.exports = BlockSchema

@@ -42,6 +42,13 @@ const count_finished_resources = (userId, params, data) => {
   })
 }
 
+const compute_resources_progress = (userId, params, data) => {
+  return Promise.all([count_finished_resources(userId, params, data), count_resources(userId, params, data)])
+  .then(([progress, total]) => {
+    return progress/total
+  })
+}
+
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
@@ -89,6 +96,9 @@ MODELS.forEach(model => {
   declareComputedField(model, 'resources_count', count_resources)
   declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
   declareComputedField(model, 'finished_resources_count', count_finished_resources)
+  declareVirtualField({model, field: 'search_text', instance: 'String', requires:'name,code'})
+  declareComputedField(model, 'resources_progress', compute_resources_progress)
+  declareVirtualField({model, field: 'resources_progress', instance: 'Number', requires:'resources_count,finished_resources_count'})
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})

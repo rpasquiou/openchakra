@@ -48,7 +48,7 @@ describe('Test models computations', () => {
     templateResource=await Resource.create({name: 'Ressource 1', duration:RESOURCE_DURATION, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: designer, url: 'url'})
     templateSequence=await Sequence.create({name: 'Séquence 1'})
     templateModule=await Module.create({name: 'Module 1'})
-    templateProgram=await Program.create({name: 'Programme 1'})
+    templateProgram=await Program.create({name: 'Programme 1', code: '12'})
     templateSession=await Session.create({name: 'Session 1', start_date: moment(), end_date: moment()})
     const blocks=await Block.countDocuments()
     expect(blocks).toEqual(5)
@@ -123,15 +123,17 @@ describe('Test models computations', () => {
   })
 
   it('must count resources', async() => {
-    const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user: designer})
+    const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count', 'resources_progress'], user: designer})
     expect(program.resources_count).toEqual(1)
     expect(program.finished_resources_count).toEqual(0)
+    expect(program.resources_progress).toEqual(0)
 
     const blocks=await Block.find()
     await Promise.all(blocks.map(block => Duration.create({block, user: designer, finished:true})))
-    const [programAfter]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count'], user: designer})
+    const [programAfter]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count', 'resources_progress'], user: designer})
     expect(programAfter.resources_count).toEqual(1)
     expect(programAfter.finished_resources_count).toEqual(1)
+    expect(programAfter.resources_progress).toEqual(1)
   })
 
   it('must filter sessions', async() => {
@@ -148,6 +150,11 @@ describe('Test models computations', () => {
     expect(designerResources).toHaveLength(1)
     const trainerResources=await loadFromDb({model: 'resource', fields:['name'], user: trainer})
     expect(trainerResources).toHaveLength(2)
+  })
+
+  it('must set search text', async() => {
+    const blocks=await loadFromDb({model: 'block', fields:['search_text', 'name', 'code'], user: designer})
+    blocks.forEach(block => expect(block.search_text).toEqual(`${block.name} ${block.code}`))
   })
 
 })
