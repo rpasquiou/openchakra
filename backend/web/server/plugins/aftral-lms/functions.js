@@ -2,9 +2,9 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, declareEnumField, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -56,6 +56,7 @@ MODELS.forEach(model => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => formatDuration(result?.duration || 0))
   })
+  declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
