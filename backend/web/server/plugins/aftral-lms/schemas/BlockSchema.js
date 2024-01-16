@@ -110,6 +110,12 @@ const BlockSchema = new Schema({
     default: BLOCK_STATUS_TO_COME,
     required: false[true, `Le status d'achèvement est obligaotire`],
   },
+  url: {
+    type: String,
+    required: [function() {return this.type=='resource' && this.isTemplate()}, `L'url est obligatoire`],
+    get: getterTemplateFirst('url'),
+  },
+
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
