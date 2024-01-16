@@ -176,7 +176,7 @@ const filterDataUser = ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-false && cron.schedule('*/10 * * * * *', async() => {
+cron.schedule('*/10 * * * * *', async() => {
   console.time('Updating all durations')
   await updateAllDurations()
   console.timeEnd('Updating all durations')
