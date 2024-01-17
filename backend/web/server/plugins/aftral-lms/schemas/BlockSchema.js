@@ -51,7 +51,7 @@ const BlockSchema = new Schema({
     set: setterTemplateOnly('code')
   },
   description: {
-    type: [String],
+    type: String,
     required: false,
     get: getterTemplateFirst('description'),
     set: setterTemplateOnly('description')
@@ -139,8 +139,12 @@ const BlockSchema = new Schema({
   search_text: {
     type: String,
     get: function() {return `${this.name} ${this.code}`}
-  }
-  
+  },
+  _locked: {
+    type: Boolean,
+    default: false,
+    required: [true, `Le status verrouillagee est obligatoire`]
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
