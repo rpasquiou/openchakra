@@ -64,7 +64,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'order', instance: 'Number'})
   declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration,origin.duration'})
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
-  declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE, requires: 'origin'})
+  declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE, requires: 'origin.resource_type'})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
   declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children,origin.children,origin.actual_children,actual_children.origin',
     multiple: true,
@@ -86,7 +86,6 @@ MODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'spent_time', instance: 'Number'})
   declareComputedField(model, 'spent_time', (userId, params, data) => {
-    console.log(userId, params, data)
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => result?.duration || 0)
   })
@@ -180,10 +179,11 @@ const filterDataUser = ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-cron.schedule('*/10 * * * * *', async() => {
-  console.time('Updating all durations')
-  await updateAllDurations()
-  console.timeEnd('Updating all durations')
+cron.schedule('*/20 * * * * *', async() => {
+  const msg = 'Updating all durations'
+  console.time(msg)
+  return updateAllDurations()
+    .finally(() => console.timeEnd(msg))
 })
 
 module.exports={

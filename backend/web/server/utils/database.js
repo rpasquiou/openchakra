@@ -365,19 +365,14 @@ const cloneArray = ({data, withOrigin, forceData = {}}) => {
   )
 }
 
-/**
-mongoose returns virtuals even if they are not present in select clause
-=> keep only require fields in data hierarchy
-*/
-const retainRequiredFields = ({data, fields}) => {
-  if (lodash.isArray(data)) {
-    return data.map(d => retainRequiredFields({data: d, fields}))
-  }
-  if (!lodash.isObject(data)) {
-    return data
-  }
+const firstLevelFieldsCache=new NodeCache()
 
-  const thisLevelFields = [
+const getFirstLevelFields = fields => {
+  const key=fields.join('/')
+  if (firstLevelFieldsCache.has(key)) {
+    return firstLevelFieldsCache.get(key)
+  }
+  const result= [
     'id',
     '_id',
     ...lodash(fields)
@@ -385,16 +380,68 @@ const retainRequiredFields = ({data, fields}) => {
       .uniq()
       .value(),
   ]
-  const pickedData = lodash.pick(data, thisLevelFields)
-  const nextLevelFields = fields
+  firstLevelFieldsCache.set(key, result)
+  return result
+}
+
+const nextLevelFieldsCache=new NodeCache()
+
+const getNextLevelFields = fields => {
+  const key=fields.join('/')
+  if (nextLevelFieldsCache.has(key)) {
+    return nextLevelFieldsCache.get(key)
+  }
+  const result=fields
     .filter(f => f.includes('.'))
     .map(f => f.split('.')[0])
+
+  nextLevelFieldsCache.set(key, result)
+  return result
+}
+
+const secondLevelFieldsCache=new NodeCache()
+
+function getSecondLevelFields(fields, f) {
+  const key=fields.join('/')
+  if (secondLevelFieldsCache.has(key)) {
+    return secondLevelFieldsCache.get(key)
+  }
+  const result=fields
+    .filter(f2 => new RegExp(`^${f}\.`).test(f2))
+    .map(f2 => f2.replace(new RegExp(`^${f}\.`), ''))
+  
+    secondLevelFieldsCache.set(key, result)
+  return result
+}
+
+
+/**
+mongoose returns virtuals even if they are not present in select clause
+=> keep only require fields in data hierarchy
+*/
+const retainRequiredFields = ({data, fields, level}) => {
+  if (level===undefined) {
+    level=3
+  }
+
+  if (level==0) {
+    return data
+  }
+  if (lodash.isArray(data)) {
+    return data.map(d => retainRequiredFields({data: d, fields, level}))
+  }
+  if (!lodash.isObject(data)) {
+    return data
+  }
+
+  const thisLevelFields = getFirstLevelFields(fields)
+  const pickedData = lodash.pick(data, thisLevelFields)
+  const nextLevelFields = getNextLevelFields(fields)
   nextLevelFields.forEach(f => {
     pickedData[f] = retainRequiredFields({
-      data: lodash.get(data, f),
-      fields: fields
-        .filter(f2 => new RegExp(`^${f}\.`).test(f2))
-        .map(f2 => f2.replace(new RegExp(`^${f}\.`), '')),
+      data: data[f],
+      fields: getSecondLevelFields(fields, f),
+      level: level-1
     })
   })
   return pickedData
@@ -702,10 +749,11 @@ const loadFromDb = ({model, fields, id, user, params}) => {
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
           return data
         })
+        /**
         .then(data => {console.time(`Leaning deep model ${model}`); return data})
         .then(data => JSON.parse(JSON.stringify(data)))
         .then(data => {console.timeEnd(`Leaning deep model ${model}`); return data})
-
+        */
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))
         .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
@@ -713,7 +761,6 @@ const loadFromDb = ({model, fields, id, user, params}) => {
         .then(data => {console.time(`Add computed fields ${model}`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
         .then(data => {console.timeEnd(`Add computed fields ${model}`); return data})
-
         .then(data => {console.time(`Retain fields ${model}`); return data})
         .then(data =>  retainRequiredFields({data, fields}))
         .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
