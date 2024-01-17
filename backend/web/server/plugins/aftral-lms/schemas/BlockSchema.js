@@ -115,11 +115,32 @@ const BlockSchema = new Schema({
     required: [function() {return this.type=='resource' && this.isTemplate()}, `L'url est obligatoire`],
     get: getterTemplateFirst('url'),
   },
-  _resource_type: {
+  resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
     required: [function(){ return this.type=='resource' && this.isTemplate()}, `Le type de ressource est obligatoire`],
+    get: getterTemplateFirst('resource_type'),
   },
+  spent_time: {
+    type: Number,
+  },
+  spent_time_str: {
+    type: String,
+  },
+  resources_count: {
+    type: Number,
+  },
+  finished_resources_count: {
+    type: Number,
+  },
+  resources_progress: {
+    type: Number,
+  },
+  search_text: {
+    type: String,
+    get: function() {return `${this.name} ${this.code}`}
+  }
+  
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
@@ -135,13 +156,6 @@ BlockSchema.virtual('children_count').get(function() {
   return this.children?.length || 0
 })
 
-BlockSchema.virtual('resource_type').get(function() {
-  return this._resource_type || this.origin?._resource_type
-})
-
-BlockSchema.virtual('resource_type').set(function(value) {
-})
-
 BlockSchema.virtual('evaluation').get(function() {
   return this._evaluation
 })
@@ -151,30 +165,6 @@ BlockSchema.virtual('evaluation').set(function(value) {
 
 BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.origin ? this.origin.children : this.actual_children
-})
-
-BlockSchema.virtual('spent_time').get(function() {
-  return 0
-})
-
-BlockSchema.virtual('spent_time_str').get(function() {
-  return 0
-})
-
-BlockSchema.virtual('resources_count').get(function() {
-  return 0
-})
-
-BlockSchema.virtual('finished_resources_count').get(function() {
-  return 0
-})
-
-BlockSchema.virtual('resources_progress').get(function() {
-  return 0
-})
-
-BlockSchema.virtual('search_text').get(function() {
-  return `${this.name} ${this.code}`
 })
 
 module.exports = BlockSchema
