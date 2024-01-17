@@ -10,15 +10,12 @@ const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
 const Resource = require('../../models/Resource')
+const Session = require('../../models/Session')
 
 const getAncestors = async id => {
   const parents=await Block.find({$or: [{actual_children: id}, {origin: id}]}, {_id:1})
   const parentsAncestors=await Promise.all(parents.map(p => getAncestors(p._id)))
   return lodash.flattenDeep([id, parentsAncestors])
-}
-
-const cloneStrructure = program_id => {
-  return Block.find()
 }
 
 const count_resources = (userId, params, data) => {
@@ -179,6 +176,41 @@ const filterDataUser = ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
+const cloneNodeData = node => {
+  return lodash.omit(node.toObject(), 
+    ['status', 'achievement_status', 'actual_children', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
+    'search_text', 'order', 'duration_str'
+  ])
+}
+
+
+const cloneAndLock = blockId => {
+  return Block.findById(blockId._id)
+    .then(block => {
+      const allChildren=[block.origin, ...block.actual_children].filter(v => !!v)
+      return Promise.all(allChildren.map(c => cloneAndLock(c)))
+        .then(children=> {
+          if (!block.isTemplate()) {
+            return children[0]
+          }
+          const cloned=cloneNodeData(block)
+          console.log('toObject', cloned)
+          if (block.type=='resource') {
+            console.log(block, '=>', cloned)
+          }
+          return mongoose.model(block.type).create({...cloned, _locked: true, actual_children: children})
+        })
+    })
+  }
+
+const lockSession = session => {
+  console.log('locking session', session._id, session.type)
+  return Block.findById(session._id,)
+    .then(block => Promise.all(block.actual_children.map(c => cloneAndLock(c)))
+      .then(children => Block.findByIdAndUpdate(session._id, {$set: {actual_children: children, _locked: true}}))
+    )
+}
+
 cron.schedule('*/20 * * * * *', async() => {
   const msg = 'Updating all durations'
   console.time(msg)
@@ -190,4 +222,5 @@ module.exports={
   updateDuration,
   updateAllDurations,
   getAncestors,
+  lockSession,
 }

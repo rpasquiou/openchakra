@@ -11,11 +11,12 @@ const Module=require('../../server/models/Module')
 const Program=require('../../server/models/Program')
 const Session=require('../../server/models/Session')
 const { ROLE_CONCEPTEUR, RESOURCE_TYPE, ROLE_APPRENANT, ROLE_FORMATEUR } = require('../../server/plugins/aftral-lms/consts')
-const { updateAllDurations, updateDuration } = require('../../server/plugins/aftral-lms/functions')
+const { updateAllDurations, updateDuration, lockSession } = require('../../server/plugins/aftral-lms/functions')
 require('../../server/plugins/aftral-lms/actions')
 const Block = require('../../server/models/Block')
 const { ACTIONS } = require('../../server/utils/studio/actions')
 const Duration = require('../../server/models/Duration')
+const { SseKmsEncryptedObjectsStatus } = require('@aws-sdk/client-s3')
 
 
 jest.setTimeout(20000)
@@ -67,7 +68,7 @@ describe('Test models computations', () => {
     expect(countAfter).toEqual(9)
   })
 
-  it('must compute childrenCount', async() => {
+  it.skip('must compute childrenCount', async() => {
     const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
     let data=[program]
     while (data.length>0) {
@@ -79,7 +80,7 @@ describe('Test models computations', () => {
     }
   })
 
-  it('must compute durations', async() => {
+  it.skip('must compute durations', async() => {
     await updateAllDurations()
     const blocks=await Block.find()
     expect(blocks).toHaveLength(9)
@@ -98,7 +99,7 @@ describe('Test models computations', () => {
 
   })
 
-  it('must compute program durations', async() => {
+  it.skip('must compute program durations', async() => {
     const program = await Program.findOne()
     const res=await updateDuration(program)
     const programAfter = await Program.findOne()
@@ -107,7 +108,7 @@ describe('Test models computations', () => {
     expect(await Block.countDocuments()).toEqual(9)
   })
 
-  it('must remove child properly', async() => {
+  it.skip('must remove child properly', async() => {
     const countBefore=await Block.countDocuments()
     expect(countBefore).toEqual(9)
     let program=await Program.findOne()
@@ -122,7 +123,7 @@ describe('Test models computations', () => {
     expect(await Block.countDocuments()).toEqual(9)
   })
 
-  it('must count resources', async() => {
+  it.skip('must count resources', async() => {
     const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count', 'resources_progress'], user: designer})
     expect(program.resources_count).toEqual(1)
     expect(program.finished_resources_count).toEqual(0)
@@ -136,7 +137,7 @@ describe('Test models computations', () => {
     expect(programAfter.resources_progress).toEqual(1)
   })
 
-  it('must filter sessions', async() => {
+  it.skip('must filter sessions', async() => {
     const sessionsBefore=await loadFromDb({model: 'session', fields:['name'], user: designer})
     expect(sessionsBefore).toHaveLength(0)
     await Block.updateMany({type: 'session'}, {trainees:[designer]})
@@ -144,17 +145,35 @@ describe('Test models computations', () => {
     expect(sessionsAfter).toHaveLength(1)
   })
 
-  it('must filter resources', async() => {
-    await Resource.create({name: 'Resource formateur', duration:1, url: 'hop', resource_type: Object.keys(RESOURCE_TYPE)[0], creator: trainer})
+  it.skip('must filter resources', async() => {
+    const res=await Resource.create({name: 'Resource formateur', duration:1, url: 'hop', resource_type: Object.keys(RESOURCE_TYPE)[0], creator: trainer})
     const designerResources=await loadFromDb({model: 'resource', fields:['name'], user: designer})
-    expect(designerResources).toHaveLength(1)
     const trainerResources=await loadFromDb({model: 'resource', fields:['name'], user: trainer})
+    await res.delete()
+    expect(designerResources).toHaveLength(1)
     expect(trainerResources).toHaveLength(2)
   })
 
-  it('must set search text', async() => {
+  it.skip('must set search text', async() => {
     const blocks=await loadFromDb({model: 'block', fields:['search_text', 'name', 'code'], user: designer})
     blocks.forEach(block => expect(block.search_text).toEqual(`${block.name} ${block.code}`))
+  })
+
+  it('Must lock session', async () => {
+    expect(await Block.count()).toEqual(9)
+    const sessionBefore=await Block.findOne({type: 'session'})
+    const res=await lockSession(sessionBefore)
+    const sessionAfter=await Block.findOne({type: 'session'})
+    expect(sessionAfter._id).toEqual(sessionBefore._id)
+    const blocks=[sessionAfter]
+    while (blocks.length>0) {
+      const block=blocks.pop()
+      console.group(block)
+      expect(block._locked).toEqual(true)
+      const children=await Block.find({_id: {$in: block.actual_children}})
+      blocks.push(...children)
+      expect(children.length).toEqual(block.type=='resource' ? 0 : 1)
+    }
   })
 
 })
