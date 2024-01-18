@@ -657,6 +657,12 @@ export const ACTIONS: IActions = {
     next: [],
   },
 
+  lockSession: {
+    label: 'Lock session',
+    options: {},
+    next: [],
+  },
+
 }
 
 export const allowsActions = (component: IComponent) => {

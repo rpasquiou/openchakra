@@ -7,7 +7,7 @@ const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME } = require('./consts')
-const { getAncestors } = require('./functions')
+const { getAncestors, lockSession } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
@@ -78,14 +78,14 @@ const upsertFinished = (id, user) => {
   return Promise.all([Duration.findOne({user, block:id}), Block.findById(id)])
     .then(([duration, block]) => {
       if (block.type=='resource') {
-        const status=(duration?.finished || duration?.duration > block.duration) ? BLOCK_STATUS_FINISHED 
+        const status=(duration?.finished || duration?.duration >= block.duration) ? BLOCK_STATUS_FINISHED 
           : duration.duration>0 ? BLOCK_STATUS_CURRENT 
           : BLOCK_STATUS_TO_COME
-        console.log('resource', id, duration, status)
+        console.log('resource', id, 'status', status)
         return status
       }
       else {
-        const children=[block.origin, ...block.actual_children].filter(v => !!v)
+        const children=block.actual_children.filter(v => !!v)
         console.log('***** children', children.map(c => c._id))
         return Duration.find({block: {$in: children}})
           .then(durations => {
@@ -93,7 +93,7 @@ const upsertFinished = (id, user) => {
               : durations.every(d => d?.finished) ? BLOCK_STATUS_FINISHED
               : durations.some(d => d?.duration>0) ? BLOCK_STATUS_CURRENT
               : BLOCK_STATUS_TO_COME
-            console.log('block', id, durations, status)
+            console.log('block', id, 'status', status)
             return status
           })
       }
@@ -105,6 +105,10 @@ const upsertFinished = (id, user) => {
 }
 
 const addSpentTimeAction = async ({id, duration}, user) => {
+  const block=await Block.findById(id, {_locked:1})
+  if (!block._locked) {
+    throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
+  }
   const allHierarchy=await getAncestors(id)
   return Promise.all(allHierarchy.map(id => Duration.findOneAndUpdate(
     {block: id, user},
@@ -114,6 +118,11 @@ const addSpentTimeAction = async ({id, duration}, user) => {
   .then(() => Promise.all(allHierarchy.map(pId => upsertFinished(pId, user))))
 }
 addAction('addSpentTime', addSpentTimeAction)
+
+const lockSessionAction = async ({value}, user) => {
+  return lockSession({_id: value})
+}
+addAction('lockSession', lockSessionAction)
 
 const isActionAllowed = ({ action, dataId, user }) => {
   if (action=='addChild') {
