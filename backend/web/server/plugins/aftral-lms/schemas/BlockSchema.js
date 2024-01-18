@@ -80,11 +80,12 @@ const BlockSchema = new Schema({
     required: true,
     default: [],
   },
-  open: {
+  // Closed: must finish children in order
+  closed: {
     type: Boolean,
-    default: function() { return this.isTemplate() ? true : null},
-    required:[function() { return this.isTemplate()}, `L'état ouvert est obligatoire`],
-    get: getterMeFirst('open'),
+    default: function() { return this.isTemplate() ? false : null},
+    required:[function() { return this.isTemplate()}, `L'état fermé (O/N) est obligatoire`],
+    get: getterMeFirst('closed'),
   },
   masked: {
     type: Boolean,
