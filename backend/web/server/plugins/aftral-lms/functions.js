@@ -144,8 +144,7 @@ const updateDuration = async block => {
   for (const child of children) {
     total += await updateDuration(child)
   }
-  block.duration=total
-  await block.save()
+  await Block.findByIdAndUpdate(block._id, {duration: total})
   return total
 }
 
