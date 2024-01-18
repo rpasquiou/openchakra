@@ -5,7 +5,7 @@ const Duration = require('../../models/Duration')
 const Resource = require('../../models/Resource')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
-const {addAction}=require('../../utils/studio/actions')
+const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME } = require('./consts')
 const { getAncestors, lockSession } = require('./functions')
 
@@ -124,7 +124,7 @@ const addSpentTimeAction = async ({id, duration}, user) => {
 addAction('addSpentTime', addSpentTimeAction)
 
 const lockSessionAction = async ({value}, user) => {
-  return lockSession({_id: value})
+  return lockSession({_id: value}, user)
 }
 addAction('lockSession', lockSessionAction)
 
@@ -132,5 +132,11 @@ const isActionAllowed = ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
+  if (action=='lockSession') {
+    return Block.findById(dataId, {_locked:1})
+      .then(res => res && !res?._locked)
+  }
   return Promise.resolve(true)
 }
+
+setAllowActionFn(isActionAllowed)
