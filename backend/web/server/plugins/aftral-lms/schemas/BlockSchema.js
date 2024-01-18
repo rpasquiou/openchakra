@@ -1,8 +1,9 @@
 const mongoose = require('mongoose')
+const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME, RESOURCE_TYPE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME, RESOURCE_TYPE, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT}=require('../consts')
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
@@ -109,8 +110,16 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(BLOCK_STATUS),
     default: BLOCK_STATUS_TO_COME,
-    required: [true, `Le status d'achèvement est obligatoire`],
-    get : function(v) { this._locked ? null : v},
+    required: [function() {return this.isTemplate()}, `Le status d'achèvement est obligatoire`],
+    get: function(v) {
+      if (this.type=='session') { 
+        return moment().isBefore(this.start_date) ? BLOCK_STATUS_TO_COME
+         : moment().isAfter(this.end_date) ? BLOCK_STATUS_FINISHED
+         : BLOCK_STATUS_CURRENT
+      }
+      if (!this._locked) { return null}
+      return  v
+    },
   },
   url: {
     type: String,
