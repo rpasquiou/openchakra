@@ -399,18 +399,19 @@ const getNextLevelFields = fields => {
   return result
 }
 
-const secondLevelFieldsCache=new NodeCache()
+// TODO this causes bug bugChildrenTrainersTraineesCHioldren. Why ?
+// const secondLevelFieldsCache=new NodeCache()
 
 function getSecondLevelFields(fields, f) {
-  const key=fields.join('/')
-  if (secondLevelFieldsCache.has(key)) {
-    return secondLevelFieldsCache.get(key)
-  }
+  // const key=fields.join('/')
+  // if (secondLevelFieldsCache.has(key)) {
+  //   return secondLevelFieldsCache.get(key)
+  // }
   const result=fields
     .filter(f2 => new RegExp(`^${f}\.`).test(f2))
     .map(f2 => f2.replace(new RegExp(`^${f}\.`), ''))
   
-    secondLevelFieldsCache.set(key, result)
+    // secondLevelFieldsCache.set(key, result)
   return result
 }
 
@@ -761,6 +762,7 @@ const loadFromDb = ({model, fields, id, user, params}) => {
         .then(data => {console.time(`Add computed fields ${model}`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
         .then(data => {console.timeEnd(`Add computed fields ${model}`); return data})
+        // .then(data => {console.log(`Loading data ${JSON.stringify(data, null,2)}`); return data})
         .then(data => {console.time(`Retain fields ${model}`); return data})
         .then(data =>  retainRequiredFields({data, fields}))
         .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
