@@ -1006,6 +1006,15 @@ return Promise.allSettled(imagePromises)
     }
     return axios.post(url, body)
   },
-  
+
+  lockSession: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'lockSession',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
   
 }

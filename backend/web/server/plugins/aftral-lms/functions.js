@@ -11,6 +11,7 @@ const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
 const Resource = require('../../models/Resource')
 const Session = require('../../models/Session')
+const { BadRequestError } = require('../../utils/errors')
 
 const getAncestors = async id => {
   const parents=await Block.find({$or: [{actual_children: id}, {origin: id}]}, {_id:1})
@@ -63,7 +64,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
   declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE, requires: 'origin.resource_type'})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
-  declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children,origin.children,origin.actual_children,actual_children.origin',
+  declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children.children,origin.children,origin.actual_children,actual_children.origin,children.origin',
     multiple: true,
     caster: {
       instance: 'ObjectID',
@@ -194,21 +195,25 @@ const cloneAndLock = blockId => {
             return children[0]
           }
           const cloned=cloneNodeData(block)
-          console.log('toObject', cloned)
-          if (block.type=='resource') {
-            console.log(block, '=>', cloned)
-          }
           return mongoose.model(block.type).create({...cloned, _locked: true, actual_children: children})
+            .catch(err => {
+              console.error(block, cloned)
+              throw err
+            })
         })
     })
   }
 
 const lockSession = session => {
-  console.log('locking session', session._id, session.type)
-  return Block.findById(session._id,)
-    .then(block => Promise.all(block.actual_children.map(c => cloneAndLock(c)))
-      .then(children => Block.findByIdAndUpdate(session._id, {$set: {actual_children: children, _locked: true}}))
-    )
+  console.log('locking session', session._id)
+  return Block.findById(session._id)
+    .then(block => {
+      if (block._locked) {
+        throw new BadRequestError(`Session ${session._id} is already locked`)
+      }
+      return Promise.all(block.actual_children.map(c => cloneAndLock(c)))
+        .then(children => Block.findByIdAndUpdate(session._id, {$set: {actual_children: children, _locked: true}}))
+  })
 }
 
 cron.schedule('*/20 * * * * *', async() => {

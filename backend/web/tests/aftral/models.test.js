@@ -68,7 +68,7 @@ describe('Test models computations', () => {
     expect(countAfter).toEqual(9)
   })
 
-  it.skip('must compute childrenCount', async() => {
+  it('must compute childrenCount', async() => {
     const program= await Program.findOne().populate({path: 'children', populate:{path: 'children', populate: {path: 'children' }}})
     let data=[program]
     while (data.length>0) {
@@ -80,7 +80,7 @@ describe('Test models computations', () => {
     }
   })
 
-  it.skip('must compute durations', async() => {
+  it('must compute durations', async() => {
     await updateAllDurations()
     const blocks=await Block.find()
     expect(blocks).toHaveLength(9)
@@ -99,7 +99,7 @@ describe('Test models computations', () => {
 
   })
 
-  it.skip('must compute program durations', async() => {
+  it('must compute program durations', async() => {
     const program = await Program.findOne()
     const res=await updateDuration(program)
     const programAfter = await Program.findOne()
@@ -108,7 +108,7 @@ describe('Test models computations', () => {
     expect(await Block.countDocuments()).toEqual(9)
   })
 
-  it.skip('must remove child properly', async() => {
+  it('must remove child properly', async() => {
     const countBefore=await Block.countDocuments()
     expect(countBefore).toEqual(9)
     let program=await Program.findOne()
@@ -123,7 +123,7 @@ describe('Test models computations', () => {
     expect(await Block.countDocuments()).toEqual(9)
   })
 
-  it.skip('must count resources', async() => {
+  it('must count resources', async() => {
     const [program]=await loadFromDb({model: 'block', id: templateProgram._id, fields: ['resources_count', 'finished_resources_count', 'resources_progress'], user: designer})
     expect(program.resources_count).toEqual(1)
     expect(program.finished_resources_count).toEqual(0)
@@ -137,7 +137,7 @@ describe('Test models computations', () => {
     expect(programAfter.resources_progress).toEqual(1)
   })
 
-  it.skip('must filter sessions', async() => {
+  it('must filter sessions', async() => {
     const sessionsBefore=await loadFromDb({model: 'session', fields:['name'], user: designer})
     expect(sessionsBefore).toHaveLength(0)
     await Block.updateMany({type: 'session'}, {trainees:[designer]})
@@ -145,7 +145,7 @@ describe('Test models computations', () => {
     expect(sessionsAfter).toHaveLength(1)
   })
 
-  it.skip('must filter resources', async() => {
+  it('must filter resources', async() => {
     const res=await Resource.create({name: 'Resource formateur', duration:1, url: 'hop', resource_type: Object.keys(RESOURCE_TYPE)[0], creator: trainer})
     const designerResources=await loadFromDb({model: 'resource', fields:['name'], user: designer})
     const trainerResources=await loadFromDb({model: 'resource', fields:['name'], user: trainer})
@@ -154,7 +154,7 @@ describe('Test models computations', () => {
     expect(trainerResources).toHaveLength(2)
   })
 
-  it.skip('must set search text', async() => {
+  it('must set search text', async() => {
     const blocks=await loadFromDb({model: 'block', fields:['search_text', 'name', 'code'], user: designer})
     blocks.forEach(block => expect(block.search_text).toEqual(`${block.name} ${block.code}`))
   })
@@ -168,7 +168,6 @@ describe('Test models computations', () => {
     const blocks=[sessionAfter]
     while (blocks.length>0) {
       const block=blocks.pop()
-      console.group(block)
       expect(block._locked).toEqual(true)
       const children=await Block.find({_id: {$in: block.actual_children}})
       blocks.push(...children)
