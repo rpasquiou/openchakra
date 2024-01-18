@@ -109,6 +109,7 @@ const BlockSchema = new Schema({
     enum: Object.keys(BLOCK_STATUS),
     default: BLOCK_STATUS_TO_COME,
     required: [true, `Le status d'achèvement est obligatoire`],
+    get : function(v) { this._locked ? null : v},
   },
   url: {
     type: String,
