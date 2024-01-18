@@ -82,7 +82,11 @@ const upsertFinished = (id, user) => {
           : duration.duration>0 ? BLOCK_STATUS_CURRENT 
           : BLOCK_STATUS_TO_COME
         console.log('resource', id, 'status', status)
-        return status
+        return Promise.all([
+          Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
+          Block.findByIdAndUpdate(id, {achievement_status: status})
+        ])
+        .then(() => status)
       }
       else {
         const children=block.actual_children.filter(v => !!v)
@@ -94,14 +98,14 @@ const upsertFinished = (id, user) => {
               : durations.some(d => d?.duration>0) ? BLOCK_STATUS_CURRENT
               : BLOCK_STATUS_TO_COME
             console.log('block', id, 'status', status)
-            return status
+            return Promise.all([
+              Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
+              Block.findByIdAndUpdate(id, {achievement_status: status})
+            ])
           })
+          .then(() => status)
       }
     })
-    .then(status => Promise.all([
-        Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
-        Block.findByIdAndUpdate(id, {achievement_status: status})
-    ]))
 }
 
 const addSpentTimeAction = async ({id, duration}, user) => {
