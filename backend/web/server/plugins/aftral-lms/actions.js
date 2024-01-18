@@ -24,14 +24,14 @@ const moveChildInParent= (parentId, childId, up) => {
   return Block.findById(parentId)
     .then(parent => {
       if (!parent) { throw new NotFoundError(`Parent introuvable`)}
-      const children=parent.children.map(c => c._id.toString())
+      const children=parent.actual_children.map(c => c._id.toString())
       const childIdx=children.indexOf(childId)
       if (childIdx==-1) { throw new NotFoundError(`Enfant introuvable`)}
       if (up && childIdx==0) { throw new BadRequestError(`Déjà premier de la liste`)}
       if (!up && childIdx==children.length-1) { throw new BadRequestError(`Déjà dernier de la liste`)}
       const otherIdx=up ? childIdx-1 : childIdx+1
       const newChildren=swapArray(children, childIdx, otherIdx)
-      return Block.findByIdAndUpdate(parentId, {children: newChildren})
+      return Block.findByIdAndUpdate(parentId, {actual_children: newChildren})
     })
 }
 
