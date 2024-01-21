@@ -46,13 +46,13 @@ describe('Test models computations', () => {
 
   it('must load children only', async() => {
     const trainer=await User.findOne({role: ROLE_FORMATEUR})
-    const data=await loadFromDb( {model: 'session', fields: FIELDS_WHITHOUT_TRAINEE, id:'65a93979be79bd790cb85fd8', user: trainer})
+    const data=await loadFromDb( {model: 'session', fields: FIELDS_WHITHOUT_TRAINEE, id:'65aa4832e4b5867f2962030a', user: trainer})
     console.log(data)
   })
 
   it.only('must load children and trainees', async() => {
     const trainer=await User.findOne({role: ROLE_FORMATEUR})
-    const data=await loadFromDb( {model: 'session', fields: ALL_FIELDS, id:'65a93979be79bd790cb85fd8', user: trainer})
+    const data=await loadFromDb( {model: 'session', fields: ALL_FIELDS, id:'65aa4832e4b5867f2962030a', user: trainer})
     expect(data[0].children[0]?.children).toBeTruthy()
   })
 
