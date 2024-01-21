@@ -400,18 +400,18 @@ const getNextLevelFields = fields => {
 }
 
 // TODO this causes bug bugChildrenTrainersTraineesCHioldren. Why ?
-// const secondLevelFieldsCache=new NodeCache()
+const secondLevelFieldsCache=new NodeCache()
 
 function getSecondLevelFields(fields, f) {
-  // const key=fields.join('/')
-  // if (secondLevelFieldsCache.has(key)) {
-  //   return secondLevelFieldsCache.get(key)
-  // }
-  const result=fields
-    .filter(f2 => new RegExp(`^${f}\.`).test(f2))
-    .map(f2 => f2.replace(new RegExp(`^${f}\.`), ''))
+  const key=[...fields, f].join('/')
+  let result = secondLevelFieldsCache.get(key)
+  if (!result) {
+    result=fields
+      .filter(f2 => new RegExp(`^${f}\.`).test(f2))
+      .map(f2 => f2.replace(new RegExp(`^${f}\.`), ''))
   
-    // secondLevelFieldsCache.set(key, result)
+    secondLevelFieldsCache.set(key, result)
+  }
   return result
 }
 
