@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE, BLOCK_STATUS}=require('../consts')
 
 const DurationSchema = new Schema({
   block: {
@@ -19,10 +19,10 @@ const DurationSchema = new Schema({
     default: 0,
     required: true,
   },
-  finished: {
-    type: Boolean,
-    default: false,
-    required: true,
+  status: {
+    type: String,
+    enum: Object.keys(BLOCK_STATUS),
+    required: false,
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 

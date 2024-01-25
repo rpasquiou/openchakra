@@ -7,7 +7,7 @@ const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME } = require('./consts')
-const { getAncestors, lockSession } = require('./functions')
+const {lockSession, onSpentTimeChanged } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
@@ -74,52 +74,17 @@ const levelDownAction = ({parent, child}, user) => {
 }
 addAction('levelDown', levelDownAction)
 
-const upsertFinished = (id, user) => {
-  return Promise.all([Duration.findOne({user, block:id}), Block.findById(id)])
-    .then(([duration, block]) => {
-      if (block.type=='resource') {
-        const status=(duration?.finished || duration?.duration >= block.duration) ? BLOCK_STATUS_FINISHED 
-          : duration.duration>0 ? BLOCK_STATUS_CURRENT 
-          : BLOCK_STATUS_TO_COME
-        console.log('resource', id, 'status', status)
-        return Promise.all([
-          Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
-          Block.findByIdAndUpdate(id, {achievement_status: status})
-        ])
-        .then(() => status)
-      }
-      else {
-        const children=block.actual_children.filter(v => !!v)
-        console.log('***** children', children.map(c => c._id))
-        return Duration.find({block: {$in: children}})
-          .then(durations => {
-            const status= durations.length==0 ? BLOCK_STATUS_TO_COME
-              : durations.every(d => d?.finished) ? BLOCK_STATUS_FINISHED
-              : durations.some(d => d?.duration>0) ? BLOCK_STATUS_CURRENT
-              : BLOCK_STATUS_TO_COME
-            console.log('block', id, 'status', status)
-            return Promise.all([
-              Duration.findOneAndUpdate({user, block:id}, {user, block: id,finished: status==BLOCK_STATUS_FINISHED}, {upsert: true}),
-              Block.findByIdAndUpdate(id, {achievement_status: status})
-            ])
-          })
-          .then(() => status)
-      }
-    })
-}
-
 const addSpentTimeAction = async ({id, duration}, user) => {
   const block=await Block.findById(id, {_locked:1})
   if (!block._locked) {
     throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
   }
-  const allHierarchy=await getAncestors(id)
-  return Promise.all(allHierarchy.map(id => Duration.findOneAndUpdate(
-    {block: id, user},
-    {$inc: {duration: duration/1000}},
-    {upsert: true, new: true}
-  )))
-  .then(() => Promise.all(allHierarchy.map(pId => upsertFinished(pId, user))))
+  await Duration.findOneAndUpdate(
+    {block, user},
+    {block, user, $inc: {duration: duration/1000.0}},
+    {upsert: true}
+  )
+  return onSpentTimeChanged({blockId: id, user})
 }
 addAction('addSpentTime', addSpentTimeAction)
 

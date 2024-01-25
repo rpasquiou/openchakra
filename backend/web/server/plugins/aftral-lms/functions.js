@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -12,12 +12,6 @@ const mongoose = require('mongoose')
 const Resource = require('../../models/Resource')
 const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
-
-const getAncestors = async id => {
-  const parents=await Block.find({$or: [{actual_children: id}, {origin: id}]}, {_id:1})
-  const parentsAncestors=await Promise.all(parents.map(p => getAncestors(p._id)))
-  return lodash.flattenDeep([id, parentsAncestors])
-}
 
 const count_resources = (userId, params, data) => {
   return Block.findById(data._id)
@@ -53,7 +47,56 @@ const compute_resources_progress = (userId, params, data) => {
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
+const getBlockStatus = async (userId, params, data) => {
+  let duration=await Duration.findOne({block: data._id, user: userId})
+  if (!duration) {
+    console.log('Creating duration data for block', data._id)
+    duration=await Duration.create({block: data._id, user:userId, duration:0, status: BLOCK_STATUS_TO_COME})
+  }
+  return duration.status
+}
+
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
+
+const onSpentTimeChanged = async ({blockId, user}) => {
+  const block=await Block.findById(blockId).populate(['origin', 'actual_children'])
+  let duration=await Duration.findOne({block: blockId, user})
+  if (!duration) {
+    duration=await Duration.create({block: blockId, user, duration: 0})
+  }
+  if (block.type=='resource') {
+    console.log(duration)
+    if (duration.duration >= block.duration) {
+      duration.status=BLOCK_STATUS_FINISHED
+    }
+    else if (duration.duration >0) {
+      duration.status=BLOCK_STATUS_CURRENT
+    }
+    else {
+      duration.status=BLOCK_STATUS_TO_COME
+    }
+    await duration.save()
+  }
+  // Compute status form children
+  if (block.actual_children?.length>0) {
+    const children_status=await Promise.all(block.actual_children.map(child => getBlockStatus(user._id, null, child)))
+    if (children_status.every(s => s==BLOCK_STATUS_FINISHED)) {
+      duration.status=BLOCK_STATUS_FINISHED
+    }
+    else if (children_status.some(s => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(s))) {
+      duration.status=BLOCK_STATUS_CURRENT
+    }
+    else {
+      duration.status=BLOCK_STATUS_TO_COME
+    }
+    console.log('Settting block', block.type, block.name, 'status to', duration.status, 'children are', children_status)
+    await duration.save()
+  }
+  const parent=await Block.findOne({actual_children: blockId})
+  if (parent) {
+    onSpentTimeChanged({blockId: parent._id, user})
+  }
+}
 
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
@@ -93,6 +136,7 @@ MODELS.forEach(model => {
       .then(result => formatDuration(result?.duration || 0))
   })
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
+  declareComputedField(model, 'achievement_status', getBlockStatus)
   declareVirtualField({model, field: 'resources_count', instance: 'Number'})
   declareComputedField(model, 'resources_count', count_resources)
   declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
@@ -103,6 +147,8 @@ MODELS.forEach(model => {
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
+
+declareVirtualField({model:'duration', field: 'status', instance: 'String', enumValues: BLOCK_STATUS})
 
 const USER_MODELS=['user', 'loggedUser']
 USER_MODELS.forEach(model => {
@@ -133,27 +179,6 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 }
 
 setPreprocessGet(preprocessGet)
-
-const updateDuration = async block => {
-  if (block.type=='resource' && block.isTemplate()) {
-    return block.duration
-  }
-  let total=0
-  const all=[block.origin, ...block.actual_children].filter(v => !lodash.isNil(v))
-  let children=await Promise.all(all.map(child => Block.findById(child).populate(['actual_children', 'children', 'origin'])))
-  for (const child of children) {
-    total += await updateDuration(child)
-  }
-  await Block.findByIdAndUpdate(block._id, {duration: total})
-  return total
-}
-
-const updateAllDurations = async () => {
-  const blocks= await Block.find().populate(['actual_children', 'origin'])
-  for(const block of blocks) {
-    await updateDuration(block)
-  }
-}
 
 const filterDataUser = ({model, data, id, user}) => {
   if (MODELS.includes(model) && !id) {
@@ -215,16 +240,7 @@ const lockSession = session => {
   })
 }
 
-cron.schedule('*/20 * * * * *', async() => {
-  const msg = 'Updating all durations'
-  console.time(msg)
-  return updateAllDurations()
-    .finally(() => console.timeEnd(msg))
-})
-
 module.exports={
-  updateDuration,
-  updateAllDurations,
-  getAncestors,
   lockSession,
+  onSpentTimeChanged,
 }
