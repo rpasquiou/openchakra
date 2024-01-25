@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -47,11 +47,25 @@ const compute_resources_progress = (userId, params, data) => {
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
+const isBlockLocked = async (childId, user) => {
+  const parent=await Block.findOne({actual_children: childId})
+  if (!parent?._locked) {
+    return false
+  }
+  const childIndex=parent.actual_children.findIndex(c => idEqual(c._id, childId))
+  if (childIndex==0) {
+    return false
+  }
+  const previous=parent.actual_children[childIndex-1]
+  const previousStatus=await getBlockStatus(user._id, null, previous._id)
+  return previousStatus!=BLOCK_STATUS_FINISHED
+}
+
 const getBlockStatus = async (userId, params, data) => {
   let duration=await Duration.findOne({block: data._id, user: userId})
   if (!duration) {
-    console.log('Creating duration data for block', data._id)
-    duration=await Duration.create({block: data._id, user:userId, duration:0, status: BLOCK_STATUS_TO_COME})
+    const status=(await isBlockLocked(data._id, userId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
+    duration=await Duration.create({block: data._id, user:userId, duration:0, status})
   }
   return duration.status
 }
@@ -73,7 +87,7 @@ const onSpentTimeChanged = async ({blockId, user}) => {
       duration.status=BLOCK_STATUS_CURRENT
     }
     else {
-      duration.status=BLOCK_STATUS_TO_COME
+      duration.status=(await isBlockLocked(blockId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
     }
     await duration.save()
   }
@@ -87,7 +101,7 @@ const onSpentTimeChanged = async ({blockId, user}) => {
       duration.status=BLOCK_STATUS_CURRENT
     }
     else {
-      duration.status=BLOCK_STATUS_TO_COME
+      duration.status=(await isBlockLocked(blockId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
     }
     console.log('Settting block', block.type, block.name, 'status to', duration.status, 'children are', children_status)
     await duration.save()
