@@ -109,17 +109,6 @@ const BlockSchema = new Schema({
   achievement_status: {
     type: String,
     enum: Object.keys(BLOCK_STATUS),
-    default: BLOCK_STATUS_TO_COME,
-    required: [function() {return this.isTemplate()}, `Le status d'achèvement est obligatoire`],
-    get: function(v) {
-      if (this.type=='session') { 
-        return moment().isBefore(this.start_date) ? BLOCK_STATUS_TO_COME
-         : moment().isAfter(this.end_date) ? BLOCK_STATUS_FINISHED
-         : BLOCK_STATUS_CURRENT
-      }
-      if (!this._locked) { return null}
-      return  v
-    },
   },
   url: {
     type: String,
