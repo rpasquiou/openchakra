@@ -133,7 +133,7 @@ MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareVirtualField({model, field: 'origin', instance: 'Block', requires: 'origin.actual_children,origin.children',
+  declareVirtualField({model, field: 'origin', instance: 'block', requires: 'origin.actual_children,origin.children',
     multiple: false,
     caster: {
       instance: 'ObjectID',
