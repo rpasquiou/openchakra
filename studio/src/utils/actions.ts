@@ -663,6 +663,12 @@ export const ACTIONS: IActions = {
     next: [],
   },
 
+  refresh: {
+    label: 'Refresh',
+    options: {},
+    next: [],
+  },
+
 }
 
 export const allowsActions = (component: IComponent) => {

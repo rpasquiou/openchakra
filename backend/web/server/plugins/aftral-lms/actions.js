@@ -6,7 +6,7 @@ const Resource = require('../../models/Resource')
 const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME } = require('./consts')
+const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const {lockSession, onSpentTimeChanged } = require('./functions')
 
 const ACCEPTS={
@@ -79,17 +79,18 @@ const addSpentTimeAction = async ({id, duration}, user) => {
   if (!block._locked) {
     throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
   }
-  await Duration.findOneAndUpdate(
-    {block, user},
-    {block, user, $inc: {duration: duration/1000.0}},
-    {upsert: true}
-  )
+  const durationDoc=await Duration.findOne({block, user})
+  if (durationDoc.status==BLOCK_STATUS_UNAVAILABLE) {
+    throw new ForbiddenError(`addSpentTime forbidden on unavailable resource`)
+  }
+  durationDoc.duration+=duration/1000
+  await durationDoc.save()
   return onSpentTimeChanged({blockId: id, user})
 }
 addAction('addSpentTime', addSpentTimeAction)
 
 const lockSessionAction = async ({value}, user) => {
-  return lockSession({_id: value}, user)
+  return lockSession(value, user)
 }
 addAction('lockSession', lockSessionAction)
 

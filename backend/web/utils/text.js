@@ -123,7 +123,17 @@ const formatDateTime = datetime => {
 }
 
 const formatDuration = durationSeconds => {
-  return externelFormatDuration(durationSeconds*1000, {leading: true})
+  const hours=Math.floor(durationSeconds/3600)
+  const minutes=Math.floor(durationSeconds%3600/60)
+  const seconds=Math.floor(durationSeconds%60)
+  if (durationSeconds==0)  {
+    return '0s'
+  }
+  let result=''
+  if (hours>0) {result+=`${hours}h`}
+  if (minutes>0) {result+=`${hours ? lodash.padStart(minutes, 2, '0') : minutes}m`}
+  if (seconds>0) {result+=`${hours || minutes ? lodash.padStart(seconds, 2, '0') : seconds}s`}
+  return result
 }
 
 const convertDuration = value =>  {
