@@ -12,104 +12,91 @@ const mongoose = require('mongoose')
 const Resource = require('../../models/Resource')
 const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
+const NodeCache=require('node-cache')
+const ObjectId = mongoose.Types.ObjectId
 
-const count_resources = (userId, params, data) => {
-  return Block.findById(data._id)
-    .then(block => {
-      if (block.type=='resource') {
-        return 1
-      }
-      const children=[block.origin, ...block.actual_children].filter(v => !!v).map(v => v._id)
-      return Promise.all(children.map(c => count_resources(userId, params, {_id: c})))
-        .then(res => lodash.sum(res))
-    })
+const NAMES_CACHE=new NodeCache()
+
+const getBlockName = async blockId => {
+  let result=NAMES_CACHE.get(blockId.toString())
+  if (!result) {
+    const block=await Block.findById(blockId, {name:1, type:1})
+    result=`${block.type}-${block.name} ${blockId}`
+    NAMES_CACHE.set(blockId.toString(), result)
+  }
+  return result
 }
 
-const count_finished_resources = (userId, params, data) => {
-  return Block.findById(data._id)
-  .then(block => {
-    if (block.type=='resource') {
-      return Duration.findOne({block: data._id, user: userId})
-        .then(duration => duration?.finished ? 1 : 0)
-    }
-    const children=[block.origin, ...block.actual_children].filter(v => !!v)
-    return Promise.all(children.map(c => count_finished_resources(userId, params, {_id: c})))
-      .then(res => lodash.sum(res))
-  })
+const getFinishedResources = (userId, params, data) => {
+  return Duration.findOne({block: data._id, user: userId}, {finished_resources_count:1})
+    .then(duration => duration?.finished_resources_count || 0)
 }
 
-const compute_resources_progress = (userId, params, data) => {
-  return Promise.all([count_finished_resources(userId, params, data), count_resources(userId, params, data)])
-  .then(([progress, total]) => {
-    return progress/total
-  })
+const getResourcesProgress = async (userId, params, data) => {
+  return Duration.findOne({block: data._id, user: userId}, {progress:1})
+    .then(duration => duration?.progress || 0)
 }
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const isBlockLocked = async (childId, user) => {
-  const parent=await Block.findOne({actual_children: childId})
-  if (!parent?._locked) {
-    return false
-  }
-  const childIndex=parent.actual_children.findIndex(c => idEqual(c._id, childId))
-  if (childIndex==0) {
-    return false
-  }
-  const previous=parent.actual_children[childIndex-1]
-  const previousStatus=await getBlockStatus(user._id, null, previous._id)
-  return previousStatus!=BLOCK_STATUS_FINISHED
-}
-
 const getBlockStatus = async (userId, params, data) => {
-  let duration=await Duration.findOne({block: data._id, user: userId})
-  if (!duration) {
-    const status=(await isBlockLocked(data._id, userId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
-    duration=await Duration.create({block: data._id, user:userId, duration:0, status})
-  }
-  return duration.status
+  return Duration.findOne({block: data._id, user: userId}, {status:1})
+    .then(duration => duration?.status || null)
 }
 
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
-const onSpentTimeChanged = async ({blockId, user}) => {
-  const block=await Block.findById(blockId).populate(['origin', 'actual_children'])
-  let duration=await Duration.findOne({block: blockId, user})
-  if (!duration) {
-    duration=await Duration.create({block: blockId, user, duration: 0})
-  }
+/** Update block status is the main function
+ * It computes, for each block level:
+ * - the FINISHED/CURRENT/TO_COME status
+ * - the finished resources count
+ * - the progress
+ * Each block returns to its parent an object:
+ * - duration : the time spent
+ * - finished_resources_count: the number of finished resources
+ */
+const updateBlockStatus = async ({blockId, userId}) => {
+  const name=await getBlockName(blockId)
+  const block=await Block.findById(blockId)
+  const durationDoc=(await Duration.findOne({user: userId, block: blockId})) || (await Duration.create({user: userId, block: blockId, duration: 0}))
   if (block.type=='resource') {
-    console.log(duration)
-    if (duration.duration >= block.duration) {
-      duration.status=BLOCK_STATUS_FINISHED
+    if (durationDoc.duration>block.duration) {
+      durationDoc.status=BLOCK_STATUS_FINISHED
+      durationDoc.finished_resources_count=1
+      durationDoc.progress=1
     }
-    else if (duration.duration >0) {
-      duration.status=BLOCK_STATUS_CURRENT
-    }
-    else {
-      duration.status=(await isBlockLocked(blockId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
-    }
-    await duration.save()
-  }
-  // Compute status form children
-  if (block.actual_children?.length>0) {
-    const children_status=await Promise.all(block.actual_children.map(child => getBlockStatus(user._id, null, child)))
-    if (children_status.every(s => s==BLOCK_STATUS_FINISHED)) {
-      duration.status=BLOCK_STATUS_FINISHED
-    }
-    else if (children_status.some(s => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(s))) {
-      duration.status=BLOCK_STATUS_CURRENT
+    else if (durationDoc.duration>0) {
+      durationDoc.status=BLOCK_STATUS_CURRENT
     }
     else {
-      duration.status=(await isBlockLocked(blockId)) ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
+      durationDoc.status=BLOCK_STATUS_TO_COME
     }
-    console.log('Settting block', block.type, block.name, 'status to', duration.status, 'children are', children_status)
-    await duration.save()
+    await durationDoc.save().catch(console.error)
+    return durationDoc
   }
-  const parent=await Block.findOne({actual_children: blockId})
-  if (parent) {
-    onSpentTimeChanged({blockId: parent._id, user})
+  const allDurations=await Promise.all(block.actual_children.map(child => updateBlockStatus({blockId: child._id, userId})))
+  durationDoc.duration=lodash(allDurations).sumBy('duration')
+  durationDoc.finished_resources_count=lodash(allDurations).sumBy('finished_resources_count')
+  durationDoc.progress=durationDoc.finished_resources_count/block.resources_count
+  if (allDurations.every(d => d.status==BLOCK_STATUS_FINISHED)) {
+    durationDoc.status=BLOCK_STATUS_FINISHED
   }
+  else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
+    durationDoc.status=BLOCK_STATUS_CURRENT
+  }
+  else {
+    durationDoc.status=BLOCK_STATUS_TO_COME
+  }
+  await durationDoc.save()
+    .catch(err =>  console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
+  return durationDoc
+}
+
+const onSpentTimeChanged = async ({blockId, user}) => {
+  const block=await Block.findById(blockId, {session:1})
+  const msg=`Update session time/status for ${await getBlockName(blockId)}`
+  const res=await updateBlockStatus({blockId: block.session[0]._id, userId: user._id})
+  return res
 }
 
 MODELS.forEach(model => {
@@ -152,11 +139,10 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
   declareComputedField(model, 'achievement_status', getBlockStatus)
   declareVirtualField({model, field: 'resources_count', instance: 'Number'})
-  declareComputedField(model, 'resources_count', count_resources)
   declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
-  declareComputedField(model, 'finished_resources_count', count_finished_resources)
+  declareComputedField(model, 'finished_resources_count', getFinishedResources)
   declareVirtualField({model, field: 'search_text', instance: 'String', requires:'name,code'})
-  declareComputedField(model, 'resources_progress', compute_resources_progress)
+  declareComputedField(model, 'resources_progress', getResourcesProgress)
   declareVirtualField({model, field: 'resources_progress', instance: 'Number', requires:'resources_count,finished_resources_count'})
 })
 
@@ -242,25 +228,59 @@ const cloneAndLock = blockId => {
     })
   }
 
-const setParentSession = async (block_id, session_id) => {
-  const block=await Block.findById(block_id, {actual_children:1})
-  block.session=[session_id]
-  await block.save()
-  return await Promise.all(block.actual_children.map(child => setParentSession(child._id, session_id)))
+const getSessionBlocks = async session_id => {
+  const result = await Block.aggregate([
+    { $match: { _id: ObjectId(session_id) }},
+    {
+      $graphLookup: {
+        from: 'blocks',
+        startWith: '$actual_children',
+        connectFromField: 'actual_children',
+        connectToField: '_id',
+        as: 'children',
+        maxDepth: 10
+      }
+    },
+    {$unwind: '$children' },
+    {$project: {_id: '$children._id'}}
+  ])
+  const rootBlock = await Block.findById(session_id).lean()
+  result.unshift(rootBlock)
+  return result
 }
 
-const lockSession = session => {
-  console.log('locking session', session._id)
-  return Block.findById(session._id)
-    .then(block => {
-      if (block._locked) {
-        throw new BadRequestError(`Session ${session._id} is already locked`)
-      }
-      return Promise.all(block.actual_children.map(c => cloneAndLock(c)))
-        .then(children => Block.findByIdAndUpdate(session._id, {$set: {actual_children: children, _locked: true}}))
-  })
-  .then(setParentSession(session._id, session._id) )
-  .catch(console.error)
+const setParentSession = async (session_id) => {
+  const allBlocks=await getSessionBlocks(session_id)
+  return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
+}
+
+const setResourcesCount = async blockId => {
+  const block=await Block.findById(blockId)
+  if (block.type=='resource') {
+    block.resources_count=1
+    await block.save()
+    return 1
+  }
+  const name=await getBlockName(blockId)
+  const childrenCount=await Promise.all(block.actual_children.map(child => setResourcesCount(child._id))).then(counts => lodash.sum(counts))
+  block.resources_count=childrenCount
+  await block.save()
+  return childrenCount
+}
+
+const lockSession = async sessionId => {
+  console.log('locking session', sessionId)
+  const session=await Block.findById(sessionId)
+  if (session._locked) {
+    console.warn(`Session`, session._id, `is already locked`)
+  }
+  else {
+    const cloned= await Promise.all(session.actual_children.map(c => cloneAndLock(c)))
+    await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
+  }
+  await setResourcesCount(session._id)
+  await setParentSession(session._id)
+  await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
 
 module.exports={

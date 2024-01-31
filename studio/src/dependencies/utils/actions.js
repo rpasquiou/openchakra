@@ -1016,5 +1016,10 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  refresh: ({reload}) => {
+    reload()
+    return Promise.resolve(true)
+  },
+
   
 }

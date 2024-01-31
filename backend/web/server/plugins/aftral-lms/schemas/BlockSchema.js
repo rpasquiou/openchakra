@@ -146,9 +146,12 @@ const BlockSchema = new Schema({
     required: [true, `Le status verrouillagee est obligatoire`]
   },
   session: {
-    type: [Schema.Types.ObjectId],
-    ref: 'block',
-    required:false,
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'block',
+    }],
+    required: true,
+    default: [],
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
