@@ -242,6 +242,13 @@ const cloneAndLock = blockId => {
     })
   }
 
+const setParentSession = async (block_id, session_id) => {
+  const block=await Block.findById(block_id, {actual_children:1})
+  block.session=[session_id]
+  await block.save()
+  return await Promise.all(block.actual_children.map(child => setParentSession(child._id, session_id)))
+}
+
 const lockSession = session => {
   console.log('locking session', session._id)
   return Block.findById(session._id)
@@ -252,6 +259,8 @@ const lockSession = session => {
       return Promise.all(block.actual_children.map(c => cloneAndLock(c)))
         .then(children => Block.findByIdAndUpdate(session._id, {$set: {actual_children: children, _locked: true}}))
   })
+  .then(setParentSession(session._id, session._id) )
+  .catch(console.error)
 }
 
 module.exports={

@@ -145,6 +145,11 @@ const BlockSchema = new Schema({
     default: false,
     required: [true, `Le status verrouillagee est obligatoire`]
   },
+  session: {
+    type: [Schema.Types.ObjectId],
+    ref: 'block',
+    required:false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {

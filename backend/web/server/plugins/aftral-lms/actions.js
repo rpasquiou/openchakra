@@ -97,10 +97,10 @@ const isActionAllowed = ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
-  if (action=='lockSession') {
-    return Block.findById(dataId, {_locked:1})
-      .then(res => res && !res?._locked)
-  }
+  // if (action=='lockSession') {
+  //   return Block.findById(dataId, {_locked:1})
+  //     .then(res => res && !res?._locked)
+  // }
   return Promise.resolve(true)
 }
 
