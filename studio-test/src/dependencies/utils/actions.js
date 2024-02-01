@@ -1021,5 +1021,34 @@ return Promise.allSettled(imagePromises)
     return Promise.resolve(true)
   },
 
+  play: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'play',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(({data}) => data)
+  },
+
+  resume: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'resume',
+      value: value._id,
+    }
+    return axios.post(url, body)
+    .then(({data}) => data)
+  },
+
+  replay: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'replay',
+      value: value._id,
+    }
+    return axios.post(url, body)
+    .then(({data}) => data)
+  },
   
 }

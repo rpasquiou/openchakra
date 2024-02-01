@@ -58,8 +58,14 @@ const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 const updateBlockStatus = async ({blockId, userId}) => {
   const name=await getBlockName(blockId)
   const block=await Block.findById(blockId)
-  const durationDoc=(await Duration.findOne({user: userId, block: blockId})) || (await Duration.create({user: userId, block: blockId, duration: 0}))
-  if (block.type=='resource') {
+  let durationDoc=await Duration.findOne({user: userId, block: blockId})
+  const hasToCompute=!!durationDoc
+  if (!durationDoc) {
+    const parent=await Block.findOne({actual_children: blockId})
+    const parentClosed=parent ? parent.closed : false
+    durationDoc= await Duration.create({user: userId, block: blockId, duration: 0, status: parentClosed ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME})
+  }
+  if (hasToCompute && block.type=='resource') {
     if (durationDoc.duration>block.duration) {
       durationDoc.status=BLOCK_STATUS_FINISHED
       durationDoc.finished_resources_count=1
@@ -69,26 +75,28 @@ const updateBlockStatus = async ({blockId, userId}) => {
       durationDoc.status=BLOCK_STATUS_CURRENT
     }
     else {
-      durationDoc.status=BLOCK_STATUS_TO_COME
+      // durationDoc.status=BLOCK_STATUS_TO_COME
     }
     await durationDoc.save().catch(console.error)
     return durationDoc
   }
   const allDurations=await Promise.all(block.actual_children.map(child => updateBlockStatus({blockId: child._id, userId})))
-  durationDoc.duration=lodash(allDurations).sumBy('duration')
-  durationDoc.finished_resources_count=lodash(allDurations).sumBy('finished_resources_count')
-  durationDoc.progress=durationDoc.finished_resources_count/block.resources_count
-  if (allDurations.every(d => d.status==BLOCK_STATUS_FINISHED)) {
-    durationDoc.status=BLOCK_STATUS_FINISHED
+  if (hasToCompute) {
+    durationDoc.duration=lodash(allDurations).sumBy('duration')
+    durationDoc.finished_resources_count=lodash(allDurations).sumBy('finished_resources_count')
+    durationDoc.progress=durationDoc.finished_resources_count/block.resources_count
+    if (allDurations.every(d => d.status==BLOCK_STATUS_FINISHED)) {
+      durationDoc.status=BLOCK_STATUS_FINISHED
+    }
+    else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
+      durationDoc.status=BLOCK_STATUS_CURRENT
+    }
+    else {
+      // durationDoc.status=BLOCK_STATUS_TO_COME
+    }
+    await durationDoc.save()
+      .catch(err =>  console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
   }
-  else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
-    durationDoc.status=BLOCK_STATUS_CURRENT
-  }
-  else {
-    durationDoc.status=BLOCK_STATUS_TO_COME
-  }
-  await durationDoc.save()
-    .catch(err =>  console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
   return durationDoc
 }
 
@@ -148,7 +156,7 @@ MODELS.forEach(model => {
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
 
-declareVirtualField({model:'duration', field: 'status', instance: 'String', enumValues: BLOCK_STATUS})
+declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 const USER_MODELS=['user', 'loggedUser']
 USER_MODELS.forEach(model => {
