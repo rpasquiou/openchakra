@@ -669,6 +669,24 @@ export const ACTIONS: IActions = {
     next: [],
   },
 
+  play: {
+    label: 'AFTRAL Play',
+    options: {},
+    next: ['openPage'],
+  },
+
+  resume: {
+    label: 'AFTRAL Resume',
+    options: {},
+    next: ['openPage'],
+  },
+
+  replay: {
+    label: 'AFTRAL Replay',
+    options: {},
+    next: ['openPage'],
+  },
+
 }
 
 export const allowsActions = (component: IComponent) => {

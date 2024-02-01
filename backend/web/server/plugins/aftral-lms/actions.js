@@ -94,7 +94,15 @@ const lockSessionAction = async ({value}, user) => {
 }
 addAction('lockSession', lockSessionAction)
 
-const isActionAllowed = ({ action, dataId, user }) => {
+const resourceAction = action => async ({value}, user) => {
+  return isActionAllowed({action, dataId: value, user}) && {_id: value}
+}
+
+addAction('play', resourceAction('play'))
+addAction('resume', resourceAction('resume'))
+addAction('replay', resourceAction('replay'))
+
+const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
@@ -102,7 +110,16 @@ const isActionAllowed = ({ action, dataId, user }) => {
   //   return Block.findById(dataId, {_locked:1})
   //     .then(res => res && !res?._locked)
   // }
-  return Promise.resolve(true)
+  if (['play', 'resume', 'replay'].includes(action)) {
+    const block=await Block.findOne({_id: dataId, type: 'resource'})
+    if (!block) { throw new NotFoundError(`Ressource introuvable`)}
+    const parent=await Block.findOne({actual_achildren: dataId})
+    const duration=await Duration.findOne({block: dataId, user})
+    return ((action=='play' && duration?.status==BLOCK_STATUS_TO_COME)
+      || (action=='resume' && duration?.status==BLOCK_STATUS_CURRENT)
+      || (action=='replay' && duration?.status==BLOCK_STATUS_FINISHED && !parent?.closed))
+  }
+  return true
 }
 
 setAllowActionFn(isActionAllowed)
