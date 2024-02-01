@@ -133,6 +133,7 @@ require('./models/NutritionAdvice')
 require('./models/Block')
 require('./models/Sequence')
 require('./models/Duration')
+require('./models/Statistics')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

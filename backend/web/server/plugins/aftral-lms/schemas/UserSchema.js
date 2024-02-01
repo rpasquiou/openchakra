@@ -37,6 +37,11 @@ const UserSchema = new Schema({
     enum: Object.keys(ROLES),
     required: [true, 'Le rôle est obligatoire'],
   },
+  statistics: {
+    type: Schema.Types.ObjectId,
+    ref: 'block',
+    required: false,
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
