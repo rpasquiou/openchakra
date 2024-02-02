@@ -219,7 +219,7 @@ const getContacts = user => {
 const getFeed = async id => {
   const model=await getModel(id, ['session', 'group'])
   const feed=await mongoose.connection.models[model].findById(id)
-  return Post.find({_feed: id})
+  return Post.find({_feed: id}).populate('author')
     .then(posts => {
       return ({
         _id: id,
