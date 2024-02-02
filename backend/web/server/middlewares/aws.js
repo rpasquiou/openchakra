@@ -1,6 +1,9 @@
 const {Upload} = require('@aws-sdk/lib-storage')
 const {S3} = require('@aws-sdk/client-s3')
 const {THUMBNAILS_DIR} = require('../../../web/utils/consts')
+const { isScorm, removeExtension } = require('../utils/filesystem')
+const path=require('path')
+const mime=require('mime')
 
 const s3 = new S3({
   region: process.env.S3_REGION,
@@ -52,31 +55,52 @@ const imageSrcSetPaths = (originalSrc, withDimension=true) => {
   return srcSet
 }
 
+const handleFile = async document => {
+  const zipEntries=await isScorm(document)
+  console.log(document.filename)
+
+  if (zipEntries) {
+    const folder=removeExtension(document.filename)
+    const subDocuments=zipEntries.filter(e => !e.isDirectory).map(e => ({
+      filename: path.join(folder, e.entryName),
+      buffer: e.getData(),
+      mimetype: mime.getType(e.entryName)
+    }))
+    const res=await Promise.all(subDocuments.map(uploadFile))
+    return res.find(r => /\/story.html$/.test(r.Key))
+  }
+  else {
+    return uploadFile(document)
+  }
+}
+
+const  uploadFile =  document => {
+  return new Promise(async (resolve, reject) => {
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: document.filename,
+      Body: document.buffer,
+      ContentType: document.mimetype,
+      // ACL: 'public-read', // What's this ACL ?
+    }
+
+    await new Upload({
+      client: s3,
+      params,
+    }).done()
+      .then(res => resolve(res))
+      .catch(err => {
+        console.error(err)
+        return reject(err)
+      })
+  })
+}
+
+
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
 
-  const documentsToSend = req.body.documents.map(document => {
-
-    return new Promise(async(resolve, reject) => {
-      const params = {
-        Bucket: process.env.S3_BUCKET,
-        Key: document.filename,
-        Body: document.buffer,
-        ContentType: document.mimetype,
-        // ACL: 'public-read', // What's this ACL ?
-      }
-
-      await new Upload({
-        client: s3,
-        params,
-      }).done()
-        .then(res => resolve(res))
-        .catch(err => {
-          console.error(err)
-          return reject(err)
-        })
-    })
-  })
+  const documentsToSend = req.body.documents.map(document => handleFile(document))
 
   req.body.result = await Promise.all(documentsToSend)
     .catch(err => console.error(err))
