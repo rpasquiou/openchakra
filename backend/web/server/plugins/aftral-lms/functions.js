@@ -13,6 +13,9 @@ const Resource = require('../../models/Resource')
 const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
 const NodeCache=require('node-cache')
+const Message = require('../../models/Message')
+const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
+const User = require('../../models/User')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
@@ -172,6 +175,10 @@ const preCreate = ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
+const getContacts = user => {
+  return User.find()
+    .then(users => users.map(u => ({_id: u._id, name: `${u.firstname}-${u.lastname}`})))
+}
 
 const preprocessGet = ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
@@ -181,6 +188,45 @@ const preprocessGet = ({model, fields, id, user, params}) => {
   // Add resource.creator.role to filter after
   if (model=='resource') {
     fields=[...fields, 'creator.role']
+  }
+
+  if (model == 'contact') {
+    return getContacts(user, id)
+      .then(res => {
+        return Promise.resolve({data: res})
+      }) 
+  }
+
+  if (model=='conversation') {
+    const getPartner= (m, user) => {
+      return idEqual(m.sender._id, user._id) ? m.receiver : m.sender
+    }
+
+    // Get non-group messages (i.e. no group attribute)
+    return Message.find({$or: [{sender: user._id}, {receiver: user._id}]})
+      .populate({path: 'sender'})
+      .populate({path: 'receiver'})
+      .sort({CREATED_AT_ATTRIBUTE: 1})
+      .then(messages => {
+        console.log(messages)
+        if (id) {
+          messages=messages.filter(m => idEqual(getPartner(m, user)._id, id))
+          // If no messages for one parner, forge it
+          if (lodash.isEmpty(messages)) {
+            return User.findById(id)
+              .then(partner => {
+                const data=[{_id: partner._id, partner, messages: []}]
+                return {model, fields, id, data}
+              })
+          }
+        }
+        const partnerMessages=lodash.groupBy(messages, m => getPartner(m, user)._id)
+        const convs=lodash(partnerMessages)
+          .values()
+          .map(msgs => { const partner=getPartner(msgs[0], user); return ({_id: partner._id, partner, messages: msgs}) })
+          .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
+        return {model, fields, id, data: convs}
+      })
   }
 
   return Promise.resolve({model, fields, id})
