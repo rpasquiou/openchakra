@@ -92,7 +92,7 @@ const createMemoryMulter = fileFilter => {
   return upload
 }
 
-const isScorm = async buffer => {
+const isScorm = async ({buffer}) => {
   let zip
   try { zip=new AdmZip(buffer)} catch { return false }
   const entry=zip.getEntries().find(e => e.entryName=='imsmanifest.xml')
@@ -100,9 +100,13 @@ const isScorm = async buffer => {
   const contents=entry.getData().toString('utf-8')
   const imsmanifest = xml2js(contents, { compact: true })
   const scormVersion = imsmanifest?.manifest?._attributes?.version
-  return scormVersion
+  return scormVersion ? zip.getEntries() : false
 }
 
+const removeExtension = fullpath => {
+  const pathInfo=path.parse(fullpath)
+  return path.join(pathInfo.dir, pathInfo.name)
+}
 
 module.exports = {
   createDiskMulter,
@@ -112,4 +116,5 @@ module.exports = {
   XL_FILTER,
   PDF_FILTER,
   isScorm,
+  removeExtension,
 }
