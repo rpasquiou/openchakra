@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -46,8 +46,6 @@ const getBlockStatus = async (userId, params, data) => {
   return Duration.findOne({block: data._id, user: userId}, {status:1})
     .then(duration => duration?.status || null)
 }
-
-const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 /** Update block status is the main function
  * It computes, for each block level:
@@ -110,6 +108,8 @@ const onSpentTimeChanged = async ({blockId, user}) => {
   return res
 }
 
+const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
+
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
   declareVirtualField({model, field: 'url', instance: 'Number', requires: 'origin.url'})
@@ -161,7 +161,7 @@ declareVirtualField({model:'program', field: 'status', instance: 'String', enumV
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
-const USER_MODELS=['user', 'loggedUser']
+const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareVirtualField({model, field: 'role', instance: 'String', enumValues: ROLES})
 })
@@ -176,8 +176,16 @@ const preCreate = ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const getContacts = user => {
+  console.log('user is', user)
+  if ([ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+    return Session.find({$or: [{trainers: user._id},{trainees: user._id}]})
+      .populate(['trainers', 'trainees'])
+      .then(sessions => sessions.map(s => [s.trainers, s.trainees]))
+      .then(res => lodash.flattenDepth(res, 2))
+      .then(res => res.filter(u => !idEqual(u._id, user._id)))
+  }
   return User.find()
-    .then(users => users.map(u => ({_id: u._id, name: `${u.firstname}-${u.lastname}`})))
+    .then(res => res.filter(u => !idEqual(u._id, user._id)))
 }
 
 const preprocessGet = ({model, fields, id, user, params}) => {
@@ -208,7 +216,6 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       .populate({path: 'receiver'})
       .sort({CREATED_AT_ATTRIBUTE: 1})
       .then(messages => {
-        console.log(messages)
         if (id) {
           messages=messages.filter(m => idEqual(getPartner(m, user)._id, id))
           // If no messages for one parner, forge it
