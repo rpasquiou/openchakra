@@ -1,14 +1,8 @@
 const { schemaOptions } = require('../../../utils/schemas');
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const { ROLES } = require('../consts');
 
-const Schema = mongoose.Schema
-
-const ContactSchema = new Schema({
-  name: {
-    type: String,
-    required: [true, `Le nom du contact est obligatoire`],
-  }
-}, schemaOptions)
-
+const UserSchema=require('./UserSchema')
+const ContactSchema=UserSchema
 
 module.exports = ContactSchema
