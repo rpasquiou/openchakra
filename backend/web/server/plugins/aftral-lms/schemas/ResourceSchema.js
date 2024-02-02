@@ -22,6 +22,9 @@ const ResourceSchema = new Schema({
     default: false,
     required: [true, `Le caractère optionnel est obligatoire`],
   },
+  mine: {
+    type: Boolean,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.virtual('evaluation').get(function(value) {
