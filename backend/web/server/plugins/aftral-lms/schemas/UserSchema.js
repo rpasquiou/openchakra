@@ -39,7 +39,7 @@ const UserSchema = new Schema({
   },
   statistics: {
     type: Schema.Types.ObjectId,
-    ref: 'block',
+    ref: 'program',
     required: false,
   }
 }, schemaOptions)

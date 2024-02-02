@@ -122,9 +122,10 @@ const login = (email, password) => {
   })
 }
 
-router.get('/models', (req, res) => {
+router.get('/models/:name?', (req, res) => {
+  const modelName=req.params.name
   const allModels = getExposedModels()
-  return res.json(allModels)
+  return res.json(modelName ? allModels[modelName]: allModels)
 })
 
 router.get('/roles', (req, res) => {
