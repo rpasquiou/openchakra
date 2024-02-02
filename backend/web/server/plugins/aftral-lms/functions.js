@@ -116,6 +116,10 @@ const getResourceAnnotation = (userId, params, data) => {
 const setResourceAnnotation = ({id, attribute, value, user}) => {
   return Duration.updateOne({user: user, block: id}, {annotation: value})
 }
+
+const isResourceMine = (userId, params, data) => {
+  return Promise.resolve(idEqual(userId, data.creator._id))
+}
   
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
@@ -170,6 +174,8 @@ MODELS.forEach(model => {
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
+
+declareComputedField('resource', 'mine', isResourceMine)
 
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
