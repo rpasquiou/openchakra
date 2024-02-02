@@ -17,6 +17,7 @@ const Message = require('../../models/Message')
 const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
 const User = require('../../models/User')
 const Post = require('../../models/Post')
+const { computeStatistics } = require('./statistics')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
@@ -263,6 +264,10 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       }) 
   }
 
+  if (model=='statistics') {
+    return computeStatistics({model, fields, id, user, params})
+      .then(data => ({data}))
+  }
   if (model=='conversation') {
     const getPartner= (m, user) => {
       return idEqual(m.sender._id, user._id) ? m.receiver : m.sender
