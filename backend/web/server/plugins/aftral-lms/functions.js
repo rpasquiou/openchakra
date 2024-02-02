@@ -2,7 +2,7 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT } = require('./consts')
 const cron=require('node-cron')
@@ -16,6 +16,7 @@ const NodeCache=require('node-cache')
 const Message = require('../../models/Message')
 const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
 const User = require('../../models/User')
+const Post = require('../../models/Post')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
@@ -186,6 +187,16 @@ const preCreate = ({model, params, user}) => {
   if (['resource'].includes(model)) {
     params.creator=params?.creator || user
   }
+  if (model=='post') {
+    params.author=user
+    const parentId=params.parent
+    return getModel(parentId, ['session', 'group'])
+      .then(modelName => {
+        params._feed=parentId
+        params._feed_type=modelName
+        return Promise.resolve({model, params})
+      })
+  }
   return Promise.resolve({model, params})
 }
 
@@ -204,6 +215,30 @@ const getContacts = user => {
     .then(res => res.filter(u => !idEqual(u._id, user._id)))
 }
 
+const getFeed = async id => {
+  const model=await getModel(id, ['session', 'group'])
+  const feed=await mongoose.connection.models[model].findById(id)
+  return Post.find({_feed: id})
+    .then(posts => {
+      return ({
+        _id: id,
+        name: feed.name,
+        posts
+      })
+    })
+}
+
+const getFeeds = async (user, id) => {
+  let ids=[]
+  if (!id) {
+    ids=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
+  }
+  else {
+    ids=[id]
+  }
+  return Promise.all(ids.map(sessId => getFeed(sessId)))
+}
+
 const preprocessGet = ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
@@ -216,6 +251,13 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 
   if (model == 'contact') {
     return getContacts(user, id)
+      .then(res => {
+        return Promise.resolve({data: res})
+      }) 
+  }
+
+  if (model == 'feed') {
+    return getFeeds(user, id)
       .then(res => {
         return Promise.resolve({data: res})
       }) 
