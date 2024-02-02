@@ -22,10 +22,6 @@ const ResourceSchema = new Schema({
     default: false,
     required: [true, `Le caractère optionnel est obligatoire`],
   },
-  // Annotation set by trainee
-  annotation: {
-    type: String,
-  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.virtual('evaluation').get(function(value) {
