@@ -134,6 +134,7 @@ require('./models/Block')
 require('./models/Sequence')
 require('./models/Duration')
 require('./models/Statistics')
+require('./models/Feed')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
