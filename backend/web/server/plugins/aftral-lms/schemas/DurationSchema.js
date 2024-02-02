@@ -37,6 +37,11 @@ const DurationSchema = new Schema({
     default: 0,
     required: [true, `La progression est obligatoire`],
   },
+  // Trainee annotation
+  annotation: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = DurationSchema
