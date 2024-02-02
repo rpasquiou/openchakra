@@ -108,6 +108,15 @@ const onSpentTimeChanged = async ({blockId, user}) => {
   return res
 }
 
+const getResourceAnnotation = (userId, params, data) => {
+  return Duration.findOne({user: userId, block: data._id})
+    .then(duration => duration?.annotation)
+}
+
+const setResourceAnnotation = ({id, attribute, value, user}) => {
+  return Duration.updateOne({user: user, block: id}, {annotation: value})
+}
+  
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
@@ -155,6 +164,7 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'search_text', instance: 'String', requires:'name,code'})
   declareComputedField(model, 'resources_progress', getResourcesProgress)
   declareVirtualField({model, field: 'resources_progress', instance: 'Number', requires:'resources_count,finished_resources_count'})
+  declareComputedField(model, 'annotation', getResourceAnnotation, setResourceAnnotation)
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})

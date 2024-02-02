@@ -153,6 +153,10 @@ const BlockSchema = new Schema({
     required: true,
     default: [],
   },
+  // Annotation set by trainee
+  annotation: {
+    type: String,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {
