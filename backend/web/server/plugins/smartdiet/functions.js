@@ -165,6 +165,7 @@ const Appointment = require('../../models/Appointment')
 const Message = require('../../models/Message')
 const Lead = require('../../models/Lead')
 const cron=require('../../utils/cron')
+const DurationSchema = require('../aftral-lms/schemas/DurationSchema')
 
 const filterDataUser = ({model, data, id, user}) => {
   if (model=='offer' && !id) {
@@ -1042,6 +1043,8 @@ declareVirtualField({model: 'range', field:'duration', instance: 'String',
 declareVirtualField({model: 'range', field:'end_date', instance: 'String',
   requires: 'start_date,duration',
 })
+declareComputedField('duration', 'annoiation', getResourceAnnotation, setResourceAnnotation)
+
 
 declareVirtualField({model: 'lead', field:'fullname', instance: 'String',
   requires: 'firstname,lastname',
@@ -1195,6 +1198,16 @@ const getUserPassedWebinars = (userId, params, data) => {
     .then(res => {
       return res.passed_events?.length || 0
     })
+}
+
+
+const getResourceAnnotation = (userId, params, data) => {
+  return DurationSchema.findOne({user: userId, block: data._id})
+    .then(duration => duration?.annotation)
+}
+
+const setResourceAnnotation = ({id, attribute, value, user}) => {
+  return DurationSchema.updateOne({user: userId, block: data._id}, {annotation: value})
 }
 
 declareComputedField('user', 'contents', getUserContents)
