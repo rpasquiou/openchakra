@@ -64,7 +64,7 @@ const createBlocks = types => {
     return {
       type,
       ...stdOptions(),
-      ...lodash.mapValues(options, v => `${v}-${idx}`),
+      ...lodash.mapValues(options, v => `${v}-${idx+1}`),
       [children_name || 'children']: createBlocks(types.slice(1))
     }
   })
