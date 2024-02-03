@@ -43,7 +43,7 @@ const createBlocks = types => {
     return undefined
   }
   
-  const stdOptions={
+  const stdOptions=() => ({
     'achievement_status': getRandomEnum(BLOCK_STATUS),
     'annotation': 'annotation',
     'closed': getRndBool(),
@@ -58,14 +58,14 @@ const createBlocks = types => {
     'resources_progress': Math.random(),
     'spent_time_str': formatDuration(getRandomInt(1200)),
     'url': 'https://images.ctfassets.net/63bmaubptoky/4kg3HnPTXf2nNRtcPeHeX7_NSpSySwVxtc-FWUJpKYI/be40d928319bc71df63fae3e0f842cac/Capterra-creation-cours-en-ligne.png?w=1000',
-    }
+    })
   const [type, count, options, children_name]=types[0]
   const res=lodash.range(count).map(idx => {
     return {
       type,
-      ...stdOptions,
+      ...stdOptions(),
       ...lodash.mapValues(options, v => `${v}-${idx}`),
-      [children_name || 'actual_children']: createBlocks(types.slice(1))
+      [children_name || 'children']: createBlocks(types.slice(1))
     }
   })
   if (type=='program') {
@@ -76,15 +76,15 @@ const createBlocks = types => {
 
 const computeFakeStatistics = ({model, fields, id, user, params}) => {
   const types=[
-    ['session', 2, {name: 'session '}, 'trainees'], 
-    ['user', 3, {firstname: 'John', lastname: 'Doe'}, 'program'], 
-    ['program', 1, {name: 'Program '}],
+    ['session', 2, {name: 'session'}, 'trainees'], 
+    ['user', 3, {firstname: 'John', lastname: 'Doe'}, 'statistics'], 
+    ['program', 1, {name: 'Program'}],
     ['module', 3, {name: 'Module'}], 
-    ['sequence', 3, {lastname: 'sequence '}], 
-    ['resource', 4, {name: 'Ressource '}],
+    ['sequence', 3, {name: 'Sequence'}], 
+    ['resource', 4, {name: 'Ressource'}],
 ]
-  const data= createBlocks(types)
-  return Promise.resolve(data)
+  const sessions= createBlocks(types)
+  return Promise.resolve([{sessions}])
 }
 
  module.exports={
