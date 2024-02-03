@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -21,6 +21,8 @@ const { computeStatistics } = require('./statistics')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
+
+const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
 const getBlockName = async blockId => {
   let result=NAMES_CACHE.get(blockId.toString())
@@ -179,6 +181,8 @@ declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 declareComputedField('resource', 'mine', isResourceMine)
 
+declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
+
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareVirtualField({model, field: 'role', instance: 'String', enumValues: ROLES})
@@ -191,7 +195,8 @@ const preCreate = ({model, params, user}) => {
   if (model=='post') {
     params.author=user
     const parentId=params.parent
-    return getModel(parentId, ['session', 'group'])
+    const modelPromise=parentId==GENERAL_FEED_ID ? Promise.resolve(FEED_TYPE_GENERAL) :  getModel(parentId, [FEED_TYPE_GROUP, FEED_TYPE_SESSION])
+    return modelPromise
       .then(modelName => {
         params._feed=parentId
         params._feed_type=modelName
@@ -217,13 +222,23 @@ const getContacts = user => {
 }
 
 const getFeed = async id => {
-  const model=await getModel(id, ['session', 'group'])
-  const feed=await mongoose.connection.models[model].findById(id)
+  let type
+  if (id==GENERAL_FEED_ID) {
+    type=FEED_TYPE_GENERAL
+    name= 'Forum Aftral LMS'
+  }
+  else {
+    const model=await getModel(id, ['session', 'group'])
+    type=model=='session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
+    const feed=await mongoose.connection.models[model].findById(id)
+    name=feed.name
+  }
   return Post.find({_feed: id}).populate('author')
     .then(posts => {
       return ({
         _id: id,
-        name: feed.name,
+        type,
+        name,
         posts
       })
     })
@@ -233,6 +248,7 @@ const getFeeds = async (user, id) => {
   let ids=[]
   if (!id) {
     ids=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
+    ids=[...ids, GENERAL_FEED_ID]
   }
   else {
     ids=[id]

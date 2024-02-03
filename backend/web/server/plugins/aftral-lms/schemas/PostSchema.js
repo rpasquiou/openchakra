@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { FEED_TYPE } = require('../consts')
 const Schema = mongoose.Schema
 
 const PostSchema = new Schema({
@@ -27,7 +28,7 @@ const PostSchema = new Schema({
   _feed_type: {
     type: String,
     required: true,
-    enum: ['session', 'group']
+    enum: Object.keys(FEED_TYPE),
   },
 }, schemaOptions)
 
