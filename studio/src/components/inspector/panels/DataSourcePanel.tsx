@@ -96,14 +96,14 @@ const DataSourcePanel: React.FC = () => {
       }
       catch (err) {
         console.error(err)
-        alert(err)
+        // alert(err)
       }
       try {
         const filterAttrs = getFilterAttributes(activeComponent, components, models)
         setFilterAttributes(filterAttrs)
       }
       catch (err) {
-        alert(err)
+        // alert(err)
       }
       if (!subDataSource) {
         setSubAttributes({})
