@@ -36,7 +36,7 @@ const FilterPanel: React.FC = () => {
     }
     catch (err) {
       console.error(err)
-      alert(err)
+      //alert(err)
     }
   }, [model])
 
