@@ -75,6 +75,7 @@ const levelDownAction = ({parent, child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
+  console.log('Adding block', id, 'duration', duration/1000)
   const block=await Block.findById(id, {_locked:1})
   if (!block._locked) {
     throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
@@ -85,6 +86,7 @@ const addSpentTimeAction = async ({id, duration}, user) => {
   }
   durationDoc.duration+=duration/1000
   await durationDoc.save()
+  console.log('Duration block is', durationDoc)
   return onSpentTimeChanged({blockId: id, user})
 }
 addAction('addSpentTime', addSpentTimeAction)
