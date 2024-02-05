@@ -401,7 +401,7 @@ const setParentSession = async (session_id) => {
   return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
 }
 
-const setResourcesCount = async blockId => {
+const computeBlocksCount = async blockId => {
   const block=await Block.findById(blockId)
   if (block.type=='resource') {
     block.resources_count=1
@@ -409,10 +409,23 @@ const setResourcesCount = async blockId => {
     return 1
   }
   const name=await getBlockName(blockId)
-  const childrenCount=await Promise.all(block.actual_children.map(child => setResourcesCount(child._id))).then(counts => lodash.sum(counts))
+  const childrenCount=await Promise.all(block.actual_children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
   block.resources_count=childrenCount
   await block.save()
   return childrenCount
+}
+
+const computeBlocksDurations = async blockId => {
+  const block=await Block.findById(blockId)
+  if (block.type=='resource') {
+    return block.duration
+  }
+  const name=await getBlockName(blockId)
+  const durations=await Promise.all(block.actual_children?.map(child => computeBlocksDurations(child._id)))
+    .then(durations => lodash.sum(durations))
+  block.duration=durations
+  await block.save()
+  return durations
 }
 
 const lockSession = async sessionId => {
@@ -425,10 +438,18 @@ const lockSession = async sessionId => {
     const cloned= await Promise.all(session.actual_children.map(c => cloneAndLock(c)))
     await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
   }
-  await setResourcesCount(session._id)
+  await computeBlocksCount(session._id)
+  await computeBlocksDurations(session._id)
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
+
+// TODO To remove
+// Lock session
+Block.find({type: 'session'})
+  .then(sessions => Promise.all(sessions.map(s => lockSession(s))))
+  .then(console.log)
+  .catch(console.error)
 
 module.exports={
   lockSession,
