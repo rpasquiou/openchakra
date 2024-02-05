@@ -222,7 +222,7 @@ const getContacts = user => {
 }
 
 const getFeed = async id => {
-  let type
+  let type, name
   if (id==GENERAL_FEED_ID) {
     type=FEED_TYPE_GENERAL
     name= 'Forum Aftral LMS'
