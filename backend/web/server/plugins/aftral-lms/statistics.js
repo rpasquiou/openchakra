@@ -5,25 +5,42 @@ const lodash=require('lodash')
 const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 
-const fillSession = session => {
-  console.group('Filling session', session._id)
+const replaceChildren = data => {
+  if (!data.actual_children) {
+    return 
+  }
+  data.children=data.actual_children
+  delete data.actual_children
+  data.children.forEach(child => {
+    replaceChildren(child)
+  })
+}
+
+const fillSession = async session => {
   const programId = session.actual_children[0]
+  let fields=lodash.range(4).map(childCount => 
+    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str']
+      .map(att => [...Array(childCount).fill('actual_children'), att].join('.'))
+  )
+  fields=lodash.flatten(fields)
   return Promise.all(session.trainees.map(trainee => {
-    return loadFromDb({model: 'program', id: programId, fields: ['name'], user: trainee})
+    return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
-        return trainee.statistics=prog
+        replaceChildren(prog[0])
+        trainee.statistics=prog[0]
+        return trainee
       })
   }))
   .then(() => session)
 }
 
-const computeStatistics = ({model, fields, id, user, params}) => {
+const computeStatistics = async ({model, fields, id, user, params}) => {
   console.log(params)
-  return Session.find({name:/programme/i, $or: [{trainees: user}, {trainers: user}]})
+  const res=await Session.find({_id: id, _locked: true, $or: [{trainees: user}, {trainers: user}]})
     .populate({path: 'trainees'}).lean()
-    // .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
-    .then(sessions => Promise.all(sessions.map(s => Promise.all(s.trainees.map(u => loadFromDb({model: 'user', fields: ['firstname'], id: u._id, user: u._id}))))))
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
     .then(sessions => ([{sessions}]))
+  return res
 }
   
 const getRandomInt = max => {
@@ -88,5 +105,6 @@ const computeFakeStatistics = ({model, fields, id, user, params}) => {
 }
 
  module.exports={
-  computeStatistics: computeFakeStatistics,
+  // computeStatistics: computeFakeStatistics,
+  computeStatistics,
  }
