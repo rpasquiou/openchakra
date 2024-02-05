@@ -77,7 +77,8 @@ export const mediaWrapper = ({
         onClick={() => downloadResource(src||undefined)}
       /></div>) || (null)
 
-  const ext = forceExt(src?.toLowerCase(), isIframe) || getExtension(src.toLowerCase())
+  const orgExt=getExtension(src.toLowerCase())
+  const ext = ['doc', 'docx'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
 
   switch (ext) {
     case 'mp4':
@@ -116,8 +117,8 @@ export const mediaWrapper = ({
         <iframe
           title={src}
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${src}`}
-          width={htmlWidth}
-          height={htmlHeight}
+          width={doc.width}
+          height={doc.height}
           frameBorder="0"
           allowFullScreen
         ></iframe>
