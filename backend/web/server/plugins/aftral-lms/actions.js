@@ -7,7 +7,7 @@ const { getModel, idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const {lockSession, onSpentTimeChanged } = require('./functions')
+const {lockSession, onSpentTimeChanged, getSessionBlocks, computeBlocksCount, onBlockCountChange } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
@@ -47,6 +47,7 @@ const addChildAction = ({parent, child}, user) => {
       return mongoose.model(cType).create({origin: child._id, creator: user})
     })
     .then(linkedChild => Block.findByIdAndUpdate(parent, {$addToSet: {actual_children: linkedChild}}))
+    .then(() => onBlockCountChange(parent))
 }
 addAction('addChild', addChildAction)
 
@@ -57,10 +58,11 @@ const removeChildAction = ({parent, child}, user) => {
   return Promise.all([Block.findById(parent),Block.findById(child)])
     .then(([parentObj, childObj]) => {
       if (!parentObj) { throw new NotFoundError(`Can not find parent ${parent}`)}
-      if (!childObj) { throw new NotFoundError(`Can not find child ${pchild}`)}
+      if (!childObj) { throw new NotFoundError(`Can not find child ${child}`)}
       if (!parentObj.children.find(v => idEqual(v._id, child))) { throw new BadRequestError(`Parent ${parent} has not child ${child}`)}
       return Promise.all([Block.deleteOne({_id: child}), Block.updateOne({_id: parent}, {$pull: {actual_children: child}})])
     })
+    .then(() => onBlockCountChange(parent))
 }
 addAction('removeChild', removeChildAction)
 

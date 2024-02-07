@@ -112,6 +112,13 @@ const onSpentTimeChanged = async ({blockId, user}) => {
   return res
 }
 
+const onBlockCountChange = async blockId => {
+  const topLevels=await getSessionBlocks(blockId)
+  await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
+  await Promise.all(topLevels.map(p => computeBlocksDurations(p._id)))
+  return blockId
+}
+
 const getResourceAnnotation = (userId, params, data) => {
   return Duration.findOne({user: userId, block: data._id})
     .then(duration => duration?.annotation)
@@ -376,23 +383,13 @@ const cloneAndLock = blockId => {
   }
 
 const getSessionBlocks = async session_id => {
-  const result = await Block.aggregate([
-    { $match: { _id: ObjectId(session_id) }},
-    {
-      $graphLookup: {
-        from: 'blocks',
-        startWith: '$actual_children',
-        connectFromField: 'actual_children',
-        connectToField: '_id',
-        as: 'children',
-        maxDepth: 10
-      }
-    },
-    {$unwind: '$children' },
-    {$project: {_id: '$children._id'}}
-  ])
-  const rootBlock = await Block.findById(session_id).lean()
-  result.unshift(rootBlock)
+  const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
+  if (lodash.isEmpty(parents)) {
+    return session_id
+  }
+  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
+    .then(res => lodash.flattenDeep(res))
+    .then(res => res.filter(v => !!v))
   return result
 }
 
@@ -402,26 +399,31 @@ const setParentSession = async (session_id) => {
 }
 
 const computeBlocksCount = async blockId => {
-  const block=await Block.findById(blockId)
+  const block=await Block.findById(blockId).populate(['children', 'actual_chlidren', 'origin'])
   if (block.type=='resource') {
     block.resources_count=1
     await block.save()
     return 1
   }
   const name=await getBlockName(blockId)
-  const childrenCount=await Promise.all(block.actual_children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
+  const childrenCount=await Promise.all(block.children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
   block.resources_count=childrenCount
   await block.save()
   return childrenCount
 }
 
 const computeBlocksDurations = async blockId => {
-  const block=await Block.findById(blockId)
+  const block=await Block.findById(blockId).populate(['children', 'actual_children', 'origin'])
   if (block.type=='resource') {
+    if (block.origin) {
+      block.duration=block.origin.duration
+      await block.save()
+      return block.origin.duration
+    }
     return block.duration
   }
   const name=await getBlockName(blockId)
-  const durations=await Promise.all(block.actual_children?.map(child => computeBlocksDurations(child._id)))
+  const durations=await Promise.all(block.children.map(child => computeBlocksDurations(child._id)))
     .then(durations => lodash.sum(durations))
   block.duration=durations
   await block.save()
@@ -445,13 +447,23 @@ const lockSession = async sessionId => {
 }
 
 // TODO To remove
-// Lock session
+// Lock all sessions
 Block.find({type: 'session'})
   .then(sessions => Promise.all(sessions.map(s => lockSession(s))))
   .then(console.log)
   .catch(console.error)
 
+// TODO To remove
+// Compute all template programs durations
+Block.find({type: 'program', _locked: false})
+.then(programs => Promise.all(programs.map(p => computeBlocksDurations(p._id))))
+.then(console.log)
+.catch(console.error)
+
 module.exports={
   lockSession,
   onSpentTimeChanged,
+  onBlockCountChange,
+  getSessionBlocks,
+  computeBlocksCount,
 }
