@@ -1,6 +1,28 @@
-//import { DataSourcesState } from '~/core/models/dataSources'
-import lodash from 'lodash'
+import lodash, { filter } from 'lodash'
 import {generateId} from './generateId'
+import {CURRENT_VERSION} from './upgrade'
+
+const DEBUG=false
+
+const log:any=DEBUG ? console.log : () => {}
+
+const components:IComponents={}
+
+const addComponent = (comp: IComponent) => {
+  const {id, parent}=comp
+  if (!!components[id]) {
+    throw new Error(`Component id ${id} already exists`)
+  }
+  components[id]=comp
+  // Link to parent if not rooot
+  if (id!='root') {
+    const parentComponent=components[parent]
+    if (!parentComponent) {
+      throw new Error(`Parent id ${parent} not found`)
+    }
+    parentComponent.children.push(id)
+  }
+}
 
 export const generateProject = (pages:any) => {
   return ({
@@ -11,81 +33,131 @@ export const generateProject = (pages:any) => {
   })
 }
 
-export const generatePage = (model:string, level:number, models:any) => {
-  const mdl=models.find((m:any) => m.name==model)
+let maxLevel=0
+
+export const generatePage = (modelName:string, level:number, models:any) => {
+  maxLevel=level
+  const mdl=models[modelName]
   const root:IComponent={
     id:'root',
     parent: 'root',
     type:'Box',
     children:[],
-    props:{model, cardinality: "multiple"}
+    props:{model: modelName, cardinality: "multiple"}
   }
-  const children=generateModel('root', mdl, models, level)
-  const components:object=Object.fromEntries(lodash.flatten([root, ...children]).map(c => [c.id, c]))
-  // Set children
-  Object.values(components).forEach(comp => {
-    comp.children=Object.values(components).filter(child => child.parent==comp.id && child.id!='root').map(child => child.id)
-  })
-  const pageId=generateId('page')
-  const pageName=`Model ${model}`
-  const selectedId='root'
-  return {pageName, pageId, components, selectedId, metaTitle: "", metaDescription: "", metaImageUrl: "",}
+  addComponent(root)
+  const children=generateModel({parentId: 'root', modelName, models, level, multiple:true})
+  return {pageId: generateId('page'), components: components, selectedId: 'root', pageName:`Model ${modelName}`}
 }
 
-const generateAttribute = (parentId:string, name:any, attr: any, models:any, level: number):any => {
-  const cmp:any={
-    String: 'Input',
-    Boolean: 'CheckBox',
-    Number: 'NumberInput',
+const generateAttributeContainer = (parentId: string, name: string, prefix:string|null, type: string) => {
+  const container:IComponent={
+    id: generateId(),
+    type: 'Flex',
+    props: {flexDirection: 'row'},
+    parent: parentId,
+    children: [],
+  }
+  addComponent(container)
+  const label:IComponent={
+    id: generateId(),
+    type: 'Text',
+    props: {children: name, flex:1},
+    parent: container.id,
+    children: [],
+  }
+  addComponent(label)
+  const attributeName=prefix ? `${prefix}.${name}`: name
+  type ComponentTypes = {
+    [key: string]: ComponentType;
+  }
+  const COMPONENT_TYPES:ComponentTypes={
+    Boolean: 'Switch',
     Date: 'Date',
+    Number: 'NumberFormat',
   }
-  let child:IComponent={
+  log('generating field for', attributeName)
+  const input:IComponent={
     id: generateId(),
-    parent: parentId,
-    type: cmp[attr.type],
-    rootParentType: cmp[attr.type],
-    props: {dataSource: 'root', attribute: name},
-    children:[],
+    type: COMPONENT_TYPES[type] || 'Text',
+    props: {attribute: attributeName, dataSource: 'root', flex:3, "data-format":{year: 'numeric',month: 'numeric',day: 'numeric',hour: 'numeric',minute: 'numeric'}},
+    parent: container.id,
+    children: [],
   }
-  let others:IComponent[]=[]
-  if (attr.ref && attr.multiple) {
-    const subFlex:IComponent={
-      id: generateId(),
-      parent: child.id,
-      type: attr.ref ? 'Flex' : cmp[attr.type],
-      rootParentType: attr.ref ? 'Flex' : cmp[attr.type],
-      props:{},
-      children:[],
-    }
-    const allChildren=generateModel(subFlex.id, attr.type, models, level-1)
-    others=[subFlex, ...allChildren]
+  addComponent(input)
+
+}
+const generateAttribute = (parentId: string, name:string, params:any, models: any, level:number, prefix?:string ):IComponent|null => {
+  if (!params.ref || level>0) {
+    // log('generating attribute', name, params.type)
   }
-  if (attr.ref && !attr.multiple) {
-    const subModelAttributes=models.find((m:any) => m.name==attr.type).attributes
-    const allChildren= Object.entries(subModelAttributes).map(([subName, attr]:[string, any]) => generateAttribute(parentId, `${name}.${subName}`, attr, models, level))
-    others=[...allChildren]
+  if (params.ref) {
+    // TODOManage non-multiple ref
+    // if (params.multiple) {
+      const pref=params.multiple ? name :  prefix ? `${prefix}.${name}`  : name
+      generateModel({parentId, modelName: params.type, models, level:level-1, multiple:params.multiple, prefix: pref})
+    // }
   }
-  return [child, ...others]
+  else {
+    generateAttributeContainer(parentId, name, prefix||null, params.type)
+  }
+  return null
 }
 
-const generateModel = (parentId:string, model:any, models:any, level:number):IComponent[] => {
-  const flex:IComponent={
-    id: generateId(),
-    parent: parentId,
-    type: 'Flex',
-    rootParentType: 'Flex',
-    children:[],
-    props:{dataSource: 'root'}
+const generateAccordion = (parentId:string, attribute:string) => {
+  const accordion:IComponent={id: generateId(), type: 'Accordion', parent: parentId, children: [], props:{allowToggle: true}}
+  addComponent(accordion)
+  const accordionItem:IComponent={id: generateId(), type: 'AccordionItem', parent: accordion.id, children: [], props:{}}
+  addComponent(accordionItem)
+
+  const accordionButton:IComponent={id: generateId(), type: 'AccordionButton', parent: accordionItem.id, children: [], props:{}}
+  addComponent(accordionButton)
+  const accordionText:IComponent={id: generateId(), type: 'Text', parent: accordionButton.id, children: [], props:{children: attribute}}
+  addComponent(accordionText)
+  const accordionIcon:IComponent={id: generateId(), type: 'AccordionIcon', parent: accordionButton.id, children: [], props:{children: attribute}}
+  addComponent(accordionIcon)
+
+  const accordionPanel:IComponent={id: generateId(), type: 'AccordionPanel', parent: accordionItem.id, children: [], props:{}}
+  addComponent(accordionPanel)
+  return accordionPanel
+}
+const generateModel = ({parentId, modelName, models, level, multiple, prefix}:
+  {parentId: string, modelName:string, models:any, level:number, multiple:boolean, prefix?:string}):IComponent[] => {
+  if (level>=0) {
+    log('generate model', modelName, multiple ? 'multiple' : '', 'prefix', prefix)
+    let multipleContainer:IComponent|null=null
+    if (multiple) {
+      const accordion=prefix ? generateAccordion(parentId, prefix!) : null
+      multipleContainer={
+        id:generateId(),
+        type: 'Flex',
+        parent: accordion?.id || parentId,
+        children: [],
+        props: {flexDirection: "column", dataSource: 'root', attribute: prefix}
+      }
+     addComponent(multipleContainer)
+    }
+    const container:IComponent={
+      id:generateId(),
+      type: 'Flex',
+      parent: multipleContainer?.id || parentId,
+      children: [],
+      // props: {flexDirection: "column", border: '1px solid black', ml: `${1*(maxLevel-level)}%`}
+      props: {flexDirection: "column", ml: `${1*(maxLevel-level)}%`}
+    }
+    addComponent(container)
+    const label:IComponent={
+      id:generateId(),
+      type: 'Text',
+      parent: container.id,
+      children: [],
+      props: {children: prefix ? prefix :  `Modèle ${modelName}`}
+    }
+    addComponent(label)
+    console.group()
+    const attributes=lodash.pickBy(models[modelName].attributes, (v, k) => !/\./.test(k))
+    Object.entries(attributes).map(([name, attDef]) => generateAttribute(container.id, name, attDef, models, level, multiple ? '' : prefix))
+    console.groupEnd()
   }
-  const subFlex:IComponent={
-    id: generateId(),
-    parent: flex.id,
-    type: 'Flex',
-    rootParentType: 'Flex',
-    children:[],
-    props:{}
-  }
-  const attributes=lodash(model.attributes).pickBy(v => !v.multiple).value()
-  const children=Object.entries(attributes).map(([name, attr]:[string, any]) => generateAttribute(subFlex.id, name, attr, models, level))
-  return [flex, subFlex, ...children]
+  return []
 }
