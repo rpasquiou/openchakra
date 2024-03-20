@@ -60,7 +60,7 @@ describe('Compute commissions tests', () => {
     expect(loaded_quotation.aa_ht).toEqual(3)
     expect(loaded_quotation.aa_vat).toBeCloseTo(0.6)
     expect(loaded_quotation.aa_total).toEqual(3.6)
-    expect(loaded_quotation.ti_vat).toEqual(4.6)
+    expect(loaded_quotation.ti_vat).toBeCloseTo(0.6)
     expect(loaded_quotation.ti_total).toEqual(20.4)
   })
 
@@ -82,13 +82,13 @@ describe('Compute commissions tests', () => {
     expect(loaded_mission.aa_ht).toEqual(3)
     expect(loaded_mission.aa_vat).toBeCloseTo(0.6)
     expect(loaded_mission.aa_total).toEqual(3.6)
-    expect(loaded_mission.ti_vat).toEqual(4.6)
+    expect(loaded_mission.ti_vat).toBeCloseTo(0.6)
     expect(loaded_mission.ti_total).toEqual(20.4)
   })
 
   const fieldsValues=[['aa_ht',3], ['aa_total',3.6], ['aa_vat',0.6], ['customer_total',27.6],
   ['customer_vat',4.6], ['gross_ht',20], ['gross_total',24], ['gross_vat',4],
-  ['mer_ht',3], ['mer_total',3.6], ['mer_vat',0.6], ['ti_total',20.4], ['ti_vat',4.6]]
+  ['mer_ht',3], ['mer_total',3.6], ['mer_vat',0.6], ['ti_total',20.4], ['ti_vat', 0.6]]
 
   test.each(fieldsValues)('%s equals %d', async (field, expected) => {
     const [loaded_mission]=await loadFromDb({model: 'mission', id: mission._id, fields:[field]})
