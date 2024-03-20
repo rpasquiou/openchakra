@@ -122,7 +122,7 @@ class MAILJET_V6 {
 
   getWorkflowsForContactsList({list}) {
     return this.smtpInstance
-      .get(`campaign?ContactsListID=${list}&FromTS=2023-01-01T00:00:00`, {version: 'v3'})
+      .get(`campaign?ContactsListID=${list}&FromTS=2023-01-01T00:00:00&Limit=200`, {version: 'v3'})
       .request()
       .then(res => lodash.uniq(res.body.Data.map(c => c.WorkflowID).filter(v => !!v)))
   }

@@ -27,7 +27,8 @@ const isESANI = account => {
   if (!account) {
     throw new Error('isESANI: account is null')
   }
-  return account.company?.offers?.[0].coaching_credit>0
+  const res=account.company?.current_offer?.coaching_credit>0
+  return res
 }
 
 const isINEA = account => {
@@ -41,8 +42,8 @@ const hasGroups = account => {
   if (!account) {
     throw new Error('hasGroups: account is null')
   }
-  return !!account.company?.offers?.[0].groups_unlimited ||
-    account.company?.offers?.[0].groups_credit>0
+  return !!account.company?.current_offer?.groups_unlimited ||
+    account.company?.current_offer?.groups_credit>0
 }
 
 const isInsurance = account => {
@@ -69,7 +70,7 @@ const coachingStarted = user => {
 const _mapContactToMailJet = contact => ({
   Email: contact.email, Properties: {
     codeentreprise: contact.company?.code,
-    credit_consult: contact.company?.offers?.[0].coaching_credit,
+    credit_consult: contact.company?.current_offer?.coaching_credit,
     client: contact.company?.name,
     logo: contact.company?.picture,
     Name: contact.fullname, Firstname: contact.firstname, 
@@ -166,7 +167,7 @@ const WORKFLOWS={
   // Registered ESANI
   CL_REGISTERED_ESANI_NOSTARTEDCOA: {
     id: '2414831',
-    name: 'SAL/ADH INSC INEA NO CAO DEM',
+    name: 'SAL/ADH INSC ESANI NO CAO DEM',
     filter: (lead, user) => {
       return isRegistered(lead, user)
         && isESANI(user)
@@ -247,10 +248,10 @@ const WORKFLOWS={
 const computeWorkflowLists = () => {
   return Promise.all([
     Lead.find()
-      .populate({path: 'company', populate: [{path: 'groups_count'}, {path: 'groups'}, {path: 'offers'}]}),
+      .populate({path: 'company', populate: [{path: 'groups_count'}, {path: 'groups'}, {path: 'current_offer'}]}),
     User.find({role: ROLE_CUSTOMER})
       .populate([{path: 'coachings', populate: ['appointments']}, {path: 'latest_coachings', populate: ['appointments']}])
-      .populate({path: 'company', populate: ['collective_challenges']}),
+      .populate({path: 'company', populate: ['collective_challenges', 'current_offer']}),
     // TODO use this version after speeding it up
     /**
     loadFromDb({model: 'lead', fields:['company.offers', 'company.groups']}),
