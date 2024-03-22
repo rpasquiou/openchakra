@@ -176,6 +176,11 @@ const buildBlock = ({
         props: lodash.cloneDeep(child.type=='Tabs' ? lodash.omit(child.props, ['dataSource']) : child.props),
       }
 
+      // Don't insert TabList if the parent Tabs is a wizard
+      if (childComponent.type=='TabList' && component.props.isWizard?.toString()=='true') {
+        return
+      }
+
       // Force TabList && TabPanel's dataSource if parent Tabs has one
       if (['TabList', 'TabPanels'].includes(childComponent.type)) {
         const tabParent=getParentOfType(components, childComponent, 'Tabs')
