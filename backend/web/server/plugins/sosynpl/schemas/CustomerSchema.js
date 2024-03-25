@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const {isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { ROLE, NATIONALITIES, DISCRIMINATOR_KEY } = require('../consts')
+const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER } = require('../consts')
+const siret = require('siret')
 
 const Schema = mongoose.Schema
 
@@ -11,21 +12,22 @@ const CustomerSchema = new Schema({
     type: String,
     required: [true, `La fonction est obligatoire`],
   },
-  roles: [{
+  role: {
     type: String,
-    enum: Object.keys(ROLE),
+    enum: Object.keys(ROLES),
+    default: ROLE_CUSTOMER,
     required: [true, `Le rôle est obligatoire`],
     index: true,
-  }],
+  },
   phone: {
     type: String,
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
     set: v => v?.replace(/^0/, '+33'),
-    required: false,
+    required: [true, `Le téléphone est obligatoire`]
   },
-  cguAccepted: {
+  cgu_accepted: {
     type: Boolean,
-    required: [function() { return this?.role==ROLE_CUSTOMER }, 'Vous devez accepter les CGU'],
+    required: [true, 'Vous devez accepter les CGU'],
   },
   birthday: {
     type: Date,
@@ -59,8 +61,8 @@ const CustomerSchema = new Schema({
   siren: {
     type: String,
     set: v => v ? v.replace(/ /g, '') : v,
-    validate: [v => !v || siret.isSIREN(v) , v => `Le siren '${v.value}' est invalide`],
-    required: false,
+    validate: [v => siret.isSIREN(v) , v => `Le siren '${v.value}' est invalide`],
+    required: [true, `Le SIREN est obligatoire`]
   },
   nationality: {
     type: String,

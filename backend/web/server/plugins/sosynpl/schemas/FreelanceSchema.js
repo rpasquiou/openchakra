@@ -1,13 +1,21 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING} = require('../consts')
+const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
 
 console.log(Object.keys(customerSchema))
 const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
-  ...customerSchema.paths,
+  ...customerSchema.obj,
+  // Override role
+  role: {
+    type: String,
+    enum: Object.keys(ROLES),
+    default: ROLE_FREELANCE,
+    required: [true, `Le rôle est obligatoire`],
+    index: true,
+  },
   main_job: {
     type: Schema.Types.ObjectId,
     ref: 'job',
