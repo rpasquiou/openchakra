@@ -4,6 +4,8 @@ const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE } = require("./consts");
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'password2', type: 'String'})
+  declareVirtualField({model, field: 'fullname', type: 'String'})
+  declareVirtualField({model, field: 'shortname', type: 'String'})
   declareEnumField({model, field: 'nationality', enumValues: NATIONALITIES})
   declareVirtualField({
     model, field: 'pinned_missions', instance: 'Array', multiple: true,
