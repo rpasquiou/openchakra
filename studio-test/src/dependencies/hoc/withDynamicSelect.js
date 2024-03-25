@@ -53,9 +53,31 @@ const withDynamicSelect = Component => {
     }
 
     if (isSearchable) {
+      const chakraStyles={
+        option: (provided, state) => ({
+          ...provided,
+          fontFamily: props.fontFamily || provided.fontFamily,
+          backgroundColor: props.backgroundColor || provided.backgroundColor,
+        }),
+        container: (provided, state) => ({
+          ...provided,
+          minWidth: props.minWidth || provided.minWidth,
+          maxWidth: props.maxWidth || provided.maxWidth,
+        }),
+        control: (provided, status) => ({
+          ...provided, 
+          borderRadius: props.borderRadius || provided.borderRadius,
+          backgroundColor: props.backgroundColor || provided.backgroundColor,
+        }),
+        dropdownIndicator: (provided, status) => ({
+          ...provided, 
+          backgroundColor: props.backgroundColor || provided.backgroundColor,
+        }),
+      }
       return (
         <Select {...props} onChange={onChange}
           options={options} placeholder={null}
+          chakraStyles={chakraStyles}
         />
       )
     }
