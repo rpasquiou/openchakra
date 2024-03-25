@@ -47,6 +47,7 @@ const SelectPanel = () => {
         </Select>
       </FormControl>
 
+      <SwitchControl label="Searchable" name="isSearchable" />
       <SwitchControl label="Invalid" name="isInvalid" />
       <SwitchControl label="Read Only" name="isReadOnly" />
     </>
