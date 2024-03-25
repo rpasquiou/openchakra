@@ -272,7 +272,8 @@ const buildBlock = ({
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
             const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
+              console.log(att.enumValues)
+              propsContent += ` enum='${encode(JSON.stringify(att.enumValues))}'`
             }
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
