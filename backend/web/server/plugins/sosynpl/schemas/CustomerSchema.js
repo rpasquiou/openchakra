@@ -12,22 +12,22 @@ const CustomerSchema = new Schema({
     type: String,
     required: [true, `La fonction est obligatoire`],
   },
-  roles: [{
+  role: {
     type: String,
     enum: Object.keys(ROLES),
     default: ROLE_CUSTOMER,
     required: [true, `Le rôle est obligatoire`],
     index: true,
-  }],
+  },
   phone: {
     type: String,
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
     set: v => v?.replace(/^0/, '+33'),
     required: false,
   },
-  cguAccepted: {
+  cgu_accepted: {
     type: Boolean,
-    required: [function() { return this?.role==ROLE_CUSTOMER }, 'Vous devez accepter les CGU'],
+    required: [true, 'Vous devez accepter les CGU'],
   },
   birthday: {
     type: Date,
