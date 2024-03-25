@@ -2,8 +2,8 @@ const mongoose = require('mongoose')
 const {isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES } = require('../consts')
-const { ROLE_CUSTOMER } = require('../../smartdiet/consts')
+const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER } = require('../consts')
+const siret = require('siret')
 
 const Schema = mongoose.Schema
 
@@ -23,7 +23,7 @@ const CustomerSchema = new Schema({
     type: String,
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
     set: v => v?.replace(/^0/, '+33'),
-    required: false,
+    required: [true, `Le téléphone est obligatoire`]
   },
   cgu_accepted: {
     type: Boolean,
@@ -61,8 +61,8 @@ const CustomerSchema = new Schema({
   siren: {
     type: String,
     set: v => v ? v.replace(/ /g, '') : v,
-    validate: [v => !v || siret.isSIREN(v) , v => `Le siren '${v.value}' est invalide`],
-    required: false,
+    validate: [v => siret.isSIREN(v) , v => `Le siren '${v.value}' est invalide`],
+    required: [true, `Le SIREN est obligatoire`]
   },
   nationality: {
     type: String,
