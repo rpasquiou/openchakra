@@ -9,13 +9,13 @@ const Schema = mongoose.Schema
 const FreelanceSchema = new Schema({
   ...customerSchema.obj,
   // Override role
-  roles: [{
+  role: {
     type: String,
     enum: Object.keys(ROLES),
     default: ROLE_FREELANCE,
     required: [true, `Le rôle est obligatoire`],
     index: true,
-  }],
+  },
   main_job: {
     type: Schema.Types.ObjectId,
     ref: 'job',
