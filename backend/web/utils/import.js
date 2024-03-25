@@ -90,8 +90,8 @@ const extractXls=(bufferData, options) => {
       const first_line=options.from_line || 1
       const columnsRange=lodash.range(1, sheet.actualColumnCount+1)
       const rowsRange=lodash.range(first_line+1, sheet.actualRowCount+1)
-      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).value)
-      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).value))
+      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).text)
+      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).text))
       if (!options.columns) {
         return {headers: headers, records: records}
       }
