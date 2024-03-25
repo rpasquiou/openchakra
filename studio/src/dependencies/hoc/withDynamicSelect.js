@@ -66,6 +66,7 @@ const withDynamicSelect = Component => {
         }),
         control: (provided, status) => ({
           ...provided, 
+          fontFamily: props.fontFamily || provided.fontFamily,
           borderRadius: props.borderRadius || provided.borderRadius,
           backgroundColor: props.backgroundColor || provided.backgroundColor,
         }),
