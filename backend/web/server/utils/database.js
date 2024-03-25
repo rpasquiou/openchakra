@@ -967,7 +967,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => {console.time(`Compute model ${model}`); return data})
-        .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
+        .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => {console.timeEnd(`Compute model ${model}`); return data})
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))

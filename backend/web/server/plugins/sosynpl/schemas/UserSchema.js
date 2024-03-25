@@ -35,6 +35,13 @@ const UserSchema = new Schema({
 // Required for register validation only
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
+UserSchema.virtual('fullname').get(function() {
+  return `${this.firstname} ${this.lastname}`
+})
+
+UserSchema.virtual('shortname').get(function() {
+  return `${this.firstname} ${this.lastname[0]}.`
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
