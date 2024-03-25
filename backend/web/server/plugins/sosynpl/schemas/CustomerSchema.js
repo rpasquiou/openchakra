@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const {isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { ROLE, NATIONALITIES, DISCRIMINATOR_KEY } = require('../consts')
+const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES } = require('../consts')
+const { ROLE_CUSTOMER } = require('../../smartdiet/consts')
 
 const Schema = mongoose.Schema
 
@@ -13,7 +14,8 @@ const CustomerSchema = new Schema({
   },
   roles: [{
     type: String,
-    enum: Object.keys(ROLE),
+    enum: Object.keys(ROLES),
+    default: ROLE_CUSTOMER,
     required: [true, `Le rôle est obligatoire`],
     index: true,
   }],
