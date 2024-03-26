@@ -28,8 +28,32 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
   }
   const loadSuggestions=debounce(_loadSuggestions, 500)
   
+  const chakraStyles={
+    option: (provided, state) => ({
+      ...provided,
+      fontFamily: props.fontFamily || provided.fontFamily,
+      backgroundColor: props.backgroundColor || provided.backgroundColor,
+    }),
+    container: (provided, state) => ({
+      ...provided,
+      minWidth: props.minWidth || provided.minWidth,
+      maxWidth: props.maxWidth || provided.maxWidth,
+    }),
+    control: (provided, status) => ({
+      ...provided, 
+      fontFamily: props.fontFamily || provided.fontFamily,
+      borderRadius: props.borderRadius || provided.borderRadius,
+      backgroundColor: props.backgroundColor || provided.backgroundColor,
+    }),
+    dropdownIndicator: (provided, status) => ({
+      ...provided, 
+      backgroundColor: props.backgroundColor || provided.backgroundColor,
+    }),
+  }
+
   return ( 
     <AsyncSelect 
+      chakraStyles={chakraStyles}
       value={addressToOption(address)}
       loadOptions={loadSuggestions} 
       onChange={onAddressChange} 
