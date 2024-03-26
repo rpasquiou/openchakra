@@ -25,7 +25,7 @@ const withDynamicSelect = Component => {
         refValues.map(v => ({ key: v?._id, value: v?._id, label: lodash.get(v, subAttributeDisplay) }))
         :
         enumValues ?
-          lodash(enumValues).entries().sortBy(v => v[1]).value().map(([k, v]) => ({ key: k, value: k, label: v }))
+          lodash(enumValues).entries().value().map(([k, v]) => ({ key: k, value: k, label: v }))
           :
           (values || []).map(v => ({ key: v._id, value: v._id, label: attribute ? lodash.get(v, attribute) : v }))
       return res
@@ -52,29 +52,30 @@ const withDynamicSelect = Component => {
       }
     }
 
+    const chakraStyles={
+      option: (provided, state) => ({
+        ...provided,
+        fontFamily: props.fontFamily || provided.fontFamily,
+        backgroundColor: props.backgroundColor || provided.backgroundColor,
+      }),
+      container: (provided, state) => ({
+        ...provided,
+        minWidth: props.minWidth || provided.minWidth,
+        maxWidth: props.maxWidth || provided.maxWidth,
+      }),
+      control: (provided, status) => ({
+        ...provided, 
+        fontFamily: props.fontFamily || provided.fontFamily,
+        borderRadius: props.borderRadius || provided.borderRadius,
+        backgroundColor: props.backgroundColor || provided.backgroundColor,
+      }),
+      dropdownIndicator: (provided, status) => ({
+        ...provided, 
+        backgroundColor: props.backgroundColor || provided.backgroundColor,
+      }),
+    }
+
     if (isSearchable) {
-      const chakraStyles={
-        option: (provided, state) => ({
-          ...provided,
-          fontFamily: props.fontFamily || provided.fontFamily,
-          backgroundColor: props.backgroundColor || provided.backgroundColor,
-        }),
-        container: (provided, state) => ({
-          ...provided,
-          minWidth: props.minWidth || provided.minWidth,
-          maxWidth: props.maxWidth || provided.maxWidth,
-        }),
-        control: (provided, status) => ({
-          ...provided, 
-          fontFamily: props.fontFamily || provided.fontFamily,
-          borderRadius: props.borderRadius || provided.borderRadius,
-          backgroundColor: props.backgroundColor || provided.backgroundColor,
-        }),
-        dropdownIndicator: (provided, status) => ({
-          ...provided, 
-          backgroundColor: props.backgroundColor || provided.backgroundColor,
-        }),
-      }
       return (
         <Select {...props} onChange={onChange}
           options={options} placeholder={null}
@@ -83,10 +84,11 @@ const withDynamicSelect = Component => {
       )
     }
 
+    console.log(props)
     return (
-      <Component {...props} value={internalValue} onChange={onChange}>
-        <option value={undefined}></option>
-        {options.map(opt => (<option key={opt.key} value={opt.value}>{opt.label}</option>))}
+      <Component {...props} value={internalValue} onChange={onChange} >
+        <option style={{...props}} value={undefined}></option>
+        {options.map(opt => (<option style={{...props}} key={opt.key} value={opt.value}>{opt.label}</option>))}
       </Component>
     )
 
