@@ -84,6 +84,7 @@ const {getExposedModels} = require('../../utils/database')
 const {ACTIONS} = require('../../utils/studio/actions')
 const {buildQuery, addComputedFields} = require('../../utils/database')
 const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
+const { getLocationSuggestions } = require('../../../utils/geo')
 
 const router = express.Router()
 
@@ -331,6 +332,19 @@ router.post('/login', (req, res) => {
     .then(user => {
       return sendCookie(user, res).json(user)
     })
+})
+
+/** 
+ * Returns geolocation suggestions for a query
+ * Expect params 
+ * - query: string query
+ * - city: search only city if contains 'city', else searches address
+ * Returns  {name, city, postcode, country, latitude, longitude}
+ */
+router.get('/geoloc', async (req, res) => {
+  const {query, city}=req.query
+  const suggestions=await getLocationSuggestions(query, city)
+  return res.json(suggestions)
 })
 
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
