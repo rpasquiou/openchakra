@@ -32,21 +32,21 @@ const FreelanceSchema = new Schema({
     enum: Object.keys(EXPERIENCE),
     required: [true, `L'expérience principale est obligatoire`],
   },
-  second_job: [{
+  second_job: {
     type: Schema.Types.ObjectId,
     ref: 'job',
     required: false,
-  }],
+  },
   second_experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),
     required: [function() {return !!this.second_job}, `L'expérience du deuxième métier est obligatoire`],
   },
-  third_job: [{
+  third_job: {
     type: Schema.Types.ObjectId,
     ref: 'job',
     required: false,
-  }],
+  },
   third_experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),
