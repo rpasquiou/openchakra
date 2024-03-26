@@ -220,9 +220,8 @@ const buildBlock = ({
         propsContent += ` pagesIndex={pagesIndex} `
         propsContent += ` setPagesIndex={setPagesIndex} `
       }
-      // Always create lazy Tabs
+      // Handle wizard
       if (childComponent.type=='Tabs') {
-        propsContent+=" isLazy "
         const tabPanels=getChildrenOfType(components, childComponent, 'TabPanel')
         propsContent += ` childPanelCount={${tabPanels.length}}`
       }
