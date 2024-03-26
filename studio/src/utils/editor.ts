@@ -10,6 +10,7 @@ export const COMPONENTS: (ComponentType | MetaComponentType)[] = [
   'Avatar',
   'AvatarBadge',
   'AvatarGroup',
+  'Address',
   'Badge',
   'Box',
   'Button',

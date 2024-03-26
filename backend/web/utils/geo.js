@@ -24,9 +24,9 @@ const getLocationSuggestions = (value, type) => {
         suggestions=res.filter(r => r.address && r.lat && r.lon && (r.address.postcode && r.address.road && (r.address.city || r.address.village || r.address.town || r.address.county)))
       }
       suggestions=suggestions.map(r => ({
-        name: r.address.road,
+        address: r.address.road,
         city: r.address.city || r.address.village || r.address.town || r.address.county,
-        postcode: r.address.postcode,
+        zip_code: r.address.postcode,
         country: r.country,
         latitude: r.lat,
         longitude: r.lon}))

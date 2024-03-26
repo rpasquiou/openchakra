@@ -38,7 +38,7 @@ export const DATE_TYPE: ComponentType[] = ['Date']
 export const SELECT_TYPE: ComponentType[] = ['Select']
 export const SOURCE_TYPE: ComponentType[] = ['Timer', 'Chart']
 export const CHECKBOX_TYPE: ComponentType[] = ['Checkbox', 'Radio', 'Switch', 'IconCheck']
-export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat']
+export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat', 'Address']
 export const UPLOAD_TYPE: ComponentType[] = ['UploadFile']
 export const GROUP_TYPE: ComponentType[] = ['RadioGroup', 'CheckboxGroup']
 
