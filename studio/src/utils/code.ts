@@ -20,6 +20,7 @@ import {
   TEXT_TYPE,
   UPLOAD_TYPE,
   computeDataFieldName,
+  getChildrenOfType,
   getDataProviderDataType,
   getFieldsForDataProvider,
   getLimitsForDataProvider,
@@ -213,10 +214,7 @@ const buildBlock = ({
 
       propsContent += ` getComponentValue={getComponentValue} `
 
-      // Forces refresh is this compnent's value is changed
-      if (isFilterComponent(childComponent, components)) {
         propsContent += ` setComponentValue={setComponentValue} `
-      }
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
         propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
         propsContent += ` pagesIndex={pagesIndex} `
@@ -225,6 +223,15 @@ const buildBlock = ({
       // Always create lazy Tabs
       if (childComponent.type=='Tabs') {
         propsContent+=" isLazy "
+        const tabPanels=getChildrenOfType(components, childComponent, 'TabPanel')
+        propsContent += ` childPanelCount={${tabPanels.length}}`
+      }
+      // Handle Wizard buttons
+      if (childComponent.type=='Button' && ['PREVIOUS', 'NEXT', 'FINISH'].includes(childComponent.props?.tag)) {
+        const tab=getParentOfType(components, component, 'Tabs')
+        propsContent+= ` parentTab={'${tab.id}'}`
+        const tabPanels=getChildrenOfType(components, tab, 'TabPanel')
+        propsContent += ` parentTabPanelsCount={${tabPanels.length}}`
       }
       // Set component id
       propsContent += ` id='${childComponent.id}' `

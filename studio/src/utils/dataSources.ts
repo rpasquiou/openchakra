@@ -324,3 +324,15 @@ export const getParentOfType = (components:IComponents, comp: IComponent, type: 
 export const hasParentType = (comp: IComponent, comps: IComponents, type: ComponentType) => {
   return !!getParentOfType(comps, comp, type)
 }
+
+export const getChildrenOfType = (components:IComponents, comp: IComponent, type: ComponentType):IComponent[] => {
+  if (comp.type==type) {
+    return [comp]
+  }
+  const children=comp.children.map(childId => {
+    const child=components[childId]
+    return getChildrenOfType(components, child, type)
+  })
+  return lodash.flatten(children)
+}
+
