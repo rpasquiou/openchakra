@@ -143,6 +143,7 @@ require('./models/Billing')
 require('./models/PriceList')
 require('./models/Customer')
 require('./models/Freelance')
+require('./models/Sector')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
