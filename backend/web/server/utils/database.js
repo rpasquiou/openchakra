@@ -182,9 +182,11 @@ const getAttributeCaracteristics = (modelName, att) => {
   const type =
     baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
   const ref = baseData.instance == 'ObjectID'
+
+  // Include caster enum values (i.e. array of enums)
   let enumValues
-  if (!lodash.isEmpty(att.enumValues)) {
-    enumValues=att.enumValues
+  if (!lodash.isEmpty(att.enumValues) || !lodash.isEmpty(att.caster?.enumValues)) {
+    enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
     enumValues=att.options.enum
