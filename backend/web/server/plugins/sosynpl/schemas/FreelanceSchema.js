@@ -40,6 +40,7 @@ const FreelanceSchema = new Schema({
   second_experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),
+    set: v => v || undefined,
     required: [function() {return !!this.second_job}, `L'expérience du deuxième métier est obligatoire`],
   },
   third_job: {
@@ -50,6 +51,7 @@ const FreelanceSchema = new Schema({
   third_experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),
+    set: v => v || undefined,
     required: [function() {return !!this.third_job}, `L'expérience du troisième métier est obligatoire`],
   },
   rate: {
