@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE } = require("./consts")
+const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
@@ -60,6 +60,8 @@ declareEnumField({model: 'freelance', field: 'source', enumValues: SOURCE})
 declareEnumField({model: 'freelance', field: 'main_experience', enumValues: EXPERIENCE})
 declareEnumField({model: 'freelance', field: 'second_experience', enumValues: EXPERIENCE})
 declareEnumField({model: 'freelance', field: 'third_experience', enumValues: EXPERIENCE})
+declareEnumField({model: 'freelance', field: 'work_duration', enumValues: WORK_DURATION})
+declareEnumField({model: 'freelance', field: 'company_size', enumValues: COMPANY_SIZE})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
