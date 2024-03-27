@@ -289,6 +289,9 @@ const buildBlock = ({
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
             }
+            if (!!att.multiple) {
+              propsContent += ` isMulti `
+            }
           }
           if (tp?.type) {
             propsContent += ` dataModel='${tp.type}' `
