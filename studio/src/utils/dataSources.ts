@@ -168,15 +168,21 @@ const getComponentAttributes = (
   return attributes
 }
 
+
+// TODO Filter attributes
 export const getAvailableAttributes = (
   component: IComponent,
   components: IComponents,
   models: any,
 ): any => {
+
   const attributes = getComponentAttributes(component, components, models)
   const cardinalityAttributes = lodash.pickBy(
     attributes,
-    att => ['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) || att.multiple === isMultipleDispatcher(component),
+    att => 
+      (['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) 
+      || att.multiple === isMultipleDispatcher(component) )
+      || (!SELECT_TYPE.includes(component.type) || (!!att.multiple || !!att.ref || !lodash.isEmpty(att.enumValues)))
   )
   return cardinalityAttributes
 }

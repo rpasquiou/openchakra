@@ -4,7 +4,7 @@ import { ACTIONS } from '../utils/actions'
 import {Select} from 'chakra-react-select'
 
 const withDynamicSelect = Component => {
-  const Internal = ({noautosave, dataSource, subDataSource, subAttribute, subAttributeDisplay, setComponentValue, isSearchable, ...props}) => {
+  const Internal = ({noautosave, dataSource, subDataSource, subAttribute, subAttributeDisplay, setComponentValue, isSearchable, isMulti, ...props}) => {
 
     let values = props.dataSourceId ? dataSource: null
     let value=lodash.get(dataSource, props.attribute)
@@ -36,7 +36,20 @@ const withDynamicSelect = Component => {
     )
 
     const onChange = ev => {
-      const {value} = isSearchable ? ev : ev.target
+      let value=null
+      // react checkra select
+      if (isSearchable || isMulti) {
+        if (isMulti) {
+          value=ev.map(e => e.value)
+        }
+        else {
+          value=ev.value
+        }
+      }
+      else {
+        value=ev.target.value
+      }
+
       setInternalValue(value)
       if (setComponentValue) {
         setComponentValue(props.id, value)
@@ -49,6 +62,9 @@ const withDynamicSelect = Component => {
         })
           .then(() => props.reload())
           .catch(err => console.error(err))
+      }
+      if (props.onChange) {
+        
       }
     }
 
@@ -75,9 +91,10 @@ const withDynamicSelect = Component => {
       }),
     }
 
-    if (isSearchable) {
+    if (isSearchable || isMulti) {
       return (
         <Select {...props} onChange={onChange}
+          isMulti={isMulti}
           options={options} placeholder={null}
           chakraStyles={chakraStyles}
         />
