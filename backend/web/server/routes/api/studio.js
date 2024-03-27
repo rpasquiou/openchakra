@@ -545,6 +545,11 @@ router.get('/job/:id?', passport.authenticate(['cookie', 'anonymous'], {session:
   return loadFromRequest(req, res)
 })
 
+router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='sector'
+  return loadFromRequest(req, res)
+})
+
 // Update last_activity
 router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
   return User.findByIdAndUpdate(req.user?._id, {last_activity: moment()})
