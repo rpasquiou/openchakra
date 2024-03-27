@@ -1,9 +1,15 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
 
-console.log(Object.keys(customerSchema))
+const MIN_SECTORS=1
+const MAX_SECTORS=5
+
+const MIN_DURATIONS=1
+const MAX_DURATIONS=3
+
 const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
@@ -68,16 +74,28 @@ const FreelanceSchema = new Schema({
     type: String,
     enum: Object.keys(WORK_MODE),
   },
-  work_duration: [{
-    type: String,
-    required: [true, `La durée préférée est obligatoire`],
-    enum: Object.keys(WORK_DURATION),
-  }],
-  sector: [{
-    type: Schema.Types.ObjectId,
-    ref: 'sector',
-    required: false,
-  }],
+  // 1 minimum, 3 max
+  work_duration: {
+    type: [{
+      type: String,
+      enum: Object.keys(WORK_DURATION),
+    }],
+    validate: [
+      durations => lodash.inRange(durations, MIN_DURATIONS, MAX_DURATIONS+1), 
+      `Vous devez choisir de ${MIN_DURATIONS} à ${MAX_DURATIONS} durées de mission` 
+    ]
+  },
+  // 1 minimum, 5 max
+  work_sector: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'sector',
+    }],
+    validate: [
+      sectors => lodash.inRange(sectors, MIN_SECTORS, MAX_SECTORS+1), 
+      `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
+    ]
+  },
   softwares: [{
     type: Schema.Types.ObjectId,
     ref: 'software',
@@ -103,11 +121,11 @@ const FreelanceSchema = new Schema({
   },
   linkedin: {
     type: String,
-    required: [function() { return !this.curriculum, `Un lien Linkedin ou un CV est obligatoire`}]
+    required: [function() { return !this.curriculum}, `Un lien Linkedin ou un CV est obligatoire`]
   },
   curriculum: {
     type: String,
-    required: [function() { return !this.linkedin, `Un lien Linkedin ou un CV est obligatoire`}]
+    required: [function() { return !this.linkedin}, `Un lien Linkedin ou un CV est obligatoire`]
   },
   source: {
     type: String,
