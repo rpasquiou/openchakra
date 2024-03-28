@@ -276,7 +276,7 @@ export const ACTIONS: IActions = {
   register: {
     label: 'Register new account',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
+      ...Object.fromEntries(lodash.range(35).map((idx:number) => {
       return [
         `component_${idx}`,
         ({ components }) => components
