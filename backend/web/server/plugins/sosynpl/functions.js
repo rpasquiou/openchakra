@@ -101,6 +101,9 @@ const postCreate = async ({model, params, data}) => {
   if (data.role==ROLE_CUSTOMER) {
     await sendCustomerConfirmEmail({user: data})
   }
+  if (data.role==ROLE_FREELANCE) {
+    await sendFreelanceConfirmEmail({user: data})
+  }
   return Promise.resolve(data)
 }
 
