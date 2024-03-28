@@ -40,8 +40,16 @@ const importJobs = async (input_file) => {
 
 const importSectors = async (input_file) => {
   let records=await loadRecords(input_file, `Secteurs`)
-  records=lodash.orderBy(records, r => r[SECTOR_MAPPING.name])
-  console.log(records)
+  records=lodash.orderBy(records, r => {
+    const name=r[SECTOR_MAPPING.name]
+    // Force 'Tout secteur' first
+    if (/tout.*secte/i.test(name)) {
+      console.log('found')
+      return ''
+    }
+    return name
+  })
+  console.log(records.slice(0, 10))
   return importData({model: 'sector', data:records, mapping:SECTOR_MAPPING, identityKey: SECTOR_KEY, 
       migrationKey: SECTOR_MIGRATION_KEY})
 }
