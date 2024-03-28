@@ -2,12 +2,14 @@ const {
   sendNotification,
   setNotificationsContents,
   setSmsContents,
-  setSmsContact
+  setSmsContact,
+  getTagUrl
 } = require('../../utils/mailing')
 const {datetime_str} = require('../../../utils/dateutils')
 const moment=require('moment')
 const { formatDate, formatHour } = require('../../../utils/text')
 const { generateIcs } = require('../../../utils/ics')
+const { computeUrl } = require('../../../config/config')
 
 const SIB_IDS={
   CUSTOMER_CONFIRM_EMAIL:1,
@@ -25,8 +27,9 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 
 setSmsContact('SoSynpL')
 
-const sendCustomerConfirmEmail = ({user, email_validation_url}) => {
-  console.log('calling with', user, email_validation_url)
+const sendCustomerConfirmEmail = async ({user}) => {
+  const tagUrl=await getTagUrl('EMAIL_VALIDATION')
+  const email_validation_url=`${computeUrl(tagUrl)}?id=${user._id}`
   return sendNotification({
     notification: SIB_IDS.CUSTOMER_CONFIRM_EMAIL,
     destinee: user,
