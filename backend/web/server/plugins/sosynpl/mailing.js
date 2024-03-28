@@ -26,6 +26,7 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 setSmsContact('SoSynpL')
 
 const sendCustomerConfirmEmail = ({user, email_validation_url}) => {
+  console.log('calling with', user, email_validation_url)
   return sendNotification({
     notification: SIB_IDS.CUSTOMER_CONFIRM_EMAIL,
     destinee: user,
