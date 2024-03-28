@@ -96,3 +96,14 @@ const soSynplRegister = props => {
 
 addAction('register', soSynplRegister)
 
+const postCreate = ({model, params, data}) => {
+  if (model=='user') {
+    if (params.role==ROLE_FREELANCE)
+    sendWelcomeRegister({member:data, password:params.nonHashedPassword})
+  }
+  return Promise.resolve(data)
+}
+
+setPostCreateData(postCreate)
+
+

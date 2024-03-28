@@ -171,7 +171,7 @@ router.post('/mailjet-hook', (req, res) => {
   .catch(console.error)
 })
 
-router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const {action}=req.params
   const query=lodash.mapValues(req.query, v => {
     try{ return JSON.parse(v) }
@@ -297,7 +297,7 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const action = req.body.action
   const actionFn = ACTIONS[action]
   if (!actionFn) {

@@ -29,6 +29,10 @@ const UserSchema = new Schema({
     required: [true, `Le mot de passe est obligatoire`],
     set: pass => pass ? bcrypt.hashSync(pass, 10) : null,
   },
+  email_valid: {
+    type: Boolean,
+    required: false,
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

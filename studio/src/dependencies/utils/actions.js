@@ -996,5 +996,14 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  validate_email: () => {
+    let url = `${API_ROOT}/action`
+    const accountId=new URL(window.location).searchParams.get('id')
+    const body = {
+      action: 'validate_email',
+      value: accountId,
+    }
+    return axios.post(url, body)
+  }
   
 }
