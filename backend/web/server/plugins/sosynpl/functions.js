@@ -5,7 +5,7 @@ const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
-const { sendCustomerConfirmEmail } = require("./mailing");
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
 MODELS.forEach(model => {
