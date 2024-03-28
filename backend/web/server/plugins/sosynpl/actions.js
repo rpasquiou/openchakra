@@ -20,6 +20,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='register') {
     return true
   }
+  return true
 }
 
 setAllowActionFn(isActionAllowed)
