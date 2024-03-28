@@ -213,8 +213,11 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
+      propsContent += ` setComponentValue={setComponentValue} `
 
-        propsContent += ` setComponentValue={setComponentValue} `
+      propsContent += ` getComponentAttribute={getComponentAttribute} `
+      propsContent += ` setComponentAttribute={setComponentAttribute} `
+
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
         propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
         propsContent += ` pagesIndex={pagesIndex} `
@@ -1008,6 +1011,7 @@ const ${componentName} = () => {
   const id=${rootIgnoreUrlParams ? 'null' : 'query.id'}
   const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
+  const [componentsAttributes, setComponentsAttributes]=useState({})
 
   const setComponentValue = (compId, value) => {
     const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
@@ -1029,6 +1033,16 @@ const ${componentName} = () => {
       value=getComponentDataValue(compId, index)
     }
     return value
+  }
+
+  const setComponentAttribute = (compId, attribute) => {
+    if (componentsAttributes[compId]!=attribute) {
+      setComponentsAttributes(s=> ({...s, [compId]: attribute}))
+    }
+  }
+
+  const getComponentAttribute = (compId, level) => {
+    return componentsAttributes[compId]
   }
 
   // ensure token set if lost during domain change

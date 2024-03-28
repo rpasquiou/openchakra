@@ -89,7 +89,7 @@ const FreelanceSchema = new Schema({
       enum: Object.keys(WORK_DURATION),
     }],
     validate: [
-      durations => lodash.inRange(durations, MIN_DURATIONS, MAX_DURATIONS+1), 
+      durations => lodash.inRange(durations?.length, MIN_DURATIONS, MAX_DURATIONS+1), 
       `Vous devez choisir de ${MIN_DURATIONS} à ${MAX_DURATIONS} durées de mission` 
     ]
   },
@@ -100,7 +100,7 @@ const FreelanceSchema = new Schema({
       ref: 'sector',
     }],
     validate: [
-      sectors => lodash.inRange(sectors, MIN_SECTORS, MAX_SECTORS+1), 
+      sectors => lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1), 
       `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
     ]
   },

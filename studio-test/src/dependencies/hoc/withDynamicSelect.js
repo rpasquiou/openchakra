@@ -11,6 +11,9 @@ const withDynamicSelect = Component => {
     value=value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
+    if (props.setComponentAttribute) {
+      props.setComponentAttribute(props.id, props.attribute)
+    }
     const computeOptions = () => {
 
       const enumValues=props.enum ? JSON.parse(props.enum) : null
