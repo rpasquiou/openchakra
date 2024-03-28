@@ -5,6 +5,7 @@ const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
+const { sendCustomerConfirmEmail } = require("./mailing");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
 MODELS.forEach(model => {
@@ -97,10 +98,8 @@ const soSynplRegister = props => {
 addAction('register', soSynplRegister)
 
 const postCreate = async ({model, params, data}) => {
-  if (model=='user') {
-    if (params.role==ROLE_CUSTOMER) {
-      await sendWelcomeRegister({user: data, email_validation_url: 'none'})
-    }
+  if (data.role==ROLE_CUSTOMER) {
+    await sendCustomerConfirmEmail({user: data, email_validation_url: 'none'})
   }
   return Promise.resolve(data)
 }
