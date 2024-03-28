@@ -29,7 +29,7 @@ describe('Test models', () => {
     expect(Freelance.create({})).rejects.toThrow(requiredRe)
   })
 
-  it.only('Should return enum values on multiple attributes', async () => {
+  it('Should return enum values on multiple attributes', async () => {
     const DIR='./server/models'
     const files=fs.readdirSync(DIR).filter(f => !/Schema/i.test(f) && /js$/.test(f)).map(f => f.replace(/\.js$/, ''))
     files.forEach(f => require(path.join('../..', DIR, f)))
