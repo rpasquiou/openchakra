@@ -33,7 +33,7 @@ export const ACTIONS = {
     const components=componentsIds.map(comp => comp=getComponent(comp, level)).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
     const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
+      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute') || getComponentAttribute(c, level), getComponentValue(c.getAttribute('id'), level)||null]
     }))
     let url = `${API_ROOT}/action`
     return axios
@@ -242,7 +242,7 @@ export const ACTIONS = {
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
     const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
+      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute')  || getComponentAttribute(c, level), getComponentValue(c.getAttribute('id'), level)||null]
     }))
 
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
@@ -298,11 +298,11 @@ export const ACTIONS = {
     window.history.back()
   },
 
-  register: ({ value, props, dataSource, level, getComponentValue }) => {
+  register: ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
     let url = `${API_ROOT}/register`
-    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
+    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute'), getComponentValue(c, level)||null]
+      [getComponent(c, level)?.getAttribute('attribute') || getComponentAttribute(c, level), getComponentValue(c, level)||null]
     ))
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     return axios.post(url, bodyJson)
@@ -319,7 +319,7 @@ export const ACTIONS = {
     let url = `${API_ROOT}/register-and-login`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute'), getComponentValue(c, level)||null]
+      [getComponent(c, level)?.getAttribute('attribute') || getComponentAttribute(c, level), getComponentValue(c, level)||null]
     ))
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     return axios.post(url, bodyJson)
@@ -471,7 +471,7 @@ return Promise.allSettled(imagePromises)
   createRecommandation: ({ value, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute')  || getComponentAttribute(c, level),
         getComponentValue(c, level)||null]
     ))
     body.job=value._id
@@ -723,7 +723,7 @@ return Promise.allSettled(imagePromises)
   alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute') || getComponentAttribute(c, level),
         getComponentValue(c, level)||null]
     ))
 
