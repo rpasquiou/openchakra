@@ -17,6 +17,9 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='validate_email') {
     return true
   }
+  if (action=='register') {
+    return true
+  }
 }
 
 setAllowActionFn(isActionAllowed)
