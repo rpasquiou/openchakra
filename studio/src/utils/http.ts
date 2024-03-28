@@ -1,6 +1,12 @@
 import zlib from 'zlib'
 import axios from 'axios'
 
+// Send {tag1: page1_url, tag2: page2_url}
+export const sendTags = (tags) => {
+  const body = { tags }
+  return axios.post(`${process.env.NEXT_PUBLIC_PROJECT_TARGETDOMAIN}/myAlfred/api/studio/tags`, body)
+}
+
 export const copyFile = ({ contents, filePath }) => {
   const zippedContents=zlib.deflateSync(contents).toString('base64')
   const body = { contents:zippedContents, projectName: process.env.NEXT_PUBLIC_PROJECT_FOLDERNAME, filePath }

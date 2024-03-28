@@ -30,6 +30,11 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
+
+// Backend private
+require('./models/PageTag_')
+
+// Project mdels
 require('./models/Answer')
 require('./models/ResetToken')
 require('./models/Program')

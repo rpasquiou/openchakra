@@ -85,6 +85,8 @@ const {ACTIONS} = require('../../utils/studio/actions')
 const {buildQuery, addComputedFields} = require('../../utils/database')
 const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
 const { getLocationSuggestions } = require('../../../utils/geo')
+const { TaggingDirective } = require('@aws-sdk/client-s3')
+const PageTag_ = require('../../models/PageTag_')
 
 const router = express.Router()
 
@@ -202,6 +204,14 @@ router.post('/file', (req, res) => {
     .then(() => {
       return res.json()
     })
+})
+
+// Provides back with tag <-> page_url pairs
+router.post('/tags', (req, res) => {
+  const  {tags}=req.body
+  return PageTag_.deleteMany()
+    .then(() => Promise.all(tags.map(tag => PageTag_.create(tag))))
+    .then(() => res.json())
 })
 
 router.post('/clean', (req, res) => {

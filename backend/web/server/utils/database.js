@@ -293,7 +293,7 @@ const getModels = () => {
 }
 
 /**
-Returns only models & attributes visible for studio users
+Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not suffixed with an '_')
 */
 const getExposedModels = () => {
   const isHidddenAttributeName = (modelName, attName) => {
@@ -301,7 +301,7 @@ const getExposedModels = () => {
   }
 
   const models=lodash(getModels())
-    .omitBy((v, k) => k=='IdentityCounter')
+    .omitBy((v, k) => k=='IdentityCounter' || /_$/.test(k))
     .mapValues((v, modelName) => ({
       ...v,
       attributes: lodash(v.attributes).omitBy((v, k) => isHidddenAttributeName(modelName, k)),

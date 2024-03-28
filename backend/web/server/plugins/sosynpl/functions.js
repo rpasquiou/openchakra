@@ -99,7 +99,7 @@ addAction('register', soSynplRegister)
 
 const postCreate = async ({model, params, data}) => {
   if (data.role==ROLE_CUSTOMER) {
-    await sendCustomerConfirmEmail({user: data, email_validation_url: 'none'})
+    await sendCustomerConfirmEmail({user: data})
   }
   return Promise.resolve(data)
 }
