@@ -114,6 +114,9 @@ const login = (email, password) => {
         throw new ForbiddenError(`Votre abonnement s'est terminé le ${date_str(user.subscription_end)}`)
       }
     }
+    if ('email_valid' in user && !user.email_valid) {
+      throw new ForbiddenError(`Vous devez confirmer votre email pour vous connecter`)
+    }
     if (user.active===false) {
       console.error(`Deactived user ${email}`)
       throw new NotFoundError(`Ce compte est désactivé`)
