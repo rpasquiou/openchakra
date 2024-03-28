@@ -1,5 +1,5 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE } = require("./consts")
 const Customer=require('../../models/Customer')
@@ -96,10 +96,11 @@ const soSynplRegister = props => {
 
 addAction('register', soSynplRegister)
 
-const postCreate = ({model, params, data}) => {
+const postCreate = async ({model, params, data}) => {
   if (model=='user') {
-    if (params.role==ROLE_FREELANCE)
-    sendWelcomeRegister({member:data, password:params.nonHashedPassword})
+    if (params.role==ROLE_CUSTOMER) {
+      await sendWelcomeRegister({user: data, email_validation_url: 'none'})
+    }
   }
   return Promise.resolve(data)
 }
