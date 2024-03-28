@@ -80,7 +80,7 @@ const CustomerSchema = new Schema({
   },
   address: {
     type: AddressSchema,
-    required: [true, `L'adresse est obligatoire`],
+    required: false,
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 

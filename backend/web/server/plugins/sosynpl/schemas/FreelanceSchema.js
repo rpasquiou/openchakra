@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
+const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
 
 const MIN_SECTORS=1
@@ -14,6 +15,11 @@ const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
   ...customerSchema.obj,
+  // Ovveride address => mandatory
+  address: {
+    type: AddressSchema,
+    required: [true, `L'adresse est obligatoire`],
+  },
   // Override role
   role: {
     type: String,

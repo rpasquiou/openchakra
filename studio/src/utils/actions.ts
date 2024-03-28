@@ -665,6 +665,12 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  validate_email: {
+    label: 'Validate email',
+    options: {},
+    next: ['openPage'],
+  },
+
 }
 
 export const allowsActions = (component: IComponent) => {
