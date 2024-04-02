@@ -296,7 +296,7 @@ const MISSING_QUOTATION_DELAY=2
 // Commission on customer
 const MER_RATE=0.15
 // Commission on TI
-const AA_RATE=0.15
+const AA_RATE=0
 // vat rate 20%
 const VAT_RATE=0.2
 
