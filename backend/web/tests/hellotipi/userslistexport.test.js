@@ -27,13 +27,14 @@ describe('Tests users extraction', () => {
   it("Must export users list", async() => {
     const list=await getUsersList()
     const linesCount=list.split(`\n`).length
-    const headerCount=list.split(`\n`)[0].split(`;`).length
-    expect(headerCount).toEqual(12)
+    const headerLine=list.split(`\n`)[0].split(`;`)
+    console.log(headerLine)
+    expect(headerLine.length).toEqual(12)
     expect(linesCount).toBeGreaterThan(100)
   })
 
 
-  it("Must send users list", () => {
+  it.only("Must send users list", () => {
     return sendUsersList({email: 'hello+test@wappizy.com'})
   })
 })

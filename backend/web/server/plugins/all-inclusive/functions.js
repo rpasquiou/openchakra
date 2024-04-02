@@ -460,7 +460,7 @@ const filterDataUser = ({model, data, user}) => {
     // Hide jobUser.user.hidden
     return Promise.all(data.map(job => JobUser.findById(job._id).populate('user')
         .then(dbJob => {
-          if (dbJob?.user?.hidden==false || idEqual(user?._id, dbJob?.user?._id)) {
+          if (!user || dbJob?.user?.hidden==false || idEqual(user?._id, dbJob?.user?._id)) {
             return job
           }
           return null
@@ -616,6 +616,8 @@ const getUsersList = () => {
     {title: 'Prénom', id:'firstname'},
     {title: 'Nom', id:'lastname'},
     {title: 'Email', id:'email'},
+    {title: 'Acheteur/Vendeur', id:'role_str'},
+    {title: `Secteur d'activité`, id:'activity'},
     {title: 'Département', id:'zip_code'},
     {title: 'Métiers', id: 'job'},
     {title: 'Masqué', id: 'visible_str'},
@@ -625,6 +627,13 @@ const getUsersList = () => {
     {title: 'Assurance', id: 'insurance_type'},
     {title: 'Document assurance', id: 'insurance_report'},
   ]
+  const TI_BUYER_ROLES=[ROLE_TI,ROLE_COMPANY_BUYER,ROLE_COMPANY_ADMIN]
+  const ROLE_LABEL={
+    [ROLE_TI]: 'V',
+    [ROLE_COMPANY_BUYER]: 'A',
+    [ROLE_COMPANY_ADMIN]: 'A',
+  }
+  
   return User.find().populate('jobs').lean({virtuals:true}).sort({creation_date:1})
     .then(users => {
       return users.map(u => ({
@@ -632,6 +641,8 @@ const getUsersList = () => {
         job: u.jobs.map(j => j.name).join(','),
         coaching_alle: u.coaching==COACH_ALLE ? 'oui':'non',
         created_format: moment(u[CREATED_AT_ATTRIBUTE]).format('DD/MM/YY hh:mm'),
+        role_str: ROLE_LABEL[u.role],
+        activity: COMPANY_ACTIVITY[u.company_activity],
       }))
     })
     .then(users => {
@@ -651,7 +662,7 @@ const sendUsersList = () => {
   ])
   .then(([admins, contents]) => {
     // TODO: contact only. Later will send to SUPER_ADMIN roles only
-    admins=admins.filter(a => /contact/.test(a.email))
+    // admins=admins.filter(a => /contact/.test(a.email))
     const name=`Extraction TIPI du ${moment().format('DD/MM/YY HH:mm')}.csv`
     const content=Buffer.from(contents).toString('base64')
     const attachment={name, content}
