@@ -1,14 +1,19 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
+const UserSchema=require('./UserSchema')
 const CustomerSchema=require('./CustomerSchema')
 const FreelanceSchema=require('./FreelanceSchema')
 const AdminSchema=require('./AdminSchema')
+const { ALL_LOCATIONS } = require('../../../../utils/consts')
 
 // LoggedUser is a "simili" schema that returns all attributes for all roles (Custromer, Freelance, Admin)
 
+const allAttributes={...UserSchema.paths, ...CustomerSchema.paths, ...FreelanceSchema.paths, ...AdminSchema.paths}
+
+console.log('all attributes are', JSON.stringify(Object.keys(allAttributes), null, 2))
 const LoggedUserSchema = new Schema({
-  ...CustomerSchema.paths, ...FreelanceSchema.paths, ...AdminSchema.paths,
+  ...allAttributes,
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
