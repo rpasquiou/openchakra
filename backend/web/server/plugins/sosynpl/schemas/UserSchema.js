@@ -3,10 +3,17 @@ const { isEmailOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
+const { ROLES } = require('../consts')
 
 const Schema = mongoose.Schema
 
 const UserSchema = new Schema({
+  role: {
+    type: String,
+    enum: Object.keys(ROLES),
+    required: [true, `Le rôle est obligatoire`],
+    index: true,
+  },
   firstname: {
     type: String,
     set: v => v?.trim(),
