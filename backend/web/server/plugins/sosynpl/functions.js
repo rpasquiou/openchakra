@@ -1,11 +1,12 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE } = require("./consts")
+const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
+const { ROLE_ADMIN } = require("../smartdiet/consts");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
 MODELS.forEach(model => {
@@ -99,6 +100,22 @@ const soSynplRegister = props => {
 }
 
 addAction('register', soSynplRegister)
+
+const ROLE_MODEL_MAPPING={
+  [ROLE_CUSTOMER]: 'customer',
+  [ROLE_FREELANCE]: 'freelance',
+  [ROLE_ADMIN]: 'admin',
+}
+
+const preprocessGet = async ({ model, fields, id, user, params }) => {
+  if (model=='loggedUser') {
+    const modelName=ROLE_MODEL_MAPPING[user.role]
+    return({model: modelName, fields, id: user._id, user, params})
+  }
+  return({model, fields, id, user, params})
+}
+
+setPreprocessGet(preprocessGet)
 
 const postCreate = async ({model, params, data}) => {
   if (data.role==ROLE_CUSTOMER) {
