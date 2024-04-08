@@ -149,6 +149,7 @@ require('./models/PriceList')
 require('./models/Customer')
 require('./models/Freelance')
 require('./models/Sector')
+require('./models/Admin')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
