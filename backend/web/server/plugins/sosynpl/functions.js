@@ -37,32 +37,35 @@ MODELS.forEach(model => {
   })
 })
 
-declareVirtualField({model: 'freelance', field: 'freelance_missions', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'mission' }
-  },
+const FREELANCE_MODELS=['freelance', 'loggedUser']
+FREELANCE_MODELS.forEach(model => {
+  declareVirtualField({model, field: 'freelance_missions', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'mission' }
+    },
+  })
+  declareVirtualField({model, field: 'recommandations', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'recommandation' }
+    },
+  })
+  declareVirtualField({model, field: 'communications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'communication' }
+    },
+  })
+  declareVirtualField({model, field: 'search_visible', instance: 'Boolean'})
+  declareEnumField({model, field: 'work_mode', enumValues: WORK_MODE})
+  declareEnumField({model, field: 'source', enumValues: SOURCE})
+  declareEnumField({model, field: 'main_experience', enumValues: EXPERIENCE})
+  declareEnumField({model, field: 'second_experience', enumValues: EXPERIENCE})
+  declareEnumField({model, field: 'third_experience', enumValues: EXPERIENCE})
+  declareEnumField({model, field: 'work_duration', enumValues: WORK_DURATION})
+  declareEnumField({model, field: 'company_size', enumValues: COMPANY_SIZE})
 })
-declareVirtualField({model: 'freelance', field: 'recommandations', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'recommandation' }
-  },
-})
-declareVirtualField({model: 'freelance', field: 'communications', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'communication' }
-  },
-})
-declareVirtualField({model: 'freelance', field: 'search_visible', instance: 'Boolean'})
-declareEnumField({model: 'freelance', field: 'work_mode', enumValues: WORK_MODE})
-declareEnumField({model: 'freelance', field: 'source', enumValues: SOURCE})
-declareEnumField({model: 'freelance', field: 'main_experience', enumValues: EXPERIENCE})
-declareEnumField({model: 'freelance', field: 'second_experience', enumValues: EXPERIENCE})
-declareEnumField({model: 'freelance', field: 'third_experience', enumValues: EXPERIENCE})
-declareEnumField({model: 'freelance', field: 'work_duration', enumValues: WORK_DURATION})
-declareEnumField({model: 'freelance', field: 'company_size', enumValues: COMPANY_SIZE})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
