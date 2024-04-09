@@ -1004,6 +1004,24 @@ return Promise.allSettled(imagePromises)
       value: accountId,
     }
     return axios.post(url, body)
-  }
-  
+  },
+
+  suspend_account: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'suspend_account',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  release_account: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'release_account',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
 }

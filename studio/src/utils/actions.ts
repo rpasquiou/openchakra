@@ -671,6 +671,18 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  suspend_account: {
+    label: 'Suspend account',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
+  release_account: {
+    label: 'Release account',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
