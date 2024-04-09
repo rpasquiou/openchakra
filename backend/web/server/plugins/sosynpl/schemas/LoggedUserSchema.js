@@ -11,7 +11,6 @@ const { ALL_LOCATIONS } = require('../../../../utils/consts')
 
 const allAttributes={...UserSchema.paths, ...CustomerSchema.paths, ...FreelanceSchema.paths, ...AdminSchema.paths}
 
-console.log('all attributes are', JSON.stringify(Object.keys(allAttributes), null, 2))
 const LoggedUserSchema = new Schema({
   ...allAttributes,
 }, {...schemaOptions})

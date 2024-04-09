@@ -3,7 +3,7 @@ const { isEmailOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES } = require('../consts')
+const { ROLES, DEACTIVATION_REASON } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -39,7 +39,7 @@ const UserSchema = new Schema({
   email_valid: {
     type: Boolean,
     required: false,
-  }
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

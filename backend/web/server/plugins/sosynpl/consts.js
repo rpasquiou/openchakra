@@ -91,8 +91,73 @@ const EXPERIENCE={
   [EXPERIENCE_EXPERT]:`Expert : 10 ans et plus`,
 }
 
+const LEGAL_STATUS_EI=`EI`
+const LEGAL_STATUS_EURL=`EURL`
+const LEGAL_STATUS_SARL=`SARL`
+const LEGAL_STATUS_SA=`SA`
+const LEGAL_STATUS_SAS=`SAS`
+const LEGAL_STATUS_SASU=`SASU`
+const LEGAL_STATUS_SNC=`SNC`
+const LEGAL_STATUS_SCOP=`SCOP`
+const LEGAL_STATUS_SCA=`SCA`
+const LEGAL_STATUS_SCS=`SCS`
+const LEGAL_STATUS_1901=`1901`
+const LEGAL_STATUS_CIVIL=`CIVIL`
+const LEGAL_STATUS_SEP=`SEP`
+const LEGAL_STATUS_SCIC=`SCIC`
+const LEGAL_STATUS_PORTAGE=`PORTAGE`
+const LEGAL_STATUS_INCUBATOR=`INCUBATOR`
+const LEGAL_STATUS_CAE=`CAE`
+const LEGAL_STATUS_MDA=`MDA`
+const LEGAL_STATUS_PUBLIC=`PUBLIC`
+
+const LEGAL_STATUS={
+  [LEGAL_STATUS_EI]:`EI - Entreprise individuelle ou micro-entreprise`,
+  [LEGAL_STATUS_EURL]:`EURL - Entreprise unipersonnelle à responsabilité limitée`,
+  [LEGAL_STATUS_SARL]:`SARL - Société à responsabilité limitée`,
+  [LEGAL_STATUS_SA]:`SA - Société anonyme`,
+  [LEGAL_STATUS_SAS]:`SAS - Société par actions simplifiée`,
+  [LEGAL_STATUS_SASU]:`SASU - Société par actions simplifiée unipersonnelle`,
+  [LEGAL_STATUS_SNC]:`SNC - Société en nom collectif`,
+  [LEGAL_STATUS_SCOP]:`Scop - Société coopérative de production`,
+  [LEGAL_STATUS_SCA]:`SCA - Société en commandite par actions`,
+  [LEGAL_STATUS_SCS]:`SCS - Société en commandite simple`,
+  [LEGAL_STATUS_1901]:`Association loi 1901`,
+  [LEGAL_STATUS_CIVIL]:`Société civile`,
+  [LEGAL_STATUS_SEP]:`SEP - société en participation`,
+  [LEGAL_STATUS_SCIC]:`SCIC - Société coopérative d'intérêt collectif`,
+  [LEGAL_STATUS_PORTAGE]:`Société de portage salarial`,
+  [LEGAL_STATUS_INCUBATOR]:`Couveuses d'entreprises (société)`,
+  [LEGAL_STATUS_CAE]:`CAE - Coopérative d'activités et d'emploi`,
+  [LEGAL_STATUS_MDA]:`MDA/ Agessa`,
+  [LEGAL_STATUS_PUBLIC]:`Entreprise publique`,
+}
+
+const REASON_NOT_FREELANCE=`REASON_NOT_FREELANCE`
+const REASON_NO_NEED=`REASON_NO_NEED`
+const REASON_NOT_SATISFIED=`REASON_NOT_SATISFIED`
+const REASON_OTHER=`REASON_OTHER`
+
+const DEACTIVATION_REASON={
+  [REASON_NOT_FREELANCE]:`Je ne suis plus indépendant`,
+  [REASON_NO_NEED]:`Je n’ai plus besoin du service de So SynpL`,
+  [REASON_NOT_SATISFIED]:`Je ne suis pas satisfait du service de So SynpL`,
+  [REASON_OTHER]:`Autre`,
+}
+
+const SUSPEND_REASON_INACTIVE=`Compte inactif`
+const SUSPEND_REASON_CRITERION=`Ne corespond pas à la charte de So SynpL`
+const SUSPEND_REASON_OTHER=`SUSPEND_REASON_OTHER`
+
+const SUSPEND_REASON={
+  [SUSPEND_REASON_INACTIVE]: `Compte inactif`,
+  [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de So SynpL`,
+  [SUSPEND_REASON_OTHER]: `Autre`,
+}
+
 module.exports={
   SOSYNPL, ROLES, NATIONALITIES, COMPANY_SIZE, WORK_MODE, WORK_DURATION, VALID_STATUS, VALID_STATUS_PENDING, SOURCE,
   DISCRIMINATOR_KEY, DISC_CUSTOMER, DISC_FREELANCE, DISC_ADMIN, EXPERIENCE, ROLE_CUSTOMER, ROLE_FREELANCE,
+  LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON,
 }
 

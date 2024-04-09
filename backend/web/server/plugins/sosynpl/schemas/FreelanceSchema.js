@@ -66,10 +66,6 @@ const FreelanceSchema = new Schema({
     min: 1.0,
     required: false,
   },
-  description: {
-    type: String,
-    required: false,
-  },
   motivation: {
     type: String,
     required: [true, `Saisisez une présentation à destination de ${SOSYNPL}`],
@@ -104,6 +100,12 @@ const FreelanceSchema = new Schema({
       `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
     ]
   },
+  work_company_size: {
+    type: [{
+      type: String,
+      enum: Object.keys(COMPANY_SIZE),
+    }],
+  },
   softwares: [{
     type: Schema.Types.ObjectId,
     ref: 'software',
@@ -121,7 +123,7 @@ const FreelanceSchema = new Schema({
   validation_status: {
     type: String,
     default: VALID_STATUS_PENDING,
-    required: [true, `Le statut de validaiton est obligatoire`],
+    required: [true, `Le statut de validation est obligatoire`],
   },
   professional_rc: {
     type: String,
