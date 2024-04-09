@@ -1,8 +1,8 @@
 const mongoose = require('mongoose')
-const {isPhoneOk } = require('../../../../utils/sms')
+const {isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER } = require('../consts')
+const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON } = require('../consts')
 const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -31,13 +31,25 @@ const CustomerSchema = new Schema({
     type: String,
     required: false,
   },
+  description: {
+    type: String,
+    required: false,
+  },
   iban: {
     type: String,
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
+  sepa_mandate_document: {
+    type: String,
+    required: false,
+  },
   kbis: { // Document
     type: String,
+    required: false,
+  },
+  social_capital: {
+    type: Number,
     required: false,
   },
   identity_proof_1: {
@@ -52,11 +64,63 @@ const CustomerSchema = new Schema({
     type: String,
     required: [true, `Le nom de la société est obligatoire`]
   },
+  company_size: {
+    type: String,
+    enum: Object.keys(COMPANY_SIZE),
+    required: false,
+  },
+  company_logo: {
+    type: String,
+    required: false,
+  },
+  legal_status: {
+    type: String,
+    enum: Object.keys(LEGAL_STATUS),
+    required: false,
+  },
+  legal_representant_fullname: {
+    type: String,
+    required: false,
+  },
+  legal_representant_email: {
+    type: String,
+    set: v => v ? v.toLowerCase().trim() : v,
+    validate: [isEmailOk, v => `L'email du représentant légal '${v.value}' est invalide`],
+    required: false,
+  },
+  billing_contact_fullname: {
+    type: String,
+    required: false,
+  },
+  billing_contact_email: {
+    type: String,
+    set: v => v ? v.toLowerCase().trim() : v,
+    validate: [isEmailOk, v => `L'email du contact de facturation '${v.value}' est invalide`],
+  },
   siren: {
     type: String,
     set: v => v ? v.replace(/ /g, '') : v,
     validate: [v => siret.isSIREN(v) , v => `Le siren '${v.value}' est invalide`],
     required: [true, `Le SIREN est obligatoire`]
+  },
+  // RCS city
+  registration_city: {
+    type: String,
+    required: false,
+  },
+  // HQ city
+  headquarter_city: {
+    type: String,
+    required: false,
+  },
+  // Délégation de pouvoir
+  authority_delegated: {
+    type: String,
+    required: false,
+  },
+  authority_delegation: {
+    type: String,
+    required: [function() {return !!this.authority_delegated}, `Le document de délégation de pouvoir est obligatoire`],
   },
   nationality: {
     type: String,
@@ -69,11 +133,34 @@ const CustomerSchema = new Schema({
   },
   vat_number: {
     type: String,
-    required: [function() {this.vat_subject===true, `Le numéro de TVA est obligatoire`}],
+    required: [function() {return this.vat_subject===true, `Le numéro de TVA est obligatoire`}],
   },
   address: {
     type: AddressSchema,
     required: false,
+  },
+  sector: {
+    type: Schema.Types.ObjectId,
+    ref: 'sector',
+    set: v => v || undefined,
+    required: false,
+  },
+  // If account deactived
+  deactivation_reason: {
+    type: String,
+    enum: Object.keys(DEACTIVATION_REASON),
+    required: false,
+  },
+  // Null: for freelance 
+  suspended: {
+    type: Boolean,
+    default: function() {return this.role==ROLE_CUSTOMER ? false: null},
+    required: [function() {return this.role==ROLE_CUSTOMER}, `Le status de suspension est obligatoire pour le client`],
+  },
+  suspended_reason: {
+    type: String,
+    enum: Object.keys(SUSPEND_REASON),
+    required: [function() {return this.suspended}, `La raison de suspension est obligatoire`],
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
