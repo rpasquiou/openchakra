@@ -145,22 +145,29 @@ const CustomerSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
-  // If account deactived
+  // Active or "deleted" account
+  active: {
+    type: Boolean,
+    default: false,
+    requried: true,
+  },
+    // If account deactived
   deactivation_reason: {
     type: String,
     enum: Object.keys(DEACTIVATION_REASON),
-    required: false,
+    required: [function() {return !!this.active}, `La raison de désactivation est obligatoire`],
   },
   // Default: customer not suspended, freelance standby
   suspended_status: {
     type: String,
-    enum: Object.values(SUSPEND_STATE),
+    enum: Object.keys(SUSPEND_STATE),
     default: function() {return this.role==ROLE_CUSTOMER ? SUSPEND_STATE_NOT_SUSPENDED: SUSPEND_STATE_STANDBY},
     required: true,
   },
   suspended_reason: {
     type: String,
     enum: Object.keys(SUSPEND_REASON),
+    set: v => v || undefined,
     required: [function() {return this.suspended_state==SUSPEND_STATE_SUSPENDED}, `La raison de suspension est obligatoire`],
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})

@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON } = require("./consts")
+const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, SUSPEND_STATE } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
@@ -39,6 +39,7 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'company_size', enumValues: COMPANY_SIZE})
   declareEnumField({model, field: 'legal_status', enumValues: LEGAL_STATUS})
   declareEnumField({model, field: 'deactivation_reason', enumValues: DEACTIVATION_REASON})
+  declareEnumField({model, field: 'suspended_status', enumValues: SUSPEND_STATE})
   declareEnumField({model, field: 'suspended_reason', enumValues: SUSPEND_REASON})
 })
 
