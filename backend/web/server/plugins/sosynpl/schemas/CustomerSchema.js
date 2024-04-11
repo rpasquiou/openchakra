@@ -133,7 +133,7 @@ const CustomerSchema = new Schema({
   },
   vat_number: {
     type: String,
-    required: [function() {return this.vat_subject===true, `Le numéro de TVA est obligatoire`}],
+    required: [function() {return this.vat_subject===true}, `Le numéro de TVA est obligatoire`],
   },
   address: {
     type: AddressSchema,
@@ -155,7 +155,7 @@ const CustomerSchema = new Schema({
   deactivation_reason: {
     type: String,
     enum: Object.keys(DEACTIVATION_REASON),
-    required: [function() {return !!this.active}, `La raison de désactivation est obligatoire`],
+    required: [function() {return !this.active}, `La raison de désactivation est obligatoire`],
   },
   // Default: customer not suspended, freelance standby
   suspended_status: {
