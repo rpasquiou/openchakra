@@ -605,9 +605,6 @@ const COACHING_MAPPING={
     const user=await User.findById(cache('user', record.SDPATIENTID))
       .populate({path: 'company', populate: 'current_offer'})
     const offer=user?.company?.current_offer?._id
-    console.log('coaching user', record.SDPATIENTID, !!user)
-    console.log('coaching company', !!user?.company)
-    console.log('coaching company offer', !!user?.company?.current_offer)
     return offer
   },
   migration_id: 'SDPROGRAMID',
