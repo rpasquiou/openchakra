@@ -76,7 +76,7 @@ describe('Test imports', () => {
     await mongoose.connection.close()
   })
 
-  it.only('must import companies', async () => {
+  it('must import companies', async () => {
     const res = await importCompanies(path.join(ROOT, 'smart_project.csv'))
     const companies=await Company.find()
     expect(companies.length).toEqual(13)
@@ -226,8 +226,8 @@ describe('Test imports', () => {
     return importUserProgressQuizz(path.join(ROOT, 'wapp_progress.csv'))
   })
 
-  it('must upsert patients quizzs', async () => {
-    return importUserQuizz(path.join(ROOT, 'wapp_patient_quiz.csv'))
+  it.only('must upsert patients quizzs', async () => {
+    return importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
   })
 
   it('must upsert patients objectives', async () => {
