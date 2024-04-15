@@ -15,13 +15,11 @@ import {
   CalendarDays,
 } from '@uselessdev/datepicker'
 
-let allLocales;
-import("date-fns/locale").then(locales => {
-  allLocales = locales;
-});
+const allLocales=import('date-fns/locale')
 
 const getLocale = () => {
-  const locale = navigator.language.replace("-", "");
+  // TODO: get lcoale from navigator
+  const locale = 'fr-FR' //navigator.language.replace("-", "");
   const rootLocale = locale.substring(0, 2);
   return allLocales[locale] || allLocales[rootLocale]
 };
