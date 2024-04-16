@@ -45,6 +45,11 @@ const {
   ROLE_COMPANY_BUYER,
   ROLE_TI,
   UNACTIVE_REASON,
+  LEAD_SOURCE,
+  LOCATION,
+  OPP_PROGRESS,
+  EMERGENCY,
+  OPP_STATUS,
 } = require('./consts')
 const {
   declareComputedField,
@@ -159,6 +164,9 @@ setPreprocessGet(preprocessGet)
 const preCreate = ({model, params, user}) => {
   if (['jobUser', 'request', 'mission', 'comment'].includes(model)) {
     params.user=params.user || user
+  }
+  if (['lead', 'opportunity', 'note'].includes(model) && !params.creator) {
+    params.creator=user._id
   }
   if (model=='quotation' && 'mission' in params) {
     return Mission.findById(params.mission)
@@ -450,6 +458,27 @@ declareVirtualField({model: 'adminDashboard', field: 'customer_commission_ca_tot
 declareVirtualField({model: 'adminDashboard', field: 'ti_registered_today', instance: 'Number'})
 declareVirtualField({model: 'adminDashboard', field: 'customers_registered_today', instance: 'Number'})
 
+/** LEAD */
+declareEnumField({model: 'lead', field: 'company_size', enumValues: COMPANY_SIZE})
+declareEnumField({model: 'lead', field: 'company_zip_code', enumValues: DEPARTEMENTS})
+declareEnumField({model: 'lead', field: 'company_activity', enumValues: COMPANY_ACTIVITY})
+declareEnumField({model: 'lead', field: 'source', enumValues: LEAD_SOURCE})
+declareVirtualField({model: 'lead', field: 'opportunities', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: {ref: 'opportunity'}}
+})
+/** End LEAD */
+
+/** OPPORTUNITY */
+declareEnumField({model: 'opportunity', field: 'zip_code', enumValues: DEPARTEMENTS})
+declareEnumField({model: 'opportunity', field: 'location', enumValues: LOCATION})
+declareEnumField({model: 'opportunity', field: 'recurrent', enumValues: BOOLEAN})
+declareEnumField({model: 'opportunity', field: 'progress', enumValues: OPP_PROGRESS})
+declareEnumField({model: 'opportunity', field: 'emergency', enumValues: EMERGENCY})
+declareEnumField({model: 'opportunity', field: 'source', enumValues: LEAD_SOURCE})
+declareEnumField({model: 'opportunity', field: 'status', enumValues: OPP_STATUS})
+/** End OPPORTUNITY */
 
 const filterDataUser = ({model, data, user}) => {
   // ALL-E admins have whole visibility
