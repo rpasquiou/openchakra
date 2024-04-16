@@ -203,6 +203,27 @@ const formatDateTime = datetime => {
   return moment(datetime).format(`[le] DD/MM/YY [à] HH:mm`)
 }
 
+/**
+ * Sort object's keys accoring to the values, setting firstkey first
+ * @throws Error if firstKey not found
+ * */
+
+const sortObject = (object, firstKey) => {
+  let entries=lodash(object)
+    .entries()
+    .sortBy(([k,v ]) => normalize(v))
+    .value()
+  if (firstKey) {
+    const firstEntry=entries.find(([k, v])=> k==firstKey)
+    if (!firstEntry) {
+      throw new Error(`Could not find key ${firstKey}`)
+    }
+    entries=[firstEntry, ...entries.filter(([k, v]) => k!=firstEntry)]
+  }
+  const result=Object.fromEntries(entries)
+  return result
+}
+
 module.exports = {
   normalize,
   matches,
@@ -227,4 +248,5 @@ module.exports = {
   formatDeadline,
   splitRemaining,
   formatDateTime,
+  sortObject,
 }
