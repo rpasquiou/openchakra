@@ -24,12 +24,12 @@ const NoteSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: [() => !this.lead, `Un client/TI ou un prospect est obligatoire`],
+    required: [function() {return !this.lead}, `Un client/TI ou un prospect est obligatoire`],
   },
   lead: {
     type: Schema.Types.ObjectId,
     ref: 'lead',
-    required: [() => !this.user, `Un client/TI ou un prospect est obligatoire`],
+    required: [function() {return !this.user}, `Un client/TI ou un prospect est obligatoire`],
   },
   }, schemaOptions
 );

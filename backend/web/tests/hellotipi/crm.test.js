@@ -6,6 +6,7 @@ const Opportunity=require('../../server/models/Opportunity')
 const { BOOLEAN_NO } = require('../../server/plugins/all-inclusive/consts')
 const User = require('../../server/models/User')
 const Lead = require('../../server/models/Lead')
+const Note = require('../../server/models/Note')
 const {CUSTOMER_USER} = require('./data/modelsBaseData')
 
 forceDataModelAllInclusive()
@@ -39,22 +40,31 @@ describe('Test missions quotations', () => {
   it('opportunity must accept lead', async() => {
     await Opportunity.create({
       recurrent: BOOLEAN_NO, creator: customer, start_date: moment(), zip_code: 76, name: 'opp',
-      lead_customer: lead,
+      lead: lead,
     })
   })
 
   it('opportunity must accept user', async() => {
     await Opportunity.create({
       recurrent: BOOLEAN_NO, creator: customer, start_date: moment(), zip_code: 76, name: 'opp',
-      registered_customer: customer
+      user: customer
     })
   })
 
   it('opportunity must not accept lead and user', async() => {
     const fn=() => Opportunity.create({
       recurrent: BOOLEAN_NO, creator: customer, start_date: moment(), zip_code: 76, name: 'opp',
-      lead_customer: lead, registered_customer: customer,
+      lead: lead, user: customer,
     })
     return expect(fn).rejects.toThrow()
   })
+
+  it('note must accept lead', async() => {
+    await Note.create({creator: customer, lead: lead, text: 'Test'})
+  })
+
+  it('note must accept user', async() => {
+    await Note.create({creator: customer, user: customer, text: 'Test'})
+  })
+
 })

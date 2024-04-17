@@ -496,13 +496,24 @@ UserSchema.virtual("search_text").get(function() {
   values.push(this.admin_validated && 'administratif')
   values=values.filter(v=>!!v)
   return values.join(' ')
-});
+})
 
-// All jobs
+UserSchema.virtual("opportunities", {
+  ref: "opportunity", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "user" // is equal to foreignField
+})
+
 UserSchema.virtual("notes", {
   ref: "note", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "user" // is equal to foreignField
-});
+})
+
+UserSchema.virtual("documents", {
+  ref: "document", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "lead" // is equal to foreignField
+})
 
 module.exports = UserSchema;

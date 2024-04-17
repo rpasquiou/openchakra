@@ -36,17 +36,17 @@ const OpportunitySchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'document',
   }],
-  lead_customer: {
+  lead: {
     type: Schema.Types.ObjectId,
     ref: 'lead',
-    validate: [function(value) {return !!value != !!this.registered_customer}, `On ne peut sélectionner à la fois un prospect et un client`],
-    required: [function() {return !this.registered_customer}, `Un prospect ou un client est obligatoire`],
+    validate: [function(value) {return !!value != !!this.user}, `On ne peut sélectionner à la fois un prospect et un client`],
+    required: [function() {return !this.user}, `Un prospect ou un client est obligatoire`],
   },
-  registered_customer: {
+  user: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    validate: [function(value) {return !!value != !!this.lead_customer}, `On ne peut sélectionner à la fois un prospect et un client`],
-    required: [function() {return !this.lead_customer}, `Un prospect ou un client est obligatoire`],
+    validate: [function(value) {return !!value != !!this.lead}, `On ne peut sélectionner à la fois un prospect et un client`],
+    required: [function() {return !this.lead}, `Un prospect ou un client est obligatoire`],
   },
   job_users:  [{
     type: Schema.Types.ObjectId,

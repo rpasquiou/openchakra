@@ -68,10 +68,6 @@ const LeadSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
-  documents: [{
-    type: Schema.Types.ObjectId,
-    ref: 'document',
-  }],
   callback: {
     type: Date,
     required: false,
@@ -88,14 +84,19 @@ const LeadSchema = new Schema({
 LeadSchema.virtual("opportunities", {
   ref: "opportunity", // The Model to use
   localField: "_id", // Find in Model, where localField
-  foreignField: 'leads' // is equal to foreignField
-});
+  foreignField: 'lead' // is equal to foreignField
+})
 
-// All jobs
 LeadSchema.virtual("notes", {
   ref: "note", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "lead" // is equal to foreignField
-});
+})
+
+LeadSchema.virtual("documents", {
+  ref: "document", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "lead" // is equal to foreignField
+})
 
 module.exports = LeadSchema

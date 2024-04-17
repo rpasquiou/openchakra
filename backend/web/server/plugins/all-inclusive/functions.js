@@ -161,12 +161,17 @@ const preprocessGet = ({model, fields, id, user}) => {
 
 setPreprocessGet(preprocessGet)
 
-const preCreate = ({model, params, user}) => {
+const preCreate = async ({model, params, user}) => {
   if (['jobUser', 'request', 'mission', 'comment'].includes(model)) {
     params.user=params.user || user
   }
   if (['lead', 'opportunity', 'note'].includes(model) && !params.creator) {
     params.creator=user._id
+  }
+  if (['document', 'opportunity', 'note'].includes(model) && !!params.parent)   {
+    const parentType=await getModel(params.parent, ['user', 'lead']).catch(console.error)
+    params[parentType=='user' ? 'user' : 'lead']=params.parent
+    params.parent=undefined
   }
   if (model=='quotation' && 'mission' in params) {
     return Mission.findById(params.mission)
