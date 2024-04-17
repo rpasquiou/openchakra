@@ -498,4 +498,11 @@ UserSchema.virtual("search_text").get(function() {
   return values.join(' ')
 });
 
+// All jobs
+UserSchema.virtual("notes", {
+  ref: "note", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "user" // is equal to foreignField
+});
+
 module.exports = UserSchema;

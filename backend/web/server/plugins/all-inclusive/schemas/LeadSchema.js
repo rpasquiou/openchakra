@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const { schemaOptions } = require('../../../utils/schemas');
 const siret = require("siret");
-const { isEmailOk } = require("../../../../utils/sms");
+const { isEmailOk, isPhoneOk } = require("../../../../utils/sms");
 const { DEPARTEMENTS, COMPANY_SIZE, COMPANY_ACTIVITY, SOURCE, LEAD_SOURCE } = require("../consts");
 
 const Schema = mongoose.Schema;
@@ -68,6 +68,10 @@ const LeadSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
+  documents: [{
+    type: Schema.Types.ObjectId,
+    ref: 'document',
+  }],
   callback: {
     type: Date,
     required: false,
@@ -85,6 +89,13 @@ LeadSchema.virtual("opportunities", {
   ref: "opportunity", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: 'leads' // is equal to foreignField
+});
+
+// All jobs
+LeadSchema.virtual("notes", {
+  ref: "note", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "lead" // is equal to foreignField
 });
 
 module.exports = LeadSchema

@@ -321,6 +321,11 @@ _missions.comments.mission.job.user.full_name,_missions.comments.mission.user.co
     requires:'firstname,lastname,qualified_str,visible_str,company_name,coaching,zip_code,admin_validated'
   })
   declareEnumField({model: m, field: 'gender', instance: 'String', enumValues: GENDER})
+  declareVirtualField({model: m, field: 'notes', instance: 'Array', requires: '', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'note'}}
+  })
 })
 
 
@@ -467,6 +472,11 @@ declareVirtualField({model: 'lead', field: 'opportunities', instance: 'Array', m
 caster: {
   instance: 'ObjectID',
   options: {ref: 'opportunity'}}
+})
+declareVirtualField({model: 'lead', field: 'notes', instance: 'Array', requires: '', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: {ref: 'note'}}
 })
 /** End LEAD */
 
