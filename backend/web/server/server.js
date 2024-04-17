@@ -128,6 +128,7 @@ require('./models/Emergency')
 require('./models/Step')
 require('./models/Opportunity')
 require('./models/Document')
+require('./models/Note')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
