@@ -182,6 +182,7 @@ const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
 const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
+const LogbookDay = require('../../models/LogbookDay')
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -209,7 +210,7 @@ const filterDataUser = ({ model, data, id, user }) => {
 
 setFilterDataUser(filterDataUser)
 
-const preprocessGet = ({ model, fields, id, user, params }) => {
+const preprocessGet = async ({ model, fields, id, user, params }) => {
   // TODO Totally ugly. When asked for chartPoint, the studio should also require 'date' attribute => to fix in the studio
   const chartPointField=fields.find(v => /value_1/.test(v))
   if (chartPointField) {
@@ -292,6 +293,24 @@ const preprocessGet = ({ model, fields, id, user, params }) => {
     model='user'
   }
 
+  if (model=='logbookDay') {
+    // Get by date
+    const coachingLogbbokFields=[...fields.map(f => f.replace(/logbooks/, 'logbook')), 'day']
+    const m=moment.unix(id)
+    if (!!id && m.isValid()) {
+      params=lodash(params).mapKeys((v, k) => k.replace(/logbooks/, 'logbook'))
+	    .omitBy((v, k) => /limit/i.test(k))
+	    .value()
+      params={...params, 'filter.user': user._id}
+      let coachingLogbooks=await loadFromDb({
+        model: 'coachingLogbook', fields: coachingLogbbokFields, id: undefined, user, params
+      })
+      coachingLogbooks=coachingLogbooks.filter(l => moment(l.day).isSame(m, 'day'))
+      const logbookDay={day: m.startOf('day'), logbooks: coachingLogbooks.map(c => c.logbook)}
+      return {data: [logbookDay]}
+   }
+  }
+
   return Promise.resolve({ model, fields, id, params })
 
 }
@@ -299,6 +318,10 @@ const preprocessGet = ({ model, fields, id, user, params }) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = async ({ model, params, user }) => {
+  if (model=='logbookDay') {
+    return logbooksConsistency(user._id, params.day)
+      .then(() => ({data: {_id: moment(params.day).unix()}}))
+  }
   if (model=='coaching') {
     const offer=(await Company.findById(user.company).populate('current_offer'))?.current_offer
     if (!offer) {
@@ -767,10 +790,16 @@ declareVirtualField({
   }),
   declareVirtualField({
     model: m, field: 'nutrition_advices', instance: 'Array', multiple: true,
+    requires: 'email,role',
     caster: {
       instance: 'ObjectID',
       options: { ref: 'nutritionAdvice' }
     },
+  }),
+  declareVirtualField({ model: m, field: 'spent_nutrition_credits', instance: 'Number', requires: 'email'})
+  declareVirtualField({
+    model: m, field: 'remaining_nutrition_credits', instance: 'Number',
+    requires: 'company.current_offer.nutrition_credit,spent_nutrition_credits,role'
   })
 })
 // End user/loggedUser
@@ -1094,12 +1123,6 @@ declareVirtualField({
 }
 )
 declareVirtualField({ model: 'coaching', field: 'spent_credits', instance: 'Number'})
-declareVirtualField({
-  model: 'coaching', field: 'remaining_nutrition_credits', instance: 'Number',
-  requires: 'user.offer.nutrition_credit,spent_nutrition_credits,user.company.offers.nutrition_credit,user.role'
-}
-)
-declareVirtualField({ model: 'coaching', field: 'spent_nutrition_credits', instance: 'Number'})
 declareEnumField({ model: 'coaching', field: 'status', enumValues: COACHING_STATUS})
 
 declareVirtualField({
@@ -1768,10 +1791,10 @@ Company.findOneAndUpdate(
   .catch(err => console.error(`Particular company upsert error:${err}`))
 
 // Ensure user logbooks consistency
-const logbooksConsistency = async user_id => {
+const logbooksConsistency = async (user_id, day) => {
   const idFilter = user_id ? { _id: user_id } : {}
-  const startDay = moment().add(-1, 'day')
-  const endDay = moment().add(1, 'days')
+  const startDay = day ? moment(day) : moment().add(-1, 'day')
+  const endDay = day ? moment(day).add(1, 'day') : moment().add(1, 'days')
   const logBooksFilter = { $and: [{ day: { $gte: startDay.startOf('day') } }, { day: { $lte: endDay.endOf('day') } }] }
   return User.find(idFilter).populate(
     { path: 'all_logbooks', match: logBooksFilter, populate: { path: 'logbook', populate: 'quizz' } },
@@ -1895,7 +1918,7 @@ ensureSpoonGains()
 
 // Ensure logbooks consistency each morning
 //cron.schedule('0 */15 * * * *', async() => {
-cron.schedule('0 0 * * * *', async () => {
+false && cron.schedule('0 0 * * * *', async () => {
   logbooksConsistency()
     .then(() => console.log(`Logbooks consistency OK `))
     .catch(err => console.error(`Logbooks consistency error:${err}`))

@@ -47,7 +47,7 @@ const CoachingSchema = new Schema({
   food_documents: [{
     type: Schema.Types.ObjectId,
     ref: 'foodDocument',
-    required: true,
+    required: false,
   }],
   quizz_templates: [{
     type: Schema.Types.ObjectId,
@@ -256,20 +256,6 @@ CoachingSchema.virtual('diet_availabilities', DUMMY_REF).get(function() {
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   const appType=lodash.isEmpty(this.appointments) ? this.user?.company?.assessment_appointment_type : this.user?.company?.followup_appointment_type
   return appType
-})
-
-CoachingSchema.virtual('spent_nutrition_credits', {
-  ref: 'nutritionAdvice',
-  localField: '_id',
-  foreignField: 'coaching',
-  count: true,
-})
-
-CoachingSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
-  if (this.user?.role!=ROLE_CUSTOMER) {
-    return 0
-  }
-  return (this.user?.offer?.nutrition_credit-this.spent_nutrition_credits) || 0
 })
 
 /* eslint-enable prefer-arrow-callback */
