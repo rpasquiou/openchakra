@@ -5,7 +5,7 @@ const moment=require('moment')
 const path=require('path')
 const crypto = require('crypto')
 const {extractData, guessFileType, importData, cache, setCache}=require('../../../utils/import')
-const { guessDelimiter, normalize } = require('../../../utils/text')
+const { guessDelimiter, normalize, getNearestWord } = require('../../../utils/text')
 const Company=require('../../models/Company')
 const User=require('../../models/User')
 const AppointmentType=require('../../models/AppointmentType')
@@ -39,16 +39,20 @@ require('../../models/Offer')
 const { updateCoachingStatus } = require('./coaching')
 const { isPhoneOk } = require('../../../utils/sms')
 const UserQuizzQuestion = require('../../models/UserQuizzQuestion')
-const mime = require('mime-types')
-const { sendFilesToAWS, sendFileToAWS } = require('../../middlewares/aws')
+const { sendFileToAWS } = require('../../middlewares/aws')
 const UserQuizz = require('../../models/UserQuizz')
 const { isNewerThan } = require('../../utils/filesystem')
-
+const pairing =require('@progstream/cantor-pairing')
+const FoodDocument = require('../../models/FoodDocument')
 const DEFAULT_PASSWORD='DEFAULT'
-const PRESTATION_DURATION=45
-const PRESTATION_NAME=`Générique ${PRESTATION_DURATION} minutes`
-const PRESTATION_SMARTAGENDA_ID=-1
-const KEY_NAME='Clé import'
+
+const ASS_PRESTATION_DURATION=45
+const ASS_PRESTATION_NAME=`Bilan générique ${ASS_PRESTATION_DURATION} minutes`
+const ASS_PRESTATION_SMARTAGENDA_ID=-1
+
+const FOLLOWUP_PRESTATION_DURATION=15
+const FOLLOWUP_PRESTATION_NAME=`Suivi générique ${FOLLOWUP_PRESTATION_DURATION} minutes`
+const FOLLOWUP_PRESTATION_SMARTAGENDA_ID=-2
 
 const QUIZZ_FACTOR=100
 
@@ -91,8 +95,8 @@ const NUT_REASON={
 }
 
 
-const normalizeTel = tel => {
-  let newTel=tel
+const normalizePhone = tel => {
+  let newTel=tel?.replace(/ /g, '')
   if (newTel?.length==9) {
     newTel=`0${newTel}`
   }
@@ -119,9 +123,9 @@ const fixPatients = async directory => {
     [/\@gmailcom"/g, '@gmail.com"'], [/\@gmail\.c"/g, '@gmail.com"'], [/\@aolcom"/g, '@aol.com"'], [/\@orangefr"/g, '@orange.fr"'], 
     [/@sfr"/g, '@sfr.fr"'], [/\@yahoofr/g, "@yahoo.fr"], [/\@hotmailcom"/g, 'hotmail.com"'], [/\@neuffr"/g, '@neuf.fr"'], 
     [/\@msncom"/g, '@msn.com"'], [/\@gmail"/g, '@gmail.com"'], [/\@free.f"/g, '@free.fr"'], [/\@orange,fr/g, 'orange.fr'],
-    [/\@live\.f"/g, '@live.fr"'], [/\@yahoo\.f"/g, '@yahoo.fr"'], [/francksurgis\.\@live\.fr/, 'francksurgis@live.fr'],
+    [/\@live\.f"/g, '@live.fr"'], [/\@yahoo\.f"/g, '@yahoo.fr"'], [/francksurgis\.\@live\.fr/g, 'francksurgis@live.fr'],
     [/\@outlook\.f"/g, '@outlook.fr"'], [/\@yahoo"/g, '@yahoo.fr"'], [/\@lapos"/g, '@laposte.net"'], [/\@lapost"/g, '@laposte.net"'],
-    [/yanis69240hotmail.com/, 'yanis69240@hotmail.com']
+    [/yanis69240hotmail.com/g, 'yanis69240@hotmail.com']
 
   ]
 
@@ -129,16 +133,58 @@ const fixPatients = async directory => {
 }
 
 const fixDiets = directory => {
-  const REPLACES=[['UPPER(lastname)', 'lastname'], [/\\""/g, "'"], [/\\"/g, "'"], [/\\\\/g, ''],]
+  const REPLACES=[['UPPER(lastname)', 'lastname'], [/\\"/g, "'"], ]
   replaceInFile(path.join(directory, 'smart_diets.csv'), REPLACES)
 }
 
-const fixAppointments = directory => {
+const fixAppointments = async directory => {
+  const INPUT=path.join(directory, 'smart_consultation.csv')
+  const MIS_INPUT=path.join(directory, 'smart_mis.csv')
+  const EO_INPUT=path.join(directory, 'smart_eo.csv')
+  const OUTPUT=path.join(directory, 'wapp_consultation.csv')
   const REPLACES=[
     [/\\"/g, "'"], [/\\\\/g, ''],
   ]
-  replaceInFile(path.join(directory, 'smart_consultation.csv'), REPLACES)
+  replaceInFile(INPUT, REPLACES)
+  let records=await loadRecords(INPUT)
+
+  if (isNewerThan(OUTPUT, INPUT) && isNewerThan(OUTPUT, MIS_INPUT) && isNewerThan(OUTPUT, EO_INPUT)) {
+    console.log('no need to generate appts')
+    return 
+  }
+  console.log('Generating appts')
+  // Remove MIS appointments
+  console.log('records before MIS filter', records.length)
+  const mis=(await loadRecords(MIS_INPUT)).map(record => record.SDCONSULTID)
+  records=records.filter(r => !mis.includes(r.SDCONSULTID))
+  console.log('records after MIS filter', records.length)
+
+  // Remove EO appointments
+  console.log('records before EO filter', records.length)
+  const eo=(await loadRecords(EO_INPUT)).map(record => record.SDCONSULTID)
+  records=records.filter(r => !eo.includes(r.SDCONSULTID))
+  console.log('records after EO filter', records.length)
+  
+  const firstAppointments=lodash(records).groupBy('SDPROGRAMID')
+    .mapValues(consults => lodash.minBy(consults, c => moment(c.date)).SDCONSULTID)
+    .value()
+  const ASS_HEADER='assessment'
+  const keys=[...Object.keys(records[0]), ASS_HEADER]
+  const result=[keys.join(';')]
+  records.forEach(record => {
+    const line=keys.map(k => k==ASS_HEADER ? (firstAppointments[record.SDPROGRAMID]==record.SDCONSULTID ? "1" : "0"): record[k])
+    result.push(line.join(';'))
+  })
+
+  
+  fs.writeFileSync(OUTPUT, result.join('\n'))
 }
+
+const createCantorKey = (value1, value2) => {
+  const values=[parseInt(value1), parseInt(value2)].sort()
+  return pairing.pair(...values)
+}
+
 
 const fixQuizz = directory => {
   const REPLACES=[
@@ -153,6 +199,24 @@ const fixQuizzQuestions = directory => {
     [/\\"/g, "'"], [/\\\\/g, ''],
   ]
   replaceInFile(path.join(directory, 'smart_question.csv'), REPLACES)
+}
+
+const fixPatientQuizz = async directory => {
+  const input=path.join(directory, 'smart_patient_quiz.csv')
+  const output=path.join(directory, 'wapp_patient_quiz.csv')
+  const records=await loadRecords(input)
+
+  const invert = value => lodash.isEmpty(value) ? '' : +value==1 ? 0 : 1
+
+  const mappedRecords=records.map(r => {
+    const copy={...r}
+    ORDERS.map(attribute => {
+      copy[attribute]=invert(copy[attribute])
+    })
+    return copy
+  })
+
+  await saveRecords(output, Object.keys(mappedRecords[0]), mappedRecords)
 }
 
 const fixObjectives = directory => {
@@ -200,57 +264,79 @@ const loadRecords = async path =>  {
   return records
 }
 
-const getMessageId = (threadId, date) => {
-  return `${threadId}${moment(date).unix()}`
+const saveRecords = async (path, keys, data) =>  {
+  const msg=`Saving records to ${path}`
+  console.time(msg)
+  const header=keys.join(';')
+  const contents=data.map(d => keys.map(k => d[k]).join(';'))
+  const fullContents=header+'\n'+contents.join('\n')
+  return fs.writeFileSync(path, fullContents)
 }
 
 const generateMessages = async directory =>{
   const THREADS=path.join(directory, 'smart_thread.csv')
   const MESSAGES=path.join(directory, 'smart_message.csv')
 
-  const OUTPUT=path.join(directory, 'message.csv')
+  const CONVERSATIONS_OUTPUT=path.join(directory, 'wapp_conversations.csv')
+  const MESSAGES_OUTPUT=path.join(directory, 'wapp_messages.csv')
 
-  if (isNewerThan(OUTPUT, THREADS) && isNewerThan(OUTPUT, MESSAGES)) {
+  if (isNewerThan(CONVERSATIONS_OUTPUT, THREADS) 
+      && isNewerThan(CONVERSATIONS_OUTPUT, MESSAGES)
+      && isNewerThan(MESSAGES_OUTPUT, THREADS)
+      && isNewerThan(MESSAGES_OUTPUT, MESSAGES)
+  ) {
     // console.log('No need to generate', OUTPUT)
     return
   }
-  console.log('Generating', OUTPUT)
 
-  const records=await loadRecords(MESSAGES)
-  const conversations=lodash(records)
+  console.log('Generating', CONVERSATIONS_OUTPUT, 'and', MESSAGES_OUTPUT)
+
+  const sd_messages=await loadRecords(MESSAGES)
+  const threads=await loadRecords(THREADS)
+
+  const conversations=lodash([...sd_messages, ...threads])
+    .map(({SDTHREADID, SDCREATORID, SDSENDERID}) => ({SDTHREADID, USERID: SDCREATORID || SDSENDERID}))
     .groupBy('SDTHREADID')
-    .mapValues(msgs => lodash.uniq(msgs.map(m => m.SDSENDERID)))
+    .mapValues(users => lodash.uniq(users.map(r => parseInt(r.USERID))))
+    .pickBy(v => v.length==2)
     .entries()
-    .filter(([threadId, users]) => users.length==2)
-    .fromPairs()
-    .value()
-  
-  // Generate conversation
-  const convContents=['SDTHREADID;USER1;USER2']
-  Object.entries(conversations).forEach(conv => convContents.push([conv[0], conv[1][0], conv[1][1]].join(';')))
-  fs.writeFileSync(path.join(directory, 'conversation.csv'), convContents.join('\n'))
+    .map((([SDTHREADID, [USER1, USER2]]) => ({SDTHREADID, USER1, USER2, CONVID: createCantorKey(USER1, USER2)})))
+    .groupBy('CONVID')
+    .mapValues(threads => ({...threads[0], SDTHREADID: undefined, SDTHREADIDS: threads.map(t => t.SDTHREADID)}))
+    
+  const conversationKeys=['CONVID','USER1','USER2']
+  saveRecords(CONVERSATIONS_OUTPUT, conversationKeys, conversations)
 
-  // Generate messages
-  const messContents=['MESSAGEID;SDTHREADID;SENDER;RECEIVER;DATE;MESSAGE']
-  records.forEach(message => {
-    const users=conversations[message.SDTHREADID]
-    if (users) {
-      const sender=message.SDSENDERID
-      const receiver=users[0]==sender ? users[1] : users[0]
-      const msgId=getMessageId(message.SDTHREADID, message.datetime)
-      messContents.push([msgId,message.SDTHREADID,sender, receiver, message.datetime, message.message].join(';'))
-    }
-  })
-  fs.writeFileSync(OUTPUT, messContents.join('\n'))
+  const getConvId = threadId => {
+    const conv=conversations.values().find(e => e.SDTHREADIDS.includes(threadId))
+    return parseInt(conv?.CONVID)
+  }
+
+  const getReceiver = (convId, sender) => {
+    const conv=conversations.values().find(conv => conv.CONVID==convId)
+    const receiver=conv.USER1==sender ? conv.USER2 : conv.USER1
+    return receiver
+  }
+
+  const messages=lodash(sd_messages)
+    // Compute convid
+    .map(r => ({...r, CONVID: getConvId(r.SDTHREADID)}))
+    // Remove no CONVID entries (i.e. thread with one people only)
+    .filter(v => !!v.CONVID)
+    .map(msg => ({...msg, SENDER: msg.SDSENDERID, RECEIVER: getReceiver(msg.CONVID, msg.SDSENDERID), message: `"${msg.message}"`}))
+    .value()
+
+  const messagesKeys=['CONVID', 'SENDER', 'RECEIVER', 'message', 'datetime']
+  saveRecords(MESSAGES_OUTPUT, messagesKeys, messages)
 }
 
 const generateProgress = async directory => {
   const consulPath=path.join(directory, 'smart_consultation.csv')
   const consultProgressPath = path.join(directory, 'smart_consultation_progress.csv')
-  const outputPath = path.join(directory, 'progress.csv')
+  const outputPath = path.join(directory, 'wapp_progress.csv')
 
   if (isNewerThan(outputPath, consulPath) && isNewerThan(outputPath, consultProgressPath)) {
-    // console.log('No need to generate', outputPath)
+    console.log('No need to generate', outputPath)
     return
   }
   console.log('Generating', outputPath)
@@ -286,9 +372,69 @@ const generateProgress = async directory => {
 
 const fixFoodDocuments = async directory => {
   const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''],
+    [/\\"/g, "'"], [/\\\\/g, ''], [/’/g, "'"]
   ]
   replaceInFile(path.join(directory, 'smart_fiche.csv'), REPLACES)
+  const fichesRecords=await loadRecords(path.join(directory, 'smart_fiche.csv'))
+  const mappingRecords=await loadRecords(path.join(directory, 'mapping_fiche.csv'))
+  const getMappingName = originalName => {
+    const mappingName=mappingRecords.find(record => record.smart_name==originalName)?.wapp_name
+    return mappingName
+  }
+  // Check existence of mapped names in DB
+  const missingDbDocuments=(await Promise.all(
+    mappingRecords
+      .filter(r => !!r.wapp_name)
+      .map(r => FoodDocument.exists({name: r.wapp_name})
+        .then(exists => exists ? '': `No document ${r.wapp_name} in DB`)
+      )
+  )).filter(v => !!v)
+  if (!lodash.isEmpty(missingDbDocuments)) {
+    throw new Error(`Not found in DB: ${missingDbDocuments}`)  
+  }
+}
+
+const computeQuestionId = (quizz_id, question_order) => {
+  return parseInt(+quizz_id)*QUIZZ_FACTOR+(+question_order)
+}
+
+const computeAnswerId = (quizz_id, question_order, answer_order) => {
+  return computeQuestionId(quizz_id, question_order)*QUIZZ_FACTOR+(+answer_order)
+}
+
+const generateQuizz = async directory => {
+  const quizz=await loadRecords(path.join(directory, 'smart_quiz.csv'))
+  const questions=await loadRecords(path.join(directory, 'smart_question.csv'))
+  
+  // Mapp quizz names
+  const dbQuizz=await Quizz.find({type: QUIZZ_TYPE_PATIENT}, {name:1}).populate('questions')
+  const mappedQuizzs=quizz.map(q => ({
+      ...q,
+      name: getNearestWord(q.name, dbQuizz.map(d => d.name), 15) || q.name
+    }))
+  await saveRecords(path.join(directory, 'wapp_quiz.csv'), Object.keys(mappedQuizzs[0]), mappedQuizzs)
+
+  // Mapp quizz question titles
+  const dbQuestions=lodash(dbQuizz).map(q => q.questions).flatten()
+  const mappedQuestions=questions.map(q => ({
+      SDQUESTIONID: computeQuestionId(q.SDQUIZID, q.position), 
+      SQQUIZID: q.SDQUIZID,
+      question: getNearestWord(q.question, dbQuestions.map(d => d.title), 6) || q.question,
+      correct_answer: computeAnswerId(q.SDQUIZID, q.position, +q.firstanswergood==1 ? 0 : 1),
+      comments: `"${q.comments}"`,
+    })
+  )
+  await saveRecords(path.join(directory, 'wapp_questions.csv'), Object.keys(mappedQuestions[0]), mappedQuestions)
+
+  const mappedAnswers=lodash(questions)
+    .map(q => ([
+      {SDANSWERID: computeAnswerId(q.SDQUIZID, q.position, 0), SDQUESTIONID: computeQuestionId(q.SDQUIZID, q.position),text: q.firstanswer},
+      {SDANSWERID: computeAnswerId(q.SDQUIZID, q.position, 1), SDQUESTIONID: computeQuestionId(q.SDQUIZID, q.position),text: q.secondanswer},
+    ]))
+    .flatten()
+    .value()
+  await saveRecords(path.join(directory, 'wapp_answers.csv'), Object.keys(mappedAnswers[0]), mappedAnswers)
+  
 }
 
 const fixFiles = async directory => {
@@ -298,13 +444,16 @@ const fixFiles = async directory => {
   await fixAppointments(directory)
   await fixQuizz(directory)
   await fixQuizzQuestions(directory)
+  await fixPatientQuizz(directory)
   await fixObjectives(directory)
   await fixMessages(directory)
   await fixSummary(directory)
   await generateMessages(directory)
   await fixSpecs(directory)
   await generateProgress(directory)
-  await fixFoodDocuments(directory)
+  // Moved in import function
+  //await fixFoodDocuments(directory)
+  await generateQuizz(directory)
   console.log('Fixed files')
 }
 
@@ -313,12 +462,14 @@ const computePseudo = record => {
   return letters.join('').toUpperCase() || 'FAK'
 }
 
-const COMPANY_MAPPING= {
+const COMPANY_MAPPING= (assTypeId, followTypeId) => ({
   name: 'name',
   size: () => 1,
   activity: () => COMPANY_ACTIVITY_OTHER,
+  assessment_appointment_type: () => assTypeId,
+  followup_appointment_type: () => followTypeId,
   migration_id: 'SDPROJECTID',
-}
+})
 
 const COMPANY_KEY='name'
 const COMPANY_MIGRATION_KEY='migration_id'
@@ -332,7 +483,10 @@ const SMART_OFFER_MAPPING= {
 }
 
 const OFFER_MAPPING= {
-  name: ({record}) => SMART_OFFER_MAPPING[record.SDPROGRAMTYPE]?.name,
+  name: async ({cache, record}) => {
+    const user=await User.findById(cache('user', record.SDPATIENTID)).populate('company')
+    return `${SMART_OFFER_MAPPING[record.SDPROGRAMTYPE]?.name} pour ${user?.company?.name} `
+  },
   price: () => 1,
   groups_credit: () => 0,
   nutrition_credit: () => 3,
@@ -344,10 +498,18 @@ const OFFER_MAPPING= {
   podcasts_unlimited: () => true,
   video_unlimited: () => true,
   webinars_credit: () => 4,
-  company: ({cache, record}) => cache('company', record.SDPROJECTID),
-  validity_start: () => moment(),
+  company: async ({cache, record}) => {
+    const user=await User.findById(cache('user', record.SDPATIENTID))
+    return user?.company
+  },
+  validity_start: () => '01/01/2019',
   assessment_quizz: async () => await Quizz.findOne({type: QUIZZ_TYPE_ASSESSMENT}),
-  migration_id: 'SDPROGRAMTYPE',
+  // migration_id: company smart id * 1000 + smart program type
+  migration_id: async ({cache, record}) => {
+    const user=await User.findById(cache('user', record.SDPATIENTID)).populate('company')
+    const mig_id=user?.company?.migration_id*1000+(+record.SDPROGRAMTYPE)
+    return mig_id
+  },
 }
 
 const OFFER_KEY='name'
@@ -370,7 +532,8 @@ const PATIENT_MAPPING={
   pseudo: ({record}) => computePseudo(record),
   gender: ({record}) => GENDER_MAPPING[record.gender],
   birthday: ({record}) => lodash.isEmpty(record.birthdate) ? null:  moment(record.birthdate),
-  phone: ({record}) => normalizeTel(record.phone),
+  phone: ({record}) => normalizePhone(record.phone),
+  diet_comment: 'comments',
   migration_id: 'SDPATIENTID',
   source: () => 'import',
 }
@@ -386,6 +549,19 @@ const HEIGHT_MAPPING={
 
 const HEIGHT_KEY='_id'
 const HEIGHT_MIGRATION_KEY='migration_id'
+
+const WEIGHT_MAPPING={
+  // Weight from summary
+  migration_id: ({record}) => -record.patient_id,
+  weight: 'weight',
+  user: ({cache, record}) => cache('user', record.patient_id),
+  date: 'updated',
+}
+
+const WEIGHT_KEY='migration_id'
+const WEIGHT_MIGRATION_KEY='migration_id'
+
+
 
 const DIET_STATUS_MAPPING={
   0: DIET_REGISTRATION_STATUS_PENDING,
@@ -404,7 +580,7 @@ const DIET_MAPPING={
   migration_id: 'SDID',
   zip_code: ({record}) => record.cp?.length==4 ? record.cp+'0' : record.cp,
   address: 'address',
-  phone: ({record}) => normalizeTel(record.phone),
+  phone: ({record}) => normalizePhone(record.phone),
   adeli: 'adelinumber',
   city: 'city',
   siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
@@ -427,7 +603,15 @@ const DIET_MIGRATION_KEY='migration_id'
 const COACHING_MAPPING={
   [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record.orderdate),
   user: ({cache, record}) => cache('user', record.SDPATIENTID),
-  offer: ({cache, record}) => cache('offer', record.SDPROGRAMTYPE),
+  offer: async ({cache, record}) => {
+    const user=await User.findById(cache('user', record.SDPATIENTID))
+      .populate({path: 'company', populate: 'current_offer'})
+    const offer=user?.company?.current_offer?._id
+    console.log('coaching user', record.SDPATIENTID, !!user)
+    console.log('coaching company', !!user?.company)
+    console.log('coaching company offer', !!user?.company?.current_offer)
+    return offer
+  },
   migration_id: 'SDPROGRAMID',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   smartdiet_patient_id: 'SDPATIENTID',
@@ -436,12 +620,12 @@ const COACHING_MAPPING={
 const COACHING_KEY=['user', CREATED_AT_ATTRIBUTE]
 const COACHING_MIGRATION_KEY='migration_id'
 
-const APPOINTMENT_MAPPING= prestation_id => ({
+const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
   coaching: ({cache, record}) => cache('coaching', record.SDPROGRAMID),
   start_date: 'date',
   end_date: ({record}) => moment(record.date).add(45, 'minutes'),
   note: 'comments',
-  appointment_type: () => prestation_id,
+  appointment_type: ({record}) => +record.assessment ? assessment_id : followup_id,
   migration_id: 'SDCONSULTID',
   diet: async ({cache, record}) => {
     let diet=cache('user', record.SDDIETID)
@@ -482,56 +666,39 @@ const QUIZZ_MAPPING={
 const QUIZZ_KEY='name'
 const QUIZZ_MIGRATION_KEY='migration_id'
 
-const QUIZZQUESTION_MAPPING={
-  migration_id: ({record}) => parseInt(record.SDQUIZID)*QUIZZ_FACTOR+parseInt(record.position),
-  title: ({record}) => record.question.replace(/[\r\n\\]/g, ''),
-  success_message: ({record}) => `Bravo! ${record.comments}`,
-  error_message: ({record}) => `Dommage! ${record.comments}`,
-  type: () => QUIZZ_QUESTION_TYPE_ENUM_SINGLE,
-}
-
-const QUIZZQUESTION_KEY='title'
-const QUIZZQUESTION_MIGRATION_KEY='migration_id'
-
-const QUIZZANSWER_1_MAPPING={
-  migration_id: ({record}) => (parseInt(record.SDQUIZID)*QUIZZ_FACTOR+parseInt(record.position))*QUIZZ_FACTOR+1,
-  quizzQuestion: ({record, cache}) => {
-    const question_migration_id=parseInt(record.SDQUIZID)*QUIZZ_FACTOR+parseInt(record.position)
-    return cache('quizzQuestion', question_migration_id)
-  },
-  text: 'firstanswer',
-}
-
-const QUIZZANSWER_1_KEY=['text', 'quizzQuestion']
-const QUIZZANSWER_1_MIGRATION_KEY='migration_id'
-
-const QUIZZANSWER_2_MAPPING={
-  migration_id: ({record}) => (parseInt(record.SDQUIZID)*QUIZZ_FACTOR+parseInt(record.position))*QUIZZ_FACTOR+1,
-  quizzQuestion: ({record, cache}) => {
-    const question_migration_id=parseInt(record.SDQUIZID)*QUIZZ_FACTOR+parseInt(record.position)
-    return cache('quizzQuestion', question_migration_id)
-  },
-  text: 'secondanswer',
-}
-
-const QUIZZANSWER_2_KEY=['text', 'quizzQuestion']
-const QUIZZANSWER_2_MIGRATION_KEY='migration_id'
-
-
+const hashCache = new NodeCache()
 const hashStringToDecimal = inputString => {
-  const hash = crypto.createHash('sha256')
-  hash.update(inputString)
-  const hashedString = hash.digest('hex')
-  const decimalNumber = BigInt('0x' + hashedString)
-  const res=parseInt(decimalNumber%BigInt(1000000000))
-  console.log(inputString, res)
+  let res=hashCache.get(inputString)
+  if (!res) {
+    console.error('Not found', inputString)
+    const hash = crypto.createHash('sha256')
+    hash.update(inputString)
+    const hashedString = hash.digest('hex')
+    const decimalNumber = BigInt('0x' + hashedString)
+    res=parseInt(decimalNumber%BigInt(1000000000))
+    hashCache.set(inputString, res)
+  }
+  else {
+    console.log('Found', inputString)
+  }
   return res
 }
 
+const SMART_POINT_MAPPING={
+  0: `Pas de clé`,
+  1: `Je bouge`,
+  2: `Je dors`,
+  3: `Je gère`,
+  4: `J'équilibre`,
+  5: `Je m'organise`,
+  6: `J'achète`,
+  7: `Je ressens`,
+}
+
+
 const KEY_MAPPING={
-  migration_id: ({record}) => hashStringToDecimal(record.smartpoint),
+  migration_id: ({record}) => Object.entries(SMART_POINT_MAPPING).find(([k, text]) => text==record.smartpoint) [0],
   name: 'smartpoint',
-  text: 'secondanswer',
 }
 
 const KEY_KEY='name'
@@ -555,20 +722,24 @@ const IMPACT_KEY='smartdiet_impact_id'
 const IMPACT_MIGRATION_KEY='migration_id'
 
 const CONVERSATION_MAPPING={
-  migration_id: 'SDTHREADID',
+  migration_id: 'CONVID',
   users: ({cache, record}) => [cache('user', record.USER1), cache('user', record.USER2)],
 }
 
 const CONVERSATION_KEY='migration_id'
 const CONVERSATION_MIGRATION_KEY='migration_id'
 
+const getMessageId = (dateTime, senderId) => {
+  return createCantorKey(moment(dateTime).unix(), senderId)
+}
+
 const MESSAGE_MAPPING={
-  migration_id: ({record}) => getMessageId(record.SDTHREADID, record.DATE),
-  conversation: ({cache, record}) => cache('conversation', record.SDTHREADID),
+  migration_id: ({record}) => moment(record.datetime).unix(),
+  conversation: ({cache, record}) => cache('conversation', record.CONVID),
   receiver: ({cache, record}) => cache('user', record.RECEIVER),
   sender: ({cache, record}) => cache('user', record.SENDER),
-  content: 'MESSAGE',
-  [CREATED_AT_ATTRIBUTE]: 'DATE',
+  content: 'message',
+  [CREATED_AT_ATTRIBUTE]: 'datetime',
 }
 
 const MESSAGE_KEY='migration_id'
@@ -582,28 +753,22 @@ const SPEC_MAPPING={
 const SPEC_KEY='name'
 const SPEC_MIGRATION_KEY='migration_id'
 
-const SMART_POINT_MAPPING={
-  0: `Je gère`,
-  1: `Je bouge`,
-  2: `Je dors`,
-  3: `Je gère`,
-  4: `J'équilibre`,
-  5: `Je m'organise`,
-  6: `J'achète`,
-  7: `Je ressens`,
-}
-
-const FOOD_DOCUMENT_MAPPING={
+const FOOD_DOCUMENT_MAPPING= mapping => ({
   migration_id: 'IDFICHESD',
-  name: 'name',
+  name: ({record}) => mapping[record.name] || record.name,
   description: 'description',
   type: () => FOOD_DOCUMENT_TYPE_NUTRITION,
   key: ({record, cache}) => {
-    const keyStr=SMART_POINT_MAPPING[record.smartpoint];
-    const keyId=hashStringToDecimal(keyStr)
-    return cache('key', keyId)
-  }
-}
+    // If no key => J'équilibre
+    const keyId=cache('key', +record.smartpoint || 4)
+    return keyId
+  },
+  document: async ({record, foodDocumentDirectory}) => {
+    const url=await getS3FileForFoodDocument(foodDocumentDirectory, record.IDFICHESD, 'food')
+      .catch(err => console.error(record, err))
+    return url
+  },
+})
 
 const FOOD_DOCUMENT_KEY='name'
 const FODD_DOCUMENT_MIGRATION_KEY='migration_id'
@@ -683,26 +848,40 @@ const updateImportedCoachingStatus = async () => {
 }
 
 const updateDietCompanies = async () => {
-  const diets=await User.find({role: ROLE_EXTERNAL_DIET, 'customer_companies.0': {$exists: false}})
+  const diets=await User.find({role: ROLE_EXTERNAL_DIET, source: 'import'})
   console.log('Updating', diets.length, 'diets companies')
   const res=await runPromisesWithDelay(diets.map(diet => async () => {
     const appts=await Appointment.find({diet}).populate('user')
-    const companies=lodash(appts).map(appt => appt.user.company._id).uniq()
+    const coachings=await Coaching.find({diet}).populate('user')
+    const companies=lodash([...appts, ...coachings]).map(appt => appt.user.company._id).uniq()
     await User.findByIdAndUpdate(diet, {$addToSet: {customer_companies: companies.value()}})
   }))
 }
 
 const importCompanies = async input_file => {
+  // Usert default assessment & followup assesment type
+  await AppointmentType.updateOne(
+    {title: ASS_PRESTATION_NAME},
+    {title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, smartagenda_id: ASS_PRESTATION_SMARTAGENDA_ID},
+    {upsert: true}
+  )
+  await AppointmentType.updateOne(
+    {title: FOLLOWUP_PRESTATION_NAME},
+    {title: FOLLOWUP_PRESTATION_NAME, duration: FOLLOWUP_PRESTATION_DURATION, smartagenda_id: FOLLOWUP_PRESTATION_SMARTAGENDA_ID},
+    {upsert: true}
+  )
+  const assAppType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
+  const followAppType=await AppointmentType.findOne({title: FOLLOWUP_PRESTATION_NAME})
+  const mapping=COMPANY_MAPPING(assAppType._id, followAppType._id)
   return loadRecords(input_file)
     .then(records => 
-      importData({model: 'company', data:records, mapping:COMPANY_MAPPING, identityKey: COMPANY_KEY, 
+      importData({model: 'company', data:records, mapping, identityKey: COMPANY_KEY, 
         migrationKey: COMPANY_MIGRATION_KEY, progressCb: progressCb()}))
 }
 
 const importOffers = async input_file => {
   return loadRecords(input_file)
     .then(records => {
-      records=lodash.uniqBy(records, 'SDPROGRAMTYPE')
       return importData({model: 'offer', data:records, mapping:OFFER_MAPPING, identityKey: OFFER_KEY, 
         migrationKey: OFFER_MIGRATION_KEY, progressCb: progressCb()})
     })
@@ -714,10 +893,8 @@ const importPatients = async input_file => {
   const schema=User.schema
   schema.paths.password.setters=[]
   // End deactivate password encryption
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => 
+  return loadRecords(input_file)
+    .then(records => 
       importData({model: 'user', data:records, mapping:PATIENT_MAPPING, identityKey: PATIENT_KEY, 
         migrationKey: PATIENT_MIGRATION_KEY, progressCb: progressCb()})
     )
@@ -768,19 +945,24 @@ const importCoachings = async input_file => {
 }
 
 const importAppointments = async input_file => {
-  let prestation=await AppointmentType.findOne({title: PRESTATION_NAME})
-  if (!prestation) {
-    prestation=await AppointmentType.create({title: PRESTATION_NAME, duration: PRESTATION_DURATION, 
-      smartagenda_id: PRESTATION_SMARTAGENDA_ID})
+  let assessemntType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
+  if (!assessemntType) {
+    assessemntType=await AppointmentType.create({title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, 
+      smartagenda_id: ASS_PRESTATION_SMARTAGENDA_ID})
   }
-  prestation=prestation._id
 
-  const contents=fs.readFileSync(input_file)
+  let followupType=await AppointmentType.findOne({title: FOLLOWUP_PRESTATION_NAME})
+  if (!followupType) {
+    followupType=await AppointmentType.create({title: FOLLOWUP_PRESTATION_NAME, duration: FOLLOWUP_PRESTATION_DURATION, 
+      smartagenda_id: FOLLOWUP_PRESTATION_SMARTAGENDA_ID})
+  }
+
   return loadRecords(input_file)
-    .then(records => 
-      importData({model: 'appointment', data:records, mapping:APPOINTMENT_MAPPING(prestation), 
-      identityKey: APPOINTMENT_KEY, migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()}
-    ))
+    .then(records => {
+      const mapping=APPOINTMENT_MAPPING(assessemntType._id, followupType._id)
+      return importData({model: 'appointment', data:records, mapping, 
+        identityKey: APPOINTMENT_KEY, migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()})
+    })
 }
 
 const importMeasures = async input_file => {
@@ -799,75 +981,107 @@ const importQuizz = async input_file => {
       identityKey: QUIZZ_KEY, migrationKey: QUIZZ_MIGRATION_KEY, progressCb: progressCb()}))
 }
   
+const QUIZZQUESTION_MAPPING={
+  migration_id: 'SDQUESTIONID',
+  title: ({record}) => record.question,
+  success_message: ({record}) => `Bravo! ${record.comments}`,
+  error_message: ({record}) => `Dommage! ${record.comments}`,
+  type: () => QUIZZ_QUESTION_TYPE_ENUM_SINGLE,
+}
+
+const QUIZZQUESTION_KEY='title'
+const QUIZZQUESTION_MIGRATION_KEY='migration_id'
+
+const QUIZZQUESTIONORDER_MAPPING={
+  migration_id: 'SDQUIZZID',
+  questions: ({record, cache}) => record.QUESTIONS.map(id => cache('quizzQuestion', id)),
+}
+
+const QUIZZQUESTIONORDER_KEY='migration_id'
+const QUIZZQUESTIONORDER_MIGRATION_KEY='migration_id'
+
 const importQuizzQuestions = async input_file => {
   return loadRecords(input_file)
     .then(records => importData({model: 'quizzQuestion', data:records, mapping:QUIZZQUESTION_MAPPING, 
-    identityKey: QUIZZQUESTION_KEY, migrationKey: QUIZZQUESTION_MIGRATION_KEY, progressCb: progressCb()})
+      identityKey: QUIZZQUESTION_KEY, migrationKey: QUIZZQUESTION_MIGRATION_KEY, progressCb: progressCb()})
+      .then(() => records)
   )
-  // Attach questions to quizzs
-  .then(res=> QuizzQuestion.find({migration_id: {$ne: null}})
-    .then(questions => lodash(questions)
-      .groupBy(q => Math.floor(q.migration_id/QUIZZ_FACTOR))
-      .mapValues(quizzQuestions => quizzQuestions.map(q => q._id))
-      .value()
-    )
-    .then(grouped => Object.keys(grouped).map(key => Quizz.findOneAndUpdate({migration_id: key}, {questions: grouped[key]})))
-    .then(queries => Promise.all(queries))
-    .then(() => res)
-  )
+  // Attach questions to quizz
+  .then(records => {
+    const quizzQuestions=lodash(records).groupBy('SQQUIZID')
+      .mapValues(questions => lodash.map(questions, q => +q.SDQUESTIONID).sort())
+      .entries().map(([quizzId, questionIds])=> ({SDQUIZZID: quizzId, QUESTIONS: questionIds}))
+    return importData({model: 'quizz', data: quizzQuestions, mapping: QUIZZQUESTIONORDER_MAPPING,
+      identityKey: QUIZZQUESTIONORDER_KEY, migrationKey: QUIZZQUESTIONORDER_MIGRATION_KEY, progressCb: progressCb()})
+      .then(() => records)
+  })
 }
 
-const importQuizzQuestionAnswer = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => 
-      Promise.all([
-        importData({model: 'item', data:records, mapping:QUIZZANSWER_1_MAPPING, 
-          identityKey: QUIZZANSWER_1_KEY, migrationKey: QUIZZANSWER_1_MIGRATION_KEY, progressCb: progressCb()}),
-        importData({model: 'item', data:records, mapping:QUIZZANSWER_2_MAPPING, 
-          identityKey: QUIZZANSWER_2_KEY, migrationKey: QUIZZANSWER_2_MIGRATION_KEY, progressCb: progressCb()}),
-      ])
+const QUIZZANSWER_MAPPING={
+  migration_id: 'SDANSWERID',
+  quizzQuestion: ({record, cache}) => cache('quizzQuestion', record.SDQUESTIONID),
+  text: 'text',
+}
+
+const QUIZZANSWER_KEY=['text', 'quizzQuestion']
+const QUIZZANSWER_MIGRATION_KEY='migration_id'
+
+const QUIZZQUESTIONANSWER_MAPPING={
+  migration_id: 'SDQUESTIONID',
+  correct_answer: ({record, cache}) => cache('item', +record.correct_answer),
+}
+
+const QUIZZQUESTIONANSWER_KEY='migration_id'
+const QUIZZQUESTIONANSWER_MIGRATION_KEY='migration_id'
+
+
+const importQuizzQuestionAnswer = async (answers_file, questions_file) => {
+  return loadRecords(answers_file)
+    .then(records => importData({model: 'item', data:records, mapping:QUIZZANSWER_MAPPING, 
+          identityKey: QUIZZANSWER_KEY, migrationKey: QUIZZANSWER_MIGRATION_KEY, progressCb: progressCb()}),
     )
-    .then(([res1, res2]) => [...res1, ...res2])
+    .then(() => loadRecords(questions_file))
+    .then(records => importData({model: 'quizzQuestion', data:records, mapping:QUIZZQUESTIONANSWER_MAPPING,
+        identityKey: QUIZZQUESTIONANSWER_KEY, migrationKey: QUIZZQUESTIONANSWER_MIGRATION_KEY, progressCb: progressCb()})
+          .then(console.log)
+)
 }
 
 const ORDERS=['FIRST', 'SECOND', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
 const importUserQuizz = async input_file => {
+  await Coaching.updateMany({migration_id: {$ne: null}}, {quizz_templates: [], quizz: []}).then(console.log)
   return loadRecords(input_file)
     .then(records => runPromisesWithDelay(records.map((record, idx) => async() => {
       const log=idx%500 ? () => {} : console.log
       log(idx, '/', records.length)
       const userId=cache('user', record.SDPATIENTID)
       const quizzId=cache('quizz', record.SDQUIZID)
-      console.log('quizzid', quizzId)
       const coaching=await Coaching.findOne({user: userId}).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
         .populate('quizz_templates')
         .populate('quizz')
       if (!coaching) {
-        console.log('no coaching')
         return Promise.reject(`No coaching for user ${record.SDPATIENTID}/${userId}`)
       }
       // Check if template exists
-      const hasTemplate=coaching.quizz_templates.some(q => idEqual(q._id, quizzId))
+      const hasTemplate=coaching.quizz_templates.find(q => idEqual(q._id, quizzId))
       if (!hasTemplate) {
         coaching.quizz_templates.push(quizzId)
         const quizz=await Quizz.findById(quizzId).populate({path: 'questions', populate: 'available_answers'})
         const cloned=await quizz.cloneAsUserQuizz()
+        cloned[CREATED_AT_ATTRIBUTE]=moment(record.obtentiondate)
+        await cloned.save()
         coaching.quizz.push(cloned._id)
-        console.log(quizz.questions.length, cloned.questions.length)
         await coaching.save()
         return Promise.all(ORDERS.map(async (attribute, index) => {
           const answer=parseInt(record[attribute])
           const quizzQuestion=quizz.questions[index]
           const userQuestion=cloned.questions[index]
-          // console.log(index, 'quizz question before', quizzQuestion)
           if (!!quizzQuestion && !lodash.isNaN(answer)) {
-            const item_id=quizzQuestion.available_answers[answer]
+            const answerMigrationId=computeAnswerId(record.SDQUIZID, index+1, +answer)
+            const item_id=quizzQuestion.available_answers.find(answ => answ.migration_id==answerMigrationId)
             userQuestion.single_enum_answer=item_id._id
-            console.log('saving')
-            return userQuestion.save().then(console.log).catch(err => console.error('err', err))
+            return userQuestion.save()
           }
           else {
             return true
@@ -882,10 +1096,10 @@ const importUserQuizz = async input_file => {
 
 const importKeys = async input_file => {
   const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'key', data:records, mapping:KEY_MAPPING, 
-    identityKey: KEY_KEY, migrationKey: KEY_MIGRATION_KEY, progressCb: progressCb()}))
+  return loadRecords(input_file)
+    .then(records => importData({model: 'key', data:records, mapping:KEY_MAPPING, 
+        identityKey: KEY_KEY, migrationKey: KEY_MIGRATION_KEY, progressCb: progressCb()})
+    )
 }
 
 const importProgressQuizz = async input_file => {
@@ -898,7 +1112,6 @@ const importProgressQuizz = async input_file => {
         if (!question) {
           throw new Error(`Missing question:${record.name}`)
         }
-        console.log('setting', question._id, 'to', record.SDCRITERIAID)
         question.migration_id=record.SDCRITERIAID
         setCache('quizzQuestion', record.SDCRITERIAID, question._id)
         return question.save()
@@ -925,7 +1138,7 @@ const getCriterionAnswer = async (criterion_id, status) => {
   }
   const quizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate({path: 'questions', populate: 'available_answers'})
   const answer_id=quizz.questions.find(q => q.migration_id==criterion_id)
-    .available_answers.find(a => a.text=COACHING_QUESTION_STATUS[STATUS_MAPPING[status]])._id
+    .available_answers.find(a => a.text==COACHING_QUESTION_STATUS[STATUS_MAPPING[status]])._id
   setCache(model, key, answer_id)
   return answer_id
 }
@@ -944,22 +1157,16 @@ const importUserProgressQuizz = async (input_file) => {
     return result
   }
 
-  const SLICE=0
   return loadRecords(input_file)
-    .then(records => runPromisesWithDelay(records.slice(SLICE).map((record, idx) => async () => {
+    .then(records => runPromisesWithDelay(records.map((record, idx) => async () => {
       if (idx%500==0)  {
-        console.log(idx,'/', records.length-SLICE)
-        if (global.gc) {
-          console.log('gc')
-          global.gc();
-      }
+        console.log(idx,'/', records.length)
       }
       const coachingId=cache('coaching', record.SDPROGRAMID)
       const progress=await getProgress(coachingId)
       const question=progress.questions.find(q => q.migration_id==record.SDCRITERIAID)
       const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
       if (!question || !answer_id) {
-        console.log(`Question ${question}: answer ${answer_id}`)
         throw new Error(`Question ${question}: answer ${answer_id}`)
       }
       question.single_enum_answer=answer_id
@@ -1010,18 +1217,14 @@ const importUserImpactId = async input_file => {
 }
 
 const importConversations = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'conversation', data:records, mapping:CONVERSATION_MAPPING, 
-    identityKey: CONVERSATION_KEY, migrationKey: CONVERSATION_MIGRATION_KEY, progressCb: progressCb()}))
+  return loadRecords(input_file)
+    .then(records => importData({model: 'conversation', data:records, mapping:CONVERSATION_MAPPING, 
+      identityKey: CONVERSATION_KEY, migrationKey: CONVERSATION_MIGRATION_KEY, progressCb: progressCb()}))
 }
 
 const importMessages = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'message', data:records, mapping:MESSAGE_MAPPING, 
+  return loadRecords(input_file)
+    .then(records => importData({model: 'message', data:records, mapping:MESSAGE_MAPPING, 
     identityKey: MESSAGE_KEY, migrationKey: MESSAGE_MIGRATION_KEY, progressCb: progressCb()}))
 }
 
@@ -1064,11 +1267,23 @@ const importPatientHeight = async input_file => {
   )
 }
 
-const importFoodDocuments = async input_file => {
+const importPatientWeight = async input_file => {
   return loadRecords(input_file)
-    .then(records => importData({model: 'foodDocument', data:records, mapping:FOOD_DOCUMENT_MAPPING, 
-      identityKey: FOOD_DOCUMENT_KEY, migrationKey: FODD_DOCUMENT_MIGRATION_KEY, progressCb: progressCb()}
-    )
+    .then(records => importData({model: 'measure', data:records, mapping:WEIGHT_MAPPING, 
+    identityKey: WEIGHT_KEY, migrationKey: WEIGHT_MIGRATION_KEY, progressCb: progressCb()})
+  )
+}
+
+const importFoodDocuments = async (input_file, mapping_file, documents_directory) => {
+  let mapping=(await loadRecords(mapping_file))
+    .filter(record => !lodash.isEmpty(record.wapp_name))
+    .map(record => [record.smart_name, record.wapp_name])
+  mapping = Object.fromEntries(mapping)
+  return loadRecords(input_file)
+    .then(records => importData({model: 'foodDocument', data:records, mapping:FOOD_DOCUMENT_MAPPING(mapping), 
+      identityKey: FOOD_DOCUMENT_KEY, migrationKey: FODD_DOCUMENT_MIGRATION_KEY, progressCb: progressCb(),
+      foodDocumentDirectory: documents_directory
+    })
   )
 }
 
@@ -1089,9 +1304,7 @@ const importUserFoodDocuments = async input_file => {
       idx%1000==0 && console.log(idx, '/', records.length)
       const ficheId=cache('foodDocument', record.SDFICHEID)
       const coachingId=await getCoaching(record.SDPATIENTID)
-      await Coaching.findByIdAndUpdate(coachingId, {$addToSet: {food_documents: ficheId}})
-        .then(console.log)
-        .catch(console.error)
+      return Coaching.findByIdAndUpdate(coachingId, {$addToSet: {food_documents: ficheId}})
     })))
 }
 
@@ -1125,6 +1338,24 @@ const findFileForDiet = async (directory, firstname, lastname) => {
 
 const getS3FileForDiet = async (directory, firstname, lastname, type) => {
   const fullpath=await findFileForDiet(directory, firstname, lastname)
+  if (fullpath) {
+    const s3File=await sendFileToAWS(fullpath, type)
+      .catch(err => console.error('err on', fullpath))
+    // console.log('in S3 got', firstname, lastname, s3File.Location)
+    return s3File?.Location
+  }
+}
+
+const findFileForFoodDocument = async (directory, documentId) => {
+  const normalizedDietName=normalize(`fiche${documentId}`)
+  const files=getDirectoryFiles(directory)
+  const found=files[normalizedDietName]
+  // !!found && console.log('Found file', found, 'for', firstname, lastname)
+  return !!found ? path.join(directory, found) : null
+}
+
+const getS3FileForFoodDocument = async (directory, documentId, type) => {
+  const fullpath=await findFileForFoodDocument(directory, documentId)
   if (fullpath) {
     const s3File=await sendFileToAWS(fullpath, type)
       .catch(err => console.error('err on', fullpath))
@@ -1173,6 +1404,7 @@ const importOtherDiploma = async (input_file) => {
 }
 
 module.exports={
+  loadRecords, saveRecords,
   importCompanies,
   importOffers,
   importPatients,
@@ -1195,11 +1427,14 @@ module.exports={
   importMessages,
   updateImportedCoachingStatus,
   updateDietCompanies,
-  importSpecs, importDietSpecs, importPatientHeight,
+  importSpecs, importDietSpecs, importPatientHeight, importPatientWeight,
   importFoodDocuments,
   importUserFoodDocuments,
   importNutAdvices,
   importNetworks, importDietNetworks, importDiploma,
   importOtherDiploma,
+  generateMessages,
+  fixFoodDocuments,
+  generateQuizz,
 }
 

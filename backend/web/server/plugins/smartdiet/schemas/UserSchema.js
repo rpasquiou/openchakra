@@ -26,7 +26,8 @@ const {
   idEqual,
   setIntersects,
   shareTargets,
-  DUMMY_REF
+  DUMMY_REF,
+  getYearFilter
 } = require('../../../utils/database')
 const mongoose = require('mongoose')
 const moment=require('moment')
@@ -129,6 +130,7 @@ const UserSchema = new Schema({
   gender: {
     type: String,
     enum: Object.keys(GENDER),
+    set : v => v || undefined,
     required: false,
   },
   objective_targets: [{
@@ -334,6 +336,10 @@ const UserSchema = new Schema({
   source: {
     type: String,
     required: false,
+  },
+  // comment on user from diet
+  diet_comment: {
+    type: String,
   },
 }, {...schemaOptions})
 
@@ -551,7 +557,8 @@ UserSchema.virtual('_all_events', DUMMY_REF).get(function() {
 UserSchema.virtual("measures", {
   ref: "measure", // The Model to use
   localField: "_id", // Find in Model, where localField
-  foreignField: "user" // is equal to foreignField
+  foreignField: "user", // is equal to foreignField
+  options: {sort: 'date'},
 });
 
 UserSchema.virtual("last_measures", DUMMY_REF).get(function() {
@@ -651,11 +658,11 @@ UserSchema.virtual("diet_objectives", {
   foreignField: "diet_private" // is equal to foreignField
 });
 
-// UserSchema.virtual("coachings", {
-//   ref: "coaching", // The Model to use
-//   localField: "_id", // Find in Model, where localField
-//   foreignField: "user" // is equal to foreignField
-// })
+UserSchema.virtual("coachings", {
+  ref: "coaching", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "user" // is equal to foreignField
+})
 
 UserSchema.virtual("latest_coachings", {
   ref: "coaching", // The Model to use
@@ -722,6 +729,29 @@ UserSchema.virtual("nutrition_advices", {
   localField: function() {return this.role==ROLE_EXTERNAL_DIET ?  "_id" : "email"}, // Find in Model, where localField
   foreignField: function() {return this.role==ROLE_EXTERNAL_DIET ?  "diet" : "patient_email"}, // is equal to foreignField
 })
+
+UserSchema.virtual('spent_nutrition_credits', {
+  ref: 'nutritionAdvice',
+  localField: 'email',
+  foreignField: 'patient_email',
+  options: {
+    match: () => {
+      const f=getYearFilter({attribute: 'start_date', year: moment()})
+      console.log(JSON.stringify(f))
+      return f;
+    },
+  },
+  count: true,
+})
+
+UserSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
+  if (this.role!=ROLE_CUSTOMER) {
+    return 0
+  }
+  return (this.company?.current_offer?.nutrition_credit-this.spent_nutrition_credits) || 0
+})
+
+
 
 /* eslint-enable prefer-arrow-callback */
 

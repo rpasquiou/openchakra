@@ -117,6 +117,7 @@ export const ACTIONS: IActions = {
         { key: false, label: 'In same page' },
       ],
     },
+    required:['page']
   },
   levelUp: {
     label: 'Move item up',
@@ -686,7 +687,7 @@ export const ACTIONS: IActions = {
 }
 
 export const allowsActions = (component: IComponent) => {
-  return ['Button', 'IconButton', 'Flex'].includes(component.type)
-  && (!(component.type === 'Flex' && !!component.props.isFilterComponent))
+  return ['Button', 'IconButton', 'Flex', 'Calendar'].includes(component.type)
+    && (!(component.type === 'Flex' && !!component.props.isFilterComponent))
 
 }
