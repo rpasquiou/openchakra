@@ -211,9 +211,9 @@ router.post('/file', (req, res) => {
 
 // Provides back with tag <-> page_url pairs
 router.post('/tags', (req, res) => {
-  const  {tags}=req.body
+  const  tags=req.body
   return PageTag_.deleteMany()
-    .then(() => Promise.all(tags.map(tag => PageTag_.create(tag))))
+    .then(() => Promise.all(tags.map(tag => PageTag_.create(({tag: tag[0], url: tag[1]})))))
     .then(() => res.json())
 })
 
