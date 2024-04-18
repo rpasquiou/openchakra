@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const {isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, SUSPEND_STATE, SUSPEND_STATE_NOT_SUSPENDED, SUSPEND_STATE_STANDBY, SUSPEND_STATE_SUSPENDED } = require('../consts')
+const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, SUSPEND_STATE, SUSPEND_STATE_NOT_SUSPENDED, SUSPEND_STATE_STANDBY, SUSPEND_STATE_SUSPENDED, ROLE_FREELANCE } = require('../consts')
 const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -15,12 +15,13 @@ const CustomerSchema = new Schema({
   },
   phone: {
     type: String,
-    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
+    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
     set: v => v?.replace(/^0/, '+33'),
     required: [true, `Le téléphone est obligatoire`]
   },
   cgu_accepted: {
     type: Boolean,
+    validate: [v => !!v, 'Vous devez accepter les CGU'],
     required: [true, 'Vous devez accepter les CGU'],
   },
   birthday: {
@@ -76,7 +77,8 @@ const CustomerSchema = new Schema({
   legal_status: {
     type: String,
     enum: Object.keys(LEGAL_STATUS),
-    required: false,
+    set: v => v || undefined,
+    required: [function() {return this.role==ROLE_FREELANCE}, `Le statut légal est obligatoire`]
   },
   legal_representant_fullname: {
     type: String,
@@ -155,7 +157,7 @@ const CustomerSchema = new Schema({
   deactivation_reason: {
     type: String,
     enum: Object.keys(DEACTIVATION_REASON),
-    required: [function() {return !this.active}, `La raison de désactivation est obligatoire`],
+    required: false,
   },
   // Default: customer not suspended, freelance standby
   suspended_status: {
