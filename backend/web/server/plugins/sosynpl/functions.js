@@ -11,8 +11,8 @@ const { ROLE_ADMIN } = require("../smartdiet/consts");
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'password2', type: 'String'})
-  declareVirtualField({model, field: 'fullname', type: 'String'})
-  declareVirtualField({model, field: 'shortname', type: 'String'})
+  declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
+  declareVirtualField({model, field: 'shortname', type: 'String', requires: 'firstname,lastname'})
   declareEnumField({model, field: 'role', enumValues: ROLES})
   declareEnumField({model, field: 'nationality', enumValues: NATIONALITIES})
   declareVirtualField({
