@@ -331,6 +331,16 @@ _missions.comments.mission.job.user.full_name,_missions.comments.mission.user.co
       instance: 'ObjectID',
       options: {ref: 'note'}}
   })
+  declareVirtualField({model: m, field: 'opportunities', instance: 'Array', requires: '', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'opportunity'}}
+  })
+  declareVirtualField({model: m, field: 'documents', instance: 'Array', requires: '', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'document'}}
+  })
 })
 
 
@@ -482,6 +492,11 @@ declareVirtualField({model: 'lead', field: 'notes', instance: 'Array', requires:
 caster: {
   instance: 'ObjectID',
   options: {ref: 'note'}}
+})
+declareVirtualField({model: 'lead', field: 'documents', instance: 'Array', requires: '', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: {ref: 'document'}}
 })
 /** End LEAD */
 
