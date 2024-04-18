@@ -437,7 +437,6 @@ const buildQuery = (model, id, fields, params) => {
   }
   const currentLimit=getCurrentLimit(limits)
   if (currentLimit) {
-    console.log('Setting limit', currentLimit, 'skipping', (params.page || 0)*currentLimit)
     query=query.skip((params.page || 0)*currentLimit)
     query=query.limit(currentLimit+1)
   }
@@ -1037,6 +1036,16 @@ const getMonthFilter = ({attribute, month}) => {
   ]}
 }
 
+// Creates a date filter to match any moment in the year
+const getYearFilter = ({attribute, year}) => {
+  const start=moment(year).startOf('year')
+  const end=moment(year).endOf('month')
+  return {$and: [
+    {[attribute]: {$gte: start}}, 
+    {[attribute]: {$lte: end}}
+  ]}
+}
+
 module.exports = {
   hasRefs,
   MONGOOSE_OPTIONS,
@@ -1084,6 +1093,6 @@ module.exports = {
   handleReliesOn,
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
-  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter,
+  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter,
 }
 
