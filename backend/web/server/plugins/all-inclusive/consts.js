@@ -289,7 +289,12 @@ const PAYMENT_STATUS={
  PAYMENT_STATUS_SUCCEEDED:"Réussi",
 }
 
-const DEPARTEMENTS=require('../../../utils/departements.json')
+const depts=require('../../../utils/departements.json')
+const DEPARTEMENTS=lodash(depts)
+  .toPairs()
+  .sortBy(([v, k]) => parseFloat(k.replace('A', '0').replace('B', '0.5')))
+  .fromPairs()
+  .value()
 
 // Days
 const MISSION_REMINDER_DELAY=3
