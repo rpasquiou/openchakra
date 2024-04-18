@@ -11,7 +11,7 @@ const Schema = mongoose.Schema
 const CustomerSchema = new Schema({
   position: {
     type: String,
-    required: [true, `La fonction est obligatoire`],
+    required: [true, `La fonction/métier principal est obligatoire`],
   },
   phone: {
     type: String,
@@ -63,7 +63,7 @@ const CustomerSchema = new Schema({
   },
   company_name: {
     type: String,
-    required: [true, `Le nom de la société est obligatoire`]
+    required: [true, `La raison sociale est obligatoire`]
   },
   company_size: {
     type: String,

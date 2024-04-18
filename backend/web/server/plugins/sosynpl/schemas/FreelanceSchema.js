@@ -68,7 +68,7 @@ const FreelanceSchema = new Schema({
   },
   motivation: {
     type: String,
-    required: [true, `Saisisez une présentation à destination de ${SOSYNPL}`],
+    required: [true, `Saisisez les types de missions recherchées`],
   },
   company_size: [{
     type: String,
