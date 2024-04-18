@@ -97,6 +97,7 @@ const withDynamicSelect = Component => {
     if (isSearchable || isMulti) {
       return (
         <Select {...props} onChange={onChange}
+          value={options?.find(opt => opt.key==value)}
           isMulti={isMulti}
           options={options} placeholder={null}
           chakraStyles={chakraStyles}
