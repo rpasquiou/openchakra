@@ -70,11 +70,13 @@ const OpportunitySchema = new Schema({
   emergency: {
     type: String,
     enum: Object.keys(EMERGENCY),
+    set: v => v ||  undefined,
     required: false,
   },
   source: {
     type: String,
     enum: Object.keys(LEAD_SOURCE),
+    set: v => v || undefined,
     required: false,
   },
   status: {
