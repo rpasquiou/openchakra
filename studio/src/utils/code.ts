@@ -958,6 +958,16 @@ export const generateCode = async (
   :
   ''
   */
+
+  const generateTagSend = () => {
+    const tagPages=Object.values(pages)
+      .filter(page => !!page.components?.root?.props?.tag)
+      .map(p => [p.components.root.props.tag, `/${getPageUrl(p.pageId, pages)}`])
+    return `useEffect(() => {
+      const tagPages=${JSON.stringify(tagPages)}
+      return axios.post('/myAlfred/api/studio/tags', tagPages)
+    }, [])`
+  }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
   code = `${header}\nimport React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
@@ -1057,6 +1067,7 @@ const ${componentName} = () => {
   ${hooksCode}
   ${filterStates}
   ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
+  ${generateTagSend()}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata

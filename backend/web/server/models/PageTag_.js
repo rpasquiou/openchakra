@@ -18,4 +18,4 @@ const PageTagSchema = new Schema({
 
 PageTagSchema.plugin(require('mongoose-lean-virtuals'))
 
-module.exports = mongoose.model('pageTag_', PageTagSchema)
+module.exports = mongoose.model('pageTag', PageTagSchema)
