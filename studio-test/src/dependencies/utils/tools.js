@@ -27,7 +27,7 @@ async function generatePDF(targetId, fileName){
     }
   }));
   
-  return html2canvas(input, { scale: 2, useCORS: true, logging: true, scrollY: -window.scrollY }).then(canvas => {
+  return html2canvas(input, { scale: 1, useCORS: true, logging: true, scrollY: -window.scrollY }).then(canvas => {
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'p',
