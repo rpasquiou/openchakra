@@ -8,7 +8,7 @@ const { validatePassword } = require("../../../utils/passwords");
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
 const { ROLE_ADMIN } = require("../smartdiet/consts");
 
-const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin']
+const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'password2', type: 'String'})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
@@ -43,7 +43,7 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'suspended_reason', enumValues: SUSPEND_REASON})
 })
 
-const FREELANCE_MODELS=['freelance', 'loggedUser']
+const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
 FREELANCE_MODELS.forEach(model => {
   declareVirtualField({model, field: 'freelance_missions', instance: 'Array', multiple: true,
     caster: {

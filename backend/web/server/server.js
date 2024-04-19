@@ -150,6 +150,7 @@ require('./models/Customer')
 require('./models/Freelance')
 require('./models/Sector')
 require('./models/Admin')
+require('./models/GenericUser')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

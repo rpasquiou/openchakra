@@ -40,19 +40,22 @@ const UserSchema = new Schema({
     type: Boolean,
     required: false,
   },
-}, {...schemaOptions})
+  fullname: {
+    type: String,
+    get: function() {return `${this.firstname} ${this.lastname}`},
+    set: () => {}
+  },
+  shortname: {
+    type: String,
+    get: function() {return `${this.firstname} ${this.lastname[0]}.`},
+    set: () => {}
+  },
+  }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
 // Required for register validation only
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
-UserSchema.virtual('fullname', DUMMY_REF).get(function() {
-  return `${this.firstname} ${this.lastname}`
-})
-
-UserSchema.virtual('shortname', DUMMY_REF).get(function() {
-  return `${this.firstname} ${this.lastname[0]}.`
-})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
