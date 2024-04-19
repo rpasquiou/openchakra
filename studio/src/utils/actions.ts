@@ -679,8 +679,8 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
-  release_account: {
-    label: 'Release account',
+  activate_account: {
+    label: 'Activate account',
     options: {},
     next: ['openPage'],
   },
