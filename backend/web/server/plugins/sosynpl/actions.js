@@ -4,7 +4,7 @@ const { getModel } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { SUSPEND_STATE_SUSPENDED, SUSPEND_STATE_NOT_SUSPENDED} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED} = require("./consts")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -22,7 +22,7 @@ const deactivateAccount = async ({reason}, user) => {
   const model=await getModel(user._id)
   return mongoose.models[model].findByIdAndUpdate(
     user._id,
-    {active: false, deactivation_reason: reason},
+    {suspended_status: ACTIVITY_STATE_DISABLED, deactivation_reason: reason},
     {runValidators: true, new: true},
   )
 }
@@ -34,23 +34,23 @@ const suspendAccount = async ({value, reason}, user) => {
   const model=await getModel(value)
   await mongoose.models[model].findByIdAndUpdate(
     value,
-    {suspended_status: SUSPEND_STATE_SUSPENDED, suspended_reason: reason},
+    {suspended_status: ACTIVITY_STATE_SUSPENDED, suspended_reason: reason},
     {runValidators: true, new: true},
   )
 }
 addAction('suspend_account', suspendAccount)
 
-const releaseAccount = async ({value, reason}, user) => {
-  const ok=await isActionAllowed({action:'release_account', dataId: value, user})
+const activateAccount = async ({value, reason}, user) => {
+  const ok=await isActionAllowed({action:'activate_account', dataId: value, user})
   if (!ok) {return false}
   const model=await getModel(value)
   await mongoose.models[model].findByIdAndUpdate(
     value,
-    {suspended_status: SUSPEND_STATE_NOT_SUSPENDED, suspended_reason:null},
+    {suspended_status: ACTIVITY_STATE_ACTIVE, suspended_reason:null},
     {runValidators: true, new: true},
   )
 }
-addAction('release_account', releaseAccount)
+addAction('activate_account', activateAccount)
 
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
@@ -66,16 +66,20 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       throw new BadRequestError(`Ce compte est déjà désactivé`)
     }
   }
-  if (['suspend_account', 'release_account'].includes(action)) {
+  if (['suspend_account', 'activate_account'].includes(action)) {
     if (user.role!=ROLE_ADMIN) {
       throw new ForbiddenError('Action interdite')
     }
     const suspend=action=='suspend_account'
     const target_user=await User.findById(dataId, { suspended_status:1})
-    if (suspend && target_user.suspended_status==SUSPEND_STATE_SUSPENDED) {
+    // Disabled account cannot be restored
+    if (!suspend && target_user.suspended_status==ACTIVITY_STATE_DISABLED) {
+      throw new ForbiddenError('Un compte désactivé ne peut être réactivé')
+    }
+    if (suspend && target_user.suspended_status==ACTIVITY_STATE_SUSPENDED) {
       throw new ForbiddenError('Compte déjà suspendu')
     }
-    if (!suspend && target_user.suspended_status==SUSPEND_STATE_NOT_SUSPENDED) {
+    if (!suspend && target_user.suspended_status==ACTIVITY_STATE_ACTIVE) {
       throw new ForbiddenError('Compte déjà actif')
     }
   }

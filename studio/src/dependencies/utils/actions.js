@@ -1015,10 +1015,10 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  release_account: ({value}) => {
+  activate_account: ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
-      action: 'release_account',
+      action: 'activate_account',
       value: value._id,
     }
     return axios.post(url, body)
