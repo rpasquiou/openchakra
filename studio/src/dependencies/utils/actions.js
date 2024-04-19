@@ -9,6 +9,7 @@ import {
   getComponentDataValue
 } from './values';
 import { clearToken } from './token';
+import { generatePDF } from './tools'
 
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
@@ -444,6 +445,10 @@ return Promise.allSettled(imagePromises)
   })
   })
 
+  },
+  generatePDF: ({props, level, getComponentValue})=> {
+    const prefix=getComponentValue(props.prefix, level)
+    return generatePDF(props.targetId, prefix)
   },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
