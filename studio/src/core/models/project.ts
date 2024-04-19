@@ -12,6 +12,10 @@ export interface PageState extends PageSettings {
   selectedId: IComponent['id']
 }
 
+export interface PayloadSettings extends PageSettings{
+  asRootPage?: boolean
+}
+
 export type ProjectState = {
   pages: {
     [key: string]: PageState
@@ -433,11 +437,10 @@ const project = createModel({
         hoveredId: undefined,
       }
     },
-    addPage(state: ProjectState, payload: PageSettings): ProjectState {
+    addPage(state: ProjectState, payload: PayloadSettings): ProjectState {
       const pageId = generateId('page')
-      const { pageName, metaTitle, metaDescription, metaImageUrl } = payload
-
-      return {
+      const { pageName, metaTitle, metaDescription, metaImageUrl, asRootPage } = payload
+      const newState = {
         ...state,
         pages: {
           ...state.pages,
@@ -451,7 +454,10 @@ const project = createModel({
             metaImageUrl,
           },
         },
+        activePage:pageId,
+        rootPage: asRootPage ? pageId : state.rootPage,
       }
+      return newState
     },
 
     editProjectSettings(state: ProjectState, payload: ProjectSettings): ProjectState {
@@ -459,13 +465,14 @@ const project = createModel({
         getProjectSettings(draftState).settings = payload
       })
     },
-    editPageSettings(state: ProjectState, payload: PageSettings): ProjectState {
+    editPageSettings(state: ProjectState, payload: PayloadSettings): ProjectState {
       const {
         pageId,
         pageName,
         metaTitle,
         metaDescription,
         metaImageUrl,
+        asRootPage,
       } = payload
 
       if (pageId) {
@@ -482,6 +489,7 @@ const project = createModel({
               metaImageUrl,
             },
           },
+          rootPage: asRootPage ? pageId : state.rootPage,
         }
       }
       return state
@@ -522,12 +530,6 @@ const project = createModel({
       return {
         ...state,
         activePage: pageId,
-      }
-    },
-    setRootPage(state: ProjectState, pageId: string): ProjectState {
-      return {
-        ...state,
-        rootPage: pageId,
       }
     },
   },
