@@ -70,10 +70,6 @@ const FreelanceSchema = new Schema({
     type: String,
     required: [true, `Saisisez les types de missions recherchées`],
   },
-  company_size: [{
-    type: String,
-    enum: Object.keys(COMPANY_SIZE)
-  }],
   work_mode: {
     type: String,
     enum: Object.keys(WORK_MODE),

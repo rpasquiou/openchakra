@@ -99,6 +99,10 @@ const CustomerSchema = new Schema({
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, v => `L'email du contact de facturation '${v.value}' est invalide`],
   },
+  billing_address: {
+    type: AddressSchema,
+    required: false,
+  },
   siren: {
     type: String,
     set: v => v ? v.replace(/ /g, '') : v,
