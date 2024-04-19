@@ -350,6 +350,18 @@ export const ACTIONS: IActions = {
     label: 'Save page as PDF',
     options:{}
   },
+  generatePDF: {
+    label: 'Generate PDF',
+    options: {
+      targetId: ({components}) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      prefix: ({components}) =>
+        components
+          .filter(c => c.type == 'Input')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required:['targetId', 'prefix']
+  },
 
   deactivateAccount: {
     label: 'Deactivate account',
