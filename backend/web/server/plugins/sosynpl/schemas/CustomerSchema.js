@@ -25,7 +25,7 @@ const CustomerSchema = new Schema({
     validate: [v => !!v, 'Vous devez accepter les CGU'],
     required: [true, 'Vous devez accepter les CGU'],
   },
-  birthday: {
+  birthdate: {
     type: Date,
     required: false,
   },
@@ -89,18 +89,46 @@ const CustomerSchema = new Schema({
   },
   legal_representant_firstname: {
     type: String,
+    get: function(v) {
+      console.log('getting legal firstname', v)
+      if (!!this.legal_representant_self) {
+        return this.firstname
+      }
+      return v
+    },
     required: false,
   },
   legal_representant_lastname: {
     type: String,
+    get: function(v) {
+      console.log('getting legal lastname', v)
+      if (!!this.legal_representant_self) {
+        return this.lastname
+      }
+      return v
+    },
     required: false,
   },
   legal_representant_birthdate: {
     type: Date,
+    get: function(v) {
+      console.log('getting legal birthdate', v)
+      if (!!this.legal_representant_self) {
+        return this.birthdate
+      }
+      return v
+    },
     required: false,
   },
   legal_representant_phone: {
     type: String,
+    get: function(v) {
+      console.log('getting legal phone', v)
+      if (!!this.legal_representant_self) {
+        return this.phone
+      }
+      return v
+    },
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
     set: v => v?.replace(/^0/, '+33'),
     required: false,
@@ -108,35 +136,85 @@ const CustomerSchema = new Schema({
   legal_representant_nationality: {
     type: String,
     enum: Object.keys(NATIONALITIES),
+    get: function(v) {
+      console.log('getting legal nationality', v)
+      if (!!this.legal_representant_self) {
+        return this.nationality
+      }
+      return v
+    },
     required: false,
   },
   legal_representant_address: {
     type: AddressSchema,
+    get: function(v) {
+      console.log('getting legal address', v)
+      if (!!this.legal_representant_self) {
+        return this.address
+      }
+      return v
+    },
     required: false,
   },
   legal_representant_email: {
     type: String,
+    get: function(v) {
+      console.log('getting legal email', v)
+      if (!!this.legal_representant_self) {
+        return this.email
+      }
+      return v
+    },
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, v => `L'email du représentant légal '${v.value}' est invalide`],
     required: false,
   },
   // End legal representant
   // Billing contact
+  billing_contact_self: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
   billing_contact_firstname: {
     type: String,
+    get: function(v) {
+      if (!!this.billing_contact_self) {
+        return this.firstname
+      }
+      return v
+    },
     required: false,
   },
   billing_contact_lastname: {
     type: String,
+    get: function(v) {
+      if (!!this.billing_contact_self) {
+        return this.lastname
+      }
+      return v
+    },
     required: false,
   },
   billing_contact_email: {
     type: String,
+    get: function(v) {
+      if (!!this.billing_contact_self) {
+        return this.email
+      }
+      return v
+    },
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, v => `L'email du contact de facturation '${v.value}' est invalide`],
   },
   billing_contact_address: {
     type: AddressSchema,
+    get: function(v) {
+      if (!!this.billing_contact_self) {
+        return this.address
+      }
+      return v
+    },
     required: false,
   },
   // End billing contact
