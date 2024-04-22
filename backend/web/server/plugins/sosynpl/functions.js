@@ -42,7 +42,6 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'activity_status', enumValues: ACTIVITY_STATE})
   declareEnumField({model, field: 'suspended_reason', enumValues: SUSPEND_REASON})
   declareEnumField({model, field: 'legal_representant_nationality', enumValues: NATIONALITIES})
-  declareVirtualField({model, field: 'legal_representant_firstname', type: 'String', requires: 'legal_representant_self'})
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
