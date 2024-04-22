@@ -84,6 +84,12 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'certification' }
     },
   })
+  declareVirtualField({model, field: 'trainings', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'training' }
+    },
+  })
 })
 
 const soSynplRegister = props => {
