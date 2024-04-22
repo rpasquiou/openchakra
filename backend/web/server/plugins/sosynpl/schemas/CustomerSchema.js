@@ -84,11 +84,6 @@ const CustomerSchema = new Schema({
   // Start legal representant
   legal_representant_self: {
     type: Boolean,
-    set: function(v) {
-      console.log(v)
-      this.legal_representant_firstname_=null
-      return v
-    },
     default: false,
     required: true,
   },
@@ -126,7 +121,12 @@ const CustomerSchema = new Schema({
     required: false,
   },
   // End legal representant
-  billing_contact_fullname: {
+  // Billing contact
+  billing_contact_firstname: {
+    type: String,
+    required: false,
+  },
+  billing_contact_lastname: {
     type: String,
     required: false,
   },
@@ -135,10 +135,11 @@ const CustomerSchema = new Schema({
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, v => `L'email du contact de facturation '${v.value}' est invalide`],
   },
-  billing_address: {
+  billing_contact_address: {
     type: AddressSchema,
     required: false,
   },
+  // End billing contact
   siren: {
     type: String,
     set: v => v ? v.replace(/ /g, '') : v,
@@ -209,22 +210,6 @@ const CustomerSchema = new Schema({
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
-// Required for register validation only
-
-/**
-CustomerSchema.virtual('legal_representant_firstname', DUMMY_REF).get(function() {
-  return !!this.legal_representant_self ? this.firstname: this.legal_representant_firstname_
-})
-
-CustomerSchema.virtual('legal_representant_firstname', DUMMY_REF).set(function(v) {
-  if (!!this.legal_representant_self) {
-    this.legal_representant_firstname_=null
-  }
-  else {
-    this.legal_representant_firstname_=v
-  }
-})
-*/
 
 CustomerSchema.virtual('customer_missions', {
   ref: 'mission',
