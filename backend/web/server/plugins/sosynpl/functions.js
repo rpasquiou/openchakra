@@ -1,5 +1,5 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, getModel } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
 const Customer=require('../../models/Customer')
@@ -128,6 +128,16 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 }
 
 setPreprocessGet(preprocessGet)
+
+const preCreate = ({model, params, user}) => {
+  if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
+    params.user=user
+  }
+
+  return Promise.resolve({model, params})
+}
+
+setPreCreateData(preCreate)
 
 const postCreate = async ({model, params, data}) => {
   if (data.role==ROLE_CUSTOMER) {
