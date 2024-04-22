@@ -5,6 +5,7 @@ const IBANValidator = require('iban-validator-js')
 const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVITY_STATE, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_STANDBY, ACTIVITY_STATE_SUSPENDED, ROLE_FREELANCE } = require('../consts')
 const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -80,8 +81,42 @@ const CustomerSchema = new Schema({
     set: v => v || undefined,
     required: [function() {return this.role==ROLE_FREELANCE}, `Le statut légal est obligatoire`]
   },
-  legal_representant_fullname: {
+  // Start legal representant
+  legal_representant_self: {
+    type: Boolean,
+    set: function(v) {
+      console.log(v)
+      this.legal_representant_firstname_=null
+      return v
+    },
+    default: false,
+    required: true,
+  },
+  legal_representant_firstname: {
     type: String,
+    required: false,
+  },
+  legal_representant_lastname: {
+    type: String,
+    required: false,
+  },
+  legal_representant_birthdate: {
+    type: Date,
+    required: false,
+  },
+  legal_representant_phone: {
+    type: String,
+    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
+    set: v => v?.replace(/^0/, '+33'),
+    required: false,
+  },
+  legal_representant_nationality: {
+    type: String,
+    enum: Object.keys(NATIONALITIES),
+    required: false,
+  },
+  legal_representant_address: {
+    type: AddressSchema,
     required: false,
   },
   legal_representant_email: {
@@ -90,6 +125,7 @@ const CustomerSchema = new Schema({
     validate: [isEmailOk, v => `L'email du représentant légal '${v.value}' est invalide`],
     required: false,
   },
+  // End legal representant
   billing_contact_fullname: {
     type: String,
     required: false,
@@ -174,6 +210,22 @@ const CustomerSchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 // Required for register validation only
+
+/**
+CustomerSchema.virtual('legal_representant_firstname', DUMMY_REF).get(function() {
+  return !!this.legal_representant_self ? this.firstname: this.legal_representant_firstname_
+})
+
+CustomerSchema.virtual('legal_representant_firstname', DUMMY_REF).set(function(v) {
+  if (!!this.legal_representant_self) {
+    this.legal_representant_firstname_=null
+  }
+  else {
+    this.legal_representant_firstname_=v
+  }
+})
+*/
+
 CustomerSchema.virtual('customer_missions', {
   ref: 'mission',
   localField: '_id',
