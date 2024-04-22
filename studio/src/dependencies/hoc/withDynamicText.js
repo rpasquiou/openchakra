@@ -1,13 +1,16 @@
 import React from 'react'
 import lodash from 'lodash'
 import { getConditionalProperties } from '../utils/filters'
+import { joinDelimiter } from '../utils/misc'
 
 const withDynamicText = Component => {
   const internal = props => {
     const enums=props.enum ?  JSON.parse(props.enum) : null
     let value = lodash.get(props.dataSource, props.attribute)
-    if (enums && value in enums) {
-      value=enums[value]
+    if (enums && !!value) {
+      value=lodash.isArray(value) ? value : [value]
+      value=value.map(v => enums[v])
+      value=joinDelimiter({array: value})
     }
     const conditionalProperties = getConditionalProperties(
       props,
