@@ -72,6 +72,12 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField({model, field: 'third_experience', enumValues: EXPERIENCE})
   declareEnumField({model, field: 'work_duration', enumValues: WORK_DURATION})
   declareEnumField({model, field: 'work_company_size', enumValues: COMPANY_SIZE})
+  declareVirtualField({model, field: 'experiences', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'experience' }
+    },
+  })
 })
 
 const soSynplRegister = props => {
