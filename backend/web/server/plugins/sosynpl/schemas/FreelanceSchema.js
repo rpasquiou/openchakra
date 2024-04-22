@@ -170,6 +170,12 @@ FreelanceSchema.virtual('communications', {
   foreignField: 'freelance',
 })
 
+FreelanceSchema.virtual('experiences', {
+  ref: 'experience',
+  localField: '_id',
+  foreignField: 'freelance',
+})
+
 // Depends on filled attributes
 FreelanceSchema.virtual('search_visible').get(function() {
   return false
