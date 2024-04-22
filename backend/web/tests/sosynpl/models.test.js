@@ -9,6 +9,10 @@ const { buildAttributesException } = require('../utils')
 const { WORK_DURATION } = require('../../server/plugins/sosynpl/consts')
 const Customer = require('../../server/models/Customer')
 const {CUSTOMER_DATA}=require('./data/base_data')
+require('../../server/plugins/sosynpl/functions')
+require('../../server/models/Sector')
+require('../../server/models/Job')
+require('../../server/models/Training')
 
 jest.setTimeout(60000)
 
@@ -23,6 +27,13 @@ describe('Test models', () => {
   afterAll(async () => {
     await mongoose.connection.dropDatabase()
     await mongoose.connection.close()
+  })
+
+  it.only('Must return Address data type', async () => {
+    const {training}=getModels()
+    expect(training.attributes.school_city.type).toEqual('Address')
+    expect(training.attributes.school_name.type).toEqual('String')
+    expect(training.attributes.user.type).toEqual('freelance')
   })
 
   it('must check freelance model', async () => {
@@ -40,7 +51,7 @@ describe('Test models', () => {
     expect(models.freelance.attributes.work_duration.enumValues).toEqual(WORK_DURATION)
   })
 
-  it.only('Customer.legal_representant must be synchronized with legal_representant_self', async () => {
+  it('Customer.legal_representant must be synchronized with legal_representant_self', async () => {
     let customer=await Customer.create({...CUSTOMER_DATA, legal_representant_self: false})
     customer=await Customer.findById(customer._id)
     expect(customer.legal_representant_self).toBe(false)
