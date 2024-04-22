@@ -1,11 +1,11 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
 
-let ExperienceSchema=null
+let TrainingSchema=null
 
 try {
-  ExperienceSchema=require(`../plugins/${getDataModel()}/schemas/ExperienceSchema`)
-  ExperienceSchema.plugin(require('mongoose-lean-virtuals'))
+  TrainingSchema=require(`../plugins/${getDataModel()}/schemas/TrainingSchema`)
+  TrainingSchema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {
@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = ExperienceSchema ? mongoose.model('experience', ExperienceSchema) : null
+module.exports = TrainingSchema ? mongoose.model('training', TrainingSchema) : null

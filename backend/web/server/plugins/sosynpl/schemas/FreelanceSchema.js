@@ -167,13 +167,25 @@ FreelanceSchema.virtual('recommandations', {
 FreelanceSchema.virtual('communications', {
   ref: 'communication',
   localField: '_id',
-  foreignField: 'freelance',
+  foreignField: 'user',
 })
 
 FreelanceSchema.virtual('experiences', {
   ref: 'experience',
   localField: '_id',
-  foreignField: 'freelance',
+  foreignField: 'user',
+})
+
+FreelanceSchema.virtual('certifications', {
+  ref: 'experience',
+  localField: '_id',
+  foreignField: 'user',
+})
+
+FreelanceSchema.virtual('trainings', {
+  ref: 'training',
+  localField: '_id',
+  foreignField: 'user',
 })
 
 // Depends on filled attributes
