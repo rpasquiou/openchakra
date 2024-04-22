@@ -151,6 +151,9 @@ require('./models/Freelance')
 require('./models/Sector')
 require('./models/Admin')
 require('./models/GenericUser')
+require('./models/Communication')
+require('./models/Certification')
+require('./models/Training')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
