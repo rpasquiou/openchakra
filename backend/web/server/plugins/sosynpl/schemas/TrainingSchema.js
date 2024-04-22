@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -28,6 +29,10 @@ const TrainingSchema = new Schema({
   school_name: {
     type: String,
     required: [true, `L'école est obligatoire`],
+  },
+  school_city: {
+    type: AddressSchema,
+    required: false,
   },
 }, {...schemaOptions})
 

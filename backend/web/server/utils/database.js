@@ -9,6 +9,7 @@ const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
+const AddressSchema = require('../models/AddressSchema')
 
 const LEAN_DATA=false
 
@@ -174,13 +175,19 @@ const getVirtualCharacteristics = (modelName, attName) => {
   return DECLARED_VIRTUALS[modelName][attName]
 }
 
+const isSchema = (attribute, schemaType) => {
+  return !!attribute.schema?.obj && JSON.stringify(Object.keys(attribute.schema?.obj))==JSON.stringify(Object.keys(schemaType?.obj))
+}
+
 const getAttributeCaracteristics = (modelName, att) => {
   const multiple = att.instance == 'Array'
   const suggestions = att.options?.suggestions
   const baseData = att.caster || att
   // TODO: fix type ObjectID => Object
   const type =
-    baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
+    baseData.instance == 'ObjectID' ? baseData.options.ref 
+      : isSchema(att, AddressSchema) ? 'Address'
+      : baseData.instance
   const ref = baseData.instance == 'ObjectID'
 
   // Include caster enum values (i.e. array of enums)
