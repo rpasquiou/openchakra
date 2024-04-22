@@ -229,9 +229,9 @@ const CustomerSchema = new Schema({
     type: String,
     required: false,
   },
-  // HQ city
-  headquarter_city: {
-    type: String,
+  // HQ address
+  headquarter_address: {
+    type: AddressSchema,
     required: false,
   },
   // Délégation de pouvoir
