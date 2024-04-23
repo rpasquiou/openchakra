@@ -515,6 +515,7 @@ const PATIENT_MAPPING={
   birthday: ({record}) => lodash.isEmpty(record.birthdate) ? null:  moment(record.birthdate),
   phone: ({record}) => normalizePhone(record.phone),
   diet_comment: 'comments',
+  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record.created_at),
   migration_id: 'SDPATIENTID',
   source: () => 'import',
 }
@@ -751,17 +752,19 @@ const FOOD_DOCUMENT_MAPPING= mapping => ({
 const FOOD_DOCUMENT_KEY='name'
 const FODD_DOCUMENT_MIGRATION_KEY='migration_id'
 
-const getGender = gender => GENDER[+gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined]
+const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined
 
 const NUTADVICE_MAPPING={
   migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.DATE).unix()}`),
   start_date: 'DATE',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
-  comment: ({record}) => {
-    return `${getGender(record.gender)} ${record.age} ans, ${NUT_JOB[record.job_type]}, sujet : ${NUT_SUBJECT[record.SUBJECT]}, \
-raison : ${NUT_REASON[record.reason]}, ${+record.coaching>0 ? 'a mené à un coaching' : `n'a pas mené à un coaching`}`
-  }
+  gender: ({record}) => getGender(record.gender),
+  age: ({record}) => (+record.age && +record.age>=18) ? +record.age : null,
+  job: ({record}) => NUT_JOB[+record.job_type],
+  comment: ({record}) => NUT_SUBJECT[record.SUBJECT],
+  reason: ({record}) => NUT_REASON[record.reason],
+  led_to_coaching: ({record}) => +record.coaching>0,
 }
 
 const NUTADVICE_KEY='migration_id'
@@ -1027,9 +1030,6 @@ const importQuizzQuestionAnswer = async (answers_file, questions_file) => {
 
 const ORDERS=['FIRST', 'SECOND', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
-const TRUE_RE=/vrai/i
-const FALSE_RE=/faux/i
-
 const quizzAnswersCache=new NodeCache()
 
 const getQuestionAnswerId = async (quizzQuestionId, answer) => {
@@ -1038,8 +1038,8 @@ const getQuestionAnswerId = async (quizzQuestionId, answer) => {
   let answerId=quizzAnswersCache.get(key)
   if (!answerId) {
     const question=await QuizzQuestion.findById(quizzQuestionId).populate('available_answers')
-    const answerRe=answer==1 ? TRUE_RE : FALSE_RE
-    answerId=question.available_answers.find(q => answerRe.test(q.text))
+    const question_migration_id=question.migration_id*QUIZZ_FACTOR+(answer==1 ? 0 : 1)
+    answerId=question.available_answers.find(a => a.migration_id==question_migration_id)._id
     quizzAnswersCache.set(key, answerId)
   }
   return answerId
@@ -1083,7 +1083,7 @@ const importUserQuizz = async input_file => {
           const userQuestion=cloned.questions[index]
           if (!!quizzQuestion && !lodash.isNaN(answer)) {
             const item_id=await getQuestionAnswerId(quizzQuestion._id, answer)
-            userQuestion.single_enum_answer=item_id._id
+            userQuestion.single_enum_answer=item_id
             return userQuestion.save()
           }
           else {
