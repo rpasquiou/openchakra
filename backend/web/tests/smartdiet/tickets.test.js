@@ -25,7 +25,7 @@ describe('Jira tickets tests ', () => {
   it.only(`must get diet's tickets`, async () => {
     const url=GET_URL+DIET_EMAIL
     const res=await axios.get(url)
-    console.log(res.data)
+    console.log(JSON.stringify(res.data, null, 2))
   })
 
   it(`must add a comment on each diet's ticket`, async () => {
