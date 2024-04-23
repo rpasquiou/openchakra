@@ -7,7 +7,7 @@ const Schema = mongoose.Schema
 
 const TicketSchema = new Schema(
   {
-    author: {
+    sender: {
       type: String,
       required: [true, `Le mail du créateur est obligatoire`],
     },

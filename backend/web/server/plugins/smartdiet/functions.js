@@ -49,6 +49,7 @@ require('../../models/Key')
 require('../../models/Association')
 require('../../models/Item')
 require('../../models/Question')
+const Ticket=require('../../models/Ticket')
 const { updateWorkflows } = require('./workflows')
 const {
   ACTIVITY,
@@ -184,6 +185,7 @@ const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
 const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
+const { createTicket, getTickets } = require('./ticketing')
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -216,6 +218,11 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
   const chartPointField=fields.find(v => /value_1/.test(v))
   if (chartPointField) {
     fields=[...fields, chartPointField.replace(/value_1/, 'date')]
+  }
+  if (model=='ticket') {
+    return getTickets(user?.email)
+      .then(tickets => tickets.map(t => ({...t, date: undefined})))
+      .then(tickets => ({ model, fields, id, data: tickets}))
   }
   if (model == 'loggedUser') {
     model = 'user'
@@ -319,6 +326,17 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = async ({ model, params, user }) => {
+  if (model=='ticket') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour créer un ticket`)
+    }
+    params.sender=user?.email
+    const ticket=new Ticket(params)
+    const errors=await ticket.validate()
+    if (errors) {return errors}
+    return createTicket(params)
+      .then(() => ({data: []}))
+  }
   if (model=='logbookDay') {
     return logbooksConsistency(user._id, params.day)
       .then(() => ({data: {_id: moment(params.day).unix()}}))
