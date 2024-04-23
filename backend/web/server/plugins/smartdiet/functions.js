@@ -50,6 +50,7 @@ require('../../models/Association')
 require('../../models/Item')
 require('../../models/Question')
 const Ticket=require('../../models/Ticket')
+const TicketComment=require('../../models/TicketComment')
 const { updateWorkflows } = require('./workflows')
 const {
   ACTIVITY,
@@ -185,7 +186,7 @@ const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
 const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
-const { createTicket, getTickets } = require('./ticketing')
+const { createTicket, getTickets, createComment } = require('./ticketing')
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -221,7 +222,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
   }
   if (model=='ticket') {
     return getTickets(user?.email)
-      .then(tickets => tickets.map(t => ({...t, date: undefined})))
+      .then(tickets => tickets.map(t => ({...t, date: undefined, _id: t.jiraid})))
       .then(tickets => ({ model, fields, id, data: tickets}))
   }
   if (model == 'loggedUser') {
@@ -335,6 +336,17 @@ const preCreate = async ({ model, params, user }) => {
     const errors=await ticket.validate()
     if (errors) {return errors}
     return createTicket(params)
+      .then(() => ({data: []}))
+  }
+  if (model=='ticketComment') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour commenter un ticket`)
+    }
+    params.jiraid=params.parent
+    const comment=new TicketComment(params)
+    const errors=await comment.validate()
+    if (errors) {return errors}
+    return createComment(params)
       .then(() => ({data: []}))
   }
   if (model=='logbookDay') {

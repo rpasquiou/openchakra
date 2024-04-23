@@ -14,6 +14,10 @@ const getTickets = email => {
     .then(({data}) => data)
 }
 
+const createComment = params => {
+  return axios.post(CREATE_COMMENT_URL, params)
+}
+
 module.exports={
-  createTicket, getTickets,
+  createTicket, getTickets, createComment,
 }
