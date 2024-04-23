@@ -160,6 +160,9 @@ const buildBlock = ({
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let child = components[key]
+    if (!child) {
+      throw new Error(`Declared child ${key} does not exist under parent ${component.id}`)
+    }
     if (child.type === 'DataProvider') {
       return
     }
