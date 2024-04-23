@@ -1390,6 +1390,8 @@ declareVirtualField({model: 'conversation', field: 'latest_messages',instance: '
 })
 declareVirtualField({model: 'conversation', field: 'messages_count',instance: 'Number'})
 
+declareEnumField({model: 'nutritionAdvice', field: 'gender', enumValues: GENDER})
+
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
