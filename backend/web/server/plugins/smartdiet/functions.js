@@ -860,6 +860,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'company', field: 'leads', instance: 'Array', multiple: true,
+  requires: 'code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'lead' }
@@ -1316,7 +1317,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'lead', field: 'company',
-  instance: 'Company', multiple: false,
+  instance: 'Company', multiple: false, requires: 'company_code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'company' }
