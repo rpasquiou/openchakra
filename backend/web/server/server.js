@@ -141,6 +141,8 @@ require('./models/Diet')
 require('./models/Conversation')
 require('./models/Billing')
 require('./models/PriceList')
+require('./models/Ticket')
+require('./models/TicketComment')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 

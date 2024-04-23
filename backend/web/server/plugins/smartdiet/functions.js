@@ -114,6 +114,7 @@ const {
   APPOINTMENT_TYPE_FOLLOWUP,
   COACHING_STATUS,
   QUIZZ_TYPE_ASSESSMENT,
+  TICKET_PRIORITY,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1392,6 +1393,16 @@ declareVirtualField({model: 'conversation', field: 'messages_count',instance: 'N
 
 declareEnumField({model: 'nutritionAdvice', field: 'gender', enumValues: GENDER})
 
+/** Ticketing START */
+declareVirtualField({model: 'ticket', field: 'comments',instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'ticketComment' }
+  },
+})
+declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORITY})
+
+/** Ticketing END */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
