@@ -222,7 +222,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
   }
   if (model=='ticket') {
     return getTickets(user?.email)
-      .then(tickets => tickets.map(t => ({...t, date: undefined, _id: t.jiraid})))
+      .then(tickets => tickets.map(t => ({...t, _id: t.jiraid})))
       .then(tickets => ({ model, fields, id, data: tickets}))
   }
   if (model == 'loggedUser') {
