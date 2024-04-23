@@ -9,7 +9,8 @@ const {
   CALL_STATUS_CALL_1,
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
-  COACHING_STATUS_STOPPED
+  COACHING_STATUS_STOPPED,
+  ROLE_EXTERNAL_DIET
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
@@ -23,7 +24,7 @@ const Webinar = require('../../models/Webinar')
 const { getHostName, getSmartdietAPIConfig } = require('../../../config/config')
 const moment = require('moment')
 const IndividualChallenge = require('../../models/IndividualChallenge')
-const { BadRequestError, NotFoundError } = require('../../utils/errors')
+const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
 const UserSurvey = require('../../models/UserSurvey')
 const UserQuestion = require('../../models/UserQuestion')
 const Question = require('../../models/Question')
@@ -391,6 +392,13 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     // Some companies require surveuy to start a coaching
     if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
       throw new Error(`Vous devez remplir le questionnaire pour démarrer un coaching`)
+    }
+    return true
+  }
+
+  if (['save', 'create'].includes(action) && ['ticket', 'ticketComment'].includes(actionProps?.model)) {
+    if (user?.role!= ROLE_EXTERNAL_DIET) {
+      throw new ForbiddenError(`Vous devez être diet pour créer ou modifier un ticket`)
     }
     return true
   }

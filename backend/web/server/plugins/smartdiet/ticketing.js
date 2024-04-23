@@ -11,7 +11,15 @@ const createTicket = params => {
 
 const getTickets = email => {
   return axios.get(GET_TICKETS_URL+email)
-    .then(({data}) => data)
+    // Replace comments.text with comments.message & fix ticket date
+    .then(({data}) => {
+      const mapped=data.map(ticket => ({
+        ...ticket,
+        date: ticket.date.replace(/\+.*$/, ''),
+        comments: ticket.comments.map(c => ({...c, message: c.text, text: undefined})) 
+      }))
+      return mapped
+    })
 }
 
 const createComment = params => {
