@@ -10,7 +10,8 @@ const {
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
   COACHING_STATUS_STOPPED,
-  ROLE_EXTERNAL_DIET
+  ROLE_EXTERNAL_DIET,
+  ROLE_ADMIN
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
@@ -367,11 +368,22 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Can i start a new coaching ?
   // TODO: send nothing instead of "undefined" for dataId
   if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
-    if (!user.role==ROLE_CUSTOMER) {
-      throw new Error(`Vous devez être un patient pour démarrer un coaching`)    
+    let patientId;
+    if (user.role==ROLE_ADMIN) {
+      if (!actionProps?.parent) {
+        throw new Error(`Vous devez sélectionner le patient qui démarre un coaching`)    
+      }
+      return true
+    }
+    else if (user.role==ROLE_CUSTOMER) {
+      patientId=user._id
+    }
+    else {
+      console.error(`Rôle ${user.role} sans droit à coaching`)
+      throw new Error(`Vous n'êtes pas autorisé à démarrer un coaching`)    
     }
     // Must customer
-    const loadedUser=await User.findById(user._id)
+    const loadedUser=await User.findById(patientId)
       .populate({path: 'latest_coachings', populate: 'appointments'})
       .populate({path: 'company', populate: 'offers'})
       .populate({path: 'surveys'})
@@ -379,19 +391,19 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     const latest_coaching=loadedUser.latest_coachings?.[0] || null
     if (latest_coaching) {
       if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
-        throw new Error(`Vous avez déjà un coaching en cours`)
+        throw new Error(`Un coaching est déjà en cours`)
       }
       const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
       if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
-        throw new Error(`Vous avez déjà utilisé un coaching cette année`)
+        throw new Error(`Un coaching a déjà été démarré cette année`)
       }
     }
     if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
+      throw new Error(`Le crédit de coaching est épuisé`)
     }
     // Some companies require surveuy to start a coaching
     if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
-      throw new Error(`Vous devez remplir le questionnaire pour démarrer un coaching`)
+      throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
     }
     return true
   }
