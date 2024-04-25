@@ -400,8 +400,8 @@ const preCreate = async ({ model, params, user }) => {
     }
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
-      if (!params.user) { throw new BadRequestError(`L'id du patient doit être fourni`) }
-      customer_id = params.user
+      if (!params.parent) { throw new BadRequestError(`L'id du patient doit être fourni`) }
+      customer_id = params.parent
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -409,7 +409,7 @@ const preCreate = async ({ model, params, user }) => {
     return loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
         'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
       ],
       user,
@@ -434,7 +434,7 @@ const preCreate = async ({ model, params, user }) => {
         }
 
         const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
-        console.log('reamining coaching credits', remaining_nut)
+
         if ((isAppointment && latest_coaching.remaining_credits <= 0)
           || (!isAppointment && !(remaining_nut > 0))) {
           throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
@@ -446,11 +446,12 @@ const preCreate = async ({ model, params, user }) => {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
         diet=latest_coaching.diet
+        console.log('patient is', JSON.stringify(usr, null, 2))
         if (isAppointment) {
           return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
         }
         else { // Nutrition advice
-          return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
         }
       })
   }
@@ -1685,9 +1686,8 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   // If operator created nutrition advice, set lead nutrition converted
-  if (model == 'nutritionAdvice' && user.role == ROLE_SUPPORT) {
-    Coaching.findById(data.coaching._id).populate('user')
-      .then(({ user }) => Lead.findOneAndUpdate({ email: user.email }, { nutrition_converted: true }))
+  if (model == 'nutritionAdvice') {
+      return Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
       .then(res => `Nutrition conversion:${res}`)
       .catch(err => `Nutrition conversion:${err}`)
   }
