@@ -117,6 +117,9 @@ const {
   COACHING_STATUS,
   QUIZZ_TYPE_ASSESSMENT,
   TICKET_PRIORITY,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -329,12 +332,12 @@ setPreprocessGet(preprocessGet)
 const canPatientStartCoaching = async patientId => {
   const loadedUser = await User.findById(patientId)
     .populate({ path: 'latest_coachings', populate: 'appointments' })
-    .populate({ path: 'company', populate: ['offers', 'current_offer'] })
+    .populate({ path: 'company', populate: 'current_offer'})
     .populate({ path: 'surveys' })
 
   const latest_coaching = loadedUser.latest_coachings?.[0] || null
-  if (latest_coaching) {
-    if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
+  if (!!latest_coaching) {
+    if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching.status)) {
       throw new Error(`Un coaching est déjà en cours`)
     }
     const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
@@ -342,7 +345,7 @@ const canPatientStartCoaching = async patientId => {
       throw new Error(`Un coaching a déjà été démarré cette année`)
     }
   }
-  if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
+  if (!loadedUser.company?.current_offer?.coaching_credit) {
     throw new Error(`Le crédit de coaching est épuisé`)
   }
   // Some companies require surveuy to start a coaching
@@ -389,17 +392,12 @@ const preCreate = async ({ model, params, user }) => {
       .then(() => ({data: {_id: moment(params.day).unix()}}))
   }
   if (model=='coaching') {
-    const patient=user?.role==ROLE_CUSTOMER ? user : await User.findById(params.parent)
+    const patient_id=user?.role==ROLE_CUSTOMER ? user._id : params.parent
 
-    try {
-      canPatientStartCoaching(patient._id)
-    }
-    catch(err) {
-      throw err
-    }
+    await canPatientStartCoaching(patient_id)
     
-    params.user=patient._id
-    params.offer=(await User.findById(patient._id).populate('current_offer')).company.current_offer
+    params.user=patient_id
+    params.offer=(await User.findById(patient_id).populate({path: 'company', populate: 'current_offer'})).company.current_offer
   }
   if (['diploma', 'comment', 'measure', 'content', 'collectiveChallenge', 'individualChallenge', 'webinar', 'menu'].includes(model)) {
     params.user = params?.user || user
