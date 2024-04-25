@@ -419,6 +419,23 @@ const generateQuizz = async directory => {
   
 }
 
+
+const generateFoodPrograms = async directory => {
+  const INPUT=path.join(directory, 'smart_consultation.csv')
+  const OUTPUT=path.join(directory, 'wapp_foodprograms.csv')
+  if (isNewerThan(OUTPUT, INPUT)) {
+    return
+  }
+
+  const consultations=await loadRecords(INPUT)
+  const foodprograms=lodash(consultations)
+    .filter(c => !lodash.isEmpty(c.foodprogram))
+    .map(c => ({SDPROGRAMID: c.SDPROGRAMID, foodprogram: c.foodprogram, date: c.date}))
+    .value()
+
+  await saveRecords(OUTPUT, Object.keys(foodprograms[0]), foodprograms)
+}
+
 const fixFiles = async directory => {
   console.log('Fixing files')
   await fixPatients(directory)
@@ -435,6 +452,7 @@ const fixFiles = async directory => {
   // Moved in import function
   //await fixFoodDocuments(directory)
   await generateQuizz(directory)
+  await generateFoodPrograms(directory)
   console.log('Fixed files')
 }
 
@@ -1406,6 +1424,25 @@ const importOtherDiploma = async (input_file) => {
   )
 }
 
+const FOODPROGRAM_MAPPING={
+  migration_id: 'SDPROGRAMID',
+  food_program: async ({record, programsDirectory}) => {
+    const fullpath=path.join(programsDirectory, record.foodprogram)
+    const s3File=await sendFileToAWS(fullpath, 'foodprogram')
+    return s3File?.Location
+  },
+}
+
+const FOODPROGRAM_KEY='migration_id'
+const FOODPROGRAM_MIGRATION_KEY='migration_id'
+
+const importFoodPrograms = async (input_file, programs_directory) => {
+  return loadRecords(input_file)
+  .then(records => importData({model: 'coaching', data:records, mapping: FOODPROGRAM_MAPPING, 
+    identityKey: FOODPROGRAM_KEY, migrationKey: FOODPROGRAM_MIGRATION_KEY, progressCb: progressCb(), programsDirectory: programs_directory})
+  )
+}
+
 module.exports={
   loadRecords, saveRecords,
   importCompanies,
@@ -1439,5 +1476,6 @@ module.exports={
   generateMessages,
   fixFoodDocuments,
   generateQuizz,
+  importFoodPrograms,
 }
 
