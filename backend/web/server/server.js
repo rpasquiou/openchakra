@@ -181,7 +181,7 @@ catch(err) {
 // throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)
 // checkConfig
 checkConfig()
-  .then(() => delayedPromise(5000, setMasterStatus))
+  .then(() => !isDevelopment() && delayedPromise(5000, setMasterStatus))
   .then(() => {
     return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
       .then(conn => autoIncrement.initialize(conn))

@@ -43,8 +43,6 @@ const NutritionAdviceSchema = new Schema({
   },
   age: {
     type: Number,
-    min: [18, `L'âge doit être supérieur à 18 ans`],
-    max: [130, `L'âge doit être inférieur à 130 ans`],
     required: false,
   },
   job: {
