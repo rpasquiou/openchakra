@@ -11,11 +11,13 @@ const {
   COACHING_STATUS_FINISHED,
   COACHING_STATUS_STOPPED,
   ROLE_EXTERNAL_DIET,
-  ROLE_ADMIN
+  ROLE_ADMIN,
+  ROLE_SUPER_ADMIN
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
-  getRegisterCompany
+  getRegisterCompany,
+  canPatientStartCoaching
 } = require('./functions')
 const { generatePassword } = require('../../../utils/passwords')
 const { importLeads } = require('./leads')
@@ -369,7 +371,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // TODO: send nothing instead of "undefined" for dataId
   if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
     let patientId;
-    if (user.role==ROLE_ADMIN) {
+    if ([ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_SUPPORT, ROLE_EXTERNAL_DIET].includes(user.role)) {
       if (!actionProps?.parent) {
         throw new Error(`Vous devez sélectionner le patient qui démarre un coaching`)    
       }
@@ -382,30 +384,9 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       console.error(`Rôle ${user.role} sans droit à coaching`)
       throw new Error(`Vous n'êtes pas autorisé à démarrer un coaching`)    
     }
-    // Must customer
-    const loadedUser=await User.findById(patientId)
-      .populate({path: 'latest_coachings', populate: 'appointments'})
-      .populate({path: 'company', populate: 'offers'})
-      .populate({path: 'surveys'})
 
-    const latest_coaching=loadedUser.latest_coachings?.[0] || null
-    if (latest_coaching) {
-      if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
-        throw new Error(`Un coaching est déjà en cours`)
-      }
-      const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
-      if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
-        throw new Error(`Un coaching a déjà été démarré cette année`)
-      }
-    }
-    if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
-      throw new Error(`Le crédit de coaching est épuisé`)
-    }
-    // Some companies require surveuy to start a coaching
-    if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
-      throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
-    }
-    return true
+    // Must customer
+    return await canPatientStartCoaching(patientId)
   }
 
   if (['save', 'create'].includes(action) && ['ticket', 'ticketComment'].includes(actionProps?.model)) {
@@ -582,3 +563,4 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
 }
 
 setAllowActionFn(isActionAllowed)
+
