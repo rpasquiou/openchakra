@@ -326,6 +326,41 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 
 setPreprocessGet(preprocessGet)
 
+const canPatientStartCoaching = async patientId => {
+  const loadedUser = await User.findById(patientId)
+    .populate({ path: 'latest_coachings', populate: 'appointments' })
+    .populate({ path: 'company', populate: ['offers', 'current_offer'] })
+    .populate({ path: 'surveys' })
+
+  const latest_coaching = loadedUser.latest_coachings?.[0] || null
+  if (latest_coaching) {
+    if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
+      throw new Error(`Un coaching est déjà en cours`)
+    }
+    const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
+    if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+      throw new Error(`Un coaching a déjà été démarré cette année`)
+    }
+  }
+  if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
+    throw new Error(`Le crédit de coaching est épuisé`)
+  }
+  // Some companies require surveuy to start a coaching
+  if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
+    throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
+  }
+  const offer=loadedUser?.company?.current_offer
+  if (!offer) {
+    throw new Error(`Votre compagnie n'a aucune offre en cours`)
+  }
+  if (!offer.coaching_credit>0) {
+    throw new Error(`Vous n'avez pas de crédit de coaching`)
+  }
+
+  return true
+}
+
+
 const preCreate = async ({ model, params, user }) => {
   if (model=='ticket') {
     if (user?.role!=ROLE_EXTERNAL_DIET) {
@@ -355,15 +390,16 @@ const preCreate = async ({ model, params, user }) => {
   }
   if (model=='coaching') {
     const patient=user?.role==ROLE_CUSTOMER ? user : await User.findById(params.parent)
-    const offer=(await Company.findById(patient.company).populate('current_offer'))?.current_offer
-    if (!offer) {
-      throw new Error(`Votre compagnie n'a aucune offre en cours`)
+
+    try {
+      canPatientStartCoaching(patient._id)
     }
-    if (!offer.coaching_credit>0) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
+    catch(err) {
+      throw err
     }
+    
     params.user=patient._id
-    params.offer=offer
+    params.offer=(await User.findById(patient._id).populate('current_offer')).company.current_offer
   }
   if (['diploma', 'comment', 'measure', 'content', 'collectiveChallenge', 'individualChallenge', 'webinar', 'menu'].includes(model)) {
     params.user = params?.user || user
@@ -396,13 +432,13 @@ const preCreate = async ({ model, params, user }) => {
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
-    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT].includes(user.role)) {
+    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) {
       throw new ForbiddenError(`Seuls les rôles patient, diet et support peuvent prendre un rendez-vous`)
     }
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
-      if (!params.user) { throw new BadRequestError(`L'id du patient doit être fourni`) }
-      customer_id = params.user
+      if (!(params.user || params.parent)) { throw new BadRequestError(`Le patient doit être indiqué`) }
+      customer_id = params.user || params.parent
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -430,10 +466,11 @@ const preCreate = async ({ model, params, user }) => {
         }
         // Check remaining credits
         const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching) {
+        if (!latest_coaching && isAppointment) {
           throw new ForbiddenError(`Aucun coaching en cours`)
         }
 
+        console.log('company', user.company?.name, 'nut', usr.company?.current_offer?.nutrition_credit,  'consumed', usr.nutrition_advices?.length)
         const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
         console.log('reamining coaching credits', remaining_nut)
         if ((isAppointment && latest_coaching.remaining_credits <= 0)
@@ -2265,4 +2302,5 @@ module.exports = {
   agendaHookFn, mailjetHookFn,
   computeStatistics,
   webinarNotifications,
+  canPatientStartCoaching,
 }
