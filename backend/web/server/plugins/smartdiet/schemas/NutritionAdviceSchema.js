@@ -19,7 +19,7 @@ const NutritionAdviceSchema = new Schema({
   },
   comment: {
     type: String,
-    required: true,
+    required: [true, `Le commentaire est obligatoire`],
   },
   food_document: {
     type: Schema.Types.ObjectId,
