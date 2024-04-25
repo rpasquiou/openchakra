@@ -1,3 +1,4 @@
+const axios=require('axios')
 const {
   declareComputedField,
   declareEnumField,
@@ -373,6 +374,12 @@ const preCreate = async ({ model, params, user }) => {
     const ticket=new Ticket(params)
     const errors=await ticket.validate()
     if (errors) {return errors}
+    // Convert URL to Readable
+    if (params.attachment) {
+      const attStream=await axios.get(params.attachment, {responseType: "stream"})
+        .then(res => res.data)
+      params.attachment=attStream
+    }
     return createTicket(params)
       .then(() => ({data: []}))
   }

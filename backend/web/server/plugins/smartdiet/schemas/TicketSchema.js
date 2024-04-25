@@ -25,6 +25,10 @@ const TicketSchema = new Schema(
       set: v => v || undefined,
       required: [true, `La priorité est obligatoire`],
     },
+    attachment: {
+      type: String,
+      required: false,
+    },
     /** Returned by Smartdiet */
     status: {
       type: String,
