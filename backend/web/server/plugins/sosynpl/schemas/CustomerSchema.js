@@ -90,7 +90,6 @@ const CustomerSchema = new Schema({
   legal_representant_firstname: {
     type: String,
     get: function(v) {
-      console.log('getting legal firstname', v)
       if (!!this.legal_representant_self) {
         return this.firstname
       }
@@ -101,7 +100,6 @@ const CustomerSchema = new Schema({
   legal_representant_lastname: {
     type: String,
     get: function(v) {
-      console.log('getting legal lastname', v)
       if (!!this.legal_representant_self) {
         return this.lastname
       }
@@ -112,7 +110,6 @@ const CustomerSchema = new Schema({
   legal_representant_birthdate: {
     type: Date,
     get: function(v) {
-      console.log('getting legal birthdate', v)
       if (!!this.legal_representant_self) {
         return this.birthdate
       }
@@ -123,7 +120,6 @@ const CustomerSchema = new Schema({
   legal_representant_phone: {
     type: String,
     get: function(v) {
-      console.log('getting legal phone', v)
       if (!!this.legal_representant_self) {
         return this.phone
       }
@@ -137,7 +133,6 @@ const CustomerSchema = new Schema({
     type: String,
     enum: Object.keys(NATIONALITIES),
     get: function(v) {
-      console.log('getting legal nationality', v)
       if (!!this.legal_representant_self) {
         return this.nationality
       }
@@ -148,7 +143,6 @@ const CustomerSchema = new Schema({
   legal_representant_address: {
     type: AddressSchema,
     get: function(v) {
-      console.log('getting legal address', v)
       if (!!this.legal_representant_self) {
         return this.address
       }
@@ -159,7 +153,6 @@ const CustomerSchema = new Schema({
   legal_representant_email: {
     type: String,
     get: function(v) {
-      console.log('getting legal email', v)
       if (!!this.legal_representant_self) {
         return this.email
       }
