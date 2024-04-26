@@ -76,7 +76,7 @@ describe('Test imports', () => {
     await mongoose.connection.close()
   })
 
-  it.only('must import companies', async () => {
+  it('must import companies', async () => {
     const res = await importCompanies(path.join(ROOT, 'smart_project.csv'))
     const companies=await Company.find()
     expect(companies.length).toEqual(13)
@@ -227,7 +227,14 @@ describe('Test imports', () => {
   })
 
   it('must upsert patients quizzs', async () => {
-    return importUserQuizz(path.join(ROOT, 'wapp_patient_quiz.csv'))
+    await importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
+    const user=await User.findOne({email: 'lylycordo@laposte.net'})
+      .populate({path: 'coachings', populate: {path: 'quizz', populate: {path: 'questions', populate: ['quizz_question', 'single_enum_answer']}}})
+    const quizz=lodash(user.coachings).map(c => c.quizz).flatten().find(q => q.name=='Fréquences alimentaires')
+    expect(quizz).toBeTruthy()
+    const imported=[...quizz.questions.map(q => q.single_enum_answer.text)]
+    const EXPECTED=['Vrai','Vrai','Faux','Faux','Vrai', 'Faux','Faux','Faux']
+    expect(imported).toEqual(EXPECTED)
   })
 
   it('must upsert patients objectives', async () => {

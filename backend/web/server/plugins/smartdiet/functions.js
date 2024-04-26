@@ -1,3 +1,4 @@
+const axios=require('axios')
 const {
   declareComputedField,
   declareEnumField,
@@ -49,6 +50,8 @@ require('../../models/Key')
 require('../../models/Association')
 require('../../models/Item')
 require('../../models/Question')
+const Ticket=require('../../models/Ticket')
+const TicketComment=require('../../models/TicketComment')
 const { updateWorkflows } = require('./workflows')
 const {
   ACTIVITY,
@@ -114,6 +117,10 @@ const {
   APPOINTMENT_TYPE_FOLLOWUP,
   COACHING_STATUS,
   QUIZZ_TYPE_ASSESSMENT,
+  TICKET_PRIORITY,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -183,6 +190,7 @@ const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
 const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
+const { createTicket, getTickets, createComment } = require('./ticketing')
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -215,6 +223,11 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
   const chartPointField=fields.find(v => /value_1/.test(v))
   if (chartPointField) {
     fields=[...fields, chartPointField.replace(/value_1/, 'date')]
+  }
+  if (model=='ticket') {
+    return getTickets(user?.email)
+      .then(tickets => tickets.map(t => ({...t, _id: t.jiraid})))
+      .then(tickets => ({ model, fields, id, data: tickets}))
   }
   if (model == 'loggedUser') {
     model = 'user'
@@ -317,21 +330,81 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 
 setPreprocessGet(preprocessGet)
 
+const canPatientStartCoaching = async patientId => {
+  const loadedUser = await User.findById(patientId)
+    .populate({ path: 'latest_coachings', populate: 'appointments' })
+    .populate({ path: 'company', populate: 'current_offer'})
+    .populate({ path: 'surveys' })
+
+  const latest_coaching = loadedUser.latest_coachings?.[0] || null
+  if (!!latest_coaching) {
+    if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching.status)) {
+      throw new Error(`Un coaching est déjà en cours`)
+    }
+    const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
+    if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+      throw new Error(`Un coaching a déjà été démarré cette année`)
+    }
+  }
+  if (!loadedUser.company?.current_offer?.coaching_credit) {
+    throw new Error(`Le crédit de coaching est épuisé`)
+  }
+  // Some companies require surveuy to start a coaching
+  if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
+    throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
+  }
+  const offer=loadedUser?.company?.current_offer
+  if (!offer) {
+    throw new Error(`Votre compagnie n'a aucune offre en cours`)
+  }
+  if (!offer.coaching_credit>0) {
+    throw new Error(`Vous n'avez pas de crédit de coaching`)
+  }
+
+  return true
+}
+
+
 const preCreate = async ({ model, params, user }) => {
+  if (model=='ticket') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour créer un ticket`)
+    }
+    params.sender=user?.email
+    const ticket=new Ticket(params)
+    const errors=await ticket.validate()
+    if (errors) {return errors}
+    // Convert URL to Readable
+    if (params.attachment) {
+      const attStream=await axios.get(params.attachment, {responseType: "stream"})
+        .then(res => res.data)
+      params.attachment=attStream
+    }
+    return createTicket(params)
+      .then(() => ({data: []}))
+  }
+  if (model=='ticketComment') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour commenter un ticket`)
+    }
+    params.jiraid=params.parent
+    const comment=new TicketComment(params)
+    const errors=await comment.validate()
+    if (errors) {return errors}
+    return createComment(params)
+      .then(() => ({data: []}))
+  }
   if (model=='logbookDay') {
     return logbooksConsistency(user._id, params.day)
       .then(() => ({data: {_id: moment(params.day).unix()}}))
   }
   if (model=='coaching') {
-    const offer=(await Company.findById(user.company).populate('current_offer'))?.current_offer
-    if (!offer) {
-      throw new Error(`Votre compagnie n'a aucune offre en cours`)
-    }
-    if (!offer.coaching_credit>0) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
-    }
-    params.user=user._id
-    params.offer=offer
+    const patient_id=user?.role==ROLE_CUSTOMER ? user._id : params.parent
+
+    await canPatientStartCoaching(patient_id)
+    
+    params.user=patient_id
+    params.offer=(await User.findById(patient_id).populate({path: 'company', populate: 'current_offer'})).company.current_offer
   }
   if (['diploma', 'comment', 'measure', 'content', 'collectiveChallenge', 'individualChallenge', 'webinar', 'menu'].includes(model)) {
     params.user = params?.user || user
@@ -364,13 +437,13 @@ const preCreate = async ({ model, params, user }) => {
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
-    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT].includes(user.role)) {
+    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) {
       throw new ForbiddenError(`Seuls les rôles patient, diet et support peuvent prendre un rendez-vous`)
     }
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
-      if (!params.user) { throw new BadRequestError(`L'id du patient doit être fourni`) }
-      customer_id = params.user
+      if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
+      customer_id = params.parent
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -378,7 +451,7 @@ const preCreate = async ({ model, params, user }) => {
     return loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
         'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
       ],
       user,
@@ -398,12 +471,13 @@ const preCreate = async ({ model, params, user }) => {
         }
         // Check remaining credits
         const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching) {
+        if (!latest_coaching && isAppointment) {
           throw new ForbiddenError(`Aucun coaching en cours`)
         }
 
+        console.log('company', user.company?.name, 'nut', usr.company?.current_offer?.nutrition_credit,  'consumed', usr.nutrition_advices?.length)
         const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
-        console.log('reamining coaching credits', remaining_nut)
+
         if ((isAppointment && latest_coaching.remaining_credits <= 0)
           || (!isAppointment && !(remaining_nut > 0))) {
           throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
@@ -415,11 +489,12 @@ const preCreate = async ({ model, params, user }) => {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
         diet=latest_coaching.diet
+        console.log('patient is', JSON.stringify(usr, null, 2))
         if (isAppointment) {
           return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
         }
         else { // Nutrition advice
-          return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
         }
       })
   }
@@ -860,6 +935,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'company', field: 'leads', instance: 'Array', multiple: true,
+  requires: 'code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'lead' }
@@ -1316,7 +1392,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'lead', field: 'company',
-  instance: 'Company', multiple: false,
+  instance: 'Company', multiple: false, requires: 'company_code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'company' }
@@ -1389,6 +1465,18 @@ declareVirtualField({model: 'conversation', field: 'latest_messages',instance: '
 })
 declareVirtualField({model: 'conversation', field: 'messages_count',instance: 'Number'})
 
+declareEnumField({model: 'nutritionAdvice', field: 'gender', enumValues: GENDER})
+
+/** Ticketing START */
+declareVirtualField({model: 'ticket', field: 'comments',instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'ticketComment' }
+  },
+})
+declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORITY})
+
+/** Ticketing END */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
@@ -1641,9 +1729,8 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   // If operator created nutrition advice, set lead nutrition converted
-  if (model == 'nutritionAdvice' && user.role == ROLE_SUPPORT) {
-    Coaching.findById(data.coaching._id).populate('user')
-      .then(({ user }) => Lead.findOneAndUpdate({ email: user.email }, { nutrition_converted: true }))
+  if (model == 'nutritionAdvice') {
+      return Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
       .then(res => `Nutrition conversion:${res}`)
       .catch(err => `Nutrition conversion:${err}`)
   }
@@ -2220,4 +2307,5 @@ module.exports = {
   agendaHookFn, mailjetHookFn,
   computeStatistics,
   webinarNotifications,
+  canPatientStartCoaching,
 }

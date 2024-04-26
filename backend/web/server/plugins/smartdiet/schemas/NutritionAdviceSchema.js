@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const moment = require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
+const { GENDER } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -18,7 +19,7 @@ const NutritionAdviceSchema = new Schema({
   },
   comment: {
     type: String,
-    required: true,
+    required: [true, `Le commentaire est obligatoire`],
   },
   food_document: {
     type: Schema.Types.ObjectId,
@@ -33,6 +34,29 @@ const NutritionAdviceSchema = new Schema({
   patient_email: {
     type: String,
     required: [true, `L'email du patient est obligatoire`],
+  },
+  gender: {
+    type: String,
+    enum: Object.keys(GENDER),
+    set: v => v || undefined,
+    required: false,
+  },
+  age: {
+    type: Number,
+    required: false,
+  },
+  job: {
+    type: String,
+    required: false,
+  },
+  reason: {
+    type: String,
+    required: false,
+  },
+  // Did the patient start a coahcing after this CN ?
+  led_to_coaching: {
+    type: Boolean,
+    required: false,
   },
   migration_id: {
     type: Number,
