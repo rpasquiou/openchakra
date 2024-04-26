@@ -26,7 +26,7 @@ export function UserWrapper({ children } : {children: React.ReactElement}) {
         setUser({...userData})
       })
       .catch(error => {
-        setUser(null)
+        setUser(false)
         console.error('Cant fetch current user', error)
       })
   }, [])
