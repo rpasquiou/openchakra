@@ -97,4 +97,12 @@ export const joinDelimiter = ({array, delimiter=', ', lastDelimiter=' et '}) => 
   return [firstPart, secondPart].join(lastDelimiter)
 }
 
+export const formatAddress = addr => {
+  if (!addr) {
+    return null
+  }
+  return `${addr.address}, ${addr.city} ${addr.zip_code}`
+}
+
+
 

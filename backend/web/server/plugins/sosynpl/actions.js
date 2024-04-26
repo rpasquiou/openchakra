@@ -22,7 +22,7 @@ const deactivateAccount = async ({reason}, user) => {
   const model=await getModel(user._id)
   return mongoose.models[model].findByIdAndUpdate(
     user._id,
-    {suspended_status: ACTIVITY_STATE_DISABLED, deactivation_reason: reason},
+    {activity_status: ACTIVITY_STATE_DISABLED, deactivation_reason: reason},
     {runValidators: true, new: true},
   )
 }
@@ -34,7 +34,7 @@ const suspendAccount = async ({value, reason}, user) => {
   const model=await getModel(value)
   await mongoose.models[model].findByIdAndUpdate(
     value,
-    {suspended_status: ACTIVITY_STATE_SUSPENDED, suspended_reason: reason},
+    {activity_status: ACTIVITY_STATE_SUSPENDED, suspended_reason: reason},
     {runValidators: true, new: true},
   )
 }
@@ -42,11 +42,12 @@ addAction('suspend_account', suspendAccount)
 
 const activateAccount = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'activate_account', dataId: value, user})
+  console.log('can activate', !!ok)
   if (!ok) {return false}
   const model=await getModel(value)
-  await mongoose.models[model].findByIdAndUpdate(
+  return mongoose.models[model].findByIdAndUpdate(
     value,
-    {suspended_status: ACTIVITY_STATE_ACTIVE, suspended_reason:null},
+    {activity_status: ACTIVITY_STATE_ACTIVE, suspended_reason:null},
     {runValidators: true, new: true},
   )
 }
@@ -71,15 +72,15 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       throw new ForbiddenError('Action interdite')
     }
     const suspend=action=='suspend_account'
-    const target_user=await User.findById(dataId, { suspended_status:1})
+    const target_user=await User.findById(dataId, { activity_status:1})
     // Disabled account cannot be restored
-    if (!suspend && target_user.suspended_status==ACTIVITY_STATE_DISABLED) {
+    if (!suspend && target_user.activity_status==ACTIVITY_STATE_DISABLED) {
       throw new ForbiddenError('Un compte désactivé ne peut être réactivé')
     }
-    if (suspend && target_user.suspended_status==ACTIVITY_STATE_SUSPENDED) {
+    if (suspend && target_user.activity_status==ACTIVITY_STATE_SUSPENDED) {
       throw new ForbiddenError('Compte déjà suspendu')
     }
-    if (!suspend && target_user.suspended_status==ACTIVITY_STATE_ACTIVE) {
+    if (!suspend && target_user.activity_status==ACTIVITY_STATE_ACTIVE) {
       throw new ForbiddenError('Compte déjà actif')
     }
   }
