@@ -1,7 +1,7 @@
 import React from 'react'
 import lodash from 'lodash'
 import { getConditionalProperties } from '../utils/filters'
-import { joinDelimiter } from '../utils/misc'
+import { formatAddress, joinDelimiter } from '../utils/misc'
 
 const withDynamicText = Component => {
   const internal = props => {
@@ -11,6 +11,10 @@ const withDynamicText = Component => {
       value=lodash.isArray(value) ? value : [value]
       value=value.map(v => enums[v])
       value=joinDelimiter({array: value})
+    }
+    // Is it an address ??
+    if (value?.city && value?.zip_code) {
+      value=formatAddress(value)
     }
     const conditionalProperties = getConditionalProperties(
       props,
