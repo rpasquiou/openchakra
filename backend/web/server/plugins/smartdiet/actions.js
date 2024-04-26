@@ -9,11 +9,15 @@ const {
   CALL_STATUS_CALL_1,
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
-  COACHING_STATUS_STOPPED
+  COACHING_STATUS_STOPPED,
+  ROLE_EXTERNAL_DIET,
+  ROLE_ADMIN,
+  ROLE_SUPER_ADMIN
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
-  getRegisterCompany
+  getRegisterCompany,
+  canPatientStartCoaching
 } = require('./functions')
 const { generatePassword } = require('../../../utils/passwords')
 const { importLeads } = require('./leads')
@@ -23,7 +27,7 @@ const Webinar = require('../../models/Webinar')
 const { getHostName, getSmartdietAPIConfig } = require('../../../config/config')
 const moment = require('moment')
 const IndividualChallenge = require('../../models/IndividualChallenge')
-const { BadRequestError, NotFoundError } = require('../../utils/errors')
+const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
 const UserSurvey = require('../../models/UserSurvey')
 const UserQuestion = require('../../models/UserQuestion')
 const Question = require('../../models/Question')
@@ -366,31 +370,28 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Can i start a new coaching ?
   // TODO: send nothing instead of "undefined" for dataId
   if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
-    if (!user.role==ROLE_CUSTOMER) {
-      throw new Error(`Vous devez être un patient pour démarrer un coaching`)    
+    let patientId;
+    if ([ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_SUPPORT, ROLE_EXTERNAL_DIET].includes(user.role)) {
+      if (!actionProps?.parent) {
+        throw new Error(`Vous devez sélectionner le patient qui démarre un coaching`)    
+      }
+      return true
     }
-    // Must customer
-    const loadedUser=await User.findById(user._id)
-      .populate({path: 'latest_coachings', populate: 'appointments'})
-      .populate({path: 'company', populate: 'offers'})
-      .populate({path: 'surveys'})
+    else if (user.role==ROLE_CUSTOMER) {
+      patientId=user._id
+    }
+    else {
+      console.error(`Rôle ${user.role} sans droit à coaching`)
+      throw new Error(`Vous n'êtes pas autorisé à démarrer un coaching`)    
+    }
 
-    const latest_coaching=loadedUser.latest_coachings?.[0] || null
-    if (latest_coaching) {
-      if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
-        throw new Error(`Vous avez déjà un coaching en cours`)
-      }
-      const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
-      if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
-        throw new Error(`Vous avez déjà utilisé un coaching cette année`)
-      }
-    }
-    if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
-    }
-    // Some companies require surveuy to start a coaching
-    if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
-      throw new Error(`Vous devez remplir le questionnaire pour démarrer un coaching`)
+    // Must customer
+    return await canPatientStartCoaching(patientId)
+  }
+
+  if (['save', 'create'].includes(action) && ['ticket', 'ticketComment'].includes(actionProps?.model)) {
+    if (user?.role!= ROLE_EXTERNAL_DIET) {
+      throw new ForbiddenError(`Vous devez être diet pour créer ou modifier un ticket`)
     }
     return true
   }
@@ -562,3 +563,4 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
 }
 
 setAllowActionFn(isActionAllowed)
+

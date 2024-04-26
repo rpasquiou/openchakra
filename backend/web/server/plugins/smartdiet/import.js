@@ -201,24 +201,6 @@ const fixQuizzQuestions = directory => {
   replaceInFile(path.join(directory, 'smart_question.csv'), REPLACES)
 }
 
-const fixPatientQuizz = async directory => {
-  const input=path.join(directory, 'smart_patient_quiz.csv')
-  const output=path.join(directory, 'wapp_patient_quiz.csv')
-  const records=await loadRecords(input)
-
-  const invert = value => lodash.isEmpty(value) ? '' : +value==1 ? 0 : 1
-
-  const mappedRecords=records.map(r => {
-    const copy={...r}
-    ORDERS.map(attribute => {
-      copy[attribute]=invert(copy[attribute])
-    })
-    return copy
-  })
-
-  await saveRecords(output, Object.keys(mappedRecords[0]), mappedRecords)
-}
-
 const fixObjectives = directory => {
   const REPLACES=[
     [/\\"/g, "'"], [/\\\\/g, ''],
@@ -444,7 +426,6 @@ const fixFiles = async directory => {
   await fixAppointments(directory)
   await fixQuizz(directory)
   await fixQuizzQuestions(directory)
-  await fixPatientQuizz(directory)
   await fixObjectives(directory)
   await fixMessages(directory)
   await fixSummary(directory)
@@ -534,6 +515,7 @@ const PATIENT_MAPPING={
   birthday: ({record}) => lodash.isEmpty(record.birthdate) ? null:  moment(record.birthdate),
   phone: ({record}) => normalizePhone(record.phone),
   diet_comment: 'comments',
+  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record.created_at),
   migration_id: 'SDPATIENTID',
   source: () => 'import',
 }
@@ -607,9 +589,6 @@ const COACHING_MAPPING={
     const user=await User.findById(cache('user', record.SDPATIENTID))
       .populate({path: 'company', populate: 'current_offer'})
     const offer=user?.company?.current_offer?._id
-    console.log('coaching user', record.SDPATIENTID, !!user)
-    console.log('coaching company', !!user?.company)
-    console.log('coaching company offer', !!user?.company?.current_offer)
     return offer
   },
   migration_id: 'SDPROGRAMID',
@@ -773,17 +752,19 @@ const FOOD_DOCUMENT_MAPPING= mapping => ({
 const FOOD_DOCUMENT_KEY='name'
 const FODD_DOCUMENT_MIGRATION_KEY='migration_id'
 
-const getGender = gender => GENDER[+gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined]
+const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined
 
 const NUTADVICE_MAPPING={
   migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.DATE).unix()}`),
   start_date: 'DATE',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
-  comment: ({record}) => {
-    return `${getGender(record.gender)} ${record.age} ans, ${NUT_JOB[record.job_type]}, sujet : ${NUT_SUBJECT[record.SUBJECT]}, \
-raison : ${NUT_REASON[record.reason]}, ${+record.coaching>0 ? 'a mené à un coaching' : `n'a pas mené à un coaching`}`
-  }
+  gender: ({record}) => getGender(record.gender),
+  age: ({record}) => (+record.age && +record.age>=18) ? +record.age : null,
+  job: ({record}) => NUT_JOB[+record.job_type],
+  comment: ({record}) => NUT_SUBJECT[record.SUBJECT],
+  reason: ({record}) => NUT_REASON[record.reason],
+  led_to_coaching: ({record}) => +record.coaching>0,
 }
 
 const NUTADVICE_KEY='migration_id'
@@ -837,7 +818,7 @@ const progressCb = step => (index, total)=> {
 
 const updateImportedCoachingStatus = async () => {
   const coachings=await Coaching.find({status: COACHING_STATUS_NOT_STARTED, migration_id: {$ne: null}}, {_id:1})
-  const step=Math.floor(coachings.length/20)
+  const step=Math.floor(coachings.length/10)
   await runPromisesWithDelay(coachings.map((coaching, idx) => () => {
     if (idx%step==0) {
       console.log(idx, '/', coachings.length, '(', Math.ceil(idx/coachings.length*100),'%)')
@@ -1049,17 +1030,40 @@ const importQuizzQuestionAnswer = async (answers_file, questions_file) => {
 
 const ORDERS=['FIRST', 'SECOND', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
+const quizzAnswersCache=new NodeCache()
+
+const getQuestionAnswerId = async (quizzQuestionId, answer) => {
+  answer=+answer
+  const key=`${quizzQuestionId}/${+answer}`
+  let answerId=quizzAnswersCache.get(key)
+  if (!answerId) {
+    const question=await QuizzQuestion.findById(quizzQuestionId).populate('available_answers')
+    const question_migration_id=question.migration_id*QUIZZ_FACTOR+(answer==1 ? 0 : 1)
+    answerId=question.available_answers.find(a => a.migration_id==question_migration_id)._id
+    quizzAnswersCache.set(key, answerId)
+  }
+  return answerId
+}
+
 const importUserQuizz = async input_file => {
   await Coaching.updateMany({migration_id: {$ne: null}}, {quizz_templates: [], quizz: []}).then(console.log)
+  let coaching=null
+  let prevKey=null
   return loadRecords(input_file)
     .then(records => runPromisesWithDelay(records.map((record, idx) => async() => {
+      const key=`${record.SDPATIENTID}/${record.obtentiondate}`
       const log=idx%500 ? () => {} : console.log
       log(idx, '/', records.length)
       const userId=cache('user', record.SDPATIENTID)
       const quizzId=cache('quizz', record.SDQUIZID)
-      const coaching=await Coaching.findOne({user: userId}).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
-        .populate('quizz_templates')
-        .populate('quizz')
+      if (key!=prevKey) {
+        coaching=await Coaching.findOne({user: userId, [CREATED_AT_ATTRIBUTE]: {$lt: moment(record.obtentiondate).add(1, 'day')}})
+          .sort({ [CREATED_AT_ATTRIBUTE]: -1 })
+          .limit(1)
+          .populate('quizz_templates')
+          .populate('quizz')
+        prevKey=key
+      }
       if (!coaching) {
         return Promise.reject(`No coaching for user ${record.SDPATIENTID}/${userId}`)
       }
@@ -1067,7 +1071,7 @@ const importUserQuizz = async input_file => {
       const hasTemplate=coaching.quizz_templates.find(q => idEqual(q._id, quizzId))
       if (!hasTemplate) {
         coaching.quizz_templates.push(quizzId)
-        const quizz=await Quizz.findById(quizzId).populate({path: 'questions', populate: 'available_answers'})
+        const quizz=await Quizz.findById(quizzId).populate({path: 'questions'})
         const cloned=await quizz.cloneAsUserQuizz()
         cloned[CREATED_AT_ATTRIBUTE]=moment(record.obtentiondate)
         await cloned.save()
@@ -1078,9 +1082,8 @@ const importUserQuizz = async input_file => {
           const quizzQuestion=quizz.questions[index]
           const userQuestion=cloned.questions[index]
           if (!!quizzQuestion && !lodash.isNaN(answer)) {
-            const answerMigrationId=computeAnswerId(record.SDQUIZID, index+1, +answer)
-            const item_id=quizzQuestion.available_answers.find(answ => answ.migration_id==answerMigrationId)
-            userQuestion.single_enum_answer=item_id._id
+            const item_id=await getQuestionAnswerId(quizzQuestion._id, answer)
+            userQuestion.single_enum_answer=item_id
             return userQuestion.save()
           }
           else {

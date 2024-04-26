@@ -355,7 +355,7 @@ const bookingUrl = (serviceUserId, extraParams = {}) => {
 let _isMaster=undefined
 
 const isMaster = () => {
-  return _isMaster
+  return isDevelopment() ? true : _isMaster
 }
 
 const setMasterStatus = async () => {
