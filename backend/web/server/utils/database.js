@@ -165,6 +165,9 @@ let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
 
+// MOdel => field => requires
+let DEPENDENCIES = {}
+
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
     !(modelName in DECLARED_VIRTUALS) ||
@@ -547,7 +550,9 @@ function getRequiredFields({model, fields}) {
   while (added) {
     added = false
     lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
-      let required = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let virtualRequired = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let dependenciesRequired= lodash.get(DEPENDENCIES, `${model}.${directAttribute}.requires`) || null
+      let required=[virtualRequired, dependenciesRequired].filter(v => !lodash.isEmpty(v)).join(',')
       if (required) {
         required = required.split(',')
         if (lodash.difference(required, requiredFields).length > 0) {
@@ -737,6 +742,11 @@ const declareVirtualField=({model, field, ...rest}) => {
 const declareEnumField = ({model, field, enumValues}) => {
   lodash.set(DECLARED_ENUMS, `${model}.${field}`, enumValues)
 }
+
+const declareFieldDependencies = ({model, field, requires}) => {
+  lodash.set(DEPENDENCIES, `${model}.${field}`, {requires})
+}
+
 
 // Default filter
 let filterDataUser = ({model, data, id, user}) => data
@@ -1102,6 +1112,6 @@ module.exports = {
   handleReliesOn,
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
-  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter,
+  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
 }
 
