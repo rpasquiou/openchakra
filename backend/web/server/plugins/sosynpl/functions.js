@@ -1,5 +1,5 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
 const Customer=require('../../models/Customer')
@@ -42,6 +42,22 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'activity_status', enumValues: ACTIVITY_STATE})
   declareEnumField({model, field: 'suspended_reason', enumValues: SUSPEND_REASON})
   declareEnumField({model, field: 'legal_representant_nationality', enumValues: NATIONALITIES})
+
+  // Legal representant
+  declareFieldDependencies({model, field: 'legal_representant_firstname', requires: `legal_representant_self,firstname`})
+  declareFieldDependencies({model, field: 'legal_representant_lastname', requires: `legal_representant_self,lastname`})
+  declareFieldDependencies({model, field: 'legal_representant_birthdate', requires: `legal_representant_self,birthdate`})
+  declareFieldDependencies({model, field: 'legal_representant_email', requires: `legal_representant_self,email`})
+  declareFieldDependencies({model, field: 'legal_representant_phone', requires: `legal_representant_self,phone`})
+  declareFieldDependencies({model, field: 'legal_representant_address', requires: `legal_representant_self,address`})
+  declareFieldDependencies({model, field: 'legal_representant_nationality', requires: `legal_representant_self,nationality`})
+
+
+  // Billing contact
+  declareFieldDependencies({model, field: 'billing_contact_firstname', requires: `billing_contact_self,firstname`})
+  declareFieldDependencies({model, field: 'billing_contact_lastname', requires: `billing_contact_self,lastname`})
+  declareFieldDependencies({model, field: 'billing_contact_email', requires: `billing_contact_self,email`})
+  declareFieldDependencies({model, field: 'billing_contact_address', requires: `billing_contact_self,address`})
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
