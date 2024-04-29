@@ -118,7 +118,7 @@ const CoachingSchema = new Schema({
     type: Number,
     index: true,
     required: false,
-  }
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
@@ -256,6 +256,11 @@ CoachingSchema.virtual('diet_availabilities', DUMMY_REF).get(function() {
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   const appType=lodash.isEmpty(this.appointments) ? this.user?.company?.assessment_appointment_type : this.user?.company?.followup_appointment_type
   return appType
+})
+
+// Returns wether this coaching is in progress or not
+CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
+  return [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
 
 /* eslint-enable prefer-arrow-callback */

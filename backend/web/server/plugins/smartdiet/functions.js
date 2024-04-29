@@ -1275,6 +1275,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'coaching', field: '_last_appointment', instance: 'appointment'})
+declareVirtualField({model: 'coaching', field: 'in_progress', instance: 'Boolean', requires: 'status'})
 
 
 declareEnumField({ model: 'userCoachingQuestion', field: 'status', enumValues: COACHING_QUESTION_STATUS })
