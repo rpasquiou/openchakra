@@ -277,7 +277,7 @@ export const ACTIONS: IActions = {
   register: {
     label: 'Register new account',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx:number) => {
+      ...Object.fromEntries(lodash.range(35).map((idx:number) => {
       return [
         `component_${idx}`,
         ({ components }) => components
@@ -349,6 +349,18 @@ export const ACTIONS: IActions = {
   savePagePDF: {
     label: 'Save page as PDF',
     options:{}
+  },
+  generatePDF: {
+    label: 'Generate PDF',
+    options: {
+      targetId: ({components}) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      prefix: ({components}) =>
+        components
+          .filter(c => c.type == 'Input')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required:['targetId', 'prefix']
   },
 
   deactivateAccount: {
@@ -666,6 +678,24 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  validate_email: {
+    label: 'Validate email',
+    options: {},
+    next: ['openPage'],
+  },
+
+  suspend_account: {
+    label: 'Suspend account',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
+  activate_account: {
+    label: 'Activate account',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
