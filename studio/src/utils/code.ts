@@ -920,6 +920,7 @@ export const generateCode = async (
       if (role && page) {
         usedRoles.push(role)
         return   `useEffect(()=>{
+            if (redirectExists()) {return}
             if (user?.role=='${role}') {window.location='/${getPageUrl(page, pages)  }'}
           }, [user])`
       }
@@ -931,6 +932,7 @@ export const generateCode = async (
   if (defaultRedirectPage) {
     const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
     autoRedirect+=`\nuseEffect(()=>{
+        if (redirectExists()) {return}
         if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
       }, [user])`
   }
@@ -975,6 +977,7 @@ import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
+import { redirectExists } from '../dependencies/utils/misc'
 
 ${extraImports.join('\n')}
 ${wappComponentsDeclaration.join('\n')}
