@@ -1,3 +1,5 @@
+import lodash from 'lodash'
+
 const THUMBNAILS_DIR = 'thumbnails'
 
 export function isJsonString(str: string) {
@@ -79,4 +81,28 @@ export const imageSrcSetPaths = (originalSrc:string, withDimension=true) => {
       
   return srcSet
 }
+
+export const joinDelimiter = ({array, delimiter=', ', lastDelimiter=' et '}) => {
+  if (!lodash.isArray(array)) {
+    throw new Error(`array ${array} (type ${typeof array}) is not an array`)
+  }
+  if (lodash.isEmpty(array)) {
+    return ''
+  }
+  if (array.length==1) {
+    return array[0].toString()
+  }
+  const firstPart=array.slice(0, -1).join(delimiter)
+  const secondPart=array.length>1 ? array.slice(-1) : []
+  return [firstPart, secondPart].join(lastDelimiter)
+}
+
+export const formatAddress = addr => {
+  if (!addr) {
+    return null
+  }
+  return `${addr.address}, ${addr.city} ${addr.zip_code}`
+}
+
+
 

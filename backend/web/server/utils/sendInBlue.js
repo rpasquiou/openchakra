@@ -7,6 +7,7 @@ const SIB_API_KEY_V3 = getSibApiKey()
 class SIB_V3 {
 
   constructor() {
+    console.log('SIB instance key', SIB_API_KEY_V3)
     let defaultClient = SibApiV3Sdk.ApiClient.instance
     let apiKey = defaultClient.authentications['api-key']
     apiKey.apiKey = SIB_API_KEY_V3

@@ -84,6 +84,9 @@ const {getExposedModels} = require('../../utils/database')
 const {ACTIONS} = require('../../utils/studio/actions')
 const {buildQuery, addComputedFields} = require('../../utils/database')
 const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
+const { getLocationSuggestions } = require('../../../utils/geo')
+const { TaggingDirective } = require('@aws-sdk/client-s3')
+const PageTag_ = require('../../models/PageTag_')
 
 const router = express.Router()
 
@@ -110,6 +113,9 @@ const login = (email, password) => {
       if (user.subscription_end && moment().isAfter(moment(user.subscription_end))) {
         throw new ForbiddenError(`Votre abonnement s'est terminé le ${date_str(user.subscription_end)}`)
       }
+    }
+    if ('email_valid' in user && !user.email_valid) {
+      throw new ForbiddenError(`Vous devez confirmer votre email pour vous connecter`)
     }
     if (user.active===false) {
       console.error(`Deactived user ${email}`)
@@ -170,7 +176,7 @@ router.post('/mailjet-hook', (req, res) => {
   .catch(console.error)
 })
 
-router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const {action}=req.params
   const query=lodash.mapValues(req.query, v => {
     try{ return JSON.parse(v) }
@@ -201,6 +207,14 @@ router.post('/file', (req, res) => {
     .then(() => {
       return res.json()
     })
+})
+
+// Provides back with tag <-> page_url pairs
+router.post('/tags', (req, res) => {
+  const  tags=req.body
+  return PageTag_.deleteMany()
+    .then(() => Promise.all(tags.map(tag => PageTag_.create(({tag: tag[0], url: tag[1]})))))
+    .then(() => res.json())
 })
 
 router.post('/clean', (req, res) => {
@@ -296,7 +310,7 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const action = req.body.action
   const actionFn = ACTIONS[action]
   if (!actionFn) {
@@ -331,6 +345,19 @@ router.post('/login', (req, res) => {
     .then(user => {
       return sendCookie(user, res).json(user)
     })
+})
+
+/** 
+ * Returns geolocation suggestions for a query
+ * Expect params 
+ * - query: string query
+ * - city: search only city if contains 'city', else searches address
+ * Returns  {name, city, postcode, country, latitude, longitude}
+ */
+router.get('/geoloc', async (req, res) => {
+  const {query, city}=req.query
+  const suggestions=await getLocationSuggestions(query, city)
+  return res.json(suggestions)
 })
 
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
@@ -526,6 +553,16 @@ const loadFromRequest = (req, res) => {
 
 router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   req.params.model='jobUser'
+  return loadFromRequest(req, res)
+})
+
+router.get('/job/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='job'
+  return loadFromRequest(req, res)
+})
+
+router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='sector'
   return loadFromRequest(req, res)
 })
 

@@ -9,6 +9,7 @@ import {
   getComponentDataValue
 } from './values';
 import { clearToken } from './token';
+import { generatePDF } from './tools'
 
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
@@ -33,7 +34,7 @@ export const ACTIONS = {
     const components=componentsIds.map(comp => comp=getComponent(comp, level)).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
     const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
+      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute') || getComponentAttribute(c, level), getComponentValue(c.getAttribute('id'), level)||null]
     }))
     let url = `${API_ROOT}/action`
     return axios
@@ -242,7 +243,7 @@ export const ACTIONS = {
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
     const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
+      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute')  || getComponentAttribute(c, level), getComponentValue(c.getAttribute('id'), level)||null]
     }))
 
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
@@ -298,11 +299,11 @@ export const ACTIONS = {
     window.history.back()
   },
 
-  register: ({ value, props, dataSource, level, getComponentValue }) => {
+  register: ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
     let url = `${API_ROOT}/register`
-    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
+    const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute'), getComponentValue(c, level)||null]
+      [getComponent(c, level)?.getAttribute('attribute') || getComponentAttribute(c, level), getComponentValue(c, level)||null]
     ))
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     return axios.post(url, bodyJson)
@@ -319,7 +320,7 @@ export const ACTIONS = {
     let url = `${API_ROOT}/register-and-login`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute'), getComponentValue(c, level)||null]
+      [getComponent(c, level)?.getAttribute('attribute') || getComponentAttribute(c, level), getComponentValue(c, level)||null]
     ))
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     return axios.post(url, bodyJson)
@@ -445,6 +446,10 @@ return Promise.allSettled(imagePromises)
   })
 
   },
+  generatePDF: ({props, level, getComponentValue})=> {
+    const prefix=getComponentValue(props.prefix, level)
+    return generatePDF(props.targetId, prefix)
+  },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
     let url = `${API_ROOT}/action`
@@ -471,7 +476,7 @@ return Promise.allSettled(imagePromises)
   createRecommandation: ({ value, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute')  || getComponentAttribute(c, level),
         getComponentValue(c, level)||null]
     ))
     body.job=value._id
@@ -723,7 +728,7 @@ return Promise.allSettled(imagePromises)
   alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
-      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute'),
+      [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute') || getComponentAttribute(c, level),
         getComponentValue(c, level)||null]
     ))
 
@@ -996,5 +1001,32 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  
+  validate_email: () => {
+    let url = `${API_ROOT}/action`
+    const accountId=new URL(window.location).searchParams.get('id')
+    const body = {
+      action: 'validate_email',
+      value: accountId,
+    }
+    return axios.post(url, body)
+  },
+
+  suspend_account: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'suspend_account',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
+  activate_account: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'activate_account',
+      value: value._id,
+    }
+    return axios.post(url, body)
+  },
+
 }

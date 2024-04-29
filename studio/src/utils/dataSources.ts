@@ -38,7 +38,7 @@ export const DATE_TYPE: ComponentType[] = ['Date']
 export const SELECT_TYPE: ComponentType[] = ['Select']
 export const SOURCE_TYPE: ComponentType[] = ['Timer', 'Chart']
 export const CHECKBOX_TYPE: ComponentType[] = ['Checkbox', 'Radio', 'Switch', 'IconCheck']
-export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat']
+export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat', 'Address']
 export const UPLOAD_TYPE: ComponentType[] = ['UploadFile']
 export const GROUP_TYPE: ComponentType[] = ['RadioGroup', 'CheckboxGroup']
 
@@ -168,15 +168,21 @@ const getComponentAttributes = (
   return attributes
 }
 
+
+// TODO Filter attributes
 export const getAvailableAttributes = (
   component: IComponent,
   components: IComponents,
   models: any,
 ): any => {
+
   const attributes = getComponentAttributes(component, components, models)
   const cardinalityAttributes = lodash.pickBy(
     attributes,
-    att => ['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) || att.multiple === isMultipleDispatcher(component),
+    att => 
+      (['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) 
+      || att.multiple === isMultipleDispatcher(component) )
+      || (!SELECT_TYPE.includes(component.type) || (!!att.multiple || !!att.ref || !lodash.isEmpty(att.enumValues)))
   )
   return cardinalityAttributes
 }
@@ -324,3 +330,15 @@ export const getParentOfType = (components:IComponents, comp: IComponent, type: 
 export const hasParentType = (comp: IComponent, comps: IComponents, type: ComponentType) => {
   return !!getParentOfType(comps, comp, type)
 }
+
+export const getChildrenOfType = (components:IComponents, comp: IComponent, type: ComponentType):IComponent[] => {
+  if (comp.type==type) {
+    return [comp]
+  }
+  const children=comp.children.map(childId => {
+    const child=components[childId]
+    return getChildrenOfType(components, child, type)
+  })
+  return lodash.flatten(children)
+}
+

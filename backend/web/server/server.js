@@ -30,6 +30,11 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
+
+// Backend private
+require('./models/PageTag_')
+
+// Project mdels
 require('./models/Answer')
 require('./models/ResetToken')
 require('./models/Program')
@@ -141,6 +146,14 @@ require('./models/Diet')
 require('./models/Conversation')
 require('./models/Billing')
 require('./models/PriceList')
+require('./models/Customer')
+require('./models/Freelance')
+require('./models/Sector')
+require('./models/Admin')
+require('./models/GenericUser')
+require('./models/Communication')
+require('./models/Certification')
+require('./models/Training')
 require('./models/Ticket')
 require('./models/TicketComment')
 require('./models/Pack')

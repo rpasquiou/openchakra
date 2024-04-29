@@ -9,6 +9,7 @@ const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
+const AddressSchema = require('../models/AddressSchema')
 
 const LEAN_DATA=false
 
@@ -164,6 +165,9 @@ let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
 
+// MOdel => field => requires
+let DEPENDENCIES = {}
+
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
     !(modelName in DECLARED_VIRTUALS) ||
@@ -174,17 +178,25 @@ const getVirtualCharacteristics = (modelName, attName) => {
   return DECLARED_VIRTUALS[modelName][attName]
 }
 
+const isSchema = (attribute, schemaType) => {
+  return !!attribute.schema?.obj && JSON.stringify(Object.keys(attribute.schema?.obj))==JSON.stringify(Object.keys(schemaType?.obj))
+}
+
 const getAttributeCaracteristics = (modelName, att) => {
   const multiple = att.instance == 'Array'
   const suggestions = att.options?.suggestions
   const baseData = att.caster || att
   // TODO: fix type ObjectID => Object
   const type =
-    baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
+    baseData.instance == 'ObjectID' ? baseData.options.ref 
+      : isSchema(att, AddressSchema) ? 'Address'
+      : baseData.instance
   const ref = baseData.instance == 'ObjectID'
+
+  // Include caster enum values (i.e. array of enums)
   let enumValues
-  if (!lodash.isEmpty(att.enumValues)) {
-    enumValues=att.enumValues
+  if (!lodash.isEmpty(att.enumValues) || !lodash.isEmpty(att.caster?.enumValues)) {
+    enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
     enumValues=att.options.enum
@@ -291,7 +303,7 @@ const getModels = () => {
 }
 
 /**
-Returns only models & attributes visible for studio users
+Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not suffixed with an '_')
 */
 const getExposedModels = () => {
   const isHidddenAttributeName = (modelName, attName) => {
@@ -299,7 +311,7 @@ const getExposedModels = () => {
   }
 
   const models=lodash(getModels())
-    .omitBy((v, k) => k=='IdentityCounter')
+    .omitBy((v, k) => k=='IdentityCounter' || /_$/.test(k))
     .mapValues((v, modelName) => ({
       ...v,
       attributes: lodash(v.attributes).omitBy((v, k) => isHidddenAttributeName(modelName, k)),
@@ -538,7 +550,9 @@ function getRequiredFields({model, fields}) {
   while (added) {
     added = false
     lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
-      let required = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let virtualRequired = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let dependenciesRequired= lodash.get(DEPENDENCIES, `${model}.${directAttribute}.requires`) || null
+      let required=[virtualRequired, dependenciesRequired].filter(v => !lodash.isEmpty(v)).join(',')
       if (required) {
         required = required.split(',')
         if (lodash.difference(required, requiredFields).length > 0) {
@@ -728,6 +742,11 @@ const declareVirtualField=({model, field, ...rest}) => {
 const declareEnumField = ({model, field, enumValues}) => {
   lodash.set(DECLARED_ENUMS, `${model}.${field}`, enumValues)
 }
+
+const declareFieldDependencies = ({model, field, requires}) => {
+  lodash.set(DEPENDENCIES, `${model}.${field}`, {requires})
+}
+
 
 // Default filter
 let filterDataUser = ({model, data, id, user}) => data
@@ -966,7 +985,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => {console.time(`Compute model ${model}`); return data})
-        .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
+        .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => {console.timeEnd(`Compute model ${model}`); return data})
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))
@@ -1093,6 +1112,6 @@ module.exports = {
   handleReliesOn,
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
-  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter,
+  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
 }
 
