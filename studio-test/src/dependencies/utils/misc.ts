@@ -1,3 +1,4 @@
+import Cookies from 'universal-cookie'
 const THUMBNAILS_DIR = 'thumbnails'
 
 export function isJsonString(str: string) {
@@ -80,3 +81,9 @@ export const imageSrcSetPaths = (originalSrc:string, withDimension=true) => {
   return srcSet
 }
 
+
+export const redirectExists = () =>{
+  const cookies=new Cookies()
+  const redirect=cookies.get('redirect')
+  return !!redirect
+} 
