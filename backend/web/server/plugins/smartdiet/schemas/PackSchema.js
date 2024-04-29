@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const PackSchema = new Schema({
   title: {
     type: String,
-    required: [true, `Le nom du pack est opbligatoire`]
+    required: [true, `Le nom du pack est obligatoire`]
   },
   checkup: {
     type: Boolean,
