@@ -696,6 +696,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  smartdiet_buy_pack: {
+    label: 'SM Buy pack',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

@@ -4,6 +4,11 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const PackSchema = new Schema({
+  active: {
+    type: Boolean,
+    default: false,
+    required: true,
+  },
   title: {
     type: String,
     required: [true, `Le nom du pack est obligatoire`]
@@ -14,15 +19,17 @@ const PackSchema = new Schema({
   },
   follow_count: {
     type: Number,
+    min: [0, `Le nombre de suivis doit être positif ou nul`],
     required: [true, `Le nombre de suivis est obligatoire`]
   },
   price: {
     type: Number,
+    min: [0, `Le tarif doit être positif`],
     required: [true, `Le tarif de l'offre est obligatoire`]
   },
   payment_count: {
     type: Number,
-    validate: [function(v) {return (+v)>0}, `Le nombre d'échéances de paiements doit être supérieur à 0`],
+    min: [1, `Le nombre d'échéances de paiements doit être positif`],
     required: [true, `Le nombre d'échéances de paiements est obligatoire`]
   },
 },

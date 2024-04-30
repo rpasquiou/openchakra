@@ -4,7 +4,10 @@ const {
   ROLE_CUSTOMER,
   ROLE_EXTERNAL_DIET,
   COACHING_STATUS,
-  COACHING_STATUS_NOT_STARTED
+  COACHING_STATUS_NOT_STARTED,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -260,7 +263,7 @@ CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
 
 // Returns wether this coaching is in progress or not
 CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
-  return [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
+  return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
 
 /* eslint-enable prefer-arrow-callback */

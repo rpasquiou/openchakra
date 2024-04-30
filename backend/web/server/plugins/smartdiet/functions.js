@@ -192,7 +192,8 @@ const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
 
-const filterDataUser = ({ model, data, id, user }) => {
+
+const filterDataUser = async ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
     return Offer.find({ company: null })
       .then(offers => data.filter(d => offers.some(o => idEqual(d._id, o._id))))
@@ -204,38 +205,54 @@ const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'lead' && user?.role == ROLE_RH) {
     return User.findById(user?.id).populate('company')
       .then(user => {
-        return data = data.filter(d => d.company_code == user?.company?.code)
+        return data.filter(d => d.company_code == user?.company?.code)
       })
   }
   // Return not affected leads or affected to me
   if (model == 'lead' && user?.role == ROLE_SUPPORT) {
-    return data = data.filter(lead => lodash.isNil(lead.operator) || idEqual(lead.operator._id, user._id))
+    return data.filter(lead => lodash.isNil(lead.operator) || idEqual(lead.operator._id, user._id))
   }
   // TODO Do not sort anymore to not confuse pagination
   // data = lodash.sortBy(data, ['order', 'fullname', 'name', 'label'])
-  return Promise.resolve(data)
+  if (model=='pack' && user?.role==ROLE_CUSTOMER) {
+    const [loadedUser]=await loadFromDb({model: 'user',id: user._id, fields: ['can_buy_pack', 'latest_coachings'], user})
+    // If can not buy, return empty
+    if (!loadedUser.can_buy_pack) {
+      return []
+    }
+    // If user has no coaching, can not buy pack containing no checkup
+    if (lodash.isEmpty(loadedUser.latest_coachings)) {
+      return data.filter(pack => !!pack.checkup)
+    }
+  }
+
+  return data
 }
 
 setFilterDataUser(filterDataUser)
 
-const preprocessGet = async ({ model, fields, id, user, params }) => {
+const preProcessGet = async ({ model, fields, id, user, params }) => {
   // TODO Totally ugly. When asked for chartPoint, the studio should also require 'date' attribute => to fix in the studio
   const chartPointField=fields.find(v => /value_1/.test(v))
   if (chartPointField) {
     fields=[...fields, chartPointField.replace(/value_1/, 'date')]
   }
+
   if (model=='ticket') {
     return getTickets(user?.email)
       .then(tickets => tickets.map(t => ({...t, _id: t.jiraid})))
       .then(tickets => ({ model, fields, id, data: tickets}))
   }
+
   if (model == 'loggedUser') {
     model = 'user'
     id = user?._id || 'INVALIDID'
   }
+
   if (model == 'user') {
     fields.push('company')
   }
+
   if (model == ROLE_CUSTOMER) {
     if (user.role==ROLE_EXTERNAL_DIET) {
       return Coaching.distinct('user', {diet: user._id})
@@ -244,6 +261,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
         }))
     }
   }
+
   if (['appointment', 'currentFutureAppointment', 'pastAppointment'] .includes(model)) {
     if (user.role==ROLE_EXTERNAL_DIET) {
       params['filter.diet']=user._id
@@ -270,9 +288,11 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
     return computeStatistics({ id, fields })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
+
   if (model=='billing') {
     return computeBilling({diet:user, fields, params })
   }
+
   if (model == 'conversation') {
     // Conversation id is the conversatio nid OR the other's one id
     if (id) {
@@ -328,7 +348,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 
 }
 
-setPreprocessGet(preprocessGet)
+setPreprocessGet(preProcessGet)
 
 const canPatientStartCoaching = async patientId => {
   const loadedUser = await User.findById(patientId)
@@ -366,6 +386,10 @@ const canPatientStartCoaching = async patientId => {
 
 
 const preCreate = async ({ model, params, user }) => {
+  if (model=='pack' && ![ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) { 
+    throw new ForbiddenError(`Vous n'avez pas le droit de créer un pack`)
+  }
+
   if (model=='ticket') {
     if (user?.role!=ROLE_EXTERNAL_DIET) {
       throw new Error(`VOus devez être diet pour créer un ticket`)
@@ -875,6 +899,10 @@ declareVirtualField({
   declareVirtualField({
     model: m, field: 'remaining_nutrition_credits', instance: 'Number',
     requires: 'company.current_offer.nutrition_credit,spent_nutrition_credits,role'
+  })
+  declareVirtualField({
+    model: m, field: 'can_buy_pack', instance: 'Boolean',
+    requires: 'latest_coachings.in_progress',
   })
 })
 // End user/loggedUser
@@ -1995,7 +2023,6 @@ ensureSpoonGains = () => {
     return SpoonGain.exists({ source })
       .then(exists => {
         if (!exists) {
-          console.log(`Create missing spoon gain ${source} 0`)
           return SpoonGain.create({ source, gain: 0 })
         }
       })

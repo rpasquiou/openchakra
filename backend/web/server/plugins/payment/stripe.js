@@ -166,6 +166,27 @@ const createPayment = ({source_user, amount, fee, destination_user, description,
   })
 }
 
+const createAnonymousPayment = ({amount, description, customer_email, success_url, failure_url, metadata}) => {
+  console.log(`Initiating payment for ${customer_email}/${description} ${amount}€`)
+  return SecretStripe.checkout.sessions.create({
+    line_items:[{
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: description,
+        },
+        unit_amount: parseInt(amount*100),
+      },
+      quantity:1
+    }],
+    customer_email,
+    metadata,
+    mode: 'payment',
+    success_url: success_url,
+    cancel_url: failure_url,
+  })
+}
+
 const createTransfer = ({destination, amount}) => {
   return SecretStripe.transfers.create({
     amount: amount*100,
@@ -186,6 +207,7 @@ module.exports={
   upsertCustomer,
   getCustomers,
   createPayment,
+  createAnonymousPayment,
   upsertProvider,
   getProviders,
   createTransfer,
