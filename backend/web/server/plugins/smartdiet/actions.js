@@ -355,8 +355,8 @@ const buyPack = async ({value}, sender) => {
     amount: pack.price, 
     customer_email: sender.email,
     description: pack.title, 
-    success_url, 
-    failure_url,
+    success_url: `https://localhost/myAlfred/api/studio/payment-hook`, 
+    failure_url: `https://localhost/myAlfred/api/studio/payment-hook`,
     metadata,
   })
     .then(payment => {
