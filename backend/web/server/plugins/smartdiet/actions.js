@@ -24,7 +24,7 @@ const { importLeads } = require('./leads')
 const Content = require('../../models/Content')
 const Webinar = require('../../models/Webinar')
 
-const { getHostName, getSmartdietAPIConfig } = require('../../../config/config')
+const { getHostName, getSmartdietAPIConfig, paymentPlugin } = require('../../../config/config')
 const moment = require('moment')
 const IndividualChallenge = require('../../models/IndividualChallenge')
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
@@ -36,6 +36,7 @@ const { getModel, idEqual, loadFromDb } = require('../../utils/database')
 const { addAction, setAllowActionFn, ACTIONS } = require('../../utils/studio/actions')
 const User = require('../../models/User')
 const Group = require('../../models/Group')
+const Pack = require('../../models/Pack')
 const Company = require('../../models/Company')
 const CollectiveChallenge = require('../../models/CollectiveChallenge')
 const Team = require('../../models/Team')
@@ -46,6 +47,7 @@ const Conversation = require('../../models/Conversation')
 const Appointment = require('../../models/Appointment')
 const Coaching = require('../../models/Coaching')
 const { sendBufferToAWS } = require('../../middlewares/aws')
+const PageTag_ = require('../../models/PageTag_')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -221,13 +223,6 @@ const importModelData = ({ model, data }) => {
     throw new NotFoundError(`L'import du modèle ${model} n'est pas implémenté`)
   }
   return importLeads(data)
-  /**
-  return isActionAllowed({action: 'import_model_data', dataId: value, user})
-    .then(allowed => {
-      if (!allowed) throw new BadRequestError(`Vous ne pouvez accéder à ce contenu`)
-      return Content.findByIdAndUpdate(value, {$addToSet: {viewed_by: user._id}})
-    })
-  */
 }
 addAction('import_model_data', importModelData)
 
@@ -345,12 +340,36 @@ const downloadImpact = async ({value}, sender) => {
 }
 addAction('smartdiet_download_impact', downloadImpact)
 
-
+const buyPack = async ({value}, sender) => {
+  await isActionAllowed({action:'smartdiet_buy_pack', dataId:value, user:sender})
+  const pack=await Pack.findById(value)
+  const {url:successPage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_SUCCESS'})
+  const {url: failurePage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_FAILURE'})
+  const [success_url, failure_url]=[successPage, failurePage].map(p => `https://${getHostName()}${p}`)
+  const metadata={userId: sender._id.toString(), productId: pack._id.toString()}
+  return paymentPlugin.createAnonymousPayment({
+    amount: pack.price, 
+    customer_email: sender.email,
+    description: pack.title, 
+    success_url, 
+    failure_url,
+    metadata,
+  })
+    .then(payment => {
+      return {redirect: payment.url}
+    })
+}
+addAction('smartdiet_buy_pack', buyPack)
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
-    return Promise.resolve(true)
+    return true
+  }
+  if (action == 'smartdiet_buy_pack') {
+    const [loadedUser]=await loadFromDb({model: 'user', id: user._id, user, fields: ['can_buy_pack', 'latest_coachings']})
+    const pack=await Pack.findById(dataId)
+    return loadedUser.can_buy_pack && (!lodash.isEmpty(loadedUser.latest_coachings) || pack.checkup)
   }
   if (action == 'smartdiet_download_assessment' || action == 'smartdiet_download_impact') {
     const attributePrefix= action == 'smartdiet_download_assessment' ? 'smartdiet_assessment': 'smartdiet_impact'

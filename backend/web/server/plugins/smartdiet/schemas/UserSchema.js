@@ -751,6 +751,29 @@ UserSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
   return (this.company?.current_offer?.nutrition_credit-this.spent_nutrition_credits) || 0
 })
 
+/** Patient can buy a pack if:
+ * - no coaching in progress
+ * - no coaching available from the company (i.e. this years' coaching already spent) 
+ */
+UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
+  if (!this.role==ROLE_CUSTOMER) {
+    return false
+  }
+  // No coaching in progress && last coaching started this year
+  const latest_coaching=this.latest_coachings?.[0]
+  if (latest_coaching) {
+    // Latest coaching in progress: can no buy
+    if (latest_coaching.in_progress) {
+      return false
+    }
+    // Latest coaching started year before => this year's one is available => can not buy
+    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year')) {
+      return false
+    }
+  }
+  return true
+})
+
 
 
 /* eslint-enable prefer-arrow-callback */

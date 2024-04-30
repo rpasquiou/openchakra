@@ -1029,4 +1029,20 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  smartdiet_buy_pack: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_buy_pack',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        if (res.data.redirect) {
+          let redirect=res.data.redirect
+          return window.location=redirect
+        }
+      })
+  },
+
+
 }
