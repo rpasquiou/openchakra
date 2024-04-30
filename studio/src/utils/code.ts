@@ -942,6 +942,12 @@ export const generateCode = async (
   :
   ''
   */
+  let renderNullCode=''
+  if(components.root.props.allowNotConnected=="false"){
+    renderNullCode+= `if(!user){
+      return null
+    }`
+  }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
   code = `${header}\nimport React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
@@ -989,7 +995,10 @@ ${componentsCodes}
 
 const ${componentName} = () => {
 
-
+  const {user}=useUserContext()
+  ${autoRedirect}
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
+  ${renderNullCode}
   /** Force reload on history.back */
   ${reloadOnBackScript}
   const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
@@ -1024,13 +1033,9 @@ const ${componentName} = () => {
     ensureToken()
   }, [])
 
-  const {user}=useUserContext()
-  ${autoRedirect}
-
-
+  
   ${hooksCode}
   ${filterStates}
-  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata
