@@ -50,6 +50,7 @@ require('../../models/Key')
 require('../../models/Association')
 require('../../models/Item')
 require('../../models/Question')
+const Pack=require('../../models/Pack')
 const Ticket=require('../../models/Ticket')
 const TicketComment=require('../../models/TicketComment')
 const { updateWorkflows } = require('./workflows')
@@ -222,7 +223,8 @@ const filterDataUser = async ({ model, data, id, user }) => {
     }
     // If user has no coaching, can not buy pack containing no checkup
     if (lodash.isEmpty(loadedUser.latest_coachings)) {
-      return data.filter(pack => !!pack.checkup)
+      const checkupPacks=await Pack.find({checkup: true})
+      return data.filter(pack => checkupPacks.some(cp => cp._id.toString()==pack._id.toString()))
     }
   }
 
