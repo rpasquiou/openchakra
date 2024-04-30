@@ -390,6 +390,8 @@ router.post('/register-and-login', (req, res) => {
 
 // Validate webhook
 router.get('/payment-hook', (req, res) => {
+  console.log('Got payment hook', req)
+  return res.redirect('https://www.google.com')
   return getWebHookToken()
     .then(token => {
       return res.set('test-header', 'value').json({key: token})
