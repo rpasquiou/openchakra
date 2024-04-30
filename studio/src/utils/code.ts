@@ -292,7 +292,8 @@ const buildBlock = ({
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
             }
-            if (!!att.multiple) {
+            // TODO Solene: have to remove this : att must exist
+            if (!!att?.multiple) {
               propsContent += ` isMulti `
             }
           }

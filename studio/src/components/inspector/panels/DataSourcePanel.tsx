@@ -119,6 +119,10 @@ const DataSourcePanel: React.FC = () => {
         setSubAttributesDisplay({})
       }
       else {
+        // TODO Solene
+        if (!components[subDataSource]) {
+          return
+        }
         const model = models[components[subDataSource].props ?.model]
         if (model) {
           const subAttrs = lodash(model.attributes)
