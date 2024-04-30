@@ -1033,7 +1033,7 @@ return Promise.allSettled(imagePromises)
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_buy_pack',
-      value: value._id,
+      value: value?._id,
     }
     return axios.post(url, body)
       .then(res => {

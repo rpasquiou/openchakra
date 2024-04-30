@@ -342,6 +342,10 @@ addAction('smartdiet_download_impact', downloadImpact)
 
 const buyPack = async ({value}, sender) => {
   await isActionAllowed({action:'smartdiet_buy_pack', dataId:value, user:sender})
+  // If no value, generic "OK" return
+  if (lodash.isEmpty(value)) {
+    return {}
+  }
   const pack=await Pack.findById(value)
   const {url:successPage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_SUCCESS'})
   const {url: failurePage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_FAILURE'})
@@ -368,6 +372,10 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   }
   if (action == 'smartdiet_buy_pack') {
     const [loadedUser]=await loadFromDb({model: 'user', id: user._id, user, fields: ['can_buy_pack', 'latest_coachings']})
+    // If no value provided, generic authorization
+    if (lodash.isEmpty(dataId) || dataId==='undefined') {
+      return loadedUser.can_buy_pack 
+    }
     const pack=await Pack.findById(dataId)
     return loadedUser.can_buy_pack && (!lodash.isEmpty(loadedUser.latest_coachings) || pack.checkup)
   }
