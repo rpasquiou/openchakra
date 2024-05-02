@@ -122,6 +122,12 @@ const CoachingSchema = new Schema({
     index: true,
     required: false,
   },
+  // Pack if any bought
+  pack: {
+    type: Schema.Types.ObjectId,
+    ref: 'pack',
+    required: false,
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

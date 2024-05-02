@@ -146,7 +146,8 @@ const Quizz = require('../../models/Quizz')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const {
   CREATED_AT_ATTRIBUTE,
-  UPDATED_AT_ATTRIBUTE
+  UPDATED_AT_ATTRIBUTE,
+  PURCHASE_STATUS
 } = require('../../../utils/consts')
 const UserQuizzQuestion = require('../../models/UserQuizzQuestion')
 const QuizzQuestion = require('../../models/QuizzQuestion')
@@ -192,6 +193,8 @@ const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
+const { PAYMENT_STATUS } = require('../fumoir/consts')
+const Purchase = require('../../models/Purchase')
 
 
 const filterDataUser = async ({ model, data, id, user }) => {
@@ -357,6 +360,12 @@ const canPatientStartCoaching = async patientId => {
     .populate({ path: 'latest_coachings', populate: 'appointments' })
     .populate({ path: 'company', populate: 'current_offer'})
     .populate({ path: 'surveys' })
+
+  const boughtPacks=(await Purchase.findOne({customer: patientId}))
+  const usedPack=await Coaching.exists({pack: {$in: boughtPacks}})
+  if (!lodash.isEmpty(boughtPacks) && !usedPack) {
+    return true
+  }
 
   const latest_coaching = loadedUser.latest_coachings?.[0] || null
   if (!!latest_coaching) {
@@ -904,7 +913,22 @@ declareVirtualField({
   })
   declareVirtualField({
     model: m, field: 'can_buy_pack', instance: 'Boolean',
-    requires: 'latest_coachings.in_progress',
+    requires: 'latest_coachings.in_progress,available_packs',
+  })
+  declareVirtualField({
+    model: m, field: 'purchases', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'purchase'}
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'available_packs', instance: 'Array', multiple: true,
+    requires: 'purchases.pack,coachings.pack',
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'pack'}
+    },
   })
 })
 // End user/loggedUser
@@ -1508,6 +1532,10 @@ declareVirtualField({model: 'ticket', field: 'comments',instance: 'Array', multi
 declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORITY})
 
 /** Ticketing END */
+
+/** Purchase START */
+declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+/** Purchase END  */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
