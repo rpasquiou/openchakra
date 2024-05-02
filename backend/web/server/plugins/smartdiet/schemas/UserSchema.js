@@ -18,7 +18,7 @@ const {
   STATUS_FAMILY,
 } = require('../consts')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
-const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
 
 const siret = require('siret')
 const luhn = require('luhn')
@@ -751,6 +751,22 @@ UserSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
   return (this.company?.current_offer?.nutrition_credit-this.spent_nutrition_credits) || 0
 })
 
+UserSchema.virtual('purchases', {
+  ref: 'purchase',
+  localField: '_id',
+  foreignField: 'customer',
+  options: {
+    filter: {status: PURCHASE_STATUS_COMPLETE}
+  }
+})
+
+UserSchema.virtual('available_packs', DUMMY_REF).get(function() {
+  const usedPacks=this.coachings?.filter(c => !!c.pack).map(c => c.pack)
+  const boughtPacks=this.purchases?.map(p => p.pack)
+  const res=lodash.differenceBy(boughtPacks, usedPacks, p => p._id.toString())
+  return res
+})
+
 /** Patient can buy a pack if:
  * - no coaching in progress
  * - no coaching available from the company (i.e. this years' coaching already spent) 
@@ -759,6 +775,11 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
   if (!this.role==ROLE_CUSTOMER) {
     return false
   }
+  // If already has an unused pack, can not buy another
+  if (!lodash.isEmpty(this.available_packs)) {
+    return false
+  }
+
   // No coaching in progress && last coaching started this year
   const latest_coaching=this.latest_coachings?.[0]
   if (latest_coaching) {

@@ -166,7 +166,7 @@ const createPayment = ({source_user, amount, fee, destination_user, description,
   })
 }
 
-const createAnonymousPayment = ({amount, description, customer_email, success_url, failure_url, metadata}) => {
+const createAnonymousPayment = ({amount, description, customer_email, success_url, failure_url, metadata, internal_reference}) => {
   console.log(`Initiating payment for ${customer_email}/${description} ${amount}€`)
   return SecretStripe.checkout.sessions.create({
     line_items:[{
@@ -180,6 +180,7 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
       quantity:1
     }],
     customer_email,
+    client_reference_id: internal_reference,
     metadata,
     mode: 'payment',
     success_url: success_url,

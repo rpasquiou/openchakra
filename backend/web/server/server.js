@@ -157,6 +157,7 @@ require('./models/Training')
 require('./models/Ticket')
 require('./models/TicketComment')
 require('./models/Pack')
+require('./models/Purchase')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
@@ -199,7 +200,7 @@ checkConfig()
   .then(() => {
     return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
       .then(conn => autoIncrement.initialize(conn))
-      .then(() => isMaster() && db_update_fn && db_update_fn())
+      // .then(() => isMaster() && db_update_fn && db_update_fn())
   })
   // Connect to MongoDB
   .then(() => {

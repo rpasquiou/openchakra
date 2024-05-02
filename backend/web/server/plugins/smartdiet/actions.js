@@ -48,6 +48,8 @@ const Appointment = require('../../models/Appointment')
 const Coaching = require('../../models/Coaching')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const PageTag_ = require('../../models/PageTag_')
+const Purchase = require('../../models/Purchase')
+const { PURCHASE_STATUS_NEW, API_ROOT } = require('../../../utils/consts')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -347,17 +349,21 @@ const buyPack = async ({value}, sender) => {
     return {}
   }
   const pack=await Pack.findById(value)
-  const {url:successPage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_SUCCESS'})
-  const {url: failurePage}=await PageTag_.findOne({tag: 'PACK_PAYMENT_FAILURE'})
-  const [success_url, failure_url]=[successPage, failurePage].map(p => `https://${getHostName()}${p}`)
+  if (!pack) { // generic action
+    return true
+  }
+  const purchase=await Purchase.create({customer: sender, pack})
+  const success_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=true`
+  const failure_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=false`
   const metadata={userId: sender._id.toString(), productId: pack._id.toString()}
   return paymentPlugin.createAnonymousPayment({
     amount: pack.price, 
     customer_email: sender.email,
     description: pack.title, 
-    success_url: `https://localhost/myAlfred/api/studio/payment-hook`, 
-    failure_url: `https://localhost/myAlfred/api/studio/payment-hook`,
+    success_url: success_url, 
+    failure_url: failure_url,
     metadata,
+    internal_reference: purchase._id.toString(),
   })
     .then(payment => {
       return {redirect: payment.url}
@@ -373,10 +379,11 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action == 'smartdiet_buy_pack') {
     const [loadedUser]=await loadFromDb({model: 'user', id: user._id, user, fields: ['can_buy_pack', 'latest_coachings']})
     // If no value provided, generic authorization
-    if (lodash.isEmpty(dataId) || dataId==='undefined') {
+    const pack=await Pack.findById(dataId)
+    // if (lodash.isEmpty(dataId) || dataId==='undefined') {
+    if (!pack) {
       return loadedUser.can_buy_pack 
     }
-    const pack=await Pack.findById(dataId)
     return loadedUser.can_buy_pack && (!lodash.isEmpty(loadedUser.latest_coachings) || pack.checkup)
   }
   if (action == 'smartdiet_download_assessment' || action == 'smartdiet_download_impact') {

@@ -29,7 +29,7 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -52,6 +52,16 @@ try {
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
   console.warn(`No functions module for ${getDataModel()}`)
+}
+
+let paymentCb=null
+
+try {
+  paymentCb=require(`../../plugins/${getDataModel()}/payment`).paymentCb
+}
+catch(err) {
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
+  console.warn(`No payment module for ${getDataModel()}`)
 }
 
 try {
@@ -87,6 +97,7 @@ const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
 const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
+const Purchase = require('../../models/Purchase')
 
 const router = express.Router()
 
@@ -389,9 +400,21 @@ router.post('/register-and-login', (req, res) => {
 })
 
 // Validate webhook
-router.get('/payment-hook', (req, res) => {
-  console.log('Got payment hook', req)
-  return res.redirect('https://www.google.com')
+router.get('/payment-hook', async (req, res) => {
+  console.log('query is', req.query)
+  // Standard way
+  if (req.query.purchase) {
+    const success=req.query.success=='true'
+    await Purchase.findByIdAndUpdate(req.query.purchase, {
+      status: success ? PURCHASE_STATUS_COMPLETE :PURCHASE_STATUS_FAILED
+    })
+    const {url}=await PageTag_.findOne({tag: `PACK_PAYMENT_${success ? 'SUCCESS' : 'FAILURE'}`})
+    if (paymentCb) {
+      await paymentCb({purchase: req.query.purchase, success})
+    }
+    return res.redirect(url)
+  }
+  return res.redirect('/')
   return getWebHookToken()
     .then(token => {
       return res.set('test-header', 'value').json({key: token})
