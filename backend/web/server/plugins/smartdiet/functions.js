@@ -2147,5 +2147,4 @@ module.exports = {
   getRegisterCompany,
   agendaHookFn, mailjetHookFn,
   computeStatistics,
-  webinarNotifications,
 }
