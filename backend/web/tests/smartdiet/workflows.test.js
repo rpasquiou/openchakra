@@ -62,31 +62,14 @@ describe('Worflows', () => {
   let appointmentType
 
   beforeAll(async() => {
-    await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
-    company=await Company.create({...COMPANY_NO_INSURANCE_DATA, code: 'COMPCODE'})
-    offer=await Offer.create({...OFFER_DATA, company})
-    key=await Key.create({...KEY_DATA})
-    anyUser=await Lead.create({...USER_DATA, email: LEADONLY, company_code: company.code})
-    await Lead.create({...USER_DATA, email: LEADUSER, company_code: company.code})
-    leadUser=await User.create({...USER_DATA, email: LEADUSER, password: 'pass', company})
-    diet=await User.create({...USER_DATA, role: ROLE_EXTERNAL_DIET,  email: DIET, password: 'pass', company})
-    appointmentType=await AppointmentType.create({smartagenda_id: 0, duration: 2, title: 'Rendez-vous'})
+    await mongoose.connect(`mongodb://localhost/smartdiet`, MONGOOSE_OPTIONS)
   })
 
   afterAll(async() => {
-    await mongoose.connection.dropDatabase()
     await mongoose.connection.close()
   })
 
   afterEach(async() => {
-    await CollectiveChallenge.deleteMany({})
-    await Coaching.deleteMany({})
-    await Appointment.deleteMany({})
-    offer.coaching_credit=0
-    offer.groups_unlimited=false
-    await offer.save()
-    company.activity=COMPANY_ACTIVITY_BANQUE
-    company=await company.save()
   })
 
   const emailContained = email => {
@@ -166,19 +149,29 @@ describe('Worflows', () => {
     expect(result.CL_ADHER_LEAD_COA_NOGROUP.add).not.toEqual(emailContained(DIET))
   })
 
-  it('Must compute workflows list', async() => {
+  it.only('Must compute workflows list', async() => {
     const res=await computeWorkflowLists()
     const removed=Object.values(res).find(v => v.remove.length>0).remove
     const added=Object.values(res).find(v => v.remove.length>0).remove
     expect(added.every(item => lodash.isObject(item))).toBe(true)
     expect(removed.every(item => lodash.isObject(item))).toBe(true)
+    const accept = c => /ouvreur/.test(c.Email) && !/ouvreurinscrit/i.test(c.Email)
+    Object.values(res)
+      .filter(d => d.add.some(accept))
+      .map(d => ({
+        ...d, 
+        add: d.add.filter(accept).map(c => c.Email), 
+        remove: d.remove.filter(accept).map(c => c.Email)
+      }))
+      .map(({id, name, add, remove}) => console.log(id, name, 'add', add, 'remove', remove))
+      // .map(({id, name, add, remove}) => console.log(id, name, 'add', add.length, 'remove', remove.length))
   })
 
-  it.skip('Must update workflows', async() => {
+  it('Must update workflows', async() => {
     const res=await updateWorkflows()
   })
 
-  it.skip('must add to list with parameters', async() => {
+  it('must add to list with parameters', async() => {
     const list=WORKFLOWS.CL_SALAR_LEAD_COA_NOGROUP.id
     //const properties={codeentreprise: 'Com hop12', credit_consult: 19, Client:'La compagnie', logo: 'hophophop'}
     const properties={codeentreprise: 'Com hop12', credit_consult: 19, client: 'compagnie', logo: false}
@@ -191,7 +184,7 @@ describe('Worflows', () => {
     //console.log(allLists.filter(l => /adh/i.test(l.Name)))
   })
 
-  it.skip('Must display contacts list', async() => {
+  it('Must display contacts list', async() => {
     const email='sebastien.auvray@wappizy.com'
     const result=await MAIL_HANDLER.getContactsLists()
     console.log(result)

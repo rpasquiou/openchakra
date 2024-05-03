@@ -143,7 +143,7 @@ const WORKFLOWS={
   },
   CL_ADH_LEAD_COA_NOGROUP_MAIL_OPENED: {
     id: '2416407',
-    name: 'SAL NON INSC ESANI sans groupe mail ouvert',
+    name: 'ADH NON INSC ESANI sans groupe mail ouvert',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
         && isInsurance(lead)
@@ -261,13 +261,13 @@ const computeWorkflowLists = () => {
   .then(([leads, users]) => {
     const allemails=lodash([...leads, ...users]).groupBy('email').mapValues(v => ([v.find(c => !c.role), v.find(c => !!c.role)]))
     // Filter for each workflow
-    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, filter}])=> {
+    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, name, filter}])=> {
       // Map mail to false or lead or user
       const retained=allemails.mapValues(([lead, user]) => filter(lead, user))
         // Retain only emails having truthy value
         .pickBy(v => !!v)
       const removed=allemails.keys().difference(retained.keys().value()).map(k => ({email:k}))
-      return [workflow_id, {id, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
+      return [workflow_id, {id, name, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
     })
     return Object.fromEntries(entries)
   })
@@ -276,7 +276,7 @@ const computeWorkflowLists = () => {
 const updateWorkflows= () => {
   return computeWorkflowLists()
     .then(lists => {
-      console.log(`Lists`, Object.entries(lists).map(([key, entry])=> ([key, entry.id, entry.add.length])))
+      console.log(`Updated workflows`, JSON.stringify(lists, null, 2))
       let promises=Object.values(lists).map(({id, add, remove})=> {
         const result=[]
         if (!lodash.isEmpty(add)) {
