@@ -356,10 +356,11 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 setPreprocessGet(preProcessGet)
 
 const canPatientStartCoaching = async (patientId, loggedUser) => {
+
   const [loadedUser] = await loadFromDb({
     model: 'user', 
     id: patientId, 
-    fields: ['latest_coachings.appointments', 'company.current_offer.coaching_credit', 'surveys', 'available_packs'], 
+    fields: ['latest_coachings.creation_date', 'latest_coachings.appointments', 'latest_coachings.status','company.current_offer.coaching_credit', 'surveys', 'available_packs'], 
     user: loggedUser}
   )
   
@@ -374,10 +375,9 @@ const canPatientStartCoaching = async (patientId, loggedUser) => {
   const latest_coaching = loadedUser.latest_coachings?.[0] || null
   if (!!latest_coaching) {
     if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching.status)) {
-      throw new Error(`Un coaching est déjà en cours`)
+      throw new Error(`Un coaching est déjà en cours ${latest_coaching}`)
     }
-    const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
-    if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+    if (moment().isSame(latest_coaching.creation_date, 'year')) {
       if (pack) {
         return pack
       }
@@ -388,7 +388,7 @@ const canPatientStartCoaching = async (patientId, loggedUser) => {
     if (pack) {
       return pack
     }
-  throw new Error(`Le crédit de coaching est épuisé`)
+    throw new Error(`Le crédit de coaching est épuisé`)
   }
   const offer=loadedUser?.company?.current_offer
   if (!offer) {
@@ -401,7 +401,7 @@ const canPatientStartCoaching = async (patientId, loggedUser) => {
     if (pack) {
       return pack
     }
-  throw new Error(`Vous n'avez pas de crédit de coaching`)
+    throw new Error(`Vous n'avez pas de crédit de coaching`)
   }
 
   return true
@@ -926,7 +926,7 @@ declareVirtualField({
   })
   declareVirtualField({
     model: m, field: 'can_buy_pack', instance: 'Boolean',
-    requires: 'latest_coachings.in_progress,available_packs',
+    requires: 'latest_coachings.in_progress,available_packs,company.current_offer.coaching_credit',
   })
   declareVirtualField({
     model: m, field: 'purchases', instance: 'Array', multiple: true,
@@ -1262,7 +1262,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'coaching', field: 'remaining_credits', instance: 'Number',
-  requires: 'offer.coaching_credit,spent_credits,user.role'
+  requires: 'offer.coaching_credit,spent_credits,user.role,pack.follow_count'
 }
 )
 declareVirtualField({ model: 'coaching', field: 'spent_credits', instance: 'Number'})

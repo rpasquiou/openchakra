@@ -183,6 +183,9 @@ CoachingSchema.virtual('questions', {
 
 
 CoachingSchema.virtual('remaining_credits', DUMMY_REF).get(function() {
+  if (this.pack) {
+    return this.pack.follow_count+(!!this.pack.checkup ? 1 : 0)-this.spent_credits
+  }
   return (this.offer?.coaching_credit-this.spent_credits) || 0
 })
 
