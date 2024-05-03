@@ -188,6 +188,62 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
   })
 }
 
+const createReccurrentPayment = async ({amount, times, product_stripe_id, customer_stripe_id, success_url, failure_url, internal_reference}) => {
+  console.log(`Initiating payment for ${customer_stripe_id}/${product_stripe_id}x${times}€`)
+  const subscription=await SecretStripe.subscriptions.create({
+    customer: customer_stripe_id,
+    items: [{
+      price_data: {
+        currency: 'eur',
+        product: product_stripe_id,
+        unit_amount: parseInt(amount*100/+times),
+        recurring: {
+          interval: 'month'
+        },
+      },
+      quantity: 1,
+    }],
+    payment_settings: {
+      payment_method_types: ['card'],
+    } 
+})
+  console.log(subscription)
+  return SecretStripe.subscriptionSchedules.create({
+    customer: customer_stripe_id,
+    start_date: 'now',
+    end_behavior: 'cancel',
+    phases: [{
+      items: [{
+        price_data: {
+          currency: 'eur',
+          product: product_stripe_id,
+          unit_amount: parseInt(amount*100/+times),
+          recurring: {
+            interval: 'month'
+          },
+        },
+        quantity: 1,
+      }],
+      iterations: times,
+    }],
+    client_reference_id: internal_reference,
+    // success_url: success_url,
+    // cancel_url: failure_url,
+  })
+  .then(res => {
+    return res.id
+  })
+}
+
+const upsertProduct = async ({name}) => {
+  let {data:products}=await SecretStripe.products.search({query: `name:'${name}'`})
+  let product=products[0]
+  if (!product) {
+    product=await SecretStripe.products.create({name})
+  }
+  return product.id
+}
+
 const createTransfer = ({destination, amount}) => {
   return SecretStripe.transfers.create({
     amount: amount*100,
@@ -215,4 +271,6 @@ module.exports={
   getCheckout,
   deleteCustomer,
   deleteProvider,
+  createReccurrentPayment,
+  upsertProduct,
 }
