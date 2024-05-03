@@ -794,7 +794,7 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
     }
   }
   else {
-    if (this.company.current_offer?.coaching_credit>0) {
+    if (this.company?.current_offer?.coaching_credit>0) {
       return false
     }
   }
