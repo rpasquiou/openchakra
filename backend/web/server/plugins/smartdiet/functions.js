@@ -355,17 +355,21 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
 setPreprocessGet(preProcessGet)
 
-const canPatientStartCoaching = async patientId => {
-  const loadedUser = await User.findById(patientId)
-    .populate({ path: 'latest_coachings', populate: 'appointments' })
-    .populate({ path: 'company', populate: 'current_offer'})
-    .populate({ path: 'surveys' })
-
-  const boughtPacks=(await Purchase.findOne({customer: patientId}))
-  const usedPack=await Coaching.exists({pack: {$in: boughtPacks}})
-  if (!lodash.isEmpty(boughtPacks) && !usedPack) {
-    return true
+const canPatientStartCoaching = async (patientId, loggedUser) => {
+  const [loadedUser] = await loadFromDb({
+    model: 'user', 
+    id: patientId, 
+    fields: ['latest_coachings.appointments', 'company.current_offer.coaching_credit', 'surveys', 'available_packs'], 
+    user: loggedUser}
+  )
+  
+  // Some companies require surveuy to start a coaching
+  if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
+    throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
   }
+
+  // Available packs which contain a checkup
+  const pack=loadedUser.available_packs.find(p => !!p.checkup)
 
   const latest_coaching = loadedUser.latest_coachings?.[0] || null
   if (!!latest_coaching) {
@@ -374,22 +378,30 @@ const canPatientStartCoaching = async patientId => {
     }
     const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
     if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+      if (pack) {
+        return pack
+      }
       throw new Error(`Un coaching a déjà été démarré cette année`)
     }
   }
   if (!loadedUser.company?.current_offer?.coaching_credit) {
-    throw new Error(`Le crédit de coaching est épuisé`)
-  }
-  // Some companies require surveuy to start a coaching
-  if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
-    throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
+    if (pack) {
+      return pack
+    }
+  throw new Error(`Le crédit de coaching est épuisé`)
   }
   const offer=loadedUser?.company?.current_offer
   if (!offer) {
+    if (pack) {
+      return pack
+    }
     throw new Error(`Votre compagnie n'a aucune offre en cours`)
   }
   if (!offer.coaching_credit>0) {
-    throw new Error(`Vous n'avez pas de crédit de coaching`)
+    if (pack) {
+      return pack
+    }
+  throw new Error(`Vous n'avez pas de crédit de coaching`)
   }
 
   return true
@@ -436,10 +448,11 @@ const preCreate = async ({ model, params, user }) => {
   if (model=='coaching') {
     const patient_id=user?.role==ROLE_CUSTOMER ? user._id : params.parent
 
-    await canPatientStartCoaching(patient_id)
+    const pack=await canPatientStartCoaching(patient_id, user)
     
     params.user=patient_id
     params.offer=(await User.findById(patient_id).populate({path: 'company', populate: 'current_offer'})).company.current_offer
+    params.pack=lodash.isBoolean(pack) ? null : pack
   }
   if (['diploma', 'comment', 'measure', 'content', 'collectiveChallenge', 'individualChallenge', 'webinar', 'menu'].includes(model)) {
     params.user = params?.user || user

@@ -420,7 +420,8 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     }
 
     // Must customer
-    return await canPatientStartCoaching(patientId)
+    return canPatientStartCoaching(patientId, user)
+      .then(res => !!res)
   }
 
   if (['save', 'create'].includes(action) && ['ticket', 'ticketComment'].includes(actionProps?.model)) {
