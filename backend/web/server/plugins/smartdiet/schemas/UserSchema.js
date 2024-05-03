@@ -775,6 +775,7 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
   if (!this.role==ROLE_CUSTOMER) {
     return false
   }
+
   // If already has an unused pack, can not buy another
   if (!lodash.isEmpty(this.available_packs)) {
     return false
@@ -788,7 +789,12 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
       return false
     }
     // Latest coaching started year before => this year's one is available => can not buy
-    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year')) {
+    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer.coaching_credit>0) {
+      return false
+    }
+  }
+  else {
+    if (this.company.current_offer?.coaching_credit>0) {
       return false
     }
   }
