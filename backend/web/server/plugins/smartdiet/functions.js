@@ -1723,7 +1723,7 @@ const postCreate = async ({ model, params, data, user }) => {
     const validity_start=moment()
     const validity_end=moment().add(1, 'year')
     const assessment_quizz=await Quizz.findOne({type: QUIZZ_TYPE_ASSESSMENT})
-    const offer=await Offer.findById(params.offer)
+    const offer=await Offer.findById(params.current_offer)
     const name=`Offre ${offer.name} pour ${data.name}`
     console.log(`Offer name is`, name)
     await Offer.create({...simpleCloneModel(offer), company: data._id, name,assessment_quizz, validity_start, validity_end})
