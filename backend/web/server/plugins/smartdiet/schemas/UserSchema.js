@@ -762,7 +762,7 @@ UserSchema.virtual('purchases', {
 
 UserSchema.virtual('available_packs', DUMMY_REF).get(function() {
   const usedPacks=this.coachings?.filter(c => !!c.pack).map(c => c.pack)
-  const boughtPacks=this.purchases?.map(p => p.pack)
+  const boughtPacks=this.purchases?.map(p => p.pack).filter(p => p.status==PURCHASE_STATUS_COMPLETE)
   const res=lodash.differenceBy(boughtPacks, usedPacks, p => p._id.toString())
   return res
 })
