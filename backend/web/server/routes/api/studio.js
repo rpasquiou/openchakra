@@ -29,7 +29,7 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -52,6 +52,16 @@ try {
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
   console.warn(`No functions module for ${getDataModel()}`)
+}
+
+let paymentCb=null
+
+try {
+  paymentCb=require(`../../plugins/${getDataModel()}/payment`).paymentCb
+}
+catch(err) {
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
+  console.warn(`No payment module for ${getDataModel()}`)
 }
 
 try {
@@ -84,6 +94,10 @@ const {getExposedModels} = require('../../utils/database')
 const {ACTIONS} = require('../../utils/studio/actions')
 const {buildQuery, addComputedFields} = require('../../utils/database')
 const {getWebHookToken} = require('../../plugins/payment/vivaWallet')
+const { getLocationSuggestions } = require('../../../utils/geo')
+const { TaggingDirective } = require('@aws-sdk/client-s3')
+const PageTag_ = require('../../models/PageTag_')
+const Purchase = require('../../models/Purchase')
 
 const router = express.Router()
 
@@ -110,6 +124,9 @@ const login = (email, password) => {
       if (user.subscription_end && moment().isAfter(moment(user.subscription_end))) {
         throw new ForbiddenError(`Votre abonnement s'est terminé le ${date_str(user.subscription_end)}`)
       }
+    }
+    if ('email_valid' in user && !user.email_valid) {
+      throw new ForbiddenError(`Vous devez confirmer votre email pour vous connecter`)
     }
     if (user.active===false) {
       console.error(`Deactived user ${email}`)
@@ -170,7 +187,7 @@ router.post('/mailjet-hook', (req, res) => {
   .catch(console.error)
 })
 
-router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const {action}=req.params
   const query=lodash.mapValues(req.query, v => {
     try{ return JSON.parse(v) }
@@ -201,6 +218,16 @@ router.post('/file', (req, res) => {
     .then(() => {
       return res.json()
     })
+})
+
+// Provides back with tag <-> page_url pairs
+router.post('/tags', (req, res) => {
+  const pageTags=req.body.map(pt => ({tag: pt[0], url:pt[1]}))
+  // Upsert tags
+  return Promise.all(pageTags.map(pt => PageTag_.updateOne({tag: pt.tag, url: pt.url}, {tag: pt.tag, url: pt.url}, {upsert: true})))
+    .then(() => PageTag_.deleteMany({url: {$nin: pageTags.map(t => t.url)}}))
+    .then(() => PageTag_.deleteMany({tag: {$nin: pageTags.map(t => t.tag)}}))
+    .then(() => res.json())
 })
 
 router.post('/clean', (req, res) => {
@@ -296,7 +323,7 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
   const action = req.body.action
   const actionFn = ACTIONS[action]
   if (!actionFn) {
@@ -333,6 +360,19 @@ router.post('/login', (req, res) => {
     })
 })
 
+/** 
+ * Returns geolocation suggestions for a query
+ * Expect params 
+ * - query: string query
+ * - city: search only city if contains 'city', else searches address
+ * Returns  {name, city, postcode, country, latitude, longitude}
+ */
+router.get('/geoloc', async (req, res) => {
+  const {query, city}=req.query
+  const suggestions=await getLocationSuggestions(query, city)
+  return res.json(suggestions)
+})
+
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
   return res.json(req.user)
 })
@@ -360,7 +400,21 @@ router.post('/register-and-login', (req, res) => {
 })
 
 // Validate webhook
-router.get('/payment-hook', (req, res) => {
+router.get('/payment-hook', async (req, res) => {
+  console.log('query is', req.query)
+  // Standard way
+  if (req.query.purchase) {
+    const success=req.query.success=='true'
+    await Purchase.findByIdAndUpdate(req.query.purchase, {
+      status: success ? PURCHASE_STATUS_COMPLETE :PURCHASE_STATUS_FAILED
+    })
+    const {url}=await PageTag_.findOne({tag: `PACK_PAYMENT_${success ? 'SUCCESS' : 'FAILURE'}`})
+    if (paymentCb) {
+      await paymentCb({purchase: req.query.purchase, success})
+    }
+    return res.redirect(url)
+  }
+  return res.redirect('/')
   return getWebHookToken()
     .then(token => {
       return res.set('test-header', 'value').json({key: token})
@@ -526,6 +580,16 @@ const loadFromRequest = (req, res) => {
 
 router.get('/jobUser/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   req.params.model='jobUser'
+  return loadFromRequest(req, res)
+})
+
+router.get('/job/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='job'
+  return loadFromRequest(req, res)
+})
+
+router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+  req.params.model='sector'
   return loadFromRequest(req, res)
 })
 

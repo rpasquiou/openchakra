@@ -4,7 +4,10 @@ const {
   ROLE_CUSTOMER,
   ROLE_EXTERNAL_DIET,
   COACHING_STATUS,
-  COACHING_STATUS_NOT_STARTED
+  COACHING_STATUS_NOT_STARTED,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -117,6 +120,12 @@ const CoachingSchema = new Schema({
   smartdiet_patient_id: {
     type: Number,
     index: true,
+    required: false,
+  },
+  // Pack if any bought
+  pack: {
+    type: Schema.Types.ObjectId,
+    ref: 'pack',
     required: false,
   }
 }, schemaOptions)
@@ -256,6 +265,11 @@ CoachingSchema.virtual('diet_availabilities', DUMMY_REF).get(function() {
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   const appType=lodash.isEmpty(this.appointments) ? this.user?.company?.assessment_appointment_type : this.user?.company?.followup_appointment_type
   return appType
+})
+
+// Returns wether this coaching is in progress or not
+CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
+  return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
 
 /* eslint-enable prefer-arrow-callback */

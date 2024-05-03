@@ -9,6 +9,7 @@ type ComponentType =
   | 'AccordionButton'
   | 'AccordionPanel'
   | 'AccordionIcon'
+  | 'Address'
   | 'Alert'
   | 'AlertIcon'
   | 'AlertTitle'

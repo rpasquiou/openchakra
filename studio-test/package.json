@@ -20,6 +20,7 @@
     "@uselessdev/datepicker": "^2.7.0",
     "aws-sdk": "^2.1257.0",
     "axios": "^1.1.2",
+    "chakra-react-select": "^4.7.6",
     "chart.js": "^4.2.1",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",

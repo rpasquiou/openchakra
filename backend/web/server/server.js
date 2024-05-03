@@ -30,6 +30,11 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
+
+// Backend private
+require('./models/PageTag_')
+
+// Project mdels
 require('./models/Answer')
 require('./models/ResetToken')
 require('./models/Program')
@@ -141,6 +146,18 @@ require('./models/Diet')
 require('./models/Conversation')
 require('./models/Billing')
 require('./models/PriceList')
+require('./models/Customer')
+require('./models/Freelance')
+require('./models/Sector')
+require('./models/Admin')
+require('./models/GenericUser')
+require('./models/Communication')
+require('./models/Certification')
+require('./models/Training')
+require('./models/Ticket')
+require('./models/TicketComment')
+require('./models/Pack')
+require('./models/Purchase')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
@@ -179,11 +196,11 @@ catch(err) {
 // throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)
 // checkConfig
 checkConfig()
-  .then(() => delayedPromise(5000, setMasterStatus))
+  .then(() => !isDevelopment() && delayedPromise(5000, setMasterStatus))
   .then(() => {
     return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
       .then(conn => autoIncrement.initialize(conn))
-      .then(() => isMaster() && db_update_fn && db_update_fn())
+      // .then(() => isMaster() && db_update_fn && db_update_fn())
   })
   // Connect to MongoDB
   .then(() => {

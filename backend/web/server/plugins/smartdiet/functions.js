@@ -1,3 +1,4 @@
+const axios=require('axios')
 const {
   declareComputedField,
   declareEnumField,
@@ -49,6 +50,9 @@ require('../../models/Key')
 require('../../models/Association')
 require('../../models/Item')
 require('../../models/Question')
+const Pack=require('../../models/Pack')
+const Ticket=require('../../models/Ticket')
+const TicketComment=require('../../models/TicketComment')
 const { updateWorkflows } = require('./workflows')
 const {
   ACTIVITY,
@@ -114,6 +118,10 @@ const {
   APPOINTMENT_TYPE_FOLLOWUP,
   COACHING_STATUS,
   QUIZZ_TYPE_ASSESSMENT,
+  TICKET_PRIORITY,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -138,7 +146,8 @@ const Quizz = require('../../models/Quizz')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const {
   CREATED_AT_ATTRIBUTE,
-  UPDATED_AT_ATTRIBUTE
+  UPDATED_AT_ATTRIBUTE,
+  PURCHASE_STATUS
 } = require('../../../utils/consts')
 const UserQuizzQuestion = require('../../models/UserQuizzQuestion')
 const QuizzQuestion = require('../../models/QuizzQuestion')
@@ -183,8 +192,12 @@ const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
 const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
+const { createTicket, getTickets, createComment } = require('./ticketing')
+const { PAYMENT_STATUS } = require('../fumoir/consts')
+const Purchase = require('../../models/Purchase')
 
-const filterDataUser = ({ model, data, id, user }) => {
+
+const filterDataUser = async ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
     return Offer.find({ company: null })
       .then(offers => data.filter(d => offers.some(o => idEqual(d._id, o._id))))
@@ -196,33 +209,55 @@ const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'lead' && user?.role == ROLE_RH) {
     return User.findById(user?.id).populate('company')
       .then(user => {
-        return data = data.filter(d => d.company_code == user?.company?.code)
+        return data.filter(d => d.company_code == user?.company?.code)
       })
   }
   // Return not affected leads or affected to me
   if (model == 'lead' && user?.role == ROLE_SUPPORT) {
-    return data = data.filter(lead => lodash.isNil(lead.operator) || idEqual(lead.operator._id, user._id))
+    return data.filter(lead => lodash.isNil(lead.operator) || idEqual(lead.operator._id, user._id))
   }
   // TODO Do not sort anymore to not confuse pagination
   // data = lodash.sortBy(data, ['order', 'fullname', 'name', 'label'])
-  return Promise.resolve(data)
+  if (model=='pack' && user?.role==ROLE_CUSTOMER) {
+    const [loadedUser]=await loadFromDb({model: 'user',id: user._id, fields: ['can_buy_pack', 'latest_coachings'], user})
+    // If can not buy, return empty
+    if (!loadedUser.can_buy_pack) {
+      return []
+    }
+    // If user has no coaching, can not buy pack containing no checkup
+    if (lodash.isEmpty(loadedUser.latest_coachings)) {
+      const checkupPacks=await Pack.find({checkup: true})
+      return data.filter(pack => checkupPacks.some(cp => cp._id.toString()==pack._id.toString()))
+    }
+  }
+
+  return data
 }
 
 setFilterDataUser(filterDataUser)
 
-const preprocessGet = async ({ model, fields, id, user, params }) => {
+const preProcessGet = async ({ model, fields, id, user, params }) => {
   // TODO Totally ugly. When asked for chartPoint, the studio should also require 'date' attribute => to fix in the studio
   const chartPointField=fields.find(v => /value_1/.test(v))
   if (chartPointField) {
     fields=[...fields, chartPointField.replace(/value_1/, 'date')]
   }
+
+  if (model=='ticket') {
+    return getTickets(user?.email)
+      .then(tickets => tickets.map(t => ({...t, _id: t.jiraid})))
+      .then(tickets => ({ model, fields, id, data: tickets}))
+  }
+
   if (model == 'loggedUser') {
     model = 'user'
     id = user?._id || 'INVALIDID'
   }
+
   if (model == 'user') {
     fields.push('company')
   }
+
   if (model == ROLE_CUSTOMER) {
     if (user.role==ROLE_EXTERNAL_DIET) {
       return Coaching.distinct('user', {diet: user._id})
@@ -231,6 +266,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
         }))
     }
   }
+
   if (['appointment', 'currentFutureAppointment', 'pastAppointment'] .includes(model)) {
     if (user.role==ROLE_EXTERNAL_DIET) {
       params['filter.diet']=user._id
@@ -257,9 +293,11 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
     return computeStatistics({ id, fields })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
+
   if (model=='billing') {
     return computeBilling({diet:user, fields, params })
   }
+
   if (model == 'conversation') {
     // Conversation id is the conversatio nid OR the other's one id
     if (id) {
@@ -315,23 +353,106 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 
 }
 
-setPreprocessGet(preprocessGet)
+setPreprocessGet(preProcessGet)
+
+const canPatientStartCoaching = async (patientId, loggedUser) => {
+  const [loadedUser] = await loadFromDb({
+    model: 'user', 
+    id: patientId, 
+    fields: ['latest_coachings.appointments', 'company.current_offer.coaching_credit', 'surveys', 'available_packs'], 
+    user: loggedUser}
+  )
+  
+  // Some companies require surveuy to start a coaching
+  if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
+    throw new Error(`Le questionnaire doit être renseigné pour démarrer un coaching`)
+  }
+
+  // Available packs which contain a checkup
+  const pack=loadedUser.available_packs.find(p => !!p.checkup)
+
+  const latest_coaching = loadedUser.latest_coachings?.[0] || null
+  if (!!latest_coaching) {
+    if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching.status)) {
+      throw new Error(`Un coaching est déjà en cours`)
+    }
+    const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
+    if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+      if (pack) {
+        return pack
+      }
+      throw new Error(`Un coaching a déjà été démarré cette année`)
+    }
+  }
+  if (!loadedUser.company?.current_offer?.coaching_credit) {
+    if (pack) {
+      return pack
+    }
+  throw new Error(`Le crédit de coaching est épuisé`)
+  }
+  const offer=loadedUser?.company?.current_offer
+  if (!offer) {
+    if (pack) {
+      return pack
+    }
+    throw new Error(`Votre compagnie n'a aucune offre en cours`)
+  }
+  if (!offer.coaching_credit>0) {
+    if (pack) {
+      return pack
+    }
+  throw new Error(`Vous n'avez pas de crédit de coaching`)
+  }
+
+  return true
+}
+
 
 const preCreate = async ({ model, params, user }) => {
+  if (model=='pack' && ![ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) { 
+    throw new ForbiddenError(`Vous n'avez pas le droit de créer un pack`)
+  }
+
+  if (model=='ticket') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour créer un ticket`)
+    }
+    params.sender=user?.email
+    const ticket=new Ticket(params)
+    const errors=await ticket.validate()
+    if (errors) {return errors}
+    // Convert URL to Readable
+    if (params.attachment) {
+      const attStream=await axios.get(params.attachment, {responseType: "stream"})
+        .then(res => res.data)
+      params.attachment=attStream
+    }
+    return createTicket(params)
+      .then(() => ({data: []}))
+  }
+  if (model=='ticketComment') {
+    if (user?.role!=ROLE_EXTERNAL_DIET) {
+      throw new Error(`VOus devez être diet pour commenter un ticket`)
+    }
+    params.jiraid=params.parent
+    const comment=new TicketComment(params)
+    const errors=await comment.validate()
+    if (errors) {return errors}
+    return createComment(params)
+      .then(() => ({data: []}))
+  }
   if (model=='logbookDay') {
     return logbooksConsistency(user._id, params.day)
       .then(() => ({data: {_id: moment(params.day).unix()}}))
   }
   if (model=='coaching') {
-    const offer=(await Company.findById(user.company).populate('current_offer'))?.current_offer
-    if (!offer) {
-      throw new Error(`Votre compagnie n'a aucune offre en cours`)
-    }
-    if (!offer.coaching_credit>0) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
-    }
-    params.user=user._id
-    params.offer=offer
+    const patient_id=user?.role==ROLE_CUSTOMER ? user._id : params.parent
+
+    const pack=await canPatientStartCoaching(patient_id, user)
+    
+    params.user=patient_id
+    params.offer=(await User.findById(patient_id).populate({path: 'company', populate: 'current_offer'})).company.current_offer
+    params.pack=lodash.isBoolean(pack) ? null : pack
   }
   if (['diploma', 'comment', 'measure', 'content', 'collectiveChallenge', 'individualChallenge', 'webinar', 'menu'].includes(model)) {
     params.user = params?.user || user
@@ -364,13 +485,13 @@ const preCreate = async ({ model, params, user }) => {
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
-    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT].includes(user.role)) {
+    if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) {
       throw new ForbiddenError(`Seuls les rôles patient, diet et support peuvent prendre un rendez-vous`)
     }
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
-      if (!params.user) { throw new BadRequestError(`L'id du patient doit être fourni`) }
-      customer_id = params.user
+      if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
+      customer_id = params.parent
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -378,7 +499,7 @@ const preCreate = async ({ model, params, user }) => {
     return loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
         'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
       ],
       user,
@@ -398,12 +519,13 @@ const preCreate = async ({ model, params, user }) => {
         }
         // Check remaining credits
         const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching) {
+        if (!latest_coaching && isAppointment) {
           throw new ForbiddenError(`Aucun coaching en cours`)
         }
 
+        console.log('company', user.company?.name, 'nut', usr.company?.current_offer?.nutrition_credit,  'consumed', usr.nutrition_advices?.length)
         const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
-        console.log('reamining coaching credits', remaining_nut)
+
         if ((isAppointment && latest_coaching.remaining_credits <= 0)
           || (!isAppointment && !(remaining_nut > 0))) {
           throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
@@ -415,11 +537,12 @@ const preCreate = async ({ model, params, user }) => {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
         diet=latest_coaching.diet
+        console.log('patient is', JSON.stringify(usr, null, 2))
         if (isAppointment) {
           return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
         }
         else { // Nutrition advice
-          return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
         }
       })
   }
@@ -801,6 +924,25 @@ declareVirtualField({
     model: m, field: 'remaining_nutrition_credits', instance: 'Number',
     requires: 'company.current_offer.nutrition_credit,spent_nutrition_credits,role'
   })
+  declareVirtualField({
+    model: m, field: 'can_buy_pack', instance: 'Boolean',
+    requires: 'latest_coachings.in_progress,available_packs',
+  })
+  declareVirtualField({
+    model: m, field: 'purchases', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'purchase'}
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'available_packs', instance: 'Array', multiple: true,
+    requires: 'purchases.pack,coachings.pack',
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'pack'}
+    },
+  })
 })
 // End user/loggedUser
 
@@ -860,6 +1002,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'company', field: 'leads', instance: 'Array', multiple: true,
+  requires: 'code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'lead' }
@@ -1199,6 +1342,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'coaching', field: '_last_appointment', instance: 'appointment'})
+declareVirtualField({model: 'coaching', field: 'in_progress', instance: 'Boolean', requires: 'status'})
 
 
 declareEnumField({ model: 'userCoachingQuestion', field: 'status', enumValues: COACHING_QUESTION_STATUS })
@@ -1316,7 +1460,7 @@ declareVirtualField({
 })
 declareVirtualField({
   model: 'lead', field: 'company',
-  instance: 'Company', multiple: false,
+  instance: 'Company', multiple: false, requires: 'company_code',
   caster: {
     instance: 'ObjectID',
     options: { ref: 'company' }
@@ -1389,6 +1533,22 @@ declareVirtualField({model: 'conversation', field: 'latest_messages',instance: '
 })
 declareVirtualField({model: 'conversation', field: 'messages_count',instance: 'Number'})
 
+declareEnumField({model: 'nutritionAdvice', field: 'gender', enumValues: GENDER})
+
+/** Ticketing START */
+declareVirtualField({model: 'ticket', field: 'comments',instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'ticketComment' }
+  },
+})
+declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORITY})
+
+/** Ticketing END */
+
+/** Purchase START */
+declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+/** Purchase END  */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
@@ -1641,9 +1801,8 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   // If operator created nutrition advice, set lead nutrition converted
-  if (model == 'nutritionAdvice' && user.role == ROLE_SUPPORT) {
-    Coaching.findById(data.coaching._id).populate('user')
-      .then(({ user }) => Lead.findOneAndUpdate({ email: user.email }, { nutrition_converted: true }))
+  if (model == 'nutritionAdvice') {
+      return Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
       .then(res => `Nutrition conversion:${res}`)
       .catch(err => `Nutrition conversion:${err}`)
   }
@@ -1907,7 +2066,6 @@ ensureSpoonGains = () => {
     return SpoonGain.exists({ source })
       .then(exists => {
         if (!exists) {
-          console.log(`Create missing spoon gain ${source} 0`)
           return SpoonGain.create({ source, gain: 0 })
         }
       })
@@ -2220,4 +2378,5 @@ module.exports = {
   agendaHookFn, mailjetHookFn,
   computeStatistics,
   webinarNotifications,
+  canPatientStartCoaching,
 }

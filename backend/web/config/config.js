@@ -111,6 +111,10 @@ const getHostName = () => {
   return process.env.HOSTDOMAIN
 }
 
+const computeUrl = _path => {
+  return `https://${getHostName()}${_path}`
+}
+
 const getPort = () => {
   if (isValidation() && isNaN(parseInt(process.env.BACKEND_PORT))) {
     throw new Error(`BACKEND_PORT config missing or not an integer`)
@@ -355,7 +359,7 @@ const bookingUrl = (serviceUserId, extraParams = {}) => {
 let _isMaster=undefined
 
 const isMaster = () => {
-  return _isMaster
+  return isDevelopment() ? true : _isMaster
 }
 
 const setMasterStatus = async () => {
@@ -449,4 +453,5 @@ module.exports = {
   isMaster,
   setMasterStatus,
   getSmartdietAPIConfig,
+  computeUrl,
 }
