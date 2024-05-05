@@ -188,49 +188,32 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
   })
 }
 
-const createReccurrentPayment = async ({amount, times, product_stripe_id, customer_stripe_id, success_url, failure_url, internal_reference}) => {
+const createReccurrentPayment = async ({amount, times, product_stripe_id, customer_email, customer_stripe_id, success_url, failure_url, internal_reference}) => {
   console.log(`Initiating payment for ${customer_stripe_id}/${product_stripe_id}x${times}€`)
-  const subscription=await SecretStripe.subscriptions.create({
-    customer: customer_stripe_id,
-    items: [{
+  return SecretStripe.checkout.sessions.create({
+    customer_email: customer_email,
+    mode: 'subscription',
+    line_items: [{
       price_data: {
-        currency: 'eur',
-        product: product_stripe_id,
-        unit_amount: parseInt(amount*100/+times),
+        currency: 'EUR',
+        product_data: {
+          name: 'Produit test 30€ en 3 fois (10€/jour)',
+        },
         recurring: {
-          interval: 'month'
+          interval: 'day',
         },
+        unit_amount: amount*100,
       },
-      quantity: 1,
-    }],
-    payment_settings: {
-      payment_method_types: ['card'],
-    } 
-})
-  console.log(subscription)
-  return SecretStripe.subscriptionSchedules.create({
-    customer: customer_stripe_id,
-    start_date: 'now',
-    end_behavior: 'cancel',
-    phases: [{
-      items: [{
-        price_data: {
-          currency: 'eur',
-          product: product_stripe_id,
-          unit_amount: parseInt(amount*100/+times),
-          recurring: {
-            interval: 'month'
-          },
-        },
-        quantity: 1,
-      }],
-      iterations: times,
+      quantity:times,
     }],
     client_reference_id: internal_reference,
-    // success_url: success_url,
-    // cancel_url: failure_url,
+    success_url: success_url,
+    cancel_url: failure_url,
   })
   .then(res => {
+    console.log(JSON.stringify(res, null, 2))
+    var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+    require('child_process').exec(start + ' ' + res.url);
     return res.id
   })
 }
@@ -253,10 +236,15 @@ const createTransfer = ({destination, amount}) => {
 }
 
 const getCheckout = id => {
-  return SecretStripe.checkout.sessions.list()
-    .then(checkouts => {
-      return checkouts.data.find(c => c.id==id)
-    })
+  return SecretStripe.checkout.sessions.retrieve(id)
+}
+
+const getSubscription = id => {
+  return SecretStripe.subscriptions.retrieve(id)
+}
+
+const getInvoice = id => {
+  return SecretStripe.invoices.retrieve(id)
 }
 
 module.exports={
@@ -273,4 +261,6 @@ module.exports={
   deleteProvider,
   createReccurrentPayment,
   upsertProduct,
+  getSubscription,
+  getInvoice,
 }
