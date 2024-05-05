@@ -7,11 +7,13 @@ const {ROLE_ADMIN} = require('../../server/plugins/smartdiet/consts')
 const moment=require('moment')
 const mongoose = require('mongoose')
 const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
-const { upsertCustomer, createReccurrentPayment, upsertProduct } = require('../../server/plugins/payment/stripe')
+const { upsertCustomer, createReccurrentPayment, upsertProduct, getCheckout, getSubscription, getInvoice } = require('../../server/plugins/payment/stripe')
 
 describe('Stripe tests ', () => {
 
   let product_stripe_id, customer_stripe_id
+  const EMAIL = 'test@wappizy.com'
+
   beforeAll(async() => {
   })
 
@@ -24,7 +26,7 @@ describe('Stripe tests ', () => {
   })
 
   it('must create a customer', async() => {
-    customer_stripe_id=await upsertCustomer({email: 'test@wappizy.com'})
+    customer_stripe_id=await upsertCustomer({email: EMAIL})
     console.log('customer', customer_stripe_id)
   })
 
@@ -36,8 +38,22 @@ describe('Stripe tests ', () => {
       amount: 10,
       customer_stripe_id, 
       product_stripe_id,
+      customer_email: EMAIL,
       success_url, failure_url
     })
+  })
+
+  it.only('must find a subscription', async()=> {
+    const res=await getCheckout('cs_test_a1AZBykiduJAP8Wtz6GlAjsTGFSty8hYOZejkTFTecGZd5G8gHl49kFFM0')
+    console.log(res)
+  })
+
+  it.only('must find an invoice', async()=> {
+    const res=await getInvoice('')
+    console.log(res)
+  })
+')
+    console.log(res)
   })
 
 })
