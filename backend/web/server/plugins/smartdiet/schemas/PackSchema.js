@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -27,11 +28,17 @@ const PackSchema = new Schema({
     min: [0, `Le tarif doit être positif`],
     required: [true, `Le tarif de l'offre est obligatoire`]
   },
+  discount_price: {
+    type: Number,
+  },
   payment_count: {
     type: Number,
     min: [1, `Le nombre d'échéances de paiements doit être positif`],
     required: [true, `Le nombre d'échéances de paiements est obligatoire`]
   },
+  stripe_id: {
+    type: String,
+  }
 },
 {...schemaOptions}
 )

@@ -755,14 +755,11 @@ UserSchema.virtual('purchases', {
   ref: 'purchase',
   localField: '_id',
   foreignField: 'customer',
-  options: {
-    filter: {status: PURCHASE_STATUS_COMPLETE}
-  }
 })
 
 UserSchema.virtual('available_packs', DUMMY_REF).get(function() {
   const usedPacks=this.coachings?.filter(c => !!c.pack).map(c => c.pack)
-  const boughtPacks=this.purchases?.map(p => p.pack).filter(p => p.status==PURCHASE_STATUS_COMPLETE)
+  const boughtPacks=this.purchases?.filter(p => p.status==PURCHASE_STATUS_COMPLETE).map(p => p.pack)
   const res=lodash.differenceBy(boughtPacks, usedPacks, p => p._id.toString())
   return res
 })

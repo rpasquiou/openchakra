@@ -402,7 +402,6 @@ router.post('/register-and-login', (req, res) => {
 // Validate webhook
 router.get('/payment-hook', async (req, res) => {
   console.log('query is', req.query)
-  // Standard way
   if (req.query.purchase) {
     const success=req.query.success=='true'
     await Purchase.findByIdAndUpdate(req.query.purchase, {
@@ -415,6 +414,7 @@ router.get('/payment-hook', async (req, res) => {
     return res.redirect(url)
   }
   return res.redirect('/')
+  // Standard way
   return getWebHookToken()
     .then(token => {
       return res.set('test-header', 'value').json({key: token})

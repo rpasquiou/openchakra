@@ -7,7 +7,7 @@ const {ROLE_ADMIN} = require('../../server/plugins/smartdiet/consts')
 const moment=require('moment')
 const mongoose = require('mongoose')
 const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
-const { upsertCustomer, createReccurrentPayment, upsertProduct, getCheckout, getSubscription, getInvoice } = require('../../server/plugins/payment/stripe')
+const { upsertCustomer, createRecurrentPayment, upsertProduct, getCheckout, getSubscription, getInvoice } = require('../../server/plugins/payment/stripe')
 
 describe('Stripe tests ', () => {
 
@@ -33,7 +33,7 @@ describe('Stripe tests ', () => {
   it('must create a payment', async() => {
     const success_url='https://my-alfred.io'
     const failure_url='https://my-alfred.io'
-    await createReccurrentPayment({
+    await createRecurrentPayment({
       times:3, 
       amount: 10,
       customer_stripe_id, 
@@ -45,14 +45,6 @@ describe('Stripe tests ', () => {
 
   it.only('must find a subscription', async()=> {
     const res=await getCheckout('cs_test_a1AZBykiduJAP8Wtz6GlAjsTGFSty8hYOZejkTFTecGZd5G8gHl49kFFM0')
-    console.log(res)
-  })
-
-  it.only('must find an invoice', async()=> {
-    const res=await getInvoice('')
-    console.log(res)
-  })
-')
     console.log(res)
   })
 
