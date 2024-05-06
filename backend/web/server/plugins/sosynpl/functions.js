@@ -209,8 +209,8 @@ const preCreate = ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
-  if (model=='languageLevel') {
-    params.user=params.parent
+  if (model=='languageLevel' && !params.parent) {
+    throw new BadRequestError(`Le freelance (parent) est obligatoire`)
   }
 
   return Promise.resolve({model, params})
@@ -224,6 +224,9 @@ const postCreate = async ({model, params, data}) => {
   }
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
+  }
+  if (model=='languageLevel') {
+    await User.findByIdAndUpdate(params.parent, {$push: {languages: data}})
   }
   return Promise.resolve(data)
 }
