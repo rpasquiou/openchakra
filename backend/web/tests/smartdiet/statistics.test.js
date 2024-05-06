@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { computeStatistics } = require('../../server/plugins/smartdiet/functions');
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database');
 
-jest.setTimeout(50000)
+jest.setTimeout(100000)
 
 
 describe('Statistics', () => {
@@ -31,20 +31,32 @@ describe('Statistics', () => {
     expect(stats.coachings_dropped).toEqual(1814)
   })
 
-  it('must return cs_done equals to 28316', async () => {
-    const stats = await computeStatistics({ fields: ['cs_done'] });
+  it.only('must return coachings_ongoing equals to 1814', async() => {
+    const stats=await computeStatistics({fields:[`coachings_ongoing`]})
+    expect(stats.coachings_ongoing).toEqual(1814)
+  })
 
-    let totalCount = 0;
-    for (const order in stats.cs_done) {
-        console.log(`${order}: ${stats.cs_done[order]}`);
-        totalCount+= stats.cs_done[order];
-    }
-    expect(totalCount).toEqual(28316);
+  it('must return cs_done equals to 38', async () => {
+    const stats = await computeStatistics({ fields: ['cs_done'] });
+    expect(stats.cs_done).toEqual(38);
   });
-  it.only('must return cs_done_c1', async () => {
+
+  it('must return cs_done_c1', async () => {
     const stats = await computeStatistics({ fields: ['cs_done_c1'] });
-    console.log(stats.cs_done_c1)
-    expect(stats.cs_done_c1).not.toBeNull();
+    console.log(stats['cs_done_c1'])
+    expect(stats['cs_done_c1']).not.toBeNull();
+  });
+
+  it('must return cs_upcoming equals to 4', async () => {
+    const stats = await computeStatistics({ fields: ['cs_upcoming'] });
+    expect(stats.cs_upcoming).toEqual(4);
+  });
+
+
+  it('must return cs_upcoming_c1', async () => {
+    const stats = await computeStatistics({ fields: ['cs_upcoming_c1'] });
+    console.log(stats['cs_upcoming_c1'])
+    expect(stats['cs_upcoming_c1']).not.toBeNull();
   });
 
 

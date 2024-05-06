@@ -123,6 +123,7 @@ const {
   COACHING_STATUS_STOPPED,
   COACHING_STATUS_NOT_STARTED,
   APPOINTMENT_VALID,
+  COACHING_STATUS_STARTED,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1320,6 +1321,7 @@ declareVirtualField({
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_started', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_stopped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_dropped', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', instance: 'Number' })
 //declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c1', instance: 'Number' })
@@ -1337,6 +1339,23 @@ declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c13', instance: '
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c14', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c15', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c16', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c1', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c2', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c3', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c4', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c5', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c6', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c7', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c8', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c9', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c10', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c11', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c12', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c13', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c14', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c15', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c16', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -1893,7 +1912,30 @@ const computeStatistics = async ({ id, fields }) => {
   result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
   result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
   result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
-  //TODO: cs_done returns an array, can't handle that yet
+  result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
+
+  const appointments = await Appointment.find({ _id: idFilter })
+        .populate({
+            path: 'coaching',
+            populate: {
+                path: 'appointments',
+            }
+        });
+
+  lodash.range(1, 17).forEach(async order => {
+    const validAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
+    const upcomingAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
+    const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
+    const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
+    const orderValidAppointments = groupedValidAppointments[order] || [];
+    const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
+
+    const validCount = orderValidAppointments.length;
+    const upcomingCount = orderUpcomingAppointments.length;
+    result[`cs_done_c${order}`] = validCount;
+    result[`cs_upcoming_c${order}`] = upcomingCount;
+  });
+
   result.cs_done = await Appointment.find({ _id: idFilter })
     .populate({
       path:'coaching',
@@ -1904,240 +1946,29 @@ const computeStatistics = async ({ id, fields }) => {
     .then(appointments => {
         appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_VALID)
         const groupedAppointments = lodash.groupBy(appointments, 'order');
-        const coachingsDone = {};
+        let coachingsDone=0;
         Object.entries(groupedAppointments).forEach(([order, apps]) => {
-            coachingsDone[order] = apps.length;
+            coachingsDone += apps.length;
         });
         return coachingsDone;
     });
 
-  result.cs_done_c1 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[1] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c2 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[2] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c3 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[3] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c4 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[4] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c5 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[5] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c6 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[6] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c7 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[7] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c8 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[8] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c9 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[9] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c10 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[10] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c11 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[11] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c12 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[12] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c13 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[13] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c14 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[14] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c15 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[15] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-  result.cs_done_c16 = await Appointment.find({ _id: idFilter })
-  .populate({
-      path: 'coaching',
-      populate: {
-          path: 'appointments',
-      }
-  })
-  .then(appointments => {
-      appointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      const orderOneAppointments = groupedAppointments[16] || [];
-      const count = orderOneAppointments.length;
-      return count;
-  });
-
-
-  
+    result.cs_upcoming = await Appointment.find({ _id: idFilter })
+    .populate({
+      path:'coaching',
+      populate:({
+        path:'appointments',
+      })
+    })
+    .then(appointments => {
+        appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+        const groupedAppointments = lodash.groupBy(appointments, 'order');
+        let coachingsToCome = 0;
+        Object.entries(groupedAppointments).forEach(([order, apps]) => {
+            coachingsToCome += apps.length;
+        });
+        return coachingsToCome;
+    });    
   
   //TODO : find the right command
   // result.nut_advices=lodash(await Company.find({_id:idFilter})
