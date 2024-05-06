@@ -210,9 +210,6 @@ const createRecurrentPayment = async ({amount, times, product_stripe_id, custome
     success_url: success_url,
     cancel_url: failure_url,
   })
-  .then(res => {
-    return res.id
-  })
 }
 
 /**
