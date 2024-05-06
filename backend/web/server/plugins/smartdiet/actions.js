@@ -348,7 +348,7 @@ const buyPack = async ({value}, sender) => {
   if (lodash.isEmpty(value)) {
     return {}
   }
-  const pack=await Pack.findById(value)
+  const pack=(await loadFromDb({model: 'pack', id: value, fields:['discount_price', 'payment_count', 'stripe_id'], user: sender}))[0]
   if (!pack) { // generic action
     return true
   }
@@ -356,7 +356,7 @@ const buyPack = async ({value}, sender) => {
   const success_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=true`
   const failure_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=false`
   return paymentPlugin.createRecurrentPayment({
-    amount: pack.price, 
+    amount: pack.discount_price, 
     times: pack.payment_count,
     customer_email: sender.email,
     product_stripe_id: pack.stripe_id,
