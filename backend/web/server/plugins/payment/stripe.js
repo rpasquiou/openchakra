@@ -1,7 +1,9 @@
-const moment = require('moment')
 /**
 Paiement ; https://stripe.com/docs/connect/collect-then-transfer-guide?locale=fr-FR
 */
+
+const moment = require('moment')
+const lodash = require('lodash')
 let PublicStripe=null
 let SecretStripe=null
 
@@ -188,7 +190,7 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
   })
 }
 
-const createReccurrentPayment = async ({amount, times, product_stripe_id, customer_email, customer_stripe_id, success_url, failure_url, internal_reference}) => {
+const createRecurrentPayment = async ({amount, times, product_stripe_id, customer_email, customer_stripe_id, success_url, failure_url, internal_reference}) => {
   console.log(`Initiating payment for ${customer_stripe_id}/${product_stripe_id}x${times}€`)
   return SecretStripe.checkout.sessions.create({
     customer_email: customer_email,
@@ -196,11 +198,9 @@ const createReccurrentPayment = async ({amount, times, product_stripe_id, custom
     line_items: [{
       price_data: {
         currency: 'EUR',
-        product_data: {
-          name: 'Produit test 30€ en 3 fois (10€/jour)',
-        },
+        product: product_stripe_id,
         recurring: {
-          interval: 'day',
+          interval: 'month',
         },
         unit_amount: amount*100,
       },
@@ -211,19 +211,20 @@ const createReccurrentPayment = async ({amount, times, product_stripe_id, custom
     cancel_url: failure_url,
   })
   .then(res => {
-    console.log(JSON.stringify(res, null, 2))
-    var start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
-    require('child_process').exec(start + ' ' + res.url);
     return res.id
   })
 }
 
-const upsertProduct = async ({name}) => {
-  let {data:products}=await SecretStripe.products.search({query: `name:'${name}'`})
-  let product=products[0]
-  if (!product) {
-    product=await SecretStripe.products.create({name})
+/**
+ *  If id is provided, updates product's name.
+ * @return The product id
+ */
+const upsertProduct = async ({id, name, description}) => {
+  if (!lodash.isEmpty(id)) {
+    const product= await SecretStripe.products.update(id, {name, description})
+    return product.id
   }
+  const product=await SecretStripe.products.create({name, description})
   return product.id
 }
 
@@ -243,10 +244,6 @@ const getSubscription = id => {
   return SecretStripe.subscriptions.retrieve(id)
 }
 
-const getInvoice = id => {
-  return SecretStripe.invoices.retrieve(id)
-}
-
 module.exports={
   init,
   upsertCustomer,
@@ -259,8 +256,7 @@ module.exports={
   getCheckout,
   deleteCustomer,
   deleteProvider,
-  createReccurrentPayment,
+  createRecurrentPayment,
   upsertProduct,
   getSubscription,
-  getInvoice,
 }

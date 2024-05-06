@@ -127,6 +127,11 @@ const CoachingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'pack',
     required: false,
+  },
+  // Credits spent during company offer, required when a pack is added
+  _company_cedits_spent: {
+    type: Number,
+    required: [function() {return this.pack},  `Le nombre de séances déjà consommées est obligatoire lors de l'ajout d'un pack`],
   }
 }, schemaOptions)
 
@@ -183,10 +188,10 @@ CoachingSchema.virtual('questions', {
 
 
 CoachingSchema.virtual('remaining_credits', DUMMY_REF).get(function() {
-  if (this.pack) {
-    return this.pack.follow_count+(!!this.pack.checkup ? 1 : 0)-this.spent_credits
-  }
-  return (this.offer?.coaching_credit-this.spent_credits) || 0
+  const credit=this.pack ? this.pack.follow_count+(!!this.pack.checkup ? 1 : 0) + this._company_cedits_spent
+    : 
+    (this.offer?.coaching_credit || 0)
+  return (credit-this.spent_credits) || 0
 })
 
 CoachingSchema.virtual('spent_credits', {

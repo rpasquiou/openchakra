@@ -195,6 +195,7 @@ const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
 const { PAYMENT_STATUS } = require('../fumoir/consts')
 const Purchase = require('../../models/Purchase')
+const { upsertProduct } = require('../payment/stripe')
 
 
 const filterDataUser = async ({ model, data, id, user }) => {
@@ -449,7 +450,10 @@ const preCreate = async ({ model, params, user }) => {
     const patient_id=user?.role==ROLE_CUSTOMER ? user._id : params.parent
 
     const pack=await canPatientStartCoaching(patient_id, user)
-    
+    // If a pack is used, already spent credit is 0
+    if (pack) {
+      params._company_cedits_spent=0
+    }
     params.user=patient_id
     params.offer=(await User.findById(patient_id).populate({path: 'company', populate: 'current_offer'})).company.current_offer
     params.pack=lodash.isBoolean(pack) ? null : pack
@@ -1716,6 +1720,16 @@ declareComputedField({model: 'key', field: 'user_passed_webinars', getterFn: get
 declareComputedField({model: 'menu', field: 'shopping_list', getterFn: getMenuShoppingList})
 declareComputedField({model: 'key', field: 'user_surveys_progress', getterFn: getUserSurveysProgress})
 
+/** Pack start */
+declareComputedField({model: 'pack', field: 'discount_price', requires: 'price', getterFn: 
+  async (userId, params, data) => {
+    const discount=(await User.findById(userId).populate('company')).company?.pack_discount || 0
+    let res=data.price*(1.0-discount)
+    res=parseInt(res*100)/100
+    return res
+  }
+})
+/** Pack end */
 
 const postCreate = async ({ model, params, data, user }) => {
   // Create company => duplicate offer
@@ -1806,7 +1820,13 @@ const postCreate = async ({ model, params, data, user }) => {
       .then(res => `Nutrition conversion:${res}`)
       .catch(err => `Nutrition conversion:${err}`)
   }
-  return Promise.resolve(data)
+
+
+  if (model=='pack') {
+    const stripe_id=await upsertProduct({name: data.title})
+    await Pack.findByIdAndUpdate(data._id, {stripe_id: stripe_id})
+  }
+  return data
 }
 
 setPostCreateData(postCreate)

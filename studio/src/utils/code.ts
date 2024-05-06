@@ -966,7 +966,7 @@ export const generateCode = async (
       .map(p => [p.components.root.props.tag, `/${getPageUrl(p.pageId, pages)}`])
     return `useEffect(() => {
       const tagPages=${JSON.stringify(tagPages)}
-      return axios.post('/myAlfred/api/studio/tags', tagPages)
+      axios.post('/myAlfred/api/studio/tags', tagPages)
     }, [])`
   }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`

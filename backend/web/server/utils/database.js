@@ -713,7 +713,7 @@ const formatTime = timeMillis => {
   return formatDuration(timeMillis ? timeMillis / 60 : 0, {leading: true})
 }
 
-const declareComputedField = ({model, field, getterFn, setterFn}) => {
+const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
   if (!model || !field || !(getterFn || setterFn)) {
     throw new Error(`${model}.${field} compute delcaration requires model, field and at least getter or setter`)
   }
@@ -725,6 +725,9 @@ const declareComputedField = ({model, field, getterFn, setterFn}) => {
   }
   if (setterFn) {
     lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
+  }
+  if (rest.requires) {
+    declareFieldDependencies({model, field, requires: rest.requires})
   }
 }
 

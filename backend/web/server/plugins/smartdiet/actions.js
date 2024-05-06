@@ -355,14 +355,14 @@ const buyPack = async ({value}, sender) => {
   const purchase=await Purchase.create({customer: sender, pack})
   const success_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=true`
   const failure_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=false`
-  const metadata={userId: sender._id.toString(), productId: pack._id.toString()}
-  return paymentPlugin.createAnonymousPayment({
+  return paymentPlugin.createRecurrentPayment({
     amount: pack.price, 
+    times: pack.payment_count,
     customer_email: sender.email,
+    product_stripe_id: pack.stripe_id,
     description: pack.title, 
     success_url: success_url, 
     failure_url: failure_url,
-    metadata,
     internal_reference: purchase._id.toString(),
   })
     .then(payment => {
