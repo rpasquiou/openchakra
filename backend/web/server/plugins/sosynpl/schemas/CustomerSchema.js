@@ -2,10 +2,11 @@ const mongoose = require('mongoose')
 const {isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
-const { NATIONALITIES, DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVITY_STATE, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_STANDBY, ACTIVITY_STATE_SUSPENDED, ROLE_FREELANCE } = require('../consts')
+const { DISCRIMINATOR_KEY, ROLES, ROLE_CUSTOMER, COMPANY_SIZE, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVITY_STATE, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_STANDBY, ACTIVITY_STATE_SUSPENDED, ROLE_FREELANCE } = require('../consts')
 const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
+const { NATIONALITIES } = require('../../../../utils/consts')
 
 const Schema = mongoose.Schema
 

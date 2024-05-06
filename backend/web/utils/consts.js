@@ -1,4 +1,7 @@
 const crypto = require('crypto')
+const lodash = require('lodash')
+const nationalities=require('i18n-nationality')
+const { sortObject } = require('./text')
 
 const API_ROOT='/myAlfred/api/studio/'
 
@@ -79,19 +82,6 @@ const SKILLS={
     entrieName: 'reactive',
   },
 }
-
-const LANGUAGES= [
-  {value: 'Français', label: 'Français'},
-  {value: 'LSF', label: 'LSF'},
-  {value: 'Anglais', label: 'Anglais'},
-  {value: 'Allemand', label: 'Allemand'},
-  {value: 'Espagnol', label: 'Espagnol'},
-  {value: 'Chinois', label: 'Chinois'},
-  {value: 'Arabe', label: 'Arabe'},
-  {value: 'Portugais', label: 'Portugais'},
-  {value: 'Russe', label: 'Russe'},
-  {value: 'Japonais', label: 'Japonais'},
-]
 
 const MAX_DESCRIPTION_LENGTH=300
 
@@ -251,6 +241,21 @@ const PURCHASE_STATUS={
   [PURCHASE_STATUS_FAILED]:`Refusé`,
 }
 
+const NATIONALITIES=sortObject(nationalities.getNames('fr'), 'FR')
+const LANGUAGES={...NATIONALITIES}
+
+const LANGUAGE_LEVEL_BEGINNER=`LANGUAGE_LEVEL_BEGINNER`
+const LANGUAGE_LEVEL_INTERMEDIATE=`LANGUAGE_LEVEL_INTERMEDIATE`
+const LANGUAGE_LEVEL_ADVANCED=`LANGUAGE_LEVEL_ADVANCED`
+const LANGUAGE_LEVEL_NATIVE=`LANGUAGE_LEVEL_NATIVE`
+
+const LANGUAGE_LEVEL={
+  [LANGUAGE_LEVEL_BEGINNER]:`Débutant`,
+  [LANGUAGE_LEVEL_INTERMEDIATE]:`Intermédiaire`,
+  [LANGUAGE_LEVEL_ADVANCED]:`Avancé`,
+  [LANGUAGE_LEVEL_NATIVE]:`Bilingue/natif`,
+}
+
 module.exports = {
   ALL_SERVICES, ALF_CONDS, CANCEL_MODE, CUSTOM_PRESTATIONS_FLTR,
   generate_id, GID_LEN, CESU,
@@ -274,5 +279,5 @@ module.exports = {
   IMAGE_SIZE_MARKER,
   THUMBNAILS_DIR,
   PURCHASE_STATUS, PURCHASE_STATUS_NEW, PURCHASE_STATUS_PENDING, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED,
-  API_ROOT,
+  API_ROOT, NATIONALITIES, LANGUAGE_LEVEL,
 }

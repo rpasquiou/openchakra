@@ -1,12 +1,14 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { NATIONALITIES, WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
 const { ROLE_ADMIN } = require("../smartdiet/consts");
+const { NATIONALITIES, PURCHASE_STATUS } = require("../../../utils/consts");
+const { BadRequestError } = require("../../utils/errors");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
@@ -108,6 +110,8 @@ FREELANCE_MODELS.forEach(model => {
   })
 })
 
+declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
@@ -161,6 +165,9 @@ const preCreate = ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
+  if (model=='languageLevel' && !params.parent) {
+    throw new BadRequestError(`Le freelance (parent) est obligatoire`)
+  }
 
   return Promise.resolve({model, params})
 }
@@ -173,6 +180,9 @@ const postCreate = async ({model, params, data}) => {
   }
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
+  }
+  if (model=='languageLevel') {
+    await User.findByIdAndUpdate(params.parent, {$push: {languages: data}})
   }
   return Promise.resolve(data)
 }
