@@ -348,10 +348,11 @@ const buyPack = async ({value}, sender) => {
   if (lodash.isEmpty(value)) {
     return {}
   }
-  const pack=(await loadFromDb({model: 'pack', id: value, fields:['discount_price', 'payment_count', 'stripe_id'], user: sender}))[0]
-  if (!pack) { // generic action
+  const model=await getModel(value)
+  if (model!='pack') {
     return true
   }
+  const pack=(await loadFromDb({model: 'pack', id: value, fields:['discount_price', 'payment_count', 'stripe_id'], user: sender}))[0]  
   const purchase=await Purchase.create({customer: sender, pack})
   const success_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=true`
   const failure_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=false`
