@@ -1367,6 +1367,10 @@ declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59',
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_unknown', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2002,7 +2006,6 @@ let ageRanges={}
 let start=25;
 let end=29;
 for(let age=0; age<75; age++){
-  console.table(ageCounts[age])
   if(age>end){
     start+=5;
     end+=5;
@@ -2014,10 +2017,42 @@ for(let age=0; age<75; age++){
     ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age]
   }
 }
-console.table(ageRanges)
 for (const [key, value] of Object.entries(ageRanges)) {
   result[key] = value;
 }
+
+const usersWithCoachings = await User.find({_id: idFilter})
+  .populate({
+    path:'coachings',
+    match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
+  }).then(users=>{
+    const groupedUsersByGender= lodash.groupBy(users, 'gender');
+    const genderCount={};
+    Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
+      genderCount[gender] = (genderCount[gender] || 0) + users.length;
+    });
+    const formattedGenderCount = {
+      male: 0,
+      female: 0,
+      non_binary: 0,
+      unknown: 0
+    };
+    for (const [key, value] of Object.entries(genderCount)) {
+      if (key === 'MALE') {
+        formattedGenderCount.male += value;
+      } else if (key === 'FEMALE') {
+        formattedGenderCount.female += value;
+      } else if (key === 'NON_BINARY') {
+        formattedGenderCount.non_binary += value;
+      } else if (key === 'undefined' || key === 'null') {
+        formattedGenderCount.unknown += value;
+      }
+    }
+  return formattedGenderCount;
+  })
+  for (const [key, value] of Object.entries(usersWithCoachings)) {
+    result[`coachings_${key}`] = value;
+  }
 
   //TODO : find the right command
   // result.nut_advices=lodash(await Company.find({_id:idFilter})
