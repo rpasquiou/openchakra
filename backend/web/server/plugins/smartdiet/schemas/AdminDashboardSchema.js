@@ -62,6 +62,17 @@ AdminDashboardSchema.virtual(`cs_upcoming_c13`, DUMMY_REF).get(function() {retur
 AdminDashboardSchema.virtual(`cs_upcoming_c14`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cs_upcoming_c15`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cs_upcoming_c16`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_18_24`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_25_29`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_30_34`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_35_39`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_40_44`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_45_49`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_50_54`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_55_59`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_60_64`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_65_69`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`started_coachings_70_74`, DUMMY_REF).get(function() {return 0})
 
 
 module.exports = AdminDashboardSchema
