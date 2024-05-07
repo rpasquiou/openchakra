@@ -60,6 +60,15 @@ MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'billing_contact_lastname', requires: `billing_contact_self,lastname`})
   declareFieldDependencies({model, field: 'billing_contact_email', requires: `billing_contact_self,email`})
   declareFieldDependencies({model, field: 'billing_contact_address', requires: `billing_contact_self,address`})
+
+  declareVirtualField({
+    model, field: 'languages', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'languageLevel' }
+    },
+  })
+
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
@@ -112,14 +121,20 @@ FREELANCE_MODELS.forEach(model => {
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
-/** JobCategory start */
+/** JobFile start */
 declareVirtualField({model: 'jobFile', field: 'jobs', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
   options: { ref: 'job' }
 },
 })
-/** JobCategory end */
+declareVirtualField({model: 'jobFile', field: 'features', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'jobFileFeature' }
+},
+})
+/** JobFIle end */
 
 /** Job start */
 declareEnumField({model: 'languageLevel', field: 'language', enumValues: LANGUAGES})
@@ -179,8 +194,8 @@ const preCreate = ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
-  if (model=='languageLevel' && !params.parent) {
-    throw new BadRequestError(`Le freelance (parent) est obligatoire`)
+  if (model=='languageLevel') {
+    params.user=params.parent
   }
 
   return Promise.resolve({model, params})
@@ -194,9 +209,6 @@ const postCreate = async ({model, params, data}) => {
   }
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
-  }
-  if (model=='languageLevel') {
-    await User.findByIdAndUpdate(params.parent, {$push: {languages: data}})
   }
   return Promise.resolve(data)
 }

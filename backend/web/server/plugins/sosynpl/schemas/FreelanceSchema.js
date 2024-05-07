@@ -107,7 +107,7 @@ const FreelanceSchema = new Schema({
     ref: 'software',
     required: false,
   }],
-  languages: [{
+  software_languages: [{
     type: Schema.Types.ObjectId,
     ref: 'language',
     required: false,
@@ -148,11 +148,6 @@ const FreelanceSchema = new Schema({
     default: false,
     required: [true, `La visibilité Google est obligatoire`]
   },
-  languages: [{
-    type: Schema.Types.ObjectId,
-    ref: 'languageLevel',
-    required: false,
-  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -196,6 +191,12 @@ FreelanceSchema.virtual('trainings', {
 // Depends on filled attributes
 FreelanceSchema.virtual('search_visible').get(function() {
   return false
+})
+
+FreelanceSchema.virtual('languages', {
+  ref: 'languageLevel',
+  localField: '_id',
+  foreignField: 'user',
 })
 
 /* eslint-enable prefer-arrow-callback */
