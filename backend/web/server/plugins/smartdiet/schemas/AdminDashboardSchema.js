@@ -73,6 +73,10 @@ AdminDashboardSchema.virtual(`started_coachings_55_59`, DUMMY_REF).get(function(
 AdminDashboardSchema.virtual(`started_coachings_60_64`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`started_coachings_65_69`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`started_coachings_70_74`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_unknown`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_male`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_female`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_non_binary`, DUMMY_REF).get(function() {return 0})
 
 
 module.exports = AdminDashboardSchema
