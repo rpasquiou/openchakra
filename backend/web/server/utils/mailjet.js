@@ -8,17 +8,30 @@ const Mailjet = require('node-mailjet')
 const {getMailjetConfig} = require('../../config/config')
 const MAILJET_CONFIG = getMailjetConfig()
 
-const RESULTS_LIMIT=100
+const RESULTS_LIMIT=1000
 
 class MAILJET_V6 {
 
+
+  // Singleton
+
+  static instance=null
+
+  static getInstance() {
+    if (!MAILJET_V6.instance) {
+      console.log('creating instance')
+      MAILJET_V6.instance=isProduction() ? new MAILJET_V6() : new MAILJET_V6_TEST()
+    }
+    return MAILJET_V6.instance
+  }
+
   constructor() {
+    console.log('constructing')
     this.smtpInstance = new Mailjet({
       apiKey: MAILJET_CONFIG.MAILJET_PUBLIC_KEY,
       apiSecret: MAILJET_CONFIG.MAILJET_PRIVATE_KEY,
     })
   }
-
 
   sendMail({index, email, /** ccs,*/ data, attachment=null}) {
     console.log(`Sending mail template #${index} to ${email} with data ${JSON.stringify(data)}, attachment:${attachment ? 'yes' : 'no'}`)
@@ -50,11 +63,25 @@ class MAILJET_V6 {
       .then(res => JSON.parse(JSON.stringify(res.body.Data)))
   }
 
+  getListContacts(listID) {
+    return this.smtpInstance
+      .get(`contact?ContactsList=${listID}&Limit=${RESULTS_LIMIT}`, {version: 'v3'})
+      .request()
+      .then(res => JSON.parse(JSON.stringify(res.body.Data)))
+  }
+
   getContactId(email) {
     return this.smtpInstance
       .get(`contact/${email}`, {version: 'v3'})
       .request()
       .then(res => res.body.Data[0]?.ID || null)
+  }
+
+  async getContact(id) {
+    return this.smtpInstance
+      .get(`contact/${id}`, {version: 'v3'})
+      .request()
+      .then(res => res.body.Data[0] || null)
   }
 
   acceptEmail(email) {
@@ -63,15 +90,14 @@ class MAILJET_V6 {
 
   // Contacts are {email, fullname}
   // Returns a JobID isf successful
-  addContactsToList({contacts, list}) {
+  addContactsToList({contacts, listID}) {
     const filteredContacts=contacts.filter(({Email}) => this.acceptEmail(Email))
     if (filteredContacts.length!=contacts.length) {
       console.log(`${contacts.length-filteredContacts.length} rejected emails `)
-      console.log(contacts, filteredContacts)
     }
     return this.smtpInstance
       .post('contactslist', {'version': 'v3'})
-      .id(list)
+      .id(listID)
       .action('managemanycontacts')
       .request({
         Action: 'addnoforce',
@@ -79,32 +105,21 @@ class MAILJET_V6 {
       })
       .then(res => {
         const jobId=res.body.Data[0].JobID
-        console.log(`Mailjet add ${filteredContacts.length} contacts to ${list}:jobId is ${jobId}`)
+        console.log(`Mailjet add ${filteredContacts.length} contacts to ${listID}:jobId is ${jobId}`)
         return jobId
       })
   }
 
-  checkContactsListsJob(jobId) {
-    return this.smtpInstance
-    .get(`contact`, {'version': 'v3'})
-    	.action("managemanycontacts")
-      .id(jobId)
-    	.request()
-      .then(res => {
-        //console.log(`Mailjet job status ${jobId}:${JSON.stringify(res.body.Data)}`)
-        return res.body.Data
-      })
-    }
-
   /** Removes contacts from list and also from workflows that use this list */
-  removeContactsFromList({contacts, list}) {
+  removeContactsFromList({contacts, listID}) {
     const filteredContacts=contacts.filter(({Email}) => this.acceptEmail(Email))
     if (filteredContacts.length!=contacts.length) {
       console.log(`${contacts.length-filteredContacts.length} rejected emails `)
     }
+    console.log(`Removing ${contacts.length} from contacts list ${listID}`)
     return this.smtpInstance
       .post('contactslist', {'version': 'v3'})
-      .id(list)
+      .id(listID)
       .action('managemanycontacts')
       .request({
         Action: 'remove',
@@ -116,33 +131,54 @@ class MAILJET_V6 {
         return jobId
       })
       // Remove from workflows
-      .then(() => this.getWorkflowsForContactsList({list}))
-      .then(res => Promise.all(res.map(workflowId => this.removeContactsFromWorkflow({contacts: filteredContacts, workflow: workflowId}))))
+      .then(() => this.getWorkflowsForContactsList(listID))
+      .then(res => {
+        return Promise.all(res.map(workflowId => this.removeContactsFromWorkflow({contacts: filteredContacts, workflow: workflowId})))
+      })
   }
 
-  getWorkflowsForContactsList({list}) {
+  getWorkflowsForContactsList(listID) {
     return this.smtpInstance
-      .get(`campaign?ContactsListID=${list}&FromTS=2023-01-01T00:00:00&Limit=200`, {version: 'v3'})
+      .get(`campaign?ContactsListID=${listID}&FromTS=2023-01-01T00:00:00&Limit=${RESULTS_LIMIT}`, {version: 'v3'})
       .request()
-      .then(res => lodash.uniq(res.body.Data.map(c => c.WorkflowID).filter(v => !!v)))
+      .then(res => {
+        const workflows=lodash.uniq(res.body.Data.map(c => c.WorkflowID).filter(v => !!v))
+        console.log(`List ${listID} has workflows ${workflows}`)
+        return workflows
+      })
+  }
+
+  getWorkflow(id) {
+    console.log('getting workflow', id)
+    return this.smtpInstance
+      .get(`workflow/${id}`, {version: 'v3'})
+      .request()
+      .then(res => res.body.Data)
   }
 
   async removeContactsFromWorkflow({contacts, workflow}) {
+    console.log(`Removing ${contacts.length} contacts from workflow ${workflow}`)
     const filteredContacts=contacts.filter(({Email}) => this.acceptEmail(Email))
     if (filteredContacts.length!=contacts.length) {
       console.log(`${contacts.length-filteredContacts.length} rejected emails `)
     }
-    const ids=await Promise.all(contacts.map(({Email}) => this.getContactId(Email)))
-    console.log('ids are', ids)
+    // const ids=(await Promise.all(contacts.map(({Email}) => this.getContactId(Email))))
+    const ids=contacts
     return Promise.all(ids.map(id => this.smtpInstance
       .delete(`workflow/${workflow}/contact/${id}`, {'version': 'v3'})
       .request()
       .then(res => {
-        console.log(`Removed contact ${id} form workflow ${workflow}`,res)
-        // const jobId=res.body.Data[0].JobID
-        // return jobId
+        console.log(`Removed contact ${id} form workflow ${workflow}`,res.response.status, res.response.statusText)
+        return true
       })
     ))
+  }
+
+  async getWorkflowContacts({workflow}) {
+    return this.smtpInstance
+      .get(`workflow/${workflow}/contact?FromTS=2023-01-01T00:00:00&Limit=${RESULTS_LIMIT}`, {'version': 'v3'})
+      .request()
+      .then(res => res.body.Data)
   }
 
 }
@@ -153,11 +189,11 @@ class MAILJET_V6_TEST extends MAILJET_V6 {
   }
 
   acceptEmail(email) {
-    return /@wappizy.com$/i.test(email)
+    // return /@wappizy.com$/i.test(email)
+    // return email=='ouvreurinscrit@gmail.com'
+    return true
   }
 
 }
 
-const PROVIDER = isProduction() ? new MAILJET_V6() : new MAILJET_V6_TEST()
-
-module.exports = PROVIDER
+module.exports = MAILJET_V6.getInstance()

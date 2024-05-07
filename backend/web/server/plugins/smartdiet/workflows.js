@@ -247,7 +247,7 @@ const WORKFLOWS={
 
 const computeWorkflowLists = () => {
   return Promise.all([
-    Lead.find()
+    Lead.find({})
       .populate({path: 'company', populate: [{path: 'groups_count'}, {path: 'groups'}, {path: 'current_offer'}]}),
     User.find({role: ROLE_CUSTOMER})
       .populate([{path: 'coachings', populate: ['appointments']}, {path: 'latest_coachings', populate: ['appointments']}])
@@ -261,7 +261,9 @@ const computeWorkflowLists = () => {
   .then(([leads, users]) => {
     const allemails=lodash([...leads, ...users]).groupBy('email').mapValues(v => ([v.find(c => !c.role), v.find(c => !!c.role)]))
     // Filter for each workflow
-    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, name, filter}])=> {
+    // 2415688 CL_REGISTERED_INEA_NOSTARTEDCOA
+    // const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, name, filter}])=> {
+      const entries=[['CL_REGISTERED_INEA_NOSTARTEDCOA', WORKFLOWS.CL_REGISTERED_INEA_NOSTARTEDCOA]].map(([workflow_id, {id, name, filter}])=> {
       // Map mail to false or lead or user
       const retained=allemails.mapValues(([lead, user]) => filter(lead, user))
         // Retain only emails having truthy value
@@ -273,25 +275,23 @@ const computeWorkflowLists = () => {
   })
 }
 
-const updateWorkflows= () => {
+const updateWorkflows= async () => {
   return computeWorkflowLists()
     .then(lists => {
-      console.log(`Updated workflows`, JSON.stringify(lists, null, 2))
+      console.log(`Updated workflows`)
       let promises=Object.values(lists).map(({id, add, remove})=> {
         const result=[]
         if (!lodash.isEmpty(add)) {
-          result.push(MAILJET_HANDLER.addContactsToList({list: id, contacts: add}))
+          result.push(MAILJET_HANDLER.addContactsToList({listID: id, contacts: add}))
         }
         if (!lodash.isEmpty(remove)) {
-          result.push(MAILJET_HANDLER.removeContactsFromList({list: id, contacts: remove}))
+          result.push(MAILJET_HANDLER.removeContactsFromList({listID: id, contacts: remove}))
         }
         return result
       })
       promises=lodash.flatten(promises).filter(v => !!v)
       return Promise.all(promises)
     })
-    .then(jobs => delayPromise(4000).then(() => jobs))
-    .then(jobs => Promise.all(jobs.map(job => MAILJET_HANDLER.checkContactsListsJob(job))))
 }
 
 module.exports={
