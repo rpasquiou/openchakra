@@ -174,11 +174,6 @@ const FreelanceSchema = new Schema({
     default: false,
     required: [true, `La visibilité Google est obligatoire`]
   },
-  languages: [{
-    type: Schema.Types.ObjectId,
-    ref: 'languageLevel',
-    required: false,
-  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
