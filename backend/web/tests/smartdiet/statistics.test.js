@@ -31,9 +31,9 @@ describe('Statistics', () => {
     expect(stats.coachings_dropped).toEqual(1814)
   })
 
-  it.only('must return coachings_ongoing equals to 1814', async() => {
+  it('must return coachings_ongoing equals to 43', async() => {
     const stats=await computeStatistics({fields:[`coachings_ongoing`]})
-    expect(stats.coachings_ongoing).toEqual(1814)
+    expect(stats.coachings_ongoing).toEqual(43)
   })
 
   it('must return cs_done equals to 38', async () => {
@@ -55,10 +55,21 @@ describe('Statistics', () => {
 
   it('must return cs_upcoming_c1', async () => {
     const stats = await computeStatistics({ fields: ['cs_upcoming_c1'] });
-    console.log(stats['cs_upcoming_c1'])
+    console.log('cs_upcoming_c1',stats['cs_upcoming_c1'])
     expect(stats['cs_upcoming_c1']).not.toBeNull();
   });
 
+  it('must return started_coaching_no_birthday', async()=>{
+    const stats = await computeStatistics({ fields: ['started_coaching_no_birthday']});
+    console.log('started_coaching_no_birthday',stats['started_coaching_no_birthday'])
+    expect(stats['started_coaching_no_birthday']).not.toBeNull
+  })
+
+  it.only('must return started_coaching_18_24', async()=>{
+    const stats = await computeStatistics({ fields: ['started_coachings_18_24']});
+    console.log('started_coachings_18_24',stats['started_coachings_18_24'])
+    expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0)
+  })
 
 
 

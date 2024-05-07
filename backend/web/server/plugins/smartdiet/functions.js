@@ -1356,6 +1356,17 @@ declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c13', instanc
 declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c14', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c15', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c16', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -1953,23 +1964,61 @@ const computeStatistics = async ({ id, fields }) => {
         return coachingsDone;
     });
 
-    result.cs_upcoming = await Appointment.find({ _id: idFilter })
-    .populate({
-      path:'coaching',
-      populate:({
-        path:'appointments',
-      })
+  result.cs_upcoming = await Appointment.find({ _id: idFilter })
+  .populate({
+    path:'coaching',
+    populate:({
+      path:'appointments',
     })
-    .then(appointments => {
-        appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
-        const groupedAppointments = lodash.groupBy(appointments, 'order');
-        let coachingsToCome = 0;
-        Object.entries(groupedAppointments).forEach(([order, apps]) => {
-            coachingsToCome += apps.length;
-        });
-        return coachingsToCome;
-    });    
-  
+  })
+  .then(appointments => {
+      appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+      const groupedAppointments = lodash.groupBy(appointments, 'order');
+      let coachingsToCome = 0;
+      Object.entries(groupedAppointments).forEach(([order, apps]) => {
+          coachingsToCome += apps.length;
+      });
+      return coachingsToCome;
+  });    
+
+const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
+    path: 'coachings',
+    match: { status: 'COACHING_STATUS_STARTED' }
+});
+
+let ageCounts = {};
+let startedCoachingsNoBirthday = 0;
+
+allUsersWithStartedCoaching.forEach(user => {
+  if (user.birthday) {
+    const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
+    ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
+  } else {
+    startedCoachingsNoBirthday += user.coachings.length;
+  }
+});
+result.started_coaching_no_birthday=startedCoachingsNoBirthday;
+let ageRanges={}
+let start=25;
+let end=29;
+for(let age=0; age<75; age++){
+  console.table(ageCounts[age])
+  if(age>end){
+    start+=5;
+    end+=5;
+  }
+  if(age>=18 && age<=24){
+    ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
+  }
+  else{
+    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age]
+  }
+}
+console.table(ageRanges)
+for (const [key, value] of Object.entries(ageRanges)) {
+  result[key] = value;
+}
+
   //TODO : find the right command
   // result.nut_advices=lodash(await Company.find({_id:idFilter})
   //   .populate({path: 'users', 
