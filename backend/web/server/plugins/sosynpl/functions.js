@@ -7,7 +7,7 @@ const Freelance=require('../../models/Freelance');
 const { validatePassword } = require("../../../utils/passwords");
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
 const { ROLE_ADMIN } = require("../smartdiet/consts");
-const { NATIONALITIES, PURCHASE_STATUS } = require("../../../utils/consts");
+const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts");
 const { BadRequestError } = require("../../utils/errors");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
@@ -111,6 +111,20 @@ FREELANCE_MODELS.forEach(model => {
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
+/** JobCategory start */
+declareVirtualField({model: 'jobFile', field: 'jobs', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'job' }
+},
+})
+/** JobCategory end */
+
+/** Job start */
+declareEnumField({model: 'languageLevel', field: 'language', enumValues: LANGUAGES})
+declareEnumField({model: 'languageLevel', field: 'level', enumValues: LANGUAGE_LEVEL})
+/** Job end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
