@@ -24,6 +24,12 @@ JobFileSchema.virtual('jobs', {
   localField: 'code',
   foreignField: 'code',
 })
+
+JobFileSchema.virtual('features', {
+  ref: 'jobFileFeature',
+  localField: '_id',
+  foreignField: 'jobFile',
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = JobFileSchema
