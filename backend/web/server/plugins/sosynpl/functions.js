@@ -8,6 +8,7 @@ const { validatePassword } = require("../../../utils/passwords");
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
 const { ROLE_ADMIN } = require("../smartdiet/consts");
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts");
+const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts");
 const { BadRequestError } = require("../../utils/errors");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
