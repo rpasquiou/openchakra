@@ -65,7 +65,7 @@ describe('Statistics', () => {
     expect(stats['started_coaching_no_birthday']).not.toBeNull
   })
 
-  it.only('must return started_coaching_18_24', async()=>{
+  it('must return started_coaching_18_24', async()=>{
     const stats = await computeStatistics({ fields: ['started_coachings_18_24']});
     console.log('started_coachings_18_24',stats['started_coachings_18_24'])
     expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0)
@@ -77,10 +77,16 @@ describe('Statistics', () => {
     expect(stats['coachings_male']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return coachings_unknown', async()=>{
+  it('must return coachings_unknown', async()=>{
     const stats = await computeStatistics({ fields: ['coachings_unknown']});
     console.log('coachings_unknown',stats['coachings_unknown'])
     expect(stats['coachings_unknown']).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('must return nut_advices', async()=>{
+    const stats = await computeStatistics({ fields: ['nut_advices']});
+    console.log('nut_advices',stats['nut_advices'])
+    expect(stats['nut_advices']).toBeGreaterThanOrEqual(0)
   })
 
 
