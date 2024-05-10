@@ -1322,7 +1322,7 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_started', insta
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_stopped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_dropped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', instance: 'Number' })
-//declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c1', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c2', instance: 'Number' })
@@ -1848,223 +1848,236 @@ const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
-  const companies=await Company.find({_id: idFilter})
-  result.company=id?.toString()
-  result.groups_count=await Group.countDocuments({companies: idFilter})
-  result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
-  result.users_count=await User.countDocuments({company: idFilter})
-  result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
-  result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
-  result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
-  result.webinars_count=await Webinar.countDocuments({companies: idFilter})
-  const webinars_replayed=(await User.aggregate([
-    {$match: { company: idFilter }},
-    {$unwind: '$replayed_events'},
-    {$match: { 'replayed_events.__t': EVENT_WEBINAR }},
-    {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
-  ]))[0]?.webinarCount||0
-  result.webinars_replayed_count=webinars_replayed
-  const webinars_registered=(await User.aggregate([
-    {$match: { company: idFilter }},
-    {$unwind: '$registered_events'},
-    {$match: { 'registered_events.__t': EVENT_WEBINAR }},
-    {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
-  ]))[0]?.webinarCount||0
-  result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
-  const apptCoachings=await Appointment.distinct('coaching')
-  const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
-  const users=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
-  result.started_coachings=users
-  result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
-  const specificities_count=await User.aggregate([
-    { $match: { role: ROLE_CUSTOMER, company: idFilter}},
-    { $unwind: "$specificity_targets" },
-    { $group: { _id: "$specificity_targets", count: { $sum: 1 }}},
-    { $lookup: {
-        from: "targets", // Target collection
-        localField: "_id",
-        foreignField: "_id",
-        as: "target"
-      }
-    },
-    { $unwind: "$target"},
-    { $project: {
-        _id: 0,
-        name: "$target.name",
-        count: 1
-      }
-    },
-    { $sort: { count: 1 } } // Sort by count in descending order
-  ])
-  result.specificities_users=specificities_count.map(({count, name})=> ({x:name, y:count}))
-  let userMatch={$match: {_id: {$exists: true}}}
-  if (result.company) {
-    const companyUsers=(await User.find({company: idFilter}, {_id:1})).map(({_id}) => _id)
-    userMatch={$match: {user: {$in: companyUsers}}}
-  }
-  const reasons_count=await Coaching.aggregate([
-    userMatch,
-    { $unwind: "$reasons" },
-    { $group: { _id: "$reasons", count: { $sum: 1 }}},
-    { $lookup: {
-        from: "targets", // Target collection
-        localField: "_id",
-        foreignField: "_id",
-        as: "target"
-      }
-    },
-    { $unwind: "$target"},
-    { $project: {
-        _id: 0,
-        name: "$target.name",
-        count: 1
-      }
-    },
-    { $sort: { count: 1 } } // Sort by count in descending order
-  ])
-  result.reasons_users=reasons_count.map(({count, name})=> ({x:name, y:count}))
+//   const companies=await Company.find({_id: idFilter})
+//   result.company=id?.toString()
+//   result.groups_count=await Group.countDocuments({companies: idFilter})
+//   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
+//   result.users_count=await User.countDocuments({company: idFilter})
+//   result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
+//   result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
+//   result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
+//   result.webinars_count=await Webinar.countDocuments({companies: idFilter})
+//   const webinars_replayed=(await User.aggregate([
+//     {$match: { company: idFilter }},
+//     {$unwind: '$replayed_events'},
+//     {$match: { 'replayed_events.__t': EVENT_WEBINAR }},
+//     {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
+//   ]))[0]?.webinarCount||0
+//   result.webinars_replayed_count=webinars_replayed
+//   const webinars_registered=(await User.aggregate([
+//     {$match: { company: idFilter }},
+//     {$unwind: '$registered_events'},
+//     {$match: { 'registered_events.__t': EVENT_WEBINAR }},
+//     {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
+//   ]))[0]?.webinarCount||0
+//   result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
+//   const apptCoachings=await Appointment.distinct('coaching')
+//   const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
+//   const users=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
+//   result.started_coachings=users
+//   result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
+//   const specificities_count=await User.aggregate([
+//     { $match: { role: ROLE_CUSTOMER, company: idFilter}},
+//     { $unwind: "$specificity_targets" },
+//     { $group: { _id: "$specificity_targets", count: { $sum: 1 }}},
+//     { $lookup: {
+//         from: "targets", // Target collection
+//         localField: "_id",
+//         foreignField: "_id",
+//         as: "target"
+//       }
+//     },
+//     { $unwind: "$target"},
+//     { $project: {
+//         _id: 0,
+//         name: "$target.name",
+//         count: 1
+//       }
+//     },
+//     { $sort: { count: 1 } } // Sort by count in descending order
+//   ])
+//   result.specificities_users=specificities_count.map(({count, name})=> ({x:name, y:count}))
+//   let userMatch={$match: {_id: {$exists: true}}}
+//   if (result.company) {
+//     const companyUsers=(await User.find({company: idFilter}, {_id:1})).map(({_id}) => _id)
+//     userMatch={$match: {user: {$in: companyUsers}}}
+//   }
+//   const reasons_count=await Coaching.aggregate([
+//     userMatch,
+//     { $unwind: "$reasons" },
+//     { $group: { _id: "$reasons", count: { $sum: 1 }}},
+//     { $lookup: {
+//         from: "targets", // Target collection
+//         localField: "_id",
+//         foreignField: "_id",
+//         as: "target"
+//       }
+//     },
+//     { $unwind: "$target"},
+//     { $project: {
+//         _id: 0,
+//         name: "$target.name",
+//         count: 1
+//       }
+//     },
+//     { $sort: { count: 1 } } // Sort by count in descending order
+//   ])
+//   result.reasons_users=reasons_count.map(({count, name})=> ({x:name, y:count}))
   
-  result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
-  result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
-  result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
-  result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
+//   result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
+//   result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
+//   result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
+//   result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
 
-  const appointments = await Appointment.find({ _id: idFilter })
-        .populate({
-            path: 'coaching',
-            populate: {
-                path: 'appointments',
-            }
-        });
+//   const appointments = await Appointment.find({ _id: idFilter })
+//         .populate({
+//             path: 'coaching',
+//             populate: {
+//                 path: 'appointments',
+//             }
+//         });
 
-  lodash.range(1, 17).forEach(async order => {
-    const validAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-    const upcomingAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
-    const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
-    const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
-    const orderValidAppointments = groupedValidAppointments[order] || [];
-    const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
+//   lodash.range(1, 17).forEach(async order => {
+//     const validAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
+//     const upcomingAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
+//     const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
+//     const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
+//     const orderValidAppointments = groupedValidAppointments[order] || [];
+//     const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
 
-    const validCount = orderValidAppointments.length;
-    const upcomingCount = orderUpcomingAppointments.length;
-    result[`cs_done_c${order}`] = validCount;
-    result[`cs_upcoming_c${order}`] = upcomingCount;
-  });
+//     const validCount = orderValidAppointments.length;
+//     const upcomingCount = orderUpcomingAppointments.length;
+//     result[`cs_done_c${order}`] = validCount;
+//     result[`cs_upcoming_c${order}`] = upcomingCount;
+//   });
 
-  result.cs_done = await Appointment.find({ _id: idFilter })
-    .populate({
-      path:'coaching',
-      populate:({
-        path:'appointments',
-      })
-    })
-    .then(appointments => {
-        appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_VALID)
-        const groupedAppointments = lodash.groupBy(appointments, 'order');
-        let coachingsDone=0;
-        Object.entries(groupedAppointments).forEach(([order, apps]) => {
-            coachingsDone += apps.length;
-        });
-        return coachingsDone;
-    });
+//   result.cs_done = await Appointment.find({ _id: idFilter })
+//     .populate({
+//       path:'coaching',
+//       populate:({
+//         path:'appointments',
+//       })
+//     })
+//     .then(appointments => {
+//         appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_VALID)
+//         const groupedAppointments = lodash.groupBy(appointments, 'order');
+//         let coachingsDone=0;
+//         Object.entries(groupedAppointments).forEach(([order, apps]) => {
+//             coachingsDone += apps.length;
+//         });
+//         return coachingsDone;
+//     });
 
-  result.cs_upcoming = await Appointment.find({ _id: idFilter })
-  .populate({
-    path:'coaching',
-    populate:({
-      path:'appointments',
-    })
-  })
-  .then(appointments => {
-      appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      let coachingsToCome = 0;
-      Object.entries(groupedAppointments).forEach(([order, apps]) => {
-          coachingsToCome += apps.length;
-      });
-      return coachingsToCome;
-  });    
+//   result.cs_upcoming = await Appointment.find({ _id: idFilter })
+//   .populate({
+//     path:'coaching',
+//     populate:({
+//       path:'appointments',
+//     })
+//   })
+//   .then(appointments => {
+//       appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+//       const groupedAppointments = lodash.groupBy(appointments, 'order');
+//       let coachingsToCome = 0;
+//       Object.entries(groupedAppointments).forEach(([order, apps]) => {
+//           coachingsToCome += apps.length;
+//       });
+//       return coachingsToCome;
+//   });    
 
-const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
-    path: 'coachings',
-    match: { status: 'COACHING_STATUS_STARTED' }
-});
+// const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
+//     path: 'coachings',
+//     match: { status: 'COACHING_STATUS_STARTED' }
+// });
 
-let ageCounts = {};
-let startedCoachingsNoBirthday = 0;
+// let ageCounts = {};
+// let startedCoachingsNoBirthday = 0;
 
-allUsersWithStartedCoaching.forEach(user => {
-  if (user.birthday) {
-    const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
-    ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
-  } else {
-    startedCoachingsNoBirthday += user.coachings.length;
-  }
-});
-result.started_coaching_no_birthday=startedCoachingsNoBirthday;
-let ageRanges={}
-let start=25;
-let end=29;
-for(let age=0; age<75; age++){
-  if(age>end){
-    start+=5;
-    end+=5;
-  }
-  if(age>=18 && age<=24){
-    ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
-  }
-  else{
-    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age]
-  }
-}
-for (const [key, value] of Object.entries(ageRanges)) {
-  result[key] = value;
-}
+// allUsersWithStartedCoaching.forEach(user => {
+//   if (user.birthday) {
+//     const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
+//     ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
+//   } else {
+//     startedCoachingsNoBirthday += user.coachings.length;
+//   }
+// });
+// result.started_coaching_no_birthday=startedCoachingsNoBirthday;
+// let ageRanges={}
+// let start=25;
+// let end=29;
+// for(let age=0; age<75; age++){
+//   if(age>end){
+//     start+=5;
+//     end+=5;
+//   }
+//   if(age>=18 && age<=24){
+//     ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
+//   }
+//   else{
+//     ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age]
+//   }
+// }
+// for (const [key, value] of Object.entries(ageRanges)) {
+//   result[key] = value;
+// }
 
-const usersWithCoachings = await User.find({_id: idFilter})
-  .populate({
-    path:'coachings',
-    match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
-  }).then(users=>{
-    const groupedUsersByGender= lodash.groupBy(users, 'gender');
-    const genderCount={};
-    Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
-      genderCount[gender] = (genderCount[gender] || 0) + users.length;
-    });
-    const formattedGenderCount = {
-      male: 0,
-      female: 0,
-      non_binary: 0,
-      unknown: 0
-    };
-    for (const [key, value] of Object.entries(genderCount)) {
-      if (key === 'MALE') {
-        formattedGenderCount.male += value;
-      } else if (key === 'FEMALE') {
-        formattedGenderCount.female += value;
-      } else if (key === 'NON_BINARY') {
-        formattedGenderCount.non_binary += value;
-      } else if (key === 'undefined' || key === 'null') {
-        formattedGenderCount.unknown += value;
-      }
+// const usersWithCoachings = await User.find({_id: idFilter})
+//   .populate({
+//     path:'coachings',
+//     match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
+//   }).then(users=>{
+//     const groupedUsersByGender= lodash.groupBy(users, 'gender');
+//     const genderCount={};
+//     Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
+//       genderCount[gender] = (genderCount[gender] || 0) + users.length;
+//     });
+//     const formattedGenderCount = {
+//       male: 0,
+//       female: 0,
+//       non_binary: 0,
+//       unknown: 0
+//     };
+//     for (const [key, value] of Object.entries(genderCount)) {
+//       if (key === 'MALE') {
+//         formattedGenderCount.male += value;
+//       } else if (key === 'FEMALE') {
+//         formattedGenderCount.female += value;
+//       } else if (key === 'NON_BINARY') {
+//         formattedGenderCount.non_binary += value;
+//       } else if (key === 'undefined' || key === 'null') {
+//         formattedGenderCount.unknown += value;
+//       }
+//     }
+//   return formattedGenderCount;
+//   })
+//   for (const [key, value] of Object.entries(usersWithCoachings)) {
+//     result[`coachings_${key}`] = value;
+//   }
+
+const nutAdvices= await User.aggregate([
+  {
+    $match:{
+      company: idFilter,
     }
-  return formattedGenderCount;
-  })
-  for (const [key, value] of Object.entries(usersWithCoachings)) {
-    result[`coachings_${key}`] = value;
-  }
+  },
 
-  //TODO : find the right command
-  // result.nut_advices=lodash(await Company.find({_id:idFilter})
-  //   .populate({path: 'users', 
-  //             populate: {
-  //               path: 'nutrition_advices'
-  //               }
-  //             })
-        
-  // )
-  // .map(c => c.users)
-  // .flatten().size()
+  {
+    $lookup:{
+      from: 'nutritionadvices',
+      localField: 'email',
+      foreignField: 'patient_email',
+      as: 'nutrition_advices',
+    }
+  },
+  {
+    $unwind: {
+      path: '$nutrition_advices',
+    }
+  },
+])
+
+result.nut_advices=nutAdvices.length  
+
   return result
 }
 

@@ -27,7 +27,7 @@ AdminDashboardSchema.virtual(`coachings_started`, DUMMY_REF).get(function() {ret
 AdminDashboardSchema.virtual(`coachings_stopped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_dropped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_ongoing`, DUMMY_REF).get(function() {return 0})
-//AdminDashboardSchema.virtual(`nut_advices`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`nut_advices`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cs_done`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cs_done_c1`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cs_done_c2`, DUMMY_REF).get(function() {return 0})
