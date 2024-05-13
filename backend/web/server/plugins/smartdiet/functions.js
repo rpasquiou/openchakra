@@ -180,6 +180,7 @@ const Company = require('../../models/Company')
 const User = require('../../models/User')
 const Team = require('../../models/Team')
 const JoinReason = require('../../models/JoinReason')
+const DeclineReason = require('../../models/DeclineReason')
 const TeamMember = require('../../models/TeamMember')
 const Coaching = require('../../models/Coaching')
 const Appointment = require('../../models/Appointment')
@@ -1451,6 +1452,37 @@ declareVirtualField({ model: 'adminDashboard', field: 'join_reason_18_name', ins
 declareVirtualField({ model: 'adminDashboard', field: 'join_reason_19_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'join_reason_20_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'join_reasons_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
 
 
 //end adminDashboard
@@ -2179,12 +2211,9 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   let jobsTotal=0;
   leads.map(lead=>{
     if(jobDict[lead.job]){
+      jobsTotal+=1;
       jobsFound[jobDict[lead.job].name]= (jobsFound[jobDict[lead.job].name]||0) +1;
     }
-    else{
-      jobsFound[lead.job]= (jobsFound[lead.job]||0) +1;
-    }
-    jobsTotal+=1;
   })
   delete jobsFound.undefined;
   jobsFound=Object.entries(jobsFound);
@@ -2208,12 +2237,9 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   let joinReasonsTotal=0;
   leads.map(lead=>{
     if(joinReasonsDict[lead.join_reason]){
+      joinReasonsTotal+=1;
       joinReasonsFound[joinReasonsDict[lead.join_reason].name]= (joinReasonsFound[joinReasonsDict[lead.join_reason].name]||0) +1;
     }
-    else{
-      joinReasonsFound[lead.join_reason]= (joinReasonsFound[lead.join_reason]||0) +1;
-    }
-    joinReasonsTotal+=1;
   })
   delete joinReasonsFound.undefined;
   joinReasonsFound=Object.entries(joinReasonsFound);
@@ -2228,6 +2254,32 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     index+=1;
   });
   result.join_reasons_total=joinReasonsTotal;
+
+  const declineReasons= await DeclineReason.find()
+  const declineReasonsDict = declineReasons.reduce((acc, jR) => {
+          acc[jR.id] = jR;
+          return acc;
+        }, {});
+  let declineReasonsFound={};
+  let declineReasonsTotal=0;
+  leads.map(lead=>{
+    if(declineReasonsDict[lead.decline_reason]){
+      declineReasonsFound[declineReasonsDict[lead.decline_reason].name]= (declineReasonsFound[declineReasonsDict[lead.decline_reason].name]||0) +1;
+      declineReasonsTotal+=1;
+    }
+  })
+  delete declineReasonsFound.undefined;
+  declineReasonsFound=Object.entries(declineReasonsFound);
+  declineReasonsFound.sort((a, b)=> b[1]-a[1]);
+  declineReasonsFound= declineReasonsFound.slice(0,10);
+  index=1;
+  declineReasonsFound.forEach(([declineReasonsId, count]) => {
+    result[`decline_reason_${index}_total`]=count;
+    result[`decline_reason_${index}_percent`]=Number(((count / declineReasonsTotal) * 100).toFixed(2));
+    result[`decline_reason_${index}_name`]=declineReasonsFound[index-1][0];
+    index+=1;
+  });
+  result.decline_reasons_total=declineReasonsTotal;
 
   return result
 }
