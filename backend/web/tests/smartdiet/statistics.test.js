@@ -83,10 +83,16 @@ describe('Statistics', () => {
     expect(stats['coachings_unknown']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return nut_advices', async()=>{
+  it('must return nut_advices', async()=>{
     const stats = await computeStatistics({ fields: ['nut_advices']});
     console.log('nut_advices',stats['nut_advices'])
     expect(stats['nut_advices']).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('must return coachings_renewed', async()=>{
+    const stats = await computeStatistics({ fields: ['nut_adcoachings_renewedvices']});
+    console.log('coachings_renewed',stats['coachings_renewed'])
+    expect(stats['coachings_renewed']).toBeGreaterThanOrEqual(0)
   })
 
   //TODO : finish nut_advices first
