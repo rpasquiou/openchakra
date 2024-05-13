@@ -2189,7 +2189,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   delete jobsFound.undefined;
   jobsFound=Object.entries(jobsFound);
   jobsFound.sort((a, b)=> b[1]-a[1]);
-  jobsFound= jobsFound.slice(0,5);
+  jobsFound= jobsFound.slice(0,10);
   let index=1;
   jobsFound.forEach(([jobId, count]) => {
     result[`job_${index}_total`]=count;
