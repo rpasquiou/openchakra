@@ -179,6 +179,7 @@ const Content = require('../../models/Content')
 const Company = require('../../models/Company')
 const User = require('../../models/User')
 const Team = require('../../models/Team')
+const JoinReason = require('../../models/JoinReason')
 const TeamMember = require('../../models/TeamMember')
 const Coaching = require('../../models/Coaching')
 const Appointment = require('../../models/Appointment')
@@ -1389,6 +1390,69 @@ declareVirtualField({ model: 'adminDashboard', field: 'job_3_name', instance: 'N
 declareVirtualField({ model: 'adminDashboard', field: 'job_4_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'job_5_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'jobs_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_1_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_2_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_3_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_4_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_5_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_6_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_7_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_8_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_9_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_10_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_11_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_12_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_13_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_14_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_15_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_16_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_17_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_18_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_19_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_20_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_1_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_2_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_3_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_4_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_5_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_6_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_7_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_8_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_9_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_10_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_11_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_12_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_13_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_14_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_15_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_16_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_17_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_18_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_19_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_20_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_1_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_2_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_3_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_4_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_5_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_6_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_7_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_8_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_9_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_10_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_11_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_12_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_13_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_14_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_15_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_16_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_17_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_18_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_19_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reason_20_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'join_reasons_total', instance: 'Number' })
+
+
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2081,7 +2145,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     },
   ])
   result.nut_advices= nutAdvices.length 
-  
+
   const usersWithCoaching= await User.find({company:idFilter})
     .populate({
       path: 'coachings',
@@ -2134,6 +2198,36 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     index+=1;
   });
   result.jobs_total=jobsTotal;
+
+  const joinReasons= await JoinReason.find()
+  const joinReasonsDict = joinReasons.reduce((acc, jR) => {
+          acc[jR.id] = jR;
+          return acc;
+        }, {});
+  let joinReasonsFound={};
+  let joinReasonsTotal=0;
+  leads.map(lead=>{
+    if(joinReasonsDict[lead.join_reason]){
+      joinReasonsFound[joinReasonsDict[lead.join_reason].name]= (joinReasonsFound[joinReasonsDict[lead.join_reason].name]||0) +1;
+    }
+    else{
+      joinReasonsFound[lead.join_reason]= (joinReasonsFound[lead.join_reason]||0) +1;
+    }
+    joinReasonsTotal+=1;
+  })
+  delete joinReasonsFound.undefined;
+  joinReasonsFound=Object.entries(joinReasonsFound);
+  joinReasonsFound.sort((a, b)=> b[1]-a[1]);
+  joinReasonsFound= joinReasonsFound.slice(0,20);
+  console.table(joinReasonsFound);
+  index=1;
+  joinReasonsFound.forEach(([joinReasonsId, count]) => {
+    result[`join_reason_${index}_total`]=count;
+    result[`join_reason_${index}_percent`]=Number(((count / joinReasonsTotal) * 100).toFixed(2));
+    result[`join_reason_${index}_name`]=joinReasonsFound[index-1][0];
+    index+=1;
+  });
+  result.join_reasons_total=joinReasonsTotal;
 
   return result
 }
