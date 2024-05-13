@@ -77,6 +77,7 @@ AdminDashboardSchema.virtual(`coachings_unknown`, DUMMY_REF).get(function() {ret
 AdminDashboardSchema.virtual(`coachings_male`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_female`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_non_binary`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_renewed`, DUMMY_REF).get(function() {return 0})
 
 
 module.exports = AdminDashboardSchema

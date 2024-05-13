@@ -2054,29 +2054,15 @@ const usersWithCoachings = await User.find({_id: idFilter})
     result[`coachings_${key}`] = value;
   }
 
-const nutAdvices= await User.aggregate([
-  {
-    $match:{
-      company: idFilter,
-    }
-  },
-
-  {
-    $lookup:{
-      from: 'nutritionadvices',
-      localField: 'email',
-      foreignField: 'patient_email',
-      as: 'nutrition_advices',
-    }
-  },
-  {
-    $unwind: {
-      path: '$nutrition_advices',
-    }
-  },
-])
-
-result.nut_advices=nutAdvices.length  
+  const nutAdvices=await User.aggregate([
+    {
+      $match:
+      {
+        company: idFilter,
+      },
+    },
+  ])
+  result.nut_advices= nutAdvices.length 
 
   return result
 }
