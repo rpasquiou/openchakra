@@ -8,6 +8,7 @@ const moment=require('moment')
 const mongoose = require('mongoose')
 const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
 const { upsertCustomer, createRecurrentPayment, upsertProduct, getCheckout, getSubscription, getInvoice } = require('../../server/plugins/payment/stripe')
+const opn = require('opn')
 
 describe('Stripe tests ', () => {
 
@@ -46,6 +47,7 @@ describe('Stripe tests ', () => {
   it.only('must find a subscription', async()=> {
     const res=await getCheckout('cs_test_a1AZBykiduJAP8Wtz6GlAjsTGFSty8hYOZejkTFTecGZd5G8gHl49kFFM0')
     console.log(res)
+    opn(res.url)
   })
 
 })
