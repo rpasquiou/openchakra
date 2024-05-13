@@ -786,7 +786,7 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
       return false
     }
     // Latest coaching started year before => this year's one is available => can not buy
-    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer.coaching_credit>0) {
+    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer?.coaching_credit>0) {
       return false
     }
   }
