@@ -95,7 +95,7 @@ describe('Statistics', () => {
     expect(stats['coachings_renewed']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return job_1_total and job_5_percent and jobs_total', async()=>{
+  it('must return job_1_total and job_5_percent and jobs_total', async()=>{
     const stats = await computeStatistics({ fields: ['job_1_total', 'job_5_percent','job_3_name', 'jobs_total']});
     console.log('job_1_total',stats['job_1_total']);
     console.log('job_5_percent',stats['job_5_percent']);
@@ -105,6 +105,18 @@ describe('Statistics', () => {
     expect(stats['job_5_percent']).toBeGreaterThanOrEqual(0);
     expect(stats['job_3_name']).not.toBeNull();
     expect(stats['jobs_total']).toBeGreaterThanOrEqual(0);
+  })
+
+  it.only('must return join_reason_1_total and join_reason_5_percent and join_reasons_total', async()=>{
+    const stats = await computeStatistics({ fields: ['join_reason_1_total', 'join_reason_5_percent','join_reason_3_name', 'join_reasons_total']});
+    console.log('join_reason_1_total',stats['join_reason_1_total']);
+    console.log('join_reason_5_percent',stats['join_reason_5_percent']);
+    console.log('join_reasons_total',stats['join_reasons_total']);
+    console.log('join_reason_3_name',stats['join_reason_3_name']);
+    expect(stats['join_reason_1_total']).toBeGreaterThanOrEqual(0);
+    expect(stats['join_reason_5_percent']).toBeGreaterThanOrEqual(0);
+    expect(stats['join_reason_3_name']).not.toBeNull();
+    expect(stats['join_reasons_total']).toBeGreaterThanOrEqual(0);
   })
 
 })
