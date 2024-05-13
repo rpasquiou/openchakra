@@ -1371,6 +1371,7 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_unknown', insta
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2021,7 +2022,7 @@ for (const [key, value] of Object.entries(ageRanges)) {
   result[key] = value;
 }
 
-const usersWithCoachings = await User.find({_id: idFilter})
+const usersWithCoachingsByGender = await User.find({_id: idFilter})
   .populate({
     path:'coachings',
     match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
@@ -2063,6 +2064,28 @@ const usersWithCoachings = await User.find({_id: idFilter})
     },
   ])
   result.nut_advices= nutAdvices.length 
+  
+  const usersWithCoaching= await User.find({company:idFilter})
+    .populate({
+      path: 'coachings',
+    })
+ 
+  const usersWithCoachingThisYear = [];
+  let coachingsRenewed = 0;
+  for (let userId in usersWithCoaching) {
+      const user = usersWithCoaching[userId];
+      user.coachings.forEach(coaching => {
+          if (moment(coaching.creation_date).isSame(moment(), 'year')) {
+              usersWithCoachingThisYear.push(user);
+          }
+      });
+  }
+  const usersWithRenewedCoachings = usersWithCoachingThisYear.filter(user => {
+    return user.coachings.some(coaching => {
+        return moment(coaching.creation_date).add(1, 'years').isSame(moment(), 'year');
+    });
+  });
+  result.coachings_renewed = usersWithRenewedCoachings.length;
 
   return result
 }
