@@ -416,7 +416,7 @@ const preCreate = async ({ model, params, user }) => {
 
   if (model=='ticket') {
     if (user?.role!=ROLE_EXTERNAL_DIET) {
-      throw new Error(`VOus devez être diet pour créer un ticket`)
+      throw new Error(`Vous devez être diet pour créer un ticket`)
     }
     params.sender=user?.email
     const ticket=new Ticket(params)
