@@ -194,6 +194,7 @@ const { updateCoachingStatus } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
+const Job = require('../../models/Job')
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -1372,6 +1373,22 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_1_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_2_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_3_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_4_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_5_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_1_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_2_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_3_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_4_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_5_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_1_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_2_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_3_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_4_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'job_5_name', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'jobs_total', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2051,7 +2068,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     }
   return formattedGenderCount;
   })
-  for (const [key, value] of Object.entries(usersWithCoachings)) {
+  for (const [key, value] of Object.entries(usersWithCoachingsByGender)) {
     result[`coachings_${key}`] = value;
   }
 
@@ -2086,6 +2103,37 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     });
   });
   result.coachings_renewed = usersWithRenewedCoachings.length;
+
+  const leads= await Lead.find();
+  const jobs= await Job.find();
+  const jobDict = jobs.reduce((acc, job) => {
+      acc[job.id] = job;
+      return acc;
+    }, {});
+  let jobsFound={};
+  let jobsPercentage={};
+  let jobsTotal=0;
+  leads.map(lead=>{
+    if(jobDict[lead.job]){
+      jobsFound[jobDict[lead.job].name]= (jobsFound[jobDict[lead.job].name]||0) +1;
+    }
+    else{
+      jobsFound[lead.job]= (jobsFound[lead.job]||0) +1;
+    }
+    jobsTotal+=1;
+  })
+  delete jobsFound.undefined;
+  jobsFound=Object.entries(jobsFound);
+  jobsFound.sort((a, b)=> b[1]-a[1]);
+  jobsFound= jobsFound.slice(0,5);
+  let index=1;
+  jobsFound.forEach(([jobId, count]) => {
+    result[`job_${index}_total`]=count;
+    result[`job_${index}_percent`]=Number(((count / jobsTotal) * 100).toFixed(2));
+    result[`job_${index}_name`]=jobsFound[index-1][0];
+    index+=1;
+  });
+  result.jobs_total=jobsTotal;
 
   return result
 }

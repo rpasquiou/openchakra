@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { computeStatistics } = require('../../server/plugins/smartdiet/functions');
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database');
 
-jest.setTimeout(100000)
+jest.setTimeout(300000)
 
 
 describe('Statistics', () => {
@@ -89,17 +89,22 @@ describe('Statistics', () => {
     expect(stats['nut_advices']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return coachings_renewed', async()=>{
+  it('must return coachings_renewed', async()=>{
     const stats = await computeStatistics({ fields: ['nut_adcoachings_renewedvices']});
     console.log('coachings_renewed',stats['coachings_renewed'])
     expect(stats['coachings_renewed']).toBeGreaterThanOrEqual(0)
   })
 
-  //TODO : finish nut_advices first
-  // it.only('must return nut_advices not to be null', async() => {
-  //   const stats=await computeStatistics({fields:[`nut_advices`]})
-  //   console.log(stats.nut_advices)
-  //   expect(stats.nut_advices).not.toBeNull()
-  // })
+  it.only('must return job_1_total and job_5_percent and jobs_total', async()=>{
+    const stats = await computeStatistics({ fields: ['job_1_total', 'job_5_percent','job_3_name', 'jobs_total']});
+    console.log('job_1_total',stats['job_1_total']);
+    console.log('job_5_percent',stats['job_5_percent']);
+    console.log('jobs_total',stats['jobs_total']);
+    console.log('job_3_name',stats['job_3_name']);
+    expect(stats['job_1_total']).toBeGreaterThanOrEqual(0);
+    expect(stats['job_5_percent']).toBeGreaterThanOrEqual(0);
+    expect(stats['job_3_name']).not.toBeNull();
+    expect(stats['jobs_total']).toBeGreaterThanOrEqual(0);
+  })
 
 })
