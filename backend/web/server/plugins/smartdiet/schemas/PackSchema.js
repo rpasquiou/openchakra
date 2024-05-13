@@ -31,6 +31,10 @@ const PackSchema = new Schema({
   discount_price: {
     type: Number,
   },
+  // True if the user's company as a packè_discount > 0
+  has_discount: {
+    type: Boolean,
+  },
   payment_count: {
     type: Number,
     min: [1, `Le nombre d'échéances de paiements doit être positif`],
