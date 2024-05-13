@@ -89,8 +89,6 @@ describe('Statistics', () => {
     expect(stats['nut_advices']).toBeGreaterThanOrEqual(0)
   })
 
-
-
   //TODO : finish nut_advices first
   // it.only('must return nut_advices not to be null', async() => {
   //   const stats=await computeStatistics({fields:[`nut_advices`]})
