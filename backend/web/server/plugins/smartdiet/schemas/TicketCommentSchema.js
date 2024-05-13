@@ -11,9 +11,9 @@ const TicketCommentSchema = new Schema(
       type: Number,
       required: [true, `Le numéro de ticket est obligatoire`],
     },
-    message: {
+    text: {
       type: String,
-      required: [true, `Le message est obligatoire`],
+      required: [true, `Le texte est obligatoire`],
     },
   }, schemaOptions,
 )
