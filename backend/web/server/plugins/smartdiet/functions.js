@@ -1729,6 +1729,14 @@ declareComputedField({model: 'pack', field: 'discount_price', requires: 'price',
     return res
   }
 })
+
+declareComputedField({model: 'pack', field: 'has_discount', getterFn: 
+  async (userId, params, data) => {
+    const discount=(await User.findById(userId).populate('company')).company?.pack_discount || 0
+    return discount>0
+  }
+})
+
 /** Pack end */
 
 const postCreate = async ({ model, params, data, user }) => {
