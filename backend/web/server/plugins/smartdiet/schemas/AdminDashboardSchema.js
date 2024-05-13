@@ -187,4 +187,5 @@ AdminDashboardSchema.virtual(`decline_reason_9_name`, DUMMY_REF).get(function() 
 AdminDashboardSchema.virtual(`decline_reason_10_name`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`decline_reasons_total`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`ratio_stopped_started`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`ratio_dropped_started`, DUMMY_REF).get(function() {return 0})
 module.exports = AdminDashboardSchema
