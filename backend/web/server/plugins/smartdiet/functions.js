@@ -1326,6 +1326,7 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_stopped', insta
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_dropped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_stopped_started', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'ratio_dropped_started', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c1', instance: 'Number' })
@@ -2282,8 +2283,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   });
   result.decline_reasons_total=declineReasonsTotal;
 
-  result.ratio_stopped_started=(result.coachings_stopped / result.coachings_started * 100).toFixed(2);
-  console.log(result.ratio_stopped_started);
+  result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
+  result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
   return result
 }
 

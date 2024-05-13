@@ -119,7 +119,7 @@ describe('Statistics', () => {
     expect(stats['join_reasons_total']).toBeGreaterThanOrEqual(0);
   })
 
-  it.only('must return decline_reason_1_total and decline_reason_5_percent and decline_reasons_total', async()=>{
+  it('must return decline_reason_1_total and decline_reason_5_percent and decline_reasons_total', async()=>{
     const stats = await computeStatistics({ fields: ['decline_reason_1_total', 'decline_reason_5_percent','decline_reason_3_name', 'decline_reasons_total']});
     console.log('decline_reason_1_total',stats['decline_reason_1_total']);
     console.log('decline_reason_5_percent',stats['decline_reason_5_percent']);
@@ -131,4 +131,15 @@ describe('Statistics', () => {
     expect(stats['decline_reasons_total']).toBeGreaterThanOrEqual(0);
   })
 
+  it.only('must return ratio_stopped_started', async()=>{
+    const stats = await computeStatistics({ fields: ['ratio_stopped_started']});
+    console.log('ratio_stopped_started',stats['ratio_stopped_started'])
+    expect(stats['ratio_stopped_started']).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('must return ratio_dropped_started', async()=>{
+    const stats = await computeStatistics({ fields: ['ratio_dropped_started']});
+    console.log('ratio_dropped_started',stats['ratio_dropped_started'])
+    expect(stats['ratio_dropped_started']).toBeGreaterThanOrEqual(0)
+  })
 })
