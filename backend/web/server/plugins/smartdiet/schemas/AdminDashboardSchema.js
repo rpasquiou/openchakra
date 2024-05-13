@@ -78,6 +78,22 @@ AdminDashboardSchema.virtual(`coachings_male`, DUMMY_REF).get(function() {return
 AdminDashboardSchema.virtual(`coachings_female`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_non_binary`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_renewed`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_1_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_2_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_3_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_4_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_5_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_1_percent`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_2_percent`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_3_percent`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_4_percent`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_5_percent`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_1_name`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_2_name`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_3_name`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_4_name`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`job_5_name`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`jobs_total`, DUMMY_REF).get(function() {return 0})
 
 
 module.exports = AdminDashboardSchema
