@@ -1390,21 +1390,13 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_1_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_2_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_3_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_4_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_5_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_1_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_2_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_3_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_4_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_5_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_1_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_2_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_3_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_4_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'job_5_name', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'job_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'jobs_total', instance: 'Number' })
 declareVirtualField({
   model: 'adminDashboard', field: 'join_reasons_details', instance: 'Array', multiple: true,
@@ -2162,7 +2154,6 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
       return acc;
     }, {});
   let jobsFound={};
-  let jobsPercentage={};
   let jobsTotal=0;
   leads.map(lead=>{
     if(jobDict[lead.job]){
@@ -2173,15 +2164,12 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   delete jobsFound.undefined;
   jobsFound=Object.entries(jobsFound);
   jobsFound.sort((a, b)=> b[1]-a[1]);
-  jobsFound= jobsFound.slice(0,10);
-  let index=1;
-  jobsFound.forEach(([jobId, count]) => {
-    result[`job_${index}_total`]=count;
-    result[`job_${index}_percent`]=Number(((count / jobsTotal) * 100).toFixed(2));
-    result[`job_${index}_name`]=jobsFound[index-1][0];
-    index+=1;
+  const jobsArray = jobsFound.map(([name, value]) => {
+    const percent = Number(((value / jobsTotal) * 100).toFixed(2));
+    return { name, value, percent };
   });
-  result.jobs_total=jobsTotal;
+  result.jobs_total = jobsTotal;
+  result.jobs_details = jobsArray;
 
   const joinReasons= await JoinReason.find()
   const joinReasonsDict = joinReasons.reduce((acc, jR) => {
