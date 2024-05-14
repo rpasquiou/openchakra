@@ -113,19 +113,15 @@ describe('Statistics', () => {
     expect(stats['jobs_total']).toBeGreaterThanOrEqual(0);
   })
 
-  it('must return join_reason_1_total and join_reason_5_percent and join_reasons_total', async()=>{
-    const stats = await computeStatistics({ fields: ['join_reason_1_total', 'join_reason_5_percent','join_reason_3_name', 'join_reasons_total']});
-    console.log('join_reason_1_total',stats['join_reason_1_total']);
-    console.log('join_reason_5_percent',stats['join_reason_5_percent']);
+  it.only('must return join_reasons_details, join_reasons_total', async()=>{
+    const stats = await computeStatistics({ fields: ['join_reasons_details, join_reasons_total']});
+    console.log('join_reasons_details',stats['join_reasons_details']);
     console.log('join_reasons_total',stats['join_reasons_total']);
-    console.log('join_reason_3_name',stats['join_reason_3_name']);
-    expect(stats['join_reason_1_total']).toBeGreaterThanOrEqual(0);
-    expect(stats['join_reason_5_percent']).toBeGreaterThanOrEqual(0);
-    expect(stats['join_reason_3_name']).not.toBeNull();
     expect(stats['join_reasons_total']).toBeGreaterThanOrEqual(0);
+    expect(stats['join_reasons_details']).not.toBeNull();
   })
 
-  it.only('must return decline_reasons_details, decline_reasons_total', async()=>{
+  it('must return decline_reasons_details, decline_reasons_total', async()=>{
     const stats = await computeStatistics({ fields: ['decline_reasons_details, decline_reasons_total']});
     console.log('decline_reasons_details',stats['decline_reasons_details']);
     console.log('decline_reasons_total',stats['decline_reasons_total']);
