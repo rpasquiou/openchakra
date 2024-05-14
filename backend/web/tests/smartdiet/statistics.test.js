@@ -101,19 +101,15 @@ describe('Statistics', () => {
     expect(stats['coachings_renewed']).toBeGreaterThanOrEqual(0)
   })
 
-  it('must return job_1_total and job_5_percent and jobs_total', async()=>{
-    const stats = await computeStatistics({ fields: ['job_1_total', 'job_5_percent','job_3_name', 'jobs_total']});
-    console.log('job_1_total',stats['job_1_total']);
-    console.log('job_5_percent',stats['job_5_percent']);
+  it.only('must return jobs_details, jobs_total', async()=>{
+    const stats = await computeStatistics({ fields: ['jobs_details, jobs_total']});
+    console.log('jobs_details',stats['jobs_details']);
     console.log('jobs_total',stats['jobs_total']);
-    console.log('job_3_name',stats['job_3_name']);
-    expect(stats['job_1_total']).toBeGreaterThanOrEqual(0);
-    expect(stats['job_5_percent']).toBeGreaterThanOrEqual(0);
-    expect(stats['job_3_name']).not.toBeNull();
     expect(stats['jobs_total']).toBeGreaterThanOrEqual(0);
+    expect(stats['jobs_details']).toBeTruthy();
   })
 
-  it.only('must return join_reasons_details, join_reasons_total', async()=>{
+  it('must return join_reasons_details, join_reasons_total', async()=>{
     const stats = await computeStatistics({ fields: ['join_reasons_details, join_reasons_total']});
     console.log('join_reasons_details',stats['join_reasons_details']);
     console.log('join_reasons_total',stats['join_reasons_total']);
