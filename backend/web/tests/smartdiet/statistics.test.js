@@ -65,10 +65,16 @@ describe('Statistics', () => {
     expect(stats['started_coaching_no_birthday']).not.toBeNull
   })
 
-  it('must return started_coaching_18_24', async()=>{
+  it('must return started_coachings_18_24', async()=>{
     const stats = await computeStatistics({ fields: ['started_coachings_18_24']});
     console.log('started_coachings_18_24',stats['started_coachings_18_24'])
     expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('must return started_coachings_25_29_percent', async()=>{
+    const stats = await computeStatistics({ fields: ['started_coachings_25_29_percent']});
+    console.log('started_coachings_25_29_percent',stats['started_coachings_25_29_percent'])
+    expect(stats['started_coachings_25_29_percent']).toBeGreaterThanOrEqual(0)
   })
 
   it('must return coachings_male', async()=>{
@@ -131,13 +137,13 @@ describe('Statistics', () => {
     expect(stats['decline_reasons_total']).toBeGreaterThanOrEqual(0);
   })
 
-  it.only('must return ratio_stopped_started', async()=>{
+  it('must return ratio_stopped_started', async()=>{
     const stats = await computeStatistics({ fields: ['ratio_stopped_started']});
     console.log('ratio_stopped_started',stats['ratio_stopped_started'])
     expect(stats['ratio_stopped_started']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return ratio_dropped_started', async()=>{
+  it('must return ratio_dropped_started', async()=>{
     const stats = await computeStatistics({ fields: ['ratio_dropped_started']});
     console.log('ratio_dropped_started',stats['ratio_dropped_started'])
     expect(stats['ratio_dropped_started']).toBeGreaterThanOrEqual(0)
