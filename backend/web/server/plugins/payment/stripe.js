@@ -191,7 +191,7 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
 }
 
 const createRecurrentPayment = async ({
-  amount, product_stripe_id, customer_email, success_url, internal_reference}) => {
+  amount, product_stripe_id, customer_email, success_url, internal_reference, description}) => {
   console.log(`Initiating payment for ${customer_email}/${product_stripe_id} ${amount}€`)
   const checkout=await SecretStripe.checkout.sessions.create({
     customer_email: customer_email,

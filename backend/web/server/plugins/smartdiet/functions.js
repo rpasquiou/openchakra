@@ -1737,6 +1737,8 @@ declareComputedField({model: 'pack', field: 'has_discount', getterFn:
   }
 })
 
+declareVirtualField({model: 'pack', field: 'description', type: 'String', requires: 'payment_count'})
+
 /** Pack end */
 
 const postCreate = async ({ model, params, data, user }) => {
