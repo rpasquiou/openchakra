@@ -1467,36 +1467,13 @@ declareVirtualField({ model: 'adminDashboard', field: 'join_reason_18_name', ins
 declareVirtualField({ model: 'adminDashboard', field: 'join_reason_19_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'join_reason_20_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'join_reasons_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_1_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_2_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_3_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_4_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_5_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_6_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_7_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_name', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_name', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'decline_reasons_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'outcalls_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'incalls_total', instance: 'Number' })
@@ -2285,7 +2262,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   });
   result.join_reasons_total=joinReasonsTotal;
 
-  const declineReasons= await DeclineReason.find()
+  const declineReasons= await DeclineReason.find();
+  const declineReasonsTab=[];
   const declineReasonsDict = declineReasons.reduce((acc, jR) => {
           acc[jR.id] = jR;
           return acc;
@@ -2301,15 +2279,12 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   delete declineReasonsFound.undefined;
   declineReasonsFound=Object.entries(declineReasonsFound);
   declineReasonsFound.sort((a, b)=> b[1]-a[1]);
-  declineReasonsFound= declineReasonsFound.slice(0,10);
-  index=1;
-  declineReasonsFound.forEach(([declineReasonsId, count]) => {
-    result[`decline_reason_${index}_total`]=count;
-    result[`decline_reason_${index}_percent`]=Number(((count / declineReasonsTotal) * 100).toFixed(2));
-    result[`decline_reason_${index}_name`]=declineReasonsFound[index-1][0];
-    index+=1;
+  const declineReasonsArray = declineReasonsFound.map(([name, value]) => {
+    const percent = Number(((value / declineReasonsTotal) * 100).toFixed(2));
+    return { name, value, percent };
   });
-  result.decline_reasons_total=declineReasonsTotal;
+  result.decline_reasons_total = declineReasonsTotal;
+  result.decline_reasons_details = declineReasonsArray;
 
   result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
   result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
