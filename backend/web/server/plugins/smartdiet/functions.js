@@ -124,6 +124,8 @@ const {
   COACHING_STATUS_NOT_STARTED,
   APPOINTMENT_VALID,
   COACHING_STATUS_STARTED,
+  CALL_DIRECTION_IN_CALL,
+  CALL_DIRECTION_OUT_CALL,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1496,7 +1498,22 @@ declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_8_name', i
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_9_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reason_10_name', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
-
+declareVirtualField({ model: 'adminDashboard', field: 'outcalls_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'incalls_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'outcall_per_operator', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'incall_per_operator', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 
 //end adminDashboard
 
@@ -2296,6 +2313,38 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
 
   result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
   result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
+
+  const groupedLeadsByOp=lodash.groupBy(leads, 'operator');
+  const inCallPerOperator=[];
+  const outCallPerOperator=[];
+  let totalInCalls=0;
+  let totalOutCalls=0;
+  for(let operator in groupedLeadsByOp){
+    let users=groupedLeadsByOp[operator];
+    let inCalls=0;
+    let outCalls=0;
+    let operatorName='unknown'
+    if(operator!='undefined'){
+      const user=await User.findById(operator)
+      operatorName= user.firstname + ' ' + user.lastname
+    }
+    for(let user in users){
+      if(users[user].call_direction == CALL_DIRECTION_IN_CALL){
+        inCalls+=1;
+        totalInCalls+=1;
+      }
+      if(users[user].call_direction == CALL_DIRECTION_OUT_CALL){
+        outCalls+=1;
+        totalOutCalls+=1;
+      }
+    }
+    inCallPerOperator.push({'name':operatorName, 'value':inCalls});
+    outCallPerOperator.push({'name':operatorName, 'value':outCalls});
+  }
+  result.incalls_per_operator=inCallPerOperator;
+  result.outcalls_per_operator=outCallPerOperator;
+  result.incalls_total=totalInCalls;
+  result.outcalls_total=totalOutCalls;
   return result
 }
 

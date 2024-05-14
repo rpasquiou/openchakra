@@ -71,7 +71,7 @@ describe('Statistics', () => {
     expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('must return started_coachings_25_29_percent', async()=>{
+  it('must return started_coachings_25_29_percent', async()=>{
     const stats = await computeStatistics({ fields: ['started_coachings_25_29_percent']});
     console.log('started_coachings_25_29_percent',stats['started_coachings_25_29_percent'])
     expect(stats['started_coachings_25_29_percent']).toBeGreaterThanOrEqual(0)
@@ -147,5 +147,17 @@ describe('Statistics', () => {
     const stats = await computeStatistics({ fields: ['ratio_dropped_started']});
     console.log('ratio_dropped_started',stats['ratio_dropped_started'])
     expect(stats['ratio_dropped_started']).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('must return incalls_total, outcalls_total, incalls_per_operator, outcalls_per_operator', async()=>{
+    const stats = await computeStatistics({ fields: ['incalls_total, outcalls_total, incalls_per_operator, outcalls_per_operator']});
+    console.log('incalls_total',stats['incalls_total'])
+    console.log('outcalls_total',stats['outcalls_total'])
+    console.log('incalls_per_operator',stats['incalls_per_operator'])
+    console.log('outcalls_per_operator',stats['outcalls_per_operator'])
+    expect(stats['incalls_total']).toBeTruthy();
+    expect(stats['outcalls_total']).toBeTruthy();
+    expect(stats['incalls_per_operator']).toBeTruthy();
+    expect(stats['outcalls_per_operator']).toBeTruthy();
   })
 })
