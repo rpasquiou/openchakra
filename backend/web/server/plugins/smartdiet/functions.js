@@ -1831,7 +1831,7 @@ const postCreate = async ({ model, params, data, user }) => {
 
 
   if (model=='pack') {
-    const stripe_id=await upsertProduct({name: data.title})
+    const stripe_id=await upsertProduct({name: data.title, description: data.description})
     await Pack.findByIdAndUpdate(data._id, {stripe_id: stripe_id})
   }
   return data
