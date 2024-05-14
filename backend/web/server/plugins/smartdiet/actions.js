@@ -358,11 +358,11 @@ const buyPack = async ({value}, sender) => {
   const success_url=`https://${getHostName()}${API_ROOT}payment-hook?checkout_id={CHECKOUT_SESSION_ID}&success=true`
 
   // To update purchase.external_id
-  return paymentPlugin.createRecurrentPayment({
+  const payment_promise=pack.payment_count>1 ? paymentPlugin.createRecurrentPayment : paymentPlugin.createSinglePayment
+  return payment_promise({
     amount: pack.discount_price, 
     customer_email: sender.email,
     product_stripe_id: pack.stripe_id,
-    description: pack.title, 
     success_url: success_url, 
     internal_reference: purchase._id.toString(),
   })

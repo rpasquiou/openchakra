@@ -22,7 +22,7 @@ describe('Stripe tests ', () => {
   })
 
   it('must create a product', async() => {
-    product_stripe_id = await upsertProduct({name: 'Test produit'})
+    product_stripe_id = await upsertProduct({name: 'Test produit 17', description: 'Un paiement aujoudhui, ensuite 12'})
     console.log('product', product_stripe_id)
   })
 
@@ -41,13 +41,13 @@ describe('Stripe tests ', () => {
       product_stripe_id,
       customer_email: EMAIL,
       success_url, failure_url,
-      internal_reference: 'test42'
+      internal_reference: 'test42',
     })
     console.log(res)
     opn(res.url)
   })
 
-  it.only('must find the sub and checkout', async() => {
+  it('must find the sub and checkout', async() => {
     const subId='sub_1PGGFRI6ihNkRdH8eMmGUpjJ'
     const checkoutId='cs_test_a1eIlUeVjNicprxF1rbRkW0fVSn9VyulNptKGzRBiOgiMyfWsjSsXuoB09'
     const sub=await getSubscription(subId)
