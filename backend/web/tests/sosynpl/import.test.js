@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash = require('lodash')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-const { importJobs, importSectors, importJobFiles, importJobFileFeatures } = require('../../server/plugins/sosynpl/import')
+const { importJobs, importSectors, importJobFiles, importJobFileFeatures, importHardSkills, fixFiles } = require('../../server/plugins/sosynpl/import')
 const { loadCache, saveCache } = require('../../utils/import')
 
 const ORIGINAL_DB=true
@@ -20,6 +20,7 @@ describe('Test imports', () => {
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
     loadCache()
+    fixFiles(ROOT)
   })
   
   afterAll(async () => {
@@ -44,6 +45,11 @@ describe('Test imports', () => {
 
   it('must import sectors', async () => {
     const res = await importSectors(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `Secteurs`)
+  })
+
+  it.only('must import hard skills', async () => {
+    return
+    const res = await importHardSkills(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `4 - Compétences savoir faire`, 2)
   })
 
 })
