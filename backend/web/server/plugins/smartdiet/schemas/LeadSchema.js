@@ -56,7 +56,9 @@ const LeadSchema = new Schema({
     type: String,
     enum: Object.keys(CALL_STATUS),
     default: CALL_STATUS_TO_CALL,
-    required: [true, `Le status d'appel est obligatoire`],
+    // TODO: manage both lead && calls
+    //required: [true, `Le status d'appel est obligatoire`],
+    required: false,
     set: v => v || undefined,
   },
   campain: {
