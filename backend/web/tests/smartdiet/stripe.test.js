@@ -34,20 +34,26 @@ describe('Stripe tests ', () => {
   it('must create a payment', async() => {
     const success_url='https://my-alfred.io'
     const failure_url='https://my-alfred.io'
-    await createRecurrentPayment({
+    const res=await createRecurrentPayment({
       times:3, 
       amount: 10,
       customer_stripe_id, 
       product_stripe_id,
       customer_email: EMAIL,
-      success_url, failure_url
+      success_url, failure_url,
+      internal_reference: 'test42'
     })
-  })
-
-  it.only('must find a subscription', async()=> {
-    const res=await getCheckout('cs_test_a1AZBykiduJAP8Wtz6GlAjsTGFSty8hYOZejkTFTecGZd5G8gHl49kFFM0')
     console.log(res)
     opn(res.url)
+  })
+
+  it.only('must find the sub and checkout', async() => {
+    const subId='sub_1PGGFRI6ihNkRdH8eMmGUpjJ'
+    const checkoutId='cs_test_a1eIlUeVjNicprxF1rbRkW0fVSn9VyulNptKGzRBiOgiMyfWsjSsXuoB09'
+    const sub=await getSubscription(subId)
+    const checkout=await getCheckout(checkoutId)
+    console.log(checkout)
+    console.log(sub)
   })
 
 })

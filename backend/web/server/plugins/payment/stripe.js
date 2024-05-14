@@ -190,9 +190,10 @@ const createAnonymousPayment = ({amount, description, customer_email, success_ur
   })
 }
 
-const createRecurrentPayment = async ({amount, times, product_stripe_id, customer_email, customer_stripe_id, success_url, failure_url, internal_reference}) => {
-  console.log(`Initiating payment for ${customer_stripe_id}/${product_stripe_id}x${times}€`)
-  return SecretStripe.checkout.sessions.create({
+const createRecurrentPayment = async ({
+  amount, product_stripe_id, customer_email, success_url, internal_reference}) => {
+  console.log(`Initiating payment for ${customer_email}/${product_stripe_id} ${amount}€`)
+  const checkout=await SecretStripe.checkout.sessions.create({
     customer_email: customer_email,
     mode: 'subscription',
     line_items: [{
@@ -204,12 +205,12 @@ const createRecurrentPayment = async ({amount, times, product_stripe_id, custome
         },
         unit_amount: amount*100,
       },
-      quantity:times,
+      quantity:1,
     }],
     client_reference_id: internal_reference,
-    success_url: success_url,
-    cancel_url: failure_url,
+    success_url,
   })
+  return checkout
 }
 
 /**
@@ -234,11 +235,18 @@ const createTransfer = ({destination, amount}) => {
 }
 
 const getCheckout = id => {
-  return SecretStripe.checkout.sessions.retrieve(id)
+  return SecretStripe.checkout.sessions.retrieve(
+    id,
+    { expand: ['subscription'],}
+  )
 }
 
 const getSubscription = id => {
   return SecretStripe.subscriptions.retrieve(id)
+}
+
+const setSubscriptionEnd = async ({subscription_id, end_date}) => {
+  await SecretStripe.subscriptions.update(subscription_id, {cancel_at: end_date.unix()})
 }
 
 module.exports={
@@ -256,4 +264,5 @@ module.exports={
   createRecurrentPayment,
   upsertProduct,
   getSubscription,
+  setSubscriptionEnd,
 }

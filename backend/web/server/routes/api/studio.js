@@ -402,14 +402,12 @@ router.post('/register-and-login', (req, res) => {
 // Validate webhook
 router.get('/payment-hook', async (req, res) => {
   console.log('query is', req.query)
-  if (req.query.purchase) {
+  if (req.query.checkout_id) {
     const success=req.query.success=='true'
-    await Purchase.findByIdAndUpdate(req.query.purchase, {
-      status: success ? PURCHASE_STATUS_COMPLETE :PURCHASE_STATUS_FAILED
-    })
     const {url}=await PageTag_.findOne({tag: `PACK_PAYMENT_${success ? 'SUCCESS' : 'FAILURE'}`})
+    console.log('Redirect URL is', url)
     if (paymentCb) {
-      await paymentCb({purchase: req.query.purchase, success})
+      await paymentCb({checkout_id: req.query.checkout_id, success})
     }
     return res.redirect(url)
   }
@@ -424,6 +422,7 @@ router.get('/payment-hook', async (req, res) => {
 router.post('/payment-hook', (req, res) => {
   const params=req.body
   console.log(`Payment hook called with params ${JSON.stringify(params)}`)
+  // VivaWallet
   if (params.EventTypeId==HOOK_PAYMENT_SUCCESSFUL) {
     return Payment.updateOne({orderCode: params.EventData.OrderCode}, {status: PAYMENT_SUCCESS})
       .then(() => res.json)
@@ -431,6 +430,10 @@ router.post('/payment-hook', (req, res) => {
   else if (params.EventTypeId==HOOK_PAYMENT_FAILED) {
     return Payment.updateOne({orderCode: params.EventData.OrderCode}, {status: PAYMENT_FAILURE})
       .then(() => res.json)
+  }
+  // Stripe
+  else {
+
   }
   console.error(`Hook was not handled`)
   return res.json()
