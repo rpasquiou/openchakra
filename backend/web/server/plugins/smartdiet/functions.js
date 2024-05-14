@@ -1372,6 +1372,17 @@ declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59',
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74_percent', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_unknown', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
@@ -2130,11 +2141,12 @@ for(let age=0; age<75; age++){
     ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
   }
   else{
-    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age]
+    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age];
   }
 }
 for (const [key, value] of Object.entries(ageRanges)) {
   result[key] = value;
+  result[`${key}_percent`] = Number((value/allUsersWithStartedCoaching.length*100).toFixed(2));
 }
 
 const usersWithCoachingsByGender = await User.find({_id: idFilter})
@@ -2247,7 +2259,6 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   joinReasonsFound=Object.entries(joinReasonsFound);
   joinReasonsFound.sort((a, b)=> b[1]-a[1]);
   joinReasonsFound= joinReasonsFound.slice(0,20);
-  console.table(joinReasonsFound);
   index=1;
   joinReasonsFound.forEach(([joinReasonsId, count]) => {
     result[`join_reason_${index}_total`]=count;
