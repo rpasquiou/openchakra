@@ -1430,7 +1430,38 @@ declareVirtualField({
     options: { ref: 'pair' }
   },
 })
-
+declareVirtualField({
+  model: 'adminDashboard', field: 'nut_advices_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'coachings_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'declined_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'unreachables_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'nut_advices_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'declined_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'unreachables_per_operator_total', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -1909,6 +1940,7 @@ const computeStatistics = async ({ id, fields }) => {
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const companies=await Company.find({_id: idFilter})
+  const users= await User.find();
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
@@ -2223,34 +2255,74 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   const groupedLeadsByOp=lodash.groupBy(leads, 'operator');
   const inCallPerOperator=[];
   const outCallPerOperator=[];
+  const nutAdvicesPerOperator=[];
+  const unreachablesPerOperator=[];
+  const coaPerOperator=[];
+  const declinedPerOperator=[];
+  
   let totalInCalls=0;
   let totalOutCalls=0;
+
+  let nutAdvicesPerOperatorTotal=0;
+  let coaPerOperatorTotal=0;
+  let declinedPerOperatorTotal=0;
+  let unreachablesPerOperatorTotal=0;
   for(let operator in groupedLeadsByOp){
-    let users=groupedLeadsByOp[operator];
+    let leadByOp=groupedLeadsByOp[operator];
     let inCalls=0;
     let outCalls=0;
-    let operatorName='unknown'
-    if(operator!='undefined'){
-      const user=await User.findById(operator)
-      operatorName= user.firstname + ' ' + user.lastname
-    }
-    for(let user in users){
-      if(users[user].call_direction == CALL_DIRECTION_IN_CALL){
+    let nutAdvices=0;
+    let coa=0;
+    let declined=0;
+    let unreachable=0;
+    const operatorName=operator!='undefined' ? users.find(user=>user._id.toString() == operator).fullname : "unknown";
+    for(let lead in leadByOp){
+      if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
         inCalls+=1;
         totalInCalls+=1;
       }
-      if(users[user].call_direction == CALL_DIRECTION_OUT_CALL){
+      if(leadByOp[lead].call_direction == CALL_DIRECTION_OUT_CALL){
         outCalls+=1;
         totalOutCalls+=1;
+      }
+      if(leadByOp[lead].nutrition_converted){
+        nutAdvices+=1
+        nutAdvicesPerOperatorTotal+=1;
+      }
+      if(leadByOp[lead].coaching_converted){
+        coa+=1;
+        coaPerOperatorTotal+=1;
+      }
+      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_NOT_INTERESTED){
+        declined+=1;
+        declinedPerOperatorTotal+=1;
+      }
+      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_UNREACHABLE){
+        unreachable+=1;
+        unreachablesPerOperatorTotal+=1;
       }
     }
     inCallPerOperator.push({'name':operatorName, 'value':inCalls});
     outCallPerOperator.push({'name':operatorName, 'value':outCalls});
+    nutAdvicesPerOperator.push({'name':operatorName, 'value':nutAdvices});
+    coaPerOperator.push({'name':operatorName, 'value':coa});
+    declinedPerOperator.push({'name':operatorName, 'value':declined});
+    unreachablesPerOperator.push({'name':operatorName, 'value':unreachable});
   }
   result.incalls_per_operator=inCallPerOperator;
   result.outcalls_per_operator=outCallPerOperator;
+  result.nut_advices_per_operator_details = nutAdvicesPerOperator;
+  result.coachings_per_operator_details = coaPerOperator;
+  result.declined_per_operator_details = declinedPerOperator;
+  result.unreachables_per_operator_details = unreachablesPerOperator;
+  
   result.incalls_total=totalInCalls;
   result.outcalls_total=totalOutCalls;
+  result.nut_advices_per_operator_total = nutAdvicesPerOperatorTotal;
+  result.coachings_per_operator_total = coaPerOperatorTotal;
+  result.declined_per_operator_total = declinedPerOperatorTotal;
+  result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
+  
   return result
 }
 

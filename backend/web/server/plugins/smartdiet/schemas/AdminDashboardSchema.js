@@ -101,4 +101,12 @@ AdminDashboardSchema.virtual(`incalls_per_operator`, DUMMY_REF).get(function() {
 AdminDashboardSchema.virtual(`outcalls_per_operator`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`incalls_total`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`outcalls_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`nut_advices_per_operator_details`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_per_operator_details`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`declined_per_operator_details`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`unreachables_per_operator_details`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`nut_advices_per_operator_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_per_operator_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`declined_per_operator_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`unreachables_per_operator_total`, DUMMY_REF).get(function() {return 0})
 module.exports = AdminDashboardSchema
