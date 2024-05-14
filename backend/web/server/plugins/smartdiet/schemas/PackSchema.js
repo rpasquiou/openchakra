@@ -14,10 +14,6 @@ const PackSchema = new Schema({
     type: String,
     required: [true, `Le nom du pack est obligatoire`]
   },
-  description: {
-    type: String,
-    required: false,
-  },
   checkup: {
     type: Boolean,
     required: [true, `Indiquez si l'offre inclut un bilan`]
@@ -51,4 +47,12 @@ const PackSchema = new Schema({
 {...schemaOptions}
 )
 
+PackSchema.virtual('description', DUMMY_REF).get(function() {
+  if (this.payment_count==1) {
+    return `Paiement unique`
+  }
+  else if (this.payment_count>1) {
+    return `Un paiment aujourd'hui puis chaque mois pendant ${this.payment_count-1} mois`
+  }
+})
 module.exports = PackSchema
