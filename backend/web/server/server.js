@@ -161,6 +161,7 @@ require('./models/Purchase')
 require('./models/JobFile')
 require('./models/JobFileFeature')
 require('./models/LanguageLevel')
+require('./models/HardSkill')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
