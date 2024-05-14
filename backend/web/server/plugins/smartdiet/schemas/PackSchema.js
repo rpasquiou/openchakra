@@ -14,6 +14,10 @@ const PackSchema = new Schema({
     type: String,
     required: [true, `Le nom du pack est obligatoire`]
   },
+  description: {
+    type: String,
+    required: false,
+  },
   checkup: {
     type: Boolean,
     required: [true, `Indiquez si l'offre inclut un bilan`]
