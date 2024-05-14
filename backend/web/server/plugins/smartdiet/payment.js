@@ -15,10 +15,12 @@ const paymentCb = async ({checkout_id, success}) => {
     // Update purchase status
     await Purchase.findByIdAndUpdate(purchase._id, {status: PURCHASE_STATUS_COMPLETE})
     // Set subscription cancel_date
-    await paymentPlugin.setSubscriptionEnd({
-      subscription_id: checkout.subscription.id,
-      end_date: moment().add(pack.payment_count-1, 'month').add(1, 'day')
-    })
+    if (!!checkout.subscription_id) {
+      await paymentPlugin.setSubscriptionEnd({
+        subscription_id: checkout.subscription.id,
+        end_date: moment().add(pack.payment_count-1, 'month').add(1, 'day')
+      })
+    }
     // If pack is only cs, link to latest coaching
     if (!pack.checkup) {
       const coaching=purchase.customer.latest_coachings[0]
