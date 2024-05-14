@@ -68,7 +68,6 @@
     "node-localstorage": "^2.2.1",
     "node-mailjet": "^6.0.4",
     "nominatim-client": "^3.2.1",
-    "opn": "^6.0.0",
     "passport": "^0.4.0",
     "passport-anonymous": "^1.0.1",
     "passport-cookie": "^1.0.9",
@@ -122,6 +121,7 @@
     "is-webview": "^1.0.1",
     "jest": "^27.5.1",
     "jssoup": "^0.0.15",
+    "opn": "^6.0.0",
     "print-tree": "^0.1.5",
     "systemjs-plugin-json": "^0.3.0",
     "tree-traversal": "^1.1.2"

@@ -49,7 +49,7 @@ const Coaching = require('../../models/Coaching')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-const { PURCHASE_STATUS_NEW, API_ROOT } = require('../../../utils/consts')
+const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -348,25 +348,28 @@ const buyPack = async ({value}, sender) => {
   if (lodash.isEmpty(value)) {
     return {}
   }
+  // No pack provided: the user can buy at leaast one pack
   const model=await getModel(value)
   if (model!='pack') {
     return true
   }
   const pack=(await loadFromDb({model: 'pack', id: value, fields:['discount_price', 'payment_count', 'stripe_id'], user: sender}))[0]  
   const purchase=await Purchase.create({customer: sender, pack})
-  const success_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=true`
-  const failure_url=`https://${getHostName()}${API_ROOT}payment-hook?purchase=${purchase._id}&success=false`
+  const success_url=`https://${getHostName()}${API_ROOT}payment-hook?checkout_id={CHECKOUT_SESSION_ID}&success=true`
+
+  // To update purchase.external_id
   return paymentPlugin.createRecurrentPayment({
     amount: pack.discount_price, 
-    times: pack.payment_count,
     customer_email: sender.email,
     product_stripe_id: pack.stripe_id,
     description: pack.title, 
     success_url: success_url, 
-    failure_url: failure_url,
     internal_reference: purchase._id.toString(),
   })
-    .then(payment => {
+    .then(async payment => {
+      purchase.external_id=payment.id
+      purchase.status=PURCHASE_STATUS_PENDING
+      await purchase.save()
       return {redirect: payment.url}
     })
 }
