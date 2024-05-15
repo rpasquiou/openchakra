@@ -141,6 +141,21 @@ declareEnumField({model: 'languageLevel', field: 'language', enumValues: LANGUAG
 declareEnumField({model: 'languageLevel', field: 'level', enumValues: LANGUAGE_LEVEL})
 /** Job end */
 
+/** Category start */
+declareVirtualField({model: 'category', field: 'children', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'category' }
+},
+})
+declareVirtualField({model: 'category', field: 'skills', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'skill' }
+},
+})
+/** Category end */
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
