@@ -1,25 +1,54 @@
 const fs=require('fs')
 const lodash=require('lodash')
 const path = require('path')
-const {importData, extractData, displayCache}=require('../../../utils/import')
-const {XL_TYPE } = require('../../../utils/consts')
+const {importData, extractData, displayCache, guessFileType}=require('../../../utils/import')
+const {XL_TYPE, TEXT_TYPE } = require('../../../utils/consts')
 require('../../../server/models/JobFile')
 require('../../../server/models/JobFileFeature')
 require('../../../server/models/Job')
 require('../../../server/models/Sector')
 require('../../../server/models/HardSkill')
-const { normalize } = require('../../../utils/text')
+require('../../../server/models/Category')
+const { normalize, guessDelimiter } = require('../../../utils/text')
 const { isNewerThan } = require('../../utils/filesystem')
+const NodeCache=require('node-cache')
+
+const filesCache=new NodeCache()
+
+const getFileParams = async path => {
+  let params=filesCache.get(path)
+  !params && console.log('******** not found')
+  if (!params) {
+    params={}
+    params.contents=fs.readFileSync(path)
+    params.type=await guessFileType(params.contents)
+    if (params.type==TEXT_TYPE) {
+      params.delimiter=await guessDelimiter(params.contents.toString())
+    }
+    filesCache.set(path, params)
+  }
+  return params
+}
 
 const loadRecords = async (path, tab_name, from_line) =>  {
   const msg=`Loading records from ${path}`
   console.time(msg)
-  const contents=fs.readFileSync(path)
-  return extractData(contents, {format: XL_TYPE, tab: tab_name, from_line})
+  const options={tab: tab_name, from_line}
+  const params=await getFileParams(path)
+  return extractData(params.contents, {format: params.type, ...params, ...options})
     .then(({records}) => {
       console.timeEnd(msg)
       return records
     })
+}
+
+const saveRecords = async (path, keys, data) =>  {
+  const msg=`Saving records to ${path}`
+  console.time(msg)
+  const header=keys.join(';')
+  const contents=data.map(d => keys.map(k => d[k]).join(';'))
+  const fullContents=header+'\n'+contents.join('\n')
+  return fs.writeFileSync(path, fullContents)
 }
 
 const fixHardSkills = async directory => {
@@ -30,10 +59,13 @@ const fixHardSkills = async directory => {
   }
   
   const jobs=await loadRecords(INPUT, 'Lien Fiche Métiers Compétences', 3)
-  console.log(jobs.slice(0, 5))
   const hardSkills=await loadRecords(INPUT, '4 - Compétences savoir faire', 2)
-
-  // await saveRecords(OUTPUT, Object.keys(foodprograms[0]), foodprograms)
+  const fullHardSkills=hardSkills.map(hs => ({
+    ...lodash.omit(hs, ['Type compétences (1=savoir faire, 3=savoir)', 'SO SYNPL à garder']),
+    'code Fiche Métiers': jobs.find(j => j['Code compétences']==hs['Code compétences Savoir faire'])?.['code Fiche Métiers']
+  }))
+  console.log(fullHardSkills.slice(0, 2))
+  await saveRecords(OUTPUT, Object.keys(fullHardSkills[0]), fullHardSkills)
 }
 
 const fixFiles = async directory => {
@@ -105,14 +137,44 @@ const importSectors = async (input_file, tab_name) => {
     }
     return name
   })
-  console.log(records.slice(0, 10))
   return importData({model: 'sector', data:records, mapping:SECTOR_MAPPING, identityKey: SECTOR_KEY, 
       migrationKey: SECTOR_MIGRATION_KEY})
 }
 
+// 1st level categories
+const CATEGORY_1_MAPPING={
+  name: `Catégorie Savoir faire`,
+}
+
+const CATEGORY_1_KEY='name'
+const CATEGORY_1_MIGRATION_KEY='name'
+
+const importCategories1 = async (input_file, tab_name, from_line) => {
+  let records=await loadRecords(input_file, tab_name, from_line)
+  return importData({model: 'category', data:records, mapping:CATEGORY_1_MAPPING, 
+    identityKey: CATEGORY_1_KEY, migrationKey: CATEGORY_1_MIGRATION_KEY})
+}
+
+// 2nd level categories ; we know name is unique
+const CATEGORY_2_MAPPING={
+  name: `Sous-Catégorie Savoir faire`,
+  parent: ({record, cache}) => cache('category', record['Catégorie Savoir faire'])
+}
+
+const CATEGORY_2_KEY='name'
+const CATEGORY_2_MIGRATION_KEY='name'
+
+const importCategories2 = async (input_file, tab_name, from_line) => {
+  let records=await loadRecords(input_file, tab_name, from_line)
+  return importData({model: 'category', data:records, mapping:CATEGORY_2_MAPPING, 
+    identityKey: CATEGORY_2_KEY, migrationKey: CATEGORY_2_MIGRATION_KEY})
+}
+
 const HARD_SKILL_MAPPING={
+  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
   name: `Libellé Savoir faire`,
   code: `Code compétences Savoir faire`,
+  category: ({record, cache}) => cache('category', record['Sous-Catégorie Savoir faire']),
 }
 
 const HARD_SKILL_KEY='code'
@@ -120,12 +182,13 @@ const HARD_SKILL_MIGRATION_KEY='code'
 
 const importHardSkills = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  records=records.filter(r => !lodash.isEmpty(r['Libellé Savoir faire']?.trim())).slice(0, 100)
+  records=records.filter(r => !lodash.isEmpty(r['Libellé Savoir faire']?.trim()))
   return importData({model: 'hardSkill', data:records, mapping:HARD_SKILL_MAPPING, 
     identityKey: HARD_SKILL_KEY, migrationKey: HARD_SKILL_MIGRATION_KEY})
 }
 
 module.exports={
   importJobFiles, importJobs, importSectors, importJobFileFeatures, importHardSkills, fixFiles,
-}
+  importCategories1, importCategories2,
+}  
 

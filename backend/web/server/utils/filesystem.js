@@ -3,7 +3,6 @@ const path = require('path')
 const crypto = require('crypto')
 const multer = require('multer')
 const {IMAGE_EXTENSIONS, TEXT_EXTENSIONS, XL_EXTENSIONS, PDF_EXTENSIONS} = require('../../utils/consts')
-const { fixFiles } = require('../plugins/smartdiet/import')
 
 const ensureDirectoryExists = dirName => {
   const rootDir = path.join(path.dirname(require.main.filename), '..')
