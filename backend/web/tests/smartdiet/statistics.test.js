@@ -148,26 +148,30 @@ describe('Statistics', () => {
     expect(stats['incalls_per_operator']).toBeTruthy();
     expect(stats['outcalls_per_operator']).toBeTruthy();
   })
-  it.only('must return nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total', async()=>{
-    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total']});
+  it.only('must return nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total', async()=>{
+    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total']});
     console.log('nut_advices_per_operator_total',stats['nut_advices_per_operator_total'])
     console.log('coachings_per_operator_total',stats['coachings_per_operator_total'])
     console.log('declined_per_operator_total',stats['declined_per_operator_total'])
     console.log('unreachables_per_operator_total',stats['unreachables_per_operator_total'])
+    console.log('useful_contacts_per_operator_total',stats['useful_contacts_per_operator_total'])
     expect(stats['nut_advices_per_operator_total']).toBeGreaterThanOrEqual(0);
     expect(stats['coachings_per_operator_total']).toBeGreaterThanOrEqual(0);
     expect(stats['declined_per_operator_total']).toBeGreaterThanOrEqual(0);
     expect(stats['unreachables_per_operator_total']).toBeGreaterThanOrEqual(0);
+    expect(stats['useful_contacts_per_operator_total']).toBeGreaterThanOrEqual(0);
   })
-  it.only('must return nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details', async()=>{
-    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details']});
-    console.log('nut_advices_per_operator_details',stats['nut_advices_per_operator_details'])
-    console.log('coachings_per_operator_details',stats['coachings_per_operator_details'])
-    console.log('declined_per_operator_details',stats['declined_per_operator_details'])
-    console.log('unreachables_per_operator_details',stats['unreachables_per_operator_details'])
+  it.only('must return nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details', async()=>{
+    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details']});
+    console.table(stats['nut_advices_per_operator_details']);
+    console.table(stats['coachings_per_operator_details']);
+    console.table(stats['declined_per_operator_details']);
+    console.table(stats['unreachables_per_operator_details']);
+    console.table(stats['useful_contacts_per_operator_details']);
     expect(stats['nut_advices_per_operator_details']).toBeTruthy();
     expect(stats['coachings_per_operator_details']).toBeTruthy();
     expect(stats['declined_per_operator_details']).toBeTruthy();
     expect(stats['unreachables_per_operator_details']).toBeTruthy();
+    expect(stats['useful_contacts_per_operator_details']).toBeTruthy();
   })
 })
