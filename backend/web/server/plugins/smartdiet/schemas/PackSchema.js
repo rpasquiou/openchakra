@@ -52,7 +52,7 @@ PackSchema.virtual('description', DUMMY_REF).get(function() {
     return `Paiement unique`
   }
   else if (this.payment_count>1) {
-    return `Un paiement aujourd'hui puis chaque mois pendant ${this.payment_count-1} mois`
+    return `Paiement échelonné. Premier paiement aujourd'hui, suivi de ${this.payment_count-1} mensualités`
   }
 })
 module.exports = PackSchema

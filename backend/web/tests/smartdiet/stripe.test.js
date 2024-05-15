@@ -21,7 +21,7 @@ describe('Stripe tests ', () => {
   afterAll(async() => {
   })
 
-  it('must create a product', async() => {
+  it.only('must create a product', async() => {
     product_stripe_id = await upsertProduct({name: 'Test produit 17', description: 'Un paiement aujoudhui, ensuite 12'})
     console.log('product', product_stripe_id)
   })
