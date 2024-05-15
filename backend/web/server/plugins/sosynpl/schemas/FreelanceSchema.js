@@ -112,6 +112,14 @@ const FreelanceSchema = new Schema({
     ref: 'language',
     required: false,
   }],
+  hard_skills_job: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkill',
+  }],
+  hard_skills_extra: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkill',
+  }],
   experience: {
     type: String,
     required: [true, `L'expérience est obligatoire`],
