@@ -1472,12 +1472,28 @@ declareVirtualField({
     options: { ref: 'pair' }
   },
 })
+declareVirtualField({
+  model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'nut_advices_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'declined_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'unreachables_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'useful_contacts_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'renewed_coachings_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_total', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2277,6 +2293,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   const declinedPerOperator=[];
   const usefulContactsPerOperator=[];
   const renewedCoachingsPerOperator=[];
+  const coaCuTransformationPerOperator=[];
+  const cnCuTransformationPerOperator=[];
 
   let totalInCalls=0;
   let totalOutCalls=0;
@@ -2286,6 +2304,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   let unreachablesPerOperatorTotal=0;
   let usefulContactsPerOperatorTotal=0;
   let renewedCoachingsPerOperatorTotal=0;
+  let coaCuTransformationPerOperatorTotal=0;
+  let cnCuTransformationPerOperatorTotal=0;
   for(let operator in groupedLeadsByOp){
     let leadByOp=groupedLeadsByOp[operator];
     let inCalls=0;
@@ -2340,6 +2360,12 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     const renewedCoachingsTotal=renewedCoachings.reduce((sum, item) => sum + item.value, 0);
     renewedCoachingsPerOperator.push({'name': operatorName, 'value':renewedCoachingsTotal});
     renewedCoachingsPerOperatorTotal+=renewedCoachingsTotal;
+    const coaCuTransformation=usefulContacts!=0 ? Number((coa/usefulContacts).toFixed(2)*100) : 0;
+    coaCuTransformationPerOperator.push({'name': operatorName, 'value':coaCuTransformation});
+    coaCuTransformationPerOperatorTotal+=coaCuTransformation;
+    const cnCuTransformation=usefulContacts != 0 ? Number((nutAdvices/usefulContacts).toFixed(2)*100) : 0;
+    cnCuTransformationPerOperator.push({'name': operatorName, 'value':cnCuTransformation});
+    cnCuTransformationPerOperatorTotal+=cnCuTransformation;
   }
   result.incalls_per_operator=inCallPerOperator;
   result.outcalls_per_operator=outCallPerOperator;
@@ -2349,6 +2375,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.unreachables_per_operator_details = unreachablesPerOperator;
   result.useful_contacts_per_operator_details = usefulContactsPerOperator;
   result.renewed_coachings_per_operator_details = renewedCoachingsPerOperator;
+  result.coa_cu_transformation_per_operator_details = coaCuTransformationPerOperator;
+  result.cn_cu_transformation_per_operator_details = cnCuTransformationPerOperator;
 
   result.incalls_total=totalInCalls;
   result.outcalls_total=totalOutCalls;
@@ -2358,6 +2386,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
   result.useful_contacts_per_operator_total = usefulContactsPerOperatorTotal;
   result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
+  result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
+  result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
   
   return result
 }
