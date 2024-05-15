@@ -148,7 +148,7 @@ describe('Statistics', () => {
     expect(stats['incalls_per_operator']).toBeTruthy();
     expect(stats['outcalls_per_operator']).toBeTruthy();
   })
-  it.only('must return nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total, renewed_coachings_per_operator_total, coa_cu_transformation_per_operator_total, cn_cu_transformation_per_operator_total', async()=>{
+  it('must return nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total, renewed_coachings_per_operator_total, coa_cu_transformation_per_operator_total, cn_cu_transformation_per_operator_total', async()=>{
     const stats = await computeStatistics({ fields: ['nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total, renewed_coachings_per_operator_total, coa_cu_transformation_per_operator_total, cn_cu_transformation_per_operator_total']});
     console.log('nut_advices_per_operator_total',stats['nut_advices_per_operator_total'])
     console.log('coachings_per_operator_total',stats['coachings_per_operator_total'])
@@ -167,7 +167,7 @@ describe('Statistics', () => {
     expect(stats['coa_cu_transformation_per_operator_total']).toBeGreaterThanOrEqual(0);
     expect(stats['cn_cu_transformation_per_operator_total']).toBeGreaterThanOrEqual(0);
   })
-  it.only('must return nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details, renewed_coachings_per_operator_details, coa_cu_transformation_per_operator_details, cn_cu_transformation_per_operator_details', async()=>{
+  it('must return nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details, renewed_coachings_per_operator_details, coa_cu_transformation_per_operator_details, cn_cu_transformation_per_operator_details', async()=>{
     const stats = await computeStatistics({ fields: ['nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details, renewed_coachings_per_operator_details, coa_cu_transformation_per_operator_details, cn_cu_transformation_per_operator_details']});
     console.table(stats['nut_advices_per_operator_details']);
     console.table(stats['coachings_per_operator_details']);
@@ -185,5 +185,10 @@ describe('Statistics', () => {
     expect(stats['renewed_coachings_per_operator_details']).toBeTruthy();
     expect(stats['coa_cu_transformation_per_operator_details']).toBeTruthy();
     expect(stats['cn_cu_transformation_per_operator_details']).toBeTruthy();
+  })
+  it.only('must return leads_by_campain', async()=>{
+    const stats = await computeStatistics({ fields: ['leads_by_campain']});
+    console.log('leads_by_campain',stats['leads_by_campain'])
+    expect(stats['leads_by_campain']).toBeTruthy()
   })
 })

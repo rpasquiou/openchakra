@@ -117,4 +117,5 @@ AdminDashboardSchema.virtual(`useful_contacts_per_operator_details`, DUMMY_REF).
 AdminDashboardSchema.virtual(`renewed_coachings_per_operator_details`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coa_cu_transformation_per_operator_details`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`cn_cu_transformation_per_operator_details`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`leads_by_campain`, DUMMY_REF).get(function() {return 0})
 module.exports = AdminDashboardSchema
