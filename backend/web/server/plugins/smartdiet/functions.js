@@ -1985,7 +1985,8 @@ const computeStatistics = async ({ id, fields }) => {
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
-  result.users_count=await User.countDocuments({company: idFilter})
+  result.users_count=users.length
+  console.table({'users_from_calc':moment().diff(timestamp, 'milliseconds'), 'from_calc': usersCount});
   result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
   result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
   result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
