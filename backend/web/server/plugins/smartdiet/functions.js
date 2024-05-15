@@ -1494,6 +1494,13 @@ declareVirtualField({ model: 'adminDashboard', field: 'useful_contacts_per_opera
 declareVirtualField({ model: 'adminDashboard', field: 'renewed_coachings_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'leads_by_campain', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2388,6 +2395,23 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
   result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
   result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
+  const leadsTotal=leads.length;
+  const leadsByCampain=[];
+  const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
+  for(let campain in groupedLeadsByCampain){
+    const campainName= campain!='undefined' && campain!='null' ? campain : 'unknown';
+    leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length; 
+  };
+  result.leads_by_campain=[];
+  for(let campain in leadsByCampain){
+    const value = leadsByCampain[campain];
+    const percent = Number(((value/leadsTotal)*100).toFixed(2));
+    result.leads_by_campain.push({
+      'name': campain,
+      'value': value,
+      'percent': percent,
+    })
+  }
   
   return result
 }
