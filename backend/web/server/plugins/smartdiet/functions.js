@@ -1965,8 +1965,8 @@ const computeStatistics = async ({ id, fields }) => {
   result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
   const apptCoachings=await Appointment.distinct('coaching')
   const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
-  const users=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
-  result.started_coachings=users
+  const usersStartedCoachings=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
+  result.started_coachings=usersStartedCoachings
   result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
   const specificities_count=await User.aggregate([
     { $match: { role: ROLE_CUSTOMER, company: idFilter}},
