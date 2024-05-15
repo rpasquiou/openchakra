@@ -24,7 +24,13 @@ import usePropsSelector from '../../../hooks/usePropsSelector'
 import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
-  const components: IComponents = sortComponents(useSelector(getComponents))
+  const unsortedComponents=useSelector(getComponents)
+  const [components, setComponents]=useState({})
+
+  useEffect(() => {
+    setComponents(sortComponents(unsortedComponents))
+  }, [unsortedComponents])
+
   const activeComponent: IComponent = useSelector(getSelectedComponent)
   const { setValueFromEvent, setValue, removeValue } = useForm()
   const dataSource = usePropsSelector('dataSource')
@@ -113,6 +119,10 @@ const DataSourcePanel: React.FC = () => {
         setSubAttributesDisplay({})
       }
       else {
+        // TODO Solene
+        if (!components[subDataSource]) {
+          return
+        }
         const model = models[components[subDataSource].props ?.model]
         if (model) {
           const subAttrs = lodash(model.attributes)

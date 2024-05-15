@@ -18,7 +18,7 @@ const {
   STATUS_FAMILY,
 } = require('../consts')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
-const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
 
 const siret = require('siret')
 const luhn = require('luhn')
@@ -26,7 +26,8 @@ const {
   idEqual,
   setIntersects,
   shareTargets,
-  DUMMY_REF
+  DUMMY_REF,
+  getYearFilter
 } = require('../../../utils/database')
 const mongoose = require('mongoose')
 const moment=require('moment')
@@ -129,6 +130,7 @@ const UserSchema = new Schema({
   gender: {
     type: String,
     enum: Object.keys(GENDER),
+    set : v => v || undefined,
     required: false,
   },
   objective_targets: [{
@@ -334,6 +336,10 @@ const UserSchema = new Schema({
   source: {
     type: String,
     required: false,
+  },
+  // comment on user from diet
+  diet_comment: {
+    type: String,
   },
 }, {...schemaOptions})
 
@@ -551,7 +557,8 @@ UserSchema.virtual('_all_events', DUMMY_REF).get(function() {
 UserSchema.virtual("measures", {
   ref: "measure", // The Model to use
   localField: "_id", // Find in Model, where localField
-  foreignField: "user" // is equal to foreignField
+  foreignField: "user", // is equal to foreignField
+  options: {sort: 'date'},
 });
 
 UserSchema.virtual("last_measures", DUMMY_REF).get(function() {
@@ -651,11 +658,11 @@ UserSchema.virtual("diet_objectives", {
   foreignField: "diet_private" // is equal to foreignField
 });
 
-// UserSchema.virtual("coachings", {
-//   ref: "coaching", // The Model to use
-//   localField: "_id", // Find in Model, where localField
-//   foreignField: "user" // is equal to foreignField
-// })
+UserSchema.virtual("coachings", {
+  ref: "coaching", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "user" // is equal to foreignField
+})
 
 UserSchema.virtual("latest_coachings", {
   ref: "coaching", // The Model to use
@@ -722,6 +729,76 @@ UserSchema.virtual("nutrition_advices", {
   localField: function() {return this.role==ROLE_EXTERNAL_DIET ?  "_id" : "email"}, // Find in Model, where localField
   foreignField: function() {return this.role==ROLE_EXTERNAL_DIET ?  "diet" : "patient_email"}, // is equal to foreignField
 })
+
+UserSchema.virtual('spent_nutrition_credits', {
+  ref: 'nutritionAdvice',
+  localField: 'email',
+  foreignField: 'patient_email',
+  options: {
+    match: () => {
+      const f=getYearFilter({attribute: 'start_date', year: moment()})
+      console.log(JSON.stringify(f))
+      return f;
+    },
+  },
+  count: true,
+})
+
+UserSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
+  if (this.role!=ROLE_CUSTOMER) {
+    return 0
+  }
+  return (this.company?.current_offer?.nutrition_credit-this.spent_nutrition_credits) || 0
+})
+
+UserSchema.virtual('purchases', {
+  ref: 'purchase',
+  localField: '_id',
+  foreignField: 'customer',
+})
+
+UserSchema.virtual('available_packs', DUMMY_REF).get(function() {
+  const usedPacks=this.coachings?.filter(c => !!c.pack).map(c => c.pack)
+  const boughtPacks=this.purchases?.filter(p => p.status==PURCHASE_STATUS_COMPLETE).map(p => p.pack)
+  const res=lodash.differenceBy(boughtPacks, usedPacks, p => p._id.toString())
+  return res
+})
+
+/** Patient can buy a pack if:
+ * - no coaching in progress
+ * - no coaching available from the company (i.e. this years' coaching already spent) 
+ */
+UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
+  if (!this.role==ROLE_CUSTOMER) {
+    return false
+  }
+
+  // If already has an unused pack, can not buy another
+  if (!lodash.isEmpty(this.available_packs)) {
+    return false
+  }
+
+  // No coaching in progress && last coaching started this year
+  const latest_coaching=this.latest_coachings?.[0]
+  if (latest_coaching) {
+    // Latest coaching in progress: can no buy
+    if (latest_coaching.in_progress) {
+      return false
+    }
+    // Latest coaching started year before => this year's one is available => can not buy
+    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer?.coaching_credit>0) {
+      return false
+    }
+  }
+  else {
+    if (this.company?.current_offer?.coaching_credit>0) {
+      return false
+    }
+  }
+  return true
+})
+
+
 
 /* eslint-enable prefer-arrow-callback */
 
