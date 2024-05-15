@@ -1979,9 +1979,9 @@ const computeStatistics = async ({ id, fields }) => {
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const companies=await Company.find({_id: idFilter})
-  const users= await User.find();
-  const leads= await Lead.find();
-  const jobs= await Job.find();
+  const users= await User.find({company: idFilter});
+  const leads= await Lead.find({company: idFilter});
+  const jobs= await Job.find({company: idFilter});
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
