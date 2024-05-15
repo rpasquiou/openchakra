@@ -22,6 +22,11 @@ const HardSkillSchema = new Schema({
     ref: 'jobFile',
     required: [true, `La fiche métier est obligatoire`],
   },
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: 'category',
+    required: [true, `La catégorie est obligatoire`],
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
