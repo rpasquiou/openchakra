@@ -90,8 +90,8 @@ const extractXls=(bufferData, options) => {
       const first_line=options.from_line || 1
       const columnsRange=lodash.range(1, sheet.actualColumnCount+1)
       const rowsRange=lodash.range(first_line+1, sheet.actualRowCount+1)
-      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).value)
-      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).value))
+      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).text)
+      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).text))
       if (!options.columns) {
         return {headers: headers, records: records}
       }
@@ -181,6 +181,7 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
       setCache(model.modelName, record[migrationKey], result._id)
       return result
     })
+    .catch(console.error)
 }
 
 const computeIdentityFilter = (identityKey, migrationKey, record) => {
@@ -199,8 +200,10 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
   console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
+  console.time('Mapping records')
   return Promise.all(data.map(record => mapRecord({record, mapping, ...rest})))
     .then(mappedData => {
+      console.timeEnd('Mapping records')
       const recordsCount=mappedData.length
       console.time(msg)
       return runPromisesWithDelay(mappedData.map((data, index) => () => {

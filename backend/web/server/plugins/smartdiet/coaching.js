@@ -13,7 +13,7 @@ let assessmentTemplate=null
 
 const updateCoachingStatus = async coaching_id => {
 
-  const coaching=await Coaching.findById(coaching_id).populate(['_last_appointment', 'offer', 'spent_credits'])
+  const coaching=await Coaching.findById(coaching_id).populate(['_last_appointment', 'appointments', 'offer', 'spent_credits'])
 
   if (!coaching._last_appointment) {
     coaching.status=COACHING_STATUS_NOT_STARTED
@@ -59,7 +59,7 @@ const updateCoachingStatus = async coaching_id => {
     if (lastValidated && afterDelay && creditsRemain) {
       coaching.status=COACHING_STATUS_STOPPED
     }
-    if (!creditsRemain && lastValidated && moment().isAfter(last_appointment.end_date)) {
+    if (!creditsRemain) {
       coaching.status=COACHING_STATUS_FINISHED
     }
   }
@@ -69,9 +69,6 @@ const updateCoachingStatus = async coaching_id => {
     throw new Error(`pb on coaching ${coaching._id}`)
   }
 
-
-  // Save if modified
-  // console.log('Coaching', coaching._id, 'status', orgStatus, '=>', coaching.status)
   const res=coaching.save()
   return res
 }

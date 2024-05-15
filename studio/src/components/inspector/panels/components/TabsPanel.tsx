@@ -16,6 +16,7 @@ const TabsPanel = () => {
 
   return (
     <>
+      <SwitchControl label="Wizard" name="isWizard" />
       <SwitchControl label="Manual" name="isManual" />
       <SwitchControl label="Fitted" name="isFitted" />
       <SwitchControl label="Lazy" name="isLazy" />

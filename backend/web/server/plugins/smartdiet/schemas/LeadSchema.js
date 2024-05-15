@@ -3,7 +3,7 @@ const { isEmailOk } = require('../../../../utils/sms')
 const { isPhoneOk } = require('../../../../utils/sms')
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS } = require('../consts')
+const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS, CALL_STATUS_TO_CALL } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -55,6 +55,9 @@ const LeadSchema = new Schema({
   call_status: {
     type: String,
     enum: Object.keys(CALL_STATUS),
+    default: CALL_STATUS_TO_CALL,
+    // TODO: manage both lead && calls
+    //required: [true, `Le status d'appel est obligatoire`],
     required: false,
     set: v => v || undefined,
   },

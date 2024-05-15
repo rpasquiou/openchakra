@@ -4,7 +4,10 @@ const {
   ROLE_CUSTOMER,
   ROLE_EXTERNAL_DIET,
   COACHING_STATUS,
-  COACHING_STATUS_NOT_STARTED
+  COACHING_STATUS_NOT_STARTED,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -47,7 +50,7 @@ const CoachingSchema = new Schema({
   food_documents: [{
     type: Schema.Types.ObjectId,
     ref: 'foodDocument',
-    required: true,
+    required: false,
   }],
   quizz_templates: [{
     type: Schema.Types.ObjectId,
@@ -118,6 +121,17 @@ const CoachingSchema = new Schema({
     type: Number,
     index: true,
     required: false,
+  },
+  // Pack if any bought
+  pack: {
+    type: Schema.Types.ObjectId,
+    ref: 'pack',
+    required: false,
+  },
+  // Credits spent during company offer, required when a pack is added
+  _company_cedits_spent: {
+    type: Number,
+    required: [function() {return this.pack},  `Le nombre de séances déjà consommées est obligatoire lors de l'ajout d'un pack`],
   }
 }, schemaOptions)
 
@@ -174,7 +188,10 @@ CoachingSchema.virtual('questions', {
 
 
 CoachingSchema.virtual('remaining_credits', DUMMY_REF).get(function() {
-  return (this.offer?.coaching_credit-this.spent_credits) || 0
+  const credit=this.pack ? this.pack.follow_count+(!!this.pack.checkup ? 1 : 0) + this._company_cedits_spent
+    : 
+    (this.offer?.coaching_credit || 0)
+  return (credit-this.spent_credits) || 0
 })
 
 CoachingSchema.virtual('spent_credits', {
@@ -258,18 +275,9 @@ CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   return appType
 })
 
-CoachingSchema.virtual('spent_nutrition_credits', {
-  ref: 'nutritionAdvice',
-  localField: '_id',
-  foreignField: 'coaching',
-  count: true,
-})
-
-CoachingSchema.virtual('remaining_nutrition_credits', DUMMY_REF).get(function() {
-  if (this.user?.role!=ROLE_CUSTOMER) {
-    return 0
-  }
-  return (this.user?.offer?.nutrition_credit-this.spent_nutrition_credits) || 0
+// Returns wether this coaching is in progress or not
+CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
+  return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
 
 /* eslint-enable prefer-arrow-callback */

@@ -18,14 +18,17 @@ const fillSms = (pattern, values) => {
   return pattern
 }
 
-const PHONE_REGEX=/^\+33[67]\d{8}$/
+const PHONE_REGEX=/(^0[67]\d{8}$)|(^\+33[67]\d{8}$)/
+const HOMEPHONE_REGEX=/(^0[01234589]\d{8}$)|(^\+33[01234589]\d{8}$)/
 
-const isPhoneOk = value => {
+const isPhoneOk = (value, acceptHomePhone) => {
   if (!value) {
     return false
   }
   const corrected=value.replace(/ /g, '')?.replace(/\u00A0/g, '')
-  return /(^0[67]\d{8}$)|(^\+33[67]\d{8}$)/.test(corrected)
+  const mobileOk=PHONE_REGEX.test(corrected)
+  const homePḧoneOk=HOMEPHONE_REGEX.test(corrected)
+  return mobileOk || (acceptHomePhone && homePḧoneOk)
 }
 
 const isInternationalPhoneOK = value => {

@@ -2,10 +2,6 @@ const {Schema}=require('mongoose')
 const lodash=require('lodash')
 
 const AddressSchema=new Schema({
-  label: {
-    type: String,
-    required: false,
-  },
   address: {
     type: String,
   },
@@ -18,12 +14,11 @@ const AddressSchema=new Schema({
   country: {
     type: String,
   },
-  phone: {
-    type: String,
+  latitude: {
+    type: Number,
   },
-  gps: {
-    lat: Number,
-    lng: Number,
+  longitude: {
+    type: Number,
   },
 })
 

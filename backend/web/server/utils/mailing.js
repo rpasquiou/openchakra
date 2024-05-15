@@ -14,6 +14,7 @@ const {
 } = require('../../config/config')
 const lodash=require('lodash')
 const {fillSms} = require('../../utils/sms')
+const PageTag_ = require('../models/PageTag_')
 
 const mailProvider=getMailProvider()
 
@@ -103,10 +104,18 @@ const sendNotification = ({notification, destinee, ccs, params, attachment}) => 
   return Promise.resolve(resultMail)
 }
 
+const getTagUrl = async tag => {
+  const tagUrl=await PageTag_.findOne({tag})
+  if (!tag) {
+    throw new Error(`Not tag ${tag} found`)
+  }
+  return tagUrl.url
+}
 
 module.exports = {
   sendNotification,
   setSmsContents,
   setNotificationsContents,
   setSmsContact,
+  getTagUrl,
 }
