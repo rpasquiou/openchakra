@@ -109,4 +109,5 @@ AdminDashboardSchema.virtual(`nut_advices_per_operator_total`, DUMMY_REF).get(fu
 AdminDashboardSchema.virtual(`coachings_per_operator_total`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`declined_per_operator_total`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`unreachables_per_operator_total`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`useful_contacts_per_operator_total`, DUMMY_REF).get(function() {return 0})
 module.exports = AdminDashboardSchema

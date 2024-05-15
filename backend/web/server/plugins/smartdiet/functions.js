@@ -1458,10 +1458,18 @@ declareVirtualField({
     options: { ref: 'pair' }
   },
 })
+declareVirtualField({
+  model: 'adminDashboard', field: 'useful_contacts_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'nut_advices_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'declined_per_operator_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'unreachables_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'useful_contacts_per_operator_total', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -1941,6 +1949,8 @@ const computeStatistics = async ({ id, fields }) => {
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const companies=await Company.find({_id: idFilter})
   const users= await User.find();
+  const leads= await Lead.find();
+  const jobs= await Job.find();
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
@@ -1965,8 +1975,13 @@ const computeStatistics = async ({ id, fields }) => {
   result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
   const apptCoachings=await Appointment.distinct('coaching')
   const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
+<<<<<<< HEAD
   const usersStartedCoachings=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
   result.started_coachings=usersStartedCoachings
+=======
+  const usersWithStartedCoaching=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
+  result.started_coachings=useful_contacts_per_operator_details
+>>>>>>> 2b6a7f8ab (Backend: [WIP] useful contacts per operator KPI)
   result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
   const specificities_count=await User.aggregate([
     { $match: { role: ROLE_CUSTOMER, company: idFilter}},
@@ -2179,8 +2194,6 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   });
   result.coachings_renewed = usersWithRenewedCoachings.length;
 
-  const leads= await Lead.find();
-  const jobs= await Job.find();
   const jobDict = jobs.reduce((acc, job) => {
       acc[job.id] = job;
       return acc;
@@ -2259,7 +2272,8 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   const unreachablesPerOperator=[];
   const coaPerOperator=[];
   const declinedPerOperator=[];
-  
+  const usefulContactsPerOperator=[];
+
   let totalInCalls=0;
   let totalOutCalls=0;
 
@@ -2267,6 +2281,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   let coaPerOperatorTotal=0;
   let declinedPerOperatorTotal=0;
   let unreachablesPerOperatorTotal=0;
+  let usefulContactsPerOperatorTotal=0;
   for(let operator in groupedLeadsByOp){
     let leadByOp=groupedLeadsByOp[operator];
     let inCalls=0;
@@ -2275,6 +2290,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     let coa=0;
     let declined=0;
     let unreachable=0;
+    let usefulContacts=0;
     const operatorName=operator!='undefined' ? users.find(user=>user._id.toString() == operator).fullname : "unknown";
     for(let lead in leadByOp){
       if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
@@ -2288,14 +2304,20 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
       if(leadByOp[lead].nutrition_converted){
         nutAdvices+=1
         nutAdvicesPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
       }
       if(leadByOp[lead].coaching_converted){
         coa+=1;
         coaPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
       }
       if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_NOT_INTERESTED){
         declined+=1;
         declinedPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
       }
       if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_UNREACHABLE){
         unreachable+=1;
@@ -2308,6 +2330,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     coaPerOperator.push({'name':operatorName, 'value':coa});
     declinedPerOperator.push({'name':operatorName, 'value':declined});
     unreachablesPerOperator.push({'name':operatorName, 'value':unreachable});
+    usefulContactsPerOperator.push({'name':operatorName, 'value':usefulContacts});
   }
   result.incalls_per_operator=inCallPerOperator;
   result.outcalls_per_operator=outCallPerOperator;
@@ -2315,6 +2338,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.coachings_per_operator_details = coaPerOperator;
   result.declined_per_operator_details = declinedPerOperator;
   result.unreachables_per_operator_details = unreachablesPerOperator;
+  result.useful_contacts_per_operator_details = usefulContactsPerOperator;
   
   result.incalls_total=totalInCalls;
   result.outcalls_total=totalOutCalls;
@@ -2322,6 +2346,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.coachings_per_operator_total = coaPerOperatorTotal;
   result.declined_per_operator_total = declinedPerOperatorTotal;
   result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
+  result.useful_contacts_per_operator_total = usefulContactsPerOperatorTotal;
   
   return result
 }
