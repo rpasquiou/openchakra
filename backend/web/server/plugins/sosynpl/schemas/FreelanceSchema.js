@@ -4,6 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -174,6 +175,10 @@ const FreelanceSchema = new Schema({
     default: false,
     required: [true, `La visibilité Google est obligatoire`]
   },
+  skills_categories: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkillCategory',
+  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
