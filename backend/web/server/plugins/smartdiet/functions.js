@@ -1501,6 +1501,14 @@ declareVirtualField({
     options: { ref: 'pair' }
   },
 })
+declareVirtualField({ model: 'adminDashboard', field: 'webinars_by_company_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'webinars_by_company_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2300,7 +2308,13 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     let unreachable=0;
     let usefulContacts=0;
     let renewedCoachings=[];
-    const operatorName=operator!='undefined' ? users.find(user=>user._id.toString() == operator).fullname : "unknown";
+    let operatorName="unknown";
+    if (operator != 'undefined') {
+      const foundUser = await User.find({_id: operator});
+      console.log(foundUser)
+      operatorName = foundUser[0] ? foundUser[0].fullname : "unknown";
+      console.log(operatorName)
+  }
     for(let lead in leadByOp){
       if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
         inCalls+=1;
@@ -2374,7 +2388,6 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
 
   const leadsTotal=leads.length;
-  console.table(leads)
   const leadsByCampain=[];
   const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
   for(let campain in groupedLeadsByCampain){
@@ -2391,6 +2404,25 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
       'percent': percent,
     })
   }
+
+  const webinars= await Webinar.find()
+    .populate({path: 'companies'})
+  const webinarsCount= webinars.length;
+  const webinarsGroupedByCompany = [];
+  webinars.forEach((webinar)=>{
+    webinar.companies.forEach((company) => {
+      const companyId = company._id.toString();
+      if(!webinarsGroupedByCompany[companyId]) {
+        webinarsGroupedByCompany[companyId] = {
+          company: company.name,
+          webinars: 0,
+        }
+      }
+      webinarsGroupedByCompany[companyId].webinars += 1;
+    })
+  })
+  result.webinars_by_company_total=webinarsCount;
+  result.webinars_by_company_details=Object.values(webinarsGroupedByCompany);
   
   return result
 }
