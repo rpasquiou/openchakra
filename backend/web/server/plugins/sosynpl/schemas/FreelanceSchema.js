@@ -124,6 +124,7 @@ const FreelanceSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'hardSkill',
     }],
+    default: [],
     validate: [
       skills => lodash.inRange(skills?.length, MIN_JOB_SKILLS, MAX_JOB_SKILLS+1), 
       `Vous devez choisir de ${MIN_JOB_SKILLS} à ${MAX_JOB_SKILLS} compétences métiers` 
@@ -134,6 +135,7 @@ const FreelanceSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'hardSkill',
     }],
+    default: [],
     validate: [
       skills => lodash.inRange(skills?.length, MIN_EXTRA_SKILLS, MAX_EXTRA_SKILLS+1), 
       `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} compétences hors métier` 
@@ -175,7 +177,7 @@ const FreelanceSchema = new Schema({
     default: false,
     required: [true, `La visibilité Google est obligatoire`]
   },
-  skills_categories: [{
+  hard_skills_categories: [{
     type: Schema.Types.ObjectId,
     ref: 'hardSkillCategory',
   }],
