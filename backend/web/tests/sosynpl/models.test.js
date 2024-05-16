@@ -8,11 +8,16 @@ const Freelance = require('../../server/models/Freelance')
 const { buildAttributesException } = require('../utils')
 const { WORK_DURATION } = require('../../server/plugins/sosynpl/consts')
 const Customer = require('../../server/models/Customer')
-const {CUSTOMER_DATA}=require('./data/base_data')
+const {CUSTOMER_DATA, FREELANCE_DATA, JOB_DATA, JOB_FILE_DATA, SECTOR_DATA, CATEGORY_DATA}=require('./data/base_data')
 require('../../server/plugins/sosynpl/functions')
 require('../../server/models/Sector')
 require('../../server/models/Job')
 require('../../server/models/Training')
+const HardSkill=require('../../server/models/HardSkill')
+const Job = require('../../server/models/Job')
+const JobFile = require('../../server/models/JobFile')
+const Sector = require('../../server/models/Sector')
+const Category = require('../../server/models/Category')
 
 jest.setTimeout(60000)
 
@@ -22,6 +27,13 @@ describe('Test models', () => {
     const DBNAME=`test${moment().unix()}`
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
+    const jobFile=await JobFile.create({...JOB_FILE_DATA})
+    const job=await Job.create({...JOB_DATA, job_file: jobFile})
+    const sector=await Sector.create({...SECTOR_DATA})
+    const category=await Category.create({...CATEGORY_DATA})
+    await Freelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]})
+    await Promise.all(lodash.range(30).map(idx => HardSkill.create({name: `Skill ${idx}`, code: '12', job_file: jobFile, category})))
+
   })
   
   afterAll(async () => {
@@ -29,7 +41,7 @@ describe('Test models', () => {
     await mongoose.connection.close()
   })
 
-  it.only('Must return Address data type', async () => {
+  it('Must return Address data type', async () => {
     const {training}=getModels()
     expect(training.attributes.school_city.type).toEqual('Address')
     expect(training.attributes.school_name.type).toEqual('String')
@@ -68,6 +80,24 @@ describe('Test models', () => {
     console.log(customer)
     expect(customer.legal_representant_self).toBe(false)
     expect(customer.legal_representant_firstname).toEqual('Gérard')
+  })
+
+  it('Freelance must accept max 20 job skills', async () => {
+    const skills=await HardSkill.find()
+    const freelance=await Freelance.findOne()
+    freelance.hard_skills_job=skills
+    expect(freelance.save()).rejects.toThrow('compétences métier')
+    freelance.hard_skills_extra=skills.slice(0, 10)
+    expect(await freelance.save()).not.toThrow()
+  })
+
+  it.only('Freelance must accept max 20 extra skills', async () => {
+    const skills=await HardSkill.find()
+    const freelance=await Freelance.findOne()
+    freelance.hard_skills_extra=skills
+    expect(await freelance.save()).rejects.toThrow('compétences hors métier')
+    freelance.hard_skills_extra=skills.slice(0, 10)
+    expect(await freelance.save()).not.toThrow()
   })
 
 })
