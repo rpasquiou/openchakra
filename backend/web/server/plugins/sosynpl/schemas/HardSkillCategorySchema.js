@@ -3,30 +3,30 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const CategorySchema = new Schema({
+const HardSkillCategorySchema = new Schema({
   name: {
     type: String,
     required: [true, 'Le nom est obligatoire'],
   },
   parent: {
     type: Schema.Types.ObjectId,
-    ref: 'category',
+    ref: 'hardSkillCategory',
     required: false,
   },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
-CategorySchema.virtual('children', {
-  ref: 'category', // The Model to use
+HardSkillCategorySchema.virtual('children', {
+  ref: 'hardSkillCategory', // The Model to use
   localField: '_id', // Find in Model, where localField
   foreignField: 'parent', // is equal to foreignField
 })
 
-CategorySchema.virtual('skills', {
+HardSkillCategorySchema.virtual('skills', {
   ref: 'hardSkill', // The Model to use
   localField: '_id', // Find in Model, where localField
   foreignField: 'category', // is equal to foreignField
 })
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = CategorySchema
+module.exports = HardSkillCategorySchema

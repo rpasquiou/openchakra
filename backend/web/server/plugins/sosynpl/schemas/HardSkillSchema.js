@@ -24,7 +24,7 @@ const HardSkillSchema = new Schema({
   },
   category: {
     type: Schema.Types.ObjectId,
-    ref: 'category',
+    ref: 'hardSkillCategory',
     required: [true, `La catégorie est obligatoire`],
   },
 }, {...schemaOptions})
