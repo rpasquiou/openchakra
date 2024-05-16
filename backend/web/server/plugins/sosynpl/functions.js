@@ -9,7 +9,7 @@ const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
 const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts")
-const {computeUserSkillsCategories } = require("./skills");
+const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./skills");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
@@ -118,7 +118,7 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'training' }
     },
   })
-  declareComputedField({model, field: 'skills_categories', requires: 'hard_skills_job,hard_skills_extra', getterFn: computeUserSkillsCategories})
+  declareComputedField({model, field: 'hard_skills_categories', requires: 'hard_skills_job,hard_skills_extra', getterFn: computeUserHardSkillsCategories})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -156,6 +156,7 @@ caster: {
   options: { ref: 'skill' }
 },
 })
+declareComputedField({model: 'hardSkillCategory', field: 'progress', instance: 'Number', getterFn: computeHSCategoryProgress})
 /** Category end */
 
 const soSynplRegister = props => {
