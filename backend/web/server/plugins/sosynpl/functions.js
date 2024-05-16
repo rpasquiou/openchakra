@@ -1,14 +1,15 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
 const Customer=require('../../models/Customer')
-const Freelance=require('../../models/Freelance');
-const { validatePassword } = require("../../../utils/passwords");
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing");
-const { ROLE_ADMIN } = require("../smartdiet/consts");
-const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts");
-const { BadRequestError } = require("../../utils/errors");
+const Freelance=require('../../models/Freelance')
+const HardSkillCategory=require('../../models/HardSkillCategory')
+const { validatePassword } = require("../../../utils/passwords")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
+const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
+const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts")
+const {computeUserSkillsCategories } = require("./skills");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
@@ -117,6 +118,7 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'training' }
     },
   })
+  declareComputedField({model, field: 'skills_categories', requires: 'hard_skills_job,hard_skills_extra', getterFn: computeUserSkillsCategories})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -200,7 +202,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
     const modelName=ROLE_MODEL_MAPPING[user.role]
     return({model: modelName, fields, id: user._id, user, params})
   }
-  return({model, fields, id, user, params})
+  return { model, fields, id, user, params }
 }
 
 setPreprocessGet(preprocessGet)
@@ -229,5 +231,15 @@ const postCreate = async ({model, params, data}) => {
 }
 
 setPostCreateData(postCreate)
+
+const filterDataUser = async ({ model, data, id, user }) => {
+  if (model=='hardSkillCategory' && !id) {
+    const top_level=await HardSkillCategory.find({parent: null}, {_id:1})
+    data=data.filter(d => top_level.some(t => idEqual(t._id, d._id)))
+  }
+  return data
+}
+
+setFilterDataUser(filterDataUser)
 
 
