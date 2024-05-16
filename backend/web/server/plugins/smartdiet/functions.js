@@ -1980,13 +1980,12 @@ const computeStatistics = async ({ id, fields }) => {
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const companies=await Company.find({_id: idFilter})
   const users= await User.find({company: idFilter});
-  const leads= await Lead.find({company: idFilter});
+  const leads= await Lead.find();
   const jobs= await Job.find({company: idFilter});
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
   result.users_count=users.length
-  console.table({'users_from_calc':moment().diff(timestamp, 'milliseconds'), 'from_calc': usersCount});
   result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
   result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
   result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
@@ -2063,62 +2062,40 @@ const computeStatistics = async ({ id, fields }) => {
   result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
   result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
 
-  const appointments = await Appointment.find({ _id: idFilter })
+  const appointmentsWithCoaching = await Appointment.find({ _id: idFilter })
         .populate({
             path: 'coaching',
             populate: {
                 path: 'appointments',
             }
         });
-
+  const csDoneFilteredAppointment=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_VALID)
+  const csGroupedAppointments = lodash.groupBy(csDoneFilteredAppointment, 'order');
+  let coachingsDone=0;
+  Object.entries(csGroupedAppointments).forEach(([order, apps]) => {
+      coachingsDone += apps.length;
+  });
+  result.cs_done=coachingsDone
+  const filteredAppointments=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+  const groupedAppointments = lodash.groupBy(filteredAppointments, 'order');
+  let coachingsToCome = 0;
+  Object.entries(groupedAppointments).forEach(([order, apps]) => {
+      coachingsToCome += apps.length;
+  });
+  result.cs_upcoming=coachingsToCome
   lodash.range(1, 17).forEach(async order => {
-    const validAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-    const upcomingAppointments = appointments.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
+    const validAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
+    const upcomingAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
     const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
     const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
     const orderValidAppointments = groupedValidAppointments[order] || [];
     const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
-
     const validCount = orderValidAppointments.length;
     const upcomingCount = orderUpcomingAppointments.length;
     result[`cs_done_c${order}`] = validCount;
     result[`cs_upcoming_c${order}`] = upcomingCount;
   });
-
-  result.cs_done = await Appointment.find({ _id: idFilter })
-    .populate({
-      path:'coaching',
-      populate:({
-        path:'appointments',
-      })
-    })
-    .then(appointments => {
-        appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_VALID)
-        const groupedAppointments = lodash.groupBy(appointments, 'order');
-        let coachingsDone=0;
-        Object.entries(groupedAppointments).forEach(([order, apps]) => {
-            coachingsDone += apps.length;
-        });
-        return coachingsDone;
-    });
-
-  result.cs_upcoming = await Appointment.find({ _id: idFilter })
-  .populate({
-    path:'coaching',
-    populate:({
-      path:'appointments',
-    })
-  })
-  .then(appointments => {
-      appointments=appointments.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
-      const groupedAppointments = lodash.groupBy(appointments, 'order');
-      let coachingsToCome = 0;
-      Object.entries(groupedAppointments).forEach(([order, apps]) => {
-          coachingsToCome += apps.length;
-      });
-      return coachingsToCome;
-  });    
-
+  
 const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
     path: 'coachings',
     match: { status: 'COACHING_STATUS_STARTED' }
@@ -2186,7 +2163,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   return formattedGenderCount;
   })
   for (const [key, value] of Object.entries(usersWithCoachingsByGender)) {
-    result[`coachings_${key}`] = value;
+    result[`coachings_gender_${key}`] = value;
   }
 
   const nutAdvices=await User.aggregate([
@@ -2205,7 +2182,6 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     })
  
   const usersWithCoachingThisYear = [];
-  let coachingsRenewed = 0;
   for (let userId in usersWithCoaching) {
       const user = usersWithCoaching[userId];
       user.coachings.forEach(coaching => {
@@ -2396,7 +2372,9 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
   result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
   result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
+
   const leadsTotal=leads.length;
+  console.table(leads)
   const leadsByCampain=[];
   const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
   for(let campain in groupedLeadsByCampain){
