@@ -8,7 +8,7 @@ require('../../../server/models/JobFileFeature')
 require('../../../server/models/Job')
 require('../../../server/models/Sector')
 require('../../../server/models/HardSkill')
-require('../../../server/models/Category')
+require('../../../server/models/HardSkillCategory')
 const { normalize, guessDelimiter } = require('../../../utils/text')
 const { isNewerThan } = require('../../utils/filesystem')
 const NodeCache=require('node-cache')
@@ -151,14 +151,14 @@ const CATEGORY_1_MIGRATION_KEY='name'
 
 const importCategories1 = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  return importData({model: 'category', data:records, mapping:CATEGORY_1_MAPPING, 
+  return importData({model: 'hardSkillCategory', data:records, mapping:CATEGORY_1_MAPPING, 
     identityKey: CATEGORY_1_KEY, migrationKey: CATEGORY_1_MIGRATION_KEY})
 }
 
 // 2nd level categories ; we know name is unique
 const CATEGORY_2_MAPPING={
   name: `Sous-Catégorie Savoir faire`,
-  parent: ({record, cache}) => cache('category', record['Catégorie Savoir faire'])
+  parent: ({record, cache}) => cache('hardSkillCategory', record['Catégorie Savoir faire'])
 }
 
 const CATEGORY_2_KEY='name'
@@ -166,7 +166,7 @@ const CATEGORY_2_MIGRATION_KEY='name'
 
 const importCategories2 = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  return importData({model: 'category', data:records, mapping:CATEGORY_2_MAPPING, 
+  return importData({model: 'hardSkillCategory', data:records, mapping:CATEGORY_2_MAPPING, 
     identityKey: CATEGORY_2_KEY, migrationKey: CATEGORY_2_MIGRATION_KEY})
 }
 
@@ -174,7 +174,7 @@ const HARD_SKILL_MAPPING={
   job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
   name: `Libellé Savoir faire`,
   code: `Code compétences Savoir faire`,
-  category: ({record, cache}) => cache('category', record['Sous-Catégorie Savoir faire']),
+  category: ({record, cache}) => cache('hardSkillCategory', record['Sous-Catégorie Savoir faire']),
 }
 
 const HARD_SKILL_KEY='code'
