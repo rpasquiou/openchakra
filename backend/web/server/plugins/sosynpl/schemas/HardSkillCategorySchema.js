@@ -13,6 +13,10 @@ const HardSkillCategorySchema = new Schema({
     ref: 'hardSkillCategory',
     required: false,
   },
+  // Progress [0.0, 1.0]
+  progress: {
+    type: Number,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
