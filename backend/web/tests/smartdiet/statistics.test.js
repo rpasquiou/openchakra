@@ -22,7 +22,6 @@ describe('Statistics', () => {
 
   it('must return coachings_stopped equals to 2649', async() => {
     const stats=await computeStatistics({fields:[`coachings_stopped`]})
-    console
     expect(stats.coachings_stopped).toEqual(2649)
   })
 
