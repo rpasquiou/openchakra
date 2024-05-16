@@ -142,13 +142,13 @@ declareEnumField({model: 'languageLevel', field: 'level', enumValues: LANGUAGE_L
 /** Job end */
 
 /** Category start */
-declareVirtualField({model: 'category', field: 'children', instance: 'Array', multiple: true,
+declareVirtualField({model: 'hardSkillCategory', field: 'children', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
-  options: { ref: 'category' }
+  options: { ref: 'hardSkillCategory' }
 },
 })
-declareVirtualField({model: 'category', field: 'skills', instance: 'Array', multiple: true,
+declareVirtualField({model: 'hardSkillCategory', field: 'skills', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
   options: { ref: 'skill' }

@@ -162,6 +162,7 @@ require('./models/JobFile')
 require('./models/JobFileFeature')
 require('./models/LanguageLevel')
 require('./models/HardSkill')
+require('./models/HardSkillCategory')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
