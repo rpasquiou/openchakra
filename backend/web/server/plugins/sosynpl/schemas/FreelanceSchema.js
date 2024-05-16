@@ -11,6 +11,12 @@ const MAX_SECTORS=5
 const MIN_DURATIONS=1
 const MAX_DURATIONS=3
 
+const MIN_JOB_SKILLS=0
+const MAX_JOB_SKILLS=20
+
+const MIN_EXTRA_SKILLS=0
+const MAX_EXTRA_SKILLS=20
+
 const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
@@ -112,14 +118,26 @@ const FreelanceSchema = new Schema({
     ref: 'language',
     required: false,
   }],
-  hard_skills_job: [{
-    type: Schema.Types.ObjectId,
-    ref: 'hardSkill',
-  }],
-  hard_skills_extra: [{
-    type: Schema.Types.ObjectId,
-    ref: 'hardSkill',
-  }],
+  hard_skills_job: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'hardSkill',
+    }],
+    validate: [
+      skills => lodash.inRange(skills?.length, MIN_JOB_SKILLS, MAX_JOB_SKILLS+1), 
+      `Vous devez choisir de ${MIN_JOB_SKILLS} à ${MAX_JOB_SKILLS} compétences métiers` 
+    ]
+  },
+  hard_skills_extra: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'hardSkill',
+    }],
+    validate: [
+      skills => lodash.inRange(skills?.length, MIN_EXTRA_SKILLS, MAX_EXTRA_SKILLS+1), 
+      `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} compétences hors métier` 
+    ]
+  },
   experience: {
     type: String,
     required: [true, `L'expérience est obligatoire`],
