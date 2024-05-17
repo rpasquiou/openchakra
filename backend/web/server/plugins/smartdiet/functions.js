@@ -1385,9 +1385,9 @@ declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59_p
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64_percent', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69_percent', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coachings_unknown', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coachings_male', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coachings_female', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_unknown', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_male', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_female', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
 declareVirtualField({
@@ -1982,14 +1982,22 @@ const ensureChallengePipsConsistency = () => {
     })
 }
 
+
 const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
+  const [companies, users, leads, jobs, appointmentsWithCoaching] = await Promise.all([
+    Company.find({_id : idFilter}),
+    User.find({company: idFilter}),
+    Lead.find(),
+    Job.find({company : idFilter}),
+    Appointment.find({ _id: idFilter }).populate({
+            path: 'coaching',
+            populate: {path: 'appointments',}
+        }),
+  ])
+
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
-  const companies=await Company.find({_id: idFilter})
-  const users= await User.find({company: idFilter});
-  const leads= await Lead.find();
-  const jobs= await Job.find({company: idFilter});
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
@@ -2070,13 +2078,6 @@ const computeStatistics = async ({ id, fields }) => {
   result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
   result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
 
-  const appointmentsWithCoaching = await Appointment.find({ _id: idFilter })
-        .populate({
-            path: 'coaching',
-            populate: {
-                path: 'appointments',
-            }
-        });
   const csDoneFilteredAppointment=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_VALID)
   const csGroupedAppointments = lodash.groupBy(csDoneFilteredAppointment, 'order');
   let coachingsDone=0;
@@ -2205,27 +2206,24 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
   });
   result.coachings_renewed = usersWithRenewedCoachings.length;
 
-  const jobDict = jobs.reduce((acc, job) => {
-      acc[job.id] = job;
-      return acc;
-    }, {});
-  let jobsFound={};
-  let jobsTotal=0;
-  leads.map(lead=>{
-    if(jobDict[lead.job]){
-      jobsTotal+=1;
-      jobsFound[jobDict[lead.job].name]= (jobsFound[jobDict[lead.job].name]||0) +1;
+  const jobDict = lodash.keyBy(jobs, 'id');
+  const jobsFound = leads.reduce((acc, lead) => {
+    const jobName = jobDict[lead.job]?.name;
+    if (jobName) {
+      acc[jobName] = (acc[jobName] || 0) + 1;
     }
-  })
-  delete jobsFound.undefined;
-  jobsFound=Object.entries(jobsFound);
-  jobsFound.sort((a, b)=> b[1]-a[1]);
-  const jobsArray = jobsFound.map(([name, value]) => {
+    return acc;
+  }, {});
+
+  const jobsTotal = Object.values(jobsFound).reduce((sum, count) => sum + count, 0);
+  const jobsArray = Object.entries(jobsFound).map(([name, value]) => {
     const percent = Number(((value / jobsTotal) * 100).toFixed(2));
     return { name, value, percent };
-  });
+  }).sort((a, b) => b.value - a.value);
+
   result.jobs_total = jobsTotal;
   result.jobs_details = jobsArray;
+
 
   const joinReasons= await JoinReason.find()
   const joinReasonsDict = joinReasons.reduce((acc, jR) => {
@@ -2311,9 +2309,7 @@ const usersWithCoachingsByGender = await User.find({_id: idFilter})
     let operatorName="unknown";
     if (operator != 'undefined') {
       const foundUser = await User.find({_id: operator});
-      console.log(foundUser)
       operatorName = foundUser[0] ? foundUser[0].fullname : "unknown";
-      console.log(operatorName)
   }
     for(let lead in leadByOp){
       if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
