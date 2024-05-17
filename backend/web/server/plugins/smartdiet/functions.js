@@ -2087,6 +2087,7 @@ const ensureChallengePipsConsistency = () => {
 
 const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
+  const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const [companies, users, leads, jobs, appointmentsWithCoaching] = await Promise.all([
     Company.find({_id : idFilter}),
     User.find({company: idFilter}),
@@ -2099,7 +2100,6 @@ const computeStatistics = async ({ id, fields }) => {
   ])
 
   const result={}
-  const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
