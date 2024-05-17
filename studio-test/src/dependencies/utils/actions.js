@@ -234,7 +234,7 @@ export const ACTIONS = {
         return {_id: res.data}
       })
   },
-  save: ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents }) => {
+  save: ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     let url = `${API_ROOT}/${props.model}${dataSource?._id ? `/${dataSource._id}`:''}`
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const components=componentsIds.map(c => {
@@ -242,8 +242,8 @@ export const ACTIONS = {
       return comp
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
-    const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute')  || getComponentAttribute(c, level), getComponentValue(c.getAttribute('id'), level)||null]
+    const body = Object.fromEntries(actualComponentIds.map(id => {
+      return [getComponentAttribute(id, level), getComponentValue(id, level)||null]
     }))
 
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
