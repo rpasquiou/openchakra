@@ -36,12 +36,19 @@ const computeHSCategoryProgress = async (userId, params, data) => {
   if (!!data.parent) {
     return 0
   }
-  const user=(await User.findById(userId))
+
+  const user=(await User.findById(userId).populate([
+    'hard_skills_job', 'hard_skills_extra',
+    {path: 'main_job', populate: {path: 'job_file', populate: 'hard_skills'}}
+  ]))
+  const mainJobSkills=user.main_job.job_file.hard_skills
   const userSkills=[...(user.hard_skills_job||[]), ...(user.hard_skills_extra||[])]
+  const userJobSkills=lodash.intersectionBy(mainJobSkills, userSkills, id => id._id.toString())
   const category=await HardSkillCategory.findById(data._id).populate({path: 'children', populate: 'skills' })
   const categorySkills=lodash.flatten(category.children.map(child => child.skills), 2).map(s => s._id)
-  const commonSkills=lodash.intersectionBy(userSkills, categorySkills, id => id._id.toString())
-  return commonSkills.length/categorySkills.length
+  const jobCategorySkills=lodash.intersectionBy(categorySkills, mainJobSkills, id => id._id.toString())
+  const commonSkills=lodash.intersectionBy(userJobSkills, jobCategorySkills, id => id._id.toString())
+  return commonSkills.length/jobCategorySkills.length
 }
 
 // Returns HS categories tree for main_job only
