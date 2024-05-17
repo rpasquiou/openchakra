@@ -160,7 +160,7 @@ caster: {
 declareVirtualField({model: 'hardSkillCategory', field: 'skills', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
-  options: { ref: 'skill' }
+  options: { ref: 'hardSkill' }
 },
 })
 declareComputedField({model: 'hardSkillCategory', field: 'progress', instance: 'Number', getterFn: computeHSCategoryProgress})
