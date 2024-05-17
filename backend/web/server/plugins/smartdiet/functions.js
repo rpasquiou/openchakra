@@ -122,6 +122,11 @@ const {
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
   COACHING_STATUS_STOPPED,
+  COACHING_STATUS_NOT_STARTED,
+  APPOINTMENT_VALID,
+  COACHING_STATUS_STARTED,
+  CALL_DIRECTION_IN_CALL,
+  CALL_DIRECTION_OUT_CALL,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -178,6 +183,8 @@ const Content = require('../../models/Content')
 const Company = require('../../models/Company')
 const User = require('../../models/User')
 const Team = require('../../models/Team')
+const JoinReason = require('../../models/JoinReason')
+const DeclineReason = require('../../models/DeclineReason')
 const TeamMember = require('../../models/TeamMember')
 const Coaching = require('../../models/Coaching')
 const Appointment = require('../../models/Appointment')
@@ -196,6 +203,7 @@ const { createTicket, getTickets, createComment } = require('./ticketing')
 const { PAYMENT_STATUS } = require('../fumoir/consts')
 const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
+const Job = require('../../models/Job')
 
 
 const filterDataUser = async ({ model, data, id, user }) => {
@@ -1351,6 +1359,7 @@ declareVirtualField({model: 'coaching', field: 'in_progress', instance: 'Boolean
 
 declareEnumField({ model: 'userCoachingQuestion', field: 'status', enumValues: COACHING_QUESTION_STATUS })
 
+//start adminDashboard
 declareVirtualField({
   model: 'adminDashboard', field: 'company', instance: 'company', multiple: false,
   caster: {
@@ -1386,6 +1395,193 @@ declareVirtualField({
     options: { ref: 'graphData' }
   },
 })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_started', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_stopped', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_dropped', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'ratio_stopped_started', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'ratio_dropped_started', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c1', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c2', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c3', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c4', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c5', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c6', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c7', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c8', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c9', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c10', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c12', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c13', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c14', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c15', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c16', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c1', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c2', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c3', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c4', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c5', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c6', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c7', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c8', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c9', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c10', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c11', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c12', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c13', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c14', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c15', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c16', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74_percent', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_unknown', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_male', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_female', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'job_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'jobs_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'join_reasons_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'join_reasons_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'decline_reasons_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'outcalls_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'incalls_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'outcall_per_operator', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'incall_per_operator', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'nut_advices_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'coachings_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'declined_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'unreachables_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'useful_contacts_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'renewed_coachings_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'nut_advices_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'declined_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'unreachables_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'useful_contacts_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'renewed_coachings_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'leads_by_campain', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({ model: 'adminDashboard', field: 'webinars_by_company_total', instance: 'Number' })
+declareVirtualField({
+  model: 'adminDashboard', field: 'webinars_by_company_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+//end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
 declareVirtualField({ model: 'foodDocument', field: 'url', type: 'String', requires: 'manual_url,document' })
@@ -1888,15 +2084,26 @@ const ensureChallengePipsConsistency = () => {
     })
 }
 
+
 const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
+  const [companies, users, leads, jobs, appointmentsWithCoaching] = await Promise.all([
+    Company.find({_id : idFilter}),
+    User.find({company: idFilter}),
+    Lead.find(),
+    Job.find({company : idFilter}),
+    Appointment.find({ _id: idFilter }).populate({
+            path: 'coaching',
+            populate: {path: 'appointments',}
+        }),
+  ])
+
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
-  const companies=await Company.find({_id: idFilter})
   result.company=id?.toString()
   result.groups_count=await Group.countDocuments({companies: idFilter})
   result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
-  result.users_count=await User.countDocuments({company: idFilter})
+  result.users_count=users.length
   result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
   result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
   result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
@@ -1917,8 +2124,8 @@ const computeStatistics = async ({ id, fields }) => {
   result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
   const apptCoachings=await Appointment.distinct('coaching')
   const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
-  const users=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
-  result.started_coachings=users
+  const usersWithStartedCoaching=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
+  result.started_coachings=usersWithStartedCoaching
   result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
   const specificities_count=await User.aggregate([
     { $match: { role: ROLE_CUSTOMER, company: idFilter}},
@@ -1967,6 +2174,354 @@ const computeStatistics = async ({ id, fields }) => {
     { $sort: { count: 1 } } // Sort by count in descending order
   ])
   result.reasons_users=reasons_count.map(({count, name})=> ({x:name, y:count}))
+  
+  result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
+  result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
+  result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
+  result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
+
+  const csDoneFilteredAppointment=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_VALID)
+  const csGroupedAppointments = lodash.groupBy(csDoneFilteredAppointment, 'order');
+  let coachingsDone=0;
+  Object.entries(csGroupedAppointments).forEach(([order, apps]) => {
+      coachingsDone += apps.length;
+  });
+  result.cs_done=coachingsDone
+  const filteredAppointments=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+  const groupedAppointments = lodash.groupBy(filteredAppointments, 'order');
+  let coachingsToCome = 0;
+  Object.entries(groupedAppointments).forEach(([order, apps]) => {
+      coachingsToCome += apps.length;
+  });
+  result.cs_upcoming=coachingsToCome
+  lodash.range(1, 17).forEach(async order => {
+    const validAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
+    const upcomingAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
+    const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
+    const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
+    const orderValidAppointments = groupedValidAppointments[order] || [];
+    const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
+    const validCount = orderValidAppointments.length;
+    const upcomingCount = orderUpcomingAppointments.length;
+    result[`cs_done_c${order}`] = validCount;
+    result[`cs_upcoming_c${order}`] = upcomingCount;
+  });
+  
+const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
+    path: 'coachings',
+    match: { status: 'COACHING_STATUS_STARTED' }
+});
+
+let ageCounts = {};
+let startedCoachingsNoBirthday = 0;
+
+allUsersWithStartedCoaching.forEach(user => {
+  if (user.birthday) {
+    const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
+    ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
+  } else {
+    startedCoachingsNoBirthday += user.coachings.length;
+  }
+});
+result.started_coaching_no_birthday=startedCoachingsNoBirthday;
+let ageRanges={}
+let start=25;
+let end=29;
+for(let age=0; age<75; age++){
+  if(age>end){
+    start+=5;
+    end+=5;
+  }
+  if(age>=18 && age<=24){
+    ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
+  }
+  else{
+    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age];
+  }
+}
+for (const [key, value] of Object.entries(ageRanges)) {
+  result[key] = value;
+  result[`${key}_percent`] = Number((value/allUsersWithStartedCoaching.length*100).toFixed(2));
+}
+
+const usersWithCoachingsByGender = await User.find({_id: idFilter})
+  .populate({
+    path:'coachings',
+    match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
+  }).then(users=>{
+    const groupedUsersByGender= lodash.groupBy(users, 'gender');
+    const genderCount={};
+    Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
+      genderCount[gender] = (genderCount[gender] || 0) + users.length;
+    });
+    const formattedGenderCount = {
+      male: 0,
+      female: 0,
+      non_binary: 0,
+      unknown: 0
+    };
+    for (const [key, value] of Object.entries(genderCount)) {
+      if (key === 'MALE') {
+        formattedGenderCount.male += value;
+      } else if (key === 'FEMALE') {
+        formattedGenderCount.female += value;
+      } else if (key === 'NON_BINARY') {
+        formattedGenderCount.non_binary += value;
+      } else if (key === 'undefined' || key === 'null') {
+        formattedGenderCount.unknown += value;
+      }
+    }
+  return formattedGenderCount;
+  })
+  for (const [key, value] of Object.entries(usersWithCoachingsByGender)) {
+    result[`coachings_gender_${key}`] = value;
+  }
+
+  const nutAdvices=await User.aggregate([
+    {
+      $match:
+      {
+        company: idFilter,
+      },
+    },
+  ])
+  result.nut_advices= nutAdvices.length 
+
+  const usersWithCoaching= await User.find({company:idFilter})
+    .populate({
+      path: 'coachings',
+    })
+ 
+  const usersWithCoachingThisYear = [];
+  for (let userId in usersWithCoaching) {
+      const user = usersWithCoaching[userId];
+      user.coachings.forEach(coaching => {
+          if (moment(coaching.creation_date).isSame(moment(), 'year')) {
+              usersWithCoachingThisYear.push(user);
+          }
+      });
+  }
+  const usersWithRenewedCoachings = usersWithCoachingThisYear.filter(user => {
+    return user.coachings.some(coaching => {
+        return moment(coaching.creation_date).add(1, 'years').isSame(moment(), 'year');
+    });
+  });
+  result.coachings_renewed = usersWithRenewedCoachings.length;
+
+  const jobDict = lodash.keyBy(jobs, 'id');
+  const jobsFound = leads.reduce((acc, lead) => {
+    const jobName = jobDict[lead.job]?.name;
+    if (jobName) {
+      acc[jobName] = (acc[jobName] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const jobsTotal = Object.values(jobsFound).reduce((sum, count) => sum + count, 0);
+  const jobsArray = Object.entries(jobsFound).map(([name, value]) => {
+    const percent = Number(((value / jobsTotal) * 100).toFixed(2));
+    return { name, value, percent };
+  }).sort((a, b) => b.value - a.value);
+
+  result.jobs_total = jobsTotal;
+  result.jobs_details = jobsArray;
+
+
+  const joinReasons= await JoinReason.find()
+  const joinReasonsDict = joinReasons.reduce((acc, jR) => {
+          acc[jR.id] = jR;
+          return acc;
+        }, {});
+  let joinReasonsFound={};
+  let joinReasonsTotal=0;
+  leads.map(lead=>{
+    if(joinReasonsDict[lead.join_reason]){
+      joinReasonsTotal+=1;
+      joinReasonsFound[joinReasonsDict[lead.join_reason].name]= (joinReasonsFound[joinReasonsDict[lead.join_reason].name]||0) +1;
+    }
+  })
+  delete joinReasonsFound.undefined;
+  joinReasonsFound=Object.entries(joinReasonsFound);
+  joinReasonsFound.sort((a, b)=> b[1]-a[1]);
+  const joinReasonsArray = joinReasonsFound.map(([name, value]) => {
+    const percent = Number(((value / joinReasonsTotal) * 100).toFixed(2));
+    return { name, value, percent };
+  });
+  result.join_reasons_total = joinReasonsTotal;
+  result.join_reasons_details = joinReasonsArray;
+
+  const declineReasons= await DeclineReason.find();
+  const declineReasonsDict = declineReasons.reduce((acc, jR) => {
+          acc[jR.id] = jR;
+          return acc;
+        }, {});
+  let declineReasonsFound={};
+  let declineReasonsTotal=0;
+  leads.map(lead=>{
+    if(declineReasonsDict[lead.decline_reason]){
+      declineReasonsFound[declineReasonsDict[lead.decline_reason].name]= (declineReasonsFound[declineReasonsDict[lead.decline_reason].name]||0) +1;
+      declineReasonsTotal+=1;
+    }
+  })
+  delete declineReasonsFound.undefined;
+  declineReasonsFound=Object.entries(declineReasonsFound);
+  declineReasonsFound.sort((a, b)=> b[1]-a[1]);
+  const declineReasonsArray = declineReasonsFound.map(([name, value]) => {
+    const percent = Number(((value / declineReasonsTotal) * 100).toFixed(2));
+    return { name, value, percent };
+  });
+  result.decline_reasons_total = declineReasonsTotal;
+  result.decline_reasons_details = declineReasonsArray;
+
+  result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
+  result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
+
+  const groupedLeadsByOp=lodash.groupBy(leads, 'operator');
+  const inCallPerOperator=[];
+  const outCallPerOperator=[];
+  const nutAdvicesPerOperator=[];
+  const unreachablesPerOperator=[];
+  const coaPerOperator=[];
+  const declinedPerOperator=[];
+  const usefulContactsPerOperator=[];
+  const renewedCoachingsPerOperator=[];
+  const coaCuTransformationPerOperator=[];
+  const cnCuTransformationPerOperator=[];
+
+  let totalInCalls=0;
+  let totalOutCalls=0;
+  let nutAdvicesPerOperatorTotal=0;
+  let coaPerOperatorTotal=0;
+  let declinedPerOperatorTotal=0;
+  let unreachablesPerOperatorTotal=0;
+  let usefulContactsPerOperatorTotal=0;
+  let renewedCoachingsPerOperatorTotal=0;
+  let coaCuTransformationPerOperatorTotal=0;
+  let cnCuTransformationPerOperatorTotal=0;
+  for(let operator in groupedLeadsByOp){
+    let leadByOp=groupedLeadsByOp[operator];
+    let inCalls=0;
+    let outCalls=0;
+    let nutAdvices=0;
+    let coa=0;
+    let declined=0;
+    let unreachable=0;
+    let usefulContacts=0;
+    let renewedCoachings=[];
+    let operatorName="unknown";
+    if (operator != 'undefined') {
+      const foundUser = await User.find({_id: operator});
+      operatorName = foundUser[0] ? foundUser[0].fullname : "unknown";
+  }
+    for(let lead in leadByOp){
+      if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
+        inCalls+=1;
+        totalInCalls+=1;
+      }
+      if(leadByOp[lead].call_direction == CALL_DIRECTION_OUT_CALL){
+        outCalls+=1;
+        totalOutCalls+=1;
+      }
+      if(leadByOp[lead].nutrition_converted){
+        nutAdvices+=1
+        nutAdvicesPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
+      }
+      if(leadByOp[lead].coaching_converted){
+        coa+=1;
+        coaPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
+        renewedCoachings[lead.email]= (renewedCoachings[lead.email] || -1) + 1;
+      }
+      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_NOT_INTERESTED){
+        declined+=1;
+        declinedPerOperatorTotal+=1;
+        usefulContacts+=1;
+        usefulContactsPerOperatorTotal+=1;
+      }
+      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_UNREACHABLE){
+        unreachable+=1;
+        unreachablesPerOperatorTotal+=1;
+      }
+    }
+    inCallPerOperator.push({'name':operatorName, 'value':inCalls});
+    outCallPerOperator.push({'name':operatorName, 'value':outCalls});
+    nutAdvicesPerOperator.push({'name':operatorName, 'value':nutAdvices});
+    coaPerOperator.push({'name':operatorName, 'value':coa});
+    declinedPerOperator.push({'name':operatorName, 'value':declined});
+    unreachablesPerOperator.push({'name':operatorName, 'value':unreachable});
+    usefulContactsPerOperator.push({'name':operatorName, 'value':usefulContacts});
+    const renewedCoachingsTotal=renewedCoachings.reduce((sum, item) => sum + item.value, 0);
+    renewedCoachingsPerOperator.push({'name': operatorName, 'value':renewedCoachingsTotal});
+    renewedCoachingsPerOperatorTotal+=renewedCoachingsTotal;
+    const coaCuTransformation=usefulContacts!=0 ? Number((coa/usefulContacts).toFixed(2)*100) : 0;
+    coaCuTransformationPerOperator.push({'name': operatorName, 'value':coaCuTransformation});
+    coaCuTransformationPerOperatorTotal+=coaCuTransformation;
+    const cnCuTransformation=usefulContacts != 0 ? Number((nutAdvices/usefulContacts).toFixed(2)*100) : 0;
+    cnCuTransformationPerOperator.push({'name': operatorName, 'value':cnCuTransformation});
+    cnCuTransformationPerOperatorTotal+=cnCuTransformation;
+  }
+  result.incalls_per_operator=inCallPerOperator;
+  result.outcalls_per_operator=outCallPerOperator;
+  result.nut_advices_per_operator_details = nutAdvicesPerOperator;
+  result.coachings_per_operator_details = coaPerOperator;
+  result.declined_per_operator_details = declinedPerOperator;
+  result.unreachables_per_operator_details = unreachablesPerOperator;
+  result.useful_contacts_per_operator_details = usefulContactsPerOperator;
+  result.renewed_coachings_per_operator_details = renewedCoachingsPerOperator;
+  result.coa_cu_transformation_per_operator_details = coaCuTransformationPerOperator;
+  result.cn_cu_transformation_per_operator_details = cnCuTransformationPerOperator;
+
+  result.incalls_total=totalInCalls;
+  result.outcalls_total=totalOutCalls;
+  result.nut_advices_per_operator_total = nutAdvicesPerOperatorTotal;
+  result.coachings_per_operator_total = coaPerOperatorTotal;
+  result.declined_per_operator_total = declinedPerOperatorTotal;
+  result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
+  result.useful_contacts_per_operator_total = usefulContactsPerOperatorTotal;
+  result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
+  result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
+  result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
+
+  const leadsTotal=leads.length;
+  const leadsByCampain=[];
+  const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
+  for(let campain in groupedLeadsByCampain){
+    const campainName= campain!='undefined' && campain!='null' ? campain : 'unknown';
+    leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length; 
+  };
+  result.leads_by_campain=[];
+  for(let campain in leadsByCampain){
+    const value = leadsByCampain[campain];
+    const percent = Number(((value/leadsTotal)*100).toFixed(2));
+    result.leads_by_campain.push({
+      'name': campain,
+      'value': value,
+      'percent': percent,
+    })
+  }
+
+  const webinars= await Webinar.find()
+    .populate({path: 'companies'})
+  const webinarsCount= webinars.length;
+  const webinarsGroupedByCompany = [];
+  webinars.forEach((webinar)=>{
+    webinar.companies.forEach((company) => {
+      const companyId = company._id.toString();
+      if(!webinarsGroupedByCompany[companyId]) {
+        webinarsGroupedByCompany[companyId] = {
+          company: company.name,
+          webinars: 0,
+        }
+      }
+      webinarsGroupedByCompany[companyId].webinars += 1;
+    })
+  })
+  result.webinars_by_company_total=webinarsCount;
+  result.webinars_by_company_details=Object.values(webinarsGroupedByCompany);
+  
   return result
 }
 

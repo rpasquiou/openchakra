@@ -218,7 +218,7 @@ const UserSchema = new Schema({
     type: String,
     required: false,
   },
-  zip_code: {
+  zip_code: { //TODO: manage Corsica zip (exemple : 2A030)
     type: String,
     validate: [v => lodash.isEmpty(v) || /^\d{5}$/.test(v), v => `Le code postal '${v.value}' est invalide`],
     required: false,
