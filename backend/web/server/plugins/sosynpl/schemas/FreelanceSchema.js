@@ -126,7 +126,7 @@ const FreelanceSchema = new Schema({
     }],
     default: [],
     validate: [
-      skills => lodash.inRange(skills?.length, MIN_JOB_SKILLS, MAX_JOB_SKILLS+1), 
+      skills => lodash.inRange(skills?.length||0, MIN_JOB_SKILLS, MAX_JOB_SKILLS+1), 
       `Vous devez choisir de ${MIN_JOB_SKILLS} à ${MAX_JOB_SKILLS} compétences métiers` 
     ]
   },
@@ -137,7 +137,7 @@ const FreelanceSchema = new Schema({
     }],
     default: [],
     validate: [
-      skills => lodash.inRange(skills?.length, MIN_EXTRA_SKILLS, MAX_EXTRA_SKILLS+1), 
+      skills => lodash.inRange(skills?.length||0, MIN_EXTRA_SKILLS, MAX_EXTRA_SKILLS+1), 
       `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} compétences hors métier` 
     ]
   },
