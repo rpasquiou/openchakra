@@ -181,6 +181,10 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'hardSkillCategory',
   }],
+  available_hard_skills_categories: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkillCategory',
+  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

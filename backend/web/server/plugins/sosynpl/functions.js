@@ -9,7 +9,7 @@ const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
 const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts")
-const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./skills");
+const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./skills");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
@@ -119,6 +119,7 @@ FREELANCE_MODELS.forEach(model => {
     },
   })
   declareComputedField({model, field: 'hard_skills_categories', requires: 'hard_skills_job,hard_skills_extra', getterFn: computeUserHardSkillsCategories})
+  declareComputedField({model, field: 'available_hard_skills_categories', requires: 'main_job.job_file.hard_skills', getterFn: computeUserHardSkillsJobCategories})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -134,6 +135,12 @@ declareVirtualField({model: 'jobFile', field: 'features', instance: 'Array', mul
 caster: {
   instance: 'ObjectID',
   options: { ref: 'jobFileFeature' }
+},
+})
+declareVirtualField({model: 'jobFile', field: 'hard_skills', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'hardSkill' }
 },
 })
 /** JobFIle end */

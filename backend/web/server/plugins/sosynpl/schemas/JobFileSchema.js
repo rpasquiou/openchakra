@@ -28,7 +28,13 @@ JobFileSchema.virtual('jobs', {
 JobFileSchema.virtual('features', {
   ref: 'jobFileFeature',
   localField: '_id',
-  foreignField: 'jobFile',
+  foreignField: 'job_file',
+})
+
+JobFileSchema.virtual('hard_skills', {
+  ref: 'hardSkill',
+  localField: '_id',
+  foreignField: 'job_file',
 })
 /* eslint-enable prefer-arrow-callback */
 
