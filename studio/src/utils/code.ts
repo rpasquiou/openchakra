@@ -216,7 +216,6 @@ const buildBlock = ({
       propsContent += ` setComponentValue={setComponentValue} `
 
       propsContent += ` getComponentAttribute={getComponentAttribute} `
-      propsContent += ` setComponentAttribute={setComponentAttribute} `
 
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
         propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
@@ -927,7 +926,13 @@ export const generateCode = async (
   const groupedComponents = lodash.groupBy(imports, c =>
     module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
   )
-
+  
+  const componentsWithAttribute=lodash(components)
+    .values()
+    .filter(c => !!c.props.attribute)
+    .map(c => [c.id, c.props.attribute])
+    .fromPairs()
+  const componentsAttributes=`const COMPONENTS_ATTRIBUTES=${JSON.stringify(componentsWithAttribute)}`
   const rootIdQuery = components.root?.props?.model
   const rootIgnoreUrlParams =
     components['root']?.props?.ignoreUrlParams == 'true'
@@ -1022,9 +1027,12 @@ const ${componentName} = () => {
   const id=${rootIgnoreUrlParams ? 'null' : 'query.id'}
   const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
-  const [componentsAttributes, setComponentsAttributes]=useState({})
 
+  ${componentsAttributes}
   const setComponentValue = (compId, value) => {
+    if (lodash.isEqual(value, componentsValues[compId])) {
+      return
+    }
     const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
       .filter(([k ,v]) => v?.variables?.some(([attName, comp]) => comp==compId))
       .map(([k, v]) => k)
@@ -1046,14 +1054,8 @@ const ${componentName} = () => {
     return value
   }
 
-  const setComponentAttribute = (compId, attribute) => {
-    if (componentsAttributes[compId]!=attribute) {
-      setComponentsAttributes(s=> ({...s, [compId]: attribute}))
-    }
-  }
-
   const getComponentAttribute = (compId, level) => {
-    return componentsAttributes[compId]
+    return COMPONENTS_ATTRIBUTES[compId.split('_')[0]]
   }
 
   // ensure token set if lost during domain change
