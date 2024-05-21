@@ -158,6 +158,7 @@ require('./models/Ticket')
 require('./models/TicketComment')
 require('./models/Pack')
 require('./models/Purchase')
+require('./models/Pair')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
