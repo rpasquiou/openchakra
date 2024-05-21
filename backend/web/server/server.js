@@ -165,6 +165,7 @@ require('./models/HardSkill')
 require('./models/HardSkillCategory')
 require('./models/ExpertiseCategory')
 require('./models/Expertise')
+require('./models/Software')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
