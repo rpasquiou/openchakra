@@ -1413,6 +1413,7 @@ declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c7', instance: 'N
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c8', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c9', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c10', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c11', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c12', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c13', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c14', instance: 'Number' })
@@ -1460,7 +1461,7 @@ declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74_p
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_unknown', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_male', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_female', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coachings_non_binary', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_non_binary', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
 declareVirtualField({
   model: 'adminDashboard', field: 'job_details', instance: 'Array', multiple: true,
@@ -1472,6 +1473,13 @@ declareVirtualField({
 declareVirtualField({ model: 'adminDashboard', field: 'jobs_total', instance: 'Number' })
 declareVirtualField({
   model: 'adminDashboard', field: 'join_reasons_details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'jobs_details', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
@@ -1489,14 +1497,14 @@ declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', i
 declareVirtualField({ model: 'adminDashboard', field: 'outcalls_total', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'incalls_total', instance: 'Number' })
 declareVirtualField({
-  model: 'adminDashboard', field: 'outcall_per_operator', instance: 'Array', multiple: true,
+  model: 'adminDashboard', field: 'outcalls_per_operator', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
   },
 })
 declareVirtualField({
-  model: 'adminDashboard', field: 'incall_per_operator', instance: 'Array', multiple: true,
+  model: 'adminDashboard', field: 'incalls_per_operator', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
