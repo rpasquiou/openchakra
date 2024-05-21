@@ -2136,10 +2136,7 @@ const ensureChallengePipsConsistency = () => {
 
 const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
-<<<<<<< HEAD
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
-=======
->>>>>>> dummy-shi
   const result={}
   result.company=id?.toString()
   const FUNCTIONS = {
