@@ -86,7 +86,7 @@ export const ACTIONS = {
     return Promise.resolve()
   },
 
-  create: ({ value, context, props, level, getComponentValue, fireClearComponents }) => {
+  create: ({ value, context, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     console.log('component ids', componentsIds)
     const components=componentsIds.map(c => {
@@ -94,9 +94,10 @@ export const ACTIONS = {
       return comp
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
-    const body = Object.fromEntries(components.map(c => {
-      return [c?.getAttribute('attribute') || c?.getAttribute('data-attribute'), getComponentValue(c.getAttribute('id'), level)||null]
+    const body = Object.fromEntries(actualComponentIds.map(id => {
+      return [getComponentAttribute(id, level), getComponentValue(id, level)||null]
     }))
+    console.log('body', body)
     'job,mission,quotation,group,parent,content,recipe,menu,pip,collectiveChallenge,quizzQuestion,userQuizzQuestion,user'.split(',').forEach(property => {
       if (props[property]) {
         const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
