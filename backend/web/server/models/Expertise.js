@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = ExpertiseSchema ? mongoose.model('expertise', ExpertiseSchema) : null
+module.exports = ExpertiseSchema ? mongoose.model('expertise', ExpertiseSchema, 'expertises') : null

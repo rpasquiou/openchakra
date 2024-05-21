@@ -9,6 +9,8 @@ require('../../../server/models/Job')
 require('../../../server/models/Sector')
 require('../../../server/models/HardSkill')
 require('../../../server/models/HardSkillCategory')
+require('../../../server/models/ExpertiseCategory')
+require('../../../server/models/Expertise')
 const { normalize, guessDelimiter } = require('../../../utils/text')
 const { isNewerThan } = require('../../utils/filesystem')
 const NodeCache=require('node-cache')
@@ -17,7 +19,6 @@ const filesCache=new NodeCache()
 
 const getFileParams = async path => {
   let params=filesCache.get(path)
-  !params && console.log('******** not found')
   if (!params) {
     params={}
     params.contents=fs.readFileSync(path)
@@ -64,13 +65,29 @@ const fixHardSkills = async directory => {
     ...lodash.omit(hs, ['Type compétences (1=savoir faire, 3=savoir)', 'SO SYNPL à garder']),
     'code Fiche Métiers': jobs.find(j => j['Code compétences']==hs['Code compétences Savoir faire'])?.['code Fiche Métiers']
   }))
-  console.log(fullHardSkills.slice(0, 2))
+  await saveRecords(OUTPUT, Object.keys(fullHardSkills[0]), fullHardSkills)
+}
+
+const fixExpertises = async directory => {
+  const INPUT=path.join(directory, 'Champs So SynpL v2.xlsx')
+  const OUTPUT=path.join(directory, 'wapp_expertises.csv')
+  if (isNewerThan(OUTPUT, INPUT)) {
+    return
+  }
+  
+  const jobs=await loadRecords(INPUT, 'Lien Fiche Métiers Compétences', 3)
+  const hardSkills=await loadRecords(INPUT, '5 - Compétences savoir', 2)
+  const fullHardSkills=hardSkills.map(hs => ({
+    ...lodash.omit(hs, ['Type compétences (1=savoir faire, 3=savoir)', 'SO SYNPL à garder']),
+    'code Fiche Métiers': jobs.find(j => j['Code compétences']==hs['Code compétences Savoir'])?.['code Fiche Métiers']
+  }))
   await saveRecords(OUTPUT, Object.keys(fullHardSkills[0]), fullHardSkills)
 }
 
 const fixFiles = async directory => {
   console.log('Fixing files')
-  return fixHardSkills(directory)
+  await fixHardSkills(directory)
+  await fixExpertises(directory)
 }
 
 const JOB_MAPPING={
@@ -187,8 +204,39 @@ const importHardSkills = async (input_file, tab_name, from_line) => {
     identityKey: HARD_SKILL_KEY, migrationKey: HARD_SKILL_MIGRATION_KEY})
 }
 
+// expertise categories
+const EXP_CATEGORY_MAPPING={
+  name: `Catégorie Savoir`,
+}
+
+const EXP_CATEGORY_KEY='name'
+const EXP_CATEGORY_MIGRATION_KEY='name'
+
+const importExpCategories = async (input_file, tab_name, from_line) => {
+  let records=await loadRecords(input_file, tab_name, from_line)
+  return importData({model: 'expertiseCategory', data:records, mapping:EXP_CATEGORY_MAPPING, 
+    identityKey: EXP_CATEGORY_KEY, migrationKey: EXP_CATEGORY_MIGRATION_KEY})
+}
+
+const EXPERTISE_MAPPING={
+  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
+  name: `Libellé Savoir`,
+  code: `Code compétences Savoir`,
+  category: ({record, cache}) => cache('expertiseCategory', record['Catégorie Savoir']),
+}
+
+const EXPERTISE_KEY='code'
+const EXPERTISE_MIGRATION_KEY='code'
+
+const importExpertises = async (input_file, tab_name, from_line) => {
+  let records=await loadRecords(input_file, tab_name, from_line)
+  records=records.filter(r => !lodash.isEmpty(r['Libellé Savoir']?.trim()))
+  return importData({model: 'expertise', data:records, mapping:EXPERTISE_MAPPING, 
+    identityKey: EXPERTISE_KEY, migrationKey: EXPERTISE_MIGRATION_KEY})
+}
+
 module.exports={
   importJobFiles, importJobs, importSectors, importJobFileFeatures, importHardSkills, fixFiles,
-  importCategories1, importCategories2,
+  importCategories1, importCategories2, importExpCategories, importExpertises,
 }  
 
