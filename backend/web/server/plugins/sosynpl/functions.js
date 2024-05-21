@@ -126,7 +126,7 @@ FREELANCE_MODELS.forEach(model => {
   declareVirtualField({model, field: 'softwares', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
-      options: { ref: 'item' }
+      options: { ref: 'software' }
     },
 })
 

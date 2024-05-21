@@ -270,7 +270,7 @@ FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
 })
 
 FreelanceSchema.virtual('softwares', {
-  ref: 'item',
+  ref: 'software',
   localField: '_id',
   foreignField: 'user',
 })
