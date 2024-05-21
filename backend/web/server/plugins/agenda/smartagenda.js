@@ -217,9 +217,10 @@ Get availabilities for a diet and appontment type (i.e. prestation)
 As smartagenda only returns about one week of availabilities, call twice
 remaining_calls tells the number of recursive calls
 */
-const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls=3}) => {
+const getAvailabilities = input_params => {
+  const {diet_id, from, to, appointment_type, remaining_calls=3}=input_params
   if (!(diet_id && from && to && appointment_type)) {
-    throw new Error(`diet_id/from/to/appointment_type are required`)
+    throw new Error(`diet_id/from/to/appointment_type are required:${JSON.stringify(input_params)}`)
   }
 
   const params={pdo_agenda_id: diet_id, pdo_type_rdv_id: appointment_type, date_a_partir_de: from.format('YYYY-MM-DD') }
@@ -299,53 +300,35 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
 })
 
 // Returns an array of (diet, appointmentType) for any diet
-const getDietAppointmentTypes= diet => {
-  return User.findById(diet._id)
+const getDietAppointmentTypes= async diet => {
+  const loaded_diet=await User.findById(diet._id)
     .populate({path: 'customer_companies', populate:['assessment_appointment_type','followup_appointment_type']})
-    .then(diet => {
-      return lodash(diet.customer_companies)
-        .map(c => [c.assessment_appointment_type, c.followup_appointment_type])
-        .flatten()
-        .value()
-    })
+  const res=lodash(loaded_diet.customer_companies)
+    .map(c => [c.assessment_appointment_type, c.followup_appointment_type])
+    .flatten()
+    .value()
+  return res
 }
 
-const synchronizeAvailabilities = () => {
+const synchronizeAvailabilities = async() => {
   console.log('Syncing availabilities from smartagenda')
   const start=moment().add(1, 'days').startOf('day')
   const end=moment().add(AVAILABILITIES_RANGE_DAYS, 'days').startOf('day')
-  return User.find({role: ROLE_EXTERNAL_DIET, smartagenda_id:{$ne :null}})
-    .then(diets => Promise.all(diets.map(d => getDietAppointmentTypes(d)))
-      .then(all_app_types => {
-        all_app_types=all_app_types.filter(v => !!v)
-        // Compute all (diet, appintment type) combinations
-        const combinations=[]
-        diets.forEach((diet, index) => {
-          all_app_types[index].forEach(app_type => {
-            if (app_type) {
-              combinations.push([diet, app_type])
-            }
-          })
-        })
-        // Get smartagenda availabilities for eahc diet/appointment type
-        return lodash.isEmpty(combinations) ?
-          Promise.resolve([])
-          :
-          runPromisesWithDelay(combinations.map(([diet, app_type]) => () => {
-            console.log(diet.email, diet.smartagenda_id, start, end, app_type.smartagenda_id)
-            return getAvailabilities({diet_id: diet.smartagenda_id, from: start, to: end, appointment_type: app_type.smartagenda_id})
-            .then(avails => avails.map(avail => ({ user: diet._id, appointment_type: app_type._id, start_date: avail.start_date })))
-        }), 100)
-        .then(results => {
-          const params=lodash(results).map(f => f.value || []).flatten().value()
-          // Clear all then create new availabilities
-          return Range.deleteMany()
-            .then(() => Range.create(params, {runValidators: true}))
-        })
-        .then(() => Range.countDocuments())
-        .then(res => console.log(`Created ${res} availability ranges`))
-      })
-    )
+  const diets=await User.find({role: ROLE_EXTERNAL_DIET, smartagenda_id:{$ne: null, $exists: true, $ne: ''}})
+  const combinations=[]
+  await Promise.all(diets.map(diet => getDietAppointmentTypes(diet)
+    .then(app_types => {
+      app_types.forEach(app_type => combinations.push([diet, app_type]))
+    })
+  ))
+  const res=await runPromisesWithDelay(combinations.map(([diet, app_type], idx) => () => {
+    return getAvailabilities({diet_id: diet.smartagenda_id, from: start, to: end, appointment_type: app_type.smartagenda_id})
+      .then(avails => avails.map(avail => ({ user: diet._id, appointment_type: app_type._id, start_date: avail.start_date })))
+  }))
+  const new_availabilities=lodash.flatten(res.filter(r => r.status=='fulfilled').map(r => r.value))
+  console.log(`Got `, new_availabilities.length, 'availabilities')
+  await Range.deleteMany()
+  await Range.create(new_availabilities, {runValidators: true})
 }
 
 

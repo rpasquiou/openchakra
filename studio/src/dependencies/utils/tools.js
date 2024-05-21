@@ -19,36 +19,34 @@ async function generatePDF(targetId, fileName){
   await Promise.all(Array.from(imgs).map(async (img) => {
     try {
       const loadedImage = await loadImage(img.src);
-      img.src = loadedImage.src; // Replace the original src with the loaded image src
-      console.log(`Image loaded and replaced for ${img.src}`);
+      img.src = loadedImage.src;
     } catch (error) {
       console.error(`Error loading image ${img.src}: ${error}`);
-      console.log("Some images failed to load and will not appear in the PDF.");
     }
   }));
   
-  return html2canvas(input, { scale: 1, useCORS: true, logging: true, scrollY: -window.scrollY }).then(canvas => {
-    const imgData = canvas.toDataURL('image/png');
+  return html2canvas(input, { scale: 2, useCORS: true, logging: true, scrollY: -window.scrollY }).then(canvas => {
+    const imgData = canvas.toDataURL('image/jpeg',0.5);
     const pdf = new jsPDF({
       orientation: 'p',
       unit: 'mm',
       format: 'a4'
     });
 
-    const imgWidth = 210;  // A4 width in mm
-    const pageHeight = 297;  // A4 height in mm
+    const imgWidth = 210;
+    const pageHeight = 297;
     const imgHeight = canvas.height * imgWidth / canvas.width;
     let heightLeft = imgHeight;
 
-    let position = 0; // Top position of the image in mm
+    let position = 0;
 
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
 
     while (heightLeft > 0) {
-      position -= pageHeight;  // Move position by page height
+      position -= pageHeight;
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
     }
     fileName=fileName +'_'+moment().format("YYYY-MM-DD-HH-mm-ss"); 
