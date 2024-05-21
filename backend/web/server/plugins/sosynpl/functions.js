@@ -242,7 +242,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = ({model, params, user}) => {
-  if (['experience', 'communication', 'certification', 'training', 'item'].includes(model) && !params.user) {
+  if (['experience', 'communication', 'certification', 'training', 'software'].includes(model) && !params.user) {
     params.user=user
   }
   if (model=='languageLevel') {
