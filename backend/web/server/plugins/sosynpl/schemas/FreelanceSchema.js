@@ -186,6 +186,7 @@ const FreelanceSchema = new Schema({
   mobility: {
     type: String,
     enum: Object.keys(MOBILITY),
+    set : v => v || undefined,
     required: false,
   },
   mobility_regions: {
@@ -194,8 +195,10 @@ const FreelanceSchema = new Schema({
       enum: Object.keys(REGIONS)
     }],
     validate: [
-      regions => lodash.inRange(regions?.length||0, MIN_REGIONS, MAX_REGIONS+1), 
-      `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions` 
+      function(regions) {
+        return this.mobility!=MOBILITY_REGIONS || lodash.inRange(regions?.length||0, MIN_REGIONS, MAX_REGIONS+1)
+      },
+      `Vous devez choisir de ${MIN_REGIONS} à ${MAX_REGIONS} régions` 
     ],
     required: [function() {return this.mobility==MOBILITY_REGIONS, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions` }]
   },
