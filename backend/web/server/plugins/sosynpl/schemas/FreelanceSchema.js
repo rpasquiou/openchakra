@@ -3,7 +3,7 @@ const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY} = require('../consts')
+const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 
@@ -266,6 +266,14 @@ FreelanceSchema.virtual('languages', {
   ref: 'languageLevel',
   localField: '_id',
   foreignField: 'user',
+})
+
+FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
+  switch(this.mobility) {
+    case MOBILITY_FRANCE: return MOBILITY[MOBILITY_FRANCE]
+    case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
+    case MOBILITY_CITY: return `${this.mobility_city.city} dans un rayon de ${this.mobility_city_distance} km`
+  }
 })
 
 /* eslint-enable prefer-arrow-callback */

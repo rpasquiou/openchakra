@@ -122,6 +122,7 @@ FREELANCE_MODELS.forEach(model => {
   declareComputedField({model, field: 'available_hard_skills_categories', requires: 'main_job.job_file.hard_skills', getterFn: computeUserHardSkillsJobCategories})
   declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
   declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
+  declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
