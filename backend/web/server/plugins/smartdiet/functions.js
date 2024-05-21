@@ -1495,17 +1495,17 @@ declareVirtualField({
   },
 })
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'outcalls_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'incalls_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'outcalls_per_operator_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'incalls_per_operator_total', instance: 'Number' })
 declareVirtualField({
-  model: 'adminDashboard', field: 'outcalls_per_operator', instance: 'Array', multiple: true,
+  model: 'adminDashboard', field: 'outcalls_per_operator_details', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
   },
 })
 declareVirtualField({
-  model: 'adminDashboard', field: 'incalls_per_operator', instance: 'Array', multiple: true,
+  model: 'adminDashboard', field: 'incalls_per_operator_details', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
