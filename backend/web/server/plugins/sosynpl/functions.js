@@ -150,7 +150,7 @@ declareEnumField({model: 'languageLevel', field: 'language', enumValues: LANGUAG
 declareEnumField({model: 'languageLevel', field: 'level', enumValues: LANGUAGE_LEVEL})
 /** Job end */
 
-/** Category start */
+/** HS Category start */
 declareVirtualField({model: 'hardSkillCategory', field: 'children', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
@@ -164,7 +164,22 @@ caster: {
 },
 })
 declareComputedField({model: 'hardSkillCategory', field: 'progress', instance: 'Number', getterFn: computeHSCategoryProgress})
-/** Category end */
+/** HS Category end */
+
+/** Expertise category start */
+declareVirtualField({model: 'expertiseCategory', field: 'children', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'expertiseCategory' }
+},})
+
+declareVirtualField({model: 'expertiseCategory', field: 'expertises', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'expertise' }
+},})
+
+/** Expertise category end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
