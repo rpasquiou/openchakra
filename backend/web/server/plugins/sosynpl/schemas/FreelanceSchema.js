@@ -240,7 +240,7 @@ const FreelanceSchema = new Schema({
   available_from: {
     type: Date,
     validate: [function(value) { return moment(value).isAfter(moment())}, `La date de disponibilité doit être dans le futur`],
-    required: [function() {return this.availability==AVAILABILITY_UNDEFINED}, `Vous devez donner une date de débit de disponibilité`],
+    required: [function() {return this.availability==AVAILABILITY_OFF}, `Vous devez donner une date de début de disponibilité`],
   },
   // END AVAILABILITY
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
