@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash = require('lodash')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-const { importJobs, importSectors, importJobFiles, importJobFileFeatures, importHardSkills, fixFiles, importCategories1, importCategories2 } = require('../../server/plugins/sosynpl/import')
+const { importJobs, importSectors, importJobFiles, importJobFileFeatures, importHardSkills, fixFiles, importCategories1, importCategories2, importExpCategories, importExpertises } = require('../../server/plugins/sosynpl/import')
 const { loadCache, saveCache } = require('../../utils/import')
 
 const HardSkill=require('../../server/models/HardSkill')
@@ -65,6 +65,15 @@ describe('Test imports', () => {
     // Each skill's category lust have a parent
     const skills=await HardSkill.find().populate('category')
     expect(skills.filter(s => !s.category.parent)).toHaveLength(0)
+  })
+
+  it('must import expertise categories', async () => {
+    return importExpCategories(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `5 - Compétences savoir`, 2)
+  })
+
+  it('must import expertises', async () => {
+    await importExpertises(path.join(ROOT, 'wapp_expertises.csv'))
+    // Each skill's category lust have a parent
   })
 
 })
