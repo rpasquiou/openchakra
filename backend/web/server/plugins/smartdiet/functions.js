@@ -2074,14 +2074,16 @@ const computeStatistics = async ({ id, fields }) => {
   for (const field of individualFields) {
       let functionResult;
 
-      if (field.includes('cs_done') || field.includes('cs_upcoming')) {
-        const csResult = await FUNCTIONS['cs_']({ idFilter });
-        lodash.range(1, 17).forEach(order => {
-            result[`cs_done_c${order}`] = csResult[`cs_done_c${order}`]
-            result[`cs_upcoming_c${order}`] = csResult[`cs_upcoming_c${order}`]
-        })
-        result.cs_done = csResult.cs_done
-        result.cs_upcoming = csResult.cs_upcoming
+      if (field.includes('cs_done_c')) {
+        functionResult = await FUNCTIONS['cs_']({ idFilter });
+        functionResult.forEach((value, index) => {
+          result[`cs_done_c${Number(index)+1}`] = value;
+        });
+      } else if (field.includes('cs_upcoming_c')) {
+        functionResult = await FUNCTIONS['cs_upcoming_c']({ idFilter });
+        functionResult.forEach((value, index) => {
+          result[`cs_upcoming_c${index + 1}`] = value;
+        });
       } else if (field.includes('started_coachings_')) {
         functionResult = await FUNCTIONS['started_coachings_']({ idFilter });
         for (const [key, value] of Object.entries(functionResult)) {
