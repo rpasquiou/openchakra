@@ -3,8 +3,9 @@ const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
+const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
+const { REGIONS } = require('../../../../utils/consts')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -17,6 +18,9 @@ const MAX_JOB_SKILLS=20
 
 const MIN_EXTRA_SKILLS=0
 const MAX_EXTRA_SKILLS=20
+
+const MIN_REGIONS=1
+const MAX_REGIONS=3
 
 const Schema = mongoose.Schema
 
@@ -189,7 +193,31 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'expertise',
   }],
-}, {...schemaOptions, ...DISCRIMINATOR_KEY})
+  mobility: {
+    type: String,
+    enum: Object.keys(MOBILITY),
+    required: false,
+  },
+  mobility_regions: {
+    type: [{
+      type: String,
+      enum: Object.keys(REGIONS)
+    }],
+    validate: [
+      regions => lodash.inRange(regions?.length||0, MIN_REGIONS, MAX_REGIONS+1), 
+      `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions` 
+    ],
+    required: [function() {return this.mobility==MOBILITY_REGIONS, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions` }]
+  },
+  mobility_city: {
+    type: AddressSchema,
+    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une ville`]
+  },
+  mobility_city_distance: {
+    type: Number,
+    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une distance autour de la ville`]
+  },
+  }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
 
