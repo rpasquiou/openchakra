@@ -272,7 +272,7 @@ FreelanceSchema.virtual('experiences', {
 })
 
 FreelanceSchema.virtual('certifications', {
-  ref: 'experience',
+  ref: 'certification',
   localField: '_id',
   foreignField: 'user',
 })
