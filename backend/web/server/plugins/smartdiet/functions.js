@@ -199,6 +199,47 @@ const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
 const Job = require('../../models/Job')
+const {
+  groups_count,
+  messages_count,
+  users_count,
+  user_women_count,
+  users_men_count,
+  users_no_gender_count,
+  webinars_count,
+  coachings_started,
+  coachings_stopped,
+  coachings_dropped,
+  coachings_ongoing,
+  webinars_replayed_count,
+  average_webinar_registrar,
+  started_coachings,
+  leads_count,
+  specificities_count,
+  reasons_users,
+  cs_,
+  started_coachings_,
+  coachings_gender_,
+  nut_advices,
+  coachings_renewed,
+  jobs_,
+  ratio_stopped_started,
+  ratio_dropped_started,
+  incalls_per_operator_,
+  outcalls_per_operator_,
+  nut_advices_per_operator_,
+  coa_per_operator_,
+  declined_per_operator_,
+  unreachables_per_operator_,
+  useful_contacts_per_operator_,
+  renewed_coachings_per_operator_,
+  coa_cu_transformation_per_operator_,
+  cn_cu_transformation_per_operator_,
+  leads_by_campain,
+  webinars_by_company_,
+  join_reasons_,
+  decline_reasons_
+} = require('./kpi');
 
 const filterDataUser = ({ model, data, id, user }) => {
   if (model == 'offer' && !id) {
@@ -1985,440 +2026,503 @@ const ensureChallengePipsConsistency = () => {
 
 const computeStatistics = async ({ id, fields }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
-  const [companies, users, leads, jobs, appointmentsWithCoaching] = await Promise.all([
-    Company.find({_id : idFilter}),
-    User.find({company: idFilter}),
-    Lead.find(),
-    Job.find({company : idFilter}),
-    Appointment.find({ _id: idFilter }).populate({
-            path: 'coaching',
-            populate: {path: 'appointments',}
-        }),
-  ])
-
   const result={}
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   result.company=id?.toString()
-  result.groups_count=await Group.countDocuments({companies: idFilter})
-  result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
-  result.users_count=users.length
-  result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
-  result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
-  result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
-  result.webinars_count=await Webinar.countDocuments({companies: idFilter})
-  const webinars_replayed=(await User.aggregate([
-    {$match: { company: idFilter }},
-    {$unwind: '$replayed_events'},
-    {$match: { 'replayed_events.__t': EVENT_WEBINAR }},
-    {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
-  ]))[0]?.webinarCount||0
-  result.webinars_replayed_count=webinars_replayed
-  const webinars_registered=(await User.aggregate([
-    {$match: { company: idFilter }},
-    {$unwind: '$registered_events'},
-    {$match: { 'registered_events.__t': EVENT_WEBINAR }},
-    {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
-  ]))[0]?.webinarCount||0
-  result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
-  const apptCoachings=await Appointment.distinct('coaching')
-  const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
-  const usersWithStartedCoaching=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
-  result.started_coachings=usersWithStartedCoaching
-  result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
-  const specificities_count=await User.aggregate([
-    { $match: { role: ROLE_CUSTOMER, company: idFilter}},
-    { $unwind: "$specificity_targets" },
-    { $group: { _id: "$specificity_targets", count: { $sum: 1 }}},
-    { $lookup: {
-        from: "targets", // Target collection
-        localField: "_id",
-        foreignField: "_id",
-        as: "target"
-      }
-    },
-    { $unwind: "$target"},
-    { $project: {
-        _id: 0,
-        name: "$target.name",
-        count: 1
-      }
-    },
-    { $sort: { count: 1 } } // Sort by count in descending order
-  ])
-  result.specificities_users=specificities_count.map(({count, name})=> ({x:name, y:count}))
-  let userMatch={$match: {_id: {$exists: true}}}
-  if (result.company) {
-    const companyUsers=(await User.find({company: idFilter}, {_id:1})).map(({_id}) => _id)
-    userMatch={$match: {user: {$in: companyUsers}}}
+  const FUNCTIONS = {
+    groups_count,
+    messages_count,
+    users_count,
+    user_women_count,
+    users_men_count,
+    users_no_gender_count,
+    webinars_count,
+    coachings_started,
+    coachings_stopped,
+    coachings_dropped,
+    coachings_ongoing,
+    webinars_replayed_count,
+    average_webinar_registrar,
+    started_coachings,
+    leads_count,
+    specificities_count,
+    reasons_users,
+    cs_,
+    started_coachings_,
+    coachings_gender_,
+    nut_advices,
+    coachings_renewed,
+    jobs_,
+    join_reasons_,
+    decline_reasons_,
+    ratio_stopped_started,
+    ratio_dropped_started,
+    incalls_per_operator_,
+    outcalls_per_operator_,
+    nut_advices_per_operator_,
+    coa_per_operator_,
+    declined_per_operator_,
+    unreachables_per_operator_,
+    useful_contacts_per_operator_,
+    renewed_coachings_per_operator_,
+    coa_cu_transformation_per_operator_,
+    cn_cu_transformation_per_operator_,
+    leads_by_campain,
+    webinars_by_company_
   }
-  const reasons_count=await Coaching.aggregate([
-    userMatch,
-    { $unwind: "$reasons" },
-    { $group: { _id: "$reasons", count: { $sum: 1 }}},
-    { $lookup: {
-        from: "targets", // Target collection
-        localField: "_id",
-        foreignField: "_id",
-        as: "target"
+  const individualFields = fields.flatMap(fieldGroup => fieldGroup.split(',').map(field => field.trim()));
+  for (const field of individualFields) {
+      let functionResult;
+
+      if (field.includes('cs_done') || field.includes('cs_upcoming')) {
+        const csResult = await FUNCTIONS['cs_']({ idFilter });
+        lodash.range(1, 17).forEach(order => {
+            result[`cs_done_c${order}`] = csResult[`cs_done_c${order}`]
+            result[`cs_upcoming_c${order}`] = csResult[`cs_upcoming_c${order}`]
+        })
+        result.cs_done = csResult.cs_done
+        result.cs_upcoming = csResult.cs_upcoming
+      } else if (field.includes('started_coachings_')) {
+        functionResult = await FUNCTIONS['started_coachings_']({ idFilter });
+        for (const [key, value] of Object.entries(functionResult)) {
+          result[key] = value;
+        };
+      } else if (field.includes('coachings_gender_')) {
+        functionResult = await FUNCTIONS['coachings_gender_']({ idFilter });
+        for (const [gender, count] of Object.entries(functionResult)) {
+          result[`${field}_${gender}`] = count;
+        };
+      } else if (field === 'jobs_' || field === 'join_reasons_' || field === 'decline_reasons_' || field.includes('_details') || field.includes('_total')) {
+        let formattedField = field.replace('details','');
+        formattedField = formattedField.replace('total', '')
+        functionResult = await FUNCTIONS[formattedField]({ idFilter });
+        result[`${formattedField}total`] = functionResult[`${formattedField}total`];
+        result[`${formattedField}details`] = functionResult[`${formattedField}details`];
+      } else {
+        functionResult = await FUNCTIONS[field]({ idFilter });
+        result[field] = functionResult;
       }
-    },
-    { $unwind: "$target"},
-    { $project: {
-        _id: 0,
-        name: "$target.name",
-        count: 1
-      }
-    },
-    { $sort: { count: 1 } } // Sort by count in descending order
-  ])
-  result.reasons_users=reasons_count.map(({count, name})=> ({x:name, y:count}))
+  }
+  //result.groups_count=await Group.countDocuments({companies: idFilter})
+  //result.messages_count=lodash(await Group.find({companies: idFilter}).populate('messages')).flatten().size()
+  //result.users_count=users.length
+  // result.user_women_count=await User.countDocuments({company: idFilter, gender: GENDER_FEMALE})
+  // result.users_men_count=await User.countDocuments({company: idFilter, gender: GENDER_MALE})
+  // result.users_no_gender_count=await User.countDocuments({company: idFilter, gender: GENDER_NON_BINARY})
+  // result.webinars_count=await Webinar.countDocuments({companies: idFilter})
+  // const webinars_replayed=(await User.aggregate([
+  //   {$match: { company: idFilter }},
+  //   {$unwind: '$replayed_events'},
+  //   {$match: { 'replayed_events.__t': EVENT_WEBINAR }},
+  //   {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
+  // ]))[0]?.webinarCount||0
+  // result.webinars_replayed_count=webinars_replayed
+  // const webinars_registered=(await User.aggregate([
+  //   {$match: { company: idFilter }},
+  //   {$unwind: '$registered_events'},
+  //   {$match: { 'registered_events.__t': EVENT_WEBINAR }},
+  //   {$group: {_id: '$_id', webinarCount: { $sum: 1 }}}
+  // ]))[0]?.webinarCount||0
+  // result.average_webinar_registar=result.webinars_count ? webinars_registered*1.0/result.webinars_count : 0
+  // const apptCoachings=await Appointment.distinct('coaching')
+  // const coachings=await Coaching.distinct('user', {_id: {$in: apptCoachings}})
+  // const usersWithStartedCoaching=await User.countDocuments({_id: {$in: coachings}, company: idFilter})
+  // result.started_coachings=usersWithStartedCoaching
+  //result.leads_count=await Lead.countDocuments({company_code: companies.map(c => c.code)})
+  // const specificities_count=await User.aggregate([
+  //   { $match: { role: ROLE_CUSTOMER, company: idFilter}},
+  //   { $unwind: "$specificity_targets" },
+  //   { $group: { _id: "$specificity_targets", count: { $sum: 1 }}},
+  //   { $lookup: {
+  //       from: "targets", // Target collection
+  //       localField: "_id",
+  //       foreignField: "_id",
+  //       as: "target"
+  //     }
+  //   },
+  //   { $unwind: "$target"},
+  //   { $project: {
+  //       _id: 0,
+  //       name: "$target.name",
+  //       count: 1
+  //     }
+  //   },
+  //   { $sort: { count: 1 } } // Sort by count in descending order
+  // ])
+  // result.specificities_users=specificities_count.map(({count, name})=> ({x:name, y:count}))
+  // let userMatch={$match: {_id: {$exists: true}}}
+  // if (result.company) {
+  //   const companyUsers=(await User.find({company: idFilter}, {_id:1})).map(({_id}) => _id)
+  //   userMatch={$match: {user: {$in: companyUsers}}}
+  // }
+  // const reasons_count=await Coaching.aggregate([
+  //   userMatch,
+  //   { $unwind: "$reasons" },
+  //   { $group: { _id: "$reasons", count: { $sum: 1 }}},
+  //   { $lookup: {
+  //       from: "targets", // Target collection
+  //       localField: "_id",
+  //       foreignField: "_id",
+  //       as: "target"
+  //     }
+  //   },
+  //   { $unwind: "$target"},
+  //   { $project: {
+  //       _id: 0,
+  //       name: "$target.name",
+  //       count: 1
+  //     }
+  //   },
+  //   { $sort: { count: 1 } } // Sort by count in descending order
+  // ])
+  // result.reasons_users=reasons_count.map(({count, name})=> ({x:name, y:count}))
   
-  result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
-  result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
-  result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
-  result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
+  // result.coachings_started=await Coaching.countDocuments({status:{$ne:COACHING_STATUS_NOT_STARTED}})
+  // result.coachings_stopped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STOPPED}})
+  // result.coachings_dropped=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_DROPPED}})
+  // result.coachings_ongoing=await Coaching.countDocuments({status:{$eq:COACHING_STATUS_STARTED}})
 
-  const csDoneFilteredAppointment=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_VALID)
-  const csGroupedAppointments = lodash.groupBy(csDoneFilteredAppointment, 'order');
-  let coachingsDone=0;
-  Object.entries(csGroupedAppointments).forEach(([order, apps]) => {
-      coachingsDone += apps.length;
-  });
-  result.cs_done=coachingsDone
-  const filteredAppointments=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
-  const groupedAppointments = lodash.groupBy(filteredAppointments, 'order');
-  let coachingsToCome = 0;
-  Object.entries(groupedAppointments).forEach(([order, apps]) => {
-      coachingsToCome += apps.length;
-  });
-  result.cs_upcoming=coachingsToCome
-  lodash.range(1, 17).forEach(async order => {
-    const validAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
-    const upcomingAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
-    const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
-    const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
-    const orderValidAppointments = groupedValidAppointments[order] || [];
-    const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
-    const validCount = orderValidAppointments.length;
-    const upcomingCount = orderUpcomingAppointments.length;
-    result[`cs_done_c${order}`] = validCount;
-    result[`cs_upcoming_c${order}`] = upcomingCount;
-  });
+  // const csDoneFilteredAppointment=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_VALID)
+  // const csGroupedAppointments = lodash.groupBy(csDoneFilteredAppointment, 'order');
+  // let coachingsDone=0;
+  // Object.entries(csGroupedAppointments).forEach(([order, apps]) => {
+  //     coachingsDone += apps.length;
+  // });
+  // result.cs_done=coachingsDone
+  // const filteredAppointments=appointmentsWithCoaching.filter(appointments=>appointments.status===APPOINTMENT_TO_COME)
+  // const groupedAppointments = lodash.groupBy(filteredAppointments, 'order');
+  // let coachingsToCome = 0;
+  // Object.entries(groupedAppointments).forEach(([order, apps]) => {
+  //     coachingsToCome += apps.length;
+  // });
+  // result.cs_upcoming=coachingsToCome
+  //   lodash.range(1, 17).forEach(async order => {
+  //     const validAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_VALID');
+  //     const upcomingAppointments = appointmentsWithCoaching.filter(appointment => appointment.status === 'APPOINTMENT_TO_COME');
+  //     const groupedValidAppointments = lodash.groupBy(validAppointments, 'order');
+  //     const groupedUpcomingAppointments = lodash.groupBy(upcomingAppointments, 'order');
+  //     const orderValidAppointments = groupedValidAppointments[order] || [];
+  //     const orderUpcomingAppointments = groupedUpcomingAppointments[order] || [];
+  //     const validCount = orderValidAppointments.length;
+  //     const upcomingCount = orderUpcomingAppointments.length;
+  //     result[`cs_done_c${order}`] = validCount;
+  //     result[`cs_upcoming_c${order}`] = upcomingCount;
+  //   });
+    
+  // const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
+  //     path: 'coachings',
+  //     match: { status: 'COACHING_STATUS_STARTED' }
+  // });
+
+  // let ageCounts = {};
+  // let startedCoachingsNoBirthday = 0;
+
+  // allUsersWithStartedCoaching.forEach(user => {
+  //   if (user.birthday) {
+  //     const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
+  //     ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
+  //   } else {
+  //     startedCoachingsNoBirthday += user.coachings.length;
+  //   }
+  // });
+  // result.started_coaching_no_birthday=startedCoachingsNoBirthday;
+  // let ageRanges={}
+  // let start=25;
+  // let end=29;
+  // for(let age=0; age<75; age++){
+  //   if(age>end){
+  //     start+=5;
+  //     end+=5;
+  //   }
+  //   if(age>=18 && age<=24){
+  //     ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
+  //   }
+  //   else{
+  //     ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age];
+  //   }
+  // }
+  // for (const [key, value] of Object.entries(ageRanges)) {
+  //   result[key] = value;
+  //   result[`${key}_percent`] = Number((value/allUsersWithStartedCoaching.length*100).toFixed(2));
+  // }
+
+  // const usersWithCoachingsByGender = await User.find({_id: idFilter})
+  //   .populate({
+  //     path:'coachings',
+  //     match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
+  //   }).then(users=>{
+  //     const groupedUsersByGender= lodash.groupBy(users, 'gender');
+  //     const genderCount={};
+  //     Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
+  //       genderCount[gender] = (genderCount[gender] || 0) + users.length;
+  //     });
+  //     const formattedGenderCount = {
+  //       male: 0,
+  //       female: 0,
+  //       non_binary: 0,
+  //       unknown: 0
+  //     };
+  //     for (const [key, value] of Object.entries(genderCount)) {
+  //       if (key === 'MALE') {
+  //         formattedGenderCount.male += value;
+  //       } else if (key === 'FEMALE') {
+  //         formattedGenderCount.female += value;
+  //       } else if (key === 'NON_BINARY') {
+  //         formattedGenderCount.non_binary += value;
+  //       } else if (key === 'undefined' || key === 'null') {
+  //         formattedGenderCount.unknown += value;
+  //       }
+  //     }
+  //   return formattedGenderCount;
+  //   })
+  //   for (const [key, value] of Object.entries(usersWithCoachingsByGender)) {
+  //     result[`coachings_gender_${key}`] = value;
+  //   }
+
+  //   const nutAdvices=await User.aggregate([
+  //     {
+  //       $match:
+  //       {
+  //         company: idFilter,
+  //       },
+  //     },
+  //   ])
+  //   result.nut_advices= nutAdvices.length 
+
+  //   const usersWithCoaching= await User.find({company:idFilter})
+  //     .populate({
+  //       path: 'coachings',
+  //     })
   
-const allUsersWithStartedCoaching = await User.find({ _id : idFilter}).populate({
-    path: 'coachings',
-    match: { status: 'COACHING_STATUS_STARTED' }
-});
+  //   const usersWithCoachingThisYear = [];
+  //   for (let userId in usersWithCoaching) {
+  //       const user = usersWithCoaching[userId];
+  //       user.coachings.forEach(coaching => {
+  //           if (moment(coaching.creation_date).isSame(moment(), 'year')) {
+  //               usersWithCoachingThisYear.push(user);
+  //           }
+  //       });
+  //   }
+  //   const usersWithRenewedCoachings = usersWithCoachingThisYear.filter(user => {
+  //     return user.coachings.some(coaching => {
+  //         return moment(coaching.creation_date).add(1, 'years').isSame(moment(), 'year');
+  //     });
+  //   });
+  //   result.coachings_renewed = usersWithRenewedCoachings.length;
 
-let ageCounts = {};
-let startedCoachingsNoBirthday = 0;
+  //   const jobDict = lodash.keyBy(jobs, 'id');
+  //   const jobsFound = leads.reduce((acc, lead) => {
+  //     const jobName = jobDict[lead.job]?.name;
+  //     if (jobName) {
+  //       acc[jobName] = (acc[jobName] || 0) + 1;
+  //     }
+  //     return acc;
+  //   }, {});
 
-allUsersWithStartedCoaching.forEach(user => {
-  if (user.birthday) {
-    const age = moment().diff(moment(user.birthday, 'YYYY-MM-DD'), 'years');
-    ageCounts[age] = (ageCounts[age] || 0) + user.coachings.length;
-  } else {
-    startedCoachingsNoBirthday += user.coachings.length;
-  }
-});
-result.started_coaching_no_birthday=startedCoachingsNoBirthday;
-let ageRanges={}
-let start=25;
-let end=29;
-for(let age=0; age<75; age++){
-  if(age>end){
-    start+=5;
-    end+=5;
-  }
-  if(age>=18 && age<=24){
-    ageRanges[`started_coachings_18_24`] = (ageRanges[`started_coachings_18_24`]|| 0) + ageCounts[age];
-  }
-  else{
-    ageRanges[`started_coachings_${start}_${end}`] = (ageRanges[`started_coachings_${start}_${end}`] || 0) + ageCounts[age];
-  }
-}
-for (const [key, value] of Object.entries(ageRanges)) {
-  result[key] = value;
-  result[`${key}_percent`] = Number((value/allUsersWithStartedCoaching.length*100).toFixed(2));
-}
+  //   const jobsTotal = Object.values(jobsFound).reduce((sum, count) => sum + count, 0);
+  //   const jobsArray = Object.entries(jobsFound).map(([name, value]) => {
+  //     const percent = Number(((value / jobsTotal) * 100).toFixed(2));
+  //     return { name, value, percent };
+  //   }).sort((a, b) => b.value - a.value);
 
-const usersWithCoachingsByGender = await User.find({_id: idFilter})
-  .populate({
-    path:'coachings',
-    match: { status: {$in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]}}
-  }).then(users=>{
-    const groupedUsersByGender= lodash.groupBy(users, 'gender');
-    const genderCount={};
-    Object.entries(groupedUsersByGender).forEach(([gender, users]) => {
-      genderCount[gender] = (genderCount[gender] || 0) + users.length;
-    });
-    const formattedGenderCount = {
-      male: 0,
-      female: 0,
-      non_binary: 0,
-      unknown: 0
-    };
-    for (const [key, value] of Object.entries(genderCount)) {
-      if (key === 'MALE') {
-        formattedGenderCount.male += value;
-      } else if (key === 'FEMALE') {
-        formattedGenderCount.female += value;
-      } else if (key === 'NON_BINARY') {
-        formattedGenderCount.non_binary += value;
-      } else if (key === 'undefined' || key === 'null') {
-        formattedGenderCount.unknown += value;
-      }
-    }
-  return formattedGenderCount;
-  })
-  for (const [key, value] of Object.entries(usersWithCoachingsByGender)) {
-    result[`coachings_gender_${key}`] = value;
-  }
-
-  const nutAdvices=await User.aggregate([
-    {
-      $match:
-      {
-        company: idFilter,
-      },
-    },
-  ])
-  result.nut_advices= nutAdvices.length 
-
-  const usersWithCoaching= await User.find({company:idFilter})
-    .populate({
-      path: 'coachings',
-    })
- 
-  const usersWithCoachingThisYear = [];
-  for (let userId in usersWithCoaching) {
-      const user = usersWithCoaching[userId];
-      user.coachings.forEach(coaching => {
-          if (moment(coaching.creation_date).isSame(moment(), 'year')) {
-              usersWithCoachingThisYear.push(user);
-          }
-      });
-  }
-  const usersWithRenewedCoachings = usersWithCoachingThisYear.filter(user => {
-    return user.coachings.some(coaching => {
-        return moment(coaching.creation_date).add(1, 'years').isSame(moment(), 'year');
-    });
-  });
-  result.coachings_renewed = usersWithRenewedCoachings.length;
-
-  const jobDict = lodash.keyBy(jobs, 'id');
-  const jobsFound = leads.reduce((acc, lead) => {
-    const jobName = jobDict[lead.job]?.name;
-    if (jobName) {
-      acc[jobName] = (acc[jobName] || 0) + 1;
-    }
-    return acc;
-  }, {});
-
-  const jobsTotal = Object.values(jobsFound).reduce((sum, count) => sum + count, 0);
-  const jobsArray = Object.entries(jobsFound).map(([name, value]) => {
-    const percent = Number(((value / jobsTotal) * 100).toFixed(2));
-    return { name, value, percent };
-  }).sort((a, b) => b.value - a.value);
-
-  result.jobs_total = jobsTotal;
-  result.jobs_details = jobsArray;
+  //   result.jobs_total = jobsTotal;
+  //   result.jobs_details = jobsArray;
 
 
-  const joinReasons= await JoinReason.find()
-  const joinReasonsDict = joinReasons.reduce((acc, jR) => {
-          acc[jR.id] = jR;
-          return acc;
-        }, {});
-  let joinReasonsFound={};
-  let joinReasonsTotal=0;
-  leads.map(lead=>{
-    if(joinReasonsDict[lead.join_reason]){
-      joinReasonsTotal+=1;
-      joinReasonsFound[joinReasonsDict[lead.join_reason].name]= (joinReasonsFound[joinReasonsDict[lead.join_reason].name]||0) +1;
-    }
-  })
-  delete joinReasonsFound.undefined;
-  joinReasonsFound=Object.entries(joinReasonsFound);
-  joinReasonsFound.sort((a, b)=> b[1]-a[1]);
-  const joinReasonsArray = joinReasonsFound.map(([name, value]) => {
-    const percent = Number(((value / joinReasonsTotal) * 100).toFixed(2));
-    return { name, value, percent };
-  });
-  result.join_reasons_total = joinReasonsTotal;
-  result.join_reasons_details = joinReasonsArray;
+  //   const joinReasons= await JoinReason.find()
+  //   const joinReasonsDict = joinReasons.reduce((acc, jR) => {
+  //           acc[jR.id] = jR;
+  //           return acc;
+  //         }, {});
+  //   let joinReasonsFound={};
+  //   let joinReasonsTotal=0;
+  //   leads.map(lead=>{
+  //     if(joinReasonsDict[lead.join_reason]){
+  //       joinReasonsTotal+=1;
+  //       joinReasonsFound[joinReasonsDict[lead.join_reason].name]= (joinReasonsFound[joinReasonsDict[lead.join_reason].name]||0) +1;
+  //     }
+  //   })
+  //   delete joinReasonsFound.undefined;
+  //   joinReasonsFound=Object.entries(joinReasonsFound);
+  //   joinReasonsFound.sort((a, b)=> b[1]-a[1]);
+  //   const joinReasonsArray = joinReasonsFound.map(([name, value]) => {
+  //     const percent = Number(((value / joinReasonsTotal) * 100).toFixed(2));
+  //     return { name, value, percent };
+  //   });
+  //   result.join_reasons_total = joinReasonsTotal;
+  //   result.join_reasons_details = joinReasonsArray;
 
-  const declineReasons= await DeclineReason.find();
-  const declineReasonsDict = declineReasons.reduce((acc, jR) => {
-          acc[jR.id] = jR;
-          return acc;
-        }, {});
-  let declineReasonsFound={};
-  let declineReasonsTotal=0;
-  leads.map(lead=>{
-    if(declineReasonsDict[lead.decline_reason]){
-      declineReasonsFound[declineReasonsDict[lead.decline_reason].name]= (declineReasonsFound[declineReasonsDict[lead.decline_reason].name]||0) +1;
-      declineReasonsTotal+=1;
-    }
-  })
-  delete declineReasonsFound.undefined;
-  declineReasonsFound=Object.entries(declineReasonsFound);
-  declineReasonsFound.sort((a, b)=> b[1]-a[1]);
-  const declineReasonsArray = declineReasonsFound.map(([name, value]) => {
-    const percent = Number(((value / declineReasonsTotal) * 100).toFixed(2));
-    return { name, value, percent };
-  });
-  result.decline_reasons_total = declineReasonsTotal;
-  result.decline_reasons_details = declineReasonsArray;
+  //   const declineReasons= await DeclineReason.find();
+  //   const declineReasonsDict = declineReasons.reduce((acc, jR) => {
+  //           acc[jR.id] = jR;
+  //           return acc;
+  //         }, {});
+  //   let declineReasonsFound={};
+  //   let declineReasonsTotal=0;
+  //   leads.map(lead=>{
+  //     if(declineReasonsDict[lead.decline_reason]){
+  //       declineReasonsFound[declineReasonsDict[lead.decline_reason].name]= (declineReasonsFound[declineReasonsDict[lead.decline_reason].name]||0) +1;
+  //       declineReasonsTotal+=1;
+  //     }
+  //   })
+  //   delete declineReasonsFound.undefined;
+  //   declineReasonsFound=Object.entries(declineReasonsFound);
+  //   declineReasonsFound.sort((a, b)=> b[1]-a[1]);
+  //   const declineReasonsArray = declineReasonsFound.map(([name, value]) => {
+  //     const percent = Number(((value / declineReasonsTotal) * 100).toFixed(2));
+  //     return { name, value, percent };
+  //   });
+  //   result.decline_reasons_total = declineReasonsTotal;
+  //   result.decline_reasons_details = declineReasonsArray;
 
-  result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
-  result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
+  //   result.ratio_stopped_started=Number((result.coachings_stopped / result.coachings_started * 100).toFixed(2));
+  //   result.ratio_dropped_started=Number((result.coachings_dropped / result.coachings_started * 100).toFixed(2));
 
-  const groupedLeadsByOp=lodash.groupBy(leads, 'operator');
-  const inCallPerOperator=[];
-  const outCallPerOperator=[];
-  const nutAdvicesPerOperator=[];
-  const unreachablesPerOperator=[];
-  const coaPerOperator=[];
-  const declinedPerOperator=[];
-  const usefulContactsPerOperator=[];
-  const renewedCoachingsPerOperator=[];
-  const coaCuTransformationPerOperator=[];
-  const cnCuTransformationPerOperator=[];
+  //   const groupedLeadsByOp=lodash.groupBy(leads, 'operator');
+  //   const inCallPerOperator=[];
+  //   const outCallPerOperator=[];
+  //   const nutAdvicesPerOperator=[];
+  //   const unreachablesPerOperator=[];
+  //   const coaPerOperator=[];
+  //   const declinedPerOperator=[];
+  //   const usefulContactsPerOperator=[];
+  //   const renewedCoachingsPerOperator=[];
+  //   const coaCuTransformationPerOperator=[];
+  //   const cnCuTransformationPerOperator=[];
 
-  let totalInCalls=0;
-  let totalOutCalls=0;
-  let nutAdvicesPerOperatorTotal=0;
-  let coaPerOperatorTotal=0;
-  let declinedPerOperatorTotal=0;
-  let unreachablesPerOperatorTotal=0;
-  let usefulContactsPerOperatorTotal=0;
-  let renewedCoachingsPerOperatorTotal=0;
-  let coaCuTransformationPerOperatorTotal=0;
-  let cnCuTransformationPerOperatorTotal=0;
-  for(let operator in groupedLeadsByOp){
-    let leadByOp=groupedLeadsByOp[operator];
-    let inCalls=0;
-    let outCalls=0;
-    let nutAdvices=0;
-    let coa=0;
-    let declined=0;
-    let unreachable=0;
-    let usefulContacts=0;
-    let renewedCoachings=[];
-    let operatorName="unknown";
-    if (operator != 'undefined') {
-      const foundUser = await User.find({_id: operator});
-      operatorName = foundUser[0] ? foundUser[0].fullname : "unknown";
-  }
-    for(let lead in leadByOp){
-      if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
-        inCalls+=1;
-        totalInCalls+=1;
-      }
-      if(leadByOp[lead].call_direction == CALL_DIRECTION_OUT_CALL){
-        outCalls+=1;
-        totalOutCalls+=1;
-      }
-      if(leadByOp[lead].nutrition_converted){
-        nutAdvices+=1
-        nutAdvicesPerOperatorTotal+=1;
-        usefulContacts+=1;
-        usefulContactsPerOperatorTotal+=1;
-      }
-      if(leadByOp[lead].coaching_converted){
-        coa+=1;
-        coaPerOperatorTotal+=1;
-        usefulContacts+=1;
-        usefulContactsPerOperatorTotal+=1;
-        renewedCoachings[lead.email]= (renewedCoachings[lead.email] || -1) + 1;
-      }
-      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_NOT_INTERESTED){
-        declined+=1;
-        declinedPerOperatorTotal+=1;
-        usefulContacts+=1;
-        usefulContactsPerOperatorTotal+=1;
-      }
-      if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_UNREACHABLE){
-        unreachable+=1;
-        unreachablesPerOperatorTotal+=1;
-      }
-    }
-    inCallPerOperator.push({'name':operatorName, 'value':inCalls});
-    outCallPerOperator.push({'name':operatorName, 'value':outCalls});
-    nutAdvicesPerOperator.push({'name':operatorName, 'value':nutAdvices});
-    coaPerOperator.push({'name':operatorName, 'value':coa});
-    declinedPerOperator.push({'name':operatorName, 'value':declined});
-    unreachablesPerOperator.push({'name':operatorName, 'value':unreachable});
-    usefulContactsPerOperator.push({'name':operatorName, 'value':usefulContacts});
-    const renewedCoachingsTotal=renewedCoachings.reduce((sum, item) => sum + item.value, 0);
-    renewedCoachingsPerOperator.push({'name': operatorName, 'value':renewedCoachingsTotal});
-    renewedCoachingsPerOperatorTotal+=renewedCoachingsTotal;
-    const coaCuTransformation=usefulContacts!=0 ? Number((coa/usefulContacts).toFixed(2)*100) : 0;
-    coaCuTransformationPerOperator.push({'name': operatorName, 'value':coaCuTransformation});
-    coaCuTransformationPerOperatorTotal+=coaCuTransformation;
-    const cnCuTransformation=usefulContacts != 0 ? Number((nutAdvices/usefulContacts).toFixed(2)*100) : 0;
-    cnCuTransformationPerOperator.push({'name': operatorName, 'value':cnCuTransformation});
-    cnCuTransformationPerOperatorTotal+=cnCuTransformation;
-  }
-  result.incalls_per_operator=inCallPerOperator;
-  result.outcalls_per_operator=outCallPerOperator;
-  result.nut_advices_per_operator_details = nutAdvicesPerOperator;
-  result.coachings_per_operator_details = coaPerOperator;
-  result.declined_per_operator_details = declinedPerOperator;
-  result.unreachables_per_operator_details = unreachablesPerOperator;
-  result.useful_contacts_per_operator_details = usefulContactsPerOperator;
-  result.renewed_coachings_per_operator_details = renewedCoachingsPerOperator;
-  result.coa_cu_transformation_per_operator_details = coaCuTransformationPerOperator;
-  result.cn_cu_transformation_per_operator_details = cnCuTransformationPerOperator;
+  //   let totalInCalls=0;
+  //   let totalOutCalls=0;
+  //   let nutAdvicesPerOperatorTotal=0;
+  //   let coaPerOperatorTotal=0;
+  //   let declinedPerOperatorTotal=0;
+  //   let unreachablesPerOperatorTotal=0;
+  //   let usefulContactsPerOperatorTotal=0;
+  //   let renewedCoachingsPerOperatorTotal=0;
+  //   let coaCuTransformationPerOperatorTotal=0;
+  //   let cnCuTransformationPerOperatorTotal=0;
+  //   for(let operator in groupedLeadsByOp){
+  //     let leadByOp=groupedLeadsByOp[operator];
+  //     let inCalls=0;
+  //     let outCalls=0;
+  //     let nutAdvices=0;
+  //     let coa=0;
+  //     let declined=0;
+  //     let unreachable=0;
+  //     let usefulContacts=0;
+  //     let renewedCoachings=[];
+  //     let operatorName="unknown";
+  //     if (operator != 'undefined') {
+  //       const foundUser = await User.find({_id: operator});
+  //       operatorName = foundUser[0] ? foundUser[0].fullname : "unknown";
+  //   }
+  //     for(let lead in leadByOp){
+  //       if(leadByOp[lead].call_direction == CALL_DIRECTION_IN_CALL){
+  //         inCalls+=1;
+  //         totalInCalls+=1;
+  //       }
+  //       if(leadByOp[lead].call_direction == CALL_DIRECTION_OUT_CALL){
+  //         outCalls+=1;
+  //         totalOutCalls+=1;
+  //       }
+  //       if(leadByOp[lead].nutrition_converted){
+  //         nutAdvices+=1
+  //         nutAdvicesPerOperatorTotal+=1;
+  //         usefulContacts+=1;
+  //         usefulContactsPerOperatorTotal+=1;
+  //       }
+  //       if(leadByOp[lead].coaching_converted){
+  //         coa+=1;
+  //         coaPerOperatorTotal+=1;
+  //         usefulContacts+=1;
+  //         usefulContactsPerOperatorTotal+=1;
+  //         renewedCoachings[lead.email]= (renewedCoachings[lead.email] || -1) + 1;
+  //       }
+  //       if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_NOT_INTERESTED){
+  //         declined+=1;
+  //         declinedPerOperatorTotal+=1;
+  //         usefulContacts+=1;
+  //         usefulContactsPerOperatorTotal+=1;
+  //       }
+  //       if(leadByOp[lead].call_status==CALL_STATUS.CALL_STATUS_UNREACHABLE){
+  //         unreachable+=1;
+  //         unreachablesPerOperatorTotal+=1;
+  //       }
+  //     }
+  //     inCallPerOperator.push({'name':operatorName, 'value':inCalls});
+  //     outCallPerOperator.push({'name':operatorName, 'value':outCalls});
+  //     nutAdvicesPerOperator.push({'name':operatorName, 'value':nutAdvices});
+  //     coaPerOperator.push({'name':operatorName, 'value':coa});
+  //     declinedPerOperator.push({'name':operatorName, 'value':declined});
+  //     unreachablesPerOperator.push({'name':operatorName, 'value':unreachable});
+  //     usefulContactsPerOperator.push({'name':operatorName, 'value':usefulContacts});
+  //     const renewedCoachingsTotal=renewedCoachings.reduce((sum, item) => sum + item.value, 0);
+  //     renewedCoachingsPerOperator.push({'name': operatorName, 'value':renewedCoachingsTotal});
+  //     renewedCoachingsPerOperatorTotal+=renewedCoachingsTotal;
+  //     const coaCuTransformation=usefulContacts!=0 ? Number((coa/usefulContacts).toFixed(2)*100) : 0;
+  //     coaCuTransformationPerOperator.push({'name': operatorName, 'value':coaCuTransformation});
+  //     coaCuTransformationPerOperatorTotal+=coaCuTransformation;
+  //     const cnCuTransformation=usefulContacts != 0 ? Number((nutAdvices/usefulContacts).toFixed(2)*100) : 0;
+  //     cnCuTransformationPerOperator.push({'name': operatorName, 'value':cnCuTransformation});
+  //     cnCuTransformationPerOperatorTotal+=cnCuTransformation;
+  //   }
+  //   result.incalls_per_operator=inCallPerOperator;
+  //   result.outcalls_per_operator=outCallPerOperator;
+  //   result.nut_advices_per_operator_details = nutAdvicesPerOperator;
+  //   result.coachings_per_operator_details = coaPerOperator;
+  //   result.declined_per_operator_details = declinedPerOperator;
+  //   result.unreachables_per_operator_details = unreachablesPerOperator;
+  //   result.useful_contacts_per_operator_details = usefulContactsPerOperator;
+  //   result.renewed_coachings_per_operator_details = renewedCoachingsPerOperator;
+  //   result.coa_cu_transformation_per_operator_details = coaCuTransformationPerOperator;
+  //   result.cn_cu_transformation_per_operator_details = cnCuTransformationPerOperator;
 
-  result.incalls_total=totalInCalls;
-  result.outcalls_total=totalOutCalls;
-  result.nut_advices_per_operator_total = nutAdvicesPerOperatorTotal;
-  result.coachings_per_operator_total = coaPerOperatorTotal;
-  result.declined_per_operator_total = declinedPerOperatorTotal;
-  result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
-  result.useful_contacts_per_operator_total = usefulContactsPerOperatorTotal;
-  result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
-  result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
-  result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
+  //   result.incalls_total=totalInCalls;
+  //   result.outcalls_total=totalOutCalls;
+  //   result.nut_advices_per_operator_total = nutAdvicesPerOperatorTotal;
+  //   result.coachings_per_operator_total = coaPerOperatorTotal;
+  //   result.declined_per_operator_total = declinedPerOperatorTotal;
+  //   result.unreachables_per_operator_total = unreachablesPerOperatorTotal;
+  //   result.useful_contacts_per_operator_total = usefulContactsPerOperatorTotal;
+  //   result.renewed_coachings_per_operator_total = renewedCoachingsPerOperatorTotal;
+  //   result.coa_cu_transformation_per_operator_total = coaCuTransformationPerOperatorTotal;
+  //   result.cn_cu_transformation_per_operator_total = cnCuTransformationPerOperatorTotal;
 
-  const leadsTotal=leads.length;
-  const leadsByCampain=[];
-  const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
-  for(let campain in groupedLeadsByCampain){
-    const campainName= campain!='undefined' && campain!='null' ? campain : 'unknown';
-    leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length; 
-  };
-  result.leads_by_campain=[];
-  for(let campain in leadsByCampain){
-    const value = leadsByCampain[campain];
-    const percent = Number(((value/leadsTotal)*100).toFixed(2));
-    result.leads_by_campain.push({
-      'name': campain,
-      'value': value,
-      'percent': percent,
-    })
-  }
+  //   const leadsTotal=leads.length;
+  //   const leadsByCampain=[];
+  //   const groupedLeadsByCampain=lodash.groupBy(leads, 'campain');
+  //   for(let campain in groupedLeadsByCampain){
+  //     const campainName= campain!='undefined' && campain!='null' ? campain : 'unknown';
+  //     leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length; 
+  //   };
+  //   result.leads_by_campain=[];
+  //   for(let campain in leadsByCampain){
+  //     const value = leadsByCampain[campain];
+  //     const percent = Number(((value/leadsTotal)*100).toFixed(2));
+  //     result.leads_by_campain.push({
+  //       'name': campain,
+  //       'value': value,
+  //       'percent': percent,
+  //     })
+  //   }
 
-  const webinars= await Webinar.find()
-    .populate({path: 'companies'})
-  const webinarsCount= webinars.length;
-  const webinarsGroupedByCompany = [];
-  webinars.forEach((webinar)=>{
-    webinar.companies.forEach((company) => {
-      const companyId = company._id.toString();
-      if(!webinarsGroupedByCompany[companyId]) {
-        webinarsGroupedByCompany[companyId] = {
-          company: company.name,
-          webinars: 0,
-        }
-      }
-      webinarsGroupedByCompany[companyId].webinars += 1;
-    })
-  })
-  result.webinars_by_company_total=webinarsCount;
-  result.webinars_by_company_details=Object.values(webinarsGroupedByCompany);
+  //   const webinars= await Webinar.find()
+  //     .populate({path: 'companies'})
+  //   const webinarsCount= webinars.length;
+  //   const webinarsGroupedByCompany = [];
+  //   webinars.forEach((webinar)=>{
+  //     webinar.companies.forEach((company) => {
+  //       const companyId = company._id.toString();
+  //       if(!webinarsGroupedByCompany[companyId]) {
+  //         webinarsGroupedByCompany[companyId] = {
+  //           company: company.name,
+  //           webinars: 0,
+  //         }
+  //       }
+  //       webinarsGroupedByCompany[companyId].webinars += 1;
+  //     })
+  //   })
+  //   result.webinars_by_company_total=webinarsCount;
+  //   result.webinars_by_company_details=Object.values(webinarsGroupedByCompany);
   
   return result
 }
