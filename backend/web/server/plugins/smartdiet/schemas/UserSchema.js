@@ -218,7 +218,7 @@ const UserSchema = new Schema({
     type: String,
     required: false,
   },
-  zip_code: {
+  zip_code: { //TODO: manage Corsica zip (exemple : 2A030)
     type: String,
     validate: [v => lodash.isEmpty(v) || /^\d{5}$/.test(v), v => `Le code postal '${v.value}' est invalide`],
     required: false,
@@ -786,7 +786,7 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
       return false
     }
     // Latest coaching started year before => this year's one is available => can not buy
-    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer.coaching_credit>0) {
+    if (!moment(latest_coaching.creation_date).isSame(moment(), 'year') && this.company.current_offer?.coaching_credit>0) {
       return false
     }
   }

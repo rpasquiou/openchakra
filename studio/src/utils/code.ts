@@ -944,6 +944,7 @@ export const generateCode = async (
       if (role && page) {
         usedRoles.push(role)
         return   `useEffect(()=>{
+            if (redirectExists()) {return}
             if (user?.role=='${role}') {window.location='/${getPageUrl(page, pages)  }'}
           }, [user])`
       }
@@ -955,6 +956,7 @@ export const generateCode = async (
   if (defaultRedirectPage) {
     const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
     autoRedirect+=`\nuseEffect(()=>{
+        if (redirectExists()) {return}
         if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
       }, [user])`
   }
@@ -973,6 +975,12 @@ export const generateCode = async (
       const tagPages=${JSON.stringify(tagPages)}
       axios.post('/myAlfred/api/studio/tags', tagPages)
     }, [])`
+  }
+  let renderNullCode=''
+  if(components.root.props.allowNotConnected=="false"){
+    renderNullCode+= `if(!user){
+      return null
+    }`
   }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
   code = `${header}\nimport React, {useState, useEffect} from 'react';
@@ -1009,6 +1017,7 @@ import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
+import { redirectExists } from '../dependencies/utils/misc'
 
 ${extraImports.join('\n')}
 ${wappComponentsDeclaration.join('\n')}
@@ -1020,7 +1029,10 @@ ${componentsCodes}
 
 const ${componentName} = () => {
 
-
+  const {user}=useUserContext()
+  ${autoRedirect}
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
+  ${renderNullCode}
   /** Force reload on history.back */
   ${reloadOnBackScript}
   const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
@@ -1063,10 +1075,7 @@ const ${componentName} = () => {
     ensureToken()
   }, [])
 
-  const {user}=useUserContext()
-  ${autoRedirect}
-
-
+  
   ${hooksCode}
   ${filterStates}
   ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}

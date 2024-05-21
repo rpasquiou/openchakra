@@ -1,5 +1,6 @@
 import lodash from 'lodash'
 
+import Cookies from 'universal-cookie'
 const THUMBNAILS_DIR = 'thumbnails'
 
 export function isJsonString(str: string) {
@@ -104,5 +105,8 @@ export const formatAddress = addr => {
   return `${addr.address}, ${addr.city} ${addr.zip_code}`
 }
 
-
-
+export const redirectExists = () =>{
+  const cookies=new Cookies()
+  const redirect=cookies.get('redirect')
+  return !!redirect
+} 
