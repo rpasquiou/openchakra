@@ -1,14 +1,14 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
 const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
-const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL } = require("../../../utils/consts")
+const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./skills");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
@@ -120,6 +120,8 @@ FREELANCE_MODELS.forEach(model => {
   })
   declareComputedField({model, field: 'hard_skills_categories', requires: 'hard_skills_job,hard_skills_extra', getterFn: computeUserHardSkillsCategories})
   declareComputedField({model, field: 'available_hard_skills_categories', requires: 'main_job.job_file.hard_skills', getterFn: computeUserHardSkillsJobCategories})
+  declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
+  declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})

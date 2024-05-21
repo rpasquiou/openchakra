@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const lodash = require('lodash')
 const nationalities=require('i18n-nationality')
+const regionData=require('./regions.json')
 const { sortObject } = require('./text')
 
 const API_ROOT='/myAlfred/api/studio/'
@@ -256,6 +257,10 @@ const LANGUAGE_LEVEL={
   [LANGUAGE_LEVEL_NATIVE]:`Bilingue/natif`,
 }
 
+const REGIONS=lodash(regionData)
+  .mapValues(v => v.region)
+  .value()
+
 module.exports = {
   ALL_SERVICES, ALF_CONDS, CANCEL_MODE, CUSTOM_PRESTATIONS_FLTR,
   generate_id, GID_LEN, CESU,
@@ -279,5 +284,5 @@ module.exports = {
   IMAGE_SIZE_MARKER,
   THUMBNAILS_DIR,
   PURCHASE_STATUS, PURCHASE_STATUS_NEW, PURCHASE_STATUS_PENDING, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED,
-  API_ROOT, NATIONALITIES, LANGUAGE_LEVEL,
+  API_ROOT, NATIONALITIES, LANGUAGE_LEVEL, REGIONS
 }
