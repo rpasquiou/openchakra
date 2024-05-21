@@ -113,16 +113,6 @@ const FreelanceSchema = new Schema({
       enum: Object.keys(COMPANY_SIZE),
     }],
   },
-  softwares: [{
-    type: Schema.Types.ObjectId,
-    ref: 'software',
-    required: false,
-  }],
-  software_languages: [{
-    type: Schema.Types.ObjectId,
-    ref: 'language',
-    required: false,
-  }],
   hard_skills_job: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -274,6 +264,12 @@ FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
     case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
     case MOBILITY_CITY: return `${this.mobility_city.city} dans un rayon de ${this.mobility_city_distance} km`
   }
+})
+
+FreelanceSchema.virtual('softwares', {
+  ref: 'item',
+  localField: '_id',
+  foreignField: 'user',
 })
 
 /* eslint-enable prefer-arrow-callback */

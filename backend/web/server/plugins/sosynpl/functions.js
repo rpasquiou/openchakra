@@ -123,6 +123,13 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
   declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
   declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
+  declareVirtualField({model, field: 'softwares', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'item' }
+    },
+})
+
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -234,7 +241,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = ({model, params, user}) => {
-  if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
+  if (['experience', 'communication', 'certification', 'training', 'item'].includes(model) && !params.user) {
     params.user=user
   }
   if (model=='languageLevel') {
