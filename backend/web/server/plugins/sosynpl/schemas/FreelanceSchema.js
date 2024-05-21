@@ -1,9 +1,11 @@
 const mongoose = require('mongoose')
+const moment = require('moment')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE} = require('../consts')
+const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 
@@ -21,6 +23,9 @@ const MAX_EXTRA_SKILLS=20
 
 const MIN_REGIONS=1
 const MAX_REGIONS=3
+
+const MIN_DAYS_PER_WEEK=1
+const MAX_DAYS_PER_WEEK=5
 
 const Schema = mongoose.Schema
 
@@ -183,6 +188,7 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'expertise',
   }],
+  // START MOBILITY
   mobility: {
     type: String,
     enum: Object.keys(MOBILITY),
@@ -210,7 +216,34 @@ const FreelanceSchema = new Schema({
     type: Number,
     required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une distance autour de la ville`]
   },
-  }, {...schemaOptions, ...DISCRIMINATOR_KEY})
+  // END MOBILITY
+  // START AVAILBILITY
+  /**
+   * TODO: make available when not available and available_from is reached 
+   * TODO: notification if not change after 8 days, make undefined after 9 days
+   * TODO: notify if no change after 15 days
+   * TODO: notify if no change after 30 days, set to available_off
+   * TODO: notify mail 'are yo niterested' if no change after 60 days, set to undefined
+  */
+  availability: {
+    type: String,
+    enum: Object.keys(AVAILABILITY),
+    default: AVAILABILITY_UNDEFINED,
+    required: true,
+  },
+  available_days_per_week: {
+    type: Number,
+    min: [MIN_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
+    max: [MAX_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
+    required: [function() {return this.availability!=AVAILABILITY_UNDEFINED}, `Vous devez indiquer des jours de disponibilité`]
+  },
+  available_from: {
+    type: Date,
+    validate: [function(value) { return moment(value).isAfter(moment())}, `La date de disponibilité doit être dans le futur`],
+    required: [function() {return this.availability==AVAILABILITY_UNDEFINED}, `Vous devez donner une date de débit de disponibilité`],
+  },
+  // END AVAILABILITY
+}, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
 
@@ -274,6 +307,15 @@ FreelanceSchema.virtual('softwares', {
   localField: '_id',
   foreignField: 'user',
 })
+
+FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
+  switch(this.availability) {
+    case AVAILABILITY_ON: return `Disponible ${this.available_days_per_week} jours par semaine`
+    case AVAILABILITY_OFF: return this.available_from ? `Disponible ${this.available_days_per_week} jours par semaine à partir du ${moment(this.available_from).format('DD/MM/YY')} ` : 'Indisponible'
+  }
+  return `Disponibilité non renseignée`
+})
+
 
 /* eslint-enable prefer-arrow-callback */
 

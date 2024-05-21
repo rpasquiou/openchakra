@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -128,8 +128,9 @@ FREELANCE_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: { ref: 'software' }
     },
-})
-
+  })
+  declareEnumField( {model, field: 'availability', enumValues: AVAILABILITY})
+  declareVirtualField({model, field: 'availability_str', instance: 'String', requires: 'availability,available_days_per_week,available_from'})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
