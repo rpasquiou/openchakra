@@ -185,6 +185,10 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'hardSkillCategory',
   }],
+  expertises: [{
+    type: Schema.Types.ObjectId,
+    ref: 'expertise',
+  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

@@ -163,6 +163,8 @@ require('./models/JobFileFeature')
 require('./models/LanguageLevel')
 require('./models/HardSkill')
 require('./models/HardSkillCategory')
+require('./models/ExpertiseCategory')
+require('./models/Expertise')
 
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
