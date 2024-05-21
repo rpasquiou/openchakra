@@ -29,7 +29,8 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
 
   const onAddressChange = ev => {
     console.log('address', JSON.stringify(ev.value, null, 2))
-    const val=isCityOnly ? ev.value.city : {...ev.value, address: `${ev.value.name.split(' ')[0]}, ${ev.value.address}`}
+    //const val=isCityOnly ? ev.value.city : {...ev.value, address: `${ev.value.name.split(' ')[0]}, ${ev.value.address}`}
+    const val=isCityOnly ? ev.value.city : ev.value
     setAddress(ev.value)
     onChange && onChange(val)
   }
