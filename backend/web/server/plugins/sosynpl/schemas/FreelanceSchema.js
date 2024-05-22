@@ -206,7 +206,7 @@ const FreelanceSchema = new Schema({
       },
       `Vous devez choisir de ${MIN_REGIONS} à ${MAX_REGIONS} régions` 
     ],
-    required: [function() {return this.mobility==MOBILITY_REGIONS, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions` }]
+    required: [function() {return this.mobility==MOBILITY_REGIONS}, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions`]
   },
   mobility_city: {
     type: AddressSchema,
