@@ -5,7 +5,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
-  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON} = require('../consts')
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_THEMES} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 
@@ -26,6 +26,10 @@ const MAX_REGIONS=3
 
 const MIN_DAYS_PER_WEEK=1
 const MAX_DAYS_PER_WEEK=5
+
+const MAX_GOLD_SOFT_SKILLS=1
+const MAX_SILVER_SOFT_SKILLS=2
+const MAX_BRONZE_SOFT_SKILLS=3
 
 const Schema = mongoose.Schema
 
@@ -247,6 +251,19 @@ const FreelanceSchema = new Schema({
     required: false,
   },
   // END AVAILABILITY
+  // Soft skills
+  gold_soft_skills: {
+    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    validate: [skills => skills?.length<MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+  },
+  silver_soft_skills: {
+    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    validate: [skills => skills?.length<MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+  },
+  bronze_soft_skills: {
+    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    validate: [skills => skills?.length<MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
