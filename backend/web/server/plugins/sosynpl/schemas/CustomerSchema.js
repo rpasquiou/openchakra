@@ -221,6 +221,7 @@ const CustomerSchema = new Schema({
   // RCS city
   registration_city: {
     type: String,
+    set: v => v?.city || v || undefined,
     required: false,
   },
   // HQ address
