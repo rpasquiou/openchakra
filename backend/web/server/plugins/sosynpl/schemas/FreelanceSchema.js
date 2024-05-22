@@ -235,12 +235,16 @@ const FreelanceSchema = new Schema({
     type: Number,
     min: [MIN_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
     max: [MAX_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
-    required: [function() {return this.availability!=AVAILABILITY_UNDEFINED}, `Vous devez indiquer des jours de disponibilité`]
+    // Required if available or (not available and start date)
+    required: [function() {
+      return this.availability==AVAILABILITY_ON || (this.availability==AVAILABILITY_ON && !!this.available_from)
+    }, `Vous devez indiquer des jours de disponibilité`]
   },
+  // TODO: set to AVAILABILITY_ON when available_from is reached
   available_from: {
     type: Date,
     validate: [function(value) { return moment(value).isAfter(moment())}, `La date de disponibilité doit être dans le futur`],
-    required: [function() {return this.availability==AVAILABILITY_OFF}, `Vous devez donner une date de début de disponibilité`],
+    required: false,
   },
   // END AVAILABILITY
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
