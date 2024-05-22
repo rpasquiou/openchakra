@@ -9,7 +9,7 @@ const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
 const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
-const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./skills");
+const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./hard_skills");
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {

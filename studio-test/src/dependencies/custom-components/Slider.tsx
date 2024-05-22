@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import lodash from 'lodash'
-import { Box, Icon, Stack } from '@chakra-ui/react'
+import { Box, Icon, Stack, Flex } from '@chakra-ui/react'
 import * as icons from 'lucide-react'
 
 
