@@ -120,6 +120,7 @@
     "geolib": "^3.2.1",
     "is-webview": "^1.0.1",
     "jest": "^27.5.1",
+    "jest-expect-message": "^1.1.3",
     "jssoup": "^0.0.15",
     "opn": "^6.0.0",
     "print-tree": "^0.1.5",
