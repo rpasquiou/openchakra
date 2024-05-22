@@ -77,6 +77,7 @@ type ComponentType =
   | 'Select'
   | 'SimpleGrid'
   | 'Spinner'
+  | 'Slider'
   | 'Stack'
   | 'Switch'
   | 'Tab'

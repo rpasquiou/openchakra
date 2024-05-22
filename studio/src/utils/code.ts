@@ -923,8 +923,10 @@ export const generateCode = async (
     module[c] ? '@chakra-ui/react' : `./custom-components/${c}/${c}`,
   )
   */
+
+  // Slider exists in chakra-ui but must be imported from custom components
   const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
+    module[c] && c!='Slider' ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
   )
   
   const componentsWithAttribute=lodash(components)
