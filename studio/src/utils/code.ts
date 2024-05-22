@@ -1034,7 +1034,6 @@ const ${componentName} = () => {
   const {user}=useUserContext()
   ${autoRedirect}
   ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
-  ${renderNullCode}
   /** Force reload on history.back */
   ${reloadOnBackScript}
   const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
@@ -1082,6 +1081,8 @@ const ${componentName} = () => {
   ${filterStates}
   ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
   ${generateTagSend()}
+  
+  ${renderNullCode}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata
