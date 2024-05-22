@@ -101,7 +101,6 @@ export const computeBronze = (medals) => {
 
 // Add 1 point for each pilier where both theme and customer themes are ampty
 export const computeEmpty = (medals) => {
-  console.log(medals)
   const emptyThemes=lodash.difference(Object.keys(SS_THEMES), Object.keys(medals))
   let result={}
   Object.keys(SS_PILIER).forEach(pilier => {
@@ -115,16 +114,49 @@ export const computeEmpty = (medals) => {
 }
 
 export const computeActivated = medals => {
-    
+  // 5 points on each pilier who have the same medals
+  let result={}
+  Object.keys(SS_PILIER).forEach(pilier => {
+    let count=0
+    Object.keys(medals).forEach(theme => {
+      const userMedal=medals[theme]
+      const matrixMedal=getMedalAt(theme, pilier)
+      if (userMedal && userMedal==matrixMedal) {
+        count+=1
+      }
+    })
+    if (count>=3) {
+      result[pilier]=(result[pilier]||0)+5
+    }
+  })
+  Object.keys(SS_PILIER).forEach(pilier => {
+    let count=0
+    Object.entries(medals)
+      .filter(([_, medal]) => medal!=SS_MEDALS_GOLD)
+      .forEach(([theme, userMedal]) => {
+        const matrixMedal=getMedalAt(theme, pilier)
+        if (userMedal && userMedal==matrixMedal) {
+          count+=1
+        }
+    })
+    if (count>=3) {
+      result[pilier]=(result[pilier]||0)+5
+    }
+  })
+  return result
 }
 
 export const computePiliers = medals =>  {
-  // console.log('Computing piliers for', Object.entries(medals).map(([theme, medal]) => `${SS_THEMES[theme]}:${SS_MEDALS[medal]}`))
   let result=Object.fromEntries(Object.keys(SS_PILIER).map(k => [k, 0]))
   const gold=computeGold(medals)
   const silver=computeSilver(medals)
   const bronze=computeBronze(medals)
-  console.log(gold, silver, bronze)
+  const empty=computeEmpty(medals)
+  const activated=computeActivated(medals)
+  Object.keys(SS_PILIER).forEach(pilier => {
+    const total=lodash([gold, silver, bronze, empty, activated]).map(res => res[pilier]||0).sum()
+    result[pilier]=total
+  })
   return result
 }
 

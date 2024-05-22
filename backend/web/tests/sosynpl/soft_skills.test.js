@@ -67,53 +67,41 @@ describe('Test imports', () => {
     console.log(res.join('\n'))
   })
 
-  // Test matrix consistency
-  const countForTheme = theme => lodash(MATRIX[theme]).values().map(v => MEDALS_VALUES[v]).sum()
-  
-  const THEMES_EXPECTED={
-    [SS_THEMES_COMM]: 5,
-    [SS_THEMES_TEAMWORK]: 8,
-    [SS_THEMES_CONFLICT]: 4,
-    [SS_THEMES_CHANGE]: 6,
-    [SS_THEMES_FEDERATE]: 7,
-    [SS_THEMES_CREATIVE]: 6,
-    [SS_THEMES_ADAPTATION]: 6,
-    [SS_THEMES_ANALYSIS]: 6,
-    [SS_THEMES_ORGANIZATION]: 7,
-    [SS_THEMES_MANAGE]: 5,
-  }
-  
-  test.each(Object.entries(THEMES_EXPECTED))(
-    `Theme %s must have %s points`,
-    (theme, expected) => {
-      expect(countForTheme(theme)).toBe(expected)
+  it('Matrix themes must be consistent', () => {
+    const countForTheme = theme => lodash(MATRIX[theme]).values().map(v => MEDALS_VALUES[v]).sum()
+    const THEMES_EXPECTED={
+      [SS_THEMES_COMM]: 5,
+      [SS_THEMES_TEAMWORK]: 8,
+      [SS_THEMES_CONFLICT]: 4,
+      [SS_THEMES_CHANGE]: 6,
+      [SS_THEMES_FEDERATE]: 7,
+      [SS_THEMES_CREATIVE]: 6,
+      [SS_THEMES_ADAPTATION]: 6,
+      [SS_THEMES_ANALYSIS]: 6,
+      [SS_THEMES_ORGANIZATION]: 7,
+      [SS_THEMES_MANAGE]: 5,
     }
-  )
+    Object.entries(THEMES_EXPECTED)
+      .forEach(([theme, expected]) => expect(countForTheme(theme)).toBe(expected))
+  })
+  
+  it('Matrix piliers must be consistent', () => {
+    const countForPilier = pilier => {
+      return lodash(MATRIX).values().map(v => MEDALS_VALUES[v[pilier]]||0).sum()
+    }
+    const PILIERS_EXPECTED={
+      [SS_PILIER_COORDINATOR]: 10,
+      [SS_PILIER_CREATOR]: 10,
+      [SS_PILIER_DIRECTOR]: 10,
+      [SS_PILIER_IMPLEMENTOR]: 10,
+      [SS_PILIER_NETWORKER]: 10,
+      [SS_PILIER_OPTIMIZER]: 10,
+    }
+    Object.entries(PILIERS_EXPECTED)
+      .forEach(([pilier, expected]) => expect(countForPilier(pilier)).toBe(expected))
     
-  const countForPilier = pilier => {
-    let sum=0
-    lodash(MATRIX).values().forEach(v => {
-      sum+=MEDALS_VALUES[v[pilier]]||0
-    })
-    return sum
-  }
-
-  const PILIERS_EXPECTED={
-    [SS_PILIER_COORDINATOR]: 10,
-    [SS_PILIER_CREATOR]: 10,
-    [SS_PILIER_DIRECTOR]: 10,
-    [SS_PILIER_IMPLEMENTOR]: 10,
-    [SS_PILIER_NETWORKER]: 10,
-    [SS_PILIER_OPTIMIZER]: 10,
-  }
+  })
   
-  test.each(Object.entries(PILIERS_EXPECTED))(
-    `Pilier %s must have %s points`,
-    (pilier, expected) => {
-      expect(countForPilier(pilier)).toBe(expected)
-    }
-  )
-
   it('must compute gold medals for Charlotte', async () => {
     const result=await computeGold(CHARLOTTE_MEDALS)
     expect(result).toEqual({[SS_PILIER_COORDINATOR]: 10})
@@ -147,7 +135,7 @@ describe('Test imports', () => {
     })
   })
 
-  it.only('must compute activated skills for Charlotte', async () => {
+  it('must compute activated skills for Charlotte', async () => {
     const result=await computeActivated(CHARLOTTE_MEDALS)
     expect(result).toEqual({
       [SS_PILIER_CREATOR]: 10, 
