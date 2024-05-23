@@ -6,7 +6,7 @@ const path = require('path')
 const { MONGOOSE_OPTIONS, getModels } = require('../../server/utils/database')
 const Freelance = require('../../server/models/Freelance')
 const { buildAttributesException } = require('../utils')
-const { WORK_DURATION } = require('../../server/plugins/sosynpl/consts')
+const { WORK_DURATION, SS_THEMES_ADAPTATION, SS_MEDALS_BRONZE, SS_THEMES, SS_THEMES_ANALYSIS, SS_THEMES_COMM } = require('../../server/plugins/sosynpl/consts')
 const Customer = require('../../server/models/Customer')
 const {CUSTOMER_DATA, FREELANCE_DATA, JOB_DATA, JOB_FILE_DATA, SECTOR_DATA, CATEGORY_DATA}=require('./data/base_data')
 require('../../server/plugins/sosynpl/functions')
@@ -18,6 +18,7 @@ const Job = require('../../server/models/Job')
 const JobFile = require('../../server/models/JobFile')
 const Sector = require('../../server/models/Sector')
 const Category = require('../../server/models/Category')
+const HardSkillCategory = require('../../server/models/HardSkillCategory')
 
 jest.setTimeout(60000)
 
@@ -30,7 +31,7 @@ describe('Test models', () => {
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
     const job=await Job.create({...JOB_DATA, job_file: jobFile})
     const sector=await Sector.create({...SECTOR_DATA})
-    const category=await Category.create({...CATEGORY_DATA})
+    const category=await HardSkillCategory.create({...CATEGORY_DATA})
     await Freelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]})
     await Promise.all(lodash.range(30).map(idx => HardSkill.create({name: `Skill ${idx}`, code: '12', job_file: jobFile, category})))
 
@@ -91,13 +92,30 @@ describe('Test models', () => {
     expect(await freelance.save()).not.toThrow()
   })
 
-  it.only('Freelance must accept max 20 extra skills', async () => {
+  it('Freelance must accept max 20 extra skills', async () => {
     const skills=await HardSkill.find()
     const freelance=await Freelance.findOne()
     freelance.hard_skills_extra=skills
     expect(await freelance.save()).rejects.toThrow('compétences hors métier')
     freelance.hard_skills_extra=skills.slice(0, 10)
     expect(await freelance.save()).not.toThrow()
+  })
+
+  it.only('Freelance soft skills', async () => {
+    let freelance=await Freelance.findOne().populate('available_soft_skills')
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length)
+    freelance.gold_soft_skills=[SS_THEMES_ADAPTATION]
+    await freelance.save()
+    freelance=await Freelance.findOne().populate('available_soft_skills')
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-1)
+    freelance.silver_soft_skills=[SS_THEMES_ANALYSIS]
+    await freelance.save()
+    freelance=await Freelance.findOne().populate('available_soft_skills')
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-2)
+    freelance.bronze_soft_skills=[SS_THEMES_COMM]
+    await freelance.save()
+    freelance=await Freelance.findOne().populate('available_soft_skills')
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-3)
   })
 
 })

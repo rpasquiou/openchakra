@@ -254,15 +254,15 @@ const FreelanceSchema = new Schema({
   // Soft skills
   gold_soft_skills: {
     type: [{type: String,enum: Object.keys(SS_THEMES),}],
-    validate: [skills => skills?.length<MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+    validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
   },
   silver_soft_skills: {
     type: [{type: String,enum: Object.keys(SS_THEMES),}],
-    validate: [skills => skills?.length<MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+    validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
   },
   bronze_soft_skills: {
     type: [{type: String,enum: Object.keys(SS_THEMES),}],
-    validate: [skills => skills?.length<MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+    validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
@@ -336,6 +336,13 @@ FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
   }
   return `Disponibilité non renseignée`
 })
+
+/** Soft skills havgin no medal */
+FreelanceSchema.virtual('available_soft_skills', DUMMY_REF).get(function() {
+  const used_ss=[...(this.gold_soft_skills || []),...(this.silver_soft_skills || []),...(this.bronze_soft_skills || []),]
+  return lodash.difference(Object.keys(SS_THEMES), used_ss)
+})
+
 
 
 /* eslint-enable prefer-arrow-callback */
