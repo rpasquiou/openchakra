@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 let Schema=null
 
 try {
-  Schema=require(`./PairSchema`)
+  Schema=require(`./CoachingStatSchema`)
   Schema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
@@ -12,4 +12,4 @@ catch(err) {
   }
 }
 
-module.exports = Schema ? mongoose.model('pair', Schema) : null
+module.exports = Schema ? mongoose.model('CoachingStatSchema', Schema) : null

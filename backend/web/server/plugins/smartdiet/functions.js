@@ -1403,69 +1403,13 @@ declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', insta
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_stopped_started', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_dropped_started', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'nut_advices', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c1', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c2', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c3', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c4', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c5', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c6', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c7', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c8', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c9', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c10', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c11', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c12', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c13', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c14', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c15', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_done_c16', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c1', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c2', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c3', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c4', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c5', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c6', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c7', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c8', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c9', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c10', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c11', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c12', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c13', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c14', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c15', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cs_upcoming_c16', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_18_24_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_25_29_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_30_34_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_35_39_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_40_44_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_45_49_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_50_54_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_55_59_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_60_64_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_65_69_percent', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'started_coachings_70_74_percent', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_unknown', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_male', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_female', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_gender_non_binary', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_renewed', instance: 'Number' })
 declareVirtualField({
-  model: 'adminDashboard', field: 'job_details', instance: 'Array', multiple: true,
+  model: 'adminDashboard', field: 'jobs_details', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
@@ -1588,6 +1532,13 @@ declareVirtualField({
   caster: {
     instance: 'ObjectID',
     options: { ref: 'pair' }
+  },
+})
+declareVirtualField({
+  model: 'adminDashboard', field: 'coachings_stats', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'coachingStat' }
   },
 })
 //end adminDashboard
@@ -2094,43 +2045,36 @@ const ensureChallengePipsConsistency = () => {
 }
 
 
-const computeStatistics = async ({ id, fields }) => {
+const computeStatistics = async ({ id, fields, startDate, endDate }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
   const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
   const result={}
   result.company=id?.toString()
-  const individualFields = fields.flatMap(fieldGroup => fieldGroup.split(',').map(field => field.trim()))
   let cache = {}
-  for (const field of individualFields) {
+  for (const field of fields) {
     let functionResult
-    if (!field.includes('cs_') && !field.includes('started_coachings_') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total')) {
+    if(field === 'company'){
+      continue
+    }
+    if (!field.includes('coachings_stats') && !field.includes('started_coachings_') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total')) {
       if (cache[field]) {
         continue
       }
       cache[field] = true
+
+      if (typeof kpi[field]!='function') {
+        throw new Error(`Field ${field} is not a function`)
+      }
       functionResult = await kpi[field]({ idFilter })
       result[field] = functionResult
     }
-    if (field.includes('cs_')) {
-      if (cache['cs_']) {
+    if (field === 'coachings_stats') {
+      if (cache['coachings_stats']) {
         continue
       }
-      functionResult = await kpi['cs_']({ idFilter })
-      result.cs_done = functionResult.cs_done
-      result.cs_upcoming = functionResult.cs_upcoming
-      lodash.range(1, 17).forEach(order => {
-        result[`cs_done_c${order}`] = functionResult[`cs_done_c${order}`]
-        result[`cs_upcoming_c${order}`] = functionResult[`cs_upcoming_c${order}`]
-      })
-    } else if (field.includes('started_coachings_')) {
-      if (cache['started_coachings_']) {
-        continue
-      }
-      cache['started_coachings_'] = true
-      functionResult = await kpi['started_coachings_']({ idFilter })
-      for (const [key, value] of Object.entries(functionResult)) {
-        result[key] = value
-      }
+      cache['coachings_stats']=true
+      result['coachings_stats'] = await kpi['coachings_stats']({ idFilter, startDate, endDate})
+
     } else if (field.includes('coachings_gender_')) {
       if (cache['coachings_gender']) {
         continue

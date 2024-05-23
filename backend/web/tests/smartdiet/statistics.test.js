@@ -1,6 +1,9 @@
 const mongoose = require('mongoose')
 const { computeStatistics } = require('../../server/plugins/smartdiet/functions')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
+const { ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
+const User = require('../../server/models/User')
+require('../../server/models/FoodDocument')
 
 jest.setTimeout(300000)
 
@@ -33,47 +36,12 @@ describe('Statistics', () => {
     expect(stats.coachings_ongoing).toBeGreaterThanOrEqual(0)
   })
 
-  it('must return cs_done', async () => {
-    const stats = await computeStatistics({ fields: ['cs_done'] })
-    console.table(stats)
-    expect(stats.cs_done).toBeGreaterThanOrEqual(0)
-  })
-
-  it('must return cs_done_c1', async () => {
-    const stats = await computeStatistics({ fields: ['cs_done_c1'] })
-    console.table(stats)
-    expect(stats['cs_done_c1']).not.toBeNull()
-  })
-
-  it('must return cs_upcoming', async () => {
-    const stats = await computeStatistics({ fields: ['cs_upcoming'] })
-    console.table(stats)
-    expect(stats.cs_upcoming).toBeGreaterThanOrEqual(0)
-  })
-
-
-  it('must return cs_upcoming_c1', async () => {
-    const stats = await computeStatistics({ fields: ['cs_upcoming_c1'] })
-    console.table(stats)
-    expect(stats['cs_upcoming_c1']).not.toBeNull()
-  })
-
-  it('must return started_coachings_no_birthday', async () => {
-    const stats = await computeStatistics({ fields: ['started_coachings_no_birthday'] })
-    console.table(stats)
-    expect(stats['started_coachings_no_birthday']).not.toBeNull
-  })
-
-  it('must return started_coachings_18_24', async () => {
-    const stats = await computeStatistics({ fields: ['started_coachings_18_24'] });
-    console.table(stats)
-    expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0);
-  })
-
-  it('must return started_coachings_25_29_percent', async () => {
-    const stats = await computeStatistics({ fields: ['started_coachings_25_29_percent'] });
-    console.table(stats)
-    expect(stats['started_coachings_25_29_percent']).toBeGreaterThanOrEqual(0);
+  it('must return coachings_stats', async () => {
+    const date = new Date('2024-01-05T13:00:00.000Z')
+    const id = '651a9d3e1a7bd51b71a40327'
+    const stats = await computeStatistics({ fields: ['coachings_stats'], startDate:date, id:id})
+    console.log(stats.coachings_stats)
+    expect(stats.coachings_stats).toBeTruthy()
   })
 
   it('must return coachings_gender_male', async () => {
