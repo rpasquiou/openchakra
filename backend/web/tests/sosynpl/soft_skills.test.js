@@ -1,5 +1,5 @@
 const lodash=require('lodash')
-const {SOFT_SKILL_COMM, SS_MEDALS_GOLD, SS_MEDALS_BRONZE, SOFT_SKILL_FEDERATE, SOFT_SKILL_CREATIVE, SS_MEDALS_SILVER, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_MANAGE, SOFT_SKILL_TEAMWORK, SS_PILIER, SOFT_SKILLS, SS_MEDALS, SOFT_SKILL_CONFLICT, SOFT_SKILL_CHANGE, SOFT_SKILL_ADAPTATION, SOFT_SKILL_ANALYSIS, SS_PILIER_COORDINATOR, SS_PILIER_CREATOR, SS_PILIER_DIRECTOR, SS_PILIER_IMPLEMENTOR, SS_PILIER_NETWORKER, SS_PILIER_OPTIMIZER}=require('../../server/plugins/sosynpl/consts')
+const {SOFT_SKILL_COMM, SS_MEDALS_GOLD, SS_MEDALS_BRONZE, SOFT_SKILL_FEDERATE, SOFT_SKILL_CREATIVE, SS_MEDALS_SILVER, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_MANAGE, SOFT_SKILL_TEAMWORK, SS_PILAR, SOFT_SKILLS, SS_MEDALS, SOFT_SKILL_CONFLICT, SOFT_SKILL_CHANGE, SOFT_SKILL_ADAPTATION, SOFT_SKILL_ANALYSIS, SS_PILAR_COORDINATOR, SS_PILAR_CREATOR, SS_PILAR_DIRECTOR, SS_PILAR_IMPLEMENTOR, SS_PILAR_NETWORKER, SS_PILAR_OPTIMIZER}=require('../../server/plugins/sosynpl/consts')
 const { computePilier, computePiliers, MATRIX, computeGold, computeSilver, computeBronze, computeEmpty, computeActivated } = require('../../server/plugins/sosynpl/soft_skills')
 jest.setTimeout(60000)
 
@@ -48,7 +48,7 @@ describe('Test imports', () => {
     Analyse, prise de recul	2	1	3	0	0	0
     Organisation	0	2	1	0	3	1
     Diriger, manager	0	0	0	0	2	3`.split('\n').map(l => l.split('\t').map(str => str.trim()))
-    const piliers=data[0].map(v => keyFromValue(SS_PILIER, v))
+    const piliers=data[0].map(v => keyFromValue(SS_PILAR, v))
     const themes=data.slice(1)
     const res=[]
     themes.forEach(theme => {
@@ -90,12 +90,12 @@ describe('Test imports', () => {
       return lodash(MATRIX).values().map(v => MEDALS_VALUES[v[pilier]]||0).sum()
     }
     const PILIERS_EXPECTED={
-      [SS_PILIER_COORDINATOR]: 10,
-      [SS_PILIER_CREATOR]: 10,
-      [SS_PILIER_DIRECTOR]: 10,
-      [SS_PILIER_IMPLEMENTOR]: 10,
-      [SS_PILIER_NETWORKER]: 10,
-      [SS_PILIER_OPTIMIZER]: 10,
+      [SS_PILAR_COORDINATOR]: 10,
+      [SS_PILAR_CREATOR]: 10,
+      [SS_PILAR_DIRECTOR]: 10,
+      [SS_PILAR_IMPLEMENTOR]: 10,
+      [SS_PILAR_NETWORKER]: 10,
+      [SS_PILAR_OPTIMIZER]: 10,
     }
     Object.entries(PILIERS_EXPECTED)
       .forEach(([pilier, expected]) => expect(countForPilier(pilier)).toBe(expected))
@@ -104,42 +104,42 @@ describe('Test imports', () => {
   
   it('must compute gold medals for Charlotte', async () => {
     const result=await computeGold(CHARLOTTE_MEDALS)
-    expect(result).toEqual({[SS_PILIER_COORDINATOR]: 10})
+    expect(result).toEqual({[SS_PILAR_COORDINATOR]: 10})
   })
 
   it('must compute silver medals for Charlotte', async () => {
     const result=await computeSilver(CHARLOTTE_MEDALS)
-    expect(result).toEqual({[SS_PILIER_COORDINATOR]: 5, [SS_PILIER_OPTIMIZER]: 5})
+    expect(result).toEqual({[SS_PILAR_COORDINATOR]: 5, [SS_PILAR_OPTIMIZER]: 5})
   })
 
   it('must compute bronze medals for Charlotte', async () => {
     const result=await computeBronze(CHARLOTTE_MEDALS)
     expect(result).toEqual({
-      [SS_PILIER_CREATOR]: 9, 
-      [SS_PILIER_IMPLEMENTOR]: 3,
-      [SS_PILIER_OPTIMIZER]: 3,
-      [SS_PILIER_COORDINATOR]: 3,
-      [SS_PILIER_DIRECTOR]: 3,
+      [SS_PILAR_CREATOR]: 9, 
+      [SS_PILAR_IMPLEMENTOR]: 3,
+      [SS_PILAR_OPTIMIZER]: 3,
+      [SS_PILAR_COORDINATOR]: 3,
+      [SS_PILAR_DIRECTOR]: 3,
     })
   })
 
   it('must compute empty medals for Charlotte', async () => {
     const result=await computeEmpty(CHARLOTTE_MEDALS)
     expect(result).toEqual({
-      [SS_PILIER_CREATOR]: 2, 
-      [SS_PILIER_IMPLEMENTOR]: 1,
-      [SS_PILIER_OPTIMIZER]: 1,
-      [SS_PILIER_NETWORKER]: 2,
-      [SS_PILIER_COORDINATOR]: 2,
-      [SS_PILIER_DIRECTOR]: 2,
+      [SS_PILAR_CREATOR]: 2, 
+      [SS_PILAR_IMPLEMENTOR]: 1,
+      [SS_PILAR_OPTIMIZER]: 1,
+      [SS_PILAR_NETWORKER]: 2,
+      [SS_PILAR_COORDINATOR]: 2,
+      [SS_PILAR_DIRECTOR]: 2,
     })
   })
 
   it('must compute activated skills for Charlotte', async () => {
     const result=await computeActivated(CHARLOTTE_MEDALS)
     expect(result).toEqual({
-      [SS_PILIER_CREATOR]: 10, 
-      [SS_PILIER_COORDINATOR]: 5,
+      [SS_PILAR_CREATOR]: 10, 
+      [SS_PILAR_COORDINATOR]: 5,
     })
   })
 
@@ -147,12 +147,12 @@ describe('Test imports', () => {
     const result=await computePiliers(CHARLOTTE_MEDALS)
 
     const EXPECTED={
-      SS_PILIER_CREATOR: 21,
-      SS_PILIER_IMPLEMENTOR: 4,
-      SS_PILIER_OPTIMIZER: 9,
-      SS_PILIER_NETWORKER: 2,
-      SS_PILIER_COORDINATOR: 25,
-      SS_PILIER_DIRECTOR: 5,
+      SS_PILAR_CREATOR: 21,
+      SS_PILAR_IMPLEMENTOR: 4,
+      SS_PILAR_OPTIMIZER: 9,
+      SS_PILAR_NETWORKER: 2,
+      SS_PILAR_COORDINATOR: 25,
+      SS_PILAR_DIRECTOR: 5,
     }
 
     Object.entries(EXPECTED).forEach(([pilier, points]) => {
