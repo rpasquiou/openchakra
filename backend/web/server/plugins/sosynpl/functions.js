@@ -11,7 +11,7 @@ const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
-const { computeAvailableSoftSkills } = require("./soft_skills");
+const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
 const { keys } = require("lodash");
 
 // TODO move in DB migration
@@ -152,7 +152,9 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField( {model, field: 'gold_soft_skills', enumValues: SOFT_SKILLS})
   declareEnumField( {model, field: 'silver_soft_skills', enumValues: SOFT_SKILLS})
   declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SOFT_SKILLS})
-  declareComputedField({model, field: 'available_soft_skills', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills', getterFn: computeAvailableSoftSkills})
+  declareComputedField({model, field: 'available_gold_soft_skills', getterFn: computeAvailableGoldSoftSkills})
+  declareComputedField({model, field: 'available_silver_soft_skills', requires: 'gold_soft_skills', getterFn: computeAvailableSilverSoftSkills})
+  declareComputedField({model, field: 'available_bronze_soft_skills', requires: 'gold_soft_skills,silver_soft_skills', getterFn: computeAvailableBronzeSoftSkills})
   // Declare virtuals for each pilar
   Object.keys(SS_PILAR).forEach(pilar => {
     const virtualName=pilar.replace(/^SS_/, '').toLowerCase()

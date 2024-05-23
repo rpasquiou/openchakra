@@ -161,12 +161,19 @@ const computePilars = medals =>  {
   return result
 }
 
-const computeAvailableSoftSkills =  async (userId, params, data) => {
-  const usedSkills=[...data.gold_soft_skills, ...data.silver_soft_skills, ...data.bronze_soft_skills].map(ss => ss._id)
-  return await SoftSkill.find({_id: {$nin: usedSkills}})
+const computeAvailableGoldSoftSkills =  async (userId, params, data) => {
+  return SoftSkill.find()
+}
+
+const computeAvailableSilverSoftSkills =  async (userId, params, data) => {
+ return await SoftSkill.find({_id: {$nin: data.gold_soft_skills}})
+}
+
+const computeAvailableBronzeSoftSkills =  async (userId, params, data) => {
+  return await SoftSkill.find({_id: {$nin: [...data.gold_soft_skills, data.silver_soft_skills]}})
 }
 
 module.exports={
-  computeAvailableSoftSkills,
+  computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills, computeAvailableBronzeSoftSkills,
   MATRIX, computePilars, computeGold, computeBronze, computeSilver, computeEmpty, computeActivated,
 }

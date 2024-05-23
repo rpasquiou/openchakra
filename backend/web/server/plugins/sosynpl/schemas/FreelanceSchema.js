@@ -281,7 +281,21 @@ const FreelanceSchema = new Schema({
     validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
   },
   // Computed depending on gold/silver/bronze soft skills
-  available_soft_skills: {
+  available_gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_bronze_soft_skills: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'softSkill',
