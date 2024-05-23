@@ -224,6 +224,10 @@ caster: {
 declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 /** Soft skills end */
 
+/** Announce start */
+declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
+/** Announce end */
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
