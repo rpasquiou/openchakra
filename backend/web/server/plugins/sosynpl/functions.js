@@ -1,13 +1,13 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SS_PILIER, SOFT_SKILLS } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
-const { ROLE_ADMIN, SPOON_SOURCE_INDIVIDUAL_CHALLENGE_PASSED } = require("../smartdiet/consts")
+const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./hard_skills");
 
