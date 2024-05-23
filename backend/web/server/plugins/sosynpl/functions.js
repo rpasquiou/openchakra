@@ -134,6 +134,12 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField( {model, field: 'gold_soft_skills', enumValues: SS_THEMES})
   declareEnumField( {model, field: 'silver_soft_skills', enumValues: SS_THEMES})
   declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SS_THEMES})
+  declareVirtualField({model, field: 'available_soft_skills', instance: 'Array', multiple: true,
+    requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills',
+    caster: {
+      instance: 'String',
+    },
+  })
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
