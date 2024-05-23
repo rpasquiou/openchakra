@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {SPOON_SOURCE, DURATION, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR} = require('../consts')
+const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -49,7 +49,7 @@ const AnnounceSchema = new Schema({
   },
   duration_unit: {
     type: String,
-    enum: Object.keys(DURATION),
+    enum: Object.keys(DURATION_UNIT),
     required: [true, `L'unité de durée est obligatoire`]
   },
   start_date: {
