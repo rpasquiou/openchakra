@@ -1,6 +1,6 @@
 const lodash=require('lodash')
 const {SOFT_SKILL_COMM, SS_MEDALS_GOLD, SS_MEDALS_BRONZE, SOFT_SKILL_FEDERATE, SOFT_SKILL_CREATIVE, SS_MEDALS_SILVER, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_MANAGE, SOFT_SKILL_TEAMWORK, SS_PILAR, SOFT_SKILLS, SS_MEDALS, SOFT_SKILL_CONFLICT, SOFT_SKILL_CHANGE, SOFT_SKILL_ADAPTATION, SOFT_SKILL_ANALYSIS, SS_PILAR_COORDINATOR, SS_PILAR_CREATOR, SS_PILAR_DIRECTOR, SS_PILAR_IMPLEMENTOR, SS_PILAR_NETWORKER, SS_PILAR_OPTIMIZER}=require('../../server/plugins/sosynpl/consts')
-const { computePilier, computePiliers, MATRIX, computeGold, computeSilver, computeBronze, computeEmpty, computeActivated } = require('../../server/plugins/sosynpl/soft_skills')
+const { computePilars, MATRIX, computeGold, computeSilver, computeBronze, computeEmpty, computeActivated } = require('../../server/plugins/sosynpl/soft_skills')
 jest.setTimeout(60000)
 
 describe('Test imports', () => {
@@ -144,7 +144,7 @@ describe('Test imports', () => {
   })
 
   it('must compute piliers for Charlotte', async () => {
-    const result=await computePiliers(CHARLOTTE_MEDALS)
+    const result=await computePilars(CHARLOTTE_MEDALS)
 
     const EXPECTED={
       SS_PILAR_CREATOR: 21,

@@ -5,9 +5,10 @@ const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
-  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SOFT_SKILLS} = require('../consts')
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
+const { computePilars } = require('../soft_skills')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -253,16 +254,39 @@ const FreelanceSchema = new Schema({
   // END AVAILABILITY
   // Soft skills
   gold_soft_skills: {
-    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
     validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
   },
   silver_soft_skills: {
-    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
     validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
   },
   bronze_soft_skills: {
-    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
     validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+  },
+  // Computed depending on gold/silver/bronze soft skills
+  available_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
@@ -337,14 +361,24 @@ FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
   return `Disponibilité non renseignée`
 })
 
-/** Soft skills havgin no medal */
-FreelanceSchema.virtual('available_soft_skills', DUMMY_REF).get(function() {
-  const used_ss=[...(this.gold_soft_skills || []),...(this.silver_soft_skills || []),...(this.bronze_soft_skills || []),]
-  return lodash.difference(Object.keys(SOFT_SKILLS), used_ss)
+const mapMedals = user => {
+  let medals={}
+  user.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
+  user.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
+  user.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
+  return medals
+}
+
+// Implement virtual for each pilar
+Object.keys(SS_PILAR).forEach(pilar => {
+  const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+  FreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
+    const medals=mapMedals(this)
+    const result=computePilars(medals)
+    return result[pilar]
+  })
+  
 })
-
-
-
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = FreelanceSchema

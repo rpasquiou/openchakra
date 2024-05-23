@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -10,6 +10,24 @@ const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./maili
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./hard_skills");
+const SoftSkill = require("../../models/SoftSkill");
+const { computeAvailableSoftSkills } = require("./soft_skills");
+const { keys } = require("lodash");
+
+// TODO move in DB migration
+// Ensure softSkills
+const ensureSoftSkills = () => {
+  const promises=Object.entries(SOFT_SKILLS).map(([value, name]) => {
+    return SoftSkill.findOneAndUpdate(
+      {value},
+      {name, value},
+      {upsert: true, new: true}
+    )
+  })
+  return Promise.all(promises)
+}
+
+ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
 MODELS.forEach(model => {
@@ -134,11 +152,11 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField( {model, field: 'gold_soft_skills', enumValues: SOFT_SKILLS})
   declareEnumField( {model, field: 'silver_soft_skills', enumValues: SOFT_SKILLS})
   declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SOFT_SKILLS})
-  declareVirtualField({model, field: 'available_soft_skills', instance: 'Array', multiple: true,
-    requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills',
-    caster: {
-      instance: 'String',
-    },
+  declareComputedField({model, field: 'available_soft_skills', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills', getterFn: computeAvailableSoftSkills})
+  // Declare virtuals for each pilar
+  Object.keys(SS_PILAR).forEach(pilar => {
+    const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+    declareVirtualField({model, field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
   })
 })
 
@@ -198,8 +216,11 @@ caster: {
   instance: 'ObjectID',
   options: { ref: 'expertise' }
 },})
-
 /** Expertise category end */
+
+/** Soft skills start */
+declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
+/** Soft skills end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
