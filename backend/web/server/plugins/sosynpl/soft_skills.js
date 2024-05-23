@@ -1,12 +1,13 @@
-import { SS_MEDALS_BRONZE, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_PILAR, SS_PILAR_COORDINATOR, SS_PILAR_CREATOR, 
+const lodash=require('lodash')
+const { SS_MEDALS_BRONZE, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_PILAR, SS_PILAR_COORDINATOR, SS_PILAR_CREATOR, 
   SS_PILAR_DIRECTOR, SS_PILAR_IMPLEMENTOR, SS_PILAR_NETWORKER, SS_PILAR_OPTIMIZER, SOFT_SKILLS, SOFT_SKILL_ADAPTATION, 
   SOFT_SKILL_ANALYSIS, SOFT_SKILL_CHANGE, SOFT_SKILL_COMM, SOFT_SKILL_CONFLICT, SOFT_SKILL_CREATIVE, SOFT_SKILL_FEDERATE, 
-  SOFT_SKILL_MANAGE, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_TEAMWORK } from './consts'
+  SOFT_SKILL_MANAGE, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_TEAMWORK } =require('./consts')
+const SoftSkill = require('../../models/SoftSkill')
 
-const lodash=require('lodash')
 
 // Matrix mapping (theme, medal) to a pilier
-export const MATRIX={}
+const MATRIX={}
 
 const setMatrixMedal = (theme, pilier, medal) => {
   lodash.set(MATRIX, `${theme}.${pilier}`, medal)
@@ -57,7 +58,7 @@ setMatrixMedal(SOFT_SKILL_ORGANIZATION, SS_PILAR_DIRECTOR, SS_MEDALS_BRONZE)
 setMatrixMedal(SOFT_SKILL_MANAGE, SS_PILAR_COORDINATOR, SS_MEDALS_SILVER)
 setMatrixMedal(SOFT_SKILL_MANAGE, SS_PILAR_DIRECTOR, SS_MEDALS_GOLD)
 
-export const computeGold = (medals) => {
+const computeGold = (medals) => {
   const gold=lodash(medals).pickBy((v, k) => v==SS_MEDALS_GOLD).value()
   const themes=Object.keys(gold)
   let result={}
@@ -71,7 +72,7 @@ export const computeGold = (medals) => {
   return result
 }
 
-export const computeSilver = (medals) => {
+const computeSilver = (medals) => {
   const silver=lodash(medals).pickBy((v, k) => v==SS_MEDALS_SILVER).value()
   const themes=Object.keys(silver)
   let result={}
@@ -85,7 +86,7 @@ export const computeSilver = (medals) => {
   return result
 }
 
-export const computeBronze = (medals) => {
+const computeBronze = (medals) => {
   const bronze=lodash(medals).pickBy((v, k) => v==SS_MEDALS_BRONZE).value()
   const themes=Object.keys(bronze)
   let result={}
@@ -100,7 +101,7 @@ export const computeBronze = (medals) => {
 }
 
 // Add 1 point for each pilier where both theme and customer themes are ampty
-export const computeEmpty = (medals) => {
+const computeEmpty = (medals) => {
   const emptyThemes=lodash.difference(Object.keys(SOFT_SKILLS), Object.keys(medals))
   let result={}
   Object.keys(SS_PILAR).forEach(pilier => {
@@ -113,7 +114,7 @@ export const computeEmpty = (medals) => {
   return result
 }
 
-export const computeActivated = medals => {
+const computeActivated = medals => {
   // 5 points on each pilier who have the same medals
   let result={}
   Object.keys(SS_PILAR).forEach(pilier => {
@@ -146,7 +147,7 @@ export const computeActivated = medals => {
   return result
 }
 
-export const computePiliers = medals =>  {
+const computePilars = medals =>  {
   let result=Object.fromEntries(Object.keys(SS_PILAR).map(k => [k, 0]))
   const gold=computeGold(medals)
   const silver=computeSilver(medals)
@@ -160,3 +161,12 @@ export const computePiliers = medals =>  {
   return result
 }
 
+const computeAvailableSoftSkills =  async (userId, params, data) => {
+  const usedSkills=[...data.gold_soft_skills, ...data.silver_soft_skills, ...data.bronze_soft_skills].map(ss => ss._id)
+  return await SoftSkill.find({_id: {$nin: usedSkills}})
+}
+
+module.exports={
+  computeAvailableSoftSkills,
+  MATRIX, computePilars, computeGold, computeBronze, computeSilver, computeEmpty, computeActivated,
+}
