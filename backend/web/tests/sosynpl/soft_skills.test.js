@@ -1,5 +1,5 @@
 const lodash=require('lodash')
-const {SS_THEMES_COMM, SS_MEDALS_GOLD, SS_MEDALS_BRONZE, SS_THEMES_FEDERATE, SS_THEMES_CREATIVE, SS_MEDALS_SILVER, SS_THEMES_ORGANIZATION, SS_THEMES_MANAGE, SS_THEMES_TEAMWORK, SS_PILIER, SS_THEMES, SS_MEDALS, SS_THEMES_CONFLICT, SS_THEMES_CHANGE, SS_THEMES_ADAPTATION, SS_THEMES_ANALYSIS, SS_PILIER_COORDINATOR, SS_PILIER_CREATOR, SS_PILIER_DIRECTOR, SS_PILIER_IMPLEMENTOR, SS_PILIER_NETWORKER, SS_PILIER_OPTIMIZER}=require('../../server/plugins/sosynpl/consts')
+const {SOFT_SKILL_COMM, SS_MEDALS_GOLD, SS_MEDALS_BRONZE, SOFT_SKILL_FEDERATE, SOFT_SKILL_CREATIVE, SS_MEDALS_SILVER, SOFT_SKILL_ORGANIZATION, SOFT_SKILL_MANAGE, SOFT_SKILL_TEAMWORK, SS_PILIER, SOFT_SKILLS, SS_MEDALS, SOFT_SKILL_CONFLICT, SOFT_SKILL_CHANGE, SOFT_SKILL_ADAPTATION, SOFT_SKILL_ANALYSIS, SS_PILIER_COORDINATOR, SS_PILIER_CREATOR, SS_PILIER_DIRECTOR, SS_PILIER_IMPLEMENTOR, SS_PILIER_NETWORKER, SS_PILIER_OPTIMIZER}=require('../../server/plugins/sosynpl/consts')
 const { computePilier, computePiliers, MATRIX, computeGold, computeSilver, computeBronze, computeEmpty, computeActivated } = require('../../server/plugins/sosynpl/soft_skills')
 jest.setTimeout(60000)
 
@@ -16,12 +16,12 @@ describe('Test imports', () => {
   }
 
   const CHARLOTTE_MEDALS={ 
-    [SS_THEMES_COMM]: SS_MEDALS_BRONZE,
-    [SS_THEMES_TEAMWORK]: SS_MEDALS_BRONZE,
-    [SS_THEMES_FEDERATE]: SS_MEDALS_BRONZE,
-    [SS_THEMES_CREATIVE]: SS_MEDALS_SILVER,
-    [SS_THEMES_ORGANIZATION]: SS_MEDALS_GOLD,
-    [SS_THEMES_MANAGE]: SS_MEDALS_SILVER,
+    [SOFT_SKILL_COMM]: SS_MEDALS_BRONZE,
+    [SOFT_SKILL_TEAMWORK]: SS_MEDALS_BRONZE,
+    [SOFT_SKILL_FEDERATE]: SS_MEDALS_BRONZE,
+    [SOFT_SKILL_CREATIVE]: SS_MEDALS_SILVER,
+    [SOFT_SKILL_ORGANIZATION]: SS_MEDALS_GOLD,
+    [SOFT_SKILL_MANAGE]: SS_MEDALS_SILVER,
   }
 
   const MEDALS_VALUES={
@@ -54,7 +54,7 @@ describe('Test imports', () => {
     themes.forEach(theme => {
       const themeName=theme[0]
       const medals=theme.slice(1)
-      const themeKey = keyFromValue(SS_THEMES, theme[0])
+      const themeKey = keyFromValue(SOFT_SKILLS, theme[0])
       return medals.forEach((medalNo, idx) => {
         const pilier=piliers[idx]
         const medal=VALUES_MEDALS[+medalNo]
@@ -70,16 +70,16 @@ describe('Test imports', () => {
   it('Matrix themes must be consistent', () => {
     const countForTheme = theme => lodash(MATRIX[theme]).values().map(v => MEDALS_VALUES[v]).sum()
     const THEMES_EXPECTED={
-      [SS_THEMES_COMM]: 5,
-      [SS_THEMES_TEAMWORK]: 8,
-      [SS_THEMES_CONFLICT]: 4,
-      [SS_THEMES_CHANGE]: 6,
-      [SS_THEMES_FEDERATE]: 7,
-      [SS_THEMES_CREATIVE]: 6,
-      [SS_THEMES_ADAPTATION]: 6,
-      [SS_THEMES_ANALYSIS]: 6,
-      [SS_THEMES_ORGANIZATION]: 7,
-      [SS_THEMES_MANAGE]: 5,
+      [SOFT_SKILL_COMM]: 5,
+      [SOFT_SKILL_TEAMWORK]: 8,
+      [SOFT_SKILL_CONFLICT]: 4,
+      [SOFT_SKILL_CHANGE]: 6,
+      [SOFT_SKILL_FEDERATE]: 7,
+      [SOFT_SKILL_CREATIVE]: 6,
+      [SOFT_SKILL_ADAPTATION]: 6,
+      [SOFT_SKILL_ANALYSIS]: 6,
+      [SOFT_SKILL_ORGANIZATION]: 7,
+      [SOFT_SKILL_MANAGE]: 5,
     }
     Object.entries(THEMES_EXPECTED)
       .forEach(([theme, expected]) => expect(countForTheme(theme)).toBe(expected))

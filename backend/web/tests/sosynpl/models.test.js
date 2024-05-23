@@ -6,7 +6,7 @@ const path = require('path')
 const { MONGOOSE_OPTIONS, getModels } = require('../../server/utils/database')
 const Freelance = require('../../server/models/Freelance')
 const { buildAttributesException } = require('../utils')
-const { WORK_DURATION, SS_THEMES_ADAPTATION, SS_MEDALS_BRONZE, SS_THEMES, SS_THEMES_ANALYSIS, SS_THEMES_COMM } = require('../../server/plugins/sosynpl/consts')
+const { WORK_DURATION, SOFT_SKILL_ADAPTATION, SS_MEDALS_BRONZE, SOFT_SKILLS, SOFT_SKILL_ANALYSIS, SOFT_SKILL_COMM } = require('../../server/plugins/sosynpl/consts')
 const Customer = require('../../server/models/Customer')
 const {CUSTOMER_DATA, FREELANCE_DATA, JOB_DATA, JOB_FILE_DATA, SECTOR_DATA, CATEGORY_DATA}=require('./data/base_data')
 require('../../server/plugins/sosynpl/functions')
@@ -103,19 +103,19 @@ describe('Test models', () => {
 
   it.only('Freelance soft skills', async () => {
     let freelance=await Freelance.findOne().populate('available_soft_skills')
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length)
-    freelance.gold_soft_skills=[SS_THEMES_ADAPTATION]
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length)
+    freelance.gold_soft_skills=[SOFT_SKILL_ADAPTATION]
     await freelance.save()
     freelance=await Freelance.findOne().populate('available_soft_skills')
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-1)
-    freelance.silver_soft_skills=[SS_THEMES_ANALYSIS]
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-1)
+    freelance.silver_soft_skills=[SOFT_SKILL_ANALYSIS]
     await freelance.save()
     freelance=await Freelance.findOne().populate('available_soft_skills')
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-2)
-    freelance.bronze_soft_skills=[SS_THEMES_COMM]
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-2)
+    freelance.bronze_soft_skills=[SOFT_SKILL_COMM]
     await freelance.save()
     freelance=await Freelance.findOne().populate('available_soft_skills')
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SS_THEMES).length-3)
+    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-3)
   })
 
 })

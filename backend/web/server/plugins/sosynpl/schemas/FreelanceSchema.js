@@ -5,7 +5,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
-  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_THEMES} = require('../consts')
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SOFT_SKILLS} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 
@@ -253,15 +253,15 @@ const FreelanceSchema = new Schema({
   // END AVAILABILITY
   // Soft skills
   gold_soft_skills: {
-    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
     validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
   },
   silver_soft_skills: {
-    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
     validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
   },
   bronze_soft_skills: {
-    type: [{type: String,enum: Object.keys(SS_THEMES),}],
+    type: [{type: String,enum: Object.keys(SOFT_SKILLS),}],
     validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
@@ -340,7 +340,7 @@ FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
 /** Soft skills havgin no medal */
 FreelanceSchema.virtual('available_soft_skills', DUMMY_REF).get(function() {
   const used_ss=[...(this.gold_soft_skills || []),...(this.silver_soft_skills || []),...(this.bronze_soft_skills || []),]
-  return lodash.difference(Object.keys(SS_THEMES), used_ss)
+  return lodash.difference(Object.keys(SOFT_SKILLS), used_ss)
 })
 
 

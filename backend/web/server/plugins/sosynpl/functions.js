@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SS_PILIER, SS_THEMES } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, DISC_ADMIN, DISC_CUSTOMER, DISC_FREELANCE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SS_PILIER, SOFT_SKILLS } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -131,9 +131,9 @@ FREELANCE_MODELS.forEach(model => {
   })
   declareEnumField( {model, field: 'availability', enumValues: AVAILABILITY})
   declareVirtualField({model, field: 'availability_str', instance: 'String', requires: 'availability,available_days_per_week,available_from'})
-  declareEnumField( {model, field: 'gold_soft_skills', enumValues: SS_THEMES})
-  declareEnumField( {model, field: 'silver_soft_skills', enumValues: SS_THEMES})
-  declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SS_THEMES})
+  declareEnumField( {model, field: 'gold_soft_skills', enumValues: SOFT_SKILLS})
+  declareEnumField( {model, field: 'silver_soft_skills', enumValues: SOFT_SKILLS})
+  declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SOFT_SKILLS})
   declareVirtualField({model, field: 'available_soft_skills', instance: 'Array', multiple: true,
     requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills',
     caster: {
