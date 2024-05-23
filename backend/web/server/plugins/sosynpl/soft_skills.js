@@ -170,7 +170,7 @@ const computeAvailableSilverSoftSkills =  async (userId, params, data) => {
 }
 
 const computeAvailableBronzeSoftSkills =  async (userId, params, data) => {
-  return await SoftSkill.find({_id: {$nin: [...data.gold_soft_skills, data.silver_soft_skills]}})
+  return await SoftSkill.find({_id: {$nin: [...data.gold_soft_skills, ...data.silver_soft_skills]}})
 }
 
 module.exports={
