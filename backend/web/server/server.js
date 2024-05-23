@@ -159,7 +159,8 @@ require('./models/TicketComment')
 require('./models/Pack')
 require('./models/Purchase')
 require('./models/Pair')
-
+require('./models/AppointmentStat')
+require('./models/CoachingStat')
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
 require('console-stamp')(console, '[dd/mm/yy HH:MM:ss.l]')

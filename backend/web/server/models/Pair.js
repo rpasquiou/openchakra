@@ -1,10 +1,10 @@
 const mongoose = require('mongoose')
 
-let UserSchema=null
+let PairSchema=null
 
 try {
-  UserSchema=require(`./PairSchema`)
-  UserSchema.plugin(require('mongoose-lean-virtuals'))
+  PairSchema=require(`./PairSchema`)
+  PairSchema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {
@@ -12,4 +12,4 @@ catch(err) {
   }
 }
 
-module.exports = UserSchema ? mongoose.model('pair', UserSchema) : null
+module.exports = PairSchema ? mongoose.model('pair', PairSchema) : null
