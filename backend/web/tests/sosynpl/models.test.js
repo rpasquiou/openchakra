@@ -143,7 +143,7 @@ describe('Test models', () => {
 
   })
 
-  it('Freelance test CHARLOTTE', async () => {
+  it.only('Freelance test CHARLOTTE', async () => {
     const softSkills=await SoftSkill.find()
     await Freelance.findByIdAndUpdate(
       freelanceId, {
@@ -156,9 +156,7 @@ describe('Test models', () => {
 
     const [freelance]=await loadFromDb({
       model: 'freelance', id: freelanceId, 
-      fields:['gold_soft_skills','silver_soft_skills','bronze_soft_skills','available_soft_skills', 
-        'pilar_coordinator','pilar_creator','pilar_director','pilar_implementor','pilar_networker','pilar_optimizer',
-      ],
+      fields:['pilar_coordinator','pilar_creator','pilar_director','pilar_implementor','pilar_networker','pilar_optimizer',],
     })
     expect(freelance.pilar_creator).toEqual(21)
     expect(freelance.pilar_implementor).toEqual(4)
