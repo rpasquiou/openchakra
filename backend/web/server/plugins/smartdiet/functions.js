@@ -2070,7 +2070,14 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
       }
       functionResult = await kpi[field]({ idFilter, startDate, endDate, diet })
       result[field] = functionResult
-    } else if (field.includes('coachings_gender_')) {
+    } else if (field.includes('coachings_stats')) {
+      if (cache['coachings_stats']) {
+        continue
+      }
+      cache['coachings_stats'] = true
+      functionResult = await kpi['coachings_stats']({ idFilter, startDate, endDate, diet })
+      result["coachings_stats"] = functionResult
+    }else if (field.includes('coachings_gender_')) {
       if (cache['coachings_gender']) {
         continue
       }
