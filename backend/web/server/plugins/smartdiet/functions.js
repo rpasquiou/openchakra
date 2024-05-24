@@ -2048,7 +2048,8 @@ const ensureChallengePipsConsistency = () => {
 const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
   const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null }
-  const result = { company: id?.toString() }
+  const result = {}
+  result.company = id?.toString()
   let cache = {}
 
   for (const field of fields) {
@@ -2067,45 +2068,27 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
       if (typeof kpi[field] !== 'function') {
         throw new Error(`Field ${field} is not a function`)
       }
-
-      try {
-        functionResult = await kpi[field]({ idFilter, startDate, endDate, diet })
-        result[field] = functionResult
-      } catch (error) {
-        console.error(`Error computing field ${field}:`, error)
-      }
+      functionResult = await kpi[field]({ idFilter, startDate, endDate, diet })
+      result[field] = functionResult
     } else if (field.includes('coachings_gender_')) {
       if (cache['coachings_gender']) {
         continue
       }
       cache['coachings_gender'] = true
-
-      try {
-        functionResult = await kpi['coachings_gender_']({ idFilter })
-        for (const [gender, count] of Object.entries(functionResult)) {
-          result[`coachings_gender_${gender}`] = count
-        }
-      } catch (error) {
-        console.error(`Error computing coachings_gender_:`, error)
+      functionResult = await kpi['coachings_gender_']({ idFilter })
+      for (const [gender, count] of Object.entries(functionResult)) {
+        result[`coachings_gender_${gender}`] = count
       }
     } else if (field.endsWith('_details') || field.endsWith('_total')) {
-      let baseField = field.replace('details', '').replace('total', '').trim()
+      const baseField = field.replace('_details', '').replace('_total', '')
       if (cache[baseField]) {
         continue
       }
       cache[baseField] = true
-
-      if (typeof kpi[baseField] !== 'function') {
-        console.table({here: baseField})
-      }
-
-      try {
-        functionResult = await kpi[baseField]({ idFilter })
-        result[`${baseField}total`] = functionResult[`${baseField}total`]
-        result[`${baseField}details`] = functionResult[`${baseField}details`]
-      } catch (error) {
-        console.error(`Error computing ${baseField}:`, error)
-      }
+      let funcName = `${baseField}_`
+      functionResult = await kpi[funcName]({ idFilter })
+      result[`${baseField}_total`] = functionResult[`${baseField}_total`]
+      result[`${baseField}_details`] = functionResult[`${baseField}_details`]
     } else if (field.includes('ratio_')) {
       if (field === 'ratio_stopped_started') {
         if (!cache['coachings_stopped']) {
@@ -2116,7 +2099,7 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
         }
         const coachingsStopped = cache['coachings_stopped']
         const coachingsStarted = cache['coachings_started']
-        result['ratio_stopped_started'] = coachingsStarted ? Number((coachingsStopped / coachingsStarted * 100).toFixed(2)) : 0
+        result['ratio_stopped_started'] = Number((coachingsStopped / coachingsStarted * 100).toFixed(2))
       } else if (field === 'ratio_dropped_started') {
         if (!cache['coachings_dropped']) {
           cache['coachings_dropped'] = await kpi['coachings_dropped']({ idFilter, diet, startDate, endDate })
@@ -2126,13 +2109,14 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
         }
         const coachingsDropped = cache['coachings_dropped']
         const coachingsStarted = cache['coachings_started']
-        result['ratio_dropped_started'] = coachingsStarted ? Number((coachingsDropped / coachingsStarted * 100).toFixed(2)) : 0
+        result['ratio_dropped_started'] = Number((coachingsDropped / coachingsStarted * 100).toFixed(2))
       }
     }
   }
 
-  return result
-}
+  return result;
+};
+
 
 /** Upsert PARTICULARS company */
 Company.findOneAndUpdate(
