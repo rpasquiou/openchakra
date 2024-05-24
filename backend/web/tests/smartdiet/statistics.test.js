@@ -108,7 +108,6 @@ describe('Statistics', () => {
 
   it('must return incalls_per_operator_total, outcalls_per_operator_total, incalls_per_operator_details, outcalls_per_operator_details', async () => {
     const stats = await computeStatistics({ fields: ['incalls_per_operator_total',' outcalls_per_operator_total',' incalls_per_operator_details',' outcalls_per_operator_details'] })
-    
     expect(stats['incalls_per_operator_total']).toBeTruthy()
     expect(stats['outcalls_per_operator_total']).toBeTruthy()
     expect(stats['incalls_per_operator_details']).toBeTruthy()
@@ -148,6 +147,10 @@ describe('Statistics', () => {
     expect(stats['webinars_by_company_details']).toBeTruthy()
     expect(stats['webinars_by_company_total']).toBeGreaterThanOrEqual(0)
   })
-
+  it.only('must return calls_stats', async () => {
+    const stats = await computeStatistics({ fields: ['calls_stats']})
+    console.table(stats.calls_stats)
+    expect(stats['calls_stats']).toBeTruthy()
+  })
 })
 
