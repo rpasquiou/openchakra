@@ -68,6 +68,16 @@ catch(err) {
   console.warn(`No database updates required for ${getDataModel()}`)
 }
 
+// Import all data models
+const modelsPath=path.join(__dirname, 'models')
+fs.readdirSync(modelsPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const modelName = path.basename(file, '.js')
+    require(path.join(modelsPath, file))
+  }
+})
+
+
 // TODO Terminer les notifications
 // throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)
 // checkConfig
