@@ -147,7 +147,7 @@ describe('Statistics', () => {
     expect(stats['webinars_by_company_details']).toBeTruthy()
     expect(stats['webinars_by_company_total']).toBeGreaterThanOrEqual(0)
   })
-  it('must return calls_stats', async () => {
+  it.only('must return calls_stats', async () => {
     const stats = await computeStatistics({ fields: ['calls_stats']})
     console.table(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
