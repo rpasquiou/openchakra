@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -234,7 +234,19 @@ caster: {
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
+declareVirtualField({model: 'announce', field: 'status', enumValues: ANNOUNCE_STATUS})
+declareVirtualField({model: 'announce', field: 'applications', instance: 'Array', multiple: true,
+caster: {
+  instance: 'ObjectID',
+  options: { ref: 'application' }
+},})
+declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number'})
 /** Announce end */
+
+
+/** Application start */
+declareEnumField({model: 'application', field: 'status', enumValues: APPLICATION_STATUS})
+/** Application end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
