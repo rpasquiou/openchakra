@@ -1,4 +1,6 @@
 const lodash = require('lodash')
+const fs=require('fs')
+const path=require('path')
 const mongoose = require('mongoose')
 const moment=require('moment')
 const formatDuration = require('format-duration')
@@ -10,6 +12,15 @@ const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
+
+// Import all data models
+const modelsPath=path.join(__dirname, '..', 'models')
+fs.readdirSync(modelsPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const modelName = path.basename(file, '.js')
+    require(path.join(modelsPath, file))
+  }
+})
 
 const LEAN_DATA=false
 
