@@ -15,7 +15,7 @@ const AppointmentStatSchema = new Schema({
   },
   ranges: {
     type: Schema.Types.ObjectId,
-    ref: 'pairrs',
+    ref: 'pair',
     required: [true, 'Les statistiques par tranche d age sont obligatoires'],
   }
 }, {...schemaOptions})

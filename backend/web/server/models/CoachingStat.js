@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
+const {getDataModel} = require('../../config/config')
 
 let Schema=null
 
 try {
-  Schema=require(`./CoachingStatSchema`)
+  Schema=require(`../plugins/${getDataModel()}/schemas/CoachingStatSchema`)
   Schema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
@@ -12,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = Schema ? mongoose.model('CoachingStatSchema', Schema) : null
+module.exports = Schema ? mongoose.model('coachingStat', Schema) : null

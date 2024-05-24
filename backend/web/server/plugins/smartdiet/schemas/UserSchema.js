@@ -16,7 +16,6 @@ const {
   ROLE_EXTERNAL_DIET,
   ROLE_RH,
   STATUS_FAMILY,
-  SOURCE,
 } = require('../consts')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
@@ -336,8 +335,7 @@ const UserSchema = new Schema({
   // Created from...
   source: {
     type: String,
-    enum: Object.keys(SOURCE),
-    required: true,
+    required: false,
   },
   // comment on user from diet
   diet_comment: {
