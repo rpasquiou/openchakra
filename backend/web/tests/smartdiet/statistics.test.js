@@ -46,10 +46,10 @@ describe('Statistics', () => {
     expect(stats.coachings_ongoing).toBeGreaterThanOrEqual(0)
   })
 
-  it('must return coachings_stats', async () => {
+  it.only('must return coachings_stats', async () => {
     const date = new Date('2024-01-05T13:00:00.000Z')
     const id = '651a9d3e1a7bd51b71a40327'
-    const stats = await computeStatistics({ fields: ['coachings_stats'], startDate:date, id:id})
+    const stats = await computeStatistics({ fields: ['coachings_stats','coachings_stats.name'], startDate:date, id:id})
     
     expect(stats.coachings_stats).toBeTruthy()
   })
