@@ -2045,57 +2045,92 @@ const ensureChallengePipsConsistency = () => {
 }
 
 
-const computeStatistics = async ({ id, fields, startDate, endDate }) => {
+const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
   console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
-  const idFilter=id ? mongoose.Types.ObjectId(id) : {$ne: null}
-  const result={}
-  result.company=id?.toString()
+  const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null }
+  const result = { company: id?.toString() }
   let cache = {}
+
   for (const field of fields) {
     let functionResult
-    if(field === 'company'){
+
+    if (field === 'company') {
       continue
     }
-    if (!field.includes('coachings_stats') && !field.includes('started_coachings_') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total')) {
+
+    if (!field.includes('started_coachings_') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
       if (cache[field]) {
         continue
       }
       cache[field] = true
 
-      if (typeof kpi[field]!='function') {
+      if (typeof kpi[field] !== 'function') {
         throw new Error(`Field ${field} is not a function`)
       }
-      functionResult = await kpi[field]({ idFilter })
-      result[field] = functionResult
-    }
-    if (field === 'coachings_stats') {
-      if (cache['coachings_stats']) {
-        continue
-      }
-      cache['coachings_stats']=true
-      result['coachings_stats'] = await kpi['coachings_stats']({ idFilter, startDate, endDate})
 
+      try {
+        functionResult = await kpi[field]({ idFilter, startDate, endDate, diet })
+        result[field] = functionResult
+      } catch (error) {
+        console.error(`Error computing field ${field}:`, error)
+      }
     } else if (field.includes('coachings_gender_')) {
       if (cache['coachings_gender']) {
         continue
       }
       cache['coachings_gender'] = true
-      functionResult = await kpi['coachings_gender_']({ idFilter })
-      for (const [gender, count] of Object.entries(functionResult)) {
-        result[`coachings_gender_${gender}`] = count
+
+      try {
+        functionResult = await kpi['coachings_gender_']({ idFilter })
+        for (const [gender, count] of Object.entries(functionResult)) {
+          result[`coachings_gender_${gender}`] = count
+        }
+      } catch (error) {
+        console.error(`Error computing coachings_gender_:`, error)
       }
-    } else if ((field.endsWith('_details') || field.endsWith('_total'))) {
-      if (cache[[field.replace('details', '').replace('total', '')]]) {
+    } else if (field.endsWith('_details') || field.endsWith('_total')) {
+      let baseField = field.replace('details', '').replace('total', '').trim()
+      if (cache[baseField]) {
         continue
       }
-      cache[[field.replace('details', '').replace('total', '')]] = true
-      let formattedField = field.replace('_details', '').replace('_total', '')
-      let funcName = formattedField + '_'
-      functionResult = await kpi[funcName]({ idFilter })
-      result[`${formattedField}_total`] = functionResult[`${formattedField}_total`]
-      result[`${formattedField}_details`] = functionResult[`${formattedField}_details`]
+      cache[baseField] = true
+
+      if (typeof kpi[baseField] !== 'function') {
+        console.table({here: baseField})
+      }
+
+      try {
+        functionResult = await kpi[baseField]({ idFilter })
+        result[`${baseField}total`] = functionResult[`${baseField}total`]
+        result[`${baseField}details`] = functionResult[`${baseField}details`]
+      } catch (error) {
+        console.error(`Error computing ${baseField}:`, error)
+      }
+    } else if (field.includes('ratio_')) {
+      if (field === 'ratio_stopped_started') {
+        if (!cache['coachings_stopped']) {
+          cache['coachings_stopped'] = await kpi['coachings_stopped']({ idFilter, diet, startDate, endDate })
+        }
+        if (!cache['coachings_started']) {
+          cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
+        }
+        const coachingsStopped = cache['coachings_stopped']
+        const coachingsStarted = cache['coachings_started']
+        result['ratio_stopped_started'] = coachingsStarted ? Number((coachingsStopped / coachingsStarted * 100).toFixed(2)) : 0
+      } else if (field === 'ratio_dropped_started') {
+        if (!cache['coachings_dropped']) {
+          cache['coachings_dropped'] = await kpi['coachings_dropped']({ idFilter, diet, startDate, endDate })
+        }
+        if (!cache['coachings_started']) {
+          cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
+        }
+        const coachingsDropped = cache['coachings_dropped']
+        const coachingsStarted = cache['coachings_started']
+        result['ratio_dropped_started'] = coachingsStarted ? Number((coachingsDropped / coachingsStarted * 100).toFixed(2)) : 0
+      }
     }
   }
+
   return result
 }
 
