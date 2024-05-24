@@ -369,8 +369,8 @@ FreelanceSchema.virtual('softwares', {
 
 FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
   switch(this.availability) {
-    case AVAILABILITY_ON: return `Disponible ${this.available_days_per_week} jours par semaine`
-    case AVAILABILITY_OFF: return this.available_from ? `Disponible ${this.available_days_per_week} jours par semaine à partir du ${moment(this.available_from).format('DD/MM/YY')} ` : 'Indisponible'
+    case AVAILABILITY_ON: return `Disponible ${this.available_days_per_week} jour(s) par semaine`
+    case AVAILABILITY_OFF: return this.available_from ? `Disponible ${this.available_days_per_week} jour(s) par semaine à partir du ${moment(this.available_from).format('DD/MM/YY')} ` : 'Indisponible'
   }
   return `Disponibilité non renseignée`
 })
