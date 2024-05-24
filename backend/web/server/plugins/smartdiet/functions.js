@@ -2059,7 +2059,7 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
       continue
     }
 
-    if (!field.includes('started_coachings_') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
+    if (!field.includes('started_coachings_') && !field.includes('coachings_stats') && !field.includes('coachings_gender_') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
       if (cache[field]) {
         continue
       }
@@ -2070,7 +2070,15 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
       }
       functionResult = await kpi[field]({ idFilter, startDate, endDate, diet })
       result[field] = functionResult
-    } else if (field.includes('coachings_gender_')) {
+    } else if (field.includes('coachings_stats')) {
+        const attributes = field.split('.')
+        if (cache['coachings_stats']) {
+          continue
+        }
+        cache['coachings_stats'] = true
+        functionResult = await kpi['coachings_stats']({ idFilter, startDate, endDate, diet })
+        result["coachings_stats"] = functionResult
+    }else if (field.includes('coachings_gender_')) {
       if (cache['coachings_gender']) {
         continue
       }

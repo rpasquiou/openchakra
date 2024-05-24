@@ -1067,12 +1067,13 @@ const calls_stats = async({idFilter}) =>{
     { call_status: CALL_STATUS_NOT_INTERESTED }
   ]})
 
+  const inCallsDetails = {}
+
   let stats = await Lead.find()
   stats = lodash.groupBy(stats, 'operator')
-  for(let op in stats){
-    const operator = stats[op]
-    console.log(operator)
-    break
+  for(let operatorId in stats){
+    const operatorDetails = stats[operatorId]
+    const operatorName = await User.find({_id: operatorId})
   }
 
   return({incallsTotal,oucallsTotal,callsTotal,nutAdvicesTotal,coachingsTotal,declinedTotal,unreachablesTotal,usefulContactsTotal,})
