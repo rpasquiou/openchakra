@@ -389,9 +389,9 @@ Object.keys(SS_PILAR).forEach(pilar => {
   FreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
     const medals=mapMedals(this)
     const pilars=computePilars(medals)
+    const max_value=lodash(pilars).values().max()
     // Convert to percent value
-    const total=lodash(pilars).values().sum()
-    const value=pilars[pilar]/total
+    const value=pilars[pilar]/max_value
     return value
   })
   
