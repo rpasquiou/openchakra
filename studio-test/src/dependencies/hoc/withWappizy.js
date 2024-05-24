@@ -17,10 +17,11 @@ const withWappizy = Component => {
     
     const {tag}=props
     if (BUTTONS.includes(compType) && ['PREVIOUS', 'NEXT', 'FINISH'].includes(tag)) {
-      const currentPage=props.getComponentValue(props.parentTab+props.level)||0
+      const parentTabId=props.parentTab+(props.level||'')
+      const currentPage=props.getComponentValue(parentTabId)||0
       const step=tag=='NEXT' ? 1 : -1
       if (['PREVIOUS', 'NEXT'].includes(tag)) {
-        props.onClick=() => props.setComponentValue(props.parentTab+props.level, Math.max(currentPage+step, 0))
+        props.onClick=() => props.setComponentValue(parentTabId, Math.max(currentPage+step, 0))
       }
       if (tag=='PREVIOUS' && currentPage==0) {
         props.display='none'
