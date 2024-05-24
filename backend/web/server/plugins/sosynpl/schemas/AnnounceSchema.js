@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR} = require('../consts')
+const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -164,7 +164,16 @@ const AnnounceSchema = new Schema({
   anonymous: {
     type: Boolean,
     required: [true, `Le status anyonyme est obligatoire`],
-  }
+  },
+  software: {
+    type: String,
+    required: [true, `Les logiciels sont obligatoires`],
+  },
+  accepted_application: {
+    type: Schema.Types.ObjectId,
+    ref: 'application',
+    required: false,
+  },
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -173,6 +182,23 @@ AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
 
 AnnounceSchema.virtual('suggested_freelances', DUMMY_REF).get(function() {
   return []
+})
+
+AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
+  return ANNOUNCE_STATUS_DRAFT
+})
+
+AnnounceSchema.virtual('applications', {
+  ref: 'application',
+  foreignField: 'announce',
+  localField: '_id',
+})
+
+AnnounceSchema.virtual('applications_count', {
+  ref: 'application',
+  foreignField: 'announce',
+  localField: '_id',
+  count: true,
 })
 
 module.exports = AnnounceSchema
