@@ -15,6 +15,7 @@ const MIN_SOFT_SKILLS=1
 const MIN_HARD_SKILLS=1
 const MIN_EXPERTISE=3
 const MIN_SOFTWARES=1
+const MIN_LANGUAGES=1
 
 const AnnounceSchema = new Schema({
   user: {
@@ -183,6 +184,15 @@ const AnnounceSchema = new Schema({
   publication_date: {
     type: Date,
     default: null,
+  },
+  languages: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'languageLevel',
+      required: true,
+    }],
+    validate: [languages => languages?.length>=MIN_LANGUAGES, `Vous devez choisir au moins ${MIN_LANGUAGES} langue(s)`],
+    required: [true, `Les langues sont obligatoires`],
   }
 }, schemaOptions)
 

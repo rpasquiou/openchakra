@@ -310,9 +310,18 @@ const FreelanceSchema = new Schema({
       ref: 'software',
       required: true,
     }],
-    validate: [softwares => softwares?.length>=MIN_SOFTWARES, `Vous devez choisir au moins ${MIN_SOFTWARES} logiciels(s)`],
-    required: [true, `Les logiciels sont obligatoires`],
+    default: [],
+    required: false,
   },
+  languages: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'languageLevel',
+      required: true,
+    }],
+    default: [],
+    required: false,
+  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -356,12 +365,6 @@ FreelanceSchema.virtual('trainings', {
 // Depends on filled attributes
 FreelanceSchema.virtual('search_visible').get(function() {
   return false
-})
-
-FreelanceSchema.virtual('languages', {
-  ref: 'languageLevel',
-  localField: '_id',
-  foreignField: 'user',
 })
 
 FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
