@@ -95,8 +95,9 @@ const AnnounceSchema = new Schema({
     type: Number,
     required: [true, `Le budget est obligatoire`]
   },
-  budget_visibility: {
+  budget_visible: {
     type: Boolean,
+    default: true,
     required: [true, `La visibilité du budget doit être indiquée`],
   },
   description: {
@@ -165,7 +166,7 @@ const AnnounceSchema = new Schema({
   },
   anonymous: {
     type: Boolean,
-    required: [true, `Le statut anonyme est obligatoire`],
+    default: false,
   },
   softwares: {
     type: [{
