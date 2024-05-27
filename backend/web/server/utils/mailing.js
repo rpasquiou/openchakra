@@ -5,12 +5,10 @@ try {
 catch(err) {
  console.warn('Could not get firebase module', err.message)
 }
+const isValidDomain = require('is-valid-domain')
 const {
-  getDataModel,
-  getHostUrl,
   getMailProvider,
   isProduction,
-  isValidation,
 } = require('../../config/config')
 const lodash=require('lodash')
 const {fillSms} = require('../../utils/sms')
@@ -22,6 +20,21 @@ let smsContact=null
 
 const setSmsContact = contact => {
   smsContact=contact
+}
+
+const ALLOWED_VALIDATION_DOMAINS=[
+  '@wappizy.com',
+]
+const addValidationAllowedDomain = domain => {
+  if (!isValidDomain(domain)) {
+    throw new Error(`Invalid domain:${domain}`)
+  }
+  ALLOWED_VALIDATION_DOMAINS.push(`@${domain}`)
+  console.log('Allowed domains are', ALLOWED_VALIDATION_DOMAINS)
+}
+
+const isAllowedEmail = email => {
+  return isProduction() || ALLOWED_VALIDATION_DOMAINS.some(domain => email.endsWith(domain))
 }
 
 const mailHandlers=lodash(mailProvider).split(',')
@@ -53,11 +66,10 @@ const setNotificationsContents = data => {
 const sendNotification = ({notification, destinee, ccs, params, attachment}) => {
 
   /** TEST purpose */
-  const isWappizy=/wappizy/.test(destinee.email)
 
-  let enable_mails = isProduction() || isWappizy
-  let enable_sms = isProduction()  || isWappizy
-  let enable_notifications = isProduction()  || isWappizy
+  let enable_mails = isAllowedEmail(destinee.email)
+  let enable_sms = isAllowedEmail(destinee.email)
+  let enable_notifications = isAllowedEmail(destinee.email)
 
   const prefix=(!enable_sms && !enable_mails && !enable_notifications) ? '***** DISABLED:':''
   console.log(`${prefix}send notification #${notification} to ${destinee.email} with params ${JSON.stringify(params)}`)
@@ -118,4 +130,5 @@ module.exports = {
   setNotificationsContents,
   setSmsContact,
   getTagUrl,
+  addValidationAllowedDomain,
 }
