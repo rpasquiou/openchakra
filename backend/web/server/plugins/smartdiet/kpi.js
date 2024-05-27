@@ -1108,20 +1108,9 @@ const calls_stats = async ({ idFilter }) => {
   let coaCuTransformationTotal = 0;
   let cnCuTransformationTotal = 0;
 
-  const operatorStats = await Promise.all(
+  await Promise.all(
     Object.keys(groupedStats).map(async (operatorId) => {
       const operatorDetails = groupedStats[operatorId];
-      const operatorName = operatorId === 'unknown' ? 'unknown' : await getOperatorName(operatorId);
-
-      const incalls = operatorDetails.filter((lead) => lead.call_direction === CALL_DIRECTION_IN_CALL).length;
-      const outcalls = operatorDetails.filter((lead) => lead.call_direction === CALL_DIRECTION_OUT_CALL).length;
-      const nutAdvices = operatorDetails.filter((lead) => lead.nutrition_converted).length;
-      const coachings = operatorDetails.filter((lead) => lead.coaching_converted).length;
-      const declined = operatorDetails.filter((lead) => lead.call_status === CALL_STATUS_NOT_INTERESTED).length;
-      const unreachables = operatorDetails.filter((lead) => lead.call_status === CALL_STATUS_UNREACHABLE).length;
-      const usefulContacts = operatorDetails.filter(
-        (lead) => lead.nutrition_converted || lead.coaching_converted || lead.call_status === CALL_STATUS_NOT_INTERESTED
-      ).length;
 
       const renewedCoachings = operatorDetails.reduce((acc, lead) => {
         if (lead.coaching_converted) {
@@ -1145,23 +1134,6 @@ const calls_stats = async ({ idFilter }) => {
       ).length;
       const cnCuTransformation = usefulContactsForCn !== 0 ? Number((nutAdvicesForCn / usefulContactsForCn * 100).toFixed(2)) : 0;
       cnCuTransformationTotal += cnCuTransformation;
-
-      return {
-        operatorName,
-        details: [
-          { name: "Appels Entrants", value: incalls },
-          { name: "Appels Sortants", value: outcalls },
-          { name: "Total Appels", value: incalls + outcalls },
-          { name: "Conseils Nut", value: nutAdvices },
-          { name: "Coachings", value: coachings },
-          { name: "Refusés", value: declined },
-          { name: "Injoignables", value: unreachables },
-          { name: "Contacts utiles", value: usefulContacts },
-          { name: "Coachings Renouvelés", value: renewedCoachingsTotalForOperator },
-          { name: "Transformation COA/CU", value: coaCuTransformation },
-          { name: "Transformation CN/CU", value: cnCuTransformation },
-        ],
-      };
     })
   );
 
@@ -1179,7 +1151,6 @@ const calls_stats = async ({ idFilter }) => {
       { name: "Transformation COA/CU", value: coaCuTransformationTotal },
       { name: "Transformation CN/CU", value: cnCuTransformationTotal },
     ],
-    operatorStats,
   };
 };
 

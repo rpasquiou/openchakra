@@ -172,10 +172,7 @@ describe('Statistics', () => {
   })
   it.only('must return calls_stats', async () => {
     const stats = await computeStatistics({ fields: ['calls_stats']})
-    console.table(stats.calls_stats.totals)
-    for(let operator of stats.calls_stats.operatorStats){
-      console.log(operator)
-    }
+    console.log(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })
 })
