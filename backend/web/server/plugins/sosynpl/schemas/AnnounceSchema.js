@@ -76,7 +76,7 @@ const AnnounceSchema = new Schema({
   homework_days: {
     type: Number,
     min: [MIN_HOMEWORK, `Le nombre de jours de télétravail minimum est ${MIN_HOMEWORK}`],
-    min: [MAX_HOMEWORK, `Le nombre de jours de télétravail maximum est ${MAX_HOMEWORK}`],
+    max: [MAX_HOMEWORK, `Le nombre de jours de télétravail maximum est ${MAX_HOMEWORK}`],
     default: 0,
     required: [true, `Le nombre de jours de télétravail est obligatoire`]
   },
