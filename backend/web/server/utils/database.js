@@ -715,7 +715,7 @@ const formatTime = timeMillis => {
 
 const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
   if (!model || !field || !(getterFn || setterFn)) {
-    throw new Error(`${model}.${field} compute delcaration requires model, field and at least getter or setter`)
+    throw new Error(`${model}.${field} compute declaration requires model, field and at least getter or setter`)
   }
   if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)

@@ -14,6 +14,7 @@ const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHa
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
 const { keys } = require("lodash");
+const { computeSuggestedFreelances } = require("./search");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -213,11 +214,12 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 
 /** Announce start */
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
-declareVirtualField({model: 'announce', field: 'suggested_freelances', instance: 'Array', multiple: true,
-caster: {
-  instance: 'ObjectID',
-  options: { ref: 'freelance' }
-},})
+// declareVirtualField({model: 'announce', field: 'suggested_freelances', instance: 'Array', multiple: true,
+// caster: {
+//   instance: 'ObjectID',
+//   options: { ref: 'freelance' }
+// },})
+declareComputedField({model: 'announce', field: 'suggested_freelances', getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
