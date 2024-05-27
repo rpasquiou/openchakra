@@ -1,5 +1,5 @@
 const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS } = require("./consts")
 const Customer=require('../../models/Customer')
@@ -241,6 +241,7 @@ caster: {
   options: { ref: 'application' }
 },})
 declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number'})
+declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 /** Announce end */
 
 
@@ -297,12 +298,17 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 
 setPreprocessGet(preprocessGet)
 
-const preCreate = ({model, params, user}) => {
+const preCreate = async ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training', 'software'].includes(model) && !params.user) {
     params.user=user
   }
   if (model=='languageLevel') {
     params.user=params.parent
+  }
+  // Announce will be validated on "publish action"
+  if (model=='announce') {
+    params.user=user
+    return { model, params, user, skip_validation: true }
   }
 
   return Promise.resolve({model, params})
@@ -321,6 +327,15 @@ const postCreate = async ({model, params, data}) => {
 }
 
 setPostCreateData(postCreate)
+
+const prePutData = async ({model, id, params, user}) => {
+  if (model=='announce') {
+    return {model, id, params, user, skip_validation: true}
+  }
+  return {model, id, params, user}
+}
+
+setPrePutData(prePutData)
 
 const filterDataUser = async ({ model, data, id, user }) => {
   if (model=='hardSkillCategory' && !id) {

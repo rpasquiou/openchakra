@@ -105,7 +105,6 @@ const withDynamicSelect = Component => {
       )
     }
 
-    console.log(props)
     return (
       <Component {...props} value={internalValue} onChange={onChange} >
         <option style={{...props}} value={undefined}></option>

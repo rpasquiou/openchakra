@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT} = require('../consts')
+const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -32,8 +32,8 @@ const AnnounceSchema = new Schema({
   },
   experience: {
     type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'experience',
+      type: String,
+      enum: Object.keys(EXPERIENCE),
       required: true,
     }],
     validate: [
@@ -163,7 +163,7 @@ const AnnounceSchema = new Schema({
   },
   anonymous: {
     type: Boolean,
-    required: [true, `Le status anyonyme est obligatoire`],
+    required: [true, `Le statut anonyme est obligatoire`],
   },
   software: {
     type: String,
