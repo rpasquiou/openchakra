@@ -193,15 +193,25 @@ const AnnounceSchema = new Schema({
     }],
     validate: [languages => languages?.length>=MIN_LANGUAGES, `Vous devez choisir au moins ${MIN_LANGUAGES} langue(s)`],
     required: [true, `Les langues sont obligatoires`],
-  }
+  },
+  suggested_freelances: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'freelance',
+      required: true,
+    }],
+  },
+  selected_freelances: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'freelance',
+      required: true,
+    }],
+  },
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
   return this.budget*COMMISSION
-})
-
-AnnounceSchema.virtual('suggested_freelances', DUMMY_REF).get(function() {
-  return []
 })
 
 AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
