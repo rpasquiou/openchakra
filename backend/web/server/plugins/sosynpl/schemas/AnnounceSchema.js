@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {SPOON_SOURCE, DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -174,6 +174,10 @@ const AnnounceSchema = new Schema({
     ref: 'application',
     required: false,
   },
+  publication_date: {
+    type: Date,
+    default: null,
+  }
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -185,7 +189,7 @@ AnnounceSchema.virtual('suggested_freelances', DUMMY_REF).get(function() {
 })
 
 AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
-  return ANNOUNCE_STATUS_DRAFT
+  return this.publication_date ? ANNOUNCE_STATUS_ACTIVE : ANNOUNCE_STATUS_DRAFT
 })
 
 AnnounceSchema.virtual('applications', {

@@ -1045,5 +1045,13 @@ return Promise.allSettled(imagePromises)
       })
   },
 
+  publish: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'publish',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+  },
 
 }
