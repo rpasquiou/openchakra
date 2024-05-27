@@ -24,6 +24,7 @@ AdminDashboardSchema.virtual(`specificities_users`, DUMMY_REF).get(function() { 
 AdminDashboardSchema.virtual(`reasons_users`, DUMMY_REF).get(function() { return 0 })
 
 AdminDashboardSchema.virtual(`coachings_started`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`coachings_finished`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_stopped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_dropped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_ongoing`, DUMMY_REF).get(function() {return 0})

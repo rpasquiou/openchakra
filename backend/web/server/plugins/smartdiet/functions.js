@@ -1397,6 +1397,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_started', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'coachings_finished', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_stopped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_dropped', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'coachings_ongoing', instance: 'Number' })
@@ -2118,6 +2119,18 @@ const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
         const coachingsDropped = cache['coachings_dropped']
         const coachingsStarted = cache['coachings_started']
         result['ratio_dropped_started'] = Number((coachingsDropped / coachingsStarted * 100).toFixed(2))
+
+      } else if (field ==='ratio_appointments_coaching') {
+        if (!cache['coachings_started']) {
+          cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
+        }
+        if (!cache['coachings_ongoing']) {
+          cache['coachings_ongoing'] = await kpi['coachings_ongoing']({ idFilter, diet, startDate, endDate })
+        }
+        const appts = await Appointment.countDocuments({validated:true})
+        const coachingsStarted = cache['coachings_started']
+        const coachingsOngoing = cache['coachings_ongoing']
+        result['ratio_appointments_coaching'] = Number((appts / (coachingsStarted - coachingsOngoing)).toFixed(2))
       }
     }
   }

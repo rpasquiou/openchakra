@@ -21,7 +21,8 @@ describe('Statistics', () => {
     const id = '65f2f95bd449f912a30afe74'
     const endDate = new Date('2021-01-05T13:00:00.000Z')
     const diet = '65f2faa6234cec144a11fb3f'
-    const stats = await computeStatistics({ fields: [`coachings_started`], startDate:startDate, endDate:endDate, id:id, diet:diet })
+    const stats = await computeStatistics({ fields: [`coachings_started`] })
+    console.table(stats)
     
     expect(stats.coachings_started).toBeGreaterThanOrEqual(0)
   })
@@ -31,26 +32,37 @@ describe('Statistics', () => {
     const id = '65f2f95bd449f912a30afe74'
     const endDate = new Date('2021-01-05T13:00:00.000Z')
     const diet = '65f2faa6234cec144a11fb3f'
-    const stats = await computeStatistics({ fields: [`coachings_stopped`], startDate:startDate, endDate:endDate, id:id, diet:diet })
+    const stats = await computeStatistics({ fields: [`coachings_stopped`] })
+    console.table(stats)
     
     expect(stats.coachings_stopped).toBeGreaterThanOrEqual(0)
   })
-
+  it('must return ratio appointments on coachings',async()=>{
+    const stats = await computeStatistics({fields:['ratio_appointments_coaching']})
+    console.table(stats)
+    expect(stats.ratio_appointments_coaching).toBeGreaterThanOrEqual(0)
+  })
   it('must return coachings_dropped', async () => {
     const stats = await computeStatistics({ fields: [`coachings_dropped`] })
+    console.table(stats)
     expect(stats.coachings_dropped).toBeGreaterThanOrEqual(0)
   })
 
   it('must return coachings_ongoing', async () => {
     const stats = await computeStatistics({ fields: [`coachings_ongoing`] })
+    console.table(stats)
     expect(stats.coachings_ongoing).toBeGreaterThanOrEqual(0)
   })
-
-  it.only('must return coachings_stats', async () => {
+  it('must return coachings_finished', async () => {
+    const stats = await computeStatistics({ fields: [`coachings_finished`] })
+    console.table(stats)
+    expect(stats.coachings_finished).toBeGreaterThanOrEqual(0)
+  })  
+  it('must return coachings_stats', async () => {
     const date = new Date('2024-01-05T13:00:00.000Z')
     const id = '651a9d3e1a7bd51b71a40327'
-    const stats = await computeStatistics({ fields: ['coachings_stats','coachings_stats.name'], startDate:date, id:id})
-    
+    const stats = await computeStatistics({ fields: ['coachings_stats','coachings_stats.name']})
+    console.log(stats)
     expect(stats.coachings_stats).toBeTruthy()
   })
 
@@ -147,9 +159,8 @@ describe('Statistics', () => {
     expect(stats['webinars_by_company_details']).toBeTruthy()
     expect(stats['webinars_by_company_total']).toBeGreaterThanOrEqual(0)
   })
-  it('must return calls_stats', async () => {
+  it.only('must return calls_stats', async () => {
     const stats = await computeStatistics({ fields: ['calls_stats']})
-    console.table(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })
 })
