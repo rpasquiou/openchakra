@@ -1082,40 +1082,105 @@ const aggregateLeadsByField = async (idFilter, matchCondition) => {
   return { total, details }
 }
 
-const calls_stats = async({idFilter}) =>{
-  const incallsTotal = await Lead.countDocuments({call_direction:CALL_DIRECTION_IN_CALL})
-  const oucallsTotal = await Lead.countDocuments({call_direction:CALL_DIRECTION_OUT_CALL})
-  const callsTotal = await Lead.countDocuments({call_direction:{$in:[CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL]}})
-  const nutAdvicesTotal = await Lead.countDocuments({nutrition_converted:true})
-  const coachingsTotal = await Lead.countDocuments({coaching_converted:true})
-  const declinedTotal = await Lead.countDocuments({call_status:CALL_STATUS_NOT_INTERESTED})
-  const unreachablesTotal = await Lead.countDocuments({call_status:CALL_STATUS_UNREACHABLE})
-  const usefulContactsTotal = await Lead.countDocuments({$or: [
-    { nutrition_converted: true },
-    { coaching_converted: true },
-    { call_status: CALL_STATUS_NOT_INTERESTED }
-  ]})
 
-  const inCallsDetails = {}
+const calls_stats = async ({ idFilter }) => {
+  const incallsTotal = await Lead.countDocuments({ call_direction: CALL_DIRECTION_IN_CALL });
+  const outcallsTotal = await Lead.countDocuments({ call_direction: CALL_DIRECTION_OUT_CALL });
+  const callsTotal = await Lead.countDocuments({ call_direction: { $in: [CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL] } });
+  const nutAdvicesTotal = await Lead.countDocuments({ nutrition_converted: true });
+  const coachingsTotal = await Lead.countDocuments({ coaching_converted: true });
+  const declinedTotal = await Lead.countDocuments({ call_status: CALL_STATUS_NOT_INTERESTED });
+  const unreachablesTotal = await Lead.countDocuments({ call_status: CALL_STATUS_UNREACHABLE });
+  const usefulContactsTotal = await Lead.countDocuments({
+    $or: [
+      { nutrition_converted: true },
+      { coaching_converted: true },
+      { call_status: CALL_STATUS_NOT_INTERESTED }
+    ]
+  });
 
-  let stats = await Lead.find()
-  stats = lodash.groupBy(stats, 'operator')
-  for(let operatorId in stats){
-    const operatorDetails = stats[operatorId]
-    operatorId !== 'undefined' ? operatorId : '$ne: null'
-    const operator = await User.find({_id: operatorId})
-    const operatorName = operator[0].fullname
-    console.log(operatorName)
-    let incalls = 0
-    let outcalls = 0
-    let callsTotal = 0
-    let nutAdvices = 0
-    let coachings = 0
-    let declined = 0
-    let unreachables = 0
-    let usefulContacts = 0
-  } 
-  console.table({incallsTotal,oucallsTotal,callsTotal,nutAdvicesTotal,coachingsTotal,declinedTotal,unreachablesTotal,usefulContactsTotal})
-  return({incallsTotal,oucallsTotal,callsTotal,nutAdvicesTotal,coachingsTotal,declinedTotal,unreachablesTotal,usefulContactsTotal,})
-}
-exports.calls_stats = calls_stats
+  const stats = await Lead.find();
+  const groupedStats = lodash.groupBy(stats, (lead) =>
+    mongoose.Types.ObjectId.isValid(lead.operator) ? lead.operator : 'unknown'
+  );
+
+  let renewedCoachingsTotal = 0;
+  let coaCuTransformationTotal = 0;
+  let cnCuTransformationTotal = 0;
+
+  const operatorStats = await Promise.all(
+    Object.keys(groupedStats).map(async (operatorId) => {
+      const operatorDetails = groupedStats[operatorId];
+      const operatorName = operatorId === 'unknown' ? 'unknown' : await getOperatorName(operatorId);
+
+      const incalls = operatorDetails.filter((lead) => lead.call_direction === CALL_DIRECTION_IN_CALL).length;
+      const outcalls = operatorDetails.filter((lead) => lead.call_direction === CALL_DIRECTION_OUT_CALL).length;
+      const nutAdvices = operatorDetails.filter((lead) => lead.nutrition_converted).length;
+      const coachings = operatorDetails.filter((lead) => lead.coaching_converted).length;
+      const declined = operatorDetails.filter((lead) => lead.call_status === CALL_STATUS_NOT_INTERESTED).length;
+      const unreachables = operatorDetails.filter((lead) => lead.call_status === CALL_STATUS_UNREACHABLE).length;
+      const usefulContacts = operatorDetails.filter(
+        (lead) => lead.nutrition_converted || lead.coaching_converted || lead.call_status === CALL_STATUS_NOT_INTERESTED
+      ).length;
+
+      const renewedCoachings = operatorDetails.reduce((acc, lead) => {
+        if (lead.coaching_converted) {
+          acc[lead.email] = (acc[lead.email] || 0) + 1;
+        }
+        return acc;
+      }, {});
+      const renewedCoachingsTotalForOperator = Object.values(renewedCoachings).reduce((sum, count) => sum + count, 0);
+      renewedCoachingsTotal += renewedCoachingsTotalForOperator;
+
+      const coa = operatorDetails.filter((lead) => lead.coaching_converted).length;
+      const usefulContactsForCoa = operatorDetails.filter(
+        (lead) => lead.nutrition_converted || lead.coaching_converted || lead.call_status === CALL_STATUS_NOT_INTERESTED
+      ).length;
+      const coaCuTransformation = usefulContactsForCoa !== 0 ? Number((coa / usefulContactsForCoa * 100).toFixed(2)) : 0;
+      coaCuTransformationTotal += coaCuTransformation;
+
+      const nutAdvicesForCn = operatorDetails.filter((lead) => lead.nutrition_converted).length;
+      const usefulContactsForCn = operatorDetails.filter(
+        (lead) => lead.nutrition_converted || lead.coaching_converted || lead.call_status === CALL_STATUS_NOT_INTERESTED
+      ).length;
+      const cnCuTransformation = usefulContactsForCn !== 0 ? Number((nutAdvicesForCn / usefulContactsForCn * 100).toFixed(2)) : 0;
+      cnCuTransformationTotal += cnCuTransformation;
+
+      return {
+        operatorName,
+        details: [
+          { name: "Appels Entrants", value: incalls },
+          { name: "Appels Sortants", value: outcalls },
+          { name: "Total Appels", value: incalls + outcalls },
+          { name: "Conseils Nut", value: nutAdvices },
+          { name: "Coachings", value: coachings },
+          { name: "Refusés", value: declined },
+          { name: "Injoignables", value: unreachables },
+          { name: "Contacts utiles", value: usefulContacts },
+          { name: "Coachings Renouvelés", value: renewedCoachingsTotalForOperator },
+          { name: "Transformation COA/CU", value: coaCuTransformation },
+          { name: "Transformation CN/CU", value: cnCuTransformation },
+        ],
+      };
+    })
+  );
+
+  return {
+    totals: [
+      { name: "Appels Entrants", value: incallsTotal },
+      { name: "Appels Sortants", value: outcallsTotal },
+      { name: "Total Appels", value: callsTotal },
+      { name: "Conseils Nut", value: nutAdvicesTotal },
+      { name: "Coachings", value: coachingsTotal },
+      { name: "Refusés", value: declinedTotal },
+      { name: "Injoignables", value: unreachablesTotal },
+      { name: "Contacts utiles", value: usefulContactsTotal },
+      { name: "Coachings Renouvelés", value: renewedCoachingsTotal },
+      { name: "Transformation COA/CU", value: coaCuTransformationTotal },
+      { name: "Transformation CN/CU", value: cnCuTransformationTotal },
+    ],
+    operatorStats,
+  };
+};
+
+exports.calls_stats = calls_stats;

@@ -2,7 +2,7 @@ const lodash=require('lodash')
 const moment=require('moment')
 const NodeCache=require('node-cache')
 const { ForbiddenError } = require("../../utils/errors")
-const { ROLE_EXTERNAL_DIET, APPOINTMENT_TYPE, APPOINTMENT_TYPE_ASSESSMENT, APPOINTMENT_TYPE_FOLLOWUP, APPOINTMENT_TYPE_NUTRITION } = require("./consts")
+const { ROLE_EXTERNAL_DIET, APPOINTMENT_TYPE, APPOINTMENT_TYPE_ASSESSMENT, APPOINTMENT_TYPE_FOLLOWUP, APPOINTMENT_TYPE_NUTRITION, ROLE_ADMIN, ROLE_SUPER_ADMIN } = require("./consts")
 const Appointment = require("../../models/Appointment")
 const Coaching = require("../../models/Coaching")
 const NutritionAdvice = require("../../models/NutritionAdvice")
@@ -41,7 +41,7 @@ const getAppointmentPrice = ({pricesList, appointment}) => {
 }
 
 const computeBilling = async ({diet, fields, params}) => {
-  if (diet.role!=ROLE_EXTERNAL_DIET) {
+  if ([ROLE_EXTERNAL_DIET, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(diet.role)){
     throw new ForbiddenError(`La facturation n'est accessible qu'aux diets`)
   }
   const prices=await getPrices()
