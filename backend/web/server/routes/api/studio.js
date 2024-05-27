@@ -141,9 +141,12 @@ const login = (email, password) => {
   })
 }
 
-router.get('/models', (req, res) => {
-  const allModels = getExposedModels()
-  return res.json(allModels)
+router.get('/models/:model?', (req, res) => {
+  let models = getExposedModels()
+  if (req.params.model) {
+    models=models[req.params.model]
+  }
+  return res.json(models)
 })
 
 router.get('/roles', (req, res) => {

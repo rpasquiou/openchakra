@@ -234,7 +234,7 @@ caster: {
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
-declareVirtualField({model: 'announce', field: 'status', enumValues: ANNOUNCE_STATUS})
+declareVirtualField({model: 'announce', field: 'status', enumValues: ANNOUNCE_STATUS, requires: 'publication_date'})
 declareVirtualField({model: 'announce', field: 'applications', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
