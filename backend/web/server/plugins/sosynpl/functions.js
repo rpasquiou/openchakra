@@ -81,14 +81,6 @@ MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'billing_contact_email', requires: `billing_contact_self,email`})
   declareFieldDependencies({model, field: 'billing_contact_address', requires: `billing_contact_self,address`})
 
-  declareVirtualField({
-    model, field: 'languages', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'languageLevel' }
-    },
-  })
-
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
@@ -325,6 +317,15 @@ const postCreate = async ({model, params, data}) => {
     }
     if (parentModel=='announce') {
       await Announce.findByIdAndUpdate(params.parent, {$addToSet: {softwares: data._id}})
+    }
+  }
+  if (model=='languageLevel' && params.parent) {
+    const parentModel=await getModel(params.parent)
+    if (['freelance', 'user'].includes(parentModel)) {
+      await Freelance.findByIdAndUpdate(params.parent, {$addToSet: {languages: data._id}})
+    }
+    if (parentModel=='announce') {
+      await Announce.findByIdAndUpdate(params.parent, {$addToSet: {languages: data._id}})
     }
   }
   return Promise.resolve(data)
