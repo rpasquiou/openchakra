@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -229,6 +229,13 @@ AnnounceSchema.virtual('applications_count', {
   foreignField: 'announce',
   localField: '_id',
   count: true,
+})
+
+AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
+  if (!!this.duration && !!this.duration_unit && !!this.budget) {
+    return this.budget/(this.duration*DURATION_UNIT_DAYS[this.duration_unit])
+  }
+  return null
 })
 
 module.exports = AnnounceSchema

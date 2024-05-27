@@ -231,6 +231,7 @@ caster: {
 },})
 declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number'})
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
+declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
 /** Announce end */
 
 
