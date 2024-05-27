@@ -1,5 +1,6 @@
-const User = require("../../models/User");
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData } = require("../../utils/database");
+const User = require("../../models/User")
+const Announce = require("../../models/Announce")
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS } = require("./consts")
 const Customer=require('../../models/Customer')
@@ -141,12 +142,6 @@ FREELANCE_MODELS.forEach(model => {
   declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
   declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
   declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
-  declareVirtualField({model, field: 'softwares', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'software' }
-    },
-  })
   declareEnumField( {model, field: 'availability', enumValues: AVAILABILITY})
   declareVirtualField({model, field: 'availability_str', instance: 'String', requires: 'availability,available_days_per_week,available_from'})
   declareEnumField( {model, field: 'gold_soft_skills', enumValues: SOFT_SKILLS})
@@ -299,7 +294,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = async ({model, params, user}) => {
-  if (['experience', 'communication', 'certification', 'training', 'software'].includes(model) && !params.user) {
+  if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
   if (model=='languageLevel') {
@@ -322,6 +317,15 @@ const postCreate = async ({model, params, data}) => {
   }
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
+  }
+  if (model=='software' && params.parent) {
+    const parentModel=await getModel(params.parent)
+    if (['freelance', 'user'].includes(parentModel)) {
+      await Freelance.findByIdAndUpdate(params.parent, {$addToSet: {softwares: data._id}})
+    }
+    if (parentModel=='announce') {
+      await Announce.findByIdAndUpdate(params.parent, {$addToSet: {softwares: data._id}})
+    }
   }
   return Promise.resolve(data)
 }
