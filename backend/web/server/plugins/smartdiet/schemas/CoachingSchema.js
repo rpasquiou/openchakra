@@ -7,7 +7,9 @@ const {
   COACHING_STATUS_NOT_STARTED,
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
-  COACHING_STATUS_STOPPED
+  COACHING_STATUS_STOPPED,
+  SOURCE,
+  SOURCE_APPLICATION
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -127,6 +129,13 @@ const CoachingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'pack',
     required: false,
+  },
+  // Coaching Source
+  source: {
+    type: String,
+    enum: Object.keys(SOURCE),
+    required: true,
+    default: SOURCE_APPLICATION
   },
   // Credits spent during company offer, required when a pack is added
   _company_cedits_spent: {
