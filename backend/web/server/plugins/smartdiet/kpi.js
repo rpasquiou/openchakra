@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const Group = require('../../models/Group')
-const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING } = require('./consts')
+const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING, APPOINTMENT_RABBIT } = require('./consts')
 const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const Coaching = require('../../models/Coaching')
@@ -413,6 +413,7 @@ const formatAgeRanges = (ranges, total) => {
 
 const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
   const pip = coachingPipeLine({ idFilter, startDate, endDate })
+
   const basePipeline = [
     { $match: pip },
     {
@@ -435,29 +436,19 @@ const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
     { $unwind: '$user' },
     {
       $addFields: {
-        validated: { $eq: ['$validated', true] },
-        isUpcoming: { $lt: [new Date(), '$start_date'] },
-        companyMatch: company ? { $eq: ['$user.company', mongoose.Types.ObjectId(company)] } : true,
-        order: {
-          $reduce: {
-            input: '$appointments',
-            initialValue: 0,
-            in: {
-              $cond: {
-                if: { $lt: ['$$this.start_date', '$start_date'] },
-                then: { $add: ['$$value', 1] },
-                else: '$$value'
-              }
-            }
-          }
-        },
         age: {
           $dateDiff: {
             startDate: "$user.birthday",
             endDate: "$$NOW",
             unit: "year"
           }
-        }
+        },
+        isUpcoming: { $lt: [new Date(), '$start_date'] },
+        isCurrent: { $and: [{ $lte: ['$start_date', new Date()] }, { $gte: ['$end_date', new Date()] }] },
+        isRabbit: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', false] }] },
+        isValid: { $eq: ['$validated', true] },
+        isValidationPending: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', null] }] },
+        companyMatch: company ? { $eq: ['$user.company', mongoose.Types.ObjectId(company)] } : true,
       }
     },
     {
@@ -485,115 +476,119 @@ const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
     { $match: { companyMatch: true } }
   ]
 
-  const validPipeline = [
-    ...basePipeline,
-    { $match: { validated: true } },
-    { $sort: { 'start_date': 1 } },
-    {
-      $group: {
-        _id: '$coaching._id',
-        appointments: { $push: '$$ROOT' },
-        count: { $sum: 1 }
+  const getAppointments = async (matchCondition) => {
+    const pipeline = [
+      ...basePipeline,
+      { $match: matchCondition },
+      { $sort: { 'start_date': 1 } },
+      {
+        $group: {
+          _id: '$coaching._id',
+          appointments: { $push: '$$ROOT' },
+          count: { $sum: 1 }
+        }
       }
-    }
-  ]
+    ]
+    return await Appointment.aggregate(pipeline).allowDiskUse(true).exec()
+  }
 
-  const upcomingPipeline = [
-    ...basePipeline,
-    { $match: { isUpcoming: true } },
-    { $sort: { 'start_date': 1 } },
-    {
-      $group: {
-        _id: '$coaching._id',
-        appointments: { $push: '$$ROOT' },
-        count: { $sum: 1 }
-      }
-    }
-  ]
-
-  const [validAppointments, upcomingAppointments] = await Promise.all([
-    Appointment.aggregate(validPipeline).allowDiskUse(true).exec(),
-    Appointment.aggregate(upcomingPipeline).allowDiskUse(true).exec()
+  const [
+    validAppointments,
+    rabbitAppointments,
+    currentAppointments,
+    upcomingAppointments,
+    validationPendingAppointments
+  ] = await Promise.all([
+    getAppointments({ isValid: true }),
+    getAppointments({ isRabbit: true }),
+    getAppointments({ isCurrent: true }),
+    getAppointments({ isUpcoming: true }),
+    getAppointments({ isValidationPending: true })
   ])
 
-  const totalValid = validAppointments.reduce((sum, group) => sum + group.count, 0)
-  const totalUpcoming = upcomingAppointments.reduce((sum, group) => sum + group.count, 0)
+  const processStats = (appointments) => {
+    const total = appointments.reduce((sum, group) => sum + group.count, 0)
+    const counts = Array(16).fill(0)
+    const ranges = initializeAgeRanges()
+    const rangesPerOrder = Array(16).fill().map(initializeAgeRanges)
 
-  const validCounts = Array(16).fill(0)
-  const upcomingCounts = Array(16).fill(0)
-
-  const validRanges = initializeAgeRanges()
-  const upcomingRanges = initializeAgeRanges()
-
-  const validRangesPerOrder = Array(16).fill().map(initializeAgeRanges)
-  const upcomingRangesPerOrder = Array(16).fill().map(initializeAgeRanges)
-
-  validAppointments.forEach(group => {
-    group.appointments.forEach((appointment, index) => {
-      const ageRange = appointment.ageRange
-      validCounts[index] += 1
-      validRanges[ageRange].count += 1
-      validRangesPerOrder[index][ageRange].count += 1
+    appointments.forEach(group => {
+      group.appointments.forEach((appointment, index) => {
+        const ageRange = appointment.ageRange
+        counts[index] += 1
+        ranges[ageRange].count += 1
+        rangesPerOrder[index][ageRange].count += 1
+      })
     })
-  })
 
-  upcomingAppointments.forEach(group => {
-    group.appointments.forEach((appointment, index) => {
-      const ageRange = appointment.ageRange
-      upcomingCounts[index] += 1
-      upcomingRanges[ageRange].count += 1
-      upcomingRangesPerOrder[index][ageRange].count += 1
+    Object.keys(ranges).forEach(key => {
+      ranges[key].percent = total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00'
     })
-  })
 
-  Object.keys(validRanges).forEach(key => {
-    validRanges[key].percent = totalValid ? ((validRanges[key].count / totalValid) * 100).toFixed(2) : '0.00'
-  })
-
-  Object.keys(upcomingRanges).forEach(key => {
-    upcomingRanges[key].percent = totalUpcoming ? ((upcomingRanges[key].count / totalUpcoming) * 100).toFixed(2) : '0.00'
-  })
-
-  validRangesPerOrder.forEach(orderRange => {
-    const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0)
-    Object.keys(orderRange).forEach(key => {
-      orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00'
+    rangesPerOrder.forEach(orderRange => {
+      const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0)
+      Object.keys(orderRange).forEach(key => {
+        orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00'
+      })
     })
-  })
 
-  upcomingRangesPerOrder.forEach(orderRange => {
-    const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0)
-    Object.keys(orderRange).forEach(key => {
-      orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00'
-    })
-  })
+    const countsObject = counts.map((count, order) => ({
+      order: order + 1,
+      total: count,
+      ranges: formatAgeRanges(rangesPerOrder[order], count)
+    }))
 
-  const validCountsObject = validCounts.map((count, order) => ({
-    order: order + 1,
-    total: count,
-    ranges: formatAgeRanges(validRangesPerOrder[order], count)
-  }))
+    return { total, ranges, countsObject }
+  }
 
-  const upcomingCountsObject = upcomingCounts.map((count, order) => ({
-    order: order + 1,
-    total: count,
-    ranges: formatAgeRanges(upcomingRangesPerOrder[order], count)
-  }))
+  const validStats = processStats(validAppointments)
+  const rabbitStats = processStats(rabbitAppointments)
+  const currentStats = processStats(currentAppointments)
+  const upcomingStats = processStats(upcomingAppointments)
+  const validationPendingStats = processStats(validationPendingAppointments)
 
   const coachingsValidApp = {
     name: APPOINTMENT_STATUS[APPOINTMENT_VALID],
-    total: totalValid,
-    ranges: formatAgeRanges(validRanges, totalValid),
-    appointments: validCountsObject
+    total: validStats.total,
+    ranges: formatAgeRanges(validStats.ranges, validStats.total),
+    appointments: validStats.countsObject
+  }
+
+  const coachingsRabbitApp = {
+    name: APPOINTMENT_STATUS[APPOINTMENT_RABBIT],
+    total: rabbitStats.total,
+    ranges: formatAgeRanges(rabbitStats.ranges, rabbitStats.total),
+    appointments: rabbitStats.countsObject
+  }
+
+  const coachingsCurrentApp = {
+    name: APPOINTMENT_STATUS[APPOINTMENT_CURRENT],
+    total: currentStats.total,
+    ranges: formatAgeRanges(currentStats.ranges, currentStats.total),
+    appointments: currentStats.countsObject
   }
 
   const coachingsUpcomingApp = {
     name: APPOINTMENT_STATUS[APPOINTMENT_TO_COME],
-    total: totalUpcoming,
-    ranges: formatAgeRanges(upcomingRanges, totalUpcoming),
-    appointments: upcomingCountsObject
+    total: upcomingStats.total,
+    ranges: formatAgeRanges(upcomingStats.ranges, upcomingStats.total),
+    appointments: upcomingStats.countsObject
   }
-  return [coachingsUpcomingApp, coachingsValidApp]
+
+  const coachingsValidationPendingApp = {
+    name: APPOINTMENT_STATUS[APPOINTMENT_VALIDATION_PENDING],
+    total: validationPendingStats.total,
+    ranges: formatAgeRanges(validationPendingStats.ranges, validationPendingStats.total),
+    appointments: validationPendingStats.countsObject
+  }
+
+  return [
+    coachingsUpcomingApp,
+    coachingsValidApp,
+    coachingsRabbitApp,
+    coachingsCurrentApp,
+    coachingsValidationPendingApp
+  ]
 }
 
 exports.coachings_stats = coachings_stats
