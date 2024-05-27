@@ -41,9 +41,6 @@ const getAppointmentPrice = ({pricesList, appointment}) => {
 }
 
 const computeBilling = async ({diet, fields, params}) => {
-  if (![ROLE_EXTERNAL_DIET, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(diet.role)){
-    throw new ForbiddenError(`La facturation n'est accessible qu'aux diets`)
-  }
   const prices=await getPrices()
   const appointments=await Appointment.find({diet}, {start_date:1}).catch(console.error)
   const nutAdvices=await NutritionAdvice.find({diet}, {start_date:1})

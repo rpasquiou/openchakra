@@ -306,7 +306,17 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   }
 
   if (model=='billing') {
-    return computeBilling({diet:user, fields, params })
+    let diet
+    if(user.role == ROLE_ADMIN || user.role == ROLE_SUPER_ADMIN){
+      diet = id
+    }
+    else if(user.role == ROLE_EXTERNAL_DIET) {
+      diet = user
+    }
+    else {
+      throw new ForbiddenError(`La facturation n'est accessible qu'aux diets`)
+    }
+    return computeBilling({diet, fields, params })
   }
 
   if (model == 'conversation') {
@@ -1442,86 +1452,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({ model: 'adminDashboard', field: 'decline_reasons_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'outcalls_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'incalls_per_operator_total', instance: 'Number' })
-declareVirtualField({
-  model: 'adminDashboard', field: 'outcalls_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'incalls_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'nut_advices_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'coachings_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'declined_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'unreachables_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'useful_contacts_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'renewed_coachings_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({
-  model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_details', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  },
-})
-declareVirtualField({ model: 'adminDashboard', field: 'nut_advices_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coachings_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'declined_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'unreachables_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'useful_contacts_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'renewed_coachings_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'coa_cu_transformation_per_operator_total', instance: 'Number' })
-declareVirtualField({ model: 'adminDashboard', field: 'cn_cu_transformation_per_operator_total', instance: 'Number' })
+
 declareVirtualField({
   model: 'adminDashboard', field: 'leads_by_campain', instance: 'Array', multiple: true,
   caster: {
@@ -1548,7 +1479,7 @@ declareVirtualField({
   model: 'adminDashboard', field: 'calls_stats', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
-    options: { ref: 'coachingStat' }
+    options: { ref: 'pair' }
   },
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })

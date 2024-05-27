@@ -37,7 +37,7 @@ describe('Statistics', () => {
     
     expect(stats.coachings_stopped).toBeGreaterThanOrEqual(0)
   })
-  it('must return ratio appointments on coachings',async()=>{
+  it.only('must return ratio appointments on coachings',async()=>{
     const stats = await computeStatistics({fields:['ratio_appointments_coaching']})
     console.table(stats)
     expect(stats.ratio_appointments_coaching).toBeGreaterThanOrEqual(0)
@@ -171,7 +171,8 @@ describe('Statistics', () => {
     expect(stats['webinars_by_company_total']).toBeGreaterThanOrEqual(0)
   })
   it.only('must return calls_stats', async () => {
-    const stats = await computeStatistics({ fields: ['calls_stats']})
+    const operatorId = "65fc021f93262d3cef08bf35"
+    const stats = await computeStatistics({ fields: ['calls_stats'], id:operatorId})
     console.log(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })

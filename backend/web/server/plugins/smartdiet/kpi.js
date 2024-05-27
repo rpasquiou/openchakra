@@ -824,182 +824,6 @@ const ratio_dropped_started = async ({idFilter, diet, startDate, endDate}) => {
 }
 exports.ratio_dropped_started = ratio_dropped_started
 
-
-
-const incalls_per_operator_ = async (idFilter) => {
-    const matchCondition = { call_direction: CALL_DIRECTION_IN_CALL }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        incalls_per_operator_total: total,
-        incalls_per_operator_details: details
-    }
-}
-exports.incalls_per_operator_ = incalls_per_operator_
-
-const outcalls_per_operator_ = async (idFilter) => {
-    const matchCondition = { call_direction: CALL_DIRECTION_OUT_CALL }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        outcalls_per_operator_total: total,
-        outcalls_per_operator_details: details
-    }
-}
-exports.outcalls_per_operator_ = outcalls_per_operator_
-
-const nut_advices_per_operator_ = async (idFilter) => {
-    const matchCondition = { nutrition_converted: true }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        nut_advices_per_operator_total: total,
-        nut_advices_per_operator_details: details
-    }
-}
-exports.nut_advices_per_operator_ = nut_advices_per_operator_
-
-const coachings_per_operator_ = async (idFilter) => {
-    const matchCondition = { coaching_converted: true }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        coachings_per_operator_total: total,
-        coachings_per_operator_details: details
-    }
-}
-exports.coachings_per_operator_ = coachings_per_operator_
-
-const declined_per_operator_ = async (idFilter) => {
-    const matchCondition = { call_status: 'CALL_STATUS_NOT_INTERESTED' }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        declined_per_operator_total: total,
-        declined_per_operator_details: details
-    }
-}
-exports.declined_per_operator_ = declined_per_operator_
-
-const unreachables_per_operator_ = async (idFilter) => {
-    const matchCondition = { call_status: 'CALL_STATUS_UNREACHABLE' }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-        unreachables_per_operator_total: total,
-        unreachables_per_operator_details: details
-    }
-}
-exports.unreachables_per_operator_ = unreachables_per_operator_
-
-const useful_contacts_per_operator_ = async (idFilter) => {
-    const matchCondition = {
-      $or: [
-        { nutrition_converted: true },
-        { coaching_converted: true },
-        { call_status: 'CALL_STATUS_NOT_INTERESTED' }
-      ]
-    }
-    const { total, details } = await aggregateLeadsByField(idFilter, matchCondition)
-    return {
-      useful_contacts_per_operator_total: total,
-      useful_contacts_per_operator_details: details
-    }
-}
-exports.useful_contacts_per_operator_ = useful_contacts_per_operator_
-
-const renewed_coachings_per_operator_ = async (idFilter) => {
-    const leads = await Lead.find({ id: idFilter })
-  
-    const groupedLeadsByOp = lodash.groupBy(leads, 'operator')
-    let renewedCoachingsPerOperatorTotal = 0
-    const renewedCoachingsPerOperator = []
-  
-    for (const operator in groupedLeadsByOp) {
-      const leadByOp = groupedLeadsByOp[operator]
-      const renewedCoachings = {}
-  
-      leadByOp.forEach(lead => {
-        if (lead.coaching_converted) {
-          renewedCoachings[lead.email] = (renewedCoachings[lead.email] || 0) + 1
-        }
-      })
-  
-      const operatorName = operator !== 'undefined' ? await getOperatorName(operator) : 'unknown'
-      const renewedCoachingsTotal = Object.values(renewedCoachings).reduce((sum, count) => sum + count, 0)
-      renewedCoachingsPerOperator.push({ name: operatorName, value: renewedCoachingsTotal })
-      renewedCoachingsPerOperatorTotal += renewedCoachingsTotal
-    }
-  
-    return {
-      renewed_coachings_per_operator_total: renewedCoachingsPerOperatorTotal,
-      renewed_coachings_per_operator_details: renewedCoachingsPerOperator
-    }
-  }
-exports.renewed_coachings_per_operator_ = renewed_coachings_per_operator_
-  
-const coa_cu_transformation_per_operator_ = async (idFilter) => {
-    const leads = await Lead.find({ id: idFilter })
-  
-    const groupedLeadsByOp = lodash.groupBy(leads, 'operator')
-    let coaCuTransformationPerOperatorTotal = 0
-    const coaCuTransformationPerOperator = []
-  
-    for (const operator in groupedLeadsByOp) {
-      const leadByOp = groupedLeadsByOp[operator]
-      let coa = 0
-      let usefulContacts = 0
-  
-      leadByOp.forEach(lead => {
-        if (lead.coaching_converted) {
-          coa += 1
-        }
-        if (lead.nutrition_converted || lead.coaching_converted || lead.call_status === 'CALL_STATUS_NOT_INTERESTED') {
-          usefulContacts += 1
-        }
-      })
-  
-      const operatorName = operator !== 'undefined' ? await getOperatorName(operator) : 'unknown'
-      const coaCuTransformation = usefulContacts !== 0 ? Number((coa / usefulContacts * 100).toFixed(2)) : 0
-      coaCuTransformationPerOperator.push({ name: operatorName, value: coaCuTransformation })
-      coaCuTransformationPerOperatorTotal += coaCuTransformation
-    }
-  
-    return {
-      coa_cu_transformation_per_operator_total: coaCuTransformationPerOperatorTotal,
-      coa_cu_transformation_per_operator_details: coaCuTransformationPerOperator
-    }
-  }
-exports.coa_cu_transformation_per_operator_ = coa_cu_transformation_per_operator_
-  
-const cn_cu_transformation_per_operator_ = async (idFilter) => {
-    const leads = await Lead.find({ id: idFilter })
-  
-    const groupedLeadsByOp = lodash.groupBy(leads, 'operator')
-    let cnCuTransformationPerOperatorTotal = 0
-    const cnCuTransformationPerOperator = []
-  
-    for (const operator in groupedLeadsByOp) {
-      const leadByOp = groupedLeadsByOp[operator]
-      let nutAdvices = 0
-      let usefulContacts = 0
-  
-      leadByOp.forEach(lead => {
-        if (lead.nutrition_converted) {
-          nutAdvices += 1
-        }
-        if (lead.nutrition_converted || lead.coaching_converted || lead.call_status === 'CALL_STATUS_NOT_INTERESTED') {
-          usefulContacts += 1
-        }
-      })
-  
-      const operatorName = operator !== 'undefined' ? await getOperatorName(operator) : 'unknown'
-      const cnCuTransformation = usefulContacts !== 0 ? Number((nutAdvices / usefulContacts * 100).toFixed(2)) : 0
-      cnCuTransformationPerOperator.push({ name: operatorName, value: cnCuTransformation })
-      cnCuTransformationPerOperatorTotal += cnCuTransformation
-    }
-  
-    return {
-      cn_cu_transformation_per_operator_total: cnCuTransformationPerOperatorTotal,
-      cn_cu_transformation_per_operator_details: cnCuTransformationPerOperator
-    }
-}
-exports.cn_cu_transformation_per_operator_ = cn_cu_transformation_per_operator_
-
 const leads_by_campain = async (idFilter) => {
     const leads=await Lead.find()
     const leadsTotal=leads.length
@@ -1058,48 +882,35 @@ const webinars_by_company_ = async () => {
 }
 exports.webinars_by_company_ = webinars_by_company_
 
-const pipeline = (idFilter, matchCondition) => ([
-  { $match: { ...matchCondition } },
-  { $group: { _id: '$operator', count: { $sum: 1 } } }
-])
-
 const getOperatorName = async (operatorId) => {
   const user = await User.findById(operatorId)
   return user ? user.fullname : "unknown"
 }
 
-const aggregateLeadsByField = async (idFilter, matchCondition) => {
-  const pip = pipeline(idFilter, matchCondition)
-  const result = await Lead.aggregate(pip)
-  let total = 0
-  const details = await Promise.all(result.map(async (item) => {
-      const operatorId = item._id
-      const count = item.count
-      total += count
-      const operatorName = operatorId ? await getOperatorName(operatorId) : "unknown"
-      return { name: operatorName, value: count }
-  }))
-  return { total, details }
-}
 
-
-const calls_stats = async ({ idFilter }) => {
-  const incallsTotal = await Lead.countDocuments({ call_direction: CALL_DIRECTION_IN_CALL });
-  const outcallsTotal = await Lead.countDocuments({ call_direction: CALL_DIRECTION_OUT_CALL });
-  const callsTotal = await Lead.countDocuments({ call_direction: { $in: [CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL] } });
-  const nutAdvicesTotal = await Lead.countDocuments({ nutrition_converted: true });
-  const coachingsTotal = await Lead.countDocuments({ coaching_converted: true });
-  const declinedTotal = await Lead.countDocuments({ call_status: CALL_STATUS_NOT_INTERESTED });
-  const unreachablesTotal = await Lead.countDocuments({ call_status: CALL_STATUS_UNREACHABLE });
+const calls_stats = async ({ idFilter, company }) => {
+  let userEmailFilter ={}
+  if (company) {
+    const users = await User.find({ company: company }).select('email').lean();
+    const userEmails = users.map(user => user.email);
+    userEmailFilter = { email: { $in: userEmails } };
+  }
+  const incallsTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, call_direction: CALL_DIRECTION_IN_CALL });
+  const outcallsTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, call_direction: CALL_DIRECTION_OUT_CALL });
+  const callsTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, call_direction: { $in: [CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL] } });
+  const nutAdvicesTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, nutrition_converted: true });
+  const coachingsTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, coaching_converted: true });
+  const declinedTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, call_status: CALL_STATUS_NOT_INTERESTED });
+  const unreachablesTotal = await Lead.countDocuments({ operator:idFilter, ...userEmailFilter, call_status: CALL_STATUS_UNREACHABLE });
   const usefulContactsTotal = await Lead.countDocuments({
     $or: [
-      { nutrition_converted: true },
-      { coaching_converted: true },
-      { call_status: CALL_STATUS_NOT_INTERESTED }
+      { operator:idFilter, ...userEmailFilter, nutrition_converted: true },
+      { operator:idFilter, ...userEmailFilter, coaching_converted: true },
+      { operator:idFilter, ...userEmailFilter, call_status: CALL_STATUS_NOT_INTERESTED }
     ]
   });
 
-  const stats = await Lead.find();
+  const stats = await Lead.find({operator:idFilter, ...userEmailFilter});
   const groupedStats = lodash.groupBy(stats, (lead) =>
     mongoose.Types.ObjectId.isValid(lead.operator) ? lead.operator : 'unknown'
   );
