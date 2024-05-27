@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const Group = require('../../models/Group')
-const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE } = require('./consts')
+const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING } = require('./consts')
 const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const Coaching = require('../../models/Coaching')
@@ -52,7 +52,6 @@ exports.webinars_count = webinars_count
 const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
   const matchCondition = { status: { $ne: COACHING_STATUS_NOT_STARTED } }
 
-  // Build match condition for the date range
   if (startDate || endDate) {
     matchCondition['appointments.start_date'] = {}
     if (startDate) {
@@ -101,8 +100,6 @@ const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
     { $group: { _id: '$_id' } },
     { $count: 'count' }
   ]
-
-  // Execute the aggregation pipeline
   const result = await Coaching.aggregate(aggregationPipeline).exec()
   return result.length > 0 ? result[0].count : 0
 }
@@ -227,8 +224,47 @@ const coachings_ongoing = async ({ idFilter, diet, startDate, endDate }) => {
   const result = await Coaching.aggregate(aggregationPipeline).exec()
   return result.length > 0 ? result[0].count : 0
 }
-
 exports.coachings_ongoing = coachings_ongoing
+
+const coachings_finished = async ({ idFilter, diet, startDate, endDate }) => {
+  const matchCondition = { status: COACHING_STATUS_FINISHED }
+
+  if (startDate || endDate) {
+    matchCondition['appointments.start_date'] = {}
+    if (startDate) {
+      matchCondition['appointments.start_date'].$gte = new Date(startDate)
+    }
+    if (endDate) {
+      matchCondition['appointments.start_date'].$lte = new Date(endDate)
+    }
+  }
+
+  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
+    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
+  }
+
+  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
+    const users = await User.find({ company: idFilter }).select('_id').lean()
+    const userIds = users.map(user => user._id)
+    matchCondition['user'] = { $in: userIds }
+  }
+
+  const aggregationPipeline = [
+    { $match: matchCondition },
+    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
+    { $unwind: '$appointments' },
+    { $match: matchCondition },
+    { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
+    { $unwind: '$user' },
+    { $group: { _id: '$_id' } },
+    { $count: 'count' }
+  ]
+
+  const result = await Coaching.aggregate(aggregationPipeline).exec()
+  return result.length > 0 ? result[0].count : 0
+}
+
+exports.coachings_finished = coachings_finished
 
 const webinars_replayed_count = async ({ idFilter }) => {
     return await User.aggregate([
@@ -595,7 +631,6 @@ const coachings_gender_ = async ({ idFilter }) => {
     non_binary: 0,
     unknown: 0
   }
-
   usersWithCoachingsByGender.forEach(({ _id, count }) => {
     if (_id === 'MALE') {
       formattedGenderCount.male += count
@@ -607,7 +642,6 @@ const coachings_gender_ = async ({ idFilter }) => {
       formattedGenderCount.unknown += count
     }
   })
-  
   return formattedGenderCount
 }
 exports.coachings_gender_ = coachings_gender_
@@ -1073,9 +1107,20 @@ const calls_stats = async({idFilter}) =>{
   stats = lodash.groupBy(stats, 'operator')
   for(let operatorId in stats){
     const operatorDetails = stats[operatorId]
-    const operatorName = await User.find({_id: operatorId})
-  }
-
+    operatorId !== 'undefined' ? operatorId : '$ne: null'
+    const operator = await User.find({_id: operatorId})
+    const operatorName = operator[0].fullname
+    console.log(operatorName)
+    let incalls = 0
+    let outcalls = 0
+    let callsTotal = 0
+    let nutAdvices = 0
+    let coachings = 0
+    let declined = 0
+    let unreachables = 0
+    let usefulContacts = 0
+  } 
+  console.table({incallsTotal,oucallsTotal,callsTotal,nutAdvicesTotal,coachingsTotal,declinedTotal,unreachablesTotal,usefulContactsTotal})
   return({incallsTotal,oucallsTotal,callsTotal,nutAdvicesTotal,coachingsTotal,declinedTotal,unreachablesTotal,usefulContactsTotal,})
 }
 exports.calls_stats = calls_stats
