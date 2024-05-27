@@ -27,7 +27,8 @@ const isESANI = account => {
   if (!account) {
     throw new Error('isESANI: account is null')
   }
-  return account.company?.offers?.[0].coaching_credit>0
+  const res=account.company?.current_offer?.coaching_credit>0
+  return res
 }
 
 const isINEA = account => {
@@ -41,8 +42,8 @@ const hasGroups = account => {
   if (!account) {
     throw new Error('hasGroups: account is null')
   }
-  return !!account.company?.offers?.[0].groups_unlimited ||
-    account.company?.offers?.[0].groups_credit>0
+  return !!account.company?.current_offer?.groups_unlimited ||
+    account.company?.current_offer?.groups_credit>0
 }
 
 const isInsurance = account => {
@@ -69,7 +70,7 @@ const coachingStarted = user => {
 const _mapContactToMailJet = contact => ({
   Email: contact.email, Properties: {
     codeentreprise: contact.company?.code,
-    credit_consult: contact.company?.offers?.[0].coaching_credit,
+    credit_consult: contact.company?.current_offer?.coaching_credit,
     client: contact.company?.name,
     logo: contact.company?.picture,
     Name: contact.fullname, Firstname: contact.firstname, 
@@ -142,7 +143,7 @@ const WORKFLOWS={
   },
   CL_ADH_LEAD_COA_NOGROUP_MAIL_OPENED: {
     id: '2416407',
-    name: 'SAL NON INSC ESANI sans groupe mail ouvert',
+    name: 'ADH NON INSC ESANI sans groupe mail ouvert',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
         && isInsurance(lead)
@@ -166,7 +167,7 @@ const WORKFLOWS={
   // Registered ESANI
   CL_REGISTERED_ESANI_NOSTARTEDCOA: {
     id: '2414831',
-    name: 'SAL/ADH INSC INEA NO CAO DEM',
+    name: 'SAL/ADH INSC ESANI NO CAO DEM',
     filter: (lead, user) => {
       return isRegistered(lead, user)
         && isESANI(user)
@@ -247,10 +248,10 @@ const WORKFLOWS={
 const computeWorkflowLists = () => {
   return Promise.all([
     Lead.find()
-      .populate({path: 'company', populate: [{path: 'groups_count'}, {path: 'groups'}, {path: 'offers'}]}),
+      .populate({path: 'company', populate: [{path: 'groups_count'}, {path: 'groups'}, {path: 'current_offer'}]}),
     User.find({role: ROLE_CUSTOMER})
       .populate([{path: 'coachings', populate: ['appointments']}, {path: 'latest_coachings', populate: ['appointments']}])
-      .populate({path: 'company', populate: ['collective_challenges']}),
+      .populate({path: 'company', populate: ['collective_challenges', 'current_offer']}),
     // TODO use this version after speeding it up
     /**
     loadFromDb({model: 'lead', fields:['company.offers', 'company.groups']}),
@@ -260,13 +261,13 @@ const computeWorkflowLists = () => {
   .then(([leads, users]) => {
     const allemails=lodash([...leads, ...users]).groupBy('email').mapValues(v => ([v.find(c => !c.role), v.find(c => !!c.role)]))
     // Filter for each workflow
-    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, filter}])=> {
+    const entries=Object.entries(WORKFLOWS).map(([workflow_id, {id, name, filter}])=> {
       // Map mail to false or lead or user
       const retained=allemails.mapValues(([lead, user]) => filter(lead, user))
         // Retain only emails having truthy value
         .pickBy(v => !!v)
       const removed=allemails.keys().difference(retained.keys().value()).map(k => ({email:k}))
-      return [workflow_id, {id, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
+      return [workflow_id, {id, name, add: retained.values().value().map(mapContactToMailJet), remove: removed.value().map(mapContactToMailJet)}]
     })
     return Object.fromEntries(entries)
   })
@@ -275,7 +276,7 @@ const computeWorkflowLists = () => {
 const updateWorkflows= () => {
   return computeWorkflowLists()
     .then(lists => {
-      console.log(`Lists`, Object.entries(lists).map(([key, entry])=> ([key, entry.id, entry.add.length])))
+      console.log(`Updated workflows`, JSON.stringify(lists, null, 2))
       let promises=Object.values(lists).map(({id, add, remove})=> {
         const result=[]
         if (!lodash.isEmpty(add)) {
