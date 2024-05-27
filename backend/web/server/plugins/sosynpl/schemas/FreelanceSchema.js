@@ -32,6 +32,8 @@ const MAX_GOLD_SOFT_SKILLS=1
 const MAX_SILVER_SOFT_SKILLS=2
 const MAX_BRONZE_SOFT_SKILLS=3
 
+const MIN_SOFTWARES=1
+
 const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
@@ -302,6 +304,15 @@ const FreelanceSchema = new Schema({
       required: true,
     }],
   },
+  softwares: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'software',
+      required: true,
+    }],
+    validate: [softwares => softwares?.length>=MIN_SOFTWARES, `Vous devez choisir au moins ${MIN_SOFTWARES} logiciels(s)`],
+    required: [true, `Les logiciels sont obligatoires`],
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -359,12 +370,6 @@ FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
     case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
     case MOBILITY_CITY: return `${this.mobility_city.city} dans un rayon de ${this.mobility_city_distance} km`
   }
-})
-
-FreelanceSchema.virtual('softwares', {
-  ref: 'software',
-  localField: '_id',
-  foreignField: 'user',
 })
 
 FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {

@@ -10,11 +10,6 @@ const SoftwareSchema = new Schema({
     type: String,
     required: [true, 'Le nom est obligatoire'],
   },
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: [true, 'Le compte est obligatoire'],
-  },
 }, schemaOptions)
 
 module.exports = SoftwareSchema

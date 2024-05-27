@@ -14,6 +14,7 @@ const MAX_HOMEWORK=5
 const MIN_SOFT_SKILLS=1
 const MIN_HARD_SKILLS=1
 const MIN_EXPERTISE=3
+const MIN_SOFTWARES=1
 
 const AnnounceSchema = new Schema({
   user: {
@@ -165,9 +166,14 @@ const AnnounceSchema = new Schema({
     type: Boolean,
     required: [true, `Le statut anonyme est obligatoire`],
   },
-  software: {
-    type: String,
-    required: [true, `Les logiciels sont obligatoires`],
+  softwares: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'software',
+      required: true,
+    }],
+    validate: [softwares => softwares?.length>=MIN_SOFTWARES, `Vous devez choisir au moins ${MIN_SOFTWARES} logiciels(s)`],
+    required: [true, `Les logiviels sont obligatoires`],
   },
   accepted_application: {
     type: Schema.Types.ObjectId,
