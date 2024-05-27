@@ -1544,8 +1544,16 @@ declareVirtualField({
     options: { ref: 'coachingStat' }
   },
 })
+declareVirtualField({
+  model: 'adminDashboard', field: 'calls_stats', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'coachingStat' }
+  },
+})
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
+declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
 
 //end adminDashboard
 

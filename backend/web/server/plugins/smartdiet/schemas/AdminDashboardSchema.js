@@ -28,6 +28,7 @@ AdminDashboardSchema.virtual(`coachings_finished`, DUMMY_REF).get(function() {re
 AdminDashboardSchema.virtual(`coachings_stopped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_dropped`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_ongoing`, DUMMY_REF).get(function() {return 0})
+AdminDashboardSchema.virtual(`ratio_appointments_coaching`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`nut_advices`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_stats`, DUMMY_REF).get(function() {return 0})
 AdminDashboardSchema.virtual(`coachings_gender_unknown`, DUMMY_REF).get(function() {return 0})
