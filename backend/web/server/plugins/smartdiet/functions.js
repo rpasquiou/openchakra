@@ -302,7 +302,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       id = user.company._id
     }
     const filters={}
-    for(let param of params){
+    for(let param in params){
       console.log(param)
       if(param.includes('filter')){
         filters[`${param}`] = params[param]
