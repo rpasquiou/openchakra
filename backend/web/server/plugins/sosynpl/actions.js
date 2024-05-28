@@ -7,6 +7,7 @@ const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
 const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT} = require("./consts")
+const {clone} = require('./announce')
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -64,6 +65,14 @@ const publishAnnounce = async ({value, reason}, user) => {
 }
 addAction('publish', publishAnnounce)
 
+const cloneAction = async ({value}, user) => {
+  const ok=await isActionAllowed({action:'clone', dataId: value, user})
+  if (!ok) {return false}
+  const cloned=await clone(value)
+  return cloned
+}
+addAction('clone', cloneAction)
+
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='validate_email') {
@@ -103,6 +112,12 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     const announce=announces[0]
     if (announce.status!=ANNOUNCE_STATUS_DRAFT) {
       throw new BadRequestError(`Announce ${dataId} must be in draft mode to publish`)
+    }
+  }
+  if (action=='clone') {
+    const exists=await Announce.exists({_id: dataId})
+    if (!exists) {
+      throw new NotFoundError(`Announce ${dataId} not found`)
     }
   }
   return true
