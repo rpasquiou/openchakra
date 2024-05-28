@@ -64,7 +64,9 @@ export const ACTIONS = {
         return res
       })
   },
-  openPage: ({ value, level, model, props, getComponentValue }) => {
+  openPage: inputParams => {
+    const { value, level, model, props, getComponentValue }=inputParams
+    console.log(`open page received ${value}`)
     const queryParams = new URLSearchParams()
     let url = `/${props.page}`
     if ('sourceId' in props) {
@@ -1053,5 +1055,15 @@ return Promise.allSettled(imagePromises)
     }
     return axios.post(url, body)
   },
+
+  clone: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'clone',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => ({value: res.data}))
+},
 
 }
