@@ -25,7 +25,7 @@ const AnnounceSchema = new Schema({
   },
   job: {
     type: Schema.Types.ObjectId,
-    ref: 'jobFile',
+    ref: 'job',
     required: false,
   },
   title: {
