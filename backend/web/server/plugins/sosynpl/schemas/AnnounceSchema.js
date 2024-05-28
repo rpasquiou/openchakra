@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const bcrypt=require('bcryptjs')
+const lodash = require('lodash')
 const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -175,7 +175,7 @@ const AnnounceSchema = new Schema({
       required: true,
     }],
     validate: [softwares => softwares?.length>=MIN_SOFTWARES, `Vous devez choisir au moins ${MIN_SOFTWARES} logiciels(s)`],
-    required: [true, `Les logiviels sont obligatoires`],
+    required: [true, `Les logiciels sont obligatoires`],
   },
   accepted_application: {
     type: Schema.Types.ObjectId,
@@ -212,7 +212,7 @@ const AnnounceSchema = new Schema({
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
-  return this.budget*(1+COMMISSION)
+  return lodash.isNil(this.budget) ? null : this.budget*(1+COMMISSION)
 })
 
 AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
