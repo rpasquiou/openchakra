@@ -302,6 +302,12 @@ CustomerSchema.virtual('pinned_freelances', {
   foreignField: 'pinned_by',
 })
 
+CustomerSchema.virtual('announces', {
+  ref: 'annonuce',
+  localField: '_id',
+  foreignField: 'user',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CustomerSchema

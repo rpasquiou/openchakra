@@ -250,7 +250,10 @@ const FreelanceSchema = new Schema({
   // TODO: set to AVAILABILITY_ON when available_from is reached
   available_from: {
     type: Date,
-    validate: [function(value) { return moment(value).isAfter(moment())}, `La date de disponibilité doit être dans le futur`],
+    set: d => lodash.isNil(d) ? d : moment(d).startOf('day'),
+    validate: [
+      function(value) { return lodash.isNil(value) || moment(value).isAfter(moment())}, 
+      `La date de disponibilité doit être dans le futur`],
     required: false,
   },
   // END AVAILABILITY

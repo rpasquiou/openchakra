@@ -2,7 +2,7 @@ const User = require("../../models/User")
 const Announce = require("../../models/Announce")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -13,8 +13,8 @@ const { NATIONALITIES, PURCHASE_STATUS, LANGUAGES, LANGUAGE_LEVEL, REGIONS } = r
 const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeUserHardSkillsJobCategories } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
-const { keys } = require("lodash");
 const { computeSuggestedFreelances } = require("./search");
+const cron = require('../../utils/cron')
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -355,4 +355,15 @@ const filterDataUser = async ({ model, data, id, user }) => {
 
 setFilterDataUser(filterDataUser)
 
+//**** CRONS start*/
 
+// Freelance whose availability date is before tonight become available
+cron.schedule('0 0 * * * *', async () => {
+  console.log('Checking freelance availabilities')
+  await Freelance.updateMany(
+    {available_from: {$lt: moment().endOf('day')}},
+    {available_from: null, availability: AVAILABILITY_ON}
+  )
+})
+
+//**** CRONS end */
