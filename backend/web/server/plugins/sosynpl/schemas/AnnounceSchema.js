@@ -212,7 +212,7 @@ const AnnounceSchema = new Schema({
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
-  return this.budget*COMMISSION
+  return this.budget*(1+COMMISSION)
 })
 
 AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
