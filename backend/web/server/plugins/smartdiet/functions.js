@@ -301,7 +301,15 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (user.role == ROLE_RH) {
       id = user.company._id
     }
-    return computeStatistics({ id, fields })
+    const filters={}
+    for(let param of params){
+      console.log(param)
+      if(param.includes('filter')){
+        filters[`${param}`] = params[param]
+      }
+    }
+    console.table(filters)
+    return computeStatistics({ id, fields, ...filters })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
 
@@ -1380,6 +1388,9 @@ declareVirtualField({
     options: { ref: 'company' }
   },
 })
+declareVirtualField({ model: 'adminDashboard', field: 'diet', instance: 'ObjectId' })
+declareVirtualField({ model: 'adminDashboard', field: 'startDate', instance: 'Date' })
+declareVirtualField({ model: 'adminDashboard', field: 'endDate', instance: 'Date' })
 declareVirtualField({ model: 'adminDashboard', field: 'webinars_count', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'average_webinar_registar', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'webinars_replayed_count', instance: 'Number' })
@@ -1991,66 +2002,79 @@ const ensureChallengePipsConsistency = () => {
 
 
 const computeStatistics = async ({ id, fields, startDate, endDate, diet }) => {
-  console.log(`Computing stats for ${id || 'all companies'} fields ${fields}`)
-  const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null }
-  const result = {}
-  result.company = id?.toString()
-  const cache = {}
+  console.log({target: id? id : 'all companies', fields: fields, options :{startDate, endDate, diet}})
+  const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null };
+  const result = {};
+  result.company = id?.toString();
+  const cache = {};
 
   const fetchAndCache = async (field, func, params) => {
-    if (cache[field]) return
-    cache[field] = true
-    const functionResult = await func(params)
-    result[field] = functionResult
-  }
+    if (cache[field]) return;
+    cache[field] = true;
+    const functionResult = await func(params);
+    result[field] = functionResult;
+  };
 
   const handleRatios = async (field) => {
-    if (field === 'ratio_stopped_started') {
-      if (!cache['coachings_stopped']) cache['coachings_stopped'] = await kpi['coachings_stopped']({ idFilter, diet, startDate, endDate })
-      if (!cache['coachings_started']) cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
-      result['ratio_stopped_started'] = Number((cache['coachings_stopped'] / cache['coachings_started'] * 100).toFixed(2))
-    } else if (field === 'ratio_dropped_started') {
-      if (!cache['coachings_dropped']) cache['coachings_dropped'] = await kpi['coachings_dropped']({ idFilter, diet, startDate, endDate })
-      if (!cache['coachings_started']) cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
-      result['ratio_dropped_started'] = Number((cache['coachings_dropped'] / cache['coachings_started'] * 100).toFixed(2))
-    } else if (field === 'ratio_appointments_coaching') {
-      if (!cache['coachings_started']) cache['coachings_started'] = await kpi['coachings_started']({ idFilter, diet, startDate, endDate })
-      if (!cache['coachings_ongoing']) cache['coachings_ongoing'] = await kpi['coachings_ongoing']({ idFilter, diet, startDate, endDate })
-      const appts = await Appointment.countDocuments({ validated: true })
-      result['ratio_appointments_coaching'] = Number((appts / (cache['coachings_started'] - cache['coachings_ongoing'])).toFixed(2))
+    if (!cache['coachings_started']){
+      await fetchAndCache('coachings_started',kpi['coachings_started'], { idFilter, startDate, endDate, diet })
     }
-  }
+    if (field === 'ratio_stopped_started') {
+      if (!cache['coachings_stopped']){
+        await fetchAndCache('coachings_stopped',kpi['coachings_stopped'], { idFilter, startDate, endDate, diet })
+      }
+      result['ratio_stopped_started'] = result['coachings_started']!=0 ? Number((result['coachings_stopped'] / result['coachings_started'] * 100).toFixed(2)) : 0
+    } else if (field === 'ratio_dropped_started') {
+      if (!cache['coachings_dropped']){
+        await fetchAndCache('coachings_dropped',kpi['coachings_dropped'], { idFilter, startDate, endDate, diet })
+      }
+      result['ratio_dropped_started'] = result['coachings_started']!=0 ? Number((result['coachings_dropped'] / result['coachings_started'] * 100).toFixed(2)) :0
+    } else if (field === 'ratio_appointments_coaching') {
+      if (!cache['coachings_ongoing']){
+        await fetchAndCache('coachings_ongoing',kpi['coachings_ongoing'], { idFilter, startDate, endDate, diet })
+      }
+      const appts = await Appointment.countDocuments({validated:true})
+      result['ratio_appointments_coaching'] = result['coachings_started']!=0 ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) : 0
+    }
+  };
 
   for (const field of fields) {
-    if (field === 'company') continue
-
-    if (field.includes('started_coachings_') || field.includes('coachings_stats') || field.includes('coachings_gender_') || field.endsWith('_details') || field.endsWith('_total') || field.includes('ratio_')) {
+    if (field === 'company' || field === 'diet' || field === 'startDate' || field === 'endDate') continue;
+    if (!field.includes('gender') && !field.includes('coachings_stats') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
+      
+      await fetchAndCache(field, kpi[field], { idFilter, startDate, endDate, diet });
+    } else {
       if (field.includes('coachings_stats')) {
-        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { idFilter, startDate, endDate, diet })
-      } else if (field.includes('coachings_gender_')) {
-        await fetchAndCache('coachings_gender', kpi['coachings_gender_'], { idFilter })
-        const genderResult = result['coachings_gender']
+        
+
+        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { idFilter, startDate, endDate, diet });
+      } else if (field.includes('gender')) {
+        
+
+        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { idFilter });
+        const genderResult = result['coachings_by_gender_'];
         for (const [gender, count] of Object.entries(genderResult)) {
-          result[`coachings_gender_${gender}`] = count
+          result[`coachings_gender_${gender}`] = count;
         }
       } else if (field.endsWith('_details') || field.endsWith('_total')) {
-        const baseField = field.replace('_details', '').replace('_total', '')
-        await fetchAndCache(baseField, kpi[`${baseField}_`], { idFilter })
-        const baseResult = result[baseField]
-        result[`${baseField}_total`] = baseResult[`${baseField}_total`]
-        result[`${baseField}_details`] = baseResult[`${baseField}_details`]
+        
+
+        const baseField = field.replace('_details', '').replace('_total', '');
+        await fetchAndCache(baseField, kpi[`${baseField}_`], { idFilter });
+        const baseResult = result[baseField];
+        result[`${baseField}_total`] = baseResult[`${baseField}_total`];
+        result[`${baseField}_details`] = baseResult[`${baseField}_details`];
       } else if (field.includes('ratio_')) {
-        await handleRatios(field)
+        
+
+        await handleRatios(field);
       }
-    } else {
-      await fetchAndCache(field, kpi[field], { idFilter, startDate, endDate, diet })
     }
   }
+  return result;
+};
 
-  return result
-}
-
-exports.computeStatistics = computeStatistics
+exports.computeStatistics = computeStatistics;
 
 /** Upsert PARTICULARS company */
 Company.findOneAndUpdate(
@@ -2441,4 +2465,5 @@ module.exports = {
   agendaHookFn, mailjetHookFn,
   computeStatistics,
   canPatientStartCoaching,
+  preProcessGet
 }

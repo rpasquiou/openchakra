@@ -47,224 +47,6 @@ const webinars_count = async ({ idFilter }) => {
     return await Webinar.countDocuments({companies: idFilter})
 }
 exports.webinars_count = webinars_count
-   
-
-const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
-  const matchCondition = { status: { $ne: COACHING_STATUS_NOT_STARTED } }
-
-  if (startDate || endDate) {
-    matchCondition['appointments.start_date'] = {}
-    if (startDate) {
-      matchCondition['appointments.start_date'].$gte = new Date(startDate)
-    }
-    if (endDate) {
-      matchCondition['appointments.start_date'].$lte = new Date(endDate)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
-    const users = await User.find({ company: idFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  if (!startDate && !endDate && !idFilter && !diet) {
-    return await Coaching.countDocuments({ status: { $ne: COACHING_STATUS_NOT_STARTED } })
-  }
-
-  const aggregationPipeline = [
-    { $match: matchCondition },
-    { 
-      $lookup: { 
-        from: 'appointments', 
-        localField: '_id', 
-        foreignField: 'coaching', 
-        as: 'appointments' 
-      } 
-    },
-    { $unwind: '$appointments' },
-    { $match: matchCondition },
-    { 
-      $lookup: { 
-        from: 'users', 
-        localField: 'user', 
-        foreignField: '_id', 
-        as: 'user' 
-      } 
-    },
-    { $unwind: '$user' },
-    { $group: { _id: '$_id' } },
-    { $count: 'count' }
-  ]
-  const result = await Coaching.aggregate(aggregationPipeline).exec()
-  return result.length > 0 ? result[0].count : 0
-}
-
-exports.coachings_started = coachings_started
-
-   
-const coachings_stopped = async ({ idFilter, diet, startDate, endDate }) => {
-  const matchCondition = { status: COACHING_STATUS_STOPPED }
-
-  if (startDate || endDate) {
-    matchCondition['appointments.end_date'] = {}
-    if (startDate) {
-      matchCondition['appointments.end_date'].$gte = new Date(startDate)
-    }
-    if (endDate) {
-      matchCondition['appointments.end_date'].$lte = new Date(endDate)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
-    const users = await User.find({ company: idFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  const aggregationPipeline = [
-    { $match: matchCondition },
-    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
-    { $unwind: '$appointments' },
-    { $match: matchCondition },
-    { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
-    { $unwind: '$user' },
-    { $group: { _id: '$_id' } },
-    { $count: 'count' }
-  ]
-
-  const result = await Coaching.aggregate(aggregationPipeline).exec()
-  return result.length > 0 ? result[0].count : 0
-}
-
-exports.coachings_stopped = coachings_stopped
-   
-const coachings_dropped = async ({ idFilter, diet, startDate, endDate }) => {
-  const matchCondition = { status: COACHING_STATUS_DROPPED }
-
-  if (startDate || endDate) {
-    matchCondition['appointments.end_date'] = {}
-    if (startDate) {
-      matchCondition['appointments.end_date'].$gte = new Date(startDate)
-    }
-    if (endDate) {
-      matchCondition['appointments.end_date'].$lte = new Date(endDate)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
-    const users = await User.find({ company: idFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  const aggregationPipeline = [
-    { $match: matchCondition },
-    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
-    { $unwind: '$appointments' },
-    { $match: matchCondition },
-    { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
-    { $unwind: '$user' },
-    { $group: { _id: '$_id' } },
-    { $count: 'count' }
-  ]
-
-  const result = await Coaching.aggregate(aggregationPipeline).exec()
-  return result.length > 0 ? result[0].count : 0
-}
-
-exports.coachings_dropped = coachings_dropped
-   
-const coachings_ongoing = async ({ idFilter, diet, startDate, endDate }) => {
-  const matchCondition = { status: COACHING_STATUS_STARTED }
-
-  if (startDate || endDate) {
-    matchCondition['appointments.start_date'] = {}
-    if (startDate) {
-      matchCondition['appointments.start_date'].$gte = new Date(startDate)
-    }
-    if (endDate) {
-      matchCondition['appointments.start_date'].$lte = new Date(endDate)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
-    const users = await User.find({ company: idFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  const aggregationPipeline = [
-    { $match: matchCondition },
-    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
-    { $unwind: '$appointments' },
-    { $match: matchCondition },
-    { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
-    { $unwind: '$user' },
-    { $group: { _id: '$_id' } },
-    { $count: 'count' }
-  ]
-
-  const result = await Coaching.aggregate(aggregationPipeline).exec()
-  return result.length > 0 ? result[0].count : 0
-}
-exports.coachings_ongoing = coachings_ongoing
-
-const coachings_finished = async ({ idFilter, diet, startDate, endDate }) => {
-  const matchCondition = { status: COACHING_STATUS_FINISHED }
-
-  if (startDate || endDate) {
-    matchCondition['appointments.start_date'] = {}
-    if (startDate) {
-      matchCondition['appointments.start_date'].$gte = new Date(startDate)
-    }
-    if (endDate) {
-      matchCondition['appointments.start_date'].$lte = new Date(endDate)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
-    const users = await User.find({ company: idFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  const aggregationPipeline = [
-    { $match: matchCondition },
-    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
-    { $unwind: '$appointments' },
-    { $match: matchCondition },
-    { $lookup: { from: 'users', localField: 'user', foreignField: '_id', as: 'user' } },
-    { $unwind: '$user' },
-    { $group: { _id: '$_id' } },
-    { $count: 'count' }
-  ]
-
-  const result = await Coaching.aggregate(aggregationPipeline).exec()
-  return result.length > 0 ? result[0].count : 0
-}
-
-exports.coachings_finished = coachings_finished
 
 const webinars_replayed_count = async ({ idFilter }) => {
     return await User.aggregate([
@@ -330,7 +112,7 @@ exports.specificities_users = async ({ idFilter }) => {
     { $unwind: "$specificity_targets" },
     { $group: { _id: "$specificity_targets", count: { $sum: 1 }}},
     { $lookup: {
-        from: "targets", // Target collection
+        from: "targets", 
         localField: "_id",
         foreignField: "_id",
         as: "target"
@@ -343,7 +125,7 @@ exports.specificities_users = async ({ idFilter }) => {
         count: 1
       }
     },
-    { $sort: { count: 1 } } // Sort by count in descending order
+    { $sort: { count: 1 } } 
   ])
   const specificities_users=specificities_count.map(({count, name})=> ({x:name, y:count}))
   return specificities_users
@@ -380,39 +162,93 @@ const reasons_users = async ({ idFilter }) => {
 exports.reasons_users = reasons_users
 
 
-const coachingPipeLine = ({ idFilter, startDate, endDate }) => {
-  const matchCondition = {}
+const coachingPipeLine = ({ dietId, startDate, endDate }) => {
+  const matchCondition = {};
 
   if (startDate) {
-    matchCondition.start_date = { $gte: new Date(startDate) }
+    matchCondition.start_date = { $gte: new Date(startDate) };
   }
 
   if (endDate) {
-    matchCondition.end_date = { $lte: new Date(endDate) }
+    matchCondition.end_date = { $lte: new Date(endDate) };
   }
 
-  const pip = { diet: idFilter, ...matchCondition }
-  return pip
-}
+  if (dietId) {
+    matchCondition.diet = dietId;
+  }
+
+  return matchCondition;
+};
 
 const initializeAgeRanges = () => {
-  const AGE_RANGES = ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', 'Unknown']
+  const AGE_RANGES = ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', 'Unknown'];
   return AGE_RANGES.reduce((acc, range) => {
-    acc[range] = { count: 0, percent: 0 }
-    return acc
-  }, {})
-}
+    acc[range] = { count: 0, percent: 0 };
+    return acc;
+  }, {});
+};
 
 const formatAgeRanges = (ranges, total) => {
   return Object.keys(ranges).map(key => ({
     name: key,
     value: ranges[key].count,
-    percent: total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00'
-  }))
-}
+    percent: total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00',
+  }));
+};
 
-const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
-  const pip = coachingPipeLine({ idFilter, startDate, endDate })
+const getAppointments = async (matchCondition, basePipeline) => {
+  const pipeline = [
+    ...basePipeline,
+    { $match: matchCondition },
+    { $sort: { 'start_date': 1 } },
+    {
+      $group: {
+        _id: '$coaching._id',
+        appointments: { $push: '$$ROOT' },
+        count: { $sum: 1 },
+      },
+    },
+  ];
+  return await Appointment.aggregate(pipeline).allowDiskUse(true).exec();
+};
+
+const processStats = (appointments) => {
+  const total = appointments.reduce((sum, group) => sum + group.count, 0);
+  const counts = Array(16).fill(0);
+  const ranges = initializeAgeRanges();
+  const rangesPerOrder = Array(16).fill().map(initializeAgeRanges);
+
+  appointments.forEach(group => {
+    group.appointments.forEach((appointment, index) => {
+      const ageRange = appointment.ageRange;
+      counts[index] += 1;
+      ranges[ageRange].count += 1;
+      rangesPerOrder[index][ageRange].count += 1;
+    });
+  });
+
+  Object.keys(ranges).forEach(key => {
+    ranges[key].percent = total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00';
+  });
+
+  rangesPerOrder.forEach(orderRange => {
+    const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0);
+    Object.keys(orderRange).forEach(key => {
+      orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00';
+    });
+  });
+
+  const countsObject = counts.map((count, order) => ({
+    order: order + 1,
+    total: count,
+    ranges: formatAgeRanges(rangesPerOrder[order], count),
+  }));
+
+  return { total, ranges, countsObject };
+};
+
+const coachings_stats = async ({ dietId, company, startDate, endDate }) => {
+  const pip = coachingPipeLine({ dietId, startDate, endDate });
 
   const basePipeline = [
     { $match: pip },
@@ -421,8 +257,8 @@ const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
         from: 'coachings',
         localField: 'coaching',
         foreignField: '_id',
-        as: 'coaching'
-      }
+        as: 'coaching',
+      },
     },
     { $unwind: '$coaching' },
     {
@@ -430,287 +266,311 @@ const coachings_stats = async ({ idFilter, company, startDate, endDate }) => {
         from: 'users',
         localField: 'user',
         foreignField: '_id',
-        as: 'user'
-      }
+        as: 'user',
+      },
     },
     { $unwind: '$user' },
     {
       $addFields: {
         age: {
           $dateDiff: {
-            startDate: "$user.birthday",
-            endDate: "$$NOW",
-            unit: "year"
-          }
+            startDate: '$user.birthday',
+            endDate: '$$NOW',
+            unit: 'year',
+          },
         },
         isUpcoming: { $lt: [new Date(), '$start_date'] },
-        isCurrent: { $and: [{ $lte: ['$start_date', new Date()] }, { $gte: ['$end_date', new Date()] }] },
         isRabbit: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', false] }] },
         isValid: { $eq: ['$validated', true] },
-        isValidationPending: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', null] }] },
         companyMatch: company ? { $eq: ['$user.company', mongoose.Types.ObjectId(company)] } : true,
-      }
+      },
     },
     {
       $addFields: {
         ageRange: {
           $switch: {
             branches: [
-              { case: { $and: [{ $gte: ["$age", 18] }, { $lte: ["$age", 24] }] }, then: "18-24" },
-              { case: { $and: [{ $gte: ["$age", 25] }, { $lte: ["$age", 29] }] }, then: "25-29" },
-              { case: { $and: [{ $gte: ["$age", 30] }, { $lte: ["$age", 34] }] }, then: "30-34" },
-              { case: { $and: [{ $gte: ["$age", 35] }, { $lte: ["$age", 39] }] }, then: "35-39" },
-              { case: { $and: [{ $gte: ["$age", 40] }, { $lte: ["$age", 44] }] }, then: "40-44" },
-              { case: { $and: [{ $gte: ["$age", 45] }, { $lte: ["$age", 49] }] }, then: "45-49" },
-              { case: { $and: [{ $gte: ["$age", 50] }, { $lte: ["$age", 54] }] }, then: "50-54" },
-              { case: { $and: [{ $gte: ["$age", 55] }, { $lte: ["$age", 59] }] }, then: "55-59" },
-              { case: { $and: [{ $gte: ["$age", 60] }, { $lte: ["$age", 64] }] }, then: "60-64" },
-              { case: { $and: [{ $gte: ["$age", 65] }, { $lte: ["$age", 69] }] }, then: "65-69" },
-              { case: { $and: [{ $gte: ["$age", 70] }, { $lte: ["$age", 74] }] }, then: "70-74" },
+              { case: { $and: [{ $gte: ['$age', 18] }, { $lte: ['$age', 24] }] }, then: '18-24' },
+              { case: { $and: [{ $gte: ['$age', 25] }, { $lte: ['$age', 29] }] }, then: '25-29' },
+              { case: { $and: [{ $gte: ['$age', 30] }, { $lte: ['$age', 34] }] }, then: '30-34' },
+              { case: { $and: [{ $gte: ['$age', 35] }, { $lte: ['$age', 39] }] }, then: '35-39' },
+              { case: { $and: [{ $gte: ['$age', 40] }, { $lte: ['$age', 44] }] }, then: '40-44' },
+              { case: { $and: [{ $gte: ['$age', 45] }, { $lte: ['$age', 49] }] }, then: '45-49' },
+              { case: { $and: [{ $gte: ['$age', 50] }, { $lte: ['$age', 54] }] }, then: '50-54' },
+              { case: { $and: [{ $gte: ['$age', 55] }, { $lte: ['$age', 59] }] }, then: '55-59' },
+              { case: { $and: [{ $gte: ['$age', 60] }, { $lte: ['$age', 64] }] }, then: '60-64' },
+              { case: { $and: [{ $gte: ['$age', 65] }, { $lte: ['$age', 69] }] }, then: '65-69' },
+              { case: { $and: [{ $gte: ['$age', 70] }, { $lte: ['$age', 74] }] }, then: '70-74' },
             ],
-            default: "Unknown"
-          }
-        }
-      }
+            default: 'Unknown',
+          },
+        },
+      },
     },
-    { $match: { companyMatch: true } }
-  ]
+    { $match: { companyMatch: true } },
+  ];
 
-  const getAppointments = async (matchCondition) => {
-    const pipeline = [
-      ...basePipeline,
-      { $match: matchCondition },
-      { $sort: { 'start_date': 1 } },
-      {
-        $group: {
-          _id: '$coaching._id',
-          appointments: { $push: '$$ROOT' },
-          count: { $sum: 1 }
-        }
-      }
-    ]
-    return await Appointment.aggregate(pipeline).allowDiskUse(true).exec()
-  }
+  const matchConditions = [
+    { isValid: true },
+    { isRabbit: true },
+    { isUpcoming: true },
+  ];
 
-  const [
-    validAppointments,
-    rabbitAppointments,
-    currentAppointments,
-    upcomingAppointments,
-    validationPendingAppointments
-  ] = await Promise.all([
-    getAppointments({ isValid: true }),
-    getAppointments({ isRabbit: true }),
-    getAppointments({ isCurrent: true }),
-    getAppointments({ isUpcoming: true }),
-    getAppointments({ isValidationPending: true })
-  ])
+  const appointmentResults = await Promise.all(matchConditions.map(matchCondition => getAppointments(matchCondition, basePipeline)));
 
-  const processStats = (appointments) => {
-    const total = appointments.reduce((sum, group) => sum + group.count, 0)
-    const counts = Array(16).fill(0)
-    const ranges = initializeAgeRanges()
-    const rangesPerOrder = Array(16).fill().map(initializeAgeRanges)
+  const [validAppointments, rabbitAppointments, upcomingAppointments] = appointmentResults;
 
-    appointments.forEach(group => {
-      group.appointments.forEach((appointment, index) => {
-        const ageRange = appointment.ageRange
-        counts[index] += 1
-        ranges[ageRange].count += 1
-        rangesPerOrder[index][ageRange].count += 1
-      })
-    })
+  const validStats = processStats(validAppointments);
+  const rabbitStats = processStats(rabbitAppointments);
+  const upcomingStats = processStats(upcomingAppointments);
 
-    Object.keys(ranges).forEach(key => {
-      ranges[key].percent = total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00'
-    })
-
-    rangesPerOrder.forEach(orderRange => {
-      const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0)
-      Object.keys(orderRange).forEach(key => {
-        orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00'
-      })
-    })
-
-    const countsObject = counts.map((count, order) => ({
-      order: order + 1,
-      total: count,
-      ranges: formatAgeRanges(rangesPerOrder[order], count)
-    }))
-
-    return { total, ranges, countsObject }
-  }
-
-  const validStats = processStats(validAppointments)
-  const rabbitStats = processStats(rabbitAppointments)
-  const currentStats = processStats(currentAppointments)
-  const upcomingStats = processStats(upcomingAppointments)
-  const validationPendingStats = processStats(validationPendingAppointments)
-
-  const coachingsValidApp = {
-    name: APPOINTMENT_STATUS[APPOINTMENT_VALID],
-    total: validStats.total,
-    ranges: formatAgeRanges(validStats.ranges, validStats.total),
-    appointments: validStats.countsObject
-  }
-
-  const coachingsRabbitApp = {
-    name: APPOINTMENT_STATUS[APPOINTMENT_RABBIT],
-    total: rabbitStats.total,
-    ranges: formatAgeRanges(rabbitStats.ranges, rabbitStats.total),
-    appointments: rabbitStats.countsObject
-  }
-
-  const coachingsCurrentApp = {
-    name: APPOINTMENT_STATUS[APPOINTMENT_CURRENT],
-    total: currentStats.total,
-    ranges: formatAgeRanges(currentStats.ranges, currentStats.total),
-    appointments: currentStats.countsObject
-  }
-
-  const coachingsUpcomingApp = {
-    name: APPOINTMENT_STATUS[APPOINTMENT_TO_COME],
-    total: upcomingStats.total,
-    ranges: formatAgeRanges(upcomingStats.ranges, upcomingStats.total),
-    appointments: upcomingStats.countsObject
-  }
-
-  const coachingsValidationPendingApp = {
-    name: APPOINTMENT_STATUS[APPOINTMENT_VALIDATION_PENDING],
-    total: validationPendingStats.total,
-    ranges: formatAgeRanges(validationPendingStats.ranges, validationPendingStats.total),
-    appointments: validationPendingStats.countsObject
-  }
+  const createStatsObject = (name, stats) => ({
+    name,
+    total: stats.total,
+    ranges: formatAgeRanges(stats.ranges, stats.total),
+    appointments: stats.countsObject,
+  });
 
   return [
-    coachingsUpcomingApp,
-    coachingsValidApp,
-    coachingsRabbitApp,
-    coachingsCurrentApp,
-    coachingsValidationPendingApp
-  ]
-}
+    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_TO_COME], upcomingStats),
+    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_VALID], validStats),
+    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_RABBIT], rabbitStats),
+  ];
+};
 
-exports.coachings_stats = coachings_stats
+exports.coachings_stats = coachings_stats;
 
-const coachings_gender_ = async ({ idFilter }) => {
-  const usersWithCoachingsByGender = await User.aggregate([
+
+const coachings_by_gender_ = async ({ idFilter, startDate, endDate, diet }) => {
+  const matchConditions = {
+    'coachings.status': {
+      $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED],
+    },
+  };
+
+  if (idFilter) {
+    matchConditions._id = idFilter;
+  }
+
+  const dateConditions = {};
+  if (startDate) {
+    dateConditions.start_date = { $gte: new Date(startDate) };
+  }
+  if (endDate) {
+    dateConditions.end_date = { ...dateConditions.end_date, $lte: new Date(endDate) };
+  }
+
+  const aggregationPipeline = [
     { $match: { _id: idFilter } },
     {
       $lookup: {
         from: 'coachings',
-        localField: '_id',
-        foreignField: 'user',
-        as: 'coachings'
-      }
+        let: { userId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$user', '$$userId'] },
+              ...dateConditions,
+              ...(diet && { diet: mongoose.Types.ObjectId(diet) }),
+            },
+          },
+        ],
+        as: 'coachings',
+      },
     },
     { $unwind: '$coachings' },
-    {
-      $match: {
-        'coachings.status': {
-          $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED]
-        }
-      }
-    },
+    { $match: matchConditions },
     {
       $group: {
         _id: '$gender',
-        count: { $sum: 1 }
-      }
-    }
-  ])
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        gender: '$_id',
+        count: 1,
+        _id: 0,
+      },
+    },
+  ];
+
+  const result = await User.aggregate(aggregationPipeline).exec();
 
   const formattedGenderCount = {
     male: 0,
     female: 0,
     non_binary: 0,
-    unknown: 0
-  }
-  usersWithCoachingsByGender.forEach(({ _id, count }) => {
-    if (_id === 'MALE') {
-      formattedGenderCount.male += count
-    } else if (_id === 'FEMALE') {
-      formattedGenderCount.female += count
-    } else if (_id === 'NON_BINARY') {
-      formattedGenderCount.non_binary += count
+    unknown: 0,
+  };
+
+  result.forEach(({ gender, count }) => {
+    if (gender === 'MALE') {
+      formattedGenderCount.male = count;
+    } else if (gender === 'FEMALE') {
+      formattedGenderCount.female = count;
+    } else if (gender === 'NON_BINARY') {
+      formattedGenderCount.non_binary = count;
     } else {
-      formattedGenderCount.unknown += count
+      formattedGenderCount.unknown = count;
     }
-  })
-  return formattedGenderCount
-}
-exports.coachings_gender_ = coachings_gender_
+  });
 
-const nut_advices = async ({ idFilter }) => {
-  const nutAdvices=await User.aggregate([
-    {
-      $match:
+  return formattedGenderCount;
+};
+
+exports.coachings_by_gender_ = coachings_by_gender_;
+
+const nut_advices = async ({ idFilter, diet, startDate, endDate }) => {
+  const matchConditions = {
+    company: idFilter,
+  };
+
+  if (startDate || endDate || diet) {
+    const pipeline = [
+      { $match: matchConditions },
       {
-        company: idFilter,
-      },
-    },
-  ])
-  return nutAdvices.length 
-}
-exports.nut_advices = nut_advices
-
-const coachings_renewed = async ({ idFilter }) => {
-  const currentYear = moment().year()
-  const previousYear = currentYear - 1
-  const currentMonth = moment().month()
-
-  const users = await User.find({ company: idFilter }).select('_id').lean()
-  const userIds = users.map(user => user._id)
-
-  const pipeline = [
-    { $match: { user: { $in: userIds } } },
-    { $lookup: { from: 'appointments', localField: '_id', foreignField: 'coaching', as: 'appointments' } },
-    { $unwind: '$appointments' },
-    {
-      $project: {
-        user: 1,
-        startDate: '$appointments.start_date',
-        year: { $year: '$appointments.start_date' },
-        month: { $month: '$appointments.start_date' }
-      }
-    },
-    {
-      $group: {
-        _id: '$user',
-        coachingsThisYear: {
-          $sum: {
-            $cond: [{ $eq: ['$year', currentYear] }, 1, 0]
-          }
+        $lookup: {
+          from: 'appointments',
+          localField: '_id',
+          foreignField: 'user',
+          as: 'appointments',
         },
-        coachingsLastYearOrAfter: {
-          $sum: {
-            $cond: [
-              {
-                $or: [
-                  { $eq: ['$year', previousYear] },
-                  { $and: [{ $eq: ['$year', currentYear] }, { $lte: ['$month', currentMonth] }] }
-                ]
-              },
-              1,
-              0
-            ]
-          }
-        }
+      },
+      { $unwind: '$appointments' },
+    ];
+
+    if (startDate) {
+      pipeline.push({
+        $match: {
+          'appointments.start_date': { $gte: new Date(startDate) },
+        },
+      });
+    }
+
+    if (endDate) {
+      pipeline.push({
+        $match: {
+          'appointments.start_date': { $lte: new Date(endDate) },
+        },
+      });
+    }
+
+    if (diet) {
+      pipeline.push({
+        $match: {
+          'appointments.diet': mongoose.Types.ObjectId(diet),
+        },
+      });
+    }
+
+    const usersWithNutAdvices = await User.aggregate(pipeline)
+      .group({ _id: '$_id' })
+      .exec();
+
+    return usersWithNutAdvices.length;
+  } else {
+    return await User.countDocuments(matchConditions).lean();
+  }
+};
+
+exports.nut_advices = nut_advices;
+
+const coachings_renewed = async ({ idFilter, diet, startDate, endDate }) => {
+  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {};
+  const dateMatch = {};
+  if (startDate!='undefined') {
+    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(startDate)}};
+  }
+  else if (endDate!='undefined') {
+    dateMatch.$match = {'firstAppointment.start_date':{$lte:new Date(endDate)}};
+  }
+  else if(endDate!='undefined' && startDate!='undefined'){
+    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(startDate), $lte:new Date(endDate)}};
+  }
+
+  const result = await Coaching.aggregate([
+    {
+      $match: dietFilter
+    },
+
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'userDetails'
       }
+    },
+    {
+      $unwind: '$userDetails'
     },
     {
       $match: {
-        coachingsThisYear: { $gt: 0 },
-        coachingsLastYearOrAfter: { $gt: 0 }
+        'userDetails.company': idFilter
       }
     },
-    { $count: 'renewedCount' }
-  ]
+    
+    {
+      $lookup: {
+        from: 'appointments',
+        localField: '_id',
+        foreignField: 'coaching',
+        as: 'appointments'
+      }
+    },
+    
+    {
+      $unwind: '$appointments'
+    },
+    {
+      $match: {
+        'appointments.validated': true
+      }
+    },
+    
+    {
+      $sort: { 'appointments.start_date': 1 }
+    },
+    
+    {
+      $group: {
+        _id: '$_id',
+        user: { $first: '$user' },
+        firstAppointment: { $first: '$appointments' }
+      }
+    },
+    
+    {...dateMatch},
+    {
+      $group: {
+        _id: '$user',
+        coachingCount: { $sum: 1 }
+      }
+    },
+    
+    {
+      $addFields: {
+        adjustedCount: { $max: [{ $subtract: ['$coachingCount', 1] }, 0] }
+      }
+    },
+    
+    {
+      $group: {
+        _id: null,
+        totalRenewed: { $sum: '$adjustedCount' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        totalRenewed: 1
+      }
+    }
+  ]).exec();
 
-  const result = await Coaching.aggregate(pipeline).exec()
-  return result.length > 0 ? result[0].renewedCount : 0
-}
-
+  return result.length > 0 ? result[0].totalRenewed : 0;
+};
 exports.coachings_renewed = coachings_renewed
 
 const jobs_ = async (idFilter) => {
@@ -813,14 +673,14 @@ exports.decline_reasons_ = decline_reasons_
 const ratio_stopped_started = async ({idFilter, diet, startDate, endDate}) => {
     const coachingsStopped= await coachings_stopped({idFilter, diet, startDate, endDate})
     const coachingsStarted= await coachings_started({idFilter, diet, startDate, endDate})
-    return Number((coachingsStopped / coachingsStarted * 100).toFixed(2))
+    return coachingsStarted!=0 ? Number((coachingsStopped / coachingsStarted * 100).toFixed(2)) : 0
 }
 exports.ratio_stopped_started = ratio_stopped_started
 
 const ratio_dropped_started = async ({idFilter, diet, startDate, endDate}) => {
   const coachingsDropped= await coachings_dropped({idFilter, diet, startDate, endDate})
   const coachingsStarted= await coachings_started({idFilter, diet, startDate, endDate})
-    return Number((coachingsDropped / coachingsStarted * 100).toFixed(2))
+    return coachingsStarted!=0 ? Number((coachingsDropped / coachingsStarted * 100).toFixed(2)) : 0
 }
 exports.ratio_dropped_started = ratio_dropped_started
 
@@ -966,3 +826,118 @@ const calls_stats = async ({ idFilter, company }) => {
 };
 
 exports.calls_stats = calls_stats;
+
+const buildMatchCondition = async ({ idFilter, diet, startDate, endDate, status }) => {
+  const matchCondition = { status };
+
+  if (startDate || endDate) {
+    matchCondition['appointments.start_date'] = {};
+    if (startDate) {
+      matchCondition['appointments.start_date'].$gte = new Date(startDate);
+    }
+    if (endDate) {
+      matchCondition['appointments.start_date'].$lte = new Date(endDate);
+    }
+  }
+
+  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
+    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet);
+  }
+
+  if (idFilter && mongoose.Types.ObjectId.isValid(idFilter)) {
+    const users = await User.find({ company: idFilter }).select('_id').lean();
+    const userIds = users.map(user => user._id);
+    matchCondition['user'] = { $in: userIds };
+  }
+
+  return matchCondition;
+};
+
+const createAggregationPipeline = (matchCondition) => [
+  { $match: matchCondition },
+  {
+    $lookup: {
+      from: 'appointments',
+      let: { coachingId: '$_id' },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ['$$coachingId', '$coaching'] },
+            ...(matchCondition['appointments.start_date'] && { start_date: matchCondition['appointments.start_date'] }),
+            ...(matchCondition['appointments.diet'] && { diet: matchCondition['appointments.diet'] }),
+          },
+        },
+      ],
+      as: 'appointments',
+    },
+  },
+  { $match: { 'appointments.0': { $exists: true } } },
+  { $group: { _id: null, count: { $sum: 1 } } },
+];
+
+
+const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+      return await Coaching.countDocuments({ status: { $ne: COACHING_STATUS_NOT_STARTED } });
+    }
+
+    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: { $ne: COACHING_STATUS_NOT_STARTED } });
+
+    if (!startDate && !endDate && !idFilter && !diet) {
+      return await Coaching.countDocuments(matchCondition);
+    }
+
+    const aggregationPipeline = createAggregationPipeline(matchCondition);
+    const result = await Coaching.aggregate(aggregationPipeline).exec();
+    return result.length > 0 ? result[0].count : 0;
+};
+
+exports.coachings_started = coachings_started;
+
+const coachings_stopped = async ({ idFilter, diet, startDate, endDate }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+      return await Coaching.countDocuments({ status: COACHING_STATUS_STOPPED });
+    }
+    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_STOPPED });
+    const aggregationPipeline = createAggregationPipeline(matchCondition);
+    const result = await Coaching.aggregate(aggregationPipeline).exec();
+    return result.length > 0 ? result[0].count : 0;
+};
+
+exports.coachings_stopped = coachings_stopped;
+
+const coachings_dropped = async ({ idFilter, diet, startDate, endDate }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+      return await Coaching.countDocuments({ status: COACHING_STATUS_DROPPED });
+    }
+    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_DROPPED });
+    const aggregationPipeline = createAggregationPipeline(matchCondition);
+    const result = await Coaching.aggregate(aggregationPipeline).exec();
+    return result.length > 0 ? result[0].count : 0;
+};
+
+exports.coachings_dropped = coachings_dropped;
+
+const coachings_ongoing = async ({ idFilter, diet, startDate, endDate }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+      return await Coaching.countDocuments({ status: COACHING_STATUS_STARTED });
+    }
+    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_STARTED });
+    const aggregationPipeline = createAggregationPipeline(matchCondition);
+    const result = await Coaching.aggregate(aggregationPipeline).exec();
+    return result.length > 0 ? result[0].count : 0;
+};
+
+exports.coachings_ongoing = coachings_ongoing;
+
+const coachings_finished = async ({ idFilter, diet, startDate, endDate }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+      return await Coaching.countDocuments({ status: COACHING_STATUS_FINISHED });
+    }
+    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_FINISHED });
+    const aggregationPipeline = createAggregationPipeline(matchCondition);
+    const result = await Coaching.aggregate(aggregationPipeline).exec();
+    return result.length > 0 ? result[0].count : 0;
+};
+
+exports.coachings_finished = coachings_finished;
