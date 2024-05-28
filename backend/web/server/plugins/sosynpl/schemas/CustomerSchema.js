@@ -278,7 +278,7 @@ const CustomerSchema = new Schema({
     type: String,
     enum: Object.keys(SUSPEND_REASON),
     set: v => v || undefined,
-    required: [function() {return this.suspended_state==ACTIVITY_STATE_SUSPENDED}, `La raison de suspension est obligatoire`],
+    required: false,
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
