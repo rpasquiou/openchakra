@@ -82,6 +82,12 @@ MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'billing_contact_email', requires: `billing_contact_self,email`})
   declareFieldDependencies({model, field: 'billing_contact_address', requires: `billing_contact_self,address`})
 
+  declareVirtualField({model, field: 'announces', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'announce' }
+    },
+  })
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
@@ -214,11 +220,6 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 
 /** Announce start */
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
-// declareVirtualField({model: 'announce', field: 'suggested_freelances', instance: 'Array', multiple: true,
-// caster: {
-//   instance: 'ObjectID',
-//   options: { ref: 'freelance' }
-// },})
 declareComputedField({model: 'announce', field: 'suggested_freelances', getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
