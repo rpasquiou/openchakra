@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const Group = require('../../models/Group')
-const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING, APPOINTMENT_RABBIT } = require('./consts')
+const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING, APPOINTMENT_RABBIT, ROLE_EXTERNAL_DIET } = require('./consts')
 const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const Coaching = require('../../models/Coaching')
@@ -162,15 +162,15 @@ const reasons_users = async ({ idFilter }) => {
 exports.reasons_users = reasons_users
 
 
-const coachingPipeLine = ({ dietId, startDate, endDate }) => {
+const coachingPipeLine = ({ dietId, start_date, end_date }) => {
   const matchCondition = {};
 
-  if (startDate) {
-    matchCondition.start_date = { $gte: new Date(startDate) };
+  if (start_date) {
+    matchCondition.start_date = { $gte: new Date(start_date) };
   }
 
-  if (endDate) {
-    matchCondition.end_date = { $lte: new Date(endDate) };
+  if (end_date) {
+    matchCondition.end_date = { $lte: new Date(end_date) };
   }
 
   if (dietId) {
@@ -247,8 +247,8 @@ const processStats = (appointments) => {
   return { total, ranges, countsObject };
 };
 
-const coachings_stats = async ({ dietId, company, startDate, endDate }) => {
-  const pip = coachingPipeLine({ dietId, startDate, endDate });
+const coachings_stats = async ({ dietId, company, start_date, end_date }) => {
+  const pip = coachingPipeLine({ dietId, start_date, end_date });
 
   const basePipeline = [
     { $match: pip },
@@ -274,8 +274,8 @@ const coachings_stats = async ({ dietId, company, startDate, endDate }) => {
       $addFields: {
         age: {
           $dateDiff: {
-            startDate: '$user.birthday',
-            endDate: '$$NOW',
+            start_date: '$user.birthday',
+            end_date: '$$NOW',
             unit: 'year',
           },
         },
@@ -341,7 +341,7 @@ const coachings_stats = async ({ dietId, company, startDate, endDate }) => {
 exports.coachings_stats = coachings_stats;
 
 
-const coachings_by_gender_ = async ({ idFilter, startDate, endDate, diet }) => {
+const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) => {
   const matchConditions = {
     'coachings.status': {
       $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED],
@@ -353,11 +353,11 @@ const coachings_by_gender_ = async ({ idFilter, startDate, endDate, diet }) => {
   }
 
   const dateConditions = {};
-  if (startDate) {
-    dateConditions.start_date = { $gte: new Date(startDate) };
+  if (start_date) {
+    dateConditions.start_date = { $gte: new Date(start_date) };
   }
-  if (endDate) {
-    dateConditions.end_date = { ...dateConditions.end_date, $lte: new Date(endDate) };
+  if (end_date) {
+    dateConditions.end_date = { ...dateConditions.end_date, $lte: new Date(end_date) };
   }
 
   const aggregationPipeline = [
@@ -421,12 +421,12 @@ const coachings_by_gender_ = async ({ idFilter, startDate, endDate, diet }) => {
 
 exports.coachings_by_gender_ = coachings_by_gender_;
 
-const nut_advices = async ({ idFilter, diet, startDate, endDate }) => {
+const nut_advices = async ({ idFilter, diet, start_date, end_date }) => {
   const matchConditions = {
     company: idFilter,
   };
 
-  if (startDate || endDate || diet) {
+  if (start_date || end_date || diet) {
     const pipeline = [
       { $match: matchConditions },
       {
@@ -440,18 +440,18 @@ const nut_advices = async ({ idFilter, diet, startDate, endDate }) => {
       { $unwind: '$appointments' },
     ];
 
-    if (startDate) {
+    if (start_date) {
       pipeline.push({
         $match: {
-          'appointments.start_date': { $gte: new Date(startDate) },
+          'appointments.start_date': { $gte: new Date(start_date) },
         },
       });
     }
 
-    if (endDate) {
+    if (end_date) {
       pipeline.push({
         $match: {
-          'appointments.start_date': { $lte: new Date(endDate) },
+          'appointments.start_date': { $lte: new Date(end_date) },
         },
       });
     }
@@ -476,17 +476,17 @@ const nut_advices = async ({ idFilter, diet, startDate, endDate }) => {
 
 exports.nut_advices = nut_advices;
 
-const coachings_renewed = async ({ idFilter, diet, startDate, endDate }) => {
+const coachings_renewed = async ({ idFilter, diet, start_date, end_date }) => {
   const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {};
   const dateMatch = {};
-  if (startDate!='undefined') {
-    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(startDate)}};
+  if (start_date!='undefined') {
+    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date)}};
   }
-  else if (endDate!='undefined') {
-    dateMatch.$match = {'firstAppointment.start_date':{$lte:new Date(endDate)}};
+  else if (end_date!='undefined') {
+    dateMatch.$match = {'firstAppointment.start_date':{$lte:new Date(end_date)}};
   }
-  else if(endDate!='undefined' && startDate!='undefined'){
-    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(startDate), $lte:new Date(endDate)}};
+  else if(end_date!='undefined' && start_date!='undefined'){
+    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date), $lte:new Date(end_date)}};
   }
 
   const result = await Coaching.aggregate([
@@ -670,16 +670,16 @@ const decline_reasons_ = async (idFilter) => {
 }
 exports.decline_reasons_ = decline_reasons_
 
-const ratio_stopped_started = async ({idFilter, diet, startDate, endDate}) => {
-    const coachingsStopped= await coachings_stopped({idFilter, diet, startDate, endDate})
-    const coachingsStarted= await coachings_started({idFilter, diet, startDate, endDate})
+const ratio_stopped_started = async ({idFilter, diet, start_date, end_date}) => {
+    const coachingsStopped= await coachings_stopped({idFilter, diet, start_date, end_date})
+    const coachingsStarted= await coachings_started({idFilter, diet, start_date, end_date})
     return coachingsStarted!=0 ? Number((coachingsStopped / coachingsStarted * 100).toFixed(2)) : 0
 }
 exports.ratio_stopped_started = ratio_stopped_started
 
-const ratio_dropped_started = async ({idFilter, diet, startDate, endDate}) => {
-  const coachingsDropped= await coachings_dropped({idFilter, diet, startDate, endDate})
-  const coachingsStarted= await coachings_started({idFilter, diet, startDate, endDate})
+const ratio_dropped_started = async ({idFilter, diet, start_date, end_date}) => {
+  const coachingsDropped= await coachings_dropped({idFilter, diet, start_date, end_date})
+  const coachingsStarted= await coachings_started({idFilter, diet, start_date, end_date})
     return coachingsStarted!=0 ? Number((coachingsDropped / coachingsStarted * 100).toFixed(2)) : 0
 }
 exports.ratio_dropped_started = ratio_dropped_started
@@ -827,16 +827,16 @@ const calls_stats = async ({ idFilter, company }) => {
 
 exports.calls_stats = calls_stats;
 
-const buildMatchCondition = async ({ idFilter, diet, startDate, endDate, status }) => {
+const buildMatchCondition = async ({ idFilter, diet, start_date, end_date, status }) => {
   const matchCondition = { status };
 
-  if (startDate || endDate) {
+  if (start_date || end_date) {
     matchCondition['appointments.start_date'] = {};
-    if (startDate) {
-      matchCondition['appointments.start_date'].$gte = new Date(startDate);
+    if (start_date) {
+      matchCondition['appointments.start_date'].$gte = new Date(start_date);
     }
-    if (endDate) {
-      matchCondition['appointments.start_date'].$lte = new Date(endDate);
+    if (end_date) {
+      matchCondition['appointments.start_date'].$lte = new Date(end_date);
     }
   }
 
@@ -876,14 +876,14 @@ const createAggregationPipeline = (matchCondition) => [
 ];
 
 
-const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
-    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+const coachings_started = async ({ idFilter, diet, start_date, end_date }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && start_date == undefined && end_date == undefined) {
       return await Coaching.countDocuments({ status: { $ne: COACHING_STATUS_NOT_STARTED } });
     }
 
-    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: { $ne: COACHING_STATUS_NOT_STARTED } });
+    const matchCondition = await buildMatchCondition({ idFilter, diet, start_date, end_date, status: { $ne: COACHING_STATUS_NOT_STARTED } });
 
-    if (!startDate && !endDate && !idFilter && !diet) {
+    if (!start_date && !end_date && !idFilter && !diet) {
       return await Coaching.countDocuments(matchCondition);
     }
 
@@ -894,11 +894,11 @@ const coachings_started = async ({ idFilter, diet, startDate, endDate }) => {
 
 exports.coachings_started = coachings_started;
 
-const coachings_stopped = async ({ idFilter, diet, startDate, endDate }) => {
-    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+const coachings_stopped = async ({ idFilter, diet, start_date, end_date }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && start_date == undefined && end_date == undefined) {
       return await Coaching.countDocuments({ status: COACHING_STATUS_STOPPED });
     }
-    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_STOPPED });
+    const matchCondition = await buildMatchCondition({ idFilter, diet, start_date, end_date, status: COACHING_STATUS_STOPPED });
     const aggregationPipeline = createAggregationPipeline(matchCondition);
     const result = await Coaching.aggregate(aggregationPipeline).exec();
     return result.length > 0 ? result[0].count : 0;
@@ -906,11 +906,11 @@ const coachings_stopped = async ({ idFilter, diet, startDate, endDate }) => {
 
 exports.coachings_stopped = coachings_stopped;
 
-const coachings_dropped = async ({ idFilter, diet, startDate, endDate }) => {
-    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+const coachings_dropped = async ({ idFilter, diet, start_date, end_date }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && start_date == undefined && end_date == undefined) {
       return await Coaching.countDocuments({ status: COACHING_STATUS_DROPPED });
     }
-    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_DROPPED });
+    const matchCondition = await buildMatchCondition({ idFilter, diet, start_date, end_date, status: COACHING_STATUS_DROPPED });
     const aggregationPipeline = createAggregationPipeline(matchCondition);
     const result = await Coaching.aggregate(aggregationPipeline).exec();
     return result.length > 0 ? result[0].count : 0;
@@ -918,11 +918,11 @@ const coachings_dropped = async ({ idFilter, diet, startDate, endDate }) => {
 
 exports.coachings_dropped = coachings_dropped;
 
-const coachings_ongoing = async ({ idFilter, diet, startDate, endDate }) => {
-    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+const coachings_ongoing = async ({ idFilter, diet, start_date, end_date }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && start_date == undefined && end_date == undefined) {
       return await Coaching.countDocuments({ status: COACHING_STATUS_STARTED });
     }
-    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_STARTED });
+    const matchCondition = await buildMatchCondition({ idFilter, diet, start_date, end_date, status: COACHING_STATUS_STARTED });
     const aggregationPipeline = createAggregationPipeline(matchCondition);
     const result = await Coaching.aggregate(aggregationPipeline).exec();
     return result.length > 0 ? result[0].count : 0;
@@ -930,14 +930,27 @@ const coachings_ongoing = async ({ idFilter, diet, startDate, endDate }) => {
 
 exports.coachings_ongoing = coachings_ongoing;
 
-const coachings_finished = async ({ idFilter, diet, startDate, endDate }) => {
-    if (diet == undefined && idFilter.$ne != 'null' && startDate == undefined && endDate == undefined) {
+const coachings_finished = async ({ idFilter, diet, start_date, end_date }) => {
+    if (diet == undefined && idFilter.$ne != 'null' && start_date == undefined && end_date == undefined) {
       return await Coaching.countDocuments({ status: COACHING_STATUS_FINISHED });
     }
-    const matchCondition = await buildMatchCondition({ idFilter, diet, startDate, endDate, status: COACHING_STATUS_FINISHED });
+    const matchCondition = await buildMatchCondition({ idFilter, diet, start_date, end_date, status: COACHING_STATUS_FINISHED });
     const aggregationPipeline = createAggregationPipeline(matchCondition);
     const result = await Coaching.aggregate(aggregationPipeline).exec();
     return result.length > 0 ? result[0].count : 0;
 };
 
 exports.coachings_finished = coachings_finished;
+
+const diet_billing = async ({ idFilter, diet, start_date, end_date }) => {
+  const diets = await User.aggregate[
+    {
+      $match:{
+        role:ROLE_EXTERNAL_DIET,
+      },
+    }
+  ]
+  console.log(diets)
+  return true
+}
+exports.diet_billing = diet_billing

@@ -18,8 +18,8 @@ afterAll(async () => {
 describe('Statistics', () => {
   let now;
   const measures = [];
-  const startDate = new Date('2020-01-05T13:00:00.000Z');
-  const endDate = new Date('2021-01-05T13:00:00.000Z');
+  const start_date = new Date('2020-01-05T13:00:00.000Z');
+  const end_date = new Date('2021-01-05T13:00:00.000Z');
   const diet = '65f2faa9234cec144a11fbed';
   const id = '65f2f95bd449f912a30afe74';
 
@@ -50,10 +50,10 @@ describe('Statistics', () => {
       console.log(typeof(withDiet))
       expect(withDiet).toBeGreaterThanOrEqual(0);
 
-      const withDates = await testCoachingStats(field, { startDate, endDate });
+      const withDates = await testCoachingStats(field, { start_date, end_date });
       expect(withDates).toBeGreaterThanOrEqual(0);
 
-      const withAll = await testCoachingStats(field, { id, diet, startDate, endDate });
+      const withAll = await testCoachingStats(field, { id, diet, start_date, end_date });
       expect(withAll).toBeGreaterThanOrEqual(0);
     });
   };
@@ -77,8 +77,8 @@ describe('Statistics', () => {
   fields.forEach(runTest);
 
   it('must return coachings_stats', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['coachings_stats']});
@@ -99,8 +99,8 @@ describe('Statistics', () => {
     expect(stats.ratio_appointments_coaching).toBeGreaterThanOrEqual(0)
   })
   it('must return jobs_details, jobs_total', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['jobs_details', 'jobs_total']});
@@ -110,8 +110,8 @@ describe('Statistics', () => {
   });
 
   it('must return join_reasons_details, join_reasons_total', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['join_reasons_details', 'join_reasons_total']});
@@ -120,8 +120,8 @@ describe('Statistics', () => {
   });
 
   it('must return decline_reasons_details, decline_reasons_total', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['decline_reasons_details', 'decline_reasons_total']});
@@ -130,8 +130,8 @@ describe('Statistics', () => {
   });
 
   it('must return ratio_stopped_started', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['ratio_stopped_started']});
@@ -140,8 +140,8 @@ describe('Statistics', () => {
   });
 
   it('must return ratio_dropped_started', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['ratio_dropped_started']});
@@ -150,8 +150,8 @@ describe('Statistics', () => {
   });
 
   it('must return leads_by_campain', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['leads_by_campain']});
@@ -160,8 +160,8 @@ describe('Statistics', () => {
   });
 
   it('must return webinars_by_company_details, webinars_by_company_total', async () => {
-    const startDate = new Date('2020-01-05T13:00:00.000Z');
-    const endDate = new Date('2021-01-05T13:00:00.000Z');
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
     const stats = await computeStatistics({ fields: ['webinars_by_company_details', 'webinars_by_company_total']});
@@ -208,12 +208,12 @@ describe('Statistics', () => {
   measure('all')
   console.table(measures)
   expect(1).toEqual(1)
-  })
-  it.only('must get filters and treat them properly', async() => {
+  })  
+  it('must get filters and treat them properly', async() => {
     const params = []
-    params['filter.startDate'] = '2020-01-05T13:00:00.000Z',
-    params['filter.endDate'] = '2022-01-05T13:00:00.000Z'
-    params['filter.id'] = '65f2f95bd449f912a30afe74'
+    params['filter.start_date'] = '2020-01-05T13:00:00.000Z',
+    params['filter.end_date'] = '2022-01-05T13:00:00.000Z'
+    params['filter.id'] = '65a911c48579fa3918aed901'
     params['filter.diet'] = '65f2faa6234cec144a11fb3f'
     params['limit'] = 30
     console.table(params)
@@ -221,12 +221,16 @@ describe('Statistics', () => {
     const fields=[
       'coachings_started',
     ]
-    const user = await User.find({role: ROLE_SUPER_ADMIN})
+    const user = await User.findOne({role: ROLE_SUPER_ADMIN})
     const model='adminDashboard'
 
-    const result = await preProcessGet({ model, fields, user, params })
-    console.log(result.decline_reasons_total)
+    const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })
+    console.log(result)
     return true
+  })
+  it.only('must return diet_billing info', async() =>{
+    const stats = await computeStatistics({fields:['diet_billing']})
+    expect(stats.diet_billing.total_billing).toBeGreaterThanOrEqual(0)
   })
 });
 
