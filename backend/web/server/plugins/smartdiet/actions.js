@@ -434,6 +434,11 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     }
     return true
   }
+
+  if (action=='create' && actionProps?.model=='appointment') {
+    return true
+  } 
+
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
   return promise
     .then(modelName => {
