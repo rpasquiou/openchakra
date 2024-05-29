@@ -8,6 +8,8 @@ const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FI
   COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS
 } = require("./consts")
 const { getAvailabilities } = require('../agenda/smartagenda')
+const Availability = require('../../models/Availability')
+const Range = require('../../models/Range')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -97,6 +99,29 @@ const getAvailableDiets = async (userId, params, data) => {
   diets=diets.filter(d => !!d)
   return diets
 }
+
+const getDietAvailabilities = async (userId, params, data) => {
+  const availabilities = await getAvailabilities({
+    diet_id: data.diet.smartagenda_id,
+    from: moment(),
+    to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+    appointment_type: data.appointment_type.smartagenda_id
+  })
+  const res = lodash(availabilities)
+    .groupBy(avail => moment(avail.start_date).startOf('day'))
+    .entries()
+    .map(([date, day_availabilities]) => (new Availability({
+      date: moment(date),
+      ranges: day_availabilities.map(day_availability => (new Range({
+        start_date: moment(day_availability.start_date),
+        appointment_type: data.appointment_type,
+      })))
+    })))
+    .value()
+  return res
+}
+
+
 module.exports={
-  updateCoachingStatus, getAvailableDiets,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities,
 }
