@@ -132,7 +132,17 @@ const CoachingSchema = new Schema({
   _company_cedits_spent: {
     type: Number,
     required: [function() {return this.pack},  `Le nombre de séances déjà consommées est obligatoire lors de l'ajout d'un pack`],
-  }
+  },
+  // Computed
+  available_diets: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
+  // Computed
+  diet_availabilities: [{
+    type: Schema.Types.ObjectId,
+    ref: 'availability',
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
@@ -224,18 +234,6 @@ CoachingSchema.virtual("_all_diets", {
 - remove if coaching not in diet's activities
 - keep then sort by reasons
 */
-CoachingSchema.virtual('available_diets', DUMMY_REF).get(function() {
-  const expected_app_type=this.appointment_type?._id
-  return lodash(this._all_diets)
-    // Diets allowing coaching
-    .filter(d => d.diet_coaching_enabled)
-    // Diets managing this company
-    .filter(d => d.customer_companies?.map(c => c._id).includes(this.user?.company._id))
-    // Diets having availability in the 15 next days for this kind of appointment
-    .filter(d => d.availability_ranges?.some(r => idEqual(r.appointment_type._id, expected_app_type)))
-    .orderBy(u => intersection(u.reasons, this.reasons), 'desc')
-    .value()
-})
 
 // Returns the current objectoves (i.e. the newest appointment's ones)
 CoachingSchema.virtual('current_objectives', DUMMY_REF).get(function() {
@@ -243,31 +241,6 @@ CoachingSchema.virtual('current_objectives', DUMMY_REF).get(function() {
    .orderBy(app => app[CREATED_AT_ATTRIBUTE].start_date, 'desc')
    .head()?.objectives || []
 })
-
-// Returned availabilities are not store in database
-CoachingSchema.virtual('diet_availabilities', DUMMY_REF).get(function() {
-
-  if (!this.diet){
-    return []
-  }
-
-  const appType=this.appointment_type
-  const diet_availabilities=this.diet.availability_ranges?.filter(r => idEqual(r.appointment_type._id, appType?._id)) || []
-
-  const availabilities=lodash.range(AVAILABILITIES_RANGE_DAYS).map(day_idx => {
-    const day=moment().add(day_idx, 'day').startOf('day')
-    const ranges=diet_availabilities?.filter(r => day.isSame(r.start_date, 'day')) || []
-    if (!ranges?.length) {
-      return null
-    }
-    return ({
-      date: day,
-      ranges: lodash.orderBy(ranges, 'start_date'),
-    })
-  })
-  .filter(v => !!v)
-  return availabilities
-});
 
 // Returns the appointment type expected (1st appnt: assesment, others: followu)
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
