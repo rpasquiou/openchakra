@@ -5,8 +5,9 @@ require("../../models/Appointment")
 const Company = require("../../models/Company")
 const Quizz = require("../../models/Quizz")
 const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FINISHED, COACHING_END_DELAY, COACHING_STATUS_DROPPED, 
-  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS
+  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS
 } = require("./consts")
+const { getAvailabilities } = require('../agenda/smartagenda')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -73,6 +74,29 @@ const updateCoachingStatus = async coaching_id => {
   return res
 }
 
+const getAvailableDiets = async (userId, params, data) => {
+  console.log('Getting available diets for', userId, 'coaching', data._all_diets.length, 'company', data.user.company.name)
+  let diets=data._all_diets
+  diets=diets.filter(d => !!d.smartagenda_id)
+  diets=diets.filter(d => d.diet_coaching_enabled)
+  diets=diets.filter(d => d.customer_companies?.map(c => c._id.toString()).includes(data.user?.company._id.toString()))
+  console.log(diets.map(d => [d.email, d.smartagenda_id]))
+  const hasAvailabilities = async diet_smartagenda_id => {
+    const availabilities=await getAvailabilities({
+      diet_id: diet_smartagenda_id, 
+      from:moment(), 
+      to:moment().add(AVAILABILITIES_RANGE_DAYS, 'day'), 
+      appointment_type: data.appointment_type.smartagenda_id
+    })
+    return !lodash.isEmpty(availabilities)
+  }
+  diets=await Promise.all(diets.map(async diet => {
+    const hasAvail=await hasAvailabilities(diet.smartagenda_id)
+    return hasAvail ? diet : null
+  }))
+  diets=diets.filter(d => !!d)
+  return diets
+}
 module.exports={
-  updateCoachingStatus,
+  updateCoachingStatus, getAvailableDiets,
 }

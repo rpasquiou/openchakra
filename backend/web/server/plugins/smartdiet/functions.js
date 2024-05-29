@@ -122,6 +122,7 @@ const {
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
   COACHING_STATUS_STOPPED,
+  AVAILABILITIES_RANGE_DAYS,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -133,10 +134,12 @@ const {
   getAgenda,
   getAppointmentTypes,
   getAppointmentVisioLink,
-  upsertAccount
+  upsertAccount,
+  getAvailabilities
 } = require('../agenda/smartagenda')
 
 const Category = require('../../models/Category')
+const Availability = require('../../models/Availability')
 const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency')
 const {getSmartAgendaConfig} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
@@ -189,13 +192,14 @@ const Conversation = require('../../models/Conversation')
 const UserQuizz = require('../../models/UserQuizz')
 const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
-const { updateCoachingStatus } = require('./coaching')
+const { updateCoachingStatus, getAvailableDiets } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
 const { PAYMENT_STATUS } = require('../fumoir/consts')
 const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
+const Range = require('../../models/Range')
 
 
 const filterDataUser = async ({ model, data, id, user }) => {
@@ -541,7 +545,7 @@ const preCreate = async ({ model, params, user }) => {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
         diet=latest_coaching.diet
-        console.log('patient is', JSON.stringify(usr, null, 2))
+
         if (isAppointment) {
           return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
         }
@@ -1288,14 +1292,9 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({
-  model: 'coaching', field: 'available_diets', instance: 'Array', multiple: true,
-  requires: `_all_diets.reasons,_all_diets.customer_companies,_all_diets.availability_ranges,\
-user.company,appointment_type,_all_diets.diet_coaching_enabled`,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'user' }
-  },
+declareComputedField({model: 'coaching', field: 'available_diets', 
+  requires: `_all_diets.smartagenda_id,_all_diets.reasons,_all_diets.customer_companies,_all_diets.availability_ranges,user.company,appointment_type,_all_diets.diet_coaching_enabled`,
+  getterFn: getAvailableDiets
 })
 declareVirtualField({
   model: 'coaching', field: 'current_objectives', instance: 'Array', multiple: true,
@@ -1319,15 +1318,27 @@ declareVirtualField({
     options: { ref: 'userQuizz' }
   },
 })
-declareVirtualField({
-  model: 'coaching', field: 'diet_availabilities', instance: 'Array',
-  requires: 'diet,appointment_type,diet.availability_ranges.appointment_type,appointments',
-  multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'availability' }
-  },
-})
+declareComputedField({model: 'coaching', field: 'diet_availabilities', requires:'diet,appointment_type', getterFn: async (userId, params, data) => {
+
+  const availabilities=await getAvailabilities({
+    diet_id:data.diet.smartagenda_id, 
+    from: moment(), 
+    to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'), 
+    appointment_type: data.appointment_type.smartagenda_id
+  })
+  const res=lodash(availabilities)
+    .groupBy(avail => moment(avail.start_date).startOf('day'))
+    .entries()
+    .map(([date, day_availabilities]) => (new Availability({
+      date: moment(date),
+      ranges: day_availabilities.map(day_availability => (new Range({
+        start_date: moment(day_availability.start_date),
+        appointment_type: data.appointment_type,
+      })))
+    })))
+    .value()
+  return res
+}})
 declareVirtualField({
   model: 'coaching', field: 'appointment_type', instance: 'appointmentType',
   requires: 'appointments,user.company.assessment_appointment_type,user.company.followup_appointment_type',
