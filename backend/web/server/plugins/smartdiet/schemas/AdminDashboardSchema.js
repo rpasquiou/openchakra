@@ -10,8 +10,8 @@ const AdminDashboardSchema = new Schema({
 
 AdminDashboardSchema.virtual('company', DUMMY_REF).get(function() { return null })
 AdminDashboardSchema.virtual('diet', DUMMY_REF).get(function() { return null })
-AdminDashboardSchema.virtual('startDate', DUMMY_REF).get(function() { return null })
-AdminDashboardSchema.virtual('endDate', DUMMY_REF).get(function() { return null })
+AdminDashboardSchema.virtual('start_date', DUMMY_REF).get(function() { return null })
+AdminDashboardSchema.virtual('end_date', DUMMY_REF).get(function() { return null })
 AdminDashboardSchema.virtual('webinars_count', DUMMY_REF).get(function() { return 0 })
 AdminDashboardSchema.virtual('average_webinar_registar', DUMMY_REF).get(function() { return 0 })
 AdminDashboardSchema.virtual('webinars_replayed_count', DUMMY_REF).get(function() { return 0 })
