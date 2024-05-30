@@ -301,6 +301,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
       return Promise.resolve({ model, fields, id, data: [] })
     }
+    id= params['filter.company']
     if (user.role == ROLE_RH) {
       id = user.company._id
     }
@@ -2031,7 +2032,7 @@ const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => 
       if (field.includes('coachings_stats')) {
         
 
-        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { idFilter, start_date, end_date, diet });
+        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { id, start_date, end_date, diet });
       } else if (field.includes('gender')) {
         
 
