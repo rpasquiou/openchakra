@@ -1,9 +1,9 @@
 const crypto = require('crypto')
 const lodash = require('lodash')
 const nationalities=require('i18n-nationality')
+const languages=require ('languages')
 const regionData=require('./regions.json')
 const { sortObject } = require('./text')
-
 const API_ROOT='/myAlfred/api/studio/'
 
 const NEEDED_VAR = [
@@ -243,7 +243,11 @@ const PURCHASE_STATUS={
 }
 
 const NATIONALITIES=sortObject(nationalities.getNames('fr'), 'FR')
-const LANGUAGES={...NATIONALITIES}
+//const LANGUAGES={...NATIONALITIES}
+const LANGUAGES=Object.fromEntries(
+  languages.getAllLanguageCode().map(code => ([code, languages.getLanguageInfo(code).nativeName])).sort(v => v[1])
+)
+//sortObject
 
 const LANGUAGE_LEVEL_BEGINNER=`LANGUAGE_LEVEL_BEGINNER`
 const LANGUAGE_LEVEL_INTERMEDIATE=`LANGUAGE_LEVEL_INTERMEDIATE`
