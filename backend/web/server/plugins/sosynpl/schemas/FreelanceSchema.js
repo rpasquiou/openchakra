@@ -407,6 +407,14 @@ Object.keys(SS_PILAR).forEach(pilar => {
   })
   
 })
+
+// TODO UGLY should be inherited from Customer schemma
+FreelanceSchema.virtual('announces', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'user',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = FreelanceSchema
