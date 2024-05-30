@@ -310,16 +310,17 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
   if (model=='billing') {
     let diet
-    if(user.role == ROLE_ADMIN || user.role == ROLE_SUPER_ADMIN){
+    const role = user.role
+    if(role == ROLE_ADMIN || role == ROLE_SUPER_ADMIN){
       diet = id
     }
-    else if(user.role == ROLE_EXTERNAL_DIET) {
+    else if(role == ROLE_EXTERNAL_DIET) {
       diet = user
     }
     else {
       throw new ForbiddenError(`La facturation n'est accessible qu'aux diets`)
     }
-    return computeBilling({diet, fields, params })
+    return computeBilling({diet, fields, params, user })
   }
 
   if (model == 'conversation') {
@@ -2453,12 +2454,11 @@ cron.schedule('0 0 10 * * *', async () => {
 })
 
 
-module.exports = {
-  ensureChallengePipsConsistency,
-  logbooksConsistency,
-  getRegisterCompany,
-  agendaHookFn, mailjetHookFn,
-  computeStatistics,
-  canPatientStartCoaching,
-  preProcessGet
-}
+exports.ensureChallengePipsConsistency = ensureChallengePipsConsistency
+exports.logbooksConsistency = logbooksConsistency
+exports.getRegisterCompany = getRegisterCompany
+exports.agendaHookFn = agendaHookFn 
+exports.mailjetHookFn = mailjetHookFn
+exports.computeStatistics = computeStatistics
+exports.canPatientStartCoaching = canPatientStartCoaching
+exports.preProcessGetFORBIDDEN = preProcessGet
