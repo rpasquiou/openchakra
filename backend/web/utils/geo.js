@@ -33,7 +33,7 @@ const getLocationSuggestions = (value, type) => {
       suggestions=lodash.uniqBy(suggestions, r => (cityOnly ? `${r.city},${r.postcode},${r.country}`: `${r.name},${r.city},${r.postcode},${r.country}`))
       const number=parseInt(value)
       if (!isNaN(number)) {
-        suggestions=suggestions.map(r => ({...r, name: `${number} ${r.name}`}))
+        suggestions=suggestions.map(r => ({...r, address: `${number} ${r.address}`}))
       }
       return suggestions
     })

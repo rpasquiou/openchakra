@@ -141,9 +141,12 @@ const login = (email, password) => {
   })
 }
 
-router.get('/models', (req, res) => {
-  const allModels = getExposedModels()
-  return res.json(allModels)
+router.get('/models/:model?', (req, res) => {
+  let models = getExposedModels()
+  if (req.params.model) {
+    models=models[req.params.model]
+  }
+  return res.json(models)
 })
 
 router.get('/roles', (req, res) => {
@@ -523,12 +526,13 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
 
   console.log(`POST ${model} ${JSON.stringify(params)}`)
   return callPreCreateData({model, params, user})
-    .then(({model, params, data}) => {
+    .then(({model, params, data, skip_validation}) => {
       if (data) {
         return res.json(data)
       }
+      const validation=!!skip_validation ? {validateBeforeSave: false} : {runValidators: true}
       return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
+        .create([params], validation)
         .then(([data]) => {
           return callPostCreateData({model, params, data, user})
         })

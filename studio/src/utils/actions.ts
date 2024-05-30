@@ -701,6 +701,16 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  publish: {
+    label: 'Publish',
+    options: {},
+    next: ['openPage'],
+  },
+  clone: {
+    label: 'Clone',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

@@ -6,8 +6,8 @@ import lodash from 'lodash'
 
 
 const Address = ({children, onChange, value, isCityOnly, ...props}: {children: React.ReactNode}) => {
-
-  const [address, setAddress]=useState(lodash.isString(value) ? {city: value} : lodash.isObject(value) ? value : null)
+  
+  const [address, setAddress]=useState(lodash.isEmpty(value) ? null : lodash.isString(value) ? {city: value} : value)
 
   if (props.setComponentAttribute) {
     props.setComponentAttribute(props.id, props.attribute)
@@ -28,10 +28,8 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
   }
 
   const onAddressChange = ev => {
-    console.log('address', JSON.stringify(ev.value, null, 2))
-    const val=isCityOnly ? ev.value.city : {...ev.value, address: `${ev.value.name.split(' ')[0]}, ${ev.value.address}`}
     setAddress(ev.value)
-    onChange && onChange(val)
+    onChange && onChange(ev.value)
   }
   const loadSuggestions=debounce(_loadSuggestions, 500)
   
@@ -60,6 +58,7 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
 
   return ( 
     <AsyncSelect 
+      id={props.id}
       chakraStyles={chakraStyles}
       value={addressToOption(address)}
       loadOptions={loadSuggestions} 
