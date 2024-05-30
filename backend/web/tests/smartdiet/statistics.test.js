@@ -77,12 +77,12 @@ describe('Statistics', () => {
 
   fields.forEach(runTest);
 
-  it('must return coachings_stats', async () => {
+  it.only('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z');
     const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
     const diet = '65f2faa6234cec144a11fb3f';
-    const stats = await computeStatistics({ fields: ['coachings_stats']});
+    const stats = await computeStatistics({ id, fields: ['coachings_stats']});
     for (let stat of stats.coachings_stats) {
       console.table({ name: stat.name, total: stat.total });
       console.log(stat.ranges);
