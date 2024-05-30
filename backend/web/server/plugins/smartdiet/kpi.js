@@ -341,6 +341,8 @@ exports.coachings_stats = coachings_stats
 
 
 const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) => {
+
+  console.time('Mapping')
   const matchConditions = {
     'coachings.status': {
       $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED],
@@ -394,6 +396,8 @@ const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) =>
     },
   ]
 
+  
+
   const result = await User.aggregate(aggregationPipeline).exec()
 
   const formattedGenderCount = {
@@ -414,6 +418,7 @@ const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) =>
       formattedGenderCount.unknown = count
     }
   })
+  console.timeEnd('Mapping')
 
   return formattedGenderCount
 }

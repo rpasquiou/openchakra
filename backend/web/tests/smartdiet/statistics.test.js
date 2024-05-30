@@ -77,7 +77,7 @@ describe('Statistics', () => {
 
   fields.forEach(runTest);
 
-  it.only('must return coachings_stats', async () => {
+  it('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z');
     const end_date = new Date('2021-01-05T13:00:00.000Z');
     const id = '65f2f95bd449f912a30afe74';
@@ -278,6 +278,15 @@ describe('Statistics', () => {
     expect(totalDiet).toBeGreaterThanOrEqual(0)
     expect(totalDietDate).toBeGreaterThanOrEqual(0)
 
+  })
+
+  it.only(`Test computation times`, async() => {
+    for await (const field of fields.filter(f => /coachings_gender_female/.test(f))) {
+      console.time(field)
+      const computedStaistics=await computeStatistics({fields:[field]})
+      console.log(field, 'is',computedStaistics[field])
+      console.timeEnd(field)
+    }
   })
 });
 
