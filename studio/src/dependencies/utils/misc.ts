@@ -102,7 +102,9 @@ export const formatAddress = addr => {
   if (!addr) {
     return null
   }
-  return `${addr.address}, ${addr.city} ${addr.zip_code}`
+  const part1=addr.address
+  const part2 = [addr.city, addr.zip_code].filter(v => !!v).join(' ')
+  return [part1, part2].filter(v => !!v).join(', ')
 }
 
 export const redirectExists = () =>{

@@ -13,7 +13,7 @@ const withDynamicText = Component => {
       value=joinDelimiter({array: value})
     }
     // Is it an address ??
-    if (value?.city && value?.zip_code) {
+    if (value?.city) {
       value=formatAddress(value)
     }
     const conditionalProperties = getConditionalProperties(

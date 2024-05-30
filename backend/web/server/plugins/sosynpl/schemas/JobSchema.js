@@ -12,14 +12,14 @@ const JobSchema = new Schema({
     set: v => v?.trim(),
     required: [true, 'Le métier est obligatoire'],
   },
-  code: {
-    type: String,
-    required: [true, 'Le code métier est obligatoire'],
-  }
+  job_file: {
+    type: Schema.Types.ObjectId,
+    ref: 'jobFile',
+    required: [true, `La fiche métier est obligatoire`],
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
-
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = JobSchema

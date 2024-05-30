@@ -14,6 +14,8 @@
 backend/web/mode_*.js
 backend/web/mode-*.js
 backend/web/fumoir*.json
+# Ignore tests generated files
+backend/web/tests/**/wapp_*
 # production
 **/build
 **/dist
