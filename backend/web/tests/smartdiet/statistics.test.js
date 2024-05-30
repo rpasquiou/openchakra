@@ -210,7 +210,7 @@ describe('Statistics', () => {
   console.table(measures)
   expect(1).toEqual(1)
   })  
-  it.only('must get filters and treat them properly', async() => {
+  it('must get filters and treat them properly', async() => {
     console.log('****************************************ADMIN****************************************')
     const userAdmin = await User.findOne({role: ROLE_ADMIN})
     const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})

@@ -273,11 +273,10 @@ const coachings_stats = async ({ dietId, company, start_date, end_date }) => {
     {
       $addFields: {
         age: {
-          $dateDiff: {
-            start_date: '$user.birthday',
-            end_date: '$$NOW',
-            unit: 'year',
-          },
+          $divide: [
+            { $subtract: [new Date(), '$user.birthday'] },
+            365 * 24 * 60 * 60 * 1000
+          ],
         },
         isUpcoming: { $lt: [new Date(), '$start_date'] },
         isRabbit: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', false] }] },
