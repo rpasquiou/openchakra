@@ -82,7 +82,6 @@ const getAvailableDiets = async (userId, params, data) => {
   diets=diets.filter(d => !!d.smartagenda_id)
   diets=diets.filter(d => d.diet_coaching_enabled)
   diets=diets.filter(d => d.customer_companies?.map(c => c._id.toString()).includes(data.user?.company._id.toString()))
-  console.log(diets.map(d => [d.email, d.smartagenda_id]))
   const hasAvailabilities = async diet_smartagenda_id => {
     const availabilities=await getAvailabilities({
       diet_id: diet_smartagenda_id, 

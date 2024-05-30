@@ -265,7 +265,7 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
     })
     .catch(err => {
       if (err?.response?.status==404) {
-        console.error(`No availabilities for ${diet_id}`)
+        console.warn(`Availabilities 404 for ${diet_id}`)
         return []
       }
       throw err
