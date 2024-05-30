@@ -941,16 +941,3 @@ const coachings_finished = async ({ idFilter, diet, start_date, end_date }) => {
 };
 
 exports.coachings_finished = coachings_finished;
-
-const diet_billing = async ({ idFilter, diet, start_date, end_date }) => {
-  const diets = await User.aggregate[
-    {
-      $match:{
-        role:ROLE_EXTERNAL_DIET,
-      },
-    }
-  ]
-  console.log(diets)
-  return true
-}
-exports.diet_billing = diet_billing
