@@ -5,8 +5,11 @@ require("../../models/Appointment")
 const Company = require("../../models/Company")
 const Quizz = require("../../models/Quizz")
 const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FINISHED, COACHING_END_DELAY, COACHING_STATUS_DROPPED, 
-  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS
+  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS
 } = require("./consts")
+const { getAvailabilities } = require('../agenda/smartagenda')
+const Availability = require('../../models/Availability')
+const Range = require('../../models/Range')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -73,6 +76,51 @@ const updateCoachingStatus = async coaching_id => {
   return res
 }
 
+const getAvailableDiets = async (userId, params, data) => {
+  console.log('Getting available diets for', userId, 'coaching', data._all_diets.length, 'company', data.user.company.name)
+  let diets=data._all_diets
+  diets=diets.filter(d => !!d.smartagenda_id)
+  diets=diets.filter(d => d.diet_coaching_enabled)
+  diets=diets.filter(d => d.customer_companies?.map(c => c._id.toString()).includes(data.user?.company._id.toString()))
+  const hasAvailabilities = async diet_smartagenda_id => {
+    const availabilities=await getAvailabilities({
+      diet_id: diet_smartagenda_id, 
+      from:moment(), 
+      to:moment().add(AVAILABILITIES_RANGE_DAYS, 'day'), 
+      appointment_type: data.appointment_type.smartagenda_id
+    })
+    return !lodash.isEmpty(availabilities)
+  }
+  diets=await Promise.all(diets.map(async diet => {
+    const hasAvail=await hasAvailabilities(diet.smartagenda_id)
+    return hasAvail ? diet : null
+  }))
+  diets=diets.filter(d => !!d)
+  return diets
+}
+
+const getDietAvailabilities = async (userId, params, data) => {
+  const availabilities = await getAvailabilities({
+    diet_id: data.diet.smartagenda_id,
+    from: moment(),
+    to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+    appointment_type: data.appointment_type.smartagenda_id
+  })
+  const res = lodash(availabilities)
+    .groupBy(avail => moment(avail.start_date).startOf('day'))
+    .entries()
+    .map(([date, day_availabilities]) => (new Availability({
+      date: moment(date),
+      ranges: day_availabilities.map(day_availability => (new Range({
+        start_date: moment(day_availability.start_date),
+        appointment_type: data.appointment_type,
+      })))
+    })))
+    .value()
+  return res
+}
+
+
 module.exports={
-  updateCoachingStatus,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities,
 }
