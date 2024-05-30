@@ -20,7 +20,6 @@ const Company=require('../../server/models/Company')
 const { computeStatistics, logbooksConsistency } = require('../../server/plugins/smartdiet/functions');
 const Patient = require('../../server/models/Patient');
 const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts');
-const { synchronizeAvailabilities } = require('../../server/plugins/agenda/smartagenda');
 require('../../server/models/Answer')
 require('../../server/models/ResetToken')
 require('../../server/models/Program')
@@ -434,10 +433,6 @@ describe('Performance ', () => {
     const user=await User.findOne(DIET_CRITERION)
     const convs=await loadFromDb({model: 'conversation', fields: ['partner.fullname,messages.creation_date'], user})
     console.log(convs.map(c => [lodash.maxBy(c.messages, CREATED_AT_ATTRIBUTE)?.[CREATED_AT_ATTRIBUTE], c.partner?.fullname] ))
-  })
-
-  it('Must update diet availabilities', async() => {
-    await synchronizeAvailabilities()
   })
 
   it('Must load contents', async() => {

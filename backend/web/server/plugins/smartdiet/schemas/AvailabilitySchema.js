@@ -8,7 +8,7 @@ const Schema = mongoose.Schema
 const AvailabilitySchema = new Schema({
   date: {
     type: Date,
-    set: m => m && moment(m).startOfDay(),
+    set: m => m && moment(m).startOf('day'),
     required: [true, 'Le jour est obligatoire'],
   },
   ranges: [{
