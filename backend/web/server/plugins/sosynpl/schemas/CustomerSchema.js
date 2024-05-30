@@ -303,7 +303,7 @@ CustomerSchema.virtual('pinned_freelances', {
 })
 
 CustomerSchema.virtual('announces', {
-  ref: 'annonuce',
+  ref: 'announce',
   localField: '_id',
   foreignField: 'user',
 })
