@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
-const { computeStatistics, preProcessGetNEVERUSE, preProcessGet } = require('../../server/plugins/smartdiet/functions');
+const { computeStatistics, preProcessGetNEVERUSE, preProcessGet, preProcessGetFORBIDDEN } = require('../../server/plugins/smartdiet/functions');
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database');
 const User = require('../../server/models/User');
 require('../../server/models/FoodDocument');
 const moment = require('moment');
-const { ROLE_SUPER_ADMIN } = require('../../server/plugins/smartdiet/consts');
+const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts');
+const { diet_billing } = require('../../server/plugins/smartdiet/kpi');
 jest.setTimeout(300000);
 
 beforeAll(async () => {
@@ -210,27 +211,74 @@ describe('Statistics', () => {
   expect(1).toEqual(1)
   })  
   it('must get filters and treat them properly', async() => {
+    console.log('****************************************ADMIN****************************************')
+    const userAdmin = await User.findOne({role: ROLE_ADMIN})
+    const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})
+    let user
+    let diet
+    let id
+    const timings = {}
+    //first test, no filters, user is Admin
     const params = []
-    params['filter.start_date'] = '2020-01-05T13:00:00.000Z',
-    params['filter.end_date'] = '2022-01-05T13:00:00.000Z'
-    params['filter.id'] = '65a911c48579fa3918aed901'
-    params['filter.diet'] = '65f2faa6234cec144a11fb3f'
     params['limit'] = 30
-    console.table(params)
-
-    const fields=[
-      'coachings_started',
-    ]
-    const user = await User.findOne({role: ROLE_SUPER_ADMIN})
-    const model='adminDashboard'
-
-    const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })
+    const fields=[]
+    user = userAdmin
+    const model='billing'
+    
+    let now = moment()
+    const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
     console.log(result)
-    return true
-  })
-  it.only('must return diet_billing info', async() =>{
-    const stats = await computeStatistics({fields:['diet_billing']})
-    expect(stats.diet_billing.total_billing).toBeGreaterThanOrEqual(0)
+    timings.admin=moment().diff(now, 'milliseconds')
+    const totalAdmin = result.data.total
+
+    //Second test, no filters, user is Admin, has id
+    console.log('****************************************ADMIN WITH ID****************************************')
+    now = moment()
+    diet = userDiet
+    id = diet._id
+    const idResult = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
+    console.log(idResult)
+    timings.admingWithDiet=moment().diff(now, 'milliseconds')
+    const totalAdminDiet = idResult.data[0].total
+  
+    //Third test, no filters, user is Diet
+    console.log('****************************************DIET****************************************')
+    now=moment()
+    user = diet
+    const dietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    console.log(dietResult)
+    timings.diet=moment().diff(now, 'milliseconds')
+    const totalDiet = dietResult.data.length
+
+    //Fourth test, date filters, user is Admin 
+    console.log('****************************************ADMIN WITH DATE FILTERS****************************************')
+    now=moment()
+    params['filter.start_date'] = '2023-01-05T13:00:00.000Z',
+    params['filter.end_date'] = '2024-01-05T13:00:00.000Z'
+    user = userAdmin
+    const filteredResult = await preProcessGetFORBIDDEN({ model, fields, user, params })  
+    console.log(filteredResult)
+    timings.adminDateFilter=moment().diff(now, 'milliseconds')
+    const totalAdminDate = filteredResult.data.total
+
+    //Fifth test, date filters, user is Diet
+    console.log('****************************************DIET WITH DATE FILTERS****************************************')
+    now=moment()
+    user = userDiet
+    const filteredDietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    console.log(filteredDietResult)
+    timings.dietDateFilter=moment().diff(now, 'milliseconds')
+    const totalDietDate = filteredDietResult.data.length
+
+
+    console.table(timings)
+    expect(totalAdmin).toBeGreaterThanOrEqual(0)
+    expect(totalAdminDiet).toBeLessThanOrEqual(totalAdmin)
+    expect(totalAdminDate).toBeLessThanOrEqual(totalAdmin)
+    expect(totalDiet).toBeGreaterThanOrEqual(0)
+    expect(totalDietDate).toBeGreaterThanOrEqual(0)
+
   })
 });
+
 
