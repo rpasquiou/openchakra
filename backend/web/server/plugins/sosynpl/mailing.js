@@ -3,7 +3,8 @@ const {
   setNotificationsContents,
   setSmsContents,
   setSmsContact,
-  getTagUrl
+  getTagUrl,
+  addValidationAllowedDomain
 } = require('../../utils/mailing')
 const {datetime_str} = require('../../../utils/dateutils')
 const moment=require('moment')
@@ -27,6 +28,8 @@ const NOTIFICATIONS_CONTENTS={
 setNotificationsContents(NOTIFICATIONS_CONTENTS)
 
 setSmsContact('SoSynpL')
+
+addValidationAllowedDomain('sosynpl.com')
 
 const sendCustomerConfirmEmail = async ({user}) => {
   const tagUrl=await getTagUrl('EMAIL_VALIDATION')

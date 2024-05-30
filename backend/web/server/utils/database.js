@@ -715,7 +715,7 @@ const formatTime = timeMillis => {
 
 const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
   if (!model || !field || !(getterFn || setterFn)) {
-    throw new Error(`${model}.${field} compute delcaration requires model, field and at least getter or setter`)
+    throw new Error(`${model}.${field} compute declaration requires model, field and at least getter or setter`)
   }
   if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
@@ -785,6 +785,17 @@ const callPreCreateData = data => {
   return preCreateData(data)
 }
 
+// Pre create data, allows to insert extra fields, etc..
+let prePutData = data => Promise.resolve(data)
+
+const setPrePutData = fn => {
+  prePutData = fn
+}
+
+const callPrePutData = data => {
+  return prePutData(data)
+}
+
 // Post create data, allows to create extra data, etc, etc
 let postCreateData = data => Promise.resolve(data.data)
 
@@ -818,12 +829,12 @@ const callPostDeleteData = data => {
   return postDeleteData(data)
 }
 
-const putAttribute = ({id, attribute, value, user}) => {
-  let model = null
-  return getModel(id)
-    .then(res => {
-      model = res
-      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${attribute}`)
+const putAttribute = async (input_params) => {
+  let res=await getModel(input_params.id)
+      let preParams={[input_params.attribute]: input_params.value}
+      let {model, id, params, user, skip_validation} = await callPrePutData({...input_params, model: res, params: preParams})
+      const [attribute, value]=Object.entries(params)[0]
+      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${input_params.attribute}`)
       if (setter) {
         callPostPutData({model, id, attribute, value, user})
         return setter({id, attribute, value, user})
@@ -835,9 +846,11 @@ const putAttribute = ({id, attribute, value, user}) => {
         return mongooseModel.findById(id)
           .then(object => {
             object[attribute]=value
-            return object.save()
+            const validation=!!skip_validation ? {validateBeforeSave: false} : {runValidators: true}
+            return object.save({...validation})
               .then(obj => {
-                return callPostPutData({model, id, attribute, value, params:{[attribute]:value}, user, data: obj})
+                const postParams={[attribute]: value}
+                return callPostPutData({model, id, attribute, value, params:postParams, user, data: obj})
                   .then(() => obj)
               })
           })
@@ -872,7 +885,6 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           }))
         })
-    })
 
 }
 
@@ -938,13 +950,16 @@ const shareTargets = (obj1, obj2) => {
   return lodash.intersectionBy(obj1.targets, obj2.targets, t => t._id.toString()).length>0
 }
 
-const putToDb = ({model, id, params, user}) => {
-  return mongoose.connection.models[model]
-    .findById(id)
+const putToDb = async (input_params) => {
+  const {model, id, params, user, skip_validation} = callPrePutData(input_params)
+  return mongoose.connection.models[model].findById(id)
     .then(data => {
       if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
+
       Object.keys(params).forEach(k => { data[k]=params[k] })
-      return data.save()
+      console.log('PUTTING data model', mode, skip_validation ? 'skip validation' : 'validate')
+      const validation=!!skip_validation ? {validateBeforeSave: false} : {}
+      return data.save(validation)
     })
     .then(data => callPostPutData({model, id, params, data, user}))
 }
@@ -1108,5 +1123,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
+  setPrePutData, callPrePutData,
 }
 
