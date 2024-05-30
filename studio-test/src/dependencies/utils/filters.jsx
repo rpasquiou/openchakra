@@ -79,7 +79,7 @@ const createFilters = (filterDef, props, componentValueGetter) => {
     const vRef = def.value
     return dataSource => {
       const dataValue = def.isComponent ?
-        componentValueGetter(attribute)
+        componentValueGetter(attribute, props.level)
         :lodash.get(dataSource, attribute)
       return opFn(dataValue, vRef) ? targetValue : null
     }

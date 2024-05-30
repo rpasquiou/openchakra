@@ -1,15 +1,38 @@
 const mongoose = require('mongoose')
+const moment = require('moment')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES} = require('../consts')
+const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR} = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
+const { REGIONS } = require('../../../../utils/consts')
+const { computePilars } = require('../soft_skills')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
 
 const MIN_DURATIONS=1
 const MAX_DURATIONS=3
+
+const MIN_JOB_SKILLS=0
+const MAX_JOB_SKILLS=20
+
+const MIN_EXTRA_SKILLS=0
+const MAX_EXTRA_SKILLS=20
+
+const MIN_REGIONS=1
+const MAX_REGIONS=3
+
+const MIN_DAYS_PER_WEEK=1
+const MAX_DAYS_PER_WEEK=5
+
+const MAX_GOLD_SOFT_SKILLS=1
+const MAX_SILVER_SOFT_SKILLS=2
+const MAX_BRONZE_SOFT_SKILLS=3
+
+const MIN_SOFTWARES=1
 
 const Schema = mongoose.Schema
 
@@ -102,16 +125,28 @@ const FreelanceSchema = new Schema({
       enum: Object.keys(COMPANY_SIZE),
     }],
   },
-  softwares: [{
-    type: Schema.Types.ObjectId,
-    ref: 'software',
-    required: false,
-  }],
-  languages: [{
-    type: Schema.Types.ObjectId,
-    ref: 'language',
-    required: false,
-  }],
+  hard_skills_job: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'hardSkill',
+    }],
+    default: [],
+    validate: [
+      skills => lodash.inRange(skills?.length||0, MIN_JOB_SKILLS, MAX_JOB_SKILLS+1), 
+      `Vous devez choisir de ${MIN_JOB_SKILLS} à ${MAX_JOB_SKILLS} compétences métiers` 
+    ]
+  },
+  hard_skills_extra: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'hardSkill',
+    }],
+    default: [],
+    validate: [
+      skills => lodash.inRange(skills?.length||0, MIN_EXTRA_SKILLS, MAX_EXTRA_SKILLS+1), 
+      `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} compétences hors métier` 
+    ]
+  },
   experience: {
     type: String,
     required: [true, `L'expérience est obligatoire`],
@@ -147,6 +182,148 @@ const FreelanceSchema = new Schema({
     type: Boolean,
     default: false,
     required: [true, `La visibilité Google est obligatoire`]
+  },
+  hard_skills_categories: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkillCategory',
+  }],
+  available_hard_skills_categories: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkillCategory',
+  }],
+  expertises: [{
+    type: Schema.Types.ObjectId,
+    ref: 'expertise',
+  }],
+  // START MOBILITY
+  mobility: {
+    type: String,
+    enum: Object.keys(MOBILITY),
+    set : v => v || undefined,
+    required: false,
+  },
+  mobility_regions: {
+    type: [{
+      type: String,
+      enum: Object.keys(REGIONS)
+    }],
+    validate: [
+      function(regions) {
+        return this.mobility!=MOBILITY_REGIONS || lodash.inRange(regions?.length||0, MIN_REGIONS, MAX_REGIONS+1)
+      },
+      `Vous devez choisir de ${MIN_REGIONS} à ${MAX_REGIONS} régions` 
+    ],
+    required: [function() {return this.mobility==MOBILITY_REGIONS}, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions`]
+  },
+  mobility_city: {
+    type: AddressSchema,
+    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une ville`]
+  },
+  mobility_city_distance: {
+    type: Number,
+    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une distance autour de la ville`]
+  },
+  // END MOBILITY
+  // START AVAILBILITY
+  /**
+   * TODO: make available when not available and available_from is reached 
+   * TODO: notification if not change after 8 days, make undefined after 9 days
+   * TODO: notify if no change after 15 days
+   * TODO: notify if no change after 30 days, set to available_off
+   * TODO: notify mail 'are yo niterested' if no change after 60 days, set to undefined
+  */
+  availability: {
+    type: String,
+    enum: Object.keys(AVAILABILITY),
+    default: AVAILABILITY_UNDEFINED,
+    required: true,
+  },
+  available_days_per_week: {
+    type: Number,
+    min: [MIN_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
+    max: [MAX_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
+    // Required if available or (not available and start date)
+    required: [function() {
+      return this.availability==AVAILABILITY_ON || (this.availability==AVAILABILITY_ON && !!this.available_from)
+    }, `Vous devez indiquer des jours de disponibilité`]
+  },
+  // TODO: set to AVAILABILITY_ON when available_from is reached
+  available_from: {
+    type: Date,
+    set: d => lodash.isNil(d) ? d : moment(d).startOf('day'),
+    validate: [
+      function(value) { return lodash.isNil(value) || moment(value).isAfter(moment())}, 
+      `La date de disponibilité doit être dans le futur`],
+    required: false,
+  },
+  // END AVAILABILITY
+  // Soft skills
+  gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+  },
+  silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+  },
+  bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+  },
+  // Computed depending on gold/silver/bronze soft skills
+  available_gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  softwares: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'software',
+      required: true,
+    }],
+    default: [],
+    required: false,
+  },
+  languages: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'languageLevel',
+      required: true,
+    }],
+    default: [],
+    required: false,
   }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
@@ -177,7 +354,7 @@ FreelanceSchema.virtual('experiences', {
 })
 
 FreelanceSchema.virtual('certifications', {
-  ref: 'experience',
+  ref: 'certification',
   localField: '_id',
   foreignField: 'user',
 })
@@ -191,6 +368,51 @@ FreelanceSchema.virtual('trainings', {
 // Depends on filled attributes
 FreelanceSchema.virtual('search_visible').get(function() {
   return false
+})
+
+FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
+  switch(this.mobility) {
+    case MOBILITY_FRANCE: return MOBILITY[MOBILITY_FRANCE]
+    case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
+    case MOBILITY_CITY: return `${this.mobility_city.city} dans un rayon de ${this.mobility_city_distance} km`
+  }
+})
+
+FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
+  switch(this.availability) {
+    case AVAILABILITY_ON: return `Disponible ${this.available_days_per_week} jour(s) par semaine`
+    case AVAILABILITY_OFF: return this.available_from ? `Disponible ${this.available_days_per_week} jour(s) par semaine à partir du ${moment(this.available_from).format('DD/MM/YY')} ` : 'Indisponible'
+  }
+  return `Disponibilité non renseignée`
+})
+
+const mapMedals = user => {
+  let medals={}
+  user.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
+  user.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
+  user.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
+  return medals
+}
+
+// Implement virtual for each pilar
+Object.keys(SS_PILAR).forEach(pilar => {
+  const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+  FreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
+    const medals=mapMedals(this)
+    const pilars=computePilars(medals)
+    const max_value=lodash(pilars).values().max()
+    // Convert to percent value
+    const value=pilars[pilar]/max_value
+    return value
+  })
+  
+})
+
+// TODO UGLY should be inherited from Customer schemma
+FreelanceSchema.virtual('announces', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'user',
 })
 
 /* eslint-enable prefer-arrow-callback */
