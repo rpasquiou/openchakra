@@ -1990,7 +1990,7 @@ const ensureChallengePipsConsistency = () => {
 
 
 const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => {
-  console.log({target: id? id : 'all companies', fields: fields, options :{id, start_date, end_date, diet}})
+  // console.log({target: id? id : 'all companies', fields: fields, options :{id, start_date, end_date, diet}})
   const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null };
   const result = {};
   result.company = id?.toString();
