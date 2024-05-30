@@ -16,7 +16,6 @@ const {
   getEvents,
   getToken,
   smartDietToMoment,
-  synchronizeAvailabilities,
   upsertAccount,
 } = require('../../server/plugins/agenda/smartagenda')
 const Appointment = require('../../server/models/Appointment')
@@ -156,11 +155,6 @@ describe('SmartAgenda test ', () => {
       .filter(r => /carcept/i.test(r.appointment_type.title))
       .filter(r => /bilan/i.test(r.appointment_type.title))
     console.log(JSON.stringify(ranges.map(r => [r.user._id, r.user.email, r.appointment_type.title]), null,2))
-  })
-
-  it.only('must sync availabilities', async() => {
-    await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
-    return synchronizeAvailabilities()
   })
 
   it('must sync availabilities', async() => {
