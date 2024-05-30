@@ -106,7 +106,7 @@ const withDynamicSelect = Component => {
         <Select {...props} onChange={onChange}
           value={selValue}
           isMulti={isMulti}
-          options={options} placeholder={null}
+          options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
         />
       )
