@@ -305,7 +305,10 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (user.role == ROLE_RH) {
       id = user.company._id
     }
-    return computeStatistics({ id, fields })
+    const start_date=params['filter.start_date'] || undefined
+    const end_date=params['filter.end_date'] || undefined
+    const diet=params['filter.diet'] || undefined
+    return computeStatistics({ id, fields, diet, start_date, end_date })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
 
