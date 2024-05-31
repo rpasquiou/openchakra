@@ -951,13 +951,12 @@ const shareTargets = (obj1, obj2) => {
 }
 
 const putToDb = async (input_params) => {
-  const {model, id, params, user, skip_validation} = callPrePutData(input_params)
+  const {model, id, params, user, skip_validation} = await callPrePutData(input_params)
   return mongoose.connection.models[model].findById(id)
     .then(data => {
       if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
 
       Object.keys(params).forEach(k => { data[k]=params[k] })
-      console.log('PUTTING data model', mode, skip_validation ? 'skip validation' : 'validate')
       const validation=!!skip_validation ? {validateBeforeSave: false} : {}
       return data.save(validation)
     })
