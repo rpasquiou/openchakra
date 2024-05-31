@@ -84,20 +84,6 @@ const fixExpertises = async directory => {
   await saveRecords(OUTPUT, Object.keys(fullHardSkills[0]), fullHardSkills)
 }
 
-const fixFiles = async directory => {
-  console.log('Fixing files')
-  await fixHardSkills(directory)
-  await fixExpertises(directory)
-}
-
-const JOB_MAPPING={
-  name: `Métiers : à étendre avec France compténces pour avoir "IA", "Intelligence articifielle"`,
-  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
-}
-
-const JOB_KEY='name'
-const JOB_MIGRATION_KEY='name'
-
 const JOB_FILE_MAPPING={
   name: `Fiche Métiers`,
   code: 'code Fiche Métiers',
@@ -105,14 +91,6 @@ const JOB_FILE_MAPPING={
 
 const JOB_FILE_KEY='code'
 const JOB_FILE_MIGRATION_KEY='code'
-
-const JOB_FILE_FEATURE_MAPPING={
-  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
-  description: `Missions principales`,
-}
-
-const JOB_FILE_FEATURE_KEY='description'
-const JOB_FILE_FEATURE_MIGRATION_KEY='description'
 
 const SECTOR_MAPPING={
   name: `Secteurs`,
@@ -123,19 +101,36 @@ const SECTOR_MIGRATION_KEY='name'
 
 const importJobFiles = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  records=records.filter(r => !lodash.isEmpty(r['SO SYNPL à garder']))
   records=lodash.orderBy(records, r => normalize(r[JOB_MAPPING.name]))
   return importData({model: 'jobFile', data:records, mapping:JOB_FILE_MAPPING, identityKey: JOB_FILE_KEY, 
       migrationKey: JOB_FILE_MIGRATION_KEY})
 }
 
+const JOB_MAPPING={
+  name: `Métiers`,
+  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
+  key: ({record, cache}) => `${cache('jobFile', record['code Fiche Métiers'])}/${record['Métiers']}`
+}
+
+const JOB_KEY='key'
+const JOB_MIGRATION_KEY='key'
+
+
 const importJobs = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  records=records.filter(r => !lodash.isEmpty(r['SO SYNPL à garder']))
   records=lodash.orderBy(records, r => normalize(r[JOB_MAPPING.name]))
   return importData({model: 'job', data:records, mapping:JOB_MAPPING, identityKey: JOB_KEY, 
       migrationKey: JOB_MIGRATION_KEY})
 }
+
+const JOB_FILE_FEATURE_MAPPING={
+  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
+  description: `Missions principales`,
+  key: ({record, cache}) => `${cache('jobFile', record['code Fiche Métiers'])}/${record['Missions principales']}`
+}
+
+const JOB_FILE_FEATURE_KEY='key'
+const JOB_FILE_FEATURE_MIGRATION_KEY='key'
 
 const importJobFileFeatures = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
@@ -160,7 +155,7 @@ const importSectors = async (input_file, tab_name) => {
 
 // 1st level categories
 const CATEGORY_1_MAPPING={
-  name: `Catégorie Savoir faire`,
+  name: `Catégorie savoir-faire`,
 }
 
 const CATEGORY_1_KEY='name'
@@ -174,12 +169,12 @@ const importCategories1 = async (input_file, tab_name, from_line) => {
 
 // 2nd level categories ; we know name is unique
 const CATEGORY_2_MAPPING={
-  name: `Sous-Catégorie Savoir faire`,
-  parent: ({record, cache}) => cache('hardSkillCategory', record['Catégorie Savoir faire'])
+  name: `Sous-catégorie savoir-faire`,
+  parent: ({record, cache}) => cache('hardSkillCategory', record['Catégorie savoir-faire'])
 }
 
-const CATEGORY_2_KEY='name'
-const CATEGORY_2_MIGRATION_KEY='name'
+const CATEGORY_2_KEY=['name', 'parent']
+const CATEGORY_2_MIGRATION_KEY=['name', 'parent']
 
 const importCategories2 = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
@@ -189,9 +184,9 @@ const importCategories2 = async (input_file, tab_name, from_line) => {
 
 const HARD_SKILL_MAPPING={
   job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
-  name: `Libellé Savoir faire`,
-  code: `Code compétences Savoir faire`,
-  category: ({record, cache}) => cache('hardSkillCategory', record['Sous-Catégorie Savoir faire']),
+  name: `Libellé savoir-faire`,
+  code: `Code savoir-faire`,
+  category: ({record, cache}) => cache('hardSkillCategory', record['Sous-catégorie savoir-faire']),
 }
 
 const HARD_SKILL_KEY='code'
@@ -199,7 +194,6 @@ const HARD_SKILL_MIGRATION_KEY='code'
 
 const importHardSkills = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  records=records.filter(r => !lodash.isEmpty(r['Libellé Savoir faire']?.trim()))
   return importData({model: 'hardSkill', data:records, mapping:HARD_SKILL_MAPPING, 
     identityKey: HARD_SKILL_KEY, migrationKey: HARD_SKILL_MIGRATION_KEY})
 }
@@ -236,7 +230,7 @@ const importExpertises = async (input_file, tab_name, from_line) => {
 }
 
 module.exports={
-  importJobFiles, importJobs, importSectors, importJobFileFeatures, importHardSkills, fixFiles,
+  importJobFiles, importJobs, importSectors, importJobFileFeatures, importHardSkills,
   importCategories1, importCategories2, importExpCategories, importExpertises,
 }  
 
