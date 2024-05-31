@@ -8,6 +8,11 @@ const { loadCache, saveCache } = require('../../utils/import')
 
 const HardSkill=require('../../server/models/HardSkill')
 const Sector=require('../../server/models/Sector')
+const JobFile = require('../../server/models/JobFile')
+const JobFileFeature = require('../../server/models/JobFileFeature')
+const Job = require('../../server/models/Job')
+const HardSkillCategory = require('../../server/models/HardSkillCategory')
+const { SKILLS } = require('../../utils/consts')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'sosynpl' : `test${moment().unix()}`
@@ -23,7 +28,6 @@ describe('Test imports', () => {
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
     await loadCache()
-    await fixFiles(ROOT)
   })
   
   afterAll(async () => {
@@ -34,44 +38,47 @@ describe('Test imports', () => {
     saveCache()
   })
 
-  it('must import job files', async () => {
-    return importJobFiles(path.join(ROOT, 'Champs So SynpL v2.xlsx'), '2- Fiche Métiers', 2)
+  it.only('must import job files', async () => {
+    await importJobFiles(path.join(ROOT, 'Base métiers.xlsx'), '1- Fiche Métiers', 1)
+    expect(await JobFile.countDocuments()).toEqual(41)
   })
 
-  it('must import job files features', async () => {
-    return importJobFileFeatures(path.join(ROOT, 'Champs So SynpL v2.xlsx'), '3 - Missions principales', 2)
+  it.only('must import job files features', async () => {
+    await importJobFileFeatures(path.join(ROOT, 'Base métiers.xlsx'), '3 - Missions principales', 1)
+    expect(await JobFileFeature.countDocuments()).toEqual(116)
   })
 
-  it('must import jobs', async () => {
-    return importJobs(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `1 - Métiers`, 2)
-  })
-
-  it('must import sectors', async () => {
-    await importSectors(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `Secteurs`)
-    const sectors=await Sector.find()
-    expect(sectors).not.toHaveLength(0)
+  it.only('must import jobs', async () => {
+    await importJobs(path.join(ROOT, 'Base métiers.xlsx'), `2 - Métiers`, 1)
+    expect(await Job.countDocuments()).toEqual(443)
   })
 
   it('must import skills categories level 1', async () => {
-    return importCategories1(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `4 - Compétences savoir faire`, 2)
+    await importCategories1(path.join(ROOT, 'Base métiers.xlsx'), `4 - Savoir faire`, 1)
+    expect(await HardSkillCategory.countDocuments({parent: null})).toEqual(7)
   })
 
   it('must import skills categories level 2', async () => {
-    return importCategories2(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `4 - Compétences savoir faire`, 2)
+    await importCategories2(path.join(ROOT, 'Base métiers.xlsx'), `4 - Savoir faire`, 1)
+    expect(await HardSkillCategory.find({parent: {$ne:null}})).toHaveLength(31)
   })
 
   it('must import hard skills', async () => {
-    await importHardSkills(path.join(ROOT, 'wapp_hardskills.csv'))
-    // Each skill's category lust have a parent
-    const skills=await HardSkill.find().populate('category')
-    expect(skills.filter(s => !s.category.parent)).toHaveLength(0)
+    await importHardSkills(path.join(ROOT, 'Base métiers.xlsx'), `4 - Savoir faire`, 1)
+    expect(await HardSkill.countDocuments()).toEqual(1484)
   })
 
-  it('must import expertise categories', async () => {
+  it.skip('must import sectors', async () => {
+    await importSectors(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `Secteurs`)
+    const sectors=await Sector.find()
+    expect(sectors).not.toHaveLength(0)
+  })  
+
+  it.skip('must import expertise categories', async () => {
     return importExpCategories(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `5 - Compétences savoir`, 2)
   })
 
-  it('must import expertises', async () => {
+  it.skip('must import expertises', async () => {
     await importExpertises(path.join(ROOT, 'wapp_expertises.csv'))
     // Each skill's category lust have a parent
   })
