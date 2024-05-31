@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const Group = require('../../models/Group')
-const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING, APPOINTMENT_RABBIT, ROLE_EXTERNAL_DIET } = require('./consts')
+const { APPOINTMENT_TO_COME, APPOINTMENT_VALID, CALL_DIRECTION_IN_CALL, COACHING_STATUS_STARTED, COACHING_STATUS_STOPPED, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, APPOINTMENT_STATUS, APPOINTMENT_CURRENT, GENDER_FEMALE, GENDER_MALE, GENDER_NON_BINARY, EVENT_WEBINAR, ROLE_CUSTOMER, COMPANY_ACTIVITY_OTHER, CALL_DIRECTION_OUT_CALL, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_UNREACHABLE, APPOINTMENT_VALIDATION_PENDING, APPOINTMENT_RABBIT, ROLE_EXTERNAL_DIET, GENDER } = require('./consts')
 const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const Coaching = require('../../models/Coaching')
@@ -342,7 +342,7 @@ exports.coachings_stats = coachings_stats
 
 const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) => {
 
-  console.time('Mapping')
+  console.time('Option 1')
   const matchConditions = {
     'coachings.status': {
       $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED],
@@ -418,7 +418,60 @@ const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) =>
       formattedGenderCount.unknown = count
     }
   })
-  console.timeEnd('Mapping')
+  console.log(formattedGenderCount)
+  console.timeEnd('Option 1')
+
+  // Ootion 2 SAU
+  console.time('Option 2')
+  const coachingConditions={status: { $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED] }}
+  if (start_date) {
+    coachingConditions.start_date={$gte: moment(start_date).startOf('day')}
+  }
+  if (end_date) {
+    coachingConditions.end_date={$lte: moment(start_date).endOf('day')}
+  }
+  if (diet) {
+    coachingConditions.diet=diet
+  }
+  let genders = await Coaching.aggregate([
+    {
+      $match: coachingConditions,
+    },
+    {
+      $lookup: {
+        from: 'users',            
+        localField: 'user',       
+        foreignField: '_id',      
+        as: 'userDetails'         
+      }
+    },
+    { $unwind: '$userDetails' }, 
+    {
+      $group: {
+        _id: '$userDetails.gender', 
+        count: { $sum: 1 }          
+      }
+    },
+    {
+      $project: {
+        _id: 0,                    
+        gender: '$_id',            
+        count: 1                   
+      }
+    }
+  ])
+  const MAPPING={
+    [GENDER_MALE]: 'male',
+    [GENDER_FEMALE]: 'female',
+    [GENDER_NON_BINARY]: 'non_binary',
+    [null]: 'unknown',
+    [undefined]: 'unknown',
+  }
+  let genders2=Object.fromEntries(Object.keys(GENDER).map(g => [MAPPING[g], 0]))
+  genders2={...genders2, ...Object.fromEntries(genders.map(({count, gender}) => [MAPPING[gender], count]))}
+  console.log(genders2)
+  console.timeEnd('Option 2')
+  // Ootion 2 SAU end
 
   return formattedGenderCount
 }
