@@ -162,267 +162,7 @@ const reasons_users = async ({ idFilter }) => {
 exports.reasons_users = reasons_users
 
 
-const coachingPipeLine = ({ diet, start_date, end_date }) => {
-  const matchCondition = {}
-
-  if (start_date) {
-    matchCondition.start_date = { $gte: new Date(start_date) }
-  }
-
-  if (end_date) {
-    matchCondition.end_date = { $lte: new Date(end_date) }
-  }
-
-  if (diet) {
-    matchCondition.diet = diet
-  }
-
-  return matchCondition
-}
-
-const initializeAgeRanges = () => {
-  const AGE_RANGES = ['18-24', '25-29', '30-34', '35-39', '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74', 'Unknown']
-  return AGE_RANGES.reduce((acc, range) => {
-    acc[range] = { count: 0, percent: 0 }
-    return acc
-  }, {})
-}
-
-const formatAgeRanges = (ranges, total) => {
-  return Object.keys(ranges).map(key => ({
-    name: key,
-    value: ranges[key].count,
-    percent: total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00',
-  }))
-}
-
-const getAppointments = async (matchCondition, basePipeline) => {
-  const pipeline = [
-    ...basePipeline,
-    { $match: matchCondition },
-    { $sort: { 'start_date': 1 } },
-    {
-      $group: {
-        _id: '$coaching._id',
-        appointments: { $push: '$$ROOT' },
-        count: { $sum: 1 },
-      },
-    },
-  ]
-  return await Appointment.aggregate(pipeline).allowDiskUse(true).exec()
-}
-
-const processStats = (appointments) => {
-  const total = appointments.reduce((sum, group) => sum + group.count, 0)
-  const counts = Array(16).fill(0)
-  const ranges = initializeAgeRanges()
-  const rangesPerOrder = Array(16).fill().map(initializeAgeRanges)
-
-  appointments.forEach(group => {
-    group.appointments.forEach((appointment, index) => {
-      const ageRange = appointment.ageRange
-      counts[index] += 1
-      ranges[ageRange].count += 1
-      rangesPerOrder[index][ageRange].count += 1
-    })
-  })
-
-  Object.keys(ranges).forEach(key => {
-    ranges[key].percent = total ? ((ranges[key].count / total) * 100).toFixed(2) : '0.00'
-  })
-
-  rangesPerOrder.forEach(orderRange => {
-    const orderTotal = Object.values(orderRange).reduce((sum, range) => sum + range.count, 0)
-    Object.keys(orderRange).forEach(key => {
-      orderRange[key].percent = orderTotal ? ((orderRange[key].count / orderTotal) * 100).toFixed(2) : '0.00'
-    })
-  })
-
-  const countsObject = counts.map((count, order) => ({
-    order: order + 1,
-    total: count,
-    ranges: formatAgeRanges(rangesPerOrder[order], count),
-  }))
-
-  return { total, ranges, countsObject }
-}
-
-const coachings_stats = async ({ id, diet, start_date, end_date }) => {
-  const pip = coachingPipeLine({ diet, start_date, end_date })
-
-  const basePipeline = [
-    { $match: pip },
-    {
-      $lookup: {
-        from: 'coachings',
-        localField: 'coaching',
-        foreignField: '_id',
-        as: 'coaching',
-      },
-    },
-    { $unwind: '$coaching' },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'user',
-      },
-    },
-    { $unwind: '$user' },
-    {
-      $addFields: {
-        age: {
-          $divide: [
-            { $subtract: [new Date(), '$user.birthday'] },
-            365 * 24 * 60 * 60 * 1000
-          ],
-        },
-        isUpcoming: { $lt: [new Date(), '$start_date'] },
-        isRabbit: { $and: [{ $gt: [new Date(), '$end_date'] }, { $eq: ['$validated', false] }] },
-        isValid: { $eq: ['$validated', true] },
-        companyMatch: id ? { $eq: ['$user.company', mongoose.Types.ObjectId(id)] } : true,
-      },
-    },
-    {
-      $addFields: {
-        ageRange: {
-          $switch: {
-            branches: [
-              { case: { $and: [{ $gte: ['$age', 18] }, { $lte: ['$age', 24] }] }, then: '18-24' },
-              { case: { $and: [{ $gte: ['$age', 25] }, { $lte: ['$age', 29] }] }, then: '25-29' },
-              { case: { $and: [{ $gte: ['$age', 30] }, { $lte: ['$age', 34] }] }, then: '30-34' },
-              { case: { $and: [{ $gte: ['$age', 35] }, { $lte: ['$age', 39] }] }, then: '35-39' },
-              { case: { $and: [{ $gte: ['$age', 40] }, { $lte: ['$age', 44] }] }, then: '40-44' },
-              { case: { $and: [{ $gte: ['$age', 45] }, { $lte: ['$age', 49] }] }, then: '45-49' },
-              { case: { $and: [{ $gte: ['$age', 50] }, { $lte: ['$age', 54] }] }, then: '50-54' },
-              { case: { $and: [{ $gte: ['$age', 55] }, { $lte: ['$age', 59] }] }, then: '55-59' },
-              { case: { $and: [{ $gte: ['$age', 60] }, { $lte: ['$age', 64] }] }, then: '60-64' },
-              { case: { $and: [{ $gte: ['$age', 65] }, { $lte: ['$age', 69] }] }, then: '65-69' },
-              { case: { $and: [{ $gte: ['$age', 70] }, { $lte: ['$age', 74] }] }, then: '70-74' },
-            ],
-            default: 'Unknown',
-          },
-        },
-      },
-    },
-    { $match: { companyMatch: true } },
-  ]
-
-  const matchConditions = [
-    { isValid: true },
-    { isRabbit: true },
-    { isUpcoming: true },
-  ]
-
-  const appointmentResults = await Promise.all(matchConditions.map(matchCondition => getAppointments(matchCondition, basePipeline)))
-
-  const [validAppointments, rabbitAppointments, upcomingAppointments] = appointmentResults
-
-  const validStats = processStats(validAppointments)
-  const rabbitStats = processStats(rabbitAppointments)
-  const upcomingStats = processStats(upcomingAppointments)
-
-  const createStatsObject = (name, stats) => ({
-    name,
-    total: stats.total,
-    ranges: formatAgeRanges(stats.ranges, stats.total),
-    appointments: stats.countsObject,
-  })
-
-  return [
-    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_TO_COME], upcomingStats),
-    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_VALID], validStats),
-    createStatsObject(APPOINTMENT_STATUS[APPOINTMENT_RABBIT], rabbitStats),
-  ]
-}
-
-exports.coachings_stats = coachings_stats
-
-
 const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) => {
-
-  console.time('Option 1')
-  const matchConditions = {
-    'coachings.status': {
-      $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED],
-    },
-  }
-
-  if (idFilter) {
-    matchConditions._id = idFilter
-  }
-
-  const dateConditions = {}
-  if (start_date) {
-    dateConditions.start_date = { $gte: new Date(start_date) }
-  }
-  if (end_date) {
-    dateConditions.end_date = { ...dateConditions.end_date, $lte: new Date(end_date) }
-  }
-
-  const aggregationPipeline = [
-    { $match: { _id: idFilter } },
-    {
-      $lookup: {
-        from: 'coachings',
-        let: { userId: '$_id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ['$user', '$$userId'] },
-              ...dateConditions,
-              ...(diet && { diet: mongoose.Types.ObjectId(diet) }),
-            },
-          },
-        ],
-        as: 'coachings',
-      },
-    },
-    { $unwind: '$coachings' },
-    { $match: matchConditions },
-    {
-      $group: {
-        _id: '$gender',
-        count: { $sum: 1 },
-      },
-    },
-    {
-      $project: {
-        gender: '$_id',
-        count: 1,
-        _id: 0,
-      },
-    },
-  ]
-
-  
-
-  const result = await User.aggregate(aggregationPipeline).exec()
-
-  const formattedGenderCount = {
-    male: 0,
-    female: 0,
-    non_binary: 0,
-    unknown: 0,
-  }
-
-  result.forEach(({ gender, count }) => {
-    if (gender === 'MALE') {
-      formattedGenderCount.male = count
-    } else if (gender === 'FEMALE') {
-      formattedGenderCount.female = count
-    } else if (gender === 'NON_BINARY') {
-      formattedGenderCount.non_binary = count
-    } else {
-      formattedGenderCount.unknown = count
-    }
-  })
-  console.log(formattedGenderCount)
-  console.timeEnd('Option 1')
-
-  // Ootion 2 SAU
-  console.time('Option 2')
   const coachingConditions={status: { $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED] }}
   if (start_date) {
     coachingConditions.start_date={$gte: moment(start_date).startOf('day')}
@@ -469,11 +209,8 @@ const coachings_by_gender_ = async ({ idFilter, start_date, end_date, diet }) =>
   }
   let genders2=Object.fromEntries(Object.keys(GENDER).map(g => [MAPPING[g], 0]))
   genders2={...genders2, ...Object.fromEntries(genders.map(({count, gender}) => [MAPPING[gender], count]))}
-  console.log(genders2)
-  console.timeEnd('Option 2')
-  // Ootion 2 SAU end
 
-  return formattedGenderCount
+  return genders2
 }
 
 exports.coachings_by_gender_ = coachings_by_gender_
@@ -747,7 +484,7 @@ const leads_by_campain = async (idFilter) => {
     const groupedLeadsByCampain=lodash.groupBy(leads, 'campain')
     for(let campain in groupedLeadsByCampain){
       const campainName= campain!='undefined' && campain!='null' ? campain : 'unknown'
-      leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length; 
+      leadsByCampain[campainName]=(leadsByCampain[campainName] || 0) + groupedLeadsByCampain[campain].length 
     }
     const leads_by_campain=[]
     for(let campain in leadsByCampain){
@@ -997,3 +734,319 @@ const coachings_finished = async ({ idFilter, diet, start_date, end_date }) => {
 }
 
 exports.coachings_finished = coachings_finished
+
+const coachings_stats = async ({ id, diet, start_date, end_date }) => {
+  const startDate = start_date ? new Date(start_date) : null
+  const endDate = end_date ? new Date(end_date) : new Date()
+
+  const statusFilters = {
+    valid: { validated: true },
+    upcoming: { start_date: { $gt: endDate } },
+    rabbit: { end_date: {$lt: endDate}, validated: false}
+  }
+
+  const dateFilter = {}
+  if (startDate) dateFilter.start_date = { $gte: startDate }
+  if (end_date) dateFilter.end_date = { $lte: endDate }
+
+  const AGE_RANGES = [
+    { name: '18-24', min: 18, max: 24 },
+    { name: '25-29', min: 25, max: 29 },
+    { name: '30-34', min: 30, max: 34 },
+    { name: '35-39', min: 35, max: 39 },
+    { name: '40-44', min: 40, max: 44 },
+    { name: '45-49', min: 45, max: 49 },
+    { name: '50-54', min: 50, max: 54 },
+    { name: '55-59', min: 55, max: 59 },
+    { name: '60-64', min: 60, max: 64 },
+    { name: '65-69', min: 65, max: 69 },
+    { name: '70-74', min: 70, max: 74 },
+    { name: 'Unknown', min: null, max: null },
+  ]
+
+  const initializeAgeRanges = () =>
+    AGE_RANGES.map(({ name }) => ({
+      name,
+      count: 0,
+      percent: '0.00',
+    }))
+
+  const createPipeline = (statusFilter, dateFilter, companyId) => [
+    { $match: { ...statusFilter, ...dateFilter } },
+    {
+      $lookup: {
+        from: 'coachings',
+        let: { coachingId: '$coaching' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$coachingId'] } } },
+          { $project: { user: 1 } },
+        ],
+        as: 'coaching',
+      },
+    },
+    { $unwind: '$coaching' },
+    {
+      $lookup: {
+        from: 'users',
+        let: { userId: '$coaching.user' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$_id', '$$userId'] },
+                  ...(companyId ? [{ $eq: ['company', companyId] }] : [{ $ne: ['$company', null] }]),
+                ],
+              },
+            },
+          },
+          { $project: { _id: 1, birthday: 1 } },
+        ],
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    {
+      $addFields: {
+        age: {
+          $floor: {
+            $divide: [
+              { $subtract: [new Date(), '$user.birthday'] },
+              365 * 24 * 60 * 60 * 1000,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ageRange: {
+          $switch: {
+            branches: AGE_RANGES.map(({ name, min, max }) => ({
+              case: min !== null && max !== null
+                ? { $and: [{ $gte: ['$age', min] }, { $lte: ['$age', max] }] }
+                : { $eq: [true, true] },
+              then: name,
+            })),
+            default: 'Unknown',
+          },
+        },
+        coachingId: '$coaching._id',
+      },
+    },
+    { $sort: { start_date: 1 } },
+    {
+      $group: {
+        _id: '$coachingId',
+        appointments: {
+          $push: {
+            _id: '$_id',
+            start_date: '$start_date',
+            ageRange: '$ageRange',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        appointmentsWithIndex: {
+          $map: {
+            input: { $range: [0, { $size: '$appointments' }] },
+            as: 'index',
+            in: {
+              index: '$$index',
+              appointment: { $arrayElemAt: ['$appointments', '$$index'] },
+            },
+          },
+        },
+      },
+    },
+    { $unwind: '$appointmentsWithIndex' },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        ageRanges: {
+          $push: '$appointmentsWithIndex.appointment.ageRange',
+        },
+        appointments: {
+          $push: {
+            order: '$appointmentsWithIndex.index',
+            ageRange: '$appointmentsWithIndex.appointment.ageRange',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ageRanges: {
+          $map: {
+            input: AGE_RANGES.map(({ name }) => name),
+            as: 'ageRange',
+            in: {
+              name: '$$ageRange',
+              count: {
+                $size: {
+                  $filter: {
+                    input: '$ageRanges',
+                    as: 'age',
+                    cond: { $eq: ['$$age', '$$ageRange'] },
+                  },
+                },
+              },
+              percent: {
+                $cond: {
+                  if: { $gt: ['$total', 0] },
+                  then: {
+                    $multiply: [
+                      { $divide: [{ $size: { $filter: { input: '$ageRanges', as: 'age', cond: { $eq: ['$$age', '$$ageRange'] } } } }, '$total'] },
+                      100,
+                    ],
+                  },
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+        appointments: {
+          $map: {
+            input: { $range: [0, 16] },
+            as: 'order',
+            in: {
+              order: '$$order',
+              total: {
+                $size: {
+                  $filter: {
+                    input: '$appointments',
+                    as: 'ord',
+                    cond: { $eq: ['$$ord.order', '$$order'] },
+                  },
+                },
+              },
+              ageRanges: {
+                $map: {
+                  input: AGE_RANGES.map(({ name }) => name),
+                  as: 'ageRange',
+                  in: {
+                    name: '$$ageRange',
+                    count: {
+                      $size: {
+                        $filter: {
+                          input: '$appointments',
+                          as: 'ord',
+                          cond: {
+                            $and: [
+                              { $eq: ['$$ord.order', '$$order'] },
+                              { $eq: ['$$ord.ageRange', '$$ageRange'] },
+                            ],
+                          },
+                        },
+                      },
+                    },
+                    percent: {
+                      $cond: {
+                        if: { $gt: ['$total', 0] },
+                        then: {
+                          $multiply: [
+                            {
+                              $divide: [
+                                {
+                                  $size: {
+                                    $filter: {
+                                      input: '$appointments',
+                                      as: 'ord',
+                                      cond: {
+                                        $and: [
+                                          { $eq: ['$$ord.order', '$$order'] },
+                                          { $eq: ['$$ord.ageRange', '$$ageRange'] },
+                                        ],
+                                      },
+                                    },
+                                  },
+                                },
+                                '$total',
+                              ],
+                            },
+                            100,
+                          ],
+                        },
+                        else: 0,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        total: 1,
+        ranges: {
+          $map: {
+            input: '$ageRanges',
+            as: 'ageRange',
+            in: {
+              name: '$$ageRange.name',
+              count: '$$ageRange.count',
+              percent: { $round: ['$$ageRange.percent', 2] },
+            },
+          },
+        },
+        appointments: {
+          $map: {
+            input: '$appointments',
+            as: 'orderData',
+            in: {
+              order: '$$orderData.order',
+              total: '$$orderData.total',
+              ranges: {
+                $map: {
+                  input: '$$orderData.ageRanges',
+                  as: 'ageRange',
+                  in: {
+                    name: '$$ageRange.name',
+                    count: '$$ageRange.count',
+                    percent: { $round: ['$$ageRange.percent', 2] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]
+
+  const validPipeline = createPipeline(statusFilters.valid, dateFilter, id)
+  const upcomingPipeline = createPipeline(statusFilters.upcoming, dateFilter, id)
+  const rabbitPipeline = createPipeline(statusFilters.rabbit, dateFilter, id)
+
+  const [validStats, upcomingStats, rabbitStats] = await Promise.all([
+    Appointment.aggregate(validPipeline),
+    Appointment.aggregate(upcomingPipeline),
+    Appointment.aggregate(rabbitPipeline)
+  ])
+
+  const initializeResult = () => ({
+    total: 0,
+    ranges: initializeAgeRanges(),
+    appointments: Array.from({ length: 16 }, (_, i) => ({ order: i, total: 0, ranges: initializeAgeRanges() })),
+  })
+
+  const validResult = validStats[0] || initializeResult()
+  const upcomingResult = upcomingStats[0] || initializeResult()
+  const rabbitResult = rabbitStats[0] || initializeResult()
+
+  validResult.name = APPOINTMENT_STATUS[APPOINTMENT_VALID]
+  upcomingResult.name = APPOINTMENT_STATUS[APPOINTMENT_TO_COME]
+  rabbitResult.name = APPOINTMENT_STATUS[APPOINTMENT_RABBIT]
+
+  return [validResult, upcomingResult, rabbitResult]
+}
+
+exports.coachings_stats = coachings_stats
