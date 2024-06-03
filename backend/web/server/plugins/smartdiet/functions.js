@@ -305,9 +305,6 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (user.role == ROLE_RH) {
       id = user.company._id
     }
-    const start_date=params['filter.start_date'] || undefined
-    const end_date=params['filter.end_date'] || undefined
-    const diet=params['filter.diet'] || undefined
     return computeStatistics({ id, fields, diet, start_date, end_date })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
@@ -2033,8 +2030,6 @@ const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => 
       await fetchAndCache(field, kpi[field], { idFilter, start_date, end_date, diet });
     } else {
       if (field.includes('coachings_stats')) {
-        
-
         await fetchAndCache('coachings_stats', kpi['coachings_stats'], { id, start_date, end_date, diet });
       } else if (field.includes('gender')) {
         
