@@ -10,6 +10,8 @@ const deleteAccount = async account_id => {
     throw new Error(`A BD user is linked to this account ${account_id}`)
   }
   return paymentPlugin.deleteProvider(account_id)
+    .then(res => res)
+    .catch(() => paymentPlugin.deleteCustomer(account_id))
 }
 
 const account_id=process.argv[2]
