@@ -210,13 +210,29 @@ const Job = require('../../models/Job')
 const kpi = require('./kpi')
 
 
-const filterDataUser = async ({ model, data, id, user }) => {
+const filterDataUser = async ({ model, data, id, user, params }) => {
   if (model == 'offer' && !id) {
     return Offer.find({ company: null })
       .then(offers => data.filter(d => offers.some(o => idEqual(d._id, o._id))))
   }
   if (model == 'user' && user?.role == ROLE_RH) {
     data = data.filter(u => idEqual(id, user._id) || (user.company && idEqual(u.company?._id, user.company?._id)))
+  }
+  if (model == 'user') {
+    if (params['sort.logbooks.day']) {
+      data=data.map(d => ({
+        ...d,
+        logbooks: lodash.orderBy(d.logbooks, 'day', params['sort.logbooks.day']=='desc' ? 'desc' : 'asc'),
+      }))
+    }
+    const pageIndex=parseInt(params['page.logbooks']) || 0
+    const pageSize=parseInt(params['limit.logbooks']) || 0
+    if (pageSize) {
+      data=data.map(d => ({
+        ...d,
+        logbooks: d.logbooks.slice(pageIndex*pageSize, (pageIndex+1)*pageSize+1),
+      }))
+    }
   }
   // Filter leads for RH
   if (model == 'lead' && user?.role == ROLE_RH) {
