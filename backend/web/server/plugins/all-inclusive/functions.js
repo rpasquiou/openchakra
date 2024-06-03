@@ -203,7 +203,7 @@ const preCreate = async ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
-const postPutData = ({model, id, attribute, data, user}) => {
+const postPutData = async ({model, id, attribute, data, user}) => {
   if (model=='user') {
     return User.findById(user._id)
       .then(account => {
@@ -211,12 +211,13 @@ const postPutData = ({model, id, attribute, data, user}) => {
           sendProfileOnline(account)
         }
         if (account.role==ROLE_TI) {
-          return !isDevelopment() && paymentPlugin.upsertProvider(account)
+          return paymentPlugin.upsertProvider(account)
         }
         if (account.role==ROLE_COMPANY_BUYER) {
-          return !isDevelopment() && paymentPlugin.upsertCustomer(account)
+          return paymentPlugin.upsertCustomer(account)
         }
       })
+      .then(account_id => User.findByIdAndUpdate(user._id, {payment_account_id: account_id}))
   }
   return Promise.resolve(data)
 }
