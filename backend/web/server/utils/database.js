@@ -991,7 +991,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => {console.timeEnd(`Compute model ${model}`); return data})
         .then(data => {console.time(`Filtering model ${model}`); return data})
-        .then(data => callFilterDataUser({model, data, id, user}))
+        .then(data => callFilterDataUser({model, data, id, user, params}))
         .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
         .then(data => {console.time(`Retain fields ${model}`); return data})
         .then(data =>  retainRequiredFields({data, fields}))
