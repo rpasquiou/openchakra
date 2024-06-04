@@ -759,7 +759,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh, componentsValues])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
   return code
 }
 
