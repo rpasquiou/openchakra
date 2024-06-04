@@ -196,11 +196,16 @@ const getExcludedTimes = (bookingDate, availabilities) => {
   return exclude
 }
 
+const getMicroTime = () =>  {
+  const hrTime = process.hrtime()
+  return hrTime[0] * 1000000 + hrTime[1] / 1000
+}
+
 module.exports = {
   isMomentAvailable, isIntervalAvailable, getDeadLine, booking_datetime_str,
   getDefaultAvailability, isDateAvailable, hasAlfredDateBooking, DAYS,
   getAvailabilityForDate, combineTimelapses, timelapsesSetToArray,
   getPeriodStart, getExcludedDays, getExcludedTimes,
   booking_date_str,
-  datetime_str, date_str,
+  datetime_str, date_str, getMicroTime,
 }
