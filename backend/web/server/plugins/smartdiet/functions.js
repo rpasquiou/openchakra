@@ -321,7 +321,11 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (user.role == ROLE_RH) {
       id = user.company._id
     }
-    return computeStatistics({ id, fields, diet, start_date, end_date })
+    const company = params['filter.company'] ? params['filter.company'] : undefined
+    const diet = params['filter.diet'] ? params['filter.diet'] : undefined
+    const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
+    const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
+    return computeStatistics({ fields, company, diet, start_date, end_date })
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
 
@@ -1497,7 +1501,12 @@ declareVirtualField({
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
-
+declareVirtualField({ model: 'adminDashboard', field: 'diet_coaching_enabled', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'diet_site_enabled', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'diet_visio_enabled', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'diet_recruiting', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'diet_refused', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'diet_activated', instance: 'Number' })
 //end adminDashboard
 
 declareEnumField({ model: 'foodDocument', field: 'type', enumValues: FOOD_DOCUMENT_TYPE })
@@ -2002,11 +2011,10 @@ const ensureChallengePipsConsistency = () => {
 }
 
 
-const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => {
-  // console.log({target: id? id : 'all companies', fields: fields, options :{id, start_date, end_date, diet}})
-  const idFilter = id ? mongoose.Types.ObjectId(id) : { $ne: null };
+const computeStatistics = async ({ fields, company, start_date, end_date, diet }) => {
+  const companyFilter = company ? mongoose.Types.ObjectId(company) : { $ne: null };
   const result = {};
-  result.company = id?.toString();
+  result.company = company?.toString();
   const cache = {};
 
   const fetchAndCache = async (field, func, params) => {
@@ -2018,21 +2026,21 @@ const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => 
 
   const handleRatios = async (field) => {
     if (!cache['coachings_started']){
-      await fetchAndCache('coachings_started',kpi['coachings_started'], { idFilter, start_date, end_date, diet })
+      await fetchAndCache('coachings_started',kpi['coachings_started'], { companyFilter, start_date, end_date, diet })
     }
     if (field === 'ratio_stopped_started') {
       if (!cache['coachings_stopped']){
-        await fetchAndCache('coachings_stopped',kpi['coachings_stopped'], { idFilter, start_date, end_date, diet })
+        await fetchAndCache('coachings_stopped',kpi['coachings_stopped'], { companyFilter, start_date, end_date, diet })
       }
       result['ratio_stopped_started'] = result['coachings_started']!=0 ? Number((result['coachings_stopped'] / result['coachings_started'] * 100).toFixed(2)) : 0
     } else if (field === 'ratio_dropped_started') {
       if (!cache['coachings_dropped']){
-        await fetchAndCache('coachings_dropped',kpi['coachings_dropped'], { idFilter, start_date, end_date, diet })
+        await fetchAndCache('coachings_dropped',kpi['coachings_dropped'], { companyFilter, start_date, end_date, diet })
       }
       result['ratio_dropped_started'] = result['coachings_started']!=0 ? Number((result['coachings_dropped'] / result['coachings_started'] * 100).toFixed(2)) :0
     } else if (field === 'ratio_appointments_coaching') {
       if (!cache['coachings_ongoing']){
-        await fetchAndCache('coachings_ongoing',kpi['coachings_ongoing'], { idFilter, start_date, end_date, diet })
+        await fetchAndCache('coachings_ongoing',kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet })
       }
       const appts = await Appointment.countDocuments({validated:true})
       result['ratio_appointments_coaching'] = result['coachings_started']!=0 ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) : 0
@@ -2043,14 +2051,14 @@ const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => 
     if (field === 'company' || field === 'diet' || field === 'start_date' || field === 'end_date') continue;
     if (!field.includes('gender') && !field.includes('coachings_stats') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
       
-      await fetchAndCache(field, kpi[field], { idFilter, start_date, end_date, diet });
+      await fetchAndCache(field, kpi[field], { companyFilter, start_date, end_date, diet });
     } else {
       if (field.includes('coachings_stats')) {
-        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { id, start_date, end_date, diet });
+        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { company, start_date, end_date, diet });
       } else if (field.includes('gender')) {
         
 
-        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { idFilter });
+        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter });
         const genderResult = result['coachings_by_gender_'];
         for (const [gender, count] of Object.entries(genderResult)) {
           result[`coachings_gender_${gender}`] = count;
@@ -2059,7 +2067,7 @@ const computeStatistics = async ({ id, fields, start_date, end_date, diet }) => 
         
 
         const baseField = field.replace('_details', '').replace('_total', '');
-        await fetchAndCache(baseField, kpi[`${baseField}_`], { idFilter });
+        await fetchAndCache(baseField, kpi[`${baseField}_`], { companyFilter });
         const baseResult = result[baseField];
         result[`${baseField}_total`] = baseResult[`${baseField}_total`];
         result[`${baseField}_details`] = baseResult[`${baseField}_details`];
