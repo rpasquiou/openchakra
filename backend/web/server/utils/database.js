@@ -1001,7 +1001,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
-        .then(data => callFilterDataUser({model, data, id, user}))
+        .then(data => callFilterDataUser({model, data, id, user, params}))
         .then(data =>  retainRequiredFields({data, fields}))
     })
 
