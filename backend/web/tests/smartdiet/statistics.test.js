@@ -76,7 +76,7 @@ describe('Statistics', () => {
 
   fields.forEach(runTest)
 
-  it.only('must return coachings_stats', async () => {
+  it('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const id = '65f2f95bd449f912a30afe74'
@@ -279,5 +279,23 @@ describe('Statistics', () => {
     expect(totalDiet).toBeGreaterThanOrEqual(0)
     expect(totalDietDate).toBeGreaterThanOrEqual(0)
 
+  })
+  it('returns diet stats', async() => {
+    const fields = [
+      'diet_coaching_enabled',
+      'diet_site_enabled',
+      'diet_visio_enabled',
+      'diet_recruiting',
+      'diet_refused',
+      'diet_activated',
+    ]
+    const stats = await computeStatistics({fields})
+    console.log(stats)
+    expect(stats.diet_coaching_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_site_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_visio_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_recruiting).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_refused).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_activated).toBeGreaterThanOrEqual(0)
   })
 })
