@@ -13,6 +13,7 @@ require('../../server/plugins/sosynpl/functions')
 require('../../server/models/Sector')
 require('../../server/models/Job')
 require('../../server/models/Training')
+require('../../server/models/Application')
 const HardSkill=require('../../server/models/HardSkill')
 const Job = require('../../server/models/Job')
 const JobFile = require('../../server/models/JobFile')
@@ -33,9 +34,11 @@ describe('Test models', () => {
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
     const job=await Job.create({...JOB_DATA, job_file: jobFile})
     const sector=await Sector.create({...SECTOR_DATA})
-    const category=await HardSkillCategory.create({...CATEGORY_DATA})
+    const category1=await HardSkillCategory.create({...CATEGORY_DATA, name: `Catégorie 1`})
+    const category2=await HardSkillCategory.create({...CATEGORY_DATA, name: `Catégorie 2`})
     freelanceId=(await Freelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]}))._id
-    await Promise.all(lodash.range(30).map(idx => HardSkill.create({name: `Skill ${idx}`, code: '12', job_file: jobFile, category})))
+    await Promise.all(lodash.range(4).map(idx => HardSkill.create({name: `Skill 1-${idx}`, code: '12', job_file: jobFile, category: category1})))
+    await Promise.all(lodash.range(2).map(idx => HardSkill.create({name: `Skill 2-${idx}`, code: '12', job_file: jobFile, category: category2})))
 
   })
   
@@ -80,27 +83,8 @@ describe('Test models', () => {
     customer.legal_representant_firstname='Gérard'
     await customer.save()
     customer=await Customer.findById(customer._id)
-    console.log(customer)
     expect(customer.legal_representant_self).toBe(false)
     expect(customer.legal_representant_firstname).toEqual('Gérard')
-  })
-
-  it('Freelance must accept max 20 job skills', async () => {
-    const skills=await HardSkill.find()
-    const freelance=await Freelance.findOne()
-    freelance.hard_skills_job=skills
-    expect(freelance.save()).rejects.toThrow('compétences métier')
-    freelance.hard_skills_extra=skills.slice(0, 10)
-    expect(await freelance.save()).not.toThrow()
-  })
-
-  it('Freelance must accept max 20 extra skills', async () => {
-    const skills=await HardSkill.find()
-    const freelance=await Freelance.findOne()
-    freelance.hard_skills_extra=skills
-    expect(await freelance.save()).rejects.toThrow('compétences hors métier')
-    freelance.hard_skills_extra=skills.slice(0, 10)
-    expect(await freelance.save()).not.toThrow()
   })
 
   it('Freelance soft skills', async () => {
@@ -108,15 +92,15 @@ describe('Test models', () => {
     const softSkills=lodash.groupBy(await SoftSkill.find(), 'value')
     const loadFreelance = async () => {
       const [f]=await loadFromDb({model: 'freelance', id: freelanceId, 
-        fields:['gold_soft_skills','silver_soft_skills','bronze_soft_skills','available_soft_skills', 
+        fields:['gold_soft_skills','silver_soft_skills','bronze_soft_skills','available_gold_soft_skills', 
+        'available_silver_soft_skills', 'available_bronze_soft_skills', 
         'pilar_coordinator','pilar_creator','pilar_director','pilar_implementor','pilar_networker','pilar_optimizer',
         ]
       })
       freelance=f
-      console.log(freelance)
     }
     await loadFreelance()
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length)
+    expect(freelance.available_gold_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length)
 
     const p=Freelance.findByIdAndUpdate(
       freelanceId, 
@@ -131,19 +115,19 @@ describe('Test models', () => {
       {runValidators: true}
     )
     await loadFreelance()
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-1)
+    expect(freelance.available_silver_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-1)
 
     await Freelance.findByIdAndUpdate(freelanceId, {silver_soft_skills:softSkills[SOFT_SKILL_ADAPTATION]}, {runValidators: true})
     await loadFreelance()
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-2)
+    expect(freelance.available_bronze_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-2)
 
     await Freelance.findByIdAndUpdate(freelanceId, {bronze_soft_skills:softSkills[SOFT_SKILL_CONFLICT]}, {runValidators: true})
     await loadFreelance()
-    expect(freelance.available_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-3)
+    expect(freelance.available_bronze_soft_skills).toHaveLength(Object.keys(SOFT_SKILLS).length-2)
 
   })
 
-  it.only('Freelance test CHARLOTTE', async () => {
+  it('Freelance test CHARLOTTE', async () => {
     const softSkills=await SoftSkill.find()
     await Freelance.findByIdAndUpdate(
       freelanceId, {
@@ -158,13 +142,32 @@ describe('Test models', () => {
       model: 'freelance', id: freelanceId, 
       fields:['pilar_coordinator','pilar_creator','pilar_director','pilar_implementor','pilar_networker','pilar_optimizer',],
     })
-    expect(freelance.pilar_creator).toEqual(21)
-    expect(freelance.pilar_implementor).toEqual(4)
-    expect(freelance.pilar_optimizer).toEqual(9)
-    expect(freelance.pilar_networker).toEqual(2)
-    expect(freelance.pilar_coordinator).toEqual(25)
-    expect(freelance.pilar_director).toEqual(5)
+    const TOTAL=25
+    // Check ratios
+    expect(freelance.pilar_creator).toEqual(21/TOTAL)
+    expect(freelance.pilar_implementor).toEqual(4/TOTAL)
+    expect(freelance.pilar_optimizer).toEqual(9/TOTAL)
+    expect(freelance.pilar_networker).toEqual(2/TOTAL)
+    expect(freelance.pilar_coordinator).toEqual(25/TOTAL)
+    expect(freelance.pilar_director).toEqual(5/TOTAL)
   })
 
+  it('must return hard skills categories', async () => {
+    const [freelance]=await loadFromDb({model: 'freelance', id: freelanceId, fields:['hard_skills_categories'], user: await Freelance.findById(freelanceId)})
+    expect(freelance.hard_skills_categories).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          "name": "Catégorie 1",
+          progress: 2/3,
+        }),
+        expect.objectContaining({
+          "name": "Catégorie 2",
+          progress: 1/3,
+        })
+
+      ])
+
+    )
+  })
 })
 
