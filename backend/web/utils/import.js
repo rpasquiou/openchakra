@@ -139,6 +139,9 @@ const mapRecord = async ({record, mapping, ...rest}) => {
 const dataCache = new NodeCache()
 
 const setCache = (model, migrationKey, destinationKey) => {
+  if (lodash.isNil(migrationKey)) {
+    throw new Error(`${model}:migration key is empty`)
+  }
   if (lodash.isNil(destinationKey)) {
     throw new Error(`${model}:${migrationKey} dest key is empty`)
   }
@@ -178,13 +181,12 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
         .then(() => ({_id: result._id}))
     })
     .then(result => {
-      setCache(model.modelName, record[migrationKey], result._id)
+      setCache(model.modelName, record[migrationKey], result._id.toString())
       return result
     })
     .catch(err => {
       const msg=`Model ${model.modelName}, record ${JSON.stringify(record)}, error(s):${err.toString()}`
       console.error(msg)
-      throw err
     })
 }
 
