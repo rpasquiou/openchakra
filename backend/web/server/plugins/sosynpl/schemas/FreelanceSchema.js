@@ -34,6 +34,9 @@ const MAX_BRONZE_SOFT_SKILLS=3
 
 const MIN_SOFTWARES=1
 
+const MAX_EXPERTISES=30
+const MAX_PINNED_EXPERTISES=3
+
 const Schema = mongoose.Schema
 
 const FreelanceSchema = new Schema({
@@ -168,6 +171,18 @@ const FreelanceSchema = new Schema({
   expertises: [{
     type: Schema.Types.ObjectId,
     ref: 'expertise',
+    validate: [
+      expertises => !expertises.length || expertises.length > MAX_EXPERTISES, 
+      `Vous pouvez choisir jusqu'à ${MAX_EXPERTISES} compétences` 
+    ],
+  }],
+  pinned_expertises: [{
+    type: Schema.Types.ObjectId,
+    ref: 'expertise',
+    validate: [
+      expertises => !expertises.length || expertises.length > MAX_PINNED_EXPERTISES, 
+      `Vous pouvez mettre en avant jusqu'à ${MAX_PINNED_EXPERTISES} compétences` 
+    ],
   }],
   // START MOBILITY
   mobility: {
