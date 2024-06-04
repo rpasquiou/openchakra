@@ -1,7 +1,7 @@
 const fs=require('fs')
 const lodash=require('lodash')
 const path = require('path')
-const {importData, extractData, displayCache, guessFileType}=require('../../../utils/import')
+const {importData, extractData, guessFileType}=require('../../../utils/import')
 const {XL_TYPE, TEXT_TYPE } = require('../../../utils/consts')
 require('../../../server/models/JobFile')
 require('../../../server/models/JobFileFeature')
@@ -9,10 +9,8 @@ require('../../../server/models/Job')
 require('../../../server/models/Sector')
 require('../../../server/models/HardSkill')
 require('../../../server/models/HardSkillCategory')
-require('../../../server/models/ExpertiseCategory')
 require('../../../server/models/Expertise')
 const { normalize, guessDelimiter } = require('../../../utils/text')
-const { isNewerThan } = require('../../utils/filesystem')
 const NodeCache=require('node-cache')
 
 const filesCache=new NodeCache()
@@ -103,7 +101,7 @@ const importSectors = async (input_file, tab_name) => {
     }
     return name
   })
-  return importData({model: 'sector', data:records, mapping:SECTOR_MAPPING, identityKey: SECTOR_KEY})
+  return importData({model: 'sector', data:records, mapping:SECTOR_MAPPING, identityKey: SECTOR_KEY, migrationKey: SECTOR_KEY})
 }
 
 // 1st level categories
@@ -165,18 +163,14 @@ const importExpCategories = async (input_file, tab_name, from_line) => {
 }
 
 const EXPERTISE_MAPPING={
-  job_file: ({record, cache}) => cache('jobFile', record['code Fiche Métiers']),
-  name: `Libellé Savoir`,
-  code: `Code compétences Savoir`,
-  category: ({record, cache}) => cache('expertiseCategory', record['Catégorie Savoir']),
+  name: `Compétences`,
 }
 
-const EXPERTISE_KEY='code'
-const EXPERTISE_MIGRATION_KEY='code'
+const EXPERTISE_KEY='name'
+const EXPERTISE_MIGRATION_KEY='name'
 
 const importExpertises = async (input_file, tab_name, from_line) => {
   let records=await loadRecords(input_file, tab_name, from_line)
-  records=records.filter(r => !lodash.isEmpty(r['Libellé Savoir']?.trim()))
   return importData({model: 'expertise', data:records, mapping:EXPERTISE_MAPPING, 
     identityKey: EXPERTISE_KEY, migrationKey: EXPERTISE_MIGRATION_KEY})
 }

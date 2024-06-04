@@ -13,6 +13,7 @@ const JobFileFeature = require('../../server/models/JobFileFeature')
 const Job = require('../../server/models/Job')
 const HardSkillCategory = require('../../server/models/HardSkillCategory')
 const { SKILLS } = require('../../utils/consts')
+const Expertise = require('../../server/models/Expertise')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'sosynpl' : `test${moment().unix()}`
@@ -74,9 +75,9 @@ describe('Test imports', () => {
     expect(sectors).not.toHaveLength(0)
   })  
 
-  it.skip('must import expertises', async () => {
+  it.only('must import expertises', async () => {
     await importExpertises(path.join(ROOT, 'Base métiers.xlsx'), `5 - Compétences`, 1)
-    // Each skill's category lust have a parent
+    expect(await Expertise.countDocuments()).toEqual(1345)
   })
 
 })
