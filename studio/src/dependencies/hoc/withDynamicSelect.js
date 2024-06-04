@@ -9,7 +9,7 @@ const withDynamicSelect = Component => {
     let values = props.dataSourceId ? dataSource: null
     let value=lodash.get(dataSource, props.attribute)
     value=isMulti ?
-      value.map(v => v?._id || v)
+    (value||[]).map(v => v?._id || v)
       :
       value?._id || value
     const [internalValue, setInternalValue]=useState(value)
