@@ -452,7 +452,7 @@ const buildQuery = (model, id, fields, params) => {
     query=query.skip((params.page || 0)*currentLimit)
     query=query.limit(currentLimit+1)
   }
-  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params})
+  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
   return query
