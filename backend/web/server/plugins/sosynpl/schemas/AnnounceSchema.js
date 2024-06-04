@@ -12,8 +12,10 @@ const MIN_SECTORS=1
 const MIN_HOMEWORK=0
 const MAX_HOMEWORK=5
 const MIN_SOFT_SKILLS=1
-const MIN_HARD_SKILLS=1
-const MIN_EXPERTISE=3
+const MIN_EXPERTISES=3
+const MAX_EXPERTISES=30
+const MIN_PINNED_EXPERTISES=1
+const MAX_PINNED_EXPERTISES=3
 const MIN_SOFTWARES=1
 const MIN_LANGUAGES=1
 
@@ -128,26 +130,38 @@ const AnnounceSchema = new Schema({
     default: [],
     required: true,
   },
-  hard_skills: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'hardSkill',
-    }],
-    validate: [
-      function(hard_skills) {return hard_skills?.length>=MIN_HARD_SKILLS},
-      `Vous devez choisir au moins ${MIN_HARD_SKILLS} compétence(s)`,
-    ],
-    default: [],
-    required: true,
-  },
   expertises: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'expertise',
     }],
     validate: [
-      function(expertises) {return expertises?.length>=MIN_EXPERTISE},
-      `Vous devez choisir au moins ${MIN_EXPERTISE} expertise(s)`,
+      function(expertises) {return lodash.inRange(expertises?.length, MIN_EXPERTISES, MAX_EXPERTISES+1)},
+      `Vous devez choisir entre ${MIN_EXPERTISES} et ${MAX_EXPERTISES} compétences`,
+    ],
+    default: [],
+    required: true,
+  },
+  pinned_expertises: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'expertise',
+    }],
+    validate: [
+      function(expertises) {return lodash.inRange(expertises?.length, MIN_PINNED_EXPERTISES, MAX_PINNED_EXPERTISES+1)},
+      `Vous devez mettre en avant de ${MIN_PINNED_EXPERTISES} à de ${MAX_PINNED_EXPERTISES} compétences` 
+    ],
+    default: [],
+    required: true,
+  },
+  pinned_expertises: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'expertise',
+    }],
+    validate: [
+      function(expertises) {return expertises?.length>=MIN_EXPERTISES && expertises?.length<=MAX_EXPERTISES},
+      `Vous devez choisir entre ${MIN_EXPERTISES} et ${MAX_EXPERTISES} compétences`,
     ],
     default: [],
     required: true,
