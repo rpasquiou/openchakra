@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { importJobs, importSectors, importJobFiles, importJobFileFeatures, importHardSkills, fixFiles, importCategories1, importCategories2, importExpCategories, importExpertises } = require('../../server/plugins/sosynpl/import')
-const { loadCache, saveCache } = require('../../utils/import')
+const { loadCache, saveCache, displayCache } = require('../../utils/import')
 
 const HardSkill=require('../../server/models/HardSkill')
 const Sector=require('../../server/models/Sector')
@@ -38,19 +38,19 @@ describe('Test imports', () => {
     saveCache()
   })
 
-  it.only('must import job files', async () => {
+  it('must import job files', async () => {
     await importJobFiles(path.join(ROOT, 'Base métiers.xlsx'), '1- Fiche Métiers', 1)
     expect(await JobFile.countDocuments()).toEqual(41)
   })
 
-  it.only('must import job files features', async () => {
+  it('must import job files features', async () => {
     await importJobFileFeatures(path.join(ROOT, 'Base métiers.xlsx'), '3 - Missions principales', 1)
     expect(await JobFileFeature.countDocuments()).toEqual(116)
   })
 
-  it.only('must import jobs', async () => {
+  it('must import jobs', async () => {
     await importJobs(path.join(ROOT, 'Base métiers.xlsx'), `2 - Métiers`, 1)
-    expect(await Job.countDocuments()).toEqual(443)
+    expect(await Job.countDocuments()).toEqual(446)
   })
 
   it('must import skills categories level 1', async () => {
@@ -60,7 +60,7 @@ describe('Test imports', () => {
 
   it('must import skills categories level 2', async () => {
     await importCategories2(path.join(ROOT, 'Base métiers.xlsx'), `4 - Savoir faire`, 1)
-    expect(await HardSkillCategory.find({parent: {$ne:null}})).toHaveLength(31)
+    expect(await HardSkillCategory.find({parent: {$ne:null}})).toHaveLength(35)
   })
 
   it('must import hard skills', async () => {
@@ -68,18 +68,14 @@ describe('Test imports', () => {
     expect(await HardSkill.countDocuments()).toEqual(1484)
   })
 
-  it.skip('must import sectors', async () => {
+  it('must import sectors', async () => {
     await importSectors(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `Secteurs`)
     const sectors=await Sector.find()
     expect(sectors).not.toHaveLength(0)
   })  
 
-  it.skip('must import expertise categories', async () => {
-    return importExpCategories(path.join(ROOT, 'Champs So SynpL v2.xlsx'), `5 - Compétences savoir`, 2)
-  })
-
   it.skip('must import expertises', async () => {
-    await importExpertises(path.join(ROOT, 'wapp_expertises.csv'))
+    await importExpertises(path.join(ROOT, 'Base métiers.xlsx'), `5 - Compétences`, 1)
     // Each skill's category lust have a parent
   })
 
