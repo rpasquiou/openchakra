@@ -205,7 +205,7 @@ const computeAllDietBillings = async (fields, params) => {
       }
 
       const coachings = await Coaching.countDocuments({ diet: diet._id })
-      const appointments = await Appointment.countDocuments({ diet: diet._id })
+      const appointments = await Appointment.countDocuments({ diet: diet._id, validated:true })
 
       billings.moy_appointments_coachings = coachings !== 0 ? Number(appointments / coachings).toFixed(2) : 0
 
