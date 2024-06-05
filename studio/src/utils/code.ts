@@ -213,7 +213,9 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
-      propsContent += ` setComponentValue={setComponentValue} `
+      if (isFilterComponent(childComponent, components)) {
+        propsContent += ` setComponentValue={setComponentValue} `
+      }
 
       propsContent += ` getComponentAttribute={getComponentAttribute} `
 
