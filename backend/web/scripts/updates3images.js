@@ -101,7 +101,6 @@ const generateImageSet = async(awsurl, filename) => {
 
   return []
 }
-
 const sendFilesToAws = async(data) => {
   const documentsToSend = data.map(document => {
     
