@@ -99,7 +99,7 @@ const withDynamicSelect = Component => {
         <Select {...props} onChange={onChange}
           value={options?.find(opt => opt.key==value)}
           isMulti={isMulti}
-          options={options} placeholder={null}
+          options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
         />
       )

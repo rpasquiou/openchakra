@@ -95,6 +95,7 @@ const UserSchema = new Schema({
   company: {
     type: Schema.Types.ObjectId,
     ref: 'company',
+    index: true,
     required: [function() { return this?.role==ROLE_CUSTOMER }, 'La compagnie est obligatoire'],
   },
   company_code: {
