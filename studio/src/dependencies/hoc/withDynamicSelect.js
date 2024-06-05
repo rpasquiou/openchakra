@@ -8,10 +8,7 @@ const withDynamicSelect = Component => {
 
     let values = props.dataSourceId ? dataSource: null
     let value=lodash.get(dataSource, props.attribute)
-    value=isMulti ?
-    (value||[]).map(v => v?._id || v)
-      :
-      value?._id || value
+    value=value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
     if (props.setComponentAttribute) {
@@ -98,13 +95,9 @@ const withDynamicSelect = Component => {
     }
 
     if (isSearchable || isMulti) {
-      const selValue=isMulti ?
-        options?.filter(opt => value.some(v => v==opt.key))
-        :
-        options?.find(opt => opt.key==value)
       return (
         <Select {...props} onChange={onChange}
-          value={selValue}
+          value={options?.find(opt => opt.key==value)}
           isMulti={isMulti}
           options={options} placeholder={null}
           chakraStyles={chakraStyles}
@@ -112,6 +105,7 @@ const withDynamicSelect = Component => {
       )
     }
 
+    console.log(props)
     return (
       <Component {...props} value={internalValue} onChange={onChange} >
         <option style={{...props}} value={undefined}></option>
