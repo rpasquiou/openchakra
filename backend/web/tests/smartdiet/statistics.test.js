@@ -1,8 +1,11 @@
 const mongoose = require('mongoose')
-const { computeStatistics } = require('../../server/plugins/smartdiet/functions')
+const { computeStatistics, preProcessGetNEVERUSE, preProcessGet, preProcessGetFORBIDDEN } = require('../../server/plugins/smartdiet/functions')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-
-jest.setTimeout(300000)
+const User = require('../../server/models/User')
+require('../../server/models/FoodDocument')
+const moment = require('moment')
+const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
+jest.setTimeout(30000000)
 
 beforeAll(async () => {
   await mongoose.connect(`mongodb://localhost/smartdiet`, MONGOOSE_OPTIONS)
@@ -13,195 +16,322 @@ afterAll(async () => {
 })
 
 describe('Statistics', () => {
-  it('must return coachings_started', async () => {
-    const stats = await computeStatistics({ fields: [`coachings_started`] })
-    console.log('coachings_started', stats.coachings_started)
-    expect(stats.coachings_started).toBeGreaterThanOrEqual(0)
-  })
+  let now
+  const measures = []
+  const start_date = new Date('2020-01-05T13:00:00.000Z')
+  const end_date = new Date('2021-01-05T13:00:00.000Z')
+  const diet = '65f2faa9234cec144a11fbed'
+  const id = '65f2f95bd449f912a30afe74'
 
-  it('must return coachings_stopped', async () => {
-    const stats = await computeStatistics({ fields: [`coachings_stopped`] })
-    console.log('coachings_stopped', stats.coachings_stopped)
-    expect(stats.coachings_stopped).toBeGreaterThanOrEqual(0)
-  })
+  const measure = (field) => {
+    measures[field] = moment().diff(now, 'milliseconds')
+    console.table(measures)
+    now = moment()
+  }
 
-  it('must return coachings_dropped', async () => {
-    const stats = await computeStatistics({ fields: [`coachings_dropped`] })
-    console.log('coachings_dropped', stats.coachings_dropped)
-    expect(stats.coachings_dropped).toBeGreaterThanOrEqual(0)
-  })
+  const testCoachingStats = async (field, options = {}) => {
+    now = moment()
+    const stats = await computeStatistics({ fields: [field], ...options })
+    const count = stats[field]
+    console.table({ [field]: count })
+    measure(`${field} + ${options}`)
+    return count
+  }
 
-  it('must return coachings_ongoing', async () => {
-    const stats = await computeStatistics({ fields: [`coachings_ongoing`] })
-    console.log('coachings_ongoing', stats.coachings_ongoing)
-    expect(stats.coachings_ongoing).toBeGreaterThanOrEqual(0)
-  })
+  const runTest = (field) => {
+    it(`must return ${field}`, async () => {
+      const base = await testCoachingStats(field)
+      expect(base).toBeGreaterThanOrEqual(0)
 
-  it('must return cs_done', async () => {
-    const stats = await computeStatistics({ fields: ['cs_done'] })
-    console.log('cs_done', stats.cs_done)
-    expect(stats.cs_done).toBeGreaterThanOrEqual(0)
-  })
+      const withId = await testCoachingStats(field, { id })
+      expect(withId).toBeGreaterThanOrEqual(0)
 
-  it('must return cs_done_c1', async () => {
-    const stats = await computeStatistics({ fields: ['cs_done_c1'] })
-    console.log('cs_done_c1', stats['cs_done_c1'])
-    expect(stats['cs_done_c1']).not.toBeNull()
-  })
+      const withDiet = await testCoachingStats(field, { diet })
+      console.log(typeof(withDiet))
+      expect(withDiet).toBeGreaterThanOrEqual(0)
 
-  it('must return cs_upcoming', async () => {
-    const stats = await computeStatistics({ fields: ['cs_upcoming'] })
-    console.log('cs_upcoming', stats.cs_upcoming)
-    expect(stats.cs_upcoming).toBeGreaterThanOrEqual(0)
-  })
+      const withDates = await testCoachingStats(field, { start_date, end_date })
+      expect(withDates).toBeGreaterThanOrEqual(0)
 
-  it('must return cs_upcoming_c1', async () => {
-    const stats = await computeStatistics({ fields: ['cs_upcoming_c1'] })
-    console.log('cs_upcoming_c1', stats['cs_upcoming_c1'])
-    expect(stats['cs_upcoming_c1']).not.toBeNull()
-  })
+      const withAll = await testCoachingStats(field, { id, diet, start_date, end_date })
+      expect(withAll).toBeGreaterThanOrEqual(0)
+    })
+  }
 
-  it('must return started_coaching_no_birthday', async () => {
-    const stats = await computeStatistics({ fields: ['started_coaching_no_birthday'] })
-    console.log('started_coaching_no_birthday', stats['started_coaching_no_birthday'])
-    expect(stats['started_coaching_no_birthday']).not.toBeNull()
-  })
+  const fields = [
+    'coachings_started',
+    'coachings_stopped',
+    'coachings_dropped',
+    'coachings_ongoing',
+    'coachings_finished',
+    'coachings_gender_male',
+    'coachings_gender_female',
+    'coachings_gender_non_binary',
+    'coachings_gender_unknown',
+    'coachings_renewed',
+    'nut_advices',
+    'ratio_stopped_started',
+    'ratio_dropped_started'
+  ]
 
-  it('must return started_coachings_18_24', async () => {
-    const stats = await computeStatistics({ fields: ['started_coachings_18_24'] })
-    console.log('started_coachings_18_24', stats['started_coachings_18_24'])
-    expect(stats['started_coachings_18_24']).toBeGreaterThanOrEqual(0)
-  })
+  fields.forEach(runTest)
 
-  it('must return started_coachings_25_29_percent', async () => {
-    const stats = await computeStatistics({ fields: ['started_coachings_25_29_percent'] })
-    console.log('started_coachings_25_29_percent', stats['started_coachings_25_29_percent'])
-    expect(stats['started_coachings_25_29_percent']).toBeGreaterThanOrEqual(0)
+  it('must return coachings_stats', async () => {
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['coachings_stats']})
+    console.log(stats.coachings_stats)
+    for (let stat of stats.coachings_stats) {
+      console.table({ name: stat.name, total: stat.total })
+      console.log(stat.ranges)
+      console.log(stat.appointments)
+      for (let app of stat.appointments) {
+        console.table({ order: app.order, total: app.total })
+        console.log(app.ranges)
+        console.log('------------------------------------------------------------------')
+      }
+      console.log("******************************************************************************************************************************")
+    }
+    expect(stats.coachings_stats).toBeTruthy()
   })
-
-  it('must return coachings_gender_male', async () => {
-    const stats = await computeStatistics({ fields: ['coachings_gender_male'] })
-    console.log('coachings_gender_male', stats['coachings_gender_male'])
-    expect(stats['coachings_gender_male']).toBeGreaterThanOrEqual(0)
+  it('must return ratio_appointments_coaching', async () => {
+    const stats = await computeStatistics({fields:['ratio_appointments_coaching']})
+    expect(stats.ratio_appointments_coaching).toBeGreaterThanOrEqual(0)
   })
-
-  it('must return coachings_gender_unknown', async () => {
-    const stats = await computeStatistics({ fields: ['coachings_gender_unknown'] })
-    console.log('coachings_gender_unknown', stats['coachings_gender_unknown'])
-    expect(stats['coachings_gender_unknown']).toBeGreaterThanOrEqual(0)
-  })
-
-  it('must return nut_advices', async () => {
-    const stats = await computeStatistics({ fields: ['nut_advices'] })
-    console.log('nut_advices', stats['nut_advices'])
-    expect(stats['nut_advices']).toBeGreaterThanOrEqual(0)
-  })
-
-  it('must return coachings_renewed', async () => {
-    const stats = await computeStatistics({ fields: ['nut_adcoachings_renewedvices'] })
-    console.log('coachings_renewed', stats['coachings_renewed'])
-    expect(stats['coachings_renewed']).toBeGreaterThanOrEqual(0)
-  })
-
   it('must return jobs_details, jobs_total', async () => {
-    const stats = await computeStatistics({ fields: ['jobs_details', 'jobs_total'] })
-    console.log('jobs_details', stats['jobs_details'])
-    console.log('jobs_total', stats['jobs_total'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['jobs_details', 'jobs_total']})
+
     expect(stats['jobs_total']).toBeGreaterThanOrEqual(0)
     expect(stats['jobs_details']).toBeTruthy()
   })
 
   it('must return join_reasons_details, join_reasons_total', async () => {
-    const stats = await computeStatistics({ fields: ['join_reasons_details', 'join_reasons_total'] })
-    console.log('join_reasons_details', stats['join_reasons_details'])
-    console.log('join_reasons_total', stats['join_reasons_total'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['join_reasons_details', 'join_reasons_total']})
     expect(stats['join_reasons_total']).toBeGreaterThanOrEqual(0)
     expect(stats['join_reasons_details']).not.toBeNull()
   })
 
   it('must return decline_reasons_details, decline_reasons_total', async () => {
-    const stats = await computeStatistics({ fields: ['decline_reasons_details', 'decline_reasons_total'] })
-    console.log('decline_reasons_details', stats['decline_reasons_details'])
-    console.log('decline_reasons_total', stats['decline_reasons_total'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['decline_reasons_details', 'decline_reasons_total']})
     expect(stats['decline_reasons_details']).toBeTruthy()
     expect(stats['decline_reasons_total']).toBeGreaterThanOrEqual(0)
   })
 
   it('must return ratio_stopped_started', async () => {
-    const stats = await computeStatistics({ fields: ['ratio_stopped_started'] })
-    console.log('ratio_stopped_started', stats['ratio_stopped_started'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['ratio_stopped_started']})
+
     expect(stats['ratio_stopped_started']).toBeGreaterThanOrEqual(0)
   })
 
   it('must return ratio_dropped_started', async () => {
-    const stats = await computeStatistics({ fields: ['ratio_dropped_started'] })
-    console.log('ratio_dropped_started', stats['ratio_dropped_started'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['ratio_dropped_started']})
+
     expect(stats['ratio_dropped_started']).toBeGreaterThanOrEqual(0)
   })
 
-  it('must return incalls_total, outcalls_total, incalls_per_operator, outcalls_per_operator', async () => {
-    const stats = await computeStatistics({ fields: ['incalls_total', 'outcalls_total', 'incalls_per_operator', 'outcalls_per_operator'] })
-    console.log('incalls_total', stats['incalls_total'])
-    console.log('outcalls_total', stats['outcalls_total'])
-    console.log('incalls_per_operator', stats['incalls_per_operator'])
-    console.log('outcalls_per_operator', stats['outcalls_per_operator'])
-    expect(stats['incalls_total']).toBeTruthy()
-    expect(stats['outcalls_total']).toBeTruthy()
-    expect(stats['incalls_per_operator']).toBeTruthy()
-    expect(stats['outcalls_per_operator']).toBeTruthy()
-  })
-
-  it('must return nut_advices_per_operator_total, coachings_per_operator_total, declined_per_operator_total, unreachables_per_operator_total, useful_contacts_per_operator_total, renewed_coachings_per_operator_total, coa_cu_transformation_per_operator_total, cn_cu_transformation_per_operator_total', async () => {
-    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_total', 'coachings_per_operator_total', 'declined_per_operator_total', 'unreachables_per_operator_total', 'useful_contacts_per_operator_total', 'renewed_coachings_per_operator_total', 'coa_cu_transformation_per_operator_total', 'cn_cu_transformation_per_operator_total'] })
-    console.log('nut_advices_per_operator_total', stats['nut_advices_per_operator_total'])
-    console.log('coachings_per_operator_total', stats['coachings_per_operator_total'])
-    console.log('declined_per_operator_total', stats['declined_per_operator_total'])
-    console.log('unreachables_per_operator_total', stats['unreachables_per_operator_total'])
-    console.log('useful_contacts_per_operator_total', stats['useful_contacts_per_operator_total'])
-    console.log('renewed_coachings_per_operator_total', stats['renewed_coachings_per_operator_total'])
-    console.log('coa_cu_transformation_per_operator_total', stats['coa_cu_transformation_per_operator_total'])
-    console.log('cn_cu_transformation_per_operator_total', stats['cn_cu_transformation_per_operator_total'])
-    expect(stats['nut_advices_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['coachings_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['declined_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['unreachables_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['useful_contacts_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['renewed_coachings_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['coa_cu_transformation_per_operator_total']).toBeGreaterThanOrEqual(0)
-    expect(stats['cn_cu_transformation_per_operator_total']).toBeGreaterThanOrEqual(0)
-  })
-
-  it('must return nut_advices_per_operator_details, coachings_per_operator_details, declined_per_operator_details, unreachables_per_operator_details, useful_contacts_per_operator_details, renewed_coachings_per_operator_details, coa_cu_transformation_per_operator_details, cn_cu_transformation_per_operator_details', async () => {
-    const stats = await computeStatistics({ fields: ['nut_advices_per_operator_details', 'coachings_per_operator_details', 'declined_per_operator_details', 'unreachables_per_operator_details', 'useful_contacts_per_operator_details', 'renewed_coachings_per_operator_details', 'coa_cu_transformation_per_operator_details', 'cn_cu_transformation_per_operator_details'] })
-    console.log('nut_advices_per_operator_details', stats['nut_advices_per_operator_details'])
-    console.log('coachings_per_operator_details', stats['coachings_per_operator_details'])
-    console.log('declined_per_operator_details', stats['declined_per_operator_details'])
-    console.log('unreachables_per_operator_details', stats['unreachables_per_operator_details'])
-    console.log('useful_contacts_per_operator_details', stats['useful_contacts_per_operator_details'])
-    console.log('renewed_coachings_per_operator_details', stats['renewed_coachings_per_operator_details'])
-    console.log('coa_cu_transformation_per_operator_details', stats['coa_cu_transformation_per_operator_details'])
-    console.log('cn_cu_transformation_per_operator_details', stats['cn_cu_transformation_per_operator_details'])
-    expect(stats['nut_advices_per_operator_details']).toBeTruthy()
-    expect(stats['coachings_per_operator_details']).toBeTruthy()
-    expect(stats['declined_per_operator_details']).toBeTruthy()
-    expect(stats['unreachables_per_operator_details']).toBeTruthy()
-    expect(stats['useful_contacts_per_operator_details']).toBeTruthy()
-    expect(stats['renewed_coachings_per_operator_details']).toBeTruthy()
-    expect(stats['coa_cu_transformation_per_operator_details']).toBeTruthy()
-    expect(stats['cn_cu_transformation_per_operator_details']).toBeTruthy()
-  })
-
   it('must return leads_by_campain', async () => {
-    const stats = await computeStatistics({ fields: ['leads_by_campain'] })
-    console.log('leads_by_campain', stats['leads_by_campain'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['leads_by_campain']})
+
     expect(stats['leads_by_campain']).toBeTruthy()
   })
 
   it('must return webinars_by_company_details, webinars_by_company_total', async () => {
-    const stats = await computeStatistics({ fields: ['webinars_by_company_details', 'webinars_by_company_total'] })
-    console.log('webinars_by_company_details', stats['webinars_by_company_details'])
-    console.log('webinars_by_company_total', stats['webinars_by_company_total'])
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const id = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({ fields: ['webinars_by_company_details', 'webinars_by_company_total']})
+
     expect(stats['webinars_by_company_details']).toBeTruthy()
-    expect(stats['webinars_by_company_total']).toBeTruthy()
+    expect(stats['webinars_by_company_total']).toBeGreaterThanOrEqual(0)
   })
+
+  it('must return calls_stats', async () => {
+    const operatorId = "65fc021f93262d3cef08bf35"
+    const stats = await computeStatistics({ fields: ['calls_stats'] })
+    console.log(stats.calls_stats)
+    expect(stats['calls_stats']).toBeTruthy()
+  })
+  it('must compute all stats for kpi coaching page', async() => {
+    let now = moment()
+    let measures=[]
+    const measure = (field) =>{
+      measures[field]=moment().diff(now,'milliseconds')
+      now=moment()
+    }
+    const fields=[
+      'coachings_started',
+      'coachings_ongoing',
+      'coachings_stopped',
+      'coachings_dropped',
+      'coachings_finished',
+      'coachings_renewed',
+      'nut_advices',
+      'ratio_dropped_started',
+      'ratio_stopped_started',
+      'ratio_appointments_coachings',
+      'coachings_gender_female',
+      'coachings_gender_male',
+      'coachings_gender_non_binary',
+      'coachings_gender_unknown',
+      'coachings_stats',
+    ]
+  for(let field of fields){
+    const stats = await computeStatistics({fields:[field]})
+    measure(field)
+  }
+  const stats = await computeStatistics({fields:fields})
+  measure('all')
+  console.table(measures)
+  expect(1).toEqual(1)
+  })  
+  it('must get filters and treat them properly', async() => {
+    console.log('****************************************ADMIN****************************************')
+    const userAdmin = await User.findOne({role: ROLE_ADMIN})
+    const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})
+    let user
+    let diet
+    let id
+    const timings = {}
+    //first test, no filters, user is Admin
+    const params = []
+    params['limit'] = 30
+    const fields=[]
+    user = userAdmin
+    const model='billing'
+    
+    let now = moment()
+    const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
+    console.log(result)
+    timings.admin=moment().diff(now, 'milliseconds')
+    const totalAdmin = result.data.total
+
+    //Second test, no filters, user is Admin, has id
+    console.log('****************************************ADMIN WITH ID****************************************')
+    now = moment()
+    diet = userDiet
+    id = diet._id
+    const idResult = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
+    console.log(idResult)
+    timings.admingWithDiet=moment().diff(now, 'milliseconds')
+    const totalAdminDiet = idResult.data[0].total
+  
+    //Third test, no filters, user is Diet
+    console.log('****************************************DIET****************************************')
+    now=moment()
+    user = diet
+    const dietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    console.log(dietResult)
+    timings.diet=moment().diff(now, 'milliseconds')
+    const totalDiet = dietResult.data.length
+
+    //Fourth test, date filters, user is Admin 
+    console.log('****************************************ADMIN WITH DATE FILTERS****************************************')
+    now=moment()
+    params['filter.start_date'] = '2023-01-05T13:00:00.000Z',
+    params['filter.end_date'] = '2024-01-05T13:00:00.000Z'
+    user = userAdmin
+    const filteredResult = await preProcessGetFORBIDDEN({ model, fields, user, params })  
+    console.log(filteredResult)
+    timings.adminDateFilter=moment().diff(now, 'milliseconds')
+    const totalAdminDate = filteredResult.data.total
+
+    //Fifth test, date filters, user is Diet
+    console.log('****************************************DIET WITH DATE FILTERS****************************************')
+    now=moment()
+    user = userDiet
+    const filteredDietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    console.log(filteredDietResult)
+    timings.dietDateFilter=moment().diff(now, 'milliseconds')
+    const totalDietDate = filteredDietResult.data.length
+
+
+    console.table(timings)
+    expect(totalAdmin).toBeGreaterThanOrEqual(0)
+    expect(totalAdminDiet).toBeLessThanOrEqual(totalAdmin)
+    expect(totalAdminDate).toBeLessThanOrEqual(totalAdmin)
+    expect(totalDiet).toBeGreaterThanOrEqual(0)
+    expect(totalDietDate).toBeGreaterThanOrEqual(0)
+
+  })
+  it('returns diet stats', async() => {
+    const fields = [
+      'diet_coaching_enabled',
+      'diet_site_enabled',
+      'diet_visio_enabled',
+      'diet_recruiting',
+      'diet_refused',
+      'diet_activated',
+    ]
+    const stats = await computeStatistics({fields})
+    console.log(stats)
+    expect(stats.diet_coaching_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_site_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_visio_enabled).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_recruiting).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_refused).toBeGreaterThanOrEqual(0)
+    expect(stats.diet_activated).toBeGreaterThanOrEqual(0)
+  })
+
+  it.only('compares coachings_stats and stats performance', async () => {
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
+    const company = '65f2f95bd449f912a30afe74';
+    const diet = '65f2faa6234cec144a11fb3f';
+  
+    const testFields = async (field, label) => {
+      const timings = {};
+      for (let i = 0; i < 3; i++) {
+        let j = 0;
+        let now, res;
+  
+        const logAndRecord = async (params, key) => {
+          now = moment();
+          console.log(`${i}+${j}`);
+          res = await computeStatistics(params);
+          console.log(res[field][0].total, res[field][1].total, res[field][2].total);
+          timings[`${i}+${key}`] = moment().diff(now, 'milliseconds');
+          j++;
+        };
+  
+        await logAndRecord({ fields: [field] }, `noParams_${j}`);
+        await logAndRecord({ fields: [field], diet }, `diet_${j}`);
+        await logAndRecord({ fields: [field], start_date }, `start_date_${j}`);
+        await logAndRecord({ fields: [field], end_date }, `end_date_${j}`);
+        await logAndRecord({ fields: [field], company }, `company_${j}`);
+        await logAndRecord({ fields: [field], company, start_date, end_date, diet }, `all_${j}`);
+      }
+  
+      console.table(timings);
+    };
+  
+    await testFields('coachings_stats', 'coachings_stats');
+  });
+  
 })

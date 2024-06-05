@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../utils/schemas')
 
+
 const Schema = mongoose.Schema
 
 const PairSchema = new Schema({
@@ -16,6 +17,6 @@ const PairSchema = new Schema({
     type: Number,
     required: [false],
   }
-}, schemaOptions)
+}, schemaOptions  )
 
 module.exports = PairSchema

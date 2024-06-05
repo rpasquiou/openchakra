@@ -452,7 +452,7 @@ const buildQuery = (model, id, fields, params) => {
     query=query.skip((params.page || 0)*currentLimit)
     query=query.limit(currentLimit+1)
   }
-  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params})
+  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
   return query
@@ -996,20 +996,12 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       }
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
-      console.time(`Loading model ${model}`)
       return buildQuery(model, id, fields, params)
-        .then(data => {console.timeEnd(`Loading model ${model}`); return data})
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
-        // .then(data => {console.time(`Compute model ${model}`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
-        // .then(data => {console.timeEnd(`Compute model ${model}`); return data})
-        // .then(data => {console.time(`Filtering model ${model}`); return data})
-        .then(data => callFilterDataUser({model, data, id, user}))
-        // .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
-        // .then(data => {console.time(`Retain fields ${model}`); return data})
+        .then(data => callFilterDataUser({model, data, id, user, params}))
         .then(data =>  retainRequiredFields({data, fields}))
-        // .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
     })
 
 }

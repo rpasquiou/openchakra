@@ -571,16 +571,13 @@ const loadFromRequest = (req, res) => {
   const user = req.user
 
   const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
-  console.log(logMsg)
   console.time(logMsg)
 
   return loadFromDb({model, fields, id, user, params})
     .then(data => {
-      console.time(`Sending ${model}`)
       return res.json(data)
     })
     .finally(() => {
-      console.timeEnd(`Sending ${model}`)
       console.timeEnd(logMsg)
     })
 }

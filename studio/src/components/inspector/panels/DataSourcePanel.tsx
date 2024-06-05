@@ -565,7 +565,7 @@ const DataSourcePanel: React.FC = () => {
             >
               <option value={undefined}></option>
               {Object.values(components)
-                .filter(c => !!c.props.model && !!c.props.attribute )
+                .filter(c => !!(c.props.model || c.props.dataSource) && !!c.props.attribute )
                 .map((component, i) => (
                   <option key={`comp${i}`} value={component.id}>
                     {`${component.id} (${component.type})`}
