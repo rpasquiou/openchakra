@@ -313,7 +313,6 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   }
 
   if (model == 'adminDashboard') {
-    console.log(params)
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
       return Promise.resolve({ model, fields, id, data: [] })
     }
@@ -325,7 +324,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
-    return computeStatistics({ fields, company, diet, start_date, end_date })
+    return computeStatistics({ fields, company, start_date, end_date, diet})
       .then(stats => ({ model, fields, id, data: [stats] }))
   }
 
@@ -2025,55 +2024,54 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
   };
 
   const handleRatios = async (field) => {
-    if (!cache['coachings_started']){
-      await fetchAndCache('coachings_started',kpi['coachings_started'], { companyFilter, start_date, end_date, diet })
+    if (!cache['coachings_started']) {
+      await fetchAndCache('coachings_started', kpi['coachings_started'], { companyFilter, start_date, end_date, diet });
     }
     if (field === 'ratio_stopped_started') {
-      if (!cache['coachings_stopped']){
-        await fetchAndCache('coachings_stopped',kpi['coachings_stopped'], { companyFilter, start_date, end_date, diet })
+      if (!cache['coachings_stopped']) {
+        await fetchAndCache('coachings_stopped', kpi['coachings_stopped'], { companyFilter, start_date, end_date, diet });
       }
-      result['ratio_stopped_started'] = result['coachings_started']!=0 ? Number((result['coachings_stopped'] / result['coachings_started'] * 100).toFixed(2)) : 0
+      result['ratio_stopped_started'] = result['coachings_started'] !== 0 
+        ? Number((result['coachings_stopped'] / result['coachings_started'] * 100).toFixed(2)) 
+        : 0;
     } else if (field === 'ratio_dropped_started') {
-      if (!cache['coachings_dropped']){
-        await fetchAndCache('coachings_dropped',kpi['coachings_dropped'], { companyFilter, start_date, end_date, diet })
+      if (!cache['coachings_dropped']) {
+        await fetchAndCache('coachings_dropped', kpi['coachings_dropped'], { companyFilter, start_date, end_date, diet });
       }
-      result['ratio_dropped_started'] = result['coachings_started']!=0 ? Number((result['coachings_dropped'] / result['coachings_started'] * 100).toFixed(2)) :0
+      result['ratio_dropped_started'] = result['coachings_started'] !== 0 
+        ? Number((result['coachings_dropped'] / result['coachings_started'] * 100).toFixed(2)) 
+        : 0;
     } else if (field === 'ratio_appointments_coaching') {
-      if (!cache['coachings_ongoing']){
-        await fetchAndCache('coachings_ongoing',kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet })
+      if (!cache['coachings_ongoing']) {
+        await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet });
       }
-      const appts = await Appointment.countDocuments({validated:true})
-      result['ratio_appointments_coaching'] = result['coachings_started']!=0 ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) : 0
+      const appts = await Appointment.countDocuments({ validated: true });
+      result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
+        ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
+        : 0;
     }
   };
 
   for (const field of fields) {
-    if (field === 'company' || field === 'diet' || field === 'start_date' || field === 'end_date') continue;
+    if (['company', 'diet', 'start_date', 'end_date'].includes(field)) continue;
     if (!field.includes('gender') && !field.includes('coachings_stats') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
-      
-      await fetchAndCache(field, kpi[field], { companyFilter, start_date, end_date, diet });
+      await fetchAndCache(field, kpi[field], {company, companyFilter, start_date, end_date, diet });
     } else {
       if (field.includes('coachings_stats')) {
         await fetchAndCache('coachings_stats', kpi['coachings_stats'], { company, start_date, end_date, diet });
       } else if (field.includes('gender')) {
-        
-
-        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter });
+        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter, start_date, end_date, diet });
         const genderResult = result['coachings_by_gender_'];
         for (const [gender, count] of Object.entries(genderResult)) {
           result[`coachings_gender_${gender}`] = count;
         }
       } else if (field.endsWith('_details') || field.endsWith('_total')) {
-        
-
         const baseField = field.replace('_details', '').replace('_total', '');
-        await fetchAndCache(baseField, kpi[`${baseField}_`], { companyFilter });
+        await fetchAndCache(baseField, kpi[`${baseField}_`], { companyFilter, start_date, end_date, diet });
         const baseResult = result[baseField];
         result[`${baseField}_total`] = baseResult[`${baseField}_total`];
         result[`${baseField}_details`] = baseResult[`${baseField}_details`];
       } else if (field.includes('ratio_')) {
-        
-
         await handleRatios(field);
       }
     }
@@ -2082,6 +2080,7 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
 };
 
 exports.computeStatistics = computeStatistics;
+
 
 /** Upsert PARTICULARS company */
 Company.findOneAndUpdate(

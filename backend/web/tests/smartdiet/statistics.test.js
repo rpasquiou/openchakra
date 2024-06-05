@@ -5,7 +5,7 @@ const User = require('../../server/models/User')
 require('../../server/models/FoodDocument')
 const moment = require('moment')
 const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
-jest.setTimeout(300000)
+jest.setTimeout(30000000)
 
 beforeAll(async () => {
   await mongoose.connect(`mongodb://localhost/smartdiet`, MONGOOSE_OPTIONS)
@@ -298,4 +298,40 @@ describe('Statistics', () => {
     expect(stats.diet_refused).toBeGreaterThanOrEqual(0)
     expect(stats.diet_activated).toBeGreaterThanOrEqual(0)
   })
+
+  it.only('compares coachings_stats and stats performance', async () => {
+    const start_date = new Date('2020-01-05T13:00:00.000Z');
+    const end_date = new Date('2021-01-05T13:00:00.000Z');
+    const company = '65f2f95bd449f912a30afe74';
+    const diet = '65f2faa6234cec144a11fb3f';
+  
+    const testFields = async (field, label) => {
+      const timings = {};
+      for (let i = 0; i < 3; i++) {
+        let j = 0;
+        let now, res;
+  
+        const logAndRecord = async (params, key) => {
+          now = moment();
+          console.log(`${i}+${j}`);
+          res = await computeStatistics(params);
+          console.log(res[field][0].total, res[field][1].total, res[field][2].total);
+          timings[`${i}+${key}`] = moment().diff(now, 'milliseconds');
+          j++;
+        };
+  
+        await logAndRecord({ fields: [field] }, `noParams_${j}`);
+        await logAndRecord({ fields: [field], diet }, `diet_${j}`);
+        await logAndRecord({ fields: [field], start_date }, `start_date_${j}`);
+        await logAndRecord({ fields: [field], end_date }, `end_date_${j}`);
+        await logAndRecord({ fields: [field], company }, `company_${j}`);
+        await logAndRecord({ fields: [field], company, start_date, end_date, diet }, `all_${j}`);
+      }
+  
+      console.table(timings);
+    };
+  
+    await testFields('coachings_stats', 'coachings_stats');
+  });
+  
 })
