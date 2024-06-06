@@ -2059,11 +2059,13 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
     } else {
       if (field.includes('coachings_stats')) {
         await fetchAndCache('coachings_stats', kpi['coachings_stats'], { company, start_date, end_date, diet });
-      } else if (field.includes('gender')) {
-        await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter, start_date, end_date, diet });
-        const genderResult = result['coachings_by_gender_'];
-        for (const [gender, count] of Object.entries(genderResult)) {
-          result[`coachings_gender_${gender}`] = count;
+      } else if (field.includes('coachings_gender')) {
+        if (!cache['coachings_by_gender_']) {
+          await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter, start_date, end_date, diet });
+          const genderResult = result['coachings_by_gender_'];
+          for (const [gender, count] of Object.entries(genderResult)) {
+            result[`coachings_gender_${gender}`] = count;
+          }
         }
       } else if (field.endsWith('_details') || field.endsWith('_total')) {
         const baseField = field.replace('_details', '').replace('_total', '');
