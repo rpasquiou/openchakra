@@ -841,8 +841,34 @@ const nut_advices = async ({ companyFilter, diet, start_date, end_date }) => {
 exports.nut_advices = nut_advices
 
 const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) => {
-  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
+  const dietFilter = diet ? 
+    [{
+      $match:{
+        diet:mongoose.Types.ObjectId(diet)
+      }
+    },]
+    : []
   const dateMatch = {}
+  const companyFilterr = companyFilter.$ne != null ?
+    [
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userDetails'
+        }
+      },
+      {
+        $unwind: '$userDetails'
+      },
+      {
+        $match: {
+          'userDetails.company': companyFilter
+        }
+      },
+    ]
+    : []
   if (start_date!='undefined') {
     dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date)}}
   }
@@ -853,49 +879,11 @@ const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) 
     dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date), $lte:new Date(end_date)}}
   }
   const result = await Coaching.aggregate([
-    {
-      $match: dietFilter
-    },
-
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'userDetails'
-      }
-    },
-    {
-      $unwind: '$userDetails'
-    },
-    {
-      $match: {
-        'userDetails.company': companyFilter
-      }
-    },
-    
-    {
-      $lookup: {
-        from: 'appointments',
-        localField: '_id',
-        foreignField: 'coaching',
-        as: 'appointments'
-      }
-    },
-    
-    {
-      $unwind: '$appointments'
-    },
-    {
-      $match: {
-        'appointments.validated': true
-      }
-    },
-    
+    ...dietFilter,
+    ...companyFilterr,
     {
       $sort: { 'appointments.start_date': 1 }
     },
-    
     {
       $group: {
         _id: '$_id',
@@ -903,7 +891,6 @@ const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) 
         firstAppointment: { $first: '$appointments' }
       }
     },
-    
     {...dateMatch},
     {
       $group: {
@@ -949,33 +936,6 @@ const coachingsStarted= await coachings_started({companyFilter, diet, start_date
   return coachingsStarted!=0 ? Number((coachingsDropped / coachingsStarted * 100).toFixed(2)) : 0
 }
 exports.ratio_dropped_started = ratio_dropped_started
-
-
-const buildMatchCondition = async ({ companyFilter, diet, start_date, end_date, status }) => {
-  const matchCondition = { status }
-
-  if (start_date || end_date) {
-    matchCondition['appointments.start_date'] = {}
-    if (start_date) {
-      matchCondition['appointments.start_date'].$gte = new Date(start_date)
-    }
-    if (end_date) {
-      matchCondition['appointments.start_date'].$lte = new Date(end_date)
-    }
-  }
-
-  if (diet && mongoose.Types.ObjectId.isValid(diet)) {
-    matchCondition['appointments.diet'] = mongoose.Types.ObjectId(diet)
-  }
-
-  if (companyFilter && mongoose.Types.ObjectId.isValid(companyFilter)) {
-    const users = await User.find({ company: companyFilter }).select('_id').lean()
-    const userIds = users.map(user => user._id)
-    matchCondition['user'] = { $in: userIds }
-  }
-
-  return matchCondition
-}
 
 const coachings_started = async ({ company, diet, start_date, end_date }) => {
   const status = { $ne: COACHING_STATUS_NOT_STARTED }
