@@ -223,7 +223,7 @@ describe('Statistics', () => {
       for (let field of fields) {
         const noww=moment()
         const stats = await computeStatistics({ fields: [field], ...combination.filters })
-        measure(combination.label + field, moment().diff(noww,'milliseconds'))
+        measure(combination.label + ' ' + field, moment().diff(noww,'milliseconds'))
         //console.log(stats)
       }
       measure(combination.label, moment().diff(now, 'milliseconds'))
@@ -305,7 +305,7 @@ describe('Statistics', () => {
     expect(totalDietDate).toBeGreaterThanOrEqual(0)
 
   })
-  it.only('returns diet stats', async() => {
+  it('returns diet stats', async() => {
     const fields = [
       'diet_coaching_enabled',
       'diet_site_enabled',
