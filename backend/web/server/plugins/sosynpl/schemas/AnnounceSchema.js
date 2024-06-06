@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
+const moment = require('moment')
+const autoIncrement = require('mongoose-auto-increment')
 const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -216,56 +218,59 @@ const AnnounceSchema = new Schema({
       required: true,
     }],
   },
-    // Soft skills
-    gold_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-      default: [],
-      validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
-    },
-    silver_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-      default: [],
-      validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
-    },
-    bronze_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-      default: [],
-      validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
-    },
-    // Computed depending on gold/silver/bronze soft skills
-    available_gold_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-    },
-    available_silver_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-    },
-    available_bronze_soft_skills: {
-      type: [{
-        type: Schema.Types.ObjectId,
-        ref: 'softSkill',
-        required: true,
-      }],
-    },
+  // Soft skills
+  gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+  },
+  silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+  },
+  bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+  },
+  // Computed depending on gold/silver/bronze soft skills
+  available_gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  _counter: {
+    type: Number,
+  }
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -302,6 +307,20 @@ Object.keys(SS_PILAR).forEach(pilar => {
   AnnounceSchema.virtual(virtualName, DUMMY_REF).get(function() {
     return computePilar(this, pilar)
   })
+})
+
+// Manage announce serial number
+if (mongoose.connection) {
+  autoIncrement.initialize(mongoose.connection) // Ensure autoincrement is initalized
+}
+
+AnnounceSchema.plugin(autoIncrement.plugin, { model: 'announce', field: '_counter', startAt: 1});
+
+AnnounceSchema.virtual('deschamps', DUMMY_REF).get(function() {
+  if (!this._counter) {
+    return undefined
+  }
+  return `${moment().format('YY')}${this._counter.toString().padStart(5, 0)}`
 })
 
 module.exports = AnnounceSchema
