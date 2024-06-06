@@ -8,7 +8,7 @@ const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KE
   MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
-const { computePilars } = require('../soft_skills')
+const { computePilars, computePilar } = require('../soft_skills')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -375,26 +375,12 @@ FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
   return `Disponibilité non renseignée`
 })
 
-const mapMedals = user => {
-  let medals={}
-  user.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
-  user.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
-  user.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
-  return medals
-}
-
 // Implement virtual for each pilar
 Object.keys(SS_PILAR).forEach(pilar => {
   const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
   FreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
-    const medals=mapMedals(this)
-    const pilars=computePilars(medals)
-    const max_value=lodash(pilars).values().max()
-    // Convert to percent value
-    const value=pilars[pilar]/max_value
-    return value
+    return computePilar(this, pilar)
   })
-  
 })
 
 // TODO UGLY should be inherited from Customer schemma
@@ -407,3 +393,4 @@ FreelanceSchema.virtual('announces', {
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = FreelanceSchema
+

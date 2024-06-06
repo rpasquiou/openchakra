@@ -142,9 +142,6 @@ FREELANCE_MODELS.forEach(model => {
   declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
   declareEnumField( {model, field: 'availability', enumValues: AVAILABILITY})
   declareVirtualField({model, field: 'availability_str', instance: 'String', requires: 'availability,available_days_per_week,available_from'})
-  declareEnumField( {model, field: 'gold_soft_skills', enumValues: SOFT_SKILLS})
-  declareEnumField( {model, field: 'silver_soft_skills', enumValues: SOFT_SKILLS})
-  declareEnumField( {model, field: 'bronze_soft_skills', enumValues: SOFT_SKILLS})
   declareComputedField({model, field: 'available_gold_soft_skills', getterFn: computeAvailableGoldSoftSkills})
   declareComputedField({model, field: 'available_silver_soft_skills', requires: 'gold_soft_skills', getterFn: computeAvailableSilverSoftSkills})
   declareComputedField({model, field: 'available_bronze_soft_skills', requires: 'gold_soft_skills,silver_soft_skills', getterFn: computeAvailableBronzeSoftSkills})
@@ -232,6 +229,15 @@ caster: {
 declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number'})
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
+// SOFT SKILLS
+declareComputedField({model: 'announce', field: 'available_gold_soft_skills', getterFn: computeAvailableGoldSoftSkills})
+declareComputedField({model: 'announce', field: 'available_silver_soft_skills', requires: 'gold_soft_skills', getterFn: computeAvailableSilverSoftSkills})
+declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', requires: 'gold_soft_skills,silver_soft_skills', getterFn: computeAvailableBronzeSoftSkills})
+  // Declare virtuals for each pilar
+  Object.keys(SS_PILAR).forEach(pilar => {
+    const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+    declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
+  })
 /** Announce end */
 
 
