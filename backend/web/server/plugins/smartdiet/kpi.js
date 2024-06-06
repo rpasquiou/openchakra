@@ -10,6 +10,7 @@ const Appointment = require('../../models/Appointment')
 const Job = require('../../models/Job')
 const JoinReason = require('../../models/JoinReason')
 const DeclineReason = require('../../models/DeclineReason')
+const NutritionAdvice = require('../../models/NutritionAdvice')
 const Webinar = require('../../models/Webinar')
 const Company = require('../../models/Company')
 
@@ -785,57 +786,20 @@ const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet 
 
 exports.coachings_by_gender_ = coachings_by_gender_
 
-const nut_advices = async ({ companyFilter, diet, start_date, end_date }) => {
-  const matchConditions = {
-    company: companyFilter,
+const nut_advices = async ({ companyFilter, company, diet, start_date, end_date }) => {
+  const matchConditions = {}
+  if (diet) {
+    matchConditions.diet=diet
+  }
+  if (start_date || end_date) {
+    matchConditions.start_date={}
+    start_date ? matchConditions.start_date['$gt']=start_date : null
+    end_date ? matchConditions.start_date['$lt']=end_date : null
   }
 
-  if (start_date || end_date || diet) {
-    const pipeline = [
-      { $match: matchConditions },
-      {
-        $lookup: {
-          from: 'appointments',
-          localField: '_id',
-          foreignField: 'user',
-          as: 'appointments',
-        },
-      },
-      { $unwind: '$appointments' },
-    ]
-
-    if (start_date) {
-      pipeline.push({
-        $match: {
-          'appointments.start_date': { $gte: new Date(start_date) },
-        },
-      })
-    }
-
-    if (end_date) {
-      pipeline.push({
-        $match: {
-          'appointments.start_date': { $lte: new Date(end_date) },
-        },
-      })
-    }
-
-    if (diet) {
-      pipeline.push({
-        $match: {
-          'appointments.diet': mongoose.Types.ObjectId(diet),
-        },
-      })
-    }
-
-    const usersWithNutAdvices = await User.aggregate(pipeline)
-      .group({ _id: '$_id' })
-      .exec()
-
-    return usersWithNutAdvices.length
-  } else {
-    return await User.countDocuments(matchConditions).lean()
-  }
+  const users=company ? await User.find({company}, {email:1}) : null
+  const usersCondition=users ? {patient_email: {$in: users.map(u => u.email)}} : {}
+  return NutritionAdvice.countDocuments({...matchConditions, ...usersCondition})
 }
 
 exports.nut_advices = nut_advices
