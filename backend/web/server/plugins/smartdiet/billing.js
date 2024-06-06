@@ -10,6 +10,7 @@ const PriceList = require("../../models/PriceList")
 const { getDateFilter, getMonthFilter } = require('../../utils/database')
 const Company = require('../../models/Company')
 const User = require('../../models/User')
+const mongoose = require('mongoose')
 
 // Keep app types for 30 seconds only to manage company changes
 const appTypes=new NodeCache({stdTTL: 60})
@@ -64,9 +65,58 @@ const computeBilling = async ({ user, diet, fields, params }) => {
 }
 
 const computeDietBilling = async (diet, fields, params, validDiet) => {
+  const company = params['filter.company']
   const prices = await getPrices()
-  const appointments = await Appointment.find({ diet }, { start_date: 1 }).catch(console.error)
-  const nutAdvices = await NutritionAdvice.find({ diet }, { start_date: 1 })
+  const appointments = company ?
+    await Appointment.aggregate([
+      {
+        $match:{
+          diet:diet
+        }
+      },
+      {
+        $lookup:{
+          from:'users',
+          localField:'user',
+          foreignField:'_id',
+          as:'user'
+        }
+      },
+      {
+        $unwind:'$user'
+      },
+      {
+        $match:{
+          'user.company':mongoose.Types.ObjectId(company)
+        }
+      },
+    ])
+    : await Appointment.find({ diet }, { start_date: 1 })
+  const nutAdvices = company ?
+    await NutritionAdvice.aggregate([
+      {
+        $match:{
+          diet:diet
+        }
+      },
+      {
+        $lookup:{
+          from:'users',
+          localField:'patient_email',
+          foreignField:'email',
+          as:'user'
+        }
+      },
+      {
+        $unwind:'$user'
+      },
+      {
+        $match:{
+          'user.company':mongoose.Types.ObjectId(company)
+        }
+      },
+    ])
+    : await NutritionAdvice.find({ diet }, { start_date: 1 })
 
   let startDate = lodash.minBy([...appointments, ...nutAdvices], obj => obj.start_date)?.start_date
   if (params['filter.start_date']) {
