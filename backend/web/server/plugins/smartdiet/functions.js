@@ -884,6 +884,7 @@ declareVirtualField({
       options: { ref: 'coaching' }
     },
   })
+  declareVirtualField({model: m, field: 'coachings_count', instance: 'Number'})
   declareVirtualField({
     model: m, field: 'latest_coachings', instance: 'Array', multiple: true,
     caster: {
