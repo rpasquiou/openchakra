@@ -123,18 +123,6 @@ const AnnounceSchema = new Schema({
     type: String,
     required: false,
   },
-  soft_skills: {
-    type: [{
-      type: String,
-      enum: Object.keys(SS_PILAR),
-    }],
-    validate: [
-      function(pilars) {return pilars?.length>=MIN_SOFT_SKILLS},
-      `Vous devez choisir au moins ${MIN_SOFT_SKILLS} soft skill(s)`,
-    ],
-    default: [],
-    required: true,
-  },
   expertises: {
     type: [{
       type: Schema.Types.ObjectId,
