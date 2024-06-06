@@ -4,6 +4,7 @@ const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, AN
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
+const { computePilar } = require('../soft_skills')
 
 const Schema = mongoose.Schema
 
@@ -18,6 +19,10 @@ const MIN_PINNED_EXPERTISES=1
 const MAX_PINNED_EXPERTISES=3
 const MIN_SOFTWARES=1
 const MIN_LANGUAGES=1
+
+const MAX_GOLD_SOFT_SKILLS=1
+const MAX_SILVER_SOFT_SKILLS=2
+const MAX_BRONZE_SOFT_SKILLS=3
 
 const AnnounceSchema = new Schema({
   user: {
@@ -223,6 +228,56 @@ const AnnounceSchema = new Schema({
       required: true,
     }],
   },
+    // Soft skills
+    gold_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+      default: [],
+      validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+    },
+    silver_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+      default: [],
+      validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+    },
+    bronze_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+      default: [],
+      validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+    },
+    // Computed depending on gold/silver/bronze soft skills
+    available_gold_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+    },
+    available_silver_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+    },
+    available_bronze_soft_skills: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'softSkill',
+        required: true,
+      }],
+    },
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -251,6 +306,14 @@ AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
     return this.budget/(this.duration*DURATION_UNIT_DAYS[this.duration_unit])
   }
   return null
+})
+
+// Implement virtual for each pilar
+Object.keys(SS_PILAR).forEach(pilar => {
+  const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+  AnnounceSchema.virtual(virtualName, DUMMY_REF).get(function() {
+    return computePilar(this, pilar)
+  })
 })
 
 module.exports = AnnounceSchema
