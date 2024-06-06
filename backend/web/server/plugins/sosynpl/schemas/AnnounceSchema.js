@@ -143,20 +143,8 @@ const AnnounceSchema = new Schema({
       ref: 'expertise',
     }],
     validate: [
-      function(expertises) {return lodash.inRange(expertises?.length, MIN_PINNED_EXPERTISES, MAX_PINNED_EXPERTISES+1)},
+      expertises => lodash.inRange(expertises?.length, MIN_PINNED_EXPERTISES, MAX_PINNED_EXPERTISES+1),
       `Vous devez mettre en avant de ${MIN_PINNED_EXPERTISES} à de ${MAX_PINNED_EXPERTISES} compétences` 
-    ],
-    default: [],
-    required: true,
-  },
-  pinned_expertises: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'expertise',
-    }],
-    validate: [
-      function(expertises) {return expertises?.length>=MIN_EXPERTISES && expertises?.length<=MAX_EXPERTISES},
-      `Vous devez choisir entre ${MIN_EXPERTISES} et ${MAX_EXPERTISES} compétences`,
     ],
     default: [],
     required: true,
