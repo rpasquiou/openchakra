@@ -977,29 +977,6 @@ const buildMatchCondition = async ({ companyFilter, diet, start_date, end_date, 
   return matchCondition
 }
 
-const createAggregationPipeline = (matchCondition) => [
-  { $match: matchCondition },
-  {
-    $lookup: {
-      from: 'appointments',
-      let: { coachingId: '$_id' },
-      pipeline: [
-        {
-          $match: {
-            $expr: { $eq: ['$$coachingId', '$coaching'] },
-            ...(matchCondition['appointments.start_date'] && { start_date: matchCondition['appointments.start_date'] }),
-            ...(matchCondition['appointments.diet'] && { diet: matchCondition['appointments.diet'] }),
-          },
-        },
-      ],
-      as: 'appointments',
-    },
-  },
-  { $match: { 'appointments.0': { $exists: true } } },
-  { $group: { _id: null, count: { $sum: 1 } } },
-]
-
-
 const coachings_started = async ({ company, diet, start_date, end_date }) => {
   const status = { $ne: COACHING_STATUS_NOT_STARTED }
   return await coachings_calc({company, diet, start_date, end_date, status})
@@ -1037,6 +1014,63 @@ exports.coachings_finished = coachings_finished
 const coachings_calc = async ({company, start_date, end_date, diet, status}) => {
   const companyFilter = company ? [
     {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    { $match: { 'user.company': mongoose.Types.ObjectId(company) } }
+  ] : []
+
+  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
+
+  const dateFilter = (start_date || end_date) ? [
+    {
+      $lookup: {
+        from: 'appointments',
+        localField: '_id',
+        foreignField: 'coaching',
+        as: 'appointments'
+      }
+    },
+    { $unwind: '$appointments' },
+    {
+      $match: {
+        ...start_date ? { 'appointments.start_date': { $gte: new Date(start_date) } } : {},
+        ...end_date ? { 'appointments.start_date': { $lte: new Date(end_date) } } : {}
+      }
+    },
+    {
+      $group: {
+        _id: '$_id'
+      }
+    }
+  ] : []
+
+  const result = await Coaching.aggregate([
+    {
+      $match: {
+        status: status,
+        ...dietFilter
+      }
+    },
+    ...companyFilter,
+    ...dateFilter,
+    {
+      $count: 'totalCoachings'
+    }
+  ])
+
+  return result.length > 0 ? result[0].totalCoachings : 0
+}
+exports.coachings_calc = coachings_calc
+
+exports.validated_appts = async ({company, start_date, end_date, diet}) => {
+  const companyFilter = company ? [
+    {
       $lookup:{
         from:'users',
         localField:'user',
@@ -1063,21 +1097,7 @@ const coachings_calc = async ({company, start_date, end_date, diet, status}) => 
       }
     },
     {$unwind:'$coaching'},
-    {
-      $match:{
-        'coaching.status':status
-      }
-    },
     ...companyFilter,
-    {
-      $group: {
-        _id: '$coaching._id'
-      }
-    },
-    {
-      $count: 'totalCoachings'
-    }
   ])
-  return result.length > 0 ? result[0].totalCoachings : 0;
+  return result.length > 0 ? result.length : 0
 }
-exports.coachings_calc = coachings_calc

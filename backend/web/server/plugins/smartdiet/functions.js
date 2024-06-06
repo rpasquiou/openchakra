@@ -2045,7 +2045,7 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
       if (!cache['coachings_ongoing']) {
         await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet });
       }
-      const appts = await Appointment.countDocuments({ validated: true });
+      const appts = await kpi.validated_appts({company, start_date, end_date, diet})
       result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
         ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
         : 0;
