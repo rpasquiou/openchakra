@@ -238,7 +238,7 @@ declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', 
     const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
     declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
 })
-declareVirtualField({model: 'announce', field: 'deschamps', requires: '_counter', instance: 'String'})
+declareVirtualField({model: 'announce', field: 'serial_number', requires: '_counter', instance: 'String'})
 /** Announce end */
 
 

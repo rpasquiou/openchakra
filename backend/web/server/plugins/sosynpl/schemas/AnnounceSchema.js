@@ -316,7 +316,7 @@ if (mongoose.connection) {
 
 AnnounceSchema.plugin(autoIncrement.plugin, { model: 'announce', field: '_counter', startAt: 1});
 
-AnnounceSchema.virtual('deschamps', DUMMY_REF).get(function() {
+AnnounceSchema.virtual('serial_number', DUMMY_REF).get(function() {
   if (!this._counter) {
     return undefined
   }
