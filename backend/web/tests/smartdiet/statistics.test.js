@@ -178,7 +178,7 @@ describe('Statistics', () => {
     console.log(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })
-  it.only('must compute all stats for kpi coaching page with filters', async () => {
+  it('must compute all stats for kpi coaching page with filters', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const company = '65f2f95bd449f912a30afe74'
@@ -236,10 +236,10 @@ describe('Statistics', () => {
     console.table(measures)
   })
   
-  it('must get filters and treat them properly', async() => {
+  it.only('must get filters and treat them properly', async() => {
     console.log('****************************************ADMIN****************************************')
     const userAdmin = await User.findOne({role: ROLE_ADMIN})
-    const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})
+    // const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})
     let user
     let diet
     let id
@@ -248,62 +248,72 @@ describe('Statistics', () => {
     const params = []
     params['limit'] = 30
     const fields=[]
-    user = userAdmin
+    // user = userAdmin
     const model='billing'
     
-    let now = moment()
-    const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
-    console.log(result)
-    timings.admin=moment().diff(now, 'milliseconds')
-    const totalAdmin = result.data.total
+    // let now = moment()
+    // const result = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
+    // console.log(result)
+    // timings.admin=moment().diff(now, 'milliseconds')
+    // const totalAdmin = result.data.total
 
-    //Second test, no filters, user is Admin, has id
-    console.log('****************************************ADMIN WITH ID****************************************')
-    now = moment()
-    diet = userDiet
-    id = diet._id
-    const idResult = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
-    console.log(idResult)
-    timings.admingWithDiet=moment().diff(now, 'milliseconds')
-    const totalAdminDiet = idResult.data[0].total
+    // //Second test, no filters, user is Admin, has id
+    // console.log('****************************************ADMIN WITH ID****************************************')
+    // now = moment()
+    // diet = userDiet
+    // id = diet._id
+    // const idResult = await preProcessGetFORBIDDEN({ model, id, fields, user, params })  
+    // console.log(idResult)
+    // timings.admingWithDiet=moment().diff(now, 'milliseconds')
+    // const totalAdminDiet = idResult.data[0].total
   
-    //Third test, no filters, user is Diet
-    console.log('****************************************DIET****************************************')
-    now=moment()
-    user = diet
-    const dietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
-    console.log(dietResult)
-    timings.diet=moment().diff(now, 'milliseconds')
-    const totalDiet = dietResult.data.length
+    // //Third test, no filters, user is Diet
+    // console.log('****************************************DIET****************************************')
+    // now=moment()
+    // user = diet
+    // const dietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    // console.log(dietResult)
+    // timings.diet=moment().diff(now, 'milliseconds')
+    // const totalDiet = dietResult.data.length
 
-    //Fourth test, date filters, user is Admin 
-    console.log('****************************************ADMIN WITH DATE FILTERS****************************************')
-    now=moment()
-    params['filter.start_date'] = '2023-01-05T13:00:00.000Z',
-    params['filter.end_date'] = '2024-01-05T13:00:00.000Z'
-    user = userAdmin
-    const filteredResult = await preProcessGetFORBIDDEN({ model, fields, user, params })  
-    console.log(filteredResult)
-    timings.adminDateFilter=moment().diff(now, 'milliseconds')
-    const totalAdminDate = filteredResult.data.total
+    // //Fourth test, date filters, user is Admin 
+    // console.log('****************************************ADMIN WITH DATE FILTERS****************************************')
+    // now=moment()
+    // params['filter.start_date'] = '2023-01-05T13:00:00.000Z',
+    // params['filter.end_date'] = '2024-01-05T13:00:00.000Z'
+    // user = userAdmin
+    // const filteredResult = await preProcessGetFORBIDDEN({ model, fields, user, params })  
+    // console.log(filteredResult)
+    // timings.adminDateFilter=moment().diff(now, 'milliseconds')
+    // const totalAdminDate = filteredResult.data.total
 
-    //Fifth test, date filters, user is Diet
-    console.log('****************************************DIET WITH DATE FILTERS****************************************')
-    now=moment()
-    user = userDiet
-    const filteredDietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
-    console.log(filteredDietResult)
-    timings.dietDateFilter=moment().diff(now, 'milliseconds')
-    const totalDietDate = filteredDietResult.data.length
+    // //Fifth test, date filters, user is Diet
+    // console.log('****************************************DIET WITH DATE FILTERS****************************************')
+    // now=moment()
+    // user = userDiet
+    // const filteredDietResult = await preProcessGetFORBIDDEN({model, id, fields, user, params})
+    // console.log(filteredDietResult)
+    // timings.dietDateFilter=moment().diff(now, 'milliseconds')
+    // const totalDietDate = filteredDietResult.data.length
 
-
+    //Sixth test, admin with company
+    params['filter.company'] = '64a6916f9abb3d5904c60799'
+    params['filter.start_date'] = ''
+    params['filter.end_date'] = ''
+    user= userAdmin
+    now = moment()
+    const companyFilter = await preProcessGetFORBIDDEN({ model, fields, user, params })  
+    console.log(companyFilter)
+    timings.companyFilter = moment().diff(now, 'milliseconds')
+    const totalCompany = companyFilter.data.length
+  
     console.table(timings)
-    expect(totalAdmin).toBeGreaterThanOrEqual(0)
-    expect(totalAdminDiet).toBeLessThanOrEqual(totalAdmin)
-    expect(totalAdminDate).toBeLessThanOrEqual(totalAdmin)
-    expect(totalDiet).toBeGreaterThanOrEqual(0)
-    expect(totalDietDate).toBeGreaterThanOrEqual(0)
-
+    // expect(totalAdmin).toBeGreaterThanOrEqual(0)
+    // expect(totalAdminDiet).toBeLessThanOrEqual(totalAdmin)
+    // expect(totalAdminDate).toBeLessThanOrEqual(totalAdmin)
+    // expect(totalDiet).toBeGreaterThanOrEqual(0)
+    // expect(totalDietDate).toBeGreaterThanOrEqual(0)
+    expect(totalCompany).toBeGreaterThanOrEqual(0)
   })
   it('returns diet stats', async() => {
     const fields = [

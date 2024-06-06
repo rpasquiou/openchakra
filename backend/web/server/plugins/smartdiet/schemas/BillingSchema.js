@@ -6,6 +6,14 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const BillingSchema = new Schema({
+  start_date: {
+    type: Date,
+    required: false,
+  },
+  end_date : {
+    type:Date,
+    required: false,
+  },
   month: {
     type: Date,
     required: false,
