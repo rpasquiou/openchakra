@@ -178,14 +178,13 @@ describe('Statistics', () => {
     console.log(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })
-  it('must compute all stats for kpi coaching page', async() => {
-    let now = moment()
-    let measures=[]
-    const measure = (field) =>{
-      measures[field]=moment().diff(now,'milliseconds')
-      now=moment()
-    }
-    const fields=[
+  it('must compute all stats for kpi coaching page with filters', async () => {
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const company = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+  
+    const fields = [
       'coachings_started',
       'coachings_ongoing',
       'coachings_stopped',
@@ -202,15 +201,41 @@ describe('Statistics', () => {
       'coachings_gender_unknown',
       'coachings_stats',
     ]
-  for(let field of fields){
-    const stats = await computeStatistics({fields:[field]})
-    measure(field)
-  }
-  const stats = await computeStatistics({fields:fields})
-  measure('all')
-  console.table(measures)
-  expect(1).toEqual(1)
-  })  
+  
+    const combinations = [
+      { label: 'noParams', filters: {} },
+      { label: 'diet', filters: { diet } },
+      { label: 'start_date', filters: { start_date } },
+      { label: 'end_date', filters: { end_date } },
+      { label: 'company', filters: { company } },
+      { label: 'all but company', filters: { diet, start_date, end_date } },
+      { label: 'all', filters: { company, start_date, end_date, diet } },
+    ]
+  
+    let measures = []
+  
+    const measure = (label, duration) => {
+      measures.push({ label, duration })
+    }
+  
+    for (let combination of combinations) {
+      let now = moment()
+      for (let field of fields) {
+        const noww=moment()
+        const stats = await computeStatistics({ fields: [field], ...combination.filters })
+        measure(combination.label + field, moment().diff(noww,'milliseconds'))
+        //console.log(stats)
+      }
+      measure(combination.label, moment().diff(now, 'milliseconds'))
+    }
+  
+    let now = moment()
+    await computeStatistics({ fields, company, start_date, end_date, diet })
+    measure('all_fields_all_filters', moment().diff(now, 'milliseconds'))
+  
+    console.table(measures)
+  })
+  
   it('must get filters and treat them properly', async() => {
     console.log('****************************************ADMIN****************************************')
     const userAdmin = await User.findOne({role: ROLE_ADMIN})
@@ -280,7 +305,7 @@ describe('Statistics', () => {
     expect(totalDietDate).toBeGreaterThanOrEqual(0)
 
   })
-  it('returns diet stats', async() => {
+  it.only('returns diet stats', async() => {
     const fields = [
       'diet_coaching_enabled',
       'diet_site_enabled',
@@ -299,7 +324,7 @@ describe('Statistics', () => {
     expect(stats.diet_activated).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('compares coachings_stats and stats performance', async () => {
+  it('compares coachings_stats and stats performance', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z');
     const end_date = new Date('2021-01-05T13:00:00.000Z');
     const company = '65f2f95bd449f912a30afe74';
@@ -333,5 +358,12 @@ describe('Statistics', () => {
   
     await testFields('coachings_stats', 'coachings_stats');
   });
-  
+  it('returns ratio appointments coachings', async () => {
+    const start_date = new Date('2020-01-05T13:00:00.000Z')
+    const end_date = new Date('2021-01-05T13:00:00.000Z')
+    const company = '65f2f95bd449f912a30afe74'
+    const diet = '65f2faa6234cec144a11fb3f'
+    const stats = await computeStatistics({fields:['ratio_appointments_coaching'], diet})
+    console.log(stats)
+  })
 })
