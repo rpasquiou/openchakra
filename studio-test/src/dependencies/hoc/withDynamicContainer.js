@@ -38,7 +38,7 @@ const setRecurseDataSource = (
       // DANGEROUS!!!!!!!! FOR QUIZZ !!!!!
       const newSuffix = suffix//child?.props?.dataSourceId ? `${suffix}_${index}` : suffix
       const newId = child.props?.id ? `${child.props?.id}${suffix}` : undefined
-      const key = `${dataSource?._id}_${index}`
+      const key = `${newId}/${dataSource?._id}`
       const level=newId ? newId.split(/(_.*)$/)[1] : undefined
       //if (child.props === undefined || (child.props.dataSourceId && child.props.dataSourceId!=dataSourceId)) {
         if (child.props === undefined) {
@@ -205,8 +205,12 @@ const withDynamicContainer = Component => {
       </Flex>
       :
       null
+    const key=(orgData || []).map(v => v._id.toString())
+    if (/LFBBCWAJ3VB59/.test(props.id)) {
+      console.log('Refresh', props.id)
+    }
     return (
-      <Component {...lodash.omit(props, ['children'])}>
+      <Component {...lodash.omit(props, ['children'])} key={key}>
         {navigation}
         {orgData.map((d, index) => {
           const newId = firstChild.props?.id
