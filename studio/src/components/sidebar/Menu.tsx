@@ -9,6 +9,7 @@ import MenuActions from './MenuActions'
 import ResponsiveActions from './ResponsiveActions'
 import MediaDetails from './MediaDetails'
 import ProjectSettings from './ProjectSettings'
+import ListModels from './pages/ListModels'
 
 interface activemenu {
   show: boolean
@@ -48,6 +49,12 @@ const Menu = () => {
     settings: {
       title: 'Settings',
       component: <ProjectSettings />,
+      icon: '/icons/settings.svg',
+    },
+
+    database: {
+      title: 'Edit Schemas',
+      component: <ListModels />,
       icon: '/icons/settings.svg',
     },
   }
