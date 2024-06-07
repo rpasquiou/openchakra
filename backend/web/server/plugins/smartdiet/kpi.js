@@ -604,8 +604,72 @@ const coachingsStarted= await coachings_started({companyFilter, diet, start_date
 exports.ratio_dropped_started = ratio_dropped_started
 
 const coachings_started = async ({ company, diet, start_date, end_date }) => {
-  const status = { $ne: COACHING_STATUS_NOT_STARTED }
-  return await coachings_calc({company, diet, start_date, end_date, status})
+  const companyFilter = company ? [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
+      }
+    },
+    { $unwind: '$user' },
+    { $match: { 'user.company': mongoose.Types.ObjectId(company) } }
+  ] : []
+
+  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
+
+  const dateFilter = (start_date || end_date) ? [
+    {
+      $match: {
+        ...start_date ? { 'appointments.start_date': { $gte: new Date(start_date) } } : {},
+        ...end_date ? { 'appointments.start_date': { $lte: new Date(end_date) } } : {}
+      }
+    },
+    {
+      $group: {
+        _id: '$_id'
+      }
+    }
+  ] : []
+
+  const result = await Coaching.aggregate([
+    ...diet ? [{$match:{ diet: mongoose.Types.ObjectId(diet) }}] : [],
+    ...companyFilter,
+    {
+      $lookup:{
+        from:'appointments',
+        localField:'_id',
+        foreignField:'coaching',
+        as:'appointments',
+      }
+    },
+    {
+      $unwind:'$appointments'
+    },
+    {
+      $match:{
+        appointments:{$ne:[]}
+      }
+    },
+    {
+      $match:{
+        'appointments.validated':true,
+        ...start_date ? { 'appointments.start_date': { $gte: new Date(moment(start_date).startOf('day')) } } : {},
+        ...end_date ? { 'appointments.start_date': { $lte: new Date(moment(end_date).endOf('day')) } } : {}
+      }
+    },
+    {
+      $group: {
+        _id: '$_id'
+      }
+    },
+    {
+      $count: 'totalCoachings'
+    }
+  ])
+  console.log(result)
+  return result.length > 0 ? result[0].totalCoachings : 0
 }
 
 exports.coachings_started = coachings_started
