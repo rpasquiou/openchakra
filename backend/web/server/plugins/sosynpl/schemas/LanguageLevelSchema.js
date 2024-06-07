@@ -1,13 +1,14 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { LANGUAGES, LANGUAGE_LEVEL } = require('../../../../utils/consts')
+const { LANGUAGE_LEVEL } = require('../../../../utils/consts')
+const { SOSYNPL_LANGUAGES } = require('../consts')
 
 const Schema = mongoose.Schema
 
 const LanguageLevelSchema = new Schema({
   language: {
     type: String,
-    enum: Object.keys(LANGUAGES),
+    enum: Object.keys(SOSYNPL_LANGUAGES),
     required: [true, `La langue est obligatoire`],
   },
   level: {

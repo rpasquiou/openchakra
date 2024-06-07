@@ -173,7 +173,25 @@ const computeAvailableBronzeSoftSkills =  async (userId, params, data) => {
   return await SoftSkill.find({_id: {$nin: [...data.gold_soft_skills, ...data.silver_soft_skills]}})
 }
 
+const mapMedals = owner => {
+  let medals={}
+  owner.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
+  owner.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
+  owner.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
+  return medals
+}
+
+function computePilar(owner, pilar) {
+  const medals = mapMedals(owner)
+  const pilars = computePilars(medals)
+  const max_value = lodash(pilars).values().max()
+  // Convert to percent value
+  const value = pilars[pilar] / max_value
+  return value
+}
+
 module.exports={
   computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills, computeAvailableBronzeSoftSkills,
   MATRIX, computePilars, computeGold, computeBronze, computeSilver, computeEmpty, computeActivated,
+  computePilar,
 }
