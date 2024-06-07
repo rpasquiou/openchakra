@@ -69,7 +69,9 @@ const UserSchema = new Schema({
   },
   birthday: {
     type: Date,
+    set: v => v ? moment(v).startOf('day') : v,
     required: false,
+    index: true,
   },
   // Height in centimeters
   height: {
@@ -663,6 +665,13 @@ UserSchema.virtual("coachings", {
   ref: "coaching", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "user" // is equal to foreignField
+})
+
+UserSchema.virtual("coachings_count", {
+  ref: "coaching", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "user", // is equal to foreignField
+  count: true,
 })
 
 UserSchema.virtual("latest_coachings", {

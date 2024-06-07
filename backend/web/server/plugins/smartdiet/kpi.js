@@ -10,6 +10,7 @@ const Appointment = require('../../models/Appointment')
 const Job = require('../../models/Job')
 const JoinReason = require('../../models/JoinReason')
 const DeclineReason = require('../../models/DeclineReason')
+const NutritionAdvice = require('../../models/NutritionAdvice')
 const Webinar = require('../../models/Webinar')
 const Company = require('../../models/Company')
 
@@ -428,305 +429,7 @@ exports.diet_activated = async () => {
   return await User.countDocuments({active:true, role:ROLE_EXTERNAL_DIET})
 }
 
-//START KPI COACHING
 
-const coachings_stats = async ({ company, start_date, end_date, diet}) => {
-  const startDate = start_date ? new Date(start_date) : null
-  const endDate = end_date ? new Date(end_date) : new Date()
-
-  const statusFilters = {
-    valid: { validated: true },
-    upcoming: { start_date: { $gt: endDate } },
-    rabbit: { end_date: {$lt: endDate}, validated: false}
-  }
-
-  const dateFilter = {}
-  if (startDate) dateFilter.start_date = { $gte: startDate }
-  if (end_date) dateFilter.end_date = { $lte: endDate }
-
-  const dietFilter = diet ? {diet:mongoose.Types.ObjectId(diet)} : {}
-  
-  const AGE_RANGES = [
-    { name: '18-24', min: 18, max: 24 },
-    { name: '25-29', min: 25, max: 29 },
-    { name: '30-34', min: 30, max: 34 },
-    { name: '35-39', min: 35, max: 39 },
-    { name: '40-44', min: 40, max: 44 },
-    { name: '45-49', min: 45, max: 49 },
-    { name: '50-54', min: 50, max: 54 },
-    { name: '55-59', min: 55, max: 59 },
-    { name: '60-64', min: 60, max: 64 },
-    { name: '65-69', min: 65, max: 69 },
-    { name: '70-74', min: 70, max: 74 },
-    { name: 'Unknown', min: null, max: null },
-  ]
-
-  const initializeAgeRanges = () =>
-    AGE_RANGES.map(({ name }) => ({
-      name,
-      count: 0,
-      percent: '0.00',
-    }))
-
-  const YEAR = 365 * 24 * 60 * 60 * 1000
-
-    
-  const createPipeline = (statusFilter, dateFilter, company) => [
-    { $match: { ...statusFilter, ...dateFilter, ...dietFilter } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'user',
-      },
-    },
-    { $unwind: '$user' },
-    {$match:{'user.company':company ? mongoose.Types.ObjectId(company) : {$ne:null}}},
-    {
-      $addFields: {
-        age: {
-          $floor: {
-            $divide: [
-              { $subtract: [new Date(), '$user.birthday'] },
-              YEAR,
-            ],
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        ageRange: {
-          $switch: {
-            branches: AGE_RANGES.map(({ name, min, max }) => ({
-              case: min !== null && max !== null
-                ? { $and: [{ $gte: ['$age', min] }, { $lte: ['$age', max] }] }
-                : { $eq: [true, true] },
-              then: name,
-            })),
-            default: 'Unknown',
-          },
-        },
-        coachingId: '$coaching._id',
-      },
-    },
-    { $sort: { start_date: 1 } },
-    {
-      $group: {
-        _id: '$coachingId',
-        appointments: {
-          $push: {
-            _id: '$_id',
-            start_date: '$start_date',
-            ageRange: '$ageRange',
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        appointmentsWithIndex: {
-          $map: {
-            input: { $range: [0, { $size: '$appointments' }] },
-            as: 'index',
-            in: {
-              index: '$$index',
-              appointment: { $arrayElemAt: ['$appointments', '$$index'] },
-            },
-          },
-        },
-      },
-    },
-    { $unwind: '$appointmentsWithIndex' },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: 1 },
-        ageRanges: {
-          $push: '$appointmentsWithIndex.appointment.ageRange',
-        },
-        appointments: {
-          $push: {
-            order: '$appointmentsWithIndex.index',
-            ageRange: '$appointmentsWithIndex.appointment.ageRange',
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        ageRanges: {
-          $map: {
-            input: AGE_RANGES.map(({ name }) => name),
-            as: 'ageRange',
-            in: {
-              name: '$$ageRange',
-              count: {
-                $size: {
-                  $filter: {
-                    input: '$ageRanges',
-                    as: 'age',
-                    cond: { $eq: ['$$age', '$$ageRange'] },
-                  },
-                },
-              },
-              percent: {
-                $cond: {
-                  if: { $gt: ['$total', 0] },
-                  then: {
-                    $multiply: [
-                      { $divide: [{ $size: { $filter: { input: '$ageRanges', as: 'age', cond: { $eq: ['$$age', '$$ageRange'] } } } }, '$total'] },
-                      100,
-                    ],
-                  },
-                  else: 0,
-                },
-              },
-            },
-          },
-        },
-        appointments: {
-          $map: {
-            input: { $range: [0, 16] },
-            as: 'order',
-            in: {
-              order: '$$order',
-              total: {
-                $size: {
-                  $filter: {
-                    input: '$appointments',
-                    as: 'ord',
-                    cond: { $eq: ['$$ord.order', '$$order'] },
-                  },
-                },
-              },
-              ageRanges: {
-                $map: {
-                  input: AGE_RANGES.map(({ name }) => name),
-                  as: 'ageRange',
-                  in: {
-                    name: '$$ageRange',
-                    count: {
-                      $size: {
-                        $filter: {
-                          input: '$appointments',
-                          as: 'ord',
-                          cond: {
-                            $and: [
-                              { $eq: ['$$ord.order', '$$order'] },
-                              { $eq: ['$$ord.ageRange', '$$ageRange'] },
-                            ],
-                          },
-                        },
-                      },
-                    },
-                    percent: {
-                      $cond: {
-                        if: { $gt: ['$total', 0] },
-                        then: {
-                          $multiply: [
-                            {
-                              $divide: [
-                                {
-                                  $size: {
-                                    $filter: {
-                                      input: '$appointments',
-                                      as: 'ord',
-                                      cond: {
-                                        $and: [
-                                          { $eq: ['$$ord.order', '$$order'] },
-                                          { $eq: ['$$ord.ageRange', '$$ageRange'] },
-                                        ],
-                                      },
-                                    },
-                                  },
-                                },
-                                '$total',
-                              ],
-                            },
-                            100,
-                          ],
-                        },
-                        else: 0,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        total: 1,
-        ranges: {
-          $map: {
-            input: '$ageRanges',
-            as: 'ageRange',
-            in: {
-              name: '$$ageRange.name',
-              count: '$$ageRange.count',
-              percent: { $round: ['$$ageRange.percent', 2] },
-            },
-          },
-        },
-        appointments: {
-          $map: {
-            input: '$appointments',
-            as: 'orderData',
-            in: {
-              order: '$$orderData.order',
-              total: '$$orderData.total',
-              ranges: {
-                $map: {
-                  input: '$$orderData.ageRanges',
-                  as: 'ageRange',
-                  in: {
-                    name: '$$ageRange.name',
-                    count: '$$ageRange.count',
-                    percent: { $round: ['$$ageRange.percent', 2] },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  ]
-
-  const validPipeline = createPipeline(statusFilters.valid, dateFilter, company)
-  const upcomingPipeline = createPipeline(statusFilters.upcoming, dateFilter, company)
-  const rabbitPipeline = createPipeline(statusFilters.rabbit, dateFilter, company)
-
-  const [validStats, upcomingStats, rabbitStats] = await Promise.all([
-    Appointment.aggregate(validPipeline),
-    Appointment.aggregate(upcomingPipeline),
-    Appointment.aggregate(rabbitPipeline)
-  ])
-
-  const initializeResult = () => ({
-    total: 0,
-    ranges: initializeAgeRanges(),
-    appointments: Array.from({ length: 16 }, (_, i) => ({ order: i, total: 0, ranges: initializeAgeRanges() })),
-  })
-
-  const validResult = validStats[0] || initializeResult()
-  const upcomingResult = upcomingStats[0] || initializeResult()
-  const rabbitResult = rabbitStats[0] || initializeResult()
-
-  validResult.name = APPOINTMENT_STATUS[APPOINTMENT_VALID]
-  upcomingResult.name = APPOINTMENT_STATUS[APPOINTMENT_TO_COME]
-  rabbitResult.name = APPOINTMENT_STATUS[APPOINTMENT_RABBIT]
-
-  return [validResult, upcomingResult, rabbitResult]
-}
-
-exports.coachings_stats = coachings_stats
 
 const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet }) => {
   const coachingConditions={status: { $in: [COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED] }}
@@ -785,57 +488,20 @@ const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet 
 
 exports.coachings_by_gender_ = coachings_by_gender_
 
-const nut_advices = async ({ companyFilter, diet, start_date, end_date }) => {
-  const matchConditions = {
-    company: companyFilter,
+const nut_advices = async ({ companyFilter, company, diet, start_date, end_date }) => {
+  const matchConditions = {}
+  if (diet) {
+    matchConditions.diet=diet
+  }
+  if (start_date || end_date) {
+    matchConditions.start_date={}
+    start_date ? matchConditions.start_date['$gt']=start_date : null
+    end_date ? matchConditions.start_date['$lt']=end_date : null
   }
 
-  if (start_date || end_date || diet) {
-    const pipeline = [
-      { $match: matchConditions },
-      {
-        $lookup: {
-          from: 'appointments',
-          localField: '_id',
-          foreignField: 'user',
-          as: 'appointments',
-        },
-      },
-      { $unwind: '$appointments' },
-    ]
-
-    if (start_date) {
-      pipeline.push({
-        $match: {
-          'appointments.start_date': { $gte: new Date(start_date) },
-        },
-      })
-    }
-
-    if (end_date) {
-      pipeline.push({
-        $match: {
-          'appointments.start_date': { $lte: new Date(end_date) },
-        },
-      })
-    }
-
-    if (diet) {
-      pipeline.push({
-        $match: {
-          'appointments.diet': mongoose.Types.ObjectId(diet),
-        },
-      })
-    }
-
-    const usersWithNutAdvices = await User.aggregate(pipeline)
-      .group({ _id: '$_id' })
-      .exec()
-
-    return usersWithNutAdvices.length
-  } else {
-    return await User.countDocuments(matchConditions).lean()
-  }
+  const users=company ? await User.find({company}, {email:1}) : null
+  const usersCondition=users ? {patient_email: {$in: users.map(u => u.email)}} : {}
+  return NutritionAdvice.countDocuments({...matchConditions, ...usersCondition})
 }
 
 exports.nut_advices = nut_advices
@@ -1061,3 +727,415 @@ exports.validated_appts = async ({company, start_date, end_date, diet}) => {
   ])
   return result.length > 0 ? result.length : 0
 }
+
+const coachings_stats = async ({ company, start_date, end_date, diet }) => {
+  const startDate = start_date ? new Date(start_date) : null
+  const endDate = end_date ? new Date(end_date) : new Date()
+  const upcomingStartDate = start_date ? new Date(start_date) : new Date()
+
+  const dateFilter = {}
+  if (startDate) dateFilter.start_date = { $gte: startDate }
+  if (end_date) dateFilter.end_date = { $lte: endDate }
+
+  const companyFilter = company ? [{ $match: { 'user.company': mongoose.Types.ObjectId(company) } }] : []
+
+  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
+
+  const AGE_RANGES = [
+    { min: 18, max: 24 },
+    { min: 25, max: 29 },
+    { min: 30, max: 34 },
+    { min: 35, max: 39 },
+    { min: 40, max: 44 },
+    { min: 45, max: 49 },
+    { min: 50, max: 54 },
+    { min: 55, max: 59 },
+    { min: 60, max: 64 },
+    { min: 65, max: 69 },
+    { min: 70, max: 74 },
+    { min: null, max: null },
+  ].map(obj => ({...obj, name: !obj.min ? 'Unknown' : `${obj.min}-${obj.max}`}))
+
+  const YEAR = 365 * 24 * 60 * 60 * 1000
+
+  const createPipeline = () => [
+    { $match: { ...dateFilter, ...dietFilter } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    ...companyFilter,
+    {
+      $project: {
+        _id: 1,
+        coaching: 1,
+        start_date: 1,
+        end_date: 1,
+        validated: 1,
+        'user._id': 1,
+        'user.birthday': 1,
+      },
+    },
+    {
+      $addFields: {
+        age: {
+          $floor: {
+            $divide: [{ $subtract: [new Date(), '$user.birthday'] }, YEAR],
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ageRange: {
+          $switch: {
+            branches: AGE_RANGES.map(({ name, min, max }) => ({
+              case: min !== null && max !== null
+                ? { $and: [{ $gte: ['$age', min] }, { $lte: ['$age', max] }] }
+                : { $eq: [true, true] },
+              then: name,
+            })),
+            default: 'Unknown',
+          },
+        },
+        coachingId: '$coaching',
+      },
+    },
+    { $sort: { start_date: 1 } },
+    {
+      $group: {
+        _id: '$coachingId',
+        appointments: {
+          $push: {
+            _id: '$_id',
+            start_date: '$start_date',
+            end_date: '$end_date',
+            ageRange: '$ageRange',
+            validated: '$validated',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        appointments: {
+          $map: {
+            input: '$appointments',
+            as: 'appointment',
+            in: {
+              $mergeObjects: [
+                '$$appointment',
+                { order: { $add: [{ $indexOfArray: ['$appointments', '$$appointment'] }, 1] } },
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        appointments: {
+          $map: {
+            input: '$appointments',
+            as: 'appointment',
+            in: {
+              $mergeObjects: [
+                '$$appointment',
+                {
+                  status: {
+                    $switch: {
+                      branches: [
+                        { case: { $eq: ['$$appointment.validated', true] }, then: APPOINTMENT_STATUS[APPOINTMENT_VALID] },
+                        {
+                          case: {
+                            $and: [
+                              { $gte: ['$$appointment.start_date', upcomingStartDate] },
+                              { $ne: ['$$appointment.validated', true] },
+                            ],
+                          },
+                          then: APPOINTMENT_STATUS[APPOINTMENT_TO_COME],
+                        },
+                        {
+                          case: {
+                            $and: [
+                              { $lte: ['$$appointment.end_date', endDate] },
+                              { $eq: ['$$appointment.validated', false] },
+                            ],
+                          },
+                          then: APPOINTMENT_STATUS[APPOINTMENT_RABBIT],
+                        },
+                      ],
+                      default: 'Unknown',
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    },
+    { $unwind: '$appointments' },
+    {
+      $group: {
+        _id: { status: '$appointments.status', order: '$appointments.order' },
+        total: { $sum: 1 }, 
+        ranges: {
+          $push: {
+            ageRange: '$appointments.ageRange',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ranges: {
+          $map: {
+            input: AGE_RANGES,
+            as: 'range',
+            in: {
+              name: '$$range.name',
+              total: {
+                $size: {
+                  $filter: {
+                    input: '$ranges',
+                    as: 'r',
+                    cond: { $eq: ['$$r.ageRange', '$$range.name'] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ranges: {
+          $map: {
+            input: '$ranges',
+            as: 'range',
+            in: {
+              name: '$$range.name',
+              total: '$$range.total',
+              percent: {$toString: { $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] } 
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: '$_id.status',
+        total: { $sum: '$total' },
+        appointments: {
+          $push: {
+            order: '$_id.order',
+            total: '$total',
+            ranges: '$ranges',
+          },
+        },
+        overallRanges: { $push: '$ranges' }, 
+      },
+    },
+    {
+      $addFields: {
+        overallRanges: {
+          $reduce: {
+            input: '$overallRanges',
+            initialValue: AGE_RANGES.map(({ name }) => ({ name, total: 0 })),
+            in: {
+              $map: {
+                input: '$$value',
+                as: 'range',
+                in: {
+                  name: '$$range.name',
+                  total: {
+                    $sum: [
+                      '$$range.total',
+                      {
+                        $let: {
+                          vars: {
+                            matchedRange: {
+                              $arrayElemAt: [
+                                {
+                                  $filter: {
+                                    input: '$$this',
+                                    as: 'thisRange',
+                                    cond: { $eq: ['$$thisRange.name', '$$range.name'] },
+                                  },
+                                },
+                                0,
+                              ],
+                            },
+                          },
+                          in: { $ifNull: ['$$matchedRange.total', 0] },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        name: '$_id',
+        total: 1,
+        appointments: 1,
+        ranges: {
+          $map: {
+            input: '$overallRanges',
+            as: 'range',
+            in: {
+              name: '$$range.name',
+              total: '$$range.total',
+              percent: {$toString: { $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] } },
+            },
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        ranges: {
+          $map: {
+            input: AGE_RANGES,
+            as: 'range',
+            in: {
+              name: '$$range.name',
+              total: {
+                $let: {
+                  vars: {
+                    matchedRange: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: '$ranges',
+                            as: 'existingRange',
+                            cond: { $eq: ['$$existingRange.name', '$$range.name'] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $ifNull: ['$$matchedRange.total', 0] },
+                },
+              },
+              percent: {
+                $let: {
+                  vars: {
+                    matchedRange: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: '$ranges',
+                            as: 'existingRange',
+                            cond: { $eq: ['$$existingRange.name', '$$range.name'] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $multiply: [{ $divide: [{ $ifNull: ['$$matchedRange.total', 0] }, '$total'] }, 100]
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    
+    {
+      $addFields: {
+        appointments: {
+          $map: {
+            input: { $range: [1, 17] },
+            as: 'order',
+            in: {
+              order: '$$order',
+              total: {
+                $let: {
+                  vars: {
+                    matchedAppointment: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: '$appointments',
+                            as: 'appointment',
+                            cond: { $eq: ['$$appointment.order', '$$order'] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $ifNull: ['$$matchedAppointment.total', 0] },
+                },
+              },
+              ranges: {
+                $let: {
+                  vars: {
+                    matchedAppointment: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: '$appointments',
+                            as: 'appointment',
+                            cond: { $eq: ['$$appointment.order', '$$order'] },
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  },
+                  in: { $ifNull: ['$$matchedAppointment.ranges', AGE_RANGES.map(({ name }) => ({ name, total: 0, percent: '0' }))] },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]
+  
+  const initializeAgeRanges= () => AGE_RANGES.map(obj => ({...obj, total:0, percent:0, min: undefined, max: undefined}))
+
+  const initializeResult = () => ({
+    total: 0,
+    ranges: initializeAgeRanges(),
+    appointments: Array.from({ length: 16 }, (_, i) => ({
+      order: i + 1,
+      total: 0,
+      ranges: initializeAgeRanges(),
+    })),
+  })
+  
+  const getResultByName = (result, name) => {
+    const found = result.find(item => item.name === name)
+    return found || { name, ...initializeResult() }
+  }
+  const result = await Appointment.aggregate(createPipeline())
+  console.timeEnd('test')
+  console.log(result)
+  const valid = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_VALID])
+  const tocome = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_TO_COME])
+  const rabbit = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_RABBIT])
+
+  return [valid, tocome, rabbit]
+}
+
+exports.coachings_stats = coachings_stats

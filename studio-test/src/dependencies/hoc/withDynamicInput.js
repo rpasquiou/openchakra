@@ -3,7 +3,6 @@ import lodash from 'lodash'
 import {InputGroup, InputRightElement} from '@chakra-ui/react'
 import {AiOutlineEye, AiOutlineEyeInvisible} from 'react-icons/ai'
 import { ACTIONS } from '../utils/actions'
-import useDebounce from '../hooks/useDebounce.hook'
 
 const withDynamicInput = Component => {
 
@@ -38,8 +37,6 @@ const withDynamicInput = Component => {
     }, [clearComponents])
     const [internalDataValue, setInternalDataValue] = useState(keptValue)
     const [visibilityType, setVisibilityType]= useState('password')
-
-    const debouncedValue = useDebounce(internalDataValue, 500)
 
     const onChange = ev => {
       const val = ev.target ? ev.target.value : ev

@@ -213,10 +213,8 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
-      if (isFilterComponent(childComponent, components)) {
-        propsContent += ` setComponentValue={setComponentValue} `
-      }
-
+      propsContent += ` setComponentValue={setComponentValue} `
+      
       propsContent += ` getComponentAttribute={getComponentAttribute} `
 
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
@@ -761,7 +759,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh, componentsValues])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
   return code
 }
 
@@ -1047,13 +1045,6 @@ const ${componentName} = () => {
   const setComponentValue = (compId, value) => {
     if (lodash.isEqual(value, componentsValues[compId])) {
       return
-    }
-    const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
-      .filter(([k ,v]) => v?.variables?.some(([attName, comp]) => comp==compId))
-      .map(([k, v]) => k)
-    if (impactedDataSources.length>0) {
-      const newPagesIndexes=lodash.omitBy(pagesIndex, (v, k) => impactedDataSources.some(ds => k==ds || k.startsWith(ds+'.')))
-      setPagesIndex(newPagesIndexes)
     }
     setComponentsValues(s=> ({...s, [compId]: value}))
   }
