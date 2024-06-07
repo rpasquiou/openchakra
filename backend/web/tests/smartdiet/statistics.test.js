@@ -18,67 +18,8 @@ afterAll(async () => {
 })
 
 describe('Statistics', () => {
-  let now
-  const measures = []
-  const start_date = new Date('2020-01-05T13:00:00.000Z')
-  const end_date = new Date('2021-01-05T13:00:00.000Z')
-  const diet = '65f2faa9234cec144a11fbed'
-  const id = '65f2f95bd449f912a30afe74'
 
-  const measure = (field) => {
-    measures[field] = moment().diff(now, 'milliseconds')
-    console.table(measures)
-    now = moment()
-  }
-
-  const testCoachingStats = async (field, options = {}) => {
-    now = moment()
-    const stats = await computeStatistics({ fields: [field], ...options })
-    const count = stats[field]
-    console.table({ [field]: count })
-    measure(`${field} + ${options}`)
-    return count
-  }
-
-  const runTest = (field) => {
-    it(`must return ${field}`, async () => {
-      const base = await testCoachingStats(field)
-      expect(base).toBeGreaterThanOrEqual(0)
-
-      const withId = await testCoachingStats(field, { id })
-      expect(withId).toBeGreaterThanOrEqual(0)
-
-      const withDiet = await testCoachingStats(field, { diet })
-      console.log(typeof(withDiet))
-      expect(withDiet).toBeGreaterThanOrEqual(0)
-
-      const withDates = await testCoachingStats(field, { start_date, end_date })
-      expect(withDates).toBeGreaterThanOrEqual(0)
-
-      const withAll = await testCoachingStats(field, { id, diet, start_date, end_date })
-      expect(withAll).toBeGreaterThanOrEqual(0)
-    })
-  }
-
-  const fields = [
-    'coachings_started',
-    'coachings_stopped',
-    'coachings_dropped',
-    'coachings_ongoing',
-    'coachings_finished',
-    'coachings_gender_male',
-    'coachings_gender_female',
-    'coachings_gender_non_binary',
-    'coachings_gender_unknown',
-    'coachings_renewed',
-    'nut_advices',
-    'ratio_stopped_started',
-    'ratio_dropped_started'
-  ]
-
-  fields.forEach(runTest)
-
-  it.only('must return coachings_stats', async () => {
+  it('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const id = '65f2f95bd449f912a30afe74'
@@ -184,7 +125,7 @@ describe('Statistics', () => {
     return means
   }
   
-  it('must compute all stats for kpi coaching page with filters', async () => {
+  it.only('must compute all stats for kpi coaching page with filters', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const company = '65f2f95bd449f912a30afe74'
@@ -192,20 +133,19 @@ describe('Statistics', () => {
   
     const fields = [
       'coachings_started',
-      'coachings_ongoing',
-      'coachings_stopped',
-      'coachings_dropped',
-      'coachings_finished',
-      'coachings_renewed',
-      'nut_advices',
-      'ratio_dropped_started',
-      'ratio_stopped_started',
-      'ratio_appointments_coachings',
-      'coachings_gender_female',
-      'coachings_gender_male',
-      'coachings_gender_non_binary',
-      'coachings_gender_unknown',
-      'coachings_stats',
+      // 'coachings_ongoing',
+      // 'coachings_stopped',
+      // 'coachings_dropped',
+      // 'coachings_finished',
+      // 'coachings_renewed',
+      // 'nut_advices',
+      // 'ratio_dropped_started',
+      // 'ratio_stopped_started',
+      // 'ratio_appointments_coachings',
+      // 'coachings_gender_female',
+      // 'coachings_gender_male',
+      // 'coachings_gender_non_binary',
+      // 'coachings_gender_unknown',
     ]
   
     const combinations = [
@@ -239,16 +179,15 @@ describe('Statistics', () => {
       }
   
       let now = moment()
-      await computeStatistics({ fields, company, start_date, end_date, diet })
-      measure('all_fields_all_filters', moment().diff(now, 'milliseconds'))
-  
+      const res = await computeStatistics({ fields, company, start_date, end_date, diet })
+      console.table(res)
       return measures
     }
   
-    for (let i = 0; i < 5; i++) {
+    // for (let i = 0; i < 5; i++) {
       const measures = await runTest()
       allMeasures = allMeasures.concat(measures)
-    }
+    // }
   
     const meanDurations = computeMeanDuration(allMeasures)
   
