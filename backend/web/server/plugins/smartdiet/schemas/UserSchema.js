@@ -69,7 +69,9 @@ const UserSchema = new Schema({
   },
   birthday: {
     type: Date,
+    set: v => v ? moment(v).startOf('day') : v,
     required: false,
+    index: true,
   },
   // Height in centimeters
   height: {
