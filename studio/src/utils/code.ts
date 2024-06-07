@@ -1048,13 +1048,6 @@ const ${componentName} = () => {
     if (lodash.isEqual(value, componentsValues[compId])) {
       return
     }
-    const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
-      .filter(([k ,v]) => v?.variables?.some(([attName, comp]) => comp==compId))
-      .map(([k, v]) => k)
-    if (impactedDataSources.length>0) {
-      const newPagesIndexes=lodash.omitBy(pagesIndex, (v, k) => impactedDataSources.some(ds => k==ds || k.startsWith(ds+'.')))
-      setPagesIndex(newPagesIndexes)
-    }
     setComponentsValues(s=> ({...s, [compId]: value}))
   }
 
