@@ -12,6 +12,7 @@ const {
   APPOINTMENT_RABBIT
 } = require('../consts')
 const lodash=require('lodash')
+const { updateApptsOrder } = require('../coaching')
 
 const Schema = mongoose.Schema
 
@@ -92,12 +93,12 @@ const AppointmentSchema = new Schema({
     index: true,
     required: false,
   },
+  order: {
+    type: Number,
+    default: -1,
+    required: true,
+  }
   }, schemaOptions)
-
-AppointmentSchema.virtual('order', DUMMY_REF).get(function() {
-  return lodash.sortBy(this.coaching?.appointments||[], 'start_date')
-   .findIndex(app => idEqual(app._id, this._id))+1
-   })
 
 AppointmentSchema.virtual('status', DUMMY_REF).get(function() {
   const now=moment()
@@ -113,4 +114,36 @@ AppointmentSchema.virtual('status', DUMMY_REF).get(function() {
   }
   return this.validated ? APPOINTMENT_VALID : APPOINTMENT_RABBIT
 })
+
+const updateAppointmentsOrder = hook => async(...params) => {
+
+  if (['save', 'remove'].includes(hook)) {
+    const appt=params[0]
+    return updateApptsOrder(appt.coaching)
+  }
+}
+
+AppointmentSchema.post('aggregate', updateAppointmentsOrder('aggregate'))
+AppointmentSchema.post('bulkWrite', updateAppointmentsOrder('bulkWrite'))
+AppointmentSchema.post('count', updateAppointmentsOrder('count'))
+AppointmentSchema.post('countDocuments', updateAppointmentsOrder('countDocuments'))
+AppointmentSchema.post('createCollection', updateAppointmentsOrder('createCollection'))
+AppointmentSchema.post('deleteOne', updateAppointmentsOrder('deleteOne'))
+AppointmentSchema.post('deleteMany', updateAppointmentsOrder('deleteMany'))
+AppointmentSchema.post('estimatedDocumentCount', updateAppointmentsOrder('estimatedDocumentCount'))
+// AppointmentSchema.post('find', updateOrdersPost('find'))
+// AppointmentSchema.post('findOne', updateOrdersPost('findOne'))
+AppointmentSchema.post('findOneAndDelete', updateAppointmentsOrder('findOneAndDelete'))
+AppointmentSchema.post('findOneAndReplace', updateAppointmentsOrder('findOneAndReplace'))
+AppointmentSchema.post('findOneAndUpdate', updateAppointmentsOrder('findOneAndUpdate'))
+// AppointmentSchema.post('init', updateOrdersPost('init'))
+AppointmentSchema.post('insertMany', updateAppointmentsOrder('insertMany'))
+AppointmentSchema.post('remove', updateAppointmentsOrder('remove'))
+AppointmentSchema.post('replaceOne', updateAppointmentsOrder('replaceOne'))
+AppointmentSchema.post('save', updateAppointmentsOrder('save'))
+AppointmentSchema.post('update', updateAppointmentsOrder('update'))
+AppointmentSchema.post('updateOne', updateAppointmentsOrder('updateOne'))
+AppointmentSchema.post('updateMany', updateAppointmentsOrder('updateMany'))
+// AppointmentSchema.post('validate', updateOrdersPost('validate'))
+
 module.exports = AppointmentSchema

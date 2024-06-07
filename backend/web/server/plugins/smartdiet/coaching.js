@@ -1,4 +1,5 @@
 const moment=require('moment')
+const mongoose=require('mongoose')
 const lodash=require('lodash')
 const Coaching = require("../../models/Coaching")
 require("../../models/Appointment")
@@ -120,7 +121,14 @@ const getDietAvailabilities = async (userId, params, data) => {
   return res
 }
 
+const updateApptsOrder= async coachingId => {
+  console.log('updating appt order for coacincoaching', coachingId)
+  const appts=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
+  const promises=appts.map((a, idx) => mongoose.models.appointment.findByIdAndUpdate(a._id, {order: idx+1}))
+  return Promise.all(promises)
+}
+
 
 module.exports={
-  updateCoachingStatus, getAvailableDiets, getDietAvailabilities,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder,
 }
