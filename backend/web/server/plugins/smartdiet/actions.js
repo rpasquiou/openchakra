@@ -403,9 +403,6 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (![ROLE_EXTERNAL_DIET, ROLE_SUPPORT].includes(user.role)) {
       return Promise.reject(`Seul le support ou la diet peut s'affecter des prospects`)
     }
-    if (user.role==ROLE_EXTERNAL_DIET){
-      return Lead.exists({_id: dataId, operator: user.id})  
-    }
     return Lead.exists({_id: dataId, operator: null})
   }
   // Can i start a new coaching ?
