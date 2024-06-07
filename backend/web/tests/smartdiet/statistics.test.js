@@ -5,6 +5,8 @@ const User = require('../../server/models/User')
 require('../../server/models/FoodDocument')
 const moment = require('moment')
 const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
+const { stats } = require('../../server/plugins/smartdiet/kpi')
+const Appointment = require('../../server/models/Appointment')
 jest.setTimeout(30000000)
 
 beforeAll(async () => {
@@ -76,24 +78,12 @@ describe('Statistics', () => {
 
   fields.forEach(runTest)
 
-  it('must return coachings_stats', async () => {
+  it.only('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const id = '65f2f95bd449f912a30afe74'
     const diet = '65f2faa6234cec144a11fb3f'
     const stats = await computeStatistics({ fields: ['coachings_stats']})
-    console.log(stats.coachings_stats)
-    for (let stat of stats.coachings_stats) {
-      console.table({ name: stat.name, total: stat.total })
-      console.log(stat.ranges)
-      console.log(stat.appointments)
-      for (let app of stat.appointments) {
-        console.table({ order: app.order, total: app.total })
-        console.log(app.ranges)
-        console.log('------------------------------------------------------------------')
-      }
-      console.log("******************************************************************************************************************************")
-    }
     expect(stats.coachings_stats).toBeTruthy()
   })
   it('must return ratio_appointments_coaching', async () => {
@@ -178,6 +168,22 @@ describe('Statistics', () => {
     console.log(stats.calls_stats)
     expect(stats['calls_stats']).toBeTruthy()
   })
+  const computeMeanDuration = (measures) => {
+    const grouped = measures.reduce((acc, { label, duration }) => {
+      if (!acc[label]) acc[label] = []
+      acc[label].push(duration)
+      return acc
+    }, {})
+  
+    const means = Object.keys(grouped).map(label => {
+      const durations = grouped[label]
+      const mean = durations.reduce((sum, value) => sum + value, 0) / durations.length
+      return { label, mean }
+    })
+  
+    return means
+  }
+  
   it('must compute all stats for kpi coaching page with filters', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
@@ -212,31 +218,45 @@ describe('Statistics', () => {
       { label: 'all', filters: { company, start_date, end_date, diet } },
     ]
   
-    let measures = []
+    let allMeasures = []
   
-    const measure = (label, duration) => {
-      measures.push({ label, duration })
-    }
+    const runTest = async () => {
+      let measures = []
   
-    for (let combination of combinations) {
-      let now = moment()
-      for (let field of fields) {
-        const noww=moment()
-        const stats = await computeStatistics({ fields: [field], ...combination.filters })
-        measure(combination.label + ' ' + field, moment().diff(noww,'milliseconds'))
-        //console.log(stats)
+      const measure = (label, duration) => {
+        measures.push({ label, duration })
       }
-      measure(combination.label, moment().diff(now, 'milliseconds'))
+  
+      for (let combination of combinations) {
+        let now = moment()
+        for (let field of fields) {
+          const noww = moment()
+          const stats = await computeStatistics({ fields: [field], ...combination.filters })
+          measure(combination.label + ' ' + field, moment().diff(noww, 'milliseconds'))
+          //console.log(stats)
+        }
+        measure(combination.label, moment().diff(now, 'milliseconds'))
+      }
+  
+      let now = moment()
+      await computeStatistics({ fields, company, start_date, end_date, diet })
+      measure('all_fields_all_filters', moment().diff(now, 'milliseconds'))
+  
+      return measures
     }
   
-    let now = moment()
-    await computeStatistics({ fields, company, start_date, end_date, diet })
-    measure('all_fields_all_filters', moment().diff(now, 'milliseconds'))
+    for (let i = 0; i < 5; i++) {
+      const measures = await runTest()
+      allMeasures = allMeasures.concat(measures)
+    }
   
-    console.table(measures)
+    const meanDurations = computeMeanDuration(allMeasures)
+  
+    console.table(meanDurations)
   })
   
-  it.only('must get filters and treat them properly', async() => {
+  
+  it('must get filters and treat them properly', async() => {
     console.log('****************************************ADMIN****************************************')
     const userAdmin = await User.findOne({role: ROLE_ADMIN})
     // const userDiet = await User.findOne({role: ROLE_EXTERNAL_DIET})
