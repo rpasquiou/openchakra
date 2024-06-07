@@ -571,7 +571,6 @@ const preCreate = async ({ model, params, user }) => {
           throw new ForbiddenError(`Aucun coaching en cours`)
         }
 
-        console.log('company', user.company?.name, 'nut', usr.company?.current_offer?.nutrition_credit,  'consumed', usr.nutrition_advices?.length)
         const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
 
         if ((isAppointment && latest_coaching.remaining_credits <= 0)
@@ -587,7 +586,20 @@ const preCreate = async ({ model, params, user }) => {
         diet=latest_coaching.diet
 
         if (isAppointment) {
-          return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+          const start=moment(params.start_date)
+          return getAvailabilities({
+            diet_id: diet.smartagenda_id, 
+            appointment_type: latest_coaching.appointment_type?.smartagenda_id,
+            from: moment(start).add(-1, 'day').startOf('day'),
+            to: moment(start).endOf('day'),
+          })
+            .then(availabilities => {
+              const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
+              if (!exists) {
+                throw new Error(`Ce créneau n'est plus disponible`)
+              }
+              return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+            })
         }
         else { // Nutrition advice
           return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
