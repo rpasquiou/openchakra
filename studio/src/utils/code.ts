@@ -213,7 +213,9 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
-      propsContent += ` setComponentValue={setComponentValue} `
+      // if (isFilterComponent(childComponent, components)) {
+        propsContent += ` setComponentValue={setComponentValue} `
+      // }
 
       propsContent += ` getComponentAttribute={getComponentAttribute} `
 
@@ -759,7 +761,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh, componentsValues])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
   return code
 }
 

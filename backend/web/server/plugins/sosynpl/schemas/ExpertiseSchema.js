@@ -12,16 +12,6 @@ const ExpertiseSchema = new Schema({
     set: v => v?.trim(),
     required: [true, 'Le libellé est obligatoire'],
   },
-  job_file: {
-    type: Schema.Types.ObjectId,
-    ref: 'jobFile',
-    required: [true, `La fiche métier est obligatoire`],
-  },
-  category: {
-    type: Schema.Types.ObjectId,
-    ref: 'expertiseCategory',
-    required: [true, `La catégorie est obligatoire`],
-  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

@@ -1,9 +1,12 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
+const moment = require('moment')
+const autoIncrement = require('mongoose-auto-increment')
 const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
+const { computePilar } = require('../soft_skills')
 
 const Schema = mongoose.Schema
 
@@ -12,10 +15,16 @@ const MIN_SECTORS=1
 const MIN_HOMEWORK=0
 const MAX_HOMEWORK=5
 const MIN_SOFT_SKILLS=1
-const MIN_HARD_SKILLS=1
-const MIN_EXPERTISE=3
+const MIN_EXPERTISES=3
+const MAX_EXPERTISES=30
+const MIN_PINNED_EXPERTISES=1
+const MAX_PINNED_EXPERTISES=3
 const MIN_SOFTWARES=1
 const MIN_LANGUAGES=1
+
+const MAX_GOLD_SOFT_SKILLS=1
+const MAX_SILVER_SOFT_SKILLS=2
+const MAX_BRONZE_SOFT_SKILLS=3
 
 const AnnounceSchema = new Schema({
   user: {
@@ -116,38 +125,26 @@ const AnnounceSchema = new Schema({
     type: String,
     required: false,
   },
-  soft_skills: {
-    type: [{
-      type: String,
-      enum: Object.keys(SS_PILAR),
-    }],
-    validate: [
-      function(pilars) {return pilars?.length>=MIN_SOFT_SKILLS},
-      `Vous devez choisir au moins ${MIN_SOFT_SKILLS} soft skill(s)`,
-    ],
-    default: [],
-    required: true,
-  },
-  hard_skills: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'hardSkill',
-    }],
-    validate: [
-      function(hard_skills) {return hard_skills?.length>=MIN_HARD_SKILLS},
-      `Vous devez choisir au moins ${MIN_HARD_SKILLS} compétence(s)`,
-    ],
-    default: [],
-    required: true,
-  },
   expertises: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'expertise',
     }],
     validate: [
-      function(expertises) {return expertises?.length>=MIN_EXPERTISE},
-      `Vous devez choisir au moins ${MIN_EXPERTISE} expertise(s)`,
+      function(expertises) {return lodash.inRange(expertises?.length, MIN_EXPERTISES, MAX_EXPERTISES+1)},
+      `Vous devez choisir entre ${MIN_EXPERTISES} et ${MAX_EXPERTISES} compétences`,
+    ],
+    default: [],
+    required: true,
+  },
+  pinned_expertises: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'expertise',
+    }],
+    validate: [
+      expertises => lodash.inRange(expertises?.length, MIN_PINNED_EXPERTISES, MAX_PINNED_EXPERTISES+1),
+      `Vous devez mettre en avant de ${MIN_PINNED_EXPERTISES} à de ${MAX_PINNED_EXPERTISES} compétences` 
     ],
     default: [],
     required: true,
@@ -209,6 +206,59 @@ const AnnounceSchema = new Schema({
       required: true,
     }],
   },
+  // Soft skills
+  gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+  },
+  silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+  },
+  bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+    default: [],
+    validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+  },
+  // Computed depending on gold/silver/bronze soft skills
+  available_gold_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_silver_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  available_bronze_soft_skills: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'softSkill',
+      required: true,
+    }],
+  },
+  _counter: {
+    type: Number,
+  }
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -237,6 +287,28 @@ AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
     return this.budget/(this.duration*DURATION_UNIT_DAYS[this.duration_unit])
   }
   return null
+})
+
+// Implement virtual for each pilar
+Object.keys(SS_PILAR).forEach(pilar => {
+  const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
+  AnnounceSchema.virtual(virtualName, DUMMY_REF).get(function() {
+    return computePilar(this, pilar)
+  })
+})
+
+// Manage announce serial number
+if (mongoose.connection) {
+  autoIncrement.initialize(mongoose.connection) // Ensure autoincrement is initalized
+}
+
+AnnounceSchema.plugin(autoIncrement.plugin, { model: 'announce', field: '_counter', startAt: 1});
+
+AnnounceSchema.virtual('serial_number', DUMMY_REF).get(function() {
+  if (!this._counter) {
+    return undefined
+  }
+  return `${moment().format('YY')}${this._counter.toString().padStart(5, 0)}`
 })
 
 module.exports = AnnounceSchema

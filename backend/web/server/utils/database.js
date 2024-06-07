@@ -224,7 +224,7 @@ const getAttributeCaracteristics = (modelName, att) => {
 const getBaseModelAttributes = modelName => {
   const schema = mongoose.model(modelName).schema
   const schema_atts = Object.values(schema.paths).filter(
-    att => !att.path.startsWith('_'),
+    att => !['__v', '_id'].includes(att.path) //!att.path.startsWith('_'),
   )
   const virtuals_atts = Object.keys(schema.virtuals)
     .filter(c => c != 'id')
