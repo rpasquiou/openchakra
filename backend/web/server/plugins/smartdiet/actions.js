@@ -401,7 +401,10 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   }
   if (action == 'smartdiet_affect_lead') {
     if (![ROLE_EXTERNAL_DIET, ROLE_SUPPORT].includes(user.role)) {
-      return Promise.reject(`Seul le support peut s'affecter des prospects`)
+      return Promise.reject(`Seul le support ou la diet peut s'affecter des prospects`)
+    }
+    if (user.role==ROLE_EXTERNAL_DIET){
+      return Lead.exists({_id: dataId, operator: user.id})  
     }
     return Lead.exists({_id: dataId, operator: null})
   }
