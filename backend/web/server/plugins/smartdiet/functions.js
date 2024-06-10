@@ -1545,10 +1545,6 @@ declareVirtualField({
 const APP_MODELS=['appointment','currentFutureAppointment','pastAppointment']
 APP_MODELS.forEach(model => {
   declareVirtualField({
-    model: model, field: 'order', instance: 'Number',
-    requires: 'coaching.appointments',
-  })
-  declareVirtualField({
     model: model, field: 'status', instance: 'String',
     requires: 'start_date,end_date,validated', enumValues: APPOINTMENT_STATUS,
   })

@@ -13,6 +13,7 @@ const Conversation = require('../../models/Conversation')
 const { idEqual } = require('../../utils/database')
 const Offer = require('../../models/Offer')
 const Quizz = require('../../models/Quizz')
+const { updateApptsOrder } = require('./coaching')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -209,6 +210,14 @@ const setOffersOnCoachings = () => {
     //   })
 }
 
+const updateAppointmentsOrder = async () => {
+  const appts=await Appointment.find({order: null}, {coaching:1})
+  console.log(appts.length, 'appts with no order')
+  const coachingIds=lodash.uniq(appts.map(app => app.coaching._id.toString()))
+  console.log(coachingIds.length, 'coachings with no order')
+  return Promise.all(coachingIds.map(id => updateApptsOrder(id)))
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizePhones()
@@ -221,6 +230,7 @@ const databaseUpdate = async () => {
   await upgradeCompanyOffers()
   //await setOffersOnCoachings() NOOOO
   await setCoachingAssQuizz()
+  await updateAppointmentsOrder()
 }
 
 module.exports=databaseUpdate
