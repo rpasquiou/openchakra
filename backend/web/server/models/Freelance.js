@@ -6,7 +6,7 @@ const { DISC_CUSTOMER, DISC_FREELANCE } = require('../plugins/sosynpl/consts')
 let Freelance=null
 
 try {
-  const freelanceSchema=require(`../plugins/${getDataModel()}/schemas/FreelanceSchema`)
+  const freelanceSchema=require(`../plugins/${getDataModel()}/schemas/CustomerFreelanceSchema`)
   Freelance=User.discriminator(DISC_FREELANCE, freelanceSchema)
 }
 catch(err) {
