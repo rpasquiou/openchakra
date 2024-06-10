@@ -11,7 +11,7 @@ import {
 import {Error, Information} from '../utils/notifications'
 
 const isVisible = e => {
-  return !!( e.offsetWidth || e.offsetHeight || e.getClientRects().length );
+  return !!e && !!( e.offsetWidth || e.offsetHeight || e.getClientRects().length );
 }
 
 const onVisible = (element, callback) => {
