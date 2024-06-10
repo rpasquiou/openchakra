@@ -3,6 +3,7 @@ const { computeStatistics } = require('../../server/plugins/smartdiet/functions'
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const moment = require('moment')
 const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
+const Appointment = require('../../server/models/Appointment')
 
 jest.setTimeout(30000000)
 
@@ -119,4 +120,47 @@ describe('Statistics', () => {
     const meanDurations = computeMeanDuration(allMeasures)
     console.table(meanDurations)
   })
+
+  it.only('must count started coachings', async () => {
+    console.time('Counting started coachings')
+    const apptMatch={
+      order: 1,
+    }
+    apptMatch['user.company']=mongoose.Types.ObjectId('65f2f95bd449f912a30afe74')
+    apptMatch['diet']=mongoose.Types.ObjectId('651a9d3e1a7bd51b71a40327')
+    const appts=await Appointment.aggregate([
+  // Lookup to join appointments with users
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'user',
+      foreignField: '_id',
+      as: 'user'
+    }
+  },
+  
+  // Unwind the user array
+  { $unwind: '$user' },
+  
+  // // Match appointments with the specified criteria
+  {
+    $match: apptMatch,
+  },
+  
+  // Group by coaching ID to count distinct coachings
+  {
+    $group: {
+      _id: '$coaching',
+      count: { $sum: 1 }
+    }
+  },
+  
+  // Count the number of distinct coachings
+  {
+    $count: 'totalCoachings'
+  }
+])
+  console.timeEnd('Counting started coachings')
+console.log('result', appts)
+})
 })
