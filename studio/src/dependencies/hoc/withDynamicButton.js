@@ -10,6 +10,21 @@ import {
 } from '../utils/filters'
 import {Error, Information} from '../utils/notifications'
 
+const isVisible = e => {
+  return !!( e.offsetWidth || e.offsetHeight || e.getClientRects().length );
+}
+
+const onVisible = (element, callback) => {
+  new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if(entry.intersectionRatio > 0) {
+        callback(element);
+        observer.disconnect();
+      }
+    });
+  }).observe(element);
+  if(!callback) return new Promise(r => callback=r);
+}
 const withDynamicButton = Component => {
 
   const Internal = props => {
@@ -38,13 +53,21 @@ const withDynamicButton = Component => {
 
     const [actionAllowed, setActionAllowed]=useState(true)
 
-    useEffect(()=> {
-      if (['openPage'].includes(action)) {
-        return setActionAllowed(true)
-      }
+    function checkAllowed() {
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => setActionAllowed(res.data))
         .catch(err => console.error(err))
+    }
+
+    useEffect(()=> {
+      if (!isVisible(document.getElementById(props.id))) {
+        return
+      }
+      if (['openPage'].includes(action)) {
+        return setActionAllowed(true)
+      }
+      checkAllowed()
+
     }, [action, value])
 
     if (action) {
@@ -102,25 +125,29 @@ const withDynamicButton = Component => {
           .finally(() => {
             setInsideAction(false)
           })
+        }
       }
-    }
-    const conditionalProperties = getConditionalProperties(
-      props,
-      props.dataSource,
-    )
+      const conditionalProperties = getConditionalProperties(
+        props,
+        props.dataSource,
+      )
+      
+      if (process.browser && document.getElementById(props.id)) {
+        onVisible(document.getElementById(props.id), checkAllowed)
+      }
 
-    // Hide if action unavailable and hideIfForbidden is set
-    if (props.hideIfForbidden && !actionAllowed) {
-      return null
-    }
-    return (
-      <>
+      // Hide if action unavailable and hideIfForbidden is set
+      if (props.hideIfForbidden && !actionAllowed) {
+        return null
+      }
+      return (
+        <>
       <Component disabled={!actionAllowed}
         {...props}
         onClick={onClick} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
-      />
+        />
       {errorMessage && <Error message={errorMessage} onClose={()=>setErrorMessage(null)}/>}
       {infoMessage && <Information message={infoMessage} onClose={()=>setInfoMessage(null)}/>}
       </>
