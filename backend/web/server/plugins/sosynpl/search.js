@@ -1,7 +1,7 @@
-const Freelance = require("../../models/Freelance")
+const CustomerFreelance = require("../../models/CustomerFreelance")
 
 const computeSuggestedFreelances = async (userId, params, data)  => {
-  return Freelance.find()
+  return CustomerFreelance.find()
 }
 
 module.exports={
