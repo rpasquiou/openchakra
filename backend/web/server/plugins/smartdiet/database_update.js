@@ -8,13 +8,11 @@ const Appointment = require('../../models/Appointment')
 const Company = require('../../models/Company')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const Coaching = require('../../models/Coaching')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
 const Message = require('../../models/Message')
 const Conversation = require('../../models/Conversation')
 const { idEqual } = require('../../utils/database')
 const Offer = require('../../models/Offer')
 const Quizz = require('../../models/Quizz')
-const { updateCoachingStatus } = require('./coaching')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -33,9 +31,12 @@ const normalizePhones = async () => {
       user.phone=null
       return user.save()
     }
-    user.phone=user.phone.replace(/^0/, '+33').replace(/ /g, '')
-    log(`Normalized for`, user.email, 'to', user.phone)
-    return user.save()
+    const modified=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
+    user.phone=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
+    if (modified!=user.phone) {
+      log(`Normalized for`, user.email, 'to', user.phone)
+      return user.save()
+    }
   }
 
   // Normalize user phones
