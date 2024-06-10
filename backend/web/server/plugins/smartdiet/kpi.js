@@ -843,6 +843,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
         validated: 1,
         'user._id': 1,
         'user.birthday': 1,
+        order:1
       },
     },
     {
@@ -864,7 +865,6 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
                 : { $eq: [true, true] },
               then: name,
             })),
-            default: 'Unknown',
           },
         },
         coachingId: '$coaching',
@@ -881,22 +881,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
             end_date: '$end_date',
             ageRange: '$ageRange',
             validated: '$validated',
-          },
-        },
-      },
-    },
-    {
-      $addFields: {
-        appointments: {
-          $map: {
-            input: '$appointments',
-            as: 'appointment',
-            in: {
-              $mergeObjects: [
-                '$$appointment',
-                { order: { $add: [{ $indexOfArray: ['$appointments', '$$appointment'] }, 1] } },
-              ],
-            },
+            order: '$order'
           },
         },
       },
@@ -987,8 +972,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
             in: {
               name: '$$range.name',
               total: '$$range.total',
-              percent: {$toString: { $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] } 
-              },
+              percent: { $round: [{ $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] }, 2] },
             },
           },
         },
@@ -1064,7 +1048,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
             in: {
               name: '$$range.name',
               total: '$$range.total',
-              percent: {$toString: { $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] } },
+              percent: {$round: [{ $multiply: [{ $divide: ['$$range.total', '$total'] }, 100] }, 2] },
             },
           },
         },
@@ -1193,7 +1177,6 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
     return found || { name, ...initializeResult() }
   }
   const result = await Appointment.aggregate(createPipeline())
-  console.timeEnd('test')
   console.log(result)
   const valid = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_VALID])
   const tocome = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_TO_COME])
