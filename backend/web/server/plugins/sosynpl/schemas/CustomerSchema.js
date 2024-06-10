@@ -297,7 +297,7 @@ CustomerSchema.virtual('pinned_missions', {
 })
 
 CustomerSchema.virtual('pinned_freelances', {
-  ref: 'freelance',
+  ref: 'customerFreelance',
   localField: '_id',
   foreignField: 'pinned_by',
 })

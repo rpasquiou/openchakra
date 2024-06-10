@@ -9,6 +9,11 @@ const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KE
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
+const {isPhoneOk, isEmailOk } = require('../../../../utils/sms')
+const IBANValidator = require('iban-validator-js')
+const {ROLE_CUSTOMER, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVITY_STATE, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_STANDBY, ACTIVITY_STATE_SUSPENDED} = require('../consts')
+const siret = require('siret')
+const { NATIONALITIES } = require('../../../../utils/consts')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -39,30 +44,34 @@ const MAX_PINNED_EXPERTISES=3
 
 const Schema = mongoose.Schema
 
-const FreelanceSchema = new Schema({
+ function isFreelance(user) {
+  return user.role==ROLE_FREELANCE
+ }
+const CustomerFreelanceSchema = new Schema({
   ...customerSchema.obj,
   // Ovveride address => mandatory
+  // For freelacne only
   address: {
     type: AddressSchema,
-    required: [true, `L'adresse est obligatoire`],
+    required: [function() {return isFreelance(this)}, `L'adresse est obligatoire`],
   },
   // Override role
   role: {
     type: String,
     enum: Object.keys(ROLES),
     default: ROLE_FREELANCE,
-    required: [true, `Le rôle est obligatoire`],
+    required: [function() {return isFreelance(this)}, `Le rôle est obligatoire`],
     index: true,
   },
   main_job: {
     type: Schema.Types.ObjectId,
     ref: 'job',
-    required: [true, `Le métier principal est obligatoire`],
+    required: [function() {return isFreelance(this)}, `Le métier principal est obligatoire`],
   },
   main_experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),
-    required: [true, `L'expérience principale est obligatoire`],
+    required: [function() {return isFreelance(this)}, `L'expérience principale est obligatoire`],
   },
   second_job: {
     type: Schema.Types.ObjectId,
@@ -73,7 +82,7 @@ const FreelanceSchema = new Schema({
     type: String,
     enum: Object.keys(EXPERIENCE),
     set: v => v || undefined,
-    required: [function() {return !!this.second_job}, `L'expérience du deuxième métier est obligatoire`],
+    required: [function() {return isFreelance(this) && !!this.second_job}, `L'expérience du deuxième métier est obligatoire`],
   },
   third_job: {
     type: Schema.Types.ObjectId,
@@ -84,7 +93,7 @@ const FreelanceSchema = new Schema({
     type: String,
     enum: Object.keys(EXPERIENCE),
     set: v => v || undefined,
-    required: [function() {return !!this.third_job}, `L'expérience du troisième métier est obligatoire`],
+    required: [function() {return isFreelance(this) && !!this.third_job}, `L'expérience du troisième métier est obligatoire`],
   },
   rate: {
     type: Number,
@@ -94,7 +103,7 @@ const FreelanceSchema = new Schema({
   },
   motivation: {
     type: String,
-    required: [true, `Saisisez les types de missions recherchées`],
+    required: [function() {return isFreelance(this)}, `Saisisez les types de missions recherchées`],
   },
   work_mode: {
     type: String,
@@ -107,7 +116,7 @@ const FreelanceSchema = new Schema({
       enum: Object.keys(WORK_DURATION),
     }],
     validate: [
-      durations => lodash.inRange(durations?.length, MIN_DURATIONS, MAX_DURATIONS+1), 
+      function(durations) {return !isFreelance(this) ||  lodash.inRange(durations?.length, MIN_DURATIONS, MAX_DURATIONS+1)}, 
       `Vous devez choisir de ${MIN_DURATIONS} à ${MAX_DURATIONS} durées de mission` 
     ]
   },
@@ -118,7 +127,7 @@ const FreelanceSchema = new Schema({
       ref: 'sector',
     }],
     validate: [
-      sectors => lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1), 
+      function(sectors) {return !isFreelance(this) || lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1)}, 
       `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
     ]
   },
@@ -130,12 +139,12 @@ const FreelanceSchema = new Schema({
   },
   experience: {
     type: String,
-    required: [true, `L'expérience est obligatoire`],
+    required: [function() {return isFreelance(this)}, `L'expérience est obligatoire`],
   },
   validation_status: {
     type: String,
     default: VALID_STATUS_PENDING,
-    required: [true, `Le statut de validation est obligatoire`],
+    required: [function() {return isFreelance(this)}, `Le statut de validation est obligatoire`],
   },
   professional_rc: {
     type: String,
@@ -143,26 +152,26 @@ const FreelanceSchema = new Schema({
   },
   linkedin: {
     type: String,
-    required: [function() { return !this.curriculum}, `Un lien Linkedin ou un CV est obligatoire`]
+    required: [function() { return isFreelance(this) && !this.curriculum}, `Un lien Linkedin ou un CV est obligatoire`]
   },
   curriculum: {
     type: String,
-    required: [function() { return !this.linkedin}, `Un lien Linkedin ou un CV est obligatoire`]
+    required: [function() { return isFreelance(this) && !this.linkedin}, `Un lien Linkedin ou un CV est obligatoire`]
   },
   source: {
     type: String,
     enum: Object.keys(SOURCE),
-    required: [true, `Sélectionnez la manière dont vous avez connu ${SOSYNPL}`]
+    required: [function() {return isFreelance(this)}, `Sélectionnez la manière dont vous avez connu ${SOSYNPL}`]
   },
   picture_visible: {
     type: Boolean,
     default: false,
-    required: [true, `La visibilité de la photo est obligatoire`]
+    required: [function() {return isFreelance(this)}, `La visibilité de la photo est obligatoire`]
   },
   google_visible: {
     type: Boolean,
     default: false,
-    required: [true, `La visibilité Google est obligatoire`]
+    required: [function() {return isFreelance(this)}, `La visibilité Google est obligatoire`]
   },
   hard_skills_categories: [{
     type: Schema.Types.ObjectId,
@@ -172,7 +181,7 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'expertise',
     validate: [
-      expertises => !expertises.length || expertises.length > MAX_EXPERTISES, 
+      function(expertises) {return !isFreelance(this) || !expertises.length || expertises.length > MAX_EXPERTISES}, 
       `Vous pouvez choisir jusqu'à ${MAX_EXPERTISES} compétences` 
     ],
   }],
@@ -180,7 +189,7 @@ const FreelanceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'expertise',
     validate: [
-      expertises => !expertises.length || expertises.length > MAX_PINNED_EXPERTISES, 
+      function(expertises) {return !isFreelance(this) || !expertises.length || expertises.length > MAX_PINNED_EXPERTISES}, 
       `Vous pouvez mettre en avant jusqu'à ${MAX_PINNED_EXPERTISES} compétences` 
     ],
   }],
@@ -202,15 +211,15 @@ const FreelanceSchema = new Schema({
       },
       `Vous devez choisir de ${MIN_REGIONS} à ${MAX_REGIONS} régions` 
     ],
-    required: [function() {return this.mobility==MOBILITY_REGIONS}, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions`]
+    required: [function() {return isFreelance(this) && this.mobility==MOBILITY_REGIONS}, `Vous devez choisir de ${MIN_EXTRA_SKILLS} à ${MAX_EXTRA_SKILLS} régions`]
   },
   mobility_city: {
     type: AddressSchema,
-    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une ville`]
+    required: [function() {return isFreelance(this) && this.mobility==MOBILITY_CITY}, `Vous devez choisir une ville`]
   },
   mobility_city_distance: {
     type: Number,
-    required: [function() {return this.mobility==MOBILITY_CITY}, `Vous devez choisir une distance autour de la ville`]
+    required: [function() {return isFreelance(this) && this.mobility==MOBILITY_CITY}, `Vous devez choisir une distance autour de la ville`]
   },
   // END MOBILITY
   // START AVAILBILITY
@@ -225,7 +234,7 @@ const FreelanceSchema = new Schema({
     type: String,
     enum: Object.keys(AVAILABILITY),
     default: AVAILABILITY_UNDEFINED,
-    required: true,
+    required: function() {return isFreelance(this)},
   },
   available_days_per_week: {
     type: Number,
@@ -233,7 +242,7 @@ const FreelanceSchema = new Schema({
     max: [MAX_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
     // Required if available or (not available and start date)
     required: [function() {
-      return this.availability==AVAILABILITY_ON || (this.availability==AVAILABILITY_ON && !!this.available_from)
+      return isFreelance(this) && (this.availability==AVAILABILITY_ON || (this.availability==AVAILABILITY_ON && !!this.available_from))
     }, `Vous devez indiquer des jours de disponibilité`]
   },
   // TODO: set to AVAILABILITY_ON when available_from is reached
@@ -241,7 +250,7 @@ const FreelanceSchema = new Schema({
     type: Date,
     set: d => lodash.isNil(d) ? d : moment(d).startOf('day'),
     validate: [
-      function(value) { return lodash.isNil(value) || moment(value).isAfter(moment())}, 
+      function(value) { return !isFreelance(this) || lodash.isNil(value) || moment(value).isAfter(moment())}, 
       `La date de disponibilité doit être dans le futur`],
     required: false,
   },
@@ -254,7 +263,7 @@ const FreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [skills => skills?.length<=MAX_GOLD_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) {return !isFreelance(this) || skills?.length<=MAX_GOLD_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
   },
   silver_soft_skills: {
     type: [{
@@ -263,7 +272,7 @@ const FreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [skills => skills?.length<=MAX_SILVER_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) {return !isFreelance(this) || skills?.length<=MAX_SILVER_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
   },
   bronze_soft_skills: {
     type: [{
@@ -272,7 +281,7 @@ const FreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [skills => skills?.length<=MAX_BRONZE_SOFT_SKILLS, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) { return !isFreelance(this) || skills?.length<=MAX_BRONZE_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
   },
   // Computed depending on gold/silver/bronze soft skills
   available_gold_soft_skills: {
@@ -318,48 +327,48 @@ const FreelanceSchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 
-FreelanceSchema.virtual('freelance_missions', {
+CustomerFreelanceSchema.virtual('freelance_missions', {
   ref: 'mission',
   localField: '_id',
-  foreignField: 'freelance',
+  foreignField: 'customerFreelance',
 })
 
-FreelanceSchema.virtual('recommandations', {
+CustomerFreelanceSchema.virtual('recommandations', {
   ref: 'recommandation',
   localField: '_id',
-  foreignField: 'freelance',
+  foreignField: 'customerFreelance',
 })
 
-FreelanceSchema.virtual('communications', {
+CustomerFreelanceSchema.virtual('communications', {
   ref: 'communication',
   localField: '_id',
   foreignField: 'user',
 })
 
-FreelanceSchema.virtual('experiences', {
+CustomerFreelanceSchema.virtual('experiences', {
   ref: 'experience',
   localField: '_id',
   foreignField: 'user',
 })
 
-FreelanceSchema.virtual('certifications', {
+CustomerFreelanceSchema.virtual('certifications', {
   ref: 'certification',
   localField: '_id',
   foreignField: 'user',
 })
 
-FreelanceSchema.virtual('trainings', {
+CustomerFreelanceSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',
   foreignField: 'user',
 })
 
 // Depends on filled attributes
-FreelanceSchema.virtual('search_visible').get(function() {
+CustomerFreelanceSchema.virtual('search_visible').get(function() {
   return false
 })
 
-FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
+CustomerFreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
   switch(this.mobility) {
     case MOBILITY_FRANCE: return MOBILITY[MOBILITY_FRANCE]
     case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
@@ -367,7 +376,7 @@ FreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
   }
 })
 
-FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
+CustomerFreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
   switch(this.availability) {
     case AVAILABILITY_ON: return `Disponible ${this.available_days_per_week} jour(s) par semaine`
     case AVAILABILITY_OFF: return this.available_from ? `Disponible ${this.available_days_per_week} jour(s) par semaine à partir du ${moment(this.available_from).format('DD/MM/YY')} ` : 'Indisponible'
@@ -378,13 +387,13 @@ FreelanceSchema.virtual('availability_str', DUMMY_REF).get(function() {
 // Implement virtual for each pilar
 Object.keys(SS_PILAR).forEach(pilar => {
   const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
-  FreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
+  CustomerFreelanceSchema.virtual(virtualName, DUMMY_REF).get(function() {
     return computePilar(this, pilar)
   })
 })
 
 // TODO UGLY should be inherited from Customer schemma
-FreelanceSchema.virtual('announces', {
+CustomerFreelanceSchema.virtual('announces', {
   ref: 'announce',
   localField: '_id',
   foreignField: 'user',
@@ -392,5 +401,5 @@ FreelanceSchema.virtual('announces', {
 
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = FreelanceSchema
+module.exports = CustomerFreelanceSchema
 

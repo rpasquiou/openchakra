@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const CertificationSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'freelance',
+    ref: 'customerFreelance',
     require: [true, `Le freelance est obligatoire`],
   },
   title: {

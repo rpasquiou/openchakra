@@ -5,6 +5,7 @@ const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
+const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
@@ -31,7 +32,7 @@ const ensureSoftSkills = () => {
 
 ensureSoftSkills()
 
-const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser']
+const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
   declareVirtualField({model, field: 'password2', type: 'String'})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
@@ -90,7 +91,7 @@ MODELS.forEach(model => {
   })
 })
 
-const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser']
+const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser', 'customerFreelance']
 FREELANCE_MODELS.forEach(model => {
   declareVirtualField({model, field: 'freelance_missions', instance: 'Array', multiple: true,
     caster: {
@@ -251,8 +252,8 @@ const soSynplRegister = props => {
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
     throw new Error(`Le role ${props.role || 'vide'} est invalide pour l'inscription`)
   }
-  const model=props.role==ROLE_FREELANCE ? Freelance : Customer
-  const modelName=props.role==ROLE_FREELANCE ? 'freelance' : 'customer'
+  const model=CustomerFreelance //props.role==ROLE_FREELANCE ? Freelance : Customer
+  const modelName='customerFreelance' //props.role==ROLE_FREELANCE ? 'freelance' : 'customer'
   return User.exists({email: props.email})
     .then(exists => {
       if (exists) {
@@ -282,18 +283,23 @@ addAction('register', soSynplRegister)
 const ROLE_MODEL_MAPPING={
   [ROLE_CUSTOMER]: 'customer',
   [ROLE_FREELANCE]: 'freelance',
+  [ROLE_CUSTOMER]: 'customerFreelance',
+  [ROLE_FREELANCE]: 'customerFreelance',
   [ROLE_ADMIN]: 'admin',
 }
 
-const preprocessGet = async ({ model, fields, id, user, params }) => {
+const preProcessGet = async ({ model, fields, id, user, params }) => {
   if (model=='loggedUser') {
     const modelName=ROLE_MODEL_MAPPING[user.role]
     return({model: modelName, fields, id: user._id, user, params})
   }
+  if (['freelance', 'customer'].includes(model)) {
+    return({model: 'customerFreelance', fields, id: user._id, user, params})
+  }
   return { model, fields, id, user, params }
 }
 
-setPreprocessGet(preprocessGet)
+setPreprocessGet(preProcessGet)
 
 const preCreate = async ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
