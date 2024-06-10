@@ -116,27 +116,16 @@ AppointmentSchema.virtual('status', DUMMY_REF).get(function() {
 })
 
 const updateAppointmentsOrder = hook => async(...params) => {
-
-  if (['save', 'remove'].includes(hook)) {
-    const appt=params[0]
-    return updateApptsOrder(appt.coaching)
-  }
+  console.log(hook, 'appt changed', params.map(p => p._id))
+  const appt=params[0]
+  return updateApptsOrder(appt.coaching)
 }
 
-AppointmentSchema.post('aggregate', updateAppointmentsOrder('aggregate'))
-AppointmentSchema.post('bulkWrite', updateAppointmentsOrder('bulkWrite'))
-AppointmentSchema.post('count', updateAppointmentsOrder('count'))
-AppointmentSchema.post('countDocuments', updateAppointmentsOrder('countDocuments'))
-AppointmentSchema.post('createCollection', updateAppointmentsOrder('createCollection'))
 AppointmentSchema.post('deleteOne', updateAppointmentsOrder('deleteOne'))
 AppointmentSchema.post('deleteMany', updateAppointmentsOrder('deleteMany'))
-AppointmentSchema.post('estimatedDocumentCount', updateAppointmentsOrder('estimatedDocumentCount'))
-// AppointmentSchema.post('find', updateOrdersPost('find'))
-// AppointmentSchema.post('findOne', updateOrdersPost('findOne'))
 AppointmentSchema.post('findOneAndDelete', updateAppointmentsOrder('findOneAndDelete'))
 AppointmentSchema.post('findOneAndReplace', updateAppointmentsOrder('findOneAndReplace'))
 AppointmentSchema.post('findOneAndUpdate', updateAppointmentsOrder('findOneAndUpdate'))
-// AppointmentSchema.post('init', updateOrdersPost('init'))
 AppointmentSchema.post('insertMany', updateAppointmentsOrder('insertMany'))
 AppointmentSchema.post('remove', updateAppointmentsOrder('remove'))
 AppointmentSchema.post('replaceOne', updateAppointmentsOrder('replaceOne'))
@@ -144,6 +133,5 @@ AppointmentSchema.post('save', updateAppointmentsOrder('save'))
 AppointmentSchema.post('update', updateAppointmentsOrder('update'))
 AppointmentSchema.post('updateOne', updateAppointmentsOrder('updateOne'))
 AppointmentSchema.post('updateMany', updateAppointmentsOrder('updateMany'))
-// AppointmentSchema.post('validate', updateOrdersPost('validate'))
 
 module.exports = AppointmentSchema

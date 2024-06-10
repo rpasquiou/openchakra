@@ -122,9 +122,15 @@ const getDietAvailabilities = async (userId, params, data) => {
 }
 
 const updateApptsOrder= async coachingId => {
-  console.log('updating appt order for coacincoaching', coachingId)
-  const appts=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
-  const promises=appts.map((a, idx) => mongoose.models.appointment.findByIdAndUpdate(a._id, {order: idx+1}))
+  console.log('updating appt order for coaching', coachingId)
+  const appointments=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
+  const promises=appointments.map((appointment, idx) => {
+    const newOrder=idx+1
+    if (newOrder!=appointment.order) {
+      return mongoose.models.appointment.findByIdAndUpdate(appointment._id, {order: idx+1})
+    }
+    return Promise.resolve()
+  })
   return Promise.all(promises)
 }
 
