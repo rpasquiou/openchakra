@@ -132,7 +132,7 @@ describe('Statistics', () => {
     const diet = '65f2faa6234cec144a11fb3f'
   
     const fields = [
-      'coachings_started',
+      // 'coachings_started',
       // 'coachings_ongoing',
       // 'coachings_stopped',
       // 'coachings_dropped',
@@ -146,16 +146,17 @@ describe('Statistics', () => {
       // 'coachings_gender_male',
       // 'coachings_gender_non_binary',
       // 'coachings_gender_unknown',
+      'coachings_stats',
     ]
   
     const combinations = [
       { label: 'noParams', filters: {} },
-      { label: 'diet', filters: { diet } },
-      { label: 'start_date', filters: { start_date } },
-      { label: 'end_date', filters: { end_date } },
-      { label: 'company', filters: { company } },
-      { label: 'all but company', filters: { diet, start_date, end_date } },
-      { label: 'all', filters: { company, start_date, end_date, diet } },
+      // { label: 'diet', filters: { diet } },
+      // { label: 'start_date', filters: { start_date } },
+      // { label: 'end_date', filters: { end_date } },
+      // { label: 'company', filters: { company } },
+      // { label: 'all but company', filters: { diet, start_date, end_date } },
+      // { label: 'all', filters: { company, start_date, end_date, diet } },
     ]
   
     let allMeasures = []
@@ -173,7 +174,12 @@ describe('Statistics', () => {
           const noww = moment()
           const stats = await computeStatistics({ fields: [field], ...combination.filters })
           measure(combination.label + ' ' + field, moment().diff(noww, 'milliseconds'))
-          //console.log(stats)
+          console.log(combination, "*********************************************************")
+          stats.coachings_stats.forEach(stat => {
+            console.table({total : stat.total, name:stat.name})
+            console.table(stat.appointments)
+            console.table(stat.appointments[0].ranges)
+          })
         }
         measure(combination.label, moment().diff(now, 'milliseconds'))
       }
