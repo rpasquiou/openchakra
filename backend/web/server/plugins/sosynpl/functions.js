@@ -294,7 +294,8 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     return({model: modelName, fields, id: user._id, user, params})
   }
   if (['freelance', 'customer'].includes(model)) {
-    return({model: 'customerFreelance', fields, id: user._id, user, params})
+    const role=model=='freelance' ? ROLE_FREELANCE : ROLE_CUSTOMER
+    return({model: 'customerFreelance', fields, user, params: {...params, 'filter.role': role}})
   }
   return { model, fields, id, user, params }
 }
