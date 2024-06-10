@@ -29,7 +29,7 @@ const MAX_BRONZE_SOFT_SKILLS=3
 const AnnounceSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'customer',
+    ref: 'customerFreelance',
     required: [true, 'Le client est obligatoire'],
   },
   job: {
@@ -195,14 +195,14 @@ const AnnounceSchema = new Schema({
   suggested_freelances: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'freelance',
+      ref: 'customerFreelance',
       required: true,
     }],
   },
   selected_freelances: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'freelance',
+      ref: 'customerFreelance',
       required: true,
     }],
   },

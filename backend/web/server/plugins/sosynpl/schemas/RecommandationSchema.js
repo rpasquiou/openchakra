@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { DISC_FREELANCE } = require('../consts')
+const {DISC_CUSTOMER_FREELANCE } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -11,7 +11,7 @@ const RecommandationSchema = new Schema({
   },
   freelance: {
     type: Schema.Types.ObjectId,
-    ref: DISC_FREELANCE,
+    ref: DISC_CUSTOMER_FREELANCE,
     required: [true, `Le freelance est obligatoire`],
   },
   creator_firstname: {
