@@ -10,21 +10,6 @@ import {
 } from '../utils/filters'
 import {Error, Information} from '../utils/notifications'
 
-const isVisible = e => {
-  return !!e && !!( e.offsetWidth || e.offsetHeight || e.getClientRects().length );
-}
-
-const onVisible = (element, callback) => {
-  new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if(entry.intersectionRatio > 0) {
-        callback(element);
-        observer.disconnect();
-      }
-    });
-  }).observe(element);
-  if(!callback) return new Promise(r => callback=r);
-}
 const withDynamicButton = Component => {
 
   const Internal = props => {
@@ -60,9 +45,6 @@ const withDynamicButton = Component => {
     }
 
     useEffect(()=> {
-      if (!isVisible(document.getElementById(props.id))) {
-        return
-      }
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
@@ -132,10 +114,6 @@ const withDynamicButton = Component => {
         props.dataSource,
       )
       
-      if (process.browser && document.getElementById(props.id)) {
-        onVisible(document.getElementById(props.id), checkAllowed)
-      }
-
       // Hide if action unavailable and hideIfForbidden is set
       if (props.hideIfForbidden && !actionAllowed) {
         return null
