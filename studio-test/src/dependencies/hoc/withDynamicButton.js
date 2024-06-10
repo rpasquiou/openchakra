@@ -122,7 +122,7 @@ const withDynamicButton = Component => {
         <>
       <Component disabled={!actionAllowed}
         {...props}
-        onClick={onClick} //For Calendar, ensure value had time to update
+        onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
         />
