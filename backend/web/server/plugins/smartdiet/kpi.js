@@ -482,7 +482,9 @@ const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet 
   }
   let genders2=Object.fromEntries(Object.keys(GENDER).map(g => [MAPPING[g], 0]))
   genders2={...genders2, ...Object.fromEntries(genders.map(({count, gender}) => [MAPPING[gender], count]))}
-
+  if (!genders2.hasOwnProperty('unknown')) {
+    genders2['unknown'] = 0;
+  }
   return genders2
 }
 
@@ -668,7 +670,6 @@ const coachings_started = async ({ company, diet, start_date, end_date }) => {
       $count: 'totalCoachings'
     }
   ])
-  console.log(result)
   return result.length > 0 ? result[0].totalCoachings : 0
 }
 
@@ -1177,7 +1178,6 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
     return found || { name, ...initializeResult() }
   }
   const result = await Appointment.aggregate(createPipeline())
-  console.log(result)
   const valid = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_VALID])
   const tocome = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_TO_COME])
   const rabbit = getResultByName(result, APPOINTMENT_STATUS[APPOINTMENT_RABBIT])
