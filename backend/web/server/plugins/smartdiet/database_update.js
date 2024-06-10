@@ -3,7 +3,7 @@ const mongoose=require('mongoose')
 const moment=require('moment')
 const { PHONE_REGEX, isPhoneOk } = require("../../../utils/sms")
 const User = require("../../models/User")
-const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED } = require('./consts')
+const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_FINISHED } = require('./consts')
 const Appointment = require('../../models/Appointment')
 const Company = require('../../models/Company')
 const CoachingLogbook = require('../../models/CoachingLogbook')
@@ -211,11 +211,16 @@ const setOffersOnCoachings = () => {
 }
 
 const updateAppointmentsOrder = async () => {
-  const appts=await Appointment.find({order: null}, {coaching:1})
-  console.log(appts.length, 'appts with no order')
-  const coachingIds=lodash.uniq(appts.map(app => app.coaching._id.toString()))
-  console.log(coachingIds.length, 'coachings with no order')
-  return Promise.all(coachingIds.map(id => updateApptsOrder(id)))
+  const apptsToUpdate=await Appointment.exists({order: null})
+  if (apptsToUpdate) {
+    const appts=await Appointment.find({order: null}, {coaching:1})
+    const coachingIds=lodash.uniq(appts.map(app => app.coaching._id.toString()))
+    console.log('Update', coachingIds.length, 'coaching appointments orders')
+    return Promise.all(coachingIds.map(id => updateApptsOrder(id)))
+  }
+  else {
+    console.log('Update no coaching appointments orders')    
+  }
 }
 
 const databaseUpdate = async () => {
