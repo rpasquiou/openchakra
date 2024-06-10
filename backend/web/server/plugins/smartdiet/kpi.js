@@ -619,51 +619,20 @@ const coachings_started = async ({ company, diet, start_date, end_date }) => {
     { $match: { 'user.company': mongoose.Types.ObjectId(company) } }
   ] : []
 
-  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
-
-  const dateFilter = (start_date || end_date) ? [
+  const result = await Appointment.aggregate([
     {
-      $match: {
-        ...start_date ? { 'appointments.start_date': { $gte: new Date(start_date) } } : {},
-        ...end_date ? { 'appointments.start_date': { $lte: new Date(end_date) } } : {}
+      $match:{
+        ...diet ? { diet: mongoose.Types.ObjectId(diet) } : {},
+        ...start_date ? { start_date: { $gte: new Date(moment(start_date).startOf('day')) } } : {},
+        ...end_date ? { start_date: { $lte: new Date(moment(end_date).endOf('day')) } } : {},
+        order:1,
+        validated:true,
       }
     },
-    {
-      $group: {
-        _id: '$_id'
-      }
-    }
-  ] : []
-
-  const result = await Coaching.aggregate([
-    ...diet ? [{$match:{ diet: mongoose.Types.ObjectId(diet) }}] : [],
     ...companyFilter,
     {
-      $lookup:{
-        from:'appointments',
-        localField:'_id',
-        foreignField:'coaching',
-        as:'appointments',
-      }
-    },
-    {
-      $unwind:'$appointments'
-    },
-    {
-      $match:{
-        appointments:{$ne:[]}
-      }
-    },
-    {
-      $match:{
-        'appointments.validated':true,
-        ...start_date ? { 'appointments.start_date': { $gte: new Date(moment(start_date).startOf('day')) } } : {},
-        ...end_date ? { 'appointments.start_date': { $lte: new Date(moment(end_date).endOf('day')) } } : {}
-      }
-    },
-    {
       $group: {
-        _id: '$_id'
+        _id: '$coaching'
       }
     },
     {
