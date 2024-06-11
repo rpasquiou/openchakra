@@ -95,7 +95,7 @@ const refuseAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'refuse', dataId: value, user})
   if (!ok) {return false}
   // Ensure is announce or announceSuggestion
-  const model=await getModel(value, ['announce',' announceSuggestion'])
+  const model=await getModel(value, ['announce','announceSuggestion'])
   let filter={freelance: user._id}
   if (model=='announce') {
     filter={...filter, announce: value}
