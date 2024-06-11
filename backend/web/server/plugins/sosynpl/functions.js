@@ -258,12 +258,38 @@ declareVirtualField({model: 'announce', field: 'serial_number', requires: '_coun
 
 /** Application start */
 declareEnumField({model: 'application', field: 'status', enumValues: APPLICATION_STATUS})
+declareVirtualField({model: 'applicaiton', field: 'quotations', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'quotation' }
+  }
+})
 /** Application end */
 
 /** Announce suggestion start */
 declareEnumField({model: 'announceSuggestion', field: 'status', enumValues: ANNOUNCE_SUGGESTION})
 declareEnumField({model: 'announceSuggestion', field: 'refuse_reason', enumValues: REFUSE_REASON})
 /** Announce suggestion end */
+
+/** Quotation start */
+declareVirtualField({model: 'quotation', field: 'details', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'quotationDetail' }
+  }
+})
+declareVirtualField({model: 'quotation', field: 'ht_total', instance: 'Number', requires: 'details.ht_total'})
+declareVirtualField({model: 'quotation', field: 'ttc_total', instance: 'Number', requires: 'details.ttc_total'})
+declareVirtualField({model: 'quotation', field: 'vat_total', instance: 'Number', requires: 'details.vat_total'})
+declareVirtualField({model: 'quotation', field: 'net_revenue', instance: 'Number', requires: 'ttc_total'})
+declareVirtualField({model: 'quotation', field: 'serial_number', requires: '_counter', instance: 'String'})
+/** Quotation end */
+
+/** QuotationDetail start */
+declareVirtualField({model: 'quotationDetail', field: 'ht_total', instance: 'Number', requires: 'price,quantity'})
+declareVirtualField({model: 'quotationDetail', field: 'ttc_total', instance: 'Number', requires: 'ht_total,vat_rate'})
+declareVirtualField({model: 'quotationDetail', field: 'vat_total', instance: 'Number', requires: 'ht_total,vat_rate'})
+/** QuotationDetail end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)

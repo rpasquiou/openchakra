@@ -39,4 +39,10 @@ const ApplicationSchema = new Schema({
   }
 }, schemaOptions)
 
+ApplicationSchema.virtual('quotations', {
+  ref: 'quotation',
+  foreignField: 'quotation',
+  localField: '_id',
+})
+
 module.exports = ApplicationSchema
