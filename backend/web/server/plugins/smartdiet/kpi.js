@@ -460,6 +460,12 @@ const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet 
     },
     { $unwind: '$user' }, 
     {
+      $project:{
+        _id:1,
+        "user.gender":1,
+      }
+    },
+    {
       $group: {
         _id: '$user.gender', 
         count: { $sum: 1 }          
@@ -483,7 +489,7 @@ const coachings_by_gender_ = async ({ companyFilter, start_date, end_date, diet 
   let genders2=Object.fromEntries(Object.keys(GENDER).map(g => [MAPPING[g], 0]))
   genders2={...genders2, ...Object.fromEntries(genders.map(({count, gender}) => [MAPPING[gender], count]))}
   if (!genders2.hasOwnProperty('unknown')) {
-    genders2['unknown'] = 0;
+    genders2['unknown'] = 0
   }
   return genders2
 }
@@ -625,7 +631,6 @@ const coachings_started = async ({ company, diet, start_date, end_date }) => {
         ...diet ? { diet: mongoose.Types.ObjectId(diet) } : {},
         ...start_date ? { start_date: { $gte: new Date(moment(start_date).startOf('day')) } } : {},
         ...end_date ? { start_date: { $lte: new Date(moment(end_date).endOf('day')) } } : {},
-        order:1,
         validated:true,
       }
     },
@@ -717,49 +722,100 @@ const coachings_calc = async ({company, start_date, end_date, diet, status}) => 
         ...dietFilter
       }
     },
+    {
+      $lookup: {
+        from: 'appointments',
+        localField: '_id',
+        foreignField: 'coaching',
+        as: 'appointments'
+      }
+    },
+    { $unwind: '$appointments' },
+    {
+      $match: {
+        'appointments.validated':true,
+        ...start_date ? { 'appointments.start_date': { $gte: new Date(start_date) } } : {},
+        ...end_date ? { 'appointments.start_date': { $lte: new Date(end_date) } } : {}
+      }
+    },
     ...companyFilter,
-    ...dateFilter,
+    {
+      $group: {
+        _id: '$_id'
+      }
+    },
     {
       $count: 'totalCoachings'
     }
   ])
-
   return result.length > 0 ? result[0].totalCoachings : 0
 }
 exports.coachings_calc = coachings_calc
 
 exports.validated_appts = async ({company, start_date, end_date, diet}) => {
-  const companyFilter = company ? [
+  if(!company){
+    return await Appointment.countDocuments({
+      ...start_date ? {start_date: {$gte: moment(start_date).startOf('day')} } : {},
+      ...end_date ? {end_date: {$lte: moment(end_date).endOf('day')}} : {},
+      ...diet ? {diet: mongoose.Types.ObjectId(diet)} : {}
+    })
+  }
+  const appointmentFilter = (start_date || end_date || diet) ? 
+  [
     {
-      $lookup:{
-        from:'users',
-        localField:'user',
-        foreignField:'_id',
-        as:'user'
+      $match:{
+        ...start_date ? {start_date: {$gte: moment(start_date).startOf('day')} } : {},
+        ...end_date ? {end_date: {$lte: moment(end_date).endOf('day')}} : {},
+        ...diet ? {diet: mongoose.Types.ObjectId(diet)} : {}
+      }
+    }
+  ]
+  : []
+
+  const res = await User.aggregate([
+    {
+      $match:{
+        company:mongoose.Types.ObjectId(company)
       }
     },
-    {$unwind:'$user'},
-    {$match:{'user.company':mongoose.Types.ObjectId(company)}}] : []
-  const filters = []
-  if(start_date) filters.start_date = {$gte:new Date(start_date)}
-  if(end_date) filters.end_date = {$lte:new Date(end_date)}
-  if(diet) filters.diet = mongoose.Types.ObjectId(diet)
-  const result = await Appointment.aggregate([
     {
-      $match: {...filters}
+      $project:{
+        _id:1
+      }
     },
     {
       $lookup:{
-        from:'coachings',
-        localField:'coaching',
-        foreignField:'_id',
-        as:'coaching'
+        from:"appointments",
+        localField:"_id",
+        foreignField: "user",
+        as:"appointments"
       }
     },
-    {$unwind:'$coaching'},
-    ...companyFilter,
+    {
+      $unwind:"$appointments"
+    },
+    {
+      $project:{
+        "appointments._id":1,
+        "appointments.diet":1,
+        "appointments.start_date":1,
+        "appointments.end_date":1,
+      }
+    },
+    ...appointmentFilter,
+    {
+      $project:{
+        "appointments._id":1,
+      }
+    },
+    {
+      $group:{
+        _id:"$appointments"
+      }
+    }
   ])
-  return result.length > 0 ? result.length : 0
+  
+  return res.length > 0 ? res.length : 0
 }
 
 const coachings_stats = async ({ company, start_date, end_date, diet }) => {

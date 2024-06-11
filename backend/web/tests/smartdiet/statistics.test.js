@@ -2,8 +2,9 @@ const mongoose = require('mongoose')
 const { computeStatistics } = require('../../server/plugins/smartdiet/functions')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const moment = require('moment')
-const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN } = require('../../server/plugins/smartdiet/consts')
+const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN, COACHING_STATUS_FINISHED } = require('../../server/plugins/smartdiet/consts')
 const Appointment = require('../../server/models/Appointment')
+const Coaching = require('../../server/models/Coaching')
 
 jest.setTimeout(30000000)
 
@@ -24,30 +25,30 @@ describe('Statistics', () => {
   const fields = {
     number: [
       'coachings_started',
-      // 'coachings_ongoing',
-      // 'coachings_stopped',
-      // 'coachings_dropped',
-      // 'coachings_finished',
-      // 'coachings_renewed',
-      // 'nut_advices',
-      // 'ratio_dropped_started',
-      // 'ratio_stopped_started',
-      // 'ratio_appointments_coaching',
-      // 'coachings_gender_female',
-      // 'coachings_gender_male',
-      // 'coachings_gender_non_binary',
-      // 'coachings_gender_unknown',
-      // 'jobs_total',
-      // 'join_reasons_total',
-      // 'decline_reasons_total',
-      // 'webinars_by_company_total',
+      'coachings_ongoing',
+      'coachings_stopped',
+      'coachings_dropped',
+      'coachings_finished',
+      'coachings_renewed',
+      'nut_advices',
+      'ratio_dropped_started',
+      'ratio_stopped_started',
+      'ratio_appointments_coaching',
+      'coachings_gender_female',
+      'coachings_gender_male',
+      'coachings_gender_non_binary',
+      'coachings_gender_unknown',
+      'jobs_total',
+      'join_reasons_total',
+      'decline_reasons_total',
+      'webinars_by_company_total',
     ],
     complex: [
-      // 'coachings_stats',
-      // 'jobs_details',
-      // 'join_reasons_details',
-      // 'decline_reasons_details',
-      // 'webinars_by_company_details'
+      'coachings_stats',
+      'jobs_details',
+      'join_reasons_details',
+      'decline_reasons_details',
+      'webinars_by_company_details'
     ]
   }
 
@@ -73,7 +74,7 @@ describe('Statistics', () => {
     return Object.keys(grouped).map(label => {
       const durations = grouped[label]
       const mean = durations.reduce((sum, value) => sum + value, 0) / durations.length
-      return { label, mean }
+      return { label, mean: Math.round(mean) }
     })
   }
 
@@ -114,53 +115,11 @@ describe('Statistics', () => {
 
     return allMeasures
   }
-
-  it('must calculate all fields and their perfs', async () => {
+  it.only('must calculate all fields and their perfs', async () => {
     const allMeasures = await runTestsForFields(allFields, 1)
     const meanDurations = computeMeanDuration(allMeasures)
     console.table(meanDurations)
   })
 
-  it.only('must count started coachings', async () => {
-    console.time('Counting started coachings')
-    const apptMatch={
-      order: 1,
-    }
-    apptMatch['user.company']=mongoose.Types.ObjectId('65f2f95bd449f912a30afe74')
-    apptMatch['diet']=mongoose.Types.ObjectId('651a9d3e1a7bd51b71a40327')
-    const appts=await Appointment.aggregate([
-  // Lookup to join appointments with users
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'user',
-      foreignField: '_id',
-      as: 'user'
-    }
-  },
   
-  // Unwind the user array
-  { $unwind: '$user' },
-  
-  // // Match appointments with the specified criteria
-  {
-    $match: apptMatch,
-  },
-  
-  // Group by coaching ID to count distinct coachings
-  {
-    $group: {
-      _id: '$coaching',
-      count: { $sum: 1 }
-    }
-  },
-  
-  // Count the number of distinct coachings
-  {
-    $count: 'totalCoachings'
-  }
-])
-  console.timeEnd('Counting started coachings')
-console.log('result', appts)
-})
 })
