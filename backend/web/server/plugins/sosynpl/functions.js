@@ -358,16 +358,16 @@ const preCreate = async ({model, params, user}) => {
     params.user=user
     return { model, params, user, skip_validation: true }
   }
-  if (model=='application' && !params.announce) {
-    params.announce=params.parent
-    return { model, params, user}
+  if (model=='application') {
+    params.announce=params.announce || params.parent
+    return { model, params, user, skip_validation: true}
   }
   if (model=='quotation' && !params.application) {
-    params.application=params.parent
-    return { model, params, user}
+    params.application=params.application || params.parent
+    return { model, params, user, skip_validation: true}
   }
   if (model=='quotationDetail' && !params.quotation) {
-    params.quotation=params.parent
+    params.quotation=params.quotation || params.parent
     return { model, params, user}
   }
 
