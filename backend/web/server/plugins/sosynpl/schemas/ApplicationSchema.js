@@ -31,6 +31,14 @@ const ApplicationSchema = new Schema({
     type: String,
     required: false,
   },
+  start_date: {
+    type: Date,
+    required: [true, `La date de début estimée est obligatoire`],
+  },
+  end_date: {
+    type: String,
+    required: [true, `La date de fin estimée est obligatoire`],
+  },
   status: {
     type: String,
     enum: Object.keys(APPLICATION_STATUS),
