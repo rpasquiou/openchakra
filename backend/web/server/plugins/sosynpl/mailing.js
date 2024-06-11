@@ -15,6 +15,7 @@ const { computeUrl } = require('../../../config/config')
 const SIB_IDS={
   CUSTOMER_CONFIRM_EMAIL:1,
   FREELANCE_CONFIRM_EMAIL:2,
+  FREELANCE_SEND_SUGGESTION: 31,
 }
 
 const SMS_CONTENTS={
@@ -57,7 +58,21 @@ const sendFreelanceConfirmEmail = async ({user}) => {
   })
 }
 
+// Send suggestion of 'announce'to 'user'
+const sendSuggestion2Freelance = async ({user, announce}) => {
+  const announceUrl=`${await getTagUrl('ANNOUNCE')}?id=${announce._id}`
+  return sendNotification({
+    notification: SIB_IDS.FREELANCE_SEND_SUGGESTION,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      title: announce.title,
+      url: announceUrl,
+    },
+  })
+}
+
 
 module.exports = {
-  sendCustomerConfirmEmail, sendFreelanceConfirmEmail,
+  sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance
 }
