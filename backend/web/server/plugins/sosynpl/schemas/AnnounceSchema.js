@@ -308,7 +308,7 @@ AnnounceSchema.virtual('serial_number', DUMMY_REF).get(function() {
   if (!this._counter) {
     return undefined
   }
-  return `${moment().format('YY')}${this._counter.toString().padStart(5, 0)}`
+  return `A${moment().format('YY')}${this._counter.toString().padStart(5, 0)}`
 })
 
 module.exports = AnnounceSchema
