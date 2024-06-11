@@ -8,7 +8,7 @@ const { getModel, loadFromDb } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED} = require("./consts")
 const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance } = require("./mailing")
@@ -69,7 +69,11 @@ const publishAnnounce = async ({value, reason}, user) => {
   // If selected freelances, create announce_suggesitons and send mails
   if (!lodash.isEmpty(announce.selected_freelances)) {
     const handleSuggestion = async freelanceId => {
-      await AnnounceSuggestion.create({user: user._id, freelance: freelanceId,  announce})
+      await AnnounceSuggestion.findOneAndUpdate(
+        {freelance: freelanceId,  announce},
+        {user: user._id, freelance: freelanceId,  announce},
+        {upsert: true, new: true},
+        )
       const freelance=await CustomerFreelance.findById(freelanceId)
       await sendSuggestion2Freelance({user: freelance, announce})
     }
@@ -86,6 +90,23 @@ const cloneAction = async ({value}, user) => {
   return cloned
 }
 addAction('clone', cloneAction)
+
+const refuseAction = async ({value, reason}, user) => {
+  const ok=await isActionAllowed({action:'refuse', dataId: value, user})
+  if (!ok) {return false}
+  // Ensure is announce or announceSuggestion
+  const model=await getModel(value, ['announce',' announceSuggestion'])
+  let filter={freelance: user._id}
+  if (model=='announce') {
+    filter={...filter, announce: value}
+  }
+  else { // Is announceSuggestion
+    filter={_id: value}
+  }
+  const update={status: ANNOUNCE_SUGGESTION_REFUSED, refuse_date: moment(), refuse_reason: reason}
+  return AnnounceSuggestion.findOneAndUpdate(filter, update)
+}
+addAction('refuse', refuseAction)
 
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {

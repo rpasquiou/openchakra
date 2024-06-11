@@ -1064,6 +1064,18 @@ return Promise.allSettled(imagePromises)
     }
     return axios.post(url, body)
       .then(res => ({value: res.data}))
-},
+  },
+
+  refuse: ({value, props, level, getComponentValue}) => {
+    const reason = getComponentValue(props.reason, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'refuse',
+      value: value?._id,
+      reason,
+    }
+    return axios.post(url, body)
+  },
+
 
 }

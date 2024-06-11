@@ -711,6 +711,13 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  refuse: {
+    label: 'Refuse',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
