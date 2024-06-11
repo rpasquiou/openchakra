@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANNOUNCE_SUGGESTION, ANNOUNCE_SUGGESTION_SENT, ANNOUNCE_SUGGESTION_ACCEPTED, ANNOUNCE_SUGGESTION_REFUSED } = require('../consts')
+const { ANNOUNCE_SUGGESTION, ANNOUNCE_SUGGESTION_SENT, ANNOUNCE_SUGGESTION_ACCEPTED, ANNOUNCE_SUGGESTION_REFUSED, REFUSE_REASON} = require('../consts')
 const Schema = mongoose.Schema
 
 
@@ -29,6 +29,11 @@ const AnnounceSuggestionSchema = new Schema({
     type: Date,
     required: [function() {return this.status==ANNOUNCE_SUGGESTION_REFUSED}, `La date de refus est obligatoire`]
   },
+  refuse_reason: {
+    type: String,
+    enum: Object.keys(REFUSE_REASON),
+    trequired: [function() {return this.status==ANNOUNCE_SUGGESTION_REFUSED}, `La raison de refus est obligatoire`]
+  }
 }, schemaOptions)
 
 
