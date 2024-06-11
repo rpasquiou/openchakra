@@ -27,7 +27,7 @@ const computeUserHardSkillsCategories = async (userId, params, data) => {
   const filtered_categories=categories
     .filter(c => keep_category(c))
     .map(c => map_category(c))
-  await Promise.all(filtered_categories.map(async c => c.progress=await computeHSCategoryProgress(userId, null, c)))
+  await Promise.all(filtered_categories.map(async c => c.progress=await computeHSCategoryProgress(data._id, null, c)))
   return filtered_categories
 }
 
