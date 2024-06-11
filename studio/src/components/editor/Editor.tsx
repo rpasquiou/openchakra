@@ -97,22 +97,6 @@ const Editor: React.FC = () => {
       onClick={onSelectBackground}
       {...adaptDevice(device)}
     >
-      {isEmpty && (
-        <Text maxWidth="md" color="gray.400" fontSize="xl" textAlign="center">
-          Drag some component to start coding without code! Or load{' '}
-          <Link
-            color="gray.500"
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation()
-              dispatch.project.loadDemo('onboarding')
-            }}
-            textDecoration="underline"
-          >
-            the onboarding components
-          </Link>
-          .
-        </Text>
-      )}
 
       {components.root.children.map((name: string) => (
         <ComponentPreview id={name} key={name} componentName={name} />
