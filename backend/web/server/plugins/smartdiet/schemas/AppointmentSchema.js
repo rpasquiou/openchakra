@@ -95,6 +95,7 @@ const AppointmentSchema = new Schema({
   },
   order: {
     type: Number,
+    index: true,
     default: -1,
     required: true,
   }
