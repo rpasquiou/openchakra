@@ -104,10 +104,10 @@ const AnnounceSchema = new Schema({
     type: Number,
     required: [true, `Le budget est obligatoire`]
   },
-  budget_visible: {
+  budget_hidden: {
     type: Boolean,
-    default: true,
-    required: [true, `La visibilité du budget doit être indiquée`],
+    default: false,
+    required: true,
   },
   description: {
     type: String,
