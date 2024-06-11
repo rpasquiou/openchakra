@@ -2,7 +2,7 @@ const User = require("../../models/User")
 const Announce = require("../../models/Announce")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION } = require("./consts")
 const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
@@ -87,6 +87,19 @@ MODELS.forEach(model => {
     caster: {
       instance: 'ObjectID',
       options: { ref: 'announce' }
+    },
+  })
+
+  declareVirtualField({model, field: 'sent_suggestions', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'announceSuggestion' }
+    },
+  })
+  declareVirtualField({model, field: 'received_suggestions', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'announceSuggestion' }
     },
   })
 })
@@ -246,6 +259,10 @@ declareVirtualField({model: 'announce', field: 'serial_number', requires: '_coun
 /** Application start */
 declareEnumField({model: 'application', field: 'status', enumValues: APPLICATION_STATUS})
 /** Application end */
+
+/** Announce suggestion start */
+declareEnumField({model: 'announceSuggestion', field: 'status', enumValues: ANNOUNCE_SUGGESTION})
+/** Announce suggestion end */
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)

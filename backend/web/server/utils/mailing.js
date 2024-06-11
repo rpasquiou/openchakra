@@ -118,7 +118,7 @@ const sendNotification = ({notification, destinee, ccs, params, attachment}) => 
 
 const getTagUrl = async tag => {
   const tagUrl=await PageTag_.findOne({tag})
-  if (!tag) {
+  if (!tagUrl) {
     throw new Error(`Not tag ${tag} found`)
   }
   return tagUrl.url

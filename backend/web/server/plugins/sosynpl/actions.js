@@ -1,13 +1,17 @@
 const mongoose=require("mongoose")
 const moment=require("moment")
+const lodash=require("lodash")
 const User = require("../../models/User")
 const Announce = require("../../models/Announce")
+const CustomerFreelance = require("../../models/CustomerFreelance")
 const { getModel, loadFromDb } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
 const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT} = require("./consts")
 const {clone} = require('./announce')
+const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
+const { sendSuggestion2Freelance } = require("./mailing")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -61,7 +65,17 @@ const publishAnnounce = async ({value, reason}, user) => {
   if (!ok) {return false}
   const announce=await Announce.findById(value)
   announce.publication_date=moment()
-  return announce.save()
+  await announce.save()
+  // If selected freelances, create announce_suggesitons and send mails
+  if (!lodash.isEmpty(announce.selected_freelances)) {
+    const handleSuggestion = async freelanceId => {
+      await AnnounceSuggestion.create({user: user._id, freelance: freelanceId,  announce})
+      const freelance=await CustomerFreelance.findById(freelanceId)
+      await sendSuggestion2Freelance({user: freelance, announce})
+    }
+    await Promise.all(announce.selected_freelances.map(freelance => handleSuggestion(freelance._id)))
+  }
+  return announce
 }
 addAction('publish', publishAnnounce)
 

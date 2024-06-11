@@ -392,14 +392,29 @@ Object.keys(SS_PILAR).forEach(pilar => {
   })
 })
 
-// TODO UGLY should be inherited from Customer schemma
+// Customer : Announces I created
 CustomerFreelanceSchema.virtual('announces', {
   ref: 'announce',
   localField: '_id',
   foreignField: 'user',
 })
 
+// Customer : Suggetsions I sent to frelance
+CustomerFreelanceSchema.virtual('sent_suggestions', {
+  ref: 'announceSuggestion',
+  localField: '_id',
+  foreignField: 'user',
+})
+
+// Freelance : Announces a customer suggested to me
+CustomerFreelanceSchema.virtual('received_suggestions', {
+  ref: 'announceSuggestion',
+  localField: '_id',
+  foreignField: 'freelance',
+})
+
 /* eslint-enable prefer-arrow-callback */
+
 
 module.exports = CustomerFreelanceSchema
 
