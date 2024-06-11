@@ -258,7 +258,7 @@ declareVirtualField({model: 'announce', field: 'serial_number', requires: '_coun
 
 /** Application start */
 declareEnumField({model: 'application', field: 'status', enumValues: APPLICATION_STATUS})
-declareVirtualField({model: 'applicaiton', field: 'quotations', instance: 'Array', multiple: true,
+declareVirtualField({model: 'application', field: 'quotations', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'quotation' }
@@ -357,6 +357,18 @@ const preCreate = async ({model, params, user}) => {
   if (model=='announce') {
     params.user=user
     return { model, params, user, skip_validation: true }
+  }
+  if (model=='application' && !params.announce) {
+    params.announce=params.parent
+    return { model, params, user}
+  }
+  if (model=='quotation' && !params.application) {
+    params.application=params.parent
+    return { model, params, user}
+  }
+  if (model=='quotationDetail' && !params.quotation) {
+    params.quotation=params.parent
+    return { model, params, user}
   }
 
   return Promise.resolve({model, params})
