@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { APPLICATION_STATUS, APPLICATION_STATUS_NONE } = require('../consts')
+const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -46,7 +46,7 @@ const ApplicationSchema = new Schema({
   status: {
     type: String,
     enum: Object.keys(APPLICATION_STATUS),
-    default: APPLICATION_STATUS_NONE,
+    default: APPLICATION_STATUS_DRAFT,
     required: [true, `Le statut est obligatoire`],
   }
 }, schemaOptions)
