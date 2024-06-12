@@ -4,15 +4,17 @@ const lodash=require("lodash")
 const User = require("../../models/User")
 const Announce = require("../../models/Announce")
 const Application = require("../../models/Application")
+const Quotation = require("../../models/Quotation")
 const CustomerFreelance = require("../../models/CustomerFreelance")
-const { getModel, loadFromDb } = require("../../utils/database")
+const { getModel, loadFromDb, idEqual } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_NONE, APPLICATION_STATUS_SENT} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT} = require("./consts")
 const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
-const { sendSuggestion2Freelance } = require("./mailing")
+const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
+const { sendQuotation } = require("./quotation")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -62,22 +64,23 @@ const activateAccount = async ({value, reason}, user) => {
 addAction('activate_account', activateAccount)
 
 const publishAction = async ({value}, user) => {
+  const ok=await isActionAllowed({action:'publish', dataId: value, user})
+  if (!ok) {return false}
   const model=await getModel(value, ['announce', 'application'])
   if (model=='application') {
-    const ok=await isActionAllowed({action:'publishApplication', dataId: value, user})
-    if (!ok) {return false}
     return publishApplication({value}, user)
   }
-  const ok=await isActionAllowed({action:'publishAnnounce', dataId: value, user})
-  if (!ok) {return false}
-return publishAnnounce({value}, user)
+  return publishAnnounce({value}, user)
 }
 
 const publishApplication = async ({value}, user) => {
-  const application=await Application.findById(value)
+  const application=await Application.findById(value).populate(['quotations', {path: 'announce', populate: 'user'}, 'freelance'])
   application.sent_date=moment()
   application.status=APPLICATION_STATUS_SENT
-  return application.save()
+  await sendQuotation(application.quotations[0]._id)
+  const res=await application.save()
+  await sendApplication2Customer({freelance: application.freelance, announce: application.announce, customer: application.announce.user})
+  return res
 }
 
 const publishAnnounce = async ({value}, user) => {
@@ -158,24 +161,28 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       throw new ForbiddenError('Compte déjà actif')
     }
   }
-  if (action=='publishAnnounce') {
-    const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status']})
-    if (!announces.length) {
-      throw new NotFoundError(`Announce ${dataId} not found`)
+
+  if (action=='publish') {
+    const model=await getModel(dataId, ['announce', 'application'])
+    if (model=='announce') {
+      const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status']})
+      if (!announces.length) {
+        throw new NotFoundError(`Announce ${dataId} not found`)
+      }
+      const announce=announces[0]
+      if (announce.status!=ANNOUNCE_STATUS_DRAFT) {
+        throw new BadRequestError(`Announce ${dataId} must be in draft mode to publish`)
+      }
     }
-    const announce=announces[0]
-    if (announce.status!=ANNOUNCE_STATUS_DRAFT) {
-      throw new BadRequestError(`Announce ${dataId} must be in draft mode to publish`)
-    }
-  }
-  if (action=='publishApplication') {
-    const applications=await loadFromDb({model: 'application', id: dataId, fields: ['status']})
-    if (!applications.length) {
-      throw new NotFoundError(`Application ${dataId} not found`)
-    }
-    const application=applications[0]
-    if (application.status!=APPLICATION_STATUS_NONE) {
-      throw new BadRequestError(`La candidature a déjà été publiée`)
+    if (model=='application') {
+      const applications=await loadFromDb({model: 'application', id: dataId, fields: ['status']})
+      if (!applications.length) {
+        throw new NotFoundError(`Application ${dataId} not found`)
+      }
+      const application=applications[0]
+      if (application.status!=APPLICATION_STATUS_DRAFT) {
+        throw new BadRequestError(`La candidature a déjà été publiée`)
+      }
     }
   }
   if (action=='clone') {
@@ -183,6 +190,16 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (!exists) {
       throw new NotFoundError(`Announce ${dataId} not found`)
     }
+  }
+
+  // Can send quotatiojn if not the first (because will be sent during application publication)
+  // and latest quotation is valid
+  if (action=='alle_send_quotation') {
+    const quotation=await Quotation.findBy(dataId, {status: 1})
+    if (quotation.status!=QUOTATION_STATUS_DRAFT) {
+      throw new BadRequestError(`Le devis a déjà été envoyé`)
+    }
+    await quotation.validate()
   }
   return true
 }

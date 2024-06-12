@@ -16,6 +16,7 @@ const SIB_IDS={
   CUSTOMER_CONFIRM_EMAIL:1,
   FREELANCE_CONFIRM_EMAIL:2,
   FREELANCE_SEND_SUGGESTION: 31,
+  CUSTOMER_SEND_APPLICATION: 39,
 }
 
 const SMS_CONTENTS={
@@ -72,7 +73,19 @@ const sendSuggestion2Freelance = async ({user, announce}) => {
   })
 }
 
+// Send suggestion of 'announce'to 'user'
+const sendApplication2Customer = async ({freelance, announce, customer}) => {
+  return sendNotification({
+    notification: SIB_IDS.CUSTOMER_SEND_APPLICATION,
+    destinee: customer,
+    params: {
+      firstname: freelance.firstname,
+      annonce_name: announce.title,
+    },
+  })
+}
+
 
 module.exports = {
-  sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance
+  sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance, sendApplication2Customer,
 }
