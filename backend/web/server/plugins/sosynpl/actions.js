@@ -9,7 +9,7 @@ const { getModel, loadFromDb } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_NONE} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_NONE, APPLICATION_STATUS_SENT} = require("./consts")
 const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance } = require("./mailing")
@@ -75,6 +75,8 @@ return publishAnnounce({value}, user)
 
 const publishApplication = async ({value}, user) => {
   const application=await Application.findById(value)
+  application.sent_date=moment()
+  application.status=APPLICATION_STATUS_SENT
   return application.save()
 }
 
@@ -173,7 +175,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     }
     const application=applications[0]
     if (application.status!=APPLICATION_STATUS_NONE) {
-      throw new BadRequestError(`Application can not be published`)
+      throw new BadRequestError(`La candidature a déjà été publiée`)
     }
   }
   if (action=='clone') {
