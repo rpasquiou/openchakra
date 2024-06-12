@@ -201,10 +201,10 @@ router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymou
   // const msg=`allowing action ${action} ${JSON.stringify(query)}`
   // console.time(msg)
   return callAllowedAction({action, user, ...query})
-    .then(allowed => res.json(allowed))
+    .then(allowed => res.json({allowed}))
     .catch(err => {
       console.error(err.message)
-      return res.json(false)
+      return res.json({allowed: false, message:err.message})
     })
 })
 
