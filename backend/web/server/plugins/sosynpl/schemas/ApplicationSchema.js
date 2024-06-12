@@ -10,7 +10,7 @@ const ApplicationSchema = new Schema({
     ref: 'announce',
     required: [true, `L'annonce est obligatoire`]
   },
-  user: {
+  freelance: {
     type: Schema.Types.ObjectId,
     ref: 'customerFreelance',
     required: [true, `Le freelance est obligatoire`]
