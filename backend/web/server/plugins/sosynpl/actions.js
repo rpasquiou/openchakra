@@ -65,6 +65,7 @@ const publishAnnounce = async ({value, reason}, user) => {
   if (!ok) {return false}
   const announce=await Announce.findById(value)
   announce.publication_date=moment()
+  // Save also validates the model
   await announce.save()
   // If selected freelances, create announce_suggesitons and send mails
   if (!lodash.isEmpty(announce.selected_freelances)) {
