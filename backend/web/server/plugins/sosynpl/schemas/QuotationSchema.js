@@ -4,7 +4,7 @@ const moment=require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const autoIncrement = require('mongoose-auto-increment')
 const { DUMMY_REF } = require('../../../utils/database')
-const { FREELANCE_COMMISSION_RATE } = require('../consts')
+const { FREELANCE_COMMISSION_RATE, QUOTATION_STATUS, QUOTATION_STATUS_DRAFT } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -27,6 +27,12 @@ const QuotationSchema = new Schema({
   reference: {
     type: String,
     required: false,
+  },
+  status: {
+    type: String,
+    enum: Object.keys(QUOTATION_STATUS),
+    default: QUOTATION_STATUS_DRAFT,
+    required: true,
   },
   _counter: {
     type: Number,

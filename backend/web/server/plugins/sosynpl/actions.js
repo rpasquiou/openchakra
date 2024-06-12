@@ -3,12 +3,13 @@ const moment=require("moment")
 const lodash=require("lodash")
 const User = require("../../models/User")
 const Announce = require("../../models/Announce")
+const Application = require("../../models/Application")
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const { getModel, loadFromDb } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_NONE} = require("./consts")
 const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance } = require("./mailing")
@@ -60,9 +61,24 @@ const activateAccount = async ({value, reason}, user) => {
 }
 addAction('activate_account', activateAccount)
 
-const publishAnnounce = async ({value, reason}, user) => {
+const publishAction = async ({value}, user) => {
+  const model=await getModel(value, ['announce', 'application'])
+  if (model=='application') {
+    const ok=await isActionAllowed({action:'publishApplication', dataId: value, user})
+    if (!ok) {return false}
+    return publishApplication({value}, user)
+  }
   const ok=await isActionAllowed({action:'publishAnnounce', dataId: value, user})
   if (!ok) {return false}
+return publishAnnounce({value}, user)
+}
+
+const publishApplication = async ({value}, user) => {
+  const application=await Application.findById(value)
+  return application.save()
+}
+
+const publishAnnounce = async ({value}, user) => {
   const announce=await Announce.findById(value)
   announce.publication_date=moment()
   // Save also validates the model
@@ -82,7 +98,7 @@ const publishAnnounce = async ({value, reason}, user) => {
   }
   return announce
 }
-addAction('publish', publishAnnounce)
+addAction('publish', publishAction)
 
 const cloneAction = async ({value}, user) => {
   const ok=await isActionAllowed({action:'clone', dataId: value, user})
@@ -140,7 +156,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       throw new ForbiddenError('Compte déjà actif')
     }
   }
-  if (action=='publish') {
+  if (action=='publishAnnounce') {
     const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status']})
     if (!announces.length) {
       throw new NotFoundError(`Announce ${dataId} not found`)
@@ -148,6 +164,16 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     const announce=announces[0]
     if (announce.status!=ANNOUNCE_STATUS_DRAFT) {
       throw new BadRequestError(`Announce ${dataId} must be in draft mode to publish`)
+    }
+  }
+  if (action=='publishApplication') {
+    const applications=await loadFromDb({model: 'application', id: dataId, fields: ['status']})
+    if (!applications.length) {
+      throw new NotFoundError(`Application ${dataId} not found`)
+    }
+    const application=applications[0]
+    if (application.status!=APPLICATION_STATUS_NONE) {
+      throw new BadRequestError(`Application can not be published`)
     }
   }
   if (action=='clone') {

@@ -39,6 +39,10 @@ const ApplicationSchema = new Schema({
     type: String,
     required: [true, `La date de fin estimée est obligatoire`],
   },
+  sent_date: {
+    type: Date,
+    required: false,
+  },
   status: {
     type: String,
     enum: Object.keys(APPLICATION_STATUS),
@@ -51,6 +55,14 @@ ApplicationSchema.virtual('quotations', {
   ref: 'quotation',
   foreignField: 'application',
   localField: '_id',
+})
+
+ApplicationSchema.pre('validate', async function(next) {
+  const quotations=await mongoose.models.quotation.countDocuments({application: this._id})
+  if (!quotations>0) {
+    return next(new Error(`La candidature doit contenir un devis`))
+  }
+  next()
 })
 
 module.exports = ApplicationSchema

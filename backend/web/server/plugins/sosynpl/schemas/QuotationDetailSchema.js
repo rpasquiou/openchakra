@@ -21,8 +21,8 @@ const QuotationDetailSchema = new Schema({
   vat_rate: {
     type: Number,
     default: 0.2,
-    min: [0, 'Le taux de TVA doit être compris entre 0% et 100%'],
-    max: [100, 'Le taux de TVA doit être compris entre 0% et 100%'],
+    min: [0, 'Le taux de TVA doit être compris entre 0 et 1'],
+    max: [1, 'Le taux de TVA doit être compris entre 0 et 1'],
     required: [true, `Le taux de TVA est obligatoire`],
   },
   price: {
