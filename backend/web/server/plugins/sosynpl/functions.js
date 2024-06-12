@@ -407,7 +407,8 @@ const postCreate = async ({model, params, data}) => {
 setPostCreateData(postCreate)
 
 const prePutData = async ({model, id, params, user}) => {
-  if (model=='announce') {
+  // Skip validaaiton for these models. Will be validated on publish action
+  if (['announce', 'applicaiton', 'quoation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
   }
   return {model, id, params, user}
