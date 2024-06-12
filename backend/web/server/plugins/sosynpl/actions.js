@@ -132,11 +132,18 @@ addAction('refuse', refuseAction)
 
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
+  console.log('allow', action, dataId, actionProps)
   if (action=='validate_email') {
     return true
   }
   if (action=='register') {
     return true
+  }
+  if (action=='create' && actionProps.model=='application') {
+    const applicationExists=await Application.exists({announce: dataId, freelance: user._id})
+    if (applicationExists) {
+      throw new ForbiddenError(`Vous avez déjà envoyé une proposition pour cette annonce`)
+    }
   }
   if (action=='deactivateAccount') {
     const logged_user=await User.findById(user._id, {active:1})
@@ -163,6 +170,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   }
 
   if (action=='publish') {
+    console.log('getting model for', dataId)
     const model=await getModel(dataId, ['announce', 'application'])
     if (model=='announce') {
       const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status']})
@@ -195,7 +203,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Can send quotatiojn if not the first (because will be sent during application publication)
   // and latest quotation is valid
   if (action=='alle_send_quotation') {
-    const quotation=await Quotation.findBy(dataId, {status: 1})
+    const quotation=await Quotation.findById(dataId, {status: 1})
     if (quotation.status!=QUOTATION_STATUS_DRAFT) {
       throw new BadRequestError(`Le devis a déjà été envoyé`)
     }
