@@ -360,13 +360,14 @@ const preCreate = async ({model, params, user}) => {
   }
   if (model=='application') {
     params.announce=params.announce || params.parent
+    params.freelance = params.freelance || user._id
     return { model, params, user, skip_validation: true}
   }
-  if (model=='quotation' && !params.application) {
+  if (model=='quotation') {
     params.application=params.application || params.parent
     return { model, params, user, skip_validation: true}
   }
-  if (model=='quotationDetail' && !params.quotation) {
+  if (model=='quotationDetail') {
     params.quotation=params.quotation || params.parent
     return { model, params, user}
   }

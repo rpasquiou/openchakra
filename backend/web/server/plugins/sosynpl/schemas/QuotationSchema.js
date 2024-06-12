@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const lodash=require('lodash')
+const moment=require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const autoIncrement = require('mongoose-auto-increment')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -8,19 +9,14 @@ const { FREELANCE_COMMISSION_RATE } = require('../consts')
 const Schema = mongoose.Schema
 
 const QuotationSchema = new Schema({
-  announce: {
+  application: {
     type: Schema.Types.ObjectId,
-    ref: 'announce',
+    ref: 'application',
     required: [true, `L'annonce est obligatoire`],
-  },
-  freelance: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: [true, `Le freelance est obligatoire`],
   },
   expiration_date: {
     type: Date,
-    validate: [dt=> moment(d).isAfter(moment()), `La date de validité doit être postérieure à aujourd'hui`],
+    validate: [dt=> moment(dt).isAfter(moment()), `La date d'expiration doit être postérieure à aujourd'hui`],
     required: [true, `La date d'expiration est obligatoire`]
   },
   comments: {

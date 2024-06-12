@@ -403,7 +403,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_send_quotation: {
-    label: 'AE Send quotation',
+    label: 'Send quotation',
     options: {},
     next: ['openPage'],
   },
