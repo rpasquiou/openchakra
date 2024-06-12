@@ -49,7 +49,7 @@ const ApplicationSchema = new Schema({
 
 ApplicationSchema.virtual('quotations', {
   ref: 'quotation',
-  foreignField: 'quotation',
+  foreignField: 'application',
   localField: '_id',
 })
 

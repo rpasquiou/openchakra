@@ -5,7 +5,7 @@ const { DUMMY_REF } = require("../../../utils/database");
 const Schema = mongoose.Schema;
 
 const QuotationDetailSchema = new Schema({
-  quoation: {
+  quotation: {
     type: Schema.Types.ObjectId,
     ref: 'quotation',
     required: [true, `Le devis parent est obligatoire`],
