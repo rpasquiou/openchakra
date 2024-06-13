@@ -18,8 +18,10 @@ import {
   SOURCE_TYPE,
   TEXT_TYPE,
   UPLOAD_TYPE,
+  computeDataFieldName,
   getDataProviderDataType,
   getFieldsForDataProvider,
+  getLimitsForDataProvider,
   getParentOfType,
   hasParentType,
   isSingleDataPage,
@@ -106,6 +108,7 @@ const getDynamicType = (comp: IComponent) => {
   if (GROUP_TYPE.includes(comp.type)) {
     return comp.type
   }
+  return null
   throw new Error(`No dynamic found for ${comp.type}`)
 }
 
@@ -208,7 +211,11 @@ const buildBlock = ({
       if (isFilterComponent(childComponent, components)) {
         propsContent += ` setComponentValue={setComponentValue} `
       }
-
+      if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
+        propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
+        propsContent += ` pagesIndex={pagesIndex} `
+        propsContent += ` setPagesIndex={setPagesIndex} `
+      }
       // Always create lazy Tabs
       if (childComponent.type=='Tabs') {
         propsContent+=" isLazy "
@@ -590,10 +597,53 @@ const buildHooks = (components: IComponents) => {
     return fields
   }
 
+  const getLimits = (dataProvider: IComponent) => {
+    const fields = getLimitsForDataProvider(dataProvider.id, components, getDynamicType)
+    return fields.map(([name, limit]) => `limit${name ? '.'+name : ''}=${limit}`)
+    return fields
+  }
+
+  const getFiltersObject = (dataProvider: IComponent) => {
+    const constantFilters = Object.values(components)
+      .filter(c => c.props.filterAttribute && c.props.filterConstant && c.props.dataSource==dataProvider.id)
+      .map(c => {
+        const fieldName=computeDataFieldName(c, components, dataProvider.id)
+        const filterAttribute=c.props.filterAttribute
+        const filterValue=c.props.filterConstant
+        return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+      })
+    const variableFilters = Object.values(components)
+      .filter(c => c.props.filterAttribute2 && c.props.filterValue2 && c.props.dataSource==dataProvider.id)
+      .map(c => {
+        const fieldName=computeDataFieldName(c, components, dataProvider.id)
+        const filterAttribute=c.props.filterAttribute2
+        const filterValue=c.props.filterValue2
+        return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+      })
+    const res={constants: constantFilters, variables: variableFilters}
+    return res
+  }
+
+
+
   const dataProviders=getValidDataProviders(components)
   if (dataProviders.length === 0) {
     return ''
   }
+
+  const objectsFilters=Object.fromEntries(dataProviders.map(dp => [dp.id, getFiltersObject(dp)]))
+  
+  const buildFilterCode = `
+    const FILTER_ATTRIBUTES=${JSON.stringify(objectsFilters)}
+    const buildFilter = dpId => {
+      const filters=FILTER_ATTRIBUTES[dpId]
+      const constants=filters?.constants?.map(([att, value]) => \`filter.\${att}=\${value}\`) || []
+      const variables=filters?.variables?.filter(([att, comp]) => ![null, undefined].includes(componentsValues[comp]))
+        .map(([att, comp]) => \`filter.\${att}=\${componentsValues[comp]}\`)  || []
+      const allFilters=[...constants, ...variables]
+      return allFilters.length>0 ? allFilters.join('&')+'&' : ''
+    }
+  `
 
   const singlePage=isSingleDataPage(components)
 
@@ -604,7 +654,8 @@ const buildHooks = (components: IComponents) => {
     return acc
   }, false)
 
-  let code = `const get=axios.get`
+  let code=buildFilterCode
+  code += `const get=axios.get`
   code +=
     '\n' +
     dataProviders
@@ -615,12 +666,25 @@ const buildHooks = (components: IComponents) => {
       .join(`\n`)
   code += `\n
   const [refresh, setRefresh]=useState(false)
+  const [pagesIndex, setPagesIndex]=useState({})
+    
+  const computePagesIndex = dataSourceId => {
+    let urlPart=Object.entries(pagesIndex)
+        .filter(([att, value]) => att==dataSourceId || att.startsWith(dataSourceId+'.'))
+        .map(([att, value]) => att.replace(dataSourceId, 'page')+'='+value)
+        .join('&')
+    if (urlPart.length>0) {
+      urlPart=urlPart+'&'
+    }
+    return urlPart
+  }
+
 
   const reload = () => {
     setRefresh(!refresh)
   }
 
-  /** Clear copponents notifications  */
+  /** Clear components notifications  */
   const [clearComponents, setClearComponents]=useState([])
   const fireClearComponents = component_ids => setClearComponents(component_ids)
 
@@ -630,11 +694,11 @@ const buildHooks = (components: IComponents) => {
       .map(dp => {
         const dataId = dp.id.replace(/comp-/, '')
         const dpFields = getDataProviderFields(dp).join(',')
+        const limits = getLimits(dp)
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'
-        }${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}\${buildFilter('${dp.id}')}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -649,7 +713,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh, componentsValues])\n`
   return code
 }
 
@@ -837,6 +901,7 @@ export const generateCode = async (
   code = `import React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
   import omit from 'lodash/omit';
+  import lodash from 'lodash';
   import Metadata from '../dependencies/Metadata';
   ${hooksCode ? `import axios from 'axios'` : ''}
   ${Object.entries(groupedComponents)
@@ -886,6 +951,13 @@ const ${componentName} = () => {
   const [componentsValues, setComponentsValues]=useState({})
 
   const setComponentValue = (compId, value) => {
+    const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
+      .filter(([k ,v]) => v?.variables?.some(([attName, comp]) => comp==compId))
+      .map(([k, v]) => k)
+    if (impactedDataSources.length>0) {
+      const newPagesIndexes=lodash.omitBy(pagesIndex, (v, k) => impactedDataSources.some(ds => k==ds || k.startsWith(ds+'.')))
+      setPagesIndex(newPagesIndexes)
+    }
     setComponentsValues(s=> ({...s, [compId]: value}))
   }
 
