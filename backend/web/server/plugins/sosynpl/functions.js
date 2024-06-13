@@ -264,6 +264,12 @@ declareVirtualField({model: 'application', field: 'quotations', instance: 'Array
     options: { ref: 'quotation' }
   }
 })
+declareVirtualField({model: 'application', field: 'latest_quotations', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'quotation' }
+  }
+})
 /** Application end */
 
 /** Announce suggestion start */
