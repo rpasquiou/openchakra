@@ -1,8 +1,12 @@
 const csv_parse = require('csv-parse/lib/sync')
 const lodash=require('lodash')
+const moment=require('moment')
 const ExcelJS = require('exceljs')
-const {JSON_TYPE, TEXT_TYPE, XL_TYPE} = require('./consts')
+const {JSON_TYPE, TEXT_TYPE, XL_TYPE, CREATED_AT_ATTRIBUTE} = require('./consts')
 const {bufferToString} = require('./text')
+const mongoose=require('mongoose')
+const { runPromisesWithDelay } = require('../server/utils/concurrency')
+const NodeCache = require('node-cache')
 
 const guessFileType = buffer => {
   return new Promise((resolve, reject) => {
@@ -115,4 +119,140 @@ const extractSample = (rawData, options) => {
     })
 }
 
-module.exports={extractData, guessFileType, getTabs, extractSample}
+const mapAttribute=({record, mappingFn}) => {
+  if (typeof mappingFn=='string') {
+    return record[mappingFn]
+  }
+ const res=mappingFn({record, cache:getCache})
+ return res
+}
+
+const mapRecord = ({record, mapping}) => {
+  const mappedArray=Object.entries(mapping).map(([k, v])=> [k, mapAttribute({record, mappingFn: v})])
+  const mapped=Object.fromEntries(mappedArray)
+  return mapped
+}
+
+const dataCache = new NodeCache()
+
+const setCache = (model, migrationKey, destinationKey) => {
+  if (lodash.isNil(destinationKey)) {
+    throw new Error(`${model}:${migrationKey} dest key is empty`)
+  }
+  const key = `${model}/${migrationKey}`
+  dataCache.set(key, destinationKey)
+}
+
+const getCache = (model, migrationKey) => {
+  const key=`${model}/${migrationKey}`
+  const res=dataCache.get(key)
+  return res
+}
+
+const getCacheKeys = () => {
+  return dataCache.keys()
+}
+
+const displayCache = () => {
+  console.log(dataCache)
+}
+
+const countCache = (model) => {
+  return dataCache.keys().filter(k => k.startsWith(`${model}/`)).length
+}
+
+function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
+  const identityFilter=computeIdentityFilter(identityKey, record)
+  return model.findOne(identityFilter)
+    .then(result => {
+      if (!result) {
+        if (updateOnly) {
+          throw new Error(`Could not find ${model.modelName} matching ${JSON.stringify(identityFilter)}`)
+        }
+        return model.create({...record})
+      }
+      return model.updateOne({_id: result._id}, record, {/**runValidators:true, */ new: true})
+        .then(() => ({_id: result._id}))
+    })
+    .then(result => {
+      setCache(model.modelName, record[migrationKey], result._id)
+      return result
+    })
+}
+
+const computeIdentityFilter = (identityKey, record) => {
+  return {$and: identityKey.map(key => ({[key]: record[key]}))}
+}
+
+const importData = ({model, data, mapping, identityKey, migrationKey, progressCb, updateOnly}) => {
+  if (!model || lodash.isEmpty(data) || !lodash.isObject(mapping) || lodash.isEmpty(identityKey) || lodash.isEmpty(migrationKey)) {
+    throw new Error(`Expecting model, data, mapping, identityKey, migrationKey`)
+  }
+  identityKey = Array.isArray(identityKey) ? identityKey : [identityKey]
+  console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
+  const msg=`Inserted ${model}, ${data.length} source records`
+  const mongoModel=mongoose.model(model)
+  return Promise.all(data.map(record => mapRecord({record, mapping})))
+    .then(mappedData => {
+      const recordsCount=mappedData.length
+      console.time(msg)
+      return runPromisesWithDelay(mappedData.map((data, index) => () => {
+        return upsertRecord({model: mongoModel, record: data, identityKey, migrationKey, updateOnly})
+          .finally(() => progressCb && progressCb(index, recordsCount))
+      }
+      ))
+      .then(results => {
+          const createResult=(result, index) => ({
+            index,
+            success: result.status=='fulfilled',
+            error: result.reason?.message || result.reason?._message || result.reason
+          })
+          const mappedResults=results.map((r, index) => createResult(r, index))
+          console.log(lodash(mappedResults).countBy('success').value())
+          return mappedResults
+        })
+    })
+    .finally(()=> console.timeEnd(msg))
+}
+
+const prepareCache = () => {
+  const MODELS=mongoose.modelNames()
+  const promises=MODELS.map(modelName => {
+    return mongoose.model(modelName).find({migration_id: {$ne: null}})
+      .populate(['coaching', 'coachings'])
+      .then(data => {
+        data.forEach(d => setCache(modelName, d.migration_id.toString(), d._id.toString()))
+        if (modelName=='appointment') {
+          data.forEach(d => setCache('consultation_patient', d.migration_id.toString(), d.coaching.user._id.toString()))
+          data.forEach(d => setCache('consultation_date', d.migration_id.toString(), moment(d.start_date).unix()))
+        }
+        if (modelName=='user') {
+          data.forEach(user => {
+            const latest_coaching=lodash(user.coachings).maxBy(c => c[CREATED_AT_ATTRIBUTE])?._id
+            if (latest_coaching) {
+              setCache('user_coaching', user._id.toString(), latest_coaching)
+            }
+          })
+        }
+        return `${countCache(modelName)} ${modelName}`
+      })
+  })
+  const msg='Caching'
+  console.log(msg)
+  console.time(msg)
+  return Promise.all(promises)
+    .then(res => {console.timeEnd(msg); console.log('Cached', res.join(','))})
+}
+
+module.exports={
+  extractData, 
+  guessFileType, 
+  getTabs, 
+  extractSample,
+  importData,
+  prepareCache,
+  getCacheKeys,
+  displayCache,
+  cache: getCache,
+}
+

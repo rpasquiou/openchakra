@@ -49,7 +49,10 @@ const matches = (str, keywords) => {
 }
 
 const bufferToString = buff => {
-  const encoding=ced(buff)
+  let encoding=ced(buff)
+  if (encoding=='ASCII-7-bit') {
+    encoding='UTF-8'
+  }
   let text = buff.toString(encoding)
   // For MAC files
   text = stripBom(text)
@@ -106,7 +109,7 @@ const capitalize = text => {
 }
 
 const guessDelimiter = text => {
-  const delimiter=csv_string.detect(text)
+  const delimiter=csv_string.detect(text.toString())
   return delimiter
 }
 
