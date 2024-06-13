@@ -102,6 +102,7 @@ const {
   COACHING_CONVERSION_TO_COME,
   COACHING_CONVERSION_CANCELLED,
   COACHING_CONVERSION_CONVERTED,
+  RECIPE_TYPE,
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -291,13 +292,24 @@ const preCreate = ({ model, params, user }) => {
     return loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'latest_coachings.appointments', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
-        'latest_coachings.nutrition_advices', 'latest_coachings.remaining_nutrition_credits',
+        'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
+        'latest_coachings.nutrition_advices', 'latest_coachings.remaining_nutrition_credits', 'company.reasons', 'phone',
       ],
       user,
     })
       .then(([usr]) => {
-        console.log('Coaching for', user._id, JSON.stringify(usr.latest_coachings, null, 2))
+        // Phone is required for appintment
+        if (lodash.isEmpty(usr.phone)) {
+          throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
+        }
+        // If company has coaching reasons, check if the user coaching intersects at least one
+        const company_reasons=usr.company?.reasons
+        if (company_reasons?.length > 0) {
+          const user_reasons=usr.latest_coachings?.[0]?.reasons
+          if (!setIntersects(user_reasons, company_reasons)) {
+            throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
+          }
+        }
         // Check remaining credits
         const latest_coaching = usr.latest_coachings[0]
         if (!latest_coaching) {
@@ -640,21 +652,27 @@ USER_MODELS.forEach(m => {
       options: { ref: 'appointment' }
     },
   })
+  // declareVirtualField({
+  //   model: m, field: 'diet_current_future_appointments', instance: 'Array',
+  //   multiple: true,
+  //   caster: {
+  //     instance: 'ObjectID',
+  //     options: { ref: 'appointment' }
+  //   },
+  // })
   // TODO This causes error because of relies_on
   //declareVirtualField({ model: m, field: 'diet_appointments_count', instance: 'Number', requires: 'diet_appointments'})
-  declareVirtualField({ model: m, field: 'diet_appointments_count', instance: 'Number', requires: 'diet_coachings'})
-  declareVirtualField({
-    model: m, field: 'diet_patients', instance: 'Array',
-    relies_on: 'diet_coachings.user',
-    multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'user' }
-    },
-  })
+  // declareVirtualField({ model: m, field: 'diet_appointments_count', instance: 'Number', requires: 'diet_coachings'})
+  // declareVirtualField({
+  //   model: m, field: 'diet_patients', instance: 'Array',
+  //   multiple: true,
+  //   caster: {
+  //     instance: 'ObjectID',
+  //     options: { ref: 'user' }
+  //   },
+  // })
   // TODO This causes error because of relies_on
-  //declareVirtualField({ model: m, field: 'diet_patients_count', instance: 'Number', requires: 'diet_patients'})
-  declareVirtualField({ model: m, field: 'diet_patients_count', instance: 'Number', requires: 'diet_coachings.appointments'})
+  //declareVirtualField({ model: m, field: 'diet_patients_count', instance: 'Number'})
   declareEnumField({ model: m, field: 'registration_warning', enumValues: REGISTRATION_WARNING })
   declareEnumField({ model: m, field: 'activities', enumValues: DIET_ACTIVITIES })
   declareVirtualField({
@@ -859,6 +877,7 @@ declareVirtualField({
   },
 })
 declareEnumField({ model: 'recipe', field: 'season', enumValues: SEASON })
+declareVirtualField({ model: 'recipe', field: 'type', instance: 'String', requires: 'duration', enumValues: RECIPE_TYPE })
 
 declareVirtualField({
   model: 'menu', field: 'recipes', instance: 'Array',
@@ -1013,6 +1032,13 @@ declareVirtualField({
 
 declareVirtualField({
   model: 'coaching', field: 'appointments', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'appointment' }
+  },
+})
+declareVirtualField({
+  model: 'coaching', field: 'appointments_future', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'appointment' }
@@ -1400,8 +1426,46 @@ const getUserPassedWebinars = (userId, params, data) => {
     })
 }
 
+const getDietPatients = (userId, params, data) => {
+  const limit=parseInt(params['limit.diet_patients']) || Number.MAX_SAFE_INTEGER
+  return Coaching.distinct('user', {diet: userId})
+    .then(users => User.find({_id: users}).limit(limit).populate('company'))
+}
+
+const getDietPatientsCount = (userId, params, data) => {
+  return Coaching.distinct('user', {diet: userId})
+    .then(users => users.length)
+}
+
+const getDietAppointmentsCount = (userId, prams, data) => {
+  console.time('Counting apppointments')
+  return Coaching.find({diet: userId}, {_id:1})
+    .then(coachings => Appointment.countDocuments({coaching: coachings}))
+    .finally(() => console.timeEnd('Counting apppointments'))
+}
+
+const getDietCurrentFutureAppointments = (userId, params, data) => {
+  const limit=parseInt(params['limit.diet_current_future_appointments']) || Number.MAX_SAFE_INTEGER
+  const now=moment()
+  console.time('Getting current future apppointments')
+  return Coaching.find({diet: userId}, {_id:1})
+    .then(coachings => Appointment.find({coaching: coachings, end_date: {$gt: now}})
+      .limit(limit)
+      .populate({path: 'coaching', populate: {path: 'user', populate: 'company'}})
+    )
+    .finally(() => console.timeEnd('Getting current future apppointments'))
+}
+
 declareComputedField('user', 'contents', getUserContents)
 declareComputedField('loggedUser', 'contents', getUserContents)
+declareComputedField('user', 'diet_patients', getDietPatients)
+declareComputedField('loggedUser', 'diet_patients', getDietPatients)
+declareComputedField('user', 'diet_patients_count', getDietPatientsCount)
+declareComputedField('loggedUser', 'diet_patients_count', getDietPatientsCount)
+declareComputedField('user', 'diet_appointments_count', getDietAppointmentsCount)
+declareComputedField('loggedUser', 'diet_current_future_appointments', getDietCurrentFutureAppointments)
+declareComputedField('user', 'diet_current_future_appointments', getDietCurrentFutureAppointments)
+declareComputedField('loggedUser', 'diet_appointments_count', getDietAppointmentsCount)
 declareComputedField('comment', 'liked', getDataLiked, setDataLiked)
 declareComputedField('message', 'liked', getDataLiked, setDataLiked)
 declareComputedField('content', 'liked', getDataLiked, setDataLiked)
