@@ -5,7 +5,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const DeclineReasonSchema = new Schema({
+const JoinReasonSchema = new Schema({
   name: {
     type: String,
     unique: true,
@@ -14,4 +14,4 @@ const DeclineReasonSchema = new Schema({
 }, schemaOptions
 )
 
-module.exports = DeclineReasonSchema
+module.exports = JoinReasonSchema
