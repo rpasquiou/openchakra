@@ -57,6 +57,14 @@ ApplicationSchema.virtual('quotations', {
   localField: '_id',
 })
 
+ApplicationSchema.virtual('latest_quotations', {
+  ref: 'quotation',
+  foreignField: 'application',
+  localField: '_id',
+  options: { sort: { creation_date: -1 }, limit:1 },
+  array: true,
+})
+
 ApplicationSchema.pre('validate', async function(next) {
   const quotations=await mongoose.models.quotation.countDocuments({application: this._id})
   if (!quotations>0) {
