@@ -264,8 +264,8 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
         .then(dispos2 => [...dispos, ...dispos2])
     })
     .catch(err => {
-      console.error(err)
       if (err?.response?.status==404) {
+        console.error(`No availabilities for ${diet_id}`)
         return []
       }
       throw err
@@ -294,7 +294,7 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
 
 // Synchronize availabilities every minute
 // ENABLED UNTIL SMARTAGENDA WEBHOOK
-!config.isDevelopment() && cron.schedule('0 * * * * *', () => {
+!config.isDevelopment() && cron.schedule('0 */30 * * * *', () => {
   synchronizeAvailabilities()
 })
 
@@ -312,7 +312,7 @@ const getDietAppointmentTypes= diet => {
 
 const synchronizeAvailabilities = () => {
   console.log('Syncing availabilities from smartagenda')
-  const start=moment().add(0, 'days').startOf('day')
+  const start=moment().add(1, 'days').startOf('day')
   const end=moment().add(AVAILABILITIES_RANGE_DAYS, 'days').startOf('day')
   return User.find({role: ROLE_EXTERNAL_DIET, smartagenda_id:{$ne :null}})
     .then(diets => Promise.all(diets.map(d => getDietAppointmentTypes(d)))
@@ -332,9 +332,10 @@ const synchronizeAvailabilities = () => {
           Promise.resolve([])
           :
           runPromisesWithDelay(combinations.map(([diet, app_type]) => () => {
+            console.log(diet.email, diet.smartagenda_id, start, end, app_type.smartagenda_id)
             return getAvailabilities({diet_id: diet.smartagenda_id, from: start, to: end, appointment_type: app_type.smartagenda_id})
             .then(avails => avails.map(avail => ({ user: diet._id, appointment_type: app_type._id, start_date: avail.start_date })))
-        }), 0)
+        }), 100)
         .then(results => {
           const params=lodash(results).map(f => f.value || []).flatten().value()
           // Clear all then create new availabilities

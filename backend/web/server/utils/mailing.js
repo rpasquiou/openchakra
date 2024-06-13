@@ -1,10 +1,9 @@
 let sendUserNotification=null
-console.log('loading')
 try {
   sendUserNotification=require('./firebase').sendUserNotification
 }
 catch(err) {
- console.warn('Could not get firebase module, stack follows', err)
+ console.warn('Could not get firebase module', err.message)
 }
 const {
   getDataModel,
@@ -17,7 +16,26 @@ const lodash=require('lodash')
 const {fillSms} = require('../../utils/sms')
 
 const mailProvider=getMailProvider()
-const MAIL_HANDLER=require(`./${mailProvider}`)
+
+let smsContact=null
+
+const setSmsContact = contact => {
+  smsContact=contact
+}
+
+const mailHandlers=lodash(mailProvider).split(',')
+  .map(provider => provider=='brevo' ? 'sendInBlue' : provider)
+  .map(m => [m, require(`./${m}`)])
+  .fromPairs()
+  .value()
+
+console.log('***** Mail Handlers:', Object.keys(mailHandlers))
+
+const MAIL_HANDLER={
+  sendMail: (...params) => Promise.allSettled(Object.values(mailHandlers).map(m => m.sendMail(...params))).then(console.log),
+  sendSms: (...params) => Promise.allSettled(Object.values(mailHandlers).map(m => m.sendSms(...params, smsContact))).then(console.log),
+  sendNotification: sendUserNotification,
+}
 
 let SMS_CONTENTS = {}
 
@@ -78,7 +96,7 @@ const sendNotification = ({notification, destinee, ccs, params, attachment}) => 
         console.error(`No firebase plugin available, check server starupt warnings`)
         return false
       }
-      resultSms = sendUserNotification({user: destinee, title:notif.title, message: notifMessage})
+      resultSms = sendUserNotification({user: destinee, title:notif.title, message: notifMessage}).catch(console.error)
     }
   }
 
@@ -90,4 +108,5 @@ module.exports = {
   sendNotification,
   setSmsContents,
   setNotificationsContents,
+  setSmsContact,
 }

@@ -1,9 +1,13 @@
 const {
   sendNotification,
   setNotificationsContents,
-  setSmsContents
+  setSmsContents,
+  setSmsContact
 } = require('../../utils/mailing')
 const {datetime_str} = require('../../../utils/dateutils')
+const moment=require('moment')
+const { formatDate, formatHour } = require('../../../utils/text')
+const { generateIcs } = require('../../../utils/ics')
 
 const SIB_IDS={
   // Firebase notifications
@@ -25,6 +29,9 @@ const SIB_IDS={
   SATURDAY_3:16,
   SATURDAY_4:17,
   NEW_MESSAGE:18,
+  VALIDATE_APPOINTMENT: 19,
+  // SMS
+  APPOINTMENT_REMIND_TOMORROW: 200,
   // CUSTOMERS
   FORGOT_PASSWORD: 4995801, // OK
   LEAD_ONBOARDING: 4982108,
@@ -51,7 +58,18 @@ const SIB_IDS={
   APPOINTEMNT_REMINDER_2_DIET: 5035052, // reminds at 7PM the day before
   DIET_ACTIVATED_2_DIET: 5035013, // 1 week after activated
   */
+ // WEBINARS
+ WEBINAR_REMIND_J21: 5709675,
+ WEBINAR_REMIND_J15: 5709827,
+ WEBINAR_REMIND_J: 5709849,
+ WEBINAR_DAYAFTER: 5758429,
 }
+
+const SMS_CONTENTS={
+  [SIB_IDS.APPOINTMENT_REMIND_TOMORROW]: 'Bonjour, nous vous rappelons votre rendez-vous du {{params.appointment_date}} à {{params.appointment_time}} avec {{params.diet_firstname}}',
+}
+
+setSmsContents(SMS_CONTENTS)
 
 const NOTIFICATIONS_CONTENTS={
   [SIB_IDS.INACTIVITY_15_DAYS]:{title: 'SmartDiet', message: `En panne d'idée ? Et si veniez prendre de l'inspiration pour vos prochains repas dans nos Top recettes`},
@@ -72,9 +90,12 @@ const NOTIFICATIONS_CONTENTS={
   [SIB_IDS.SATURDAY_3]:{title: 'SmartDiet', message: `Vous l'attendiez ? Le voilà, le nouveau menu de la semaine`},
   [SIB_IDS.SATURDAY_4]:{title: 'SmartDiet', message: `Rendez-vous sur votre application pour retrouver votre nouveau menu de la semaine`},
   [SIB_IDS.NEW_MESSAGE]:{title: 'SmartDiet', message: `Vous avez reçu un nouveau message !`},
+  [SIB_IDS.VALIDATE_APPOINTMENT]:{title: 'SmartDiet', message: `Vous n'avez pas encore renseigné de progression pour le rendez-vous du {{params.appointment_date}} à {{params.appointment_hour}} avec {{params.user_fullname}}`},
 }
 
 setNotificationsContents(NOTIFICATIONS_CONTENTS)
+
+setSmsContact('SmartDiet')
 
 const sendForgotPassword = ({user, password}) => {
   return sendNotification({
@@ -238,6 +259,96 @@ const sendNewMessage = ({user}) => {
   })
 }
 
+const sendWebinarJ21 = async ({user, webinar}) => {
+  const att=await generateIcs({start: webinar.start_date, end: webinar.end_date, title: webinar.name, url: webinar.url}).catch(console.error)
+  return sendNotification({
+    notification: SIB_IDS.WEBINAR_REMIND_J21,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      web_lancement_date: formatDate(webinar.start_date),
+      web_lancement_heure: formatHour(webinar.start_date),
+      web_titre_webinaire: webinar.name,
+      web_duree_webinaire: moment(webinar.end_date).diff(webinar.start_date, 'hour'),
+    },
+    attachment: att ? {name: 'webinaire.ics', content: Buffer.from(att).toString('base64')} : undefined
+  })
+}
+
+const sendWebinarJ15 = async ({user, webinar}) => {
+  const att=await generateIcs({start: webinar.start_date, end: webinar.end_date, title: webinar.name, url: webinar.url}).catch(console.error)
+  return sendNotification({
+    notification: SIB_IDS.WEBINAR_REMIND_J15,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      web_lancement_date: formatDate(webinar.start_date),
+      web_lancement_heure: formatHour(webinar.start_date),
+      web_titre_webinaire: webinar.name,
+      web_duree_webinaire: moment(webinar.end_date).diff(webinar.start_date, 'hour'),
+    },
+    attachment: att ? {name: 'webinaire.ics', content: Buffer.from(att).toString('base64')} : undefined
+  })
+}
+
+const sendWebinarJ = async ({user, webinar}) => {
+  const att=await generateIcs({start: webinar.start_date, end: webinar.end_date, title: webinar.name, url: webinar.url}).catch(console.error)
+  return sendNotification({
+    notification: SIB_IDS.WEBINAR_REMIND_J,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      web_lancement_date: formatDate(webinar.start_date),
+      web_lancement_heure: formatHour(webinar.start_date),
+      web_duree_webinaire: moment(webinar.end_date).diff(webinar.start_date, 'hour'),
+      web_titre_webinaire: webinar.name,
+      lien_web_lancement: webinar.url,
+    },
+    attachment: att ? {name: 'webinaire.ics', content: Buffer.from(att).toString('base64')} : undefined
+  })
+}
+
+const sendWebinarDayAfter = async ({user, webinar}) => {
+  const att=await generateIcs({start: webinar.start_date, end: webinar.end_date, title: webinar.name, url: webinar.url}).catch(console.error)
+  return sendNotification({
+    notification: SIB_IDS.WEBINAR_REMIND_J,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      web_lancement_date: formatDate(webinar.start_date),
+      web_lancement_heure: formatHour(webinar.start_date),
+      web_duree_webinaire: moment(webinar.end_date).diff(webinar.start_date, 'hour'),
+      web_titre_webinaire: webinar.name,
+      lien_web_lancement: webinar.url,
+    },
+    attachment: att ? {name: 'webinaire.ics', content: Buffer.from(att).toString('base64')} : undefined
+  })
+}
+
+const sendAppointmentRemindTomorrow = async ({appointment}) => {
+  return sendNotification({
+    notification: SIB_IDS.APPOINTMENT_REMIND_TOMORROW,
+    destinee: appointment.user,
+    params: {
+      appointment_date: formatDate(appointment.start_date),
+      appointment_time: formatHour(appointment.start_date),
+      diet_firstname: appointment.diet.firstname,
+    },
+  })
+}
+
+const sendAppointmentNotValidated = async ({destinee, appointment}) => {
+  return sendNotification({
+    notification: SIB_IDS.VALIDATE_APPOINTMENT,
+    destinee,
+    params: {
+      appointment_date: formatDate(appointment.start_date),
+      appointment_hour: formatHour(appointment.start_date),
+      user_fullname: appointment.user.fullname,
+    },
+  })
+}
+
 module.exports = {
   sendForgotPassword,
   sendDietPreRegister2Diet,
@@ -246,7 +357,8 @@ module.exports = {
   sendInactivity15, sendInactivity30, sendInactivity45,
   sendIndChallenge1, sendIndChallenge2, sendIndChallenge3, sendIndChallenge5,
   sendIndChallenge6,
-  sendNewWebinar, sendWebinarIn3Days,
+  sendNewWebinar, sendWebinarIn3Days, sendWebinarDayAfter,
   sendSaturday1, sendSaturday2, sendSaturday3, sendSaturday4,
-  sendNewMessage,
+  sendNewMessage, sendWebinarJ15, sendWebinarJ, sendWebinarJ21,
+  sendAppointmentRemindTomorrow, sendAppointmentNotValidated,
 }

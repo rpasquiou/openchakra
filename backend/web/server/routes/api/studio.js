@@ -43,9 +43,11 @@ const {
 } = require('../../../config/config')
 
 let agendaHookFn=null
+let mailjetHookFn=null
 try {
   require(`../../plugins/${getDataModel()}/functions`)
   agendaHookFn=require(`../../plugins/${getDataModel()}/functions`).agendaHookFn
+  mailjetHookFn=require(`../../plugins/${getDataModel()}/functions`).mailjetHookFn
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
@@ -152,11 +154,21 @@ router.post('/s3deletefile', deleteFileFromAWS, (req, res) => {
 
 // Hooks agenda modifications
 router.post('/agenda-hook', (req, res) => {
+  // First return OK
+  res.json()
   console.log(`Agenda hook received ${JSON.stringify(req.body)}`)
-  if (agendaHookFn) {
-    agendaHookFn(req.body)
-  }
-  return res.json()
+  return agendaHookFn ? agendaHookFn(req.body) : Promise.resolve()
+    .then(console.log)
+    .catch(console.error)
+})
+
+router.post('/mailjet-hook', (req, res) => {
+  // First return OK
+  res.json()
+  console.log(`Mailjet hook received ${JSON.stringify(req.body, null, 2)}`)
+  return mailjetHookFn ? mailjetHookFn(req.body) : Promise.resolve()
+  .then(console.log)
+  .catch(console.error)
 })
 
 router.get('/action-allowed/:action', passport.authenticate('cookie', {session: false}), (req, res) => {
@@ -170,7 +182,7 @@ router.get('/action-allowed/:action', passport.authenticate('cookie', {session: 
   return callAllowedAction({action, user, ...query})
     .then(allowed => res.json(allowed))
     .catch(err => {
-      console.error(err)
+      console.error(err.message)
       return res.json(false)
     })
 })
@@ -450,7 +462,10 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
 
   console.log(`POST ${model} ${JSON.stringify(params)}`)
   return callPreCreateData({model, params, user})
-    .then(({model, params}) => {
+    .then(({model, params, data}) => {
+      if (data) {
+        return res.json(data)
+      }
       return mongoose.connection.models[model]
         .create([params], {runValidators: true})
         .then(([data]) => {

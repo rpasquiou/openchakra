@@ -1,10 +1,15 @@
+const axios = require('axios')
+const crypto=require('crypto')
 const { sendForgotPassword, sendNewMessage } = require('./mailing')
 const {
   DAYS_BEFORE_IND_CHALL_ANSWER,
   PARTICULAR_COMPANY_NAME,
   ROLE_CUSTOMER,
   ROLE_SUPPORT,
-  CALL_STATUS_CALL_1
+  CALL_STATUS_CALL_1,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
@@ -15,7 +20,7 @@ const { importLeads } = require('./leads')
 const Content = require('../../models/Content')
 const Webinar = require('../../models/Webinar')
 
-const { getHostName } = require('../../../config/config')
+const { getHostName, getSmartdietAPIConfig } = require('../../../config/config')
 const moment = require('moment')
 const IndividualChallenge = require('../../models/IndividualChallenge')
 const { BadRequestError, NotFoundError } = require('../../utils/errors')
@@ -33,6 +38,10 @@ const Team = require('../../models/Team')
 const TeamMember = require('../../models/TeamMember')
 const lodash = require('lodash')
 const Lead = require('../../models/Lead')
+const Conversation = require('../../models/Conversation')
+const Appointment = require('../../models/Appointment')
+const Coaching = require('../../models/Coaching')
+const { sendBufferToAWS } = require('../../middlewares/aws')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -257,18 +266,93 @@ addAction('smartdiet_affect_lead', affectLead)
 const orgSendMessage = ACTIONS.sendMessage
 
 const sendMessageOverride = (params, sender) => {
-  return orgSendMessage(params, sender)
-    .then(message => {
-      sendNewMessage({ user: message.receiver })
-      return message
+  // destinee may be a user or a conversation
+  return Conversation.findById(params.destinee)
+    .then(conv => {
+      // destinee id was a conversation
+      if (conv) {
+        return conv.getPartner(sender._id)
+          .then(partner => {
+            params.destinee=partner._id
+            return conv
+          })
+      }
+      else {
+        return Conversation.getFromUsers(sender._id, params.destinee)
+      }
     })
+    .then(conv => {
+      return orgSendMessage({...params, conversation: conv._id}, sender)
+      .then(message => {
+        sendNewMessage({ user: message.receiver })
+        return message
+      })
+      })
 }
 addAction('sendMessage', sendMessageOverride)
 
-const isActionAllowed = ({ action, dataId, user }) => {
+const setRabbitAppointment = ({value}, sender) => {
+  return Appointment.findByIdAndUpdate(value, {validated: false})
+}
+addAction('smartdiet_rabbit_appointment', setRabbitAppointment)
+
+const downloadSmartdietDocument = ({type, patientId, documentId}) => {
+
+  const config=getSmartdietAPIConfig()
+  const url = 'https://pro.smartdiet.fr/ws/patient-summary'
+  const timestamp=moment().unix()
+  const hashStr=`${documentId}${timestamp}${config.login}:${config.password}`
+  const hash=crypto.createHash('md5').update(hashStr).digest('hex')
+
+  const postData = {
+    resourceType: type,
+    patientId: patientId, 
+    summaryId: documentId,
+    timestamp,
+    hash
+  };
+
+  const headers={'Content-Type': 'application/json'}
+
+  console.log('url', url, 'post data',postData, 'timestamp', timestamp, 'hash str', hashStr, 'hash', hash)
+
+  return axios.post(url, postData, {headers})
+  .then(({data}) => Buffer.from(data, 'base64'))
+}
+
+
+const downloadAssessment = async ({value}, sender) => {
+  const coaching=await Coaching.findById(value).populate('user')
+  const buffer=await downloadSmartdietDocument({type: 'summary', patientId: coaching.smartdiet_patient_id, documentId: coaching.smartdiet_assessment_id})
+
+  const s3File=await sendBufferToAWS({filename: `checkup_${coaching._id}.pdf`, buffer, type: 'document', mimeType: 'application/pdf', })
+  console.log('got file', s3File?.Location)
+  return Coaching.findByIdAndUpdate(value, {smartdiet_assessment_document: s3File?.Location}, {runValidators: true, new: true}).catch(console.error)
+}
+addAction('smartdiet_download_assessment', downloadAssessment)
+
+const downloadImpact = async ({value}, sender) => {
+  const coaching=await Coaching.findById(value).populate('user')
+  const buffer=await downloadSmartdietDocument({type: 'secondsummary', patientId: coaching.smartdiet_patient_id, documentId: coaching.smartdiet_impact_id})
+
+  const s3File=await sendBufferToAWS({filename: `impact_${coaching._id}.pdf`, buffer, type: 'document', mimeType: 'application/pdf', })
+  console.log('got file', s3File?.Location)
+  return Coaching.findByIdAndUpdate(value, {smartdiet_impact_document: s3File?.Location}, {runValidators: true, new: true}).catch(console.error)
+}
+addAction('smartdiet_download_impact', downloadImpact)
+
+
+
+const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
     return Promise.resolve(true)
+  }
+  if (action == 'smartdiet_download_assessment' || action == 'smartdiet_download_impact') {
+    const attributePrefix= action == 'smartdiet_download_assessment' ? 'smartdiet_assessment': 'smartdiet_impact'
+    const idAttribute=`${attributePrefix}_id`
+    const documentAttribute=`${attributePrefix}_document`
+    return Coaching.exists({_id: dataId, [idAttribute]: {$ne:null}, [documentAttribute]: null})
   }
   if (action == 'logout') {
     return Promise.resolve(!!user)
@@ -278,6 +362,37 @@ const isActionAllowed = ({ action, dataId, user }) => {
       return Promise.reject(`Seul le support peut s'affecter des prospects`)
     }
     return Lead.exists({_id: dataId, operator: null})
+  }
+  // Can i start a new coaching ?
+  // TODO: send nothing instead of "undefined" for dataId
+  if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
+    if (!user.role==ROLE_CUSTOMER) {
+      throw new Error(`Vous devez être un patient pour démarrer un coaching`)    
+    }
+    // Must customer
+    const loadedUser=await User.findById(user._id)
+      .populate({path: 'latest_coachings', populate: 'appointments'})
+      .populate({path: 'company', populate: 'offers'})
+      .populate({path: 'surveys'})
+
+    const latest_coaching=loadedUser.latest_coachings?.[0] || null
+    if (latest_coaching) {
+      if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
+        throw new Error(`Vous avez déjà un coaching en cours`)
+      }
+      const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
+      if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
+        throw new Error(`Vous avez déjà utilisé un coaching cette année`)
+      }
+    }
+    if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
+      throw new Error(`Vous n'avez pas de crédit de coaching`)
+    }
+    // Some companies require surveuy to start a coaching
+    if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
+      throw new Error(`Vous devez remplir le questionnaire pour démarrer un coaching`)
+    }
+    return true
   }
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
   return promise
@@ -337,6 +452,7 @@ const isActionAllowed = ({ action, dataId, user }) => {
                 if (modelName == 'menu') { return false }
                 if (user?.skipped_events?.some(r => idEqual(r._id, dataId))) { return false }
                 if (user?.routine_events?.some(r => idEqual(r._id, dataId))) { return false }
+                if (modelName!='webinar' && user?.passed_events?.some(r => idEqual(r._id, dataId))) { return false }
                 const registeredEvent = user?.registered_events?.find(r => idEqual(r.event._id, dataId))
                 // Event must be registered except for past webinars
                 if (modelName == 'webinar') {
@@ -435,6 +551,9 @@ const isActionAllowed = ({ action, dataId, user }) => {
             // Get all teams of this team's collective challenge, then check if
             // user in on one of them
             return user.canView(dataId)
+          }
+          if (action == 'smartdiet_rabbit_appointment') {
+            return Appointment.exists({_id: dataId, validated: {$in: [null, undefined]}, end_date: {$lt: moment()}})
           }
           return Promise.resolve(true)
         })
