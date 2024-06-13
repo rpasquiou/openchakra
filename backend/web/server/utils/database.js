@@ -12,6 +12,8 @@ const NodeCache=require('node-cache')
 // TODO: Omporting Theme makes a cyclic import. Why ?
 // const Theme = require('../models/Theme');
 
+const LEAN_DATA=false
+
 const MONGOOSE_OPTIONS = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -44,6 +46,82 @@ const hasRefs = (req, field, id) => {
     .join('.')
   return model.exists({[attribute]: id})
 }
+
+
+/**
+ * QUERY FILTERS
+ */
+
+/** Extracts filters parameters from query params */
+const extractFilters = params => {
+  const FILTER_PATTERN = /^filter\./
+  let filters = lodash(params)
+    .pickBy((_, key) => FILTER_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(FILTER_PATTERN, ''))
+    .mapValues(v => new RegExp(v, 'i'))
+  return filters.value()
+}
+
+/**
+ * Build filters from attributues name and values
+ * Return filter on:
+ *  - 1st level attributes only (next levels will be handled in subsequent buildPopulates)
+ *  - not virtual or computed attributes
+ */
+const getCurrentFilter = (filters, modelName) => {
+  filters = lodash(filters)
+    // Use 1st level filters
+    .pickBy((_, key) => !/\./.test(key))
+    // Filter by non virtual && non computed attributes
+    .pickBy((_, key) => {
+      const modelAtt = `${modelName}.${key}`
+      return !lodash.get(DECLARED_VIRTUALS, modelAtt) && !lodash.get(COMPUTED_FIELDS_GETTERS, modelAtt)
+    })
+  return filters.value()
+}
+
+const getSubFilters = (filters, attributeName) => {
+  const ATTRIBUTE_PATTERN = new RegExp(`^${attributeName}(\.|$)`)
+  filters = lodash(filters)
+    // Use 1st level filters
+    .pickBy((_, key) => ATTRIBUTE_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(ATTRIBUTE_PATTERN, ''))
+  return filters.value()
+}
+
+/** Extracts filters parameters from query params */
+const extractLimits = params => {
+  const LIMIT_PATTERN = /^limit(\.|$)/
+  let filters = lodash(params)
+    .pickBy((_, key) => LIMIT_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(LIMIT_PATTERN, ''))
+    .mapValues(v =>parseInt(v))
+  return filters.value()
+}
+
+/** Extracts filters parameters from query params */
+const getCurrentLimit = limits => {
+  return limits['']
+}
+
+/**
+ * Build limits from attributues name and values
+ * Return filter on:
+ *  - 1st level attributes only (next levels will be handled in subsequent buildPopulates)
+ *  - not virtual or computed attributes
+ */
+const getSubLimits = (limits, attributeName) => {
+  const ATTRIBUTE_PATTERN = new RegExp(`^${attributeName}(\.|$)`)
+  limits = lodash(limits)
+    // Use 1st level filters
+    .pickBy((_, key) => ATTRIBUTE_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(ATTRIBUTE_PATTERN, ''))
+  return limits.value()
+}
+
+/**
+ * END QUERY FILTERS
+ */
 
 /**
 Compares attributes recursively :
@@ -216,11 +294,12 @@ function handleReliesOn(directAttribute, relies_on, requiredFields) {
 }
 
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = ({modelName, fields, params, parentField}) => {
+const buildPopulates = ({modelName, fields, filters, limits, parentField, params}) => {
   // Retain all ref fields
   const model=getModels()[modelName]
   if (!model) {
-    throw new Error(`Unkown model ${modelName}`)
+    console.warn(`Can not populate model ${modelName}`)
+    return undefined
   }
   const attributes=model.attributes
   let requiredFields=[...fields]
@@ -244,24 +323,50 @@ const buildPopulates = ({modelName, fields, params, parentField}) => {
     })
   }
 
+  // TODO passs filters and limits as object parameters in buildPopulates
+  // TODO filter populates
+  // TODO: re-add filters on UI
+
   // Retain ref attributes only
   const groupedAttributes=lodash(requiredFields)
     .groupBy(att => att.split('.')[0])
-    .pickBy((_, attName) => { if (!attributes[attName]) { throw new Error(`Attribute ${modelName}.${attName} unknown`) } return attributes[attName].ref===true })
+    .pickBy((_, attName) => { 
+      if (!attributes[attName]) { 
+        throw new Error(`Attribute ${modelName}.${attName} unknown`)
+      } 
+      return attributes[attName].ref===true
+    })
     .mapValues(attributes => attributes.map(att => att.split('.').slice(1).join('.')).filter(v => !lodash.isEmpty(v)))
 
   // / Build populate using att and subpopulation
+
+  // const select=Object.fromEntries(requiredFields.map(f => f.split('.')[0]).map(f => [f, 1]))
+  // console.log('Populates select is ', modelName, select)
+
   const pops=groupedAttributes.entries().map(([attributeName, fields]) => {
     const attType=attributes[attributeName].type
-    const subPopulate=buildPopulates({modelName: attType, fields, params, parentField: `${parentField ? parentField+'.' : ''}${attributeName}`})
-    const limitParamName = `limit.${parentField? parentField+'.' : ''}${attributeName}`
-    const limit=params?.[limitParamName] ? parseInt(params[limitParamName])+1 : undefined
+    limits=getSubLimits(limits, attributeName)
+    filters=getSubFilters(filters, attributeName)
+    const limit=getCurrentLimit(limits)
+    const match=getCurrentFilter(filters, attType) 
+    const subPopulate=buildPopulates({
+      modelName: attType, fields, parentField: `${parentField ? parentField+'.' : ''}${attributeName}`,
+      filters, limits, params,
+    })
+    // TODO Fix page number
     const pageParamName = `page.${parentField? parentField+'.' : ''}${attributeName}`
-    const page=params?.[pageParamName] ? parseInt(params[pageParamName])*parseInt(params[limitParamName]) : undefined
-    return {path: attributeName, options: {limit, skip:page}, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    const page=undefined //params?.[pageParamName] ? parseInt(params[pageParamName])*parseInt(params[limitParamName]) : undefined
+    return {
+      path: attributeName, 
+      // select,
+      match,
+      options: {limit, skip:page}, 
+      populate: lodash.isEmpty(subPopulate)?undefined:subPopulate
+    }
   })
   return pops.value()
 }
+
 
 // Returns mongoose models ordered using child classes first (using discriminators)
 const getMongooseModels = () => {
@@ -297,11 +402,6 @@ const getModel = (id, expectedModel) => {
     })
 }
 
-const buildFilter = params => {
-  const filters=Object.entries(params).filter(([key]) => key.startsWith('filter.'))
-  return Object.fromEntries(filters.map(([attName, value]) => [attName.replace(/^filter\./, ''), new RegExp(value)]))
-}
-
 const buildSort = params => {
   return {}
 }
@@ -312,27 +412,32 @@ const buildQuery = (model, id, fields, params) => {
   const select = lodash(fields)
     .map(att => att.split('.')[0])
     .uniq()
-    .filter(att => {
-      if (!modelAttributes[att]) {
-        throw new Error(`Unknown attribute ${model}.${att}`)
-      }
-      return modelAttributes[att].ref == false
-    })
-    .map(att => [att, true])
+    .map(att => [att, 1])
     .fromPairs()
     .value()
 
   let criterion = id ? {_id: id} : {}
-  criterion={...criterion, ...buildFilter(params)}
+  const filters=extractFilters(params)
+  const limits=extractLimits(params)
+
+  // Add filter fields
+  fields=lodash.uniq([...fields, ...Object.keys(filters)])
+
+  const currentFilter=getCurrentFilter(filters)
+  criterion={...criterion, ...currentFilter}
+  console.log('select is', select)
   console.log('criterion is', criterion)
-  let query = mongoose.connection.models[model].find(criterion) //, select)
+  console.log('limits is', limits)
+  let query = mongoose.connection.models[model].find(criterion, select)
   query = query.collation({ locale: 'fr', strength: 2 })
-  if (params?.limit) {
-    query=query.skip((params.page || 0)*parseInt(params.limit))
-    query=query.limit(parseInt(params.limit)+1)
- }
-  const populates=buildPopulates({modelName: model, fields, params})
-  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  const currentLimit=getCurrentLimit(limits)
+  if (currentLimit) {
+    console.log('Setting limit', currentLimit, 'skipping', (params.page || 0)*currentLimit)
+    query=query.skip((params.page || 0)*currentLimit)
+    query=query.limit(currentLimit+1)
+  }
+  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params})
+  console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
   query = query.populate(populates).sort(buildSort(params))
   return query
 }
@@ -440,16 +545,9 @@ function getSecondLevelFields(fields, f) {
 mongoose returns virtuals even if they are not present in select clause
 => keep only require fields in data hierarchy
 */
-const retainRequiredFields = ({data, fields, level}) => {
-  if (level===undefined) {
-    level=3
-  }
-
-  if (level==0) {
-    return data
-  }
+const retainRequiredFields = ({data, fields}) => {
   if (lodash.isArray(data)) {
-    return data.map(d => retainRequiredFields({data: d, fields, level}))
+    return data.map(d => retainRequiredFields({data: d, fields}))
   }
   if (!lodash.isObject(data)) {
     return data
@@ -462,7 +560,6 @@ const retainRequiredFields = ({data, fields, level}) => {
     pickedData[f] = retainRequiredFields({
       data: data[f],
       fields: getSecondLevelFields(fields, f),
-      level: level-1
     })
   })
   return pickedData
@@ -538,17 +635,26 @@ const addComputedFields = (
   })
 }
 
-const declareComputedField = (model, field, getFn, setFn) => {
-    if (getFn) {
-    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getFn)
+const declareComputedField = ({model, field, getterFn, setterFn}) => {
+  if (!model || !field || !(getterFn || setterFn)) {
+    throw new Error(`${model}.${field} compute delcaration requires model, field and at least getter or setter`)
   }
-  if (setFn) {
-    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setFn)
+  // if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
+  //   throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
+  // }
+  if (getterFn) {
+    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn)
+  }
+  if (setterFn) {
+    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
   }
 }
 
 const declareVirtualField=({model, field, ...rest}) => {
-    const enumValues=rest.enumValues ? Object.keys(rest.enumValues) : undefined
+  // if (!LEAN_DATA && lodash.get(COMPUTED_FIELDS_GETTERS, `${model}.${field}`)) {
+  //   throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
+  // }
+  const enumValues=rest.enumValues ? Object.keys(rest.enumValues) : undefined
   lodash.set(DECLARED_VIRTUALS, `${model}.${field}`, {path: field, ...rest, enumValues})
   if (!lodash.isEmpty(rest.enumValues)) {
     declareEnumField({model, field, enumValues: rest.enumValues})
@@ -650,7 +756,7 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           })
       }
-      const populates=buildPopulates({modelaName: model, fields:[attribute]})
+      const populates=buildPopulates({modelName: model, fields:[attribute]})
 
       let query=mongooseModel.find({$or: [{_id: id}, {origin: id}]})
       query = populates.reduce((q, key) => q.populate(key), query)
@@ -757,7 +863,24 @@ const putToDb = ({model, id, params, user}) => {
     .then(data => callPostPutData({model, id, params, data, user}))
 }
 
+const lean = ({model, data}) => {
+  if (LEAN_DATA) {
+    console.time(`Leaning model ${model}`)
+    /** Original mongoose. Only leans 1st level
+     * const res=data.map(d => d.toObject()))
+     * */
+    const res=JSON.parse(JSON.stringify(data))
+    console.timeEnd(`Leaning model ${model}`)
+    return res
+  }
+  console.log('Lean disabled')
+  return data
+}
+
 const loadFromDb = ({model, fields, id, user, params}) => {
+  // Add filter fields to return them to client
+  const filters=extractFilters(params)
+  fields=lodash.uniq([...fields, ...Object.keys(filters)])
   return callPreprocessGet({model, fields, id, user, params})
     .then(({model, fields, id, data}) => {
       if (data) {
@@ -766,21 +889,19 @@ const loadFromDb = ({model, fields, id, user, params}) => {
       console.time(`Loading model ${model}`)
       return buildQuery(model, id, fields, params)
         .then(data => {console.timeEnd(`Loading model ${model}`); return data})
+        .then(data => lean({model, data}))
+        .then(data => {console.time(`Compute model ${model}`); return data})
         .then(data => {
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return data
+          return Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model)))
         })
-        /**
-        .then(data => {console.time(`Leaning deep model ${model}`); return data})
-        .then(data => JSON.parse(JSON.stringify(data)))
-        .then(data => {console.timeEnd(`Leaning deep model ${model}`); return data})
-        */
+        .then(data => {console.timeEnd(`Compute model ${model}`); return data})
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))
         .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
-        .then(data => {console.time(`Retain fields ${model}`); return data})
-        .then(data =>  retainRequiredFields({data, fields}))
-        .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
+        // .then(data => {console.time(`Retain fields ${model}`); return data})
+        // .then(data =>  retainRequiredFields({data, fields}))
+        // .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
     })
 
 }
@@ -850,5 +971,6 @@ module.exports = {
   setPostDeleteData,
   setMaxPopulateDepth,
   handleReliesOn,
+  extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
 }
 

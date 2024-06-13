@@ -620,7 +620,20 @@ const buildHooks = (components: IComponents) => {
         const filterValue=c.props.filterValue2
         return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
       })
-    const res={constants: constantFilters, variables: variableFilters}
+    const ultraVariableFilters = Object.values(components)
+      .filter(c => c.props.dataSource==dataProvider.id && lodash.range(5).some(idx => !!c.props[`filterComponent_${idx}`]))
+      .map(c => {
+        return lodash.flatten(lodash.range(5).map(idx => {
+          const filterComponent=c.props[`filterComponent_${idx}`]
+          if (!filterComponent) { return []}
+          const fieldName=computeDataFieldName(c, components, dataProvider.id)
+          const filterAttribute=components[filterComponent].props.attribute
+          const filterValue=filterComponent
+          return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+          }))
+      })
+      // TODO get Filter component 0 => 4
+    const res={constants: constantFilters, variables: [...variableFilters, ...ultraVariableFilters]}
     return res
   }
 
@@ -633,18 +646,6 @@ const buildHooks = (components: IComponents) => {
 
   const objectsFilters=Object.fromEntries(dataProviders.map(dp => [dp.id, getFiltersObject(dp)]))
   
-  const buildFilterCode = `
-    const FILTER_ATTRIBUTES=${JSON.stringify(objectsFilters)}
-    const buildFilter = dpId => {
-      const filters=FILTER_ATTRIBUTES[dpId]
-      const constants=filters?.constants?.map(([att, value]) => \`filter.\${att}=\${value}\`) || []
-      const variables=filters?.variables?.filter(([att, comp]) => ![null, undefined].includes(componentsValues[comp]))
-        .map(([att, comp]) => \`filter.\${att}=\${componentsValues[comp]}\`)  || []
-      const allFilters=[...constants, ...variables]
-      return allFilters.length>0 ? allFilters.join('&')+'&' : ''
-    }
-  `
-
   const singlePage=isSingleDataPage(components)
 
   const isIdInDependencyArray = dataProviders.reduce((acc, curr, i) => {
@@ -654,7 +655,7 @@ const buildHooks = (components: IComponents) => {
     return acc
   }, false)
 
-  let code=buildFilterCode
+  let code=`const FILTER_ATTRIBUTES=${JSON.stringify(objectsFilters, null, 2)}\n`
   code += `const get=axios.get`
   code +=
     '\n' +
@@ -698,7 +699,7 @@ const buildHooks = (components: IComponents) => {
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}\${buildFilter('${dp.id}')}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, componentsValues)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -722,6 +723,7 @@ const isFilterComponent = (component: IComponent, components: IComponents) => {
   let result=Object.values(components).some(
     c => (c.props?.textFilter == component.id || c.props?.filterValue == component.id
       || c.props?.filterValue2 == component.id
+      || lodash.range(5).some(idx => c.props[`filterComponent_${idx}`]==component.id)
     )
   )
 
@@ -900,6 +902,7 @@ export const generateCode = async (
   */
   code = `import React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
+  import {buildFilter} from '../dependencies/utils/filters'
   import omit from 'lodash/omit';
   import lodash from 'lodash';
   import Metadata from '../dependencies/Metadata';

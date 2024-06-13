@@ -121,6 +121,14 @@ const withDynamicContainer = Component => {
       }
       }
   
+    if (props.filterAttribute && props.filterConstant) {
+      const value=props.filterConstant
+      // TODO Check why value "null" comes as string
+      if (!(lodash.isNil(value) || value=="null")) {
+        orgData = matcher(value, orgData, props.filterAttribute)
+      }
+    }
+
     if (props.contextFilter) {
       const contextIds = props.contextFilter.map(o => o._id.toString())
       orgData = orgData.filter(d => contextIds.includes(d._id))
@@ -163,8 +171,7 @@ const withDynamicContainer = Component => {
     }
 
     const getPageIndex = () => {
-      const res=props.pagesIndex[getPageIndexKey()] || 0
-      // console.log('page index', res)
+      const res=props.pagesIndex?.[getPageIndexKey()] || 0
       return res
     }
 

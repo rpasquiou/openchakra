@@ -22,6 +22,7 @@ import ColorsControl from '../controls/ColorsControl';
 import FormControl from '../controls/FormControl'
 import usePropsSelector from '../../../hooks/usePropsSelector'
 import { sortComponents } from '~utils/misc'
+import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
   const components: IComponents = sortComponents(useSelector(getComponents))
@@ -103,6 +104,8 @@ const DataSourcePanel: React.FC = () => {
         setFilterAttributes(filterAttrs)
       }
       catch (err) {
+        console.error(err)
+        // TODO Should not raise exception
         // alert(err)
       }
       if (!subDataSource) {
