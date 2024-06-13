@@ -13,7 +13,7 @@ const MAILJET_HANDLER=require('../../utils/mailjet')
 const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const { isDevelopment, isProduction } = require('../../../config/config')
-require('../../models/Group')
+require('../../plugins/smartdiet/functions')
 
 const isLeadOnly = (lead, user) => {
   return !!lead && !user
@@ -23,17 +23,47 @@ const isRegistered = (lead, user) => {
   return !!user
 }
 
-const hasCoaching = account => {
+const isESANI = account => {
+  if (!account) {
+    throw new Error('isESANI: account is null')
+  }
   return account.company?.offers?.[0].coaching_credit>0
 }
 
+const isINEA = account => {
+  if (!account) {
+    throw new Error('isINEA: account is null')
+  }
+  return !isESANI(account)
+}
+
 const hasGroups = account => {
+  if (!account) {
+    throw new Error('hasGroups: account is null')
+  }
   return !!account.company?.offers?.[0].groups_unlimited ||
     account.company?.offers?.[0].groups_credit>0
 }
 
 const isInsurance = account => {
+  if (!account) {
+    throw new Error('isInsurance: account is null')
+  }
   return account?.company?.activity===COMPANY_ACTIVITY_ASSURANCE
+}
+
+const mailOpened = account => {
+  if (!account) {
+    throw new Error('mailOpened: account is null')
+  }
+  return !!account.mail_opened
+}
+
+const coachingStarted = user => {
+  if (!user) {
+    throw new Error('coachingStarted: account is null')
+  }
+  return !!user?.latest_coachings[0]?.appointments?.find(a => moment(a.end_date).isBefore(moment()))
 }
 
 const _mapContactToMailJet = contact => ({
@@ -52,88 +82,163 @@ const mapContactToMailJet = contact => {
 }
 
 const WORKFLOWS={
-  CL_SALAR_LEAD_NOCOA_NOGROUP: {
-    id: '2414827',
-    name: 'INEA sans groupe',
+  CL_ADH_LEAD_NOCOA_NOGROUP_NOT_OPENED: {
+    id: '2415607',
+    name: 'ADH NON INSC INEA SS GRP MAIL NON OUVERT',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
-        && !hasCoaching(lead)
+        && isInsurance(lead)
+        && isINEA(lead)
         && !hasGroups(lead)
+        && !mailOpened(lead)
+        && lead
+    },
+  },
+  CL_ADH_LEAD_COA_NOGROUP_NOT_OPENED: {
+    id: '2414836',
+    name: 'ADH NON INSC ESANI SS GRP MAIL NON OUVERT',
+    filter: (lead, user) => {
+      return isLeadOnly(lead, user)
+        && isInsurance(lead)
+        && isESANI(lead)
+        && !hasGroups(lead)
+        && !mailOpened(lead)
+        && lead
+    },
+  },
+  CL_SALAR_LEAD_NOCOA_NOGROUP: {
+    id: '2414827',
+    name: 'SAL NON INSC INEA SS GRP',
+    filter: (lead, user) => {
+      return isLeadOnly(lead, user)
         && !isInsurance(lead)
+        && isINEA(lead)
+        && !hasGroups(lead)
         && lead
     },
   },
   CL_SALAR_LEAD_COA_NOGROUP: {
     id: '2414829',
-    name: 'ESANI sans groupe',
+    name: 'SAL NON INSC ESANI SS GRP',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
-      && hasCoaching(lead)
-      && !hasGroups(lead)
-      && !isInsurance(lead)
-      && lead
+        && !isInsurance(lead)
+        && isESANI(lead)
+        && !hasGroups(lead)
+        && lead
     }
   },
-  CL_SALAR_LEAD_NOCOA_GROUP: {
-    id: '2414828',
-    name: 'INEA avec groupe',
+  CL_ADH_LEAD_NOCOA_NOGROUP_MAIL_OPENED: {
+    id: '2416408',
+    name: 'ADH NON INSC INEA SS GRP MAIL OUVERT',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
-      && !hasCoaching(lead)
-      && hasGroups(lead)
-      && !isInsurance(lead)
-      && lead
-    }
+        && isInsurance(lead)
+        && isINEA(lead)
+        && !hasGroups(lead)
+        && mailOpened(lead)
+        && lead
+    },
   },
-  CL_SALAR_LEAD_COA_GROUP: {
-    id: '2414830',
-    name: 'ESANI avec groupe',
+  CL_ADH_LEAD_COA_NOGROUP_MAIL_OPENED: {
+    id: '2416407',
+    name: 'SAL NON INSC ESANI sans groupe mail ouvert',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
-      && hasCoaching(lead)
-      && hasGroups(lead)
-      && !isInsurance(lead)
-      && lead
-    }
+        && isInsurance(lead)
+        && isESANI(lead)
+        && !hasGroups(lead)
+        && mailOpened(lead)
+        && lead
+    },
   },
-  // Registered
-  CL_REGISTERED: {
-    id: '2414831',
-    name: 'inscrits motiv usage',
+  // Registered INEA
+  CL_REGISTERED_INEA_NOSTARTEDCOA: {
+    id: '2415688',
+    name: 'SAL/ADH INSC INEA NO COA DEM',
     filter: (lead, user) => {
       return isRegistered(lead, user)
-        && !isInsurance(user)
+        && isINEA(user)
+        && !coachingStarted(user)
         && user
     }
   },
-  // 1 month before coll chall
-  CL_SALAR_REGISTERED_COLL_CHALL: {
-    id: '2414833',
-    name: 'TEIRA challenge co',
+  // Registered ESANI
+  CL_REGISTERED_ESANI_NOSTARTEDCOA: {
+    id: '2414831',
+    name: 'SAL/ADH INSC INEA NO CAO DEM',
     filter: (lead, user) => {
-      return !!user?.company?.collective_challenges?.some(c => moment(c.start_date).diff(moment(), 'days')<30)
-        && !isInsurance(user)
+      return isRegistered(lead, user)
+        && isESANI(user)
+        && !coachingStarted(user)
         && user
     }
   },
   // After 1 week
   CL_SALAR_REGISTERED_FIRST_COA_APPT: {
     id: '2414832',
-    name: 'inscrits CAO démarré',
+    name: 'SAL/ADH INSC CAO DEM',
     filter: (lead, user) => {
-      return !!user?.latest_coachings[0]?.appointments?.some(a => moment().isAfter(moment(a.end_date)))
-      && !isInsurance(user)
+      return isRegistered(lead, user)
+      && coachingStarted(user)
       && user
     }
   },
-  CL_ADHER_LEAD_COA_NOGROUP: {
-    id: '2414836',
-    name: 'Mutuelle ESANI sans groupe',
+  // 1 month before coll chall
+  CL_REGISTERED_COLL_CHALL: {
+    id: '2414833',
+    name: 'TEIRA challenge co',
+    filter: (lead, user) => {
+      return isRegistered(lead, user)
+        && user?.company?.collective_challenges?.some(c => moment(c.start_date).diff(moment(), 'days')<30)
+        && user
+    }
+  },
+  CL_SALAR_NONINSC_INEA_GROUP_NON_MAIL: {
+    id: '2414828',
+    name: 'INEA avec groupe',
     filter: (lead, user) => {
       return isLeadOnly(lead, user)
-      && hasCoaching(lead)
-      && !hasGroups(lead)
-      && isInsurance(lead)
+      && !mailOpened(lead)
+      && !isInsurance(lead)
+      && isINEA(lead)
+      && hasGroups(lead)
+      && lead
+    }
+  },
+  CL_SALAR_NONINSC_ESANI_GROUP_NON_MAIL: {
+    id: '2414830',
+    name: 'ESANI avec groupe',
+    filter: (lead, user) => {
+      return isLeadOnly(lead, user)
+      && !mailOpened(lead)
+      && !isInsurance(lead)
+      && isESANI(lead)
+      && hasGroups(lead)
+      && lead
+    }
+  },
+  CL_SAL_NONINSC_INEA_GRP_MAIL_OUVERT: {
+    id: '2416441',
+    name: 'SAL INEA GRP MAIL OUVERT',
+    filter: (lead, user) => {
+      return isLeadOnly(lead, user)
+      && !isInsurance(lead)
+      && isINEA(lead)
+      && hasGroups(lead)
+      && mailOpened(lead)
+      && lead
+    }
+  },
+  CL_SAL_NONINSC_ESANI_GRP_MAIL_OUVERT: {
+    id: '2416442',
+    name: 'SAL ESANI GRP MAIL OUVERT',
+    filter: (lead, user) => {
+      return isLeadOnly(lead, user)
+      && !isInsurance(lead)
+      && isESANI(lead)
+      && hasGroups(lead)
+      && mailOpened(lead)
       && lead
     }
   },
@@ -194,3 +299,4 @@ module.exports={
   mapContactToMailJet,
   computeWorkflowLists,
 }
+

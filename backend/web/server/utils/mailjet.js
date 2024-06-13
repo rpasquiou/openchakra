@@ -1,5 +1,5 @@
 const { isProduction } = require('../../config/config')
-
+const lodash=require('lodash')
 /**
 As from https://dev.mailjet.com/email/reference/contacts/contact-list/
 */
@@ -30,9 +30,17 @@ class MAILJET_V6 {
       Variables: {...data},
     }
 
+    if (attachment) {
+      message.Attachments=[{Filename: attachment.name, Base64Content: attachment.content, ContentType: "text/calendar"}]
+    }
+
     return this.smtpInstance
       .post('send', {version: 'v3.1'})
       .request({Messages: [message]})
+  }
+
+  sendSms(/** number, data, contact*/) {
+    return Promise.reject('No SMS sent through Mailjet')
   }
 
   getContactsLists() {
@@ -40,6 +48,13 @@ class MAILJET_V6 {
       .get(`contactslist?Limit=${RESULTS_LIMIT}`, {version: 'v3'})
       .request()
       .then(res => JSON.parse(JSON.stringify(res.body.Data)))
+  }
+
+  getContactId(email) {
+    return this.smtpInstance
+      .get(`contact/${email}`, {version: 'v3'})
+      .request()
+      .then(res => res.body.Data[0]?.ID || null)
   }
 
   acceptEmail(email) {
@@ -81,6 +96,7 @@ class MAILJET_V6 {
       })
     }
 
+  /** Removes contacts from list and also from workflows that use this list */
   removeContactsFromList({contacts, list}) {
     const filteredContacts=contacts.filter(({Email}) => this.acceptEmail(Email))
     if (filteredContacts.length!=contacts.length) {
@@ -99,30 +115,35 @@ class MAILJET_V6 {
         //console.log(`Mailjet remove ${filteredContacts.length} contacts from ${list}:jobId is ${jobId}`)
         return jobId
       })
+      // Remove from workflows
+      .then(() => this.getWorkflowsForContactsList({list}))
+      .then(res => Promise.all(res.map(workflowId => this.removeContactsFromWorkflow({contacts: filteredContacts, workflow: workflowId}))))
   }
 
-  /**
-  sendSms(number, data) {
-
-    console.log(`Sending SMS to ${number}, data:${JSON.stringify(data)}`)
-
-    const smsData = new SibApiV3Sdk.SendTransacSms()
-    smsData.sender = 'Contact'
-    smsData.recipient = number
-    smsData.content = data
-    smsData.type = 'transactional'
-
-    this.smsInstance.sendTransacSms(smsData)
-      .then(data => {
-        console.log(`SMS called successfully. Returned data: ${ JSON.stringify(data, null, 2)}`)
-        return true
-      })
-      .catch(err => {
-        console.error(`Error while sending ${JSON.stringify(smsData)}:${JSON.stringify(err.response.body)}`)
-        return false
-      })
+  getWorkflowsForContactsList({list}) {
+    return this.smtpInstance
+      .get(`campaign?ContactsListID=${list}&FromTS=2023-01-01T00:00:00`, {version: 'v3'})
+      .request()
+      .then(res => lodash.uniq(res.body.Data.map(c => c.WorkflowID).filter(v => !!v)))
   }
-  */
+
+  async removeContactsFromWorkflow({contacts, workflow}) {
+    const filteredContacts=contacts.filter(({Email}) => this.acceptEmail(Email))
+    if (filteredContacts.length!=contacts.length) {
+      console.log(`${contacts.length-filteredContacts.length} rejected emails `)
+    }
+    const ids=await Promise.all(contacts.map(({Email}) => this.getContactId(Email)))
+    console.log('ids are', ids)
+    return Promise.all(ids.map(id => this.smtpInstance
+      .delete(`workflow/${workflow}/contact/${id}`, {'version': 'v3'})
+      .request()
+      .then(res => {
+        console.log(`Removed contact ${id} form workflow ${workflow}`,res)
+        // const jobId=res.body.Data[0].JobID
+        // return jobId
+      })
+    ))
+  }
 
 }
 

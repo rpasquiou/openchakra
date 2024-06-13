@@ -25,7 +25,13 @@ import { sortComponents } from '~utils/misc'
 import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
-  const components: IComponents = sortComponents(useSelector(getComponents))
+  const unsortedComponents=useSelector(getComponents)
+  const [components, setComponents]=useState({})
+
+  useEffect(() => {
+    setComponents(sortComponents(unsortedComponents))
+  }, [unsortedComponents])
+
   const activeComponent: IComponent = useSelector(getSelectedComponent)
   const { setValueFromEvent, setValue, removeValue } = useForm()
   const dataSource = usePropsSelector('dataSource')

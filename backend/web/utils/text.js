@@ -4,6 +4,8 @@ const stripBom = require('strip-bom')
 const moment=require('moment')
 const lodash=require('lodash')
 const externelFormatDuration=require('format-duration')
+const levenshtein = require('fast-levenshtein')
+
 const ARTICLES = 'le la les un une de des d l à'.split(/ /g)
 const SIREN_LENGTH=9
 const SIRET_LENGTH=14
@@ -122,7 +124,29 @@ const splitRemaining = (pattern, delimiter) => {
 }
 
 const formatDateTime = datetime => {
-  return moment(datetime).format(`[le] DD/MM/YY [à] HH:mm`)
+  return `le ${formatDate(datetime)} à ${formatTime(datetime)}`
+}
+
+const formatDate = datetime => {
+  return moment(datetime).format(`DD/MM/YY`)
+}
+
+const formatHour = datetime => {
+  return moment(datetime).format(`HH:mm`)
+}
+
+const getWordsDistance = (word1, word2) => {
+  return levenshtein.get(word1, word2)
+}
+
+const getNearestWord = (word, words, limit=undefined) => {
+  const nearest=lodash(words).minBy(w => getWordsDistance(word, w))
+  const distance=getWordsDistance(word, nearest)
+  if (distance>limit) {
+    console.error(`****** Too far\n${word}\n**** from\n${nearest}\n*** distance ${distance}`)
+    return null
+  }
+  return nearest
 }
 
 const formatDuration = durationSeconds => {
@@ -170,7 +194,8 @@ module.exports = {
   capitalize,
   guessDelimiter,
   splitRemaining,
-  formatDateTime,
+  formatDateTime, formatDate, formatHour,
+  getWordsDistance, getNearestWord,
   formatDuration,
   convertDuration,
 }

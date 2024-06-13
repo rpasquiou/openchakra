@@ -146,7 +146,7 @@ describe('Worflows', () => {
 
   it('must filter CL_SALAR_REGISTERED_FIRST_COA_APPT', async() => {
     const coaching=await Coaching.create({...COACHING_DATA, user: leadUser})
-    await Appointment.create({...APPOINTMENT_DATA, appointment_type: appointmentType,
+    await Appointment.create({...APPOINTMENT_DATA, appointment_type: appointmentType, user: leadUser, diet,
       start_date: moment().add(-3, 'hour'), end_date:moment().add(-2, 'hour'), coaching,
     })
     const result=await computeWorkflowLists()
@@ -191,11 +191,18 @@ describe('Worflows', () => {
     //console.log(allLists.filter(l => /adh/i.test(l.Name)))
   })
 
-  it.only('Must display contacts list', async() => {
-    const result=await computeWorkflowLists()
-    Object.entries(result).forEach(([key, entry])=> {
-      console.log(key, entry.id, entry.add.length)
-    })
+  it.skip('Must display contacts list', async() => {
+    const email='sebastien.auvray@wappizy.com'
+    const result=await MAIL_HANDLER.getContactsLists()
+    console.log(result)
+    const listId=result[0].ID
+    const res=await MAIL_HANDLER.addContactsToList({contacts: [{Email: email}], list: listId})
+    const id=await MAIL_HANDLER.getContactId(email)
+    console.log('ID is', id)
+    console.log(listId)
+    // const campaigns=await MAIL_HANDLER.getWorkflowsForContactsList({list:listId}).catch(console.error)
+    // console.log(campaigns, campaigns.length, 'workflows', campaigns.map(c => c.WorkflowID))
+    await MAIL_HANDLER.removeContactsFromList({contacts: [{Email:email}], list: listId})
   })
 
 })

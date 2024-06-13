@@ -15,7 +15,16 @@ const Schema = mongoose.Schema
 const QuizzQuestionSchema = new Schema({
   title: {
     type: String,
+    index: true,
     required: [true, 'Le titre est obligatoire'],
+  },
+  // Title for synthesis
+  synthesis_label: {
+    type: String
+  },
+  // Category
+  category: {
+    type: String
   },
   type: {
     type: String,
@@ -42,6 +51,7 @@ const QuizzQuestionSchema = new Schema({
   },
   migration_id: {
     type: Number,
+    index: true,
     required: false,
   },
 }, schemaOptions)

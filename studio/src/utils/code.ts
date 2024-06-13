@@ -1,3 +1,4 @@
+import moment from 'moment'
 import {encode} from 'html-entities'
 import filter from 'lodash/filter'
 import isBoolean from 'lodash/isBoolean'
@@ -208,7 +209,7 @@ const buildBlock = ({
       propsContent += ` getComponentValue={getComponentValue} `
 
       // Forces refresh is this compnent's value is changed
-      if (isFilterComponent(childComponent, components)) {
+      if (isFilterComponent(childComponent, components) || childComponent.type=='Calendar') {
         propsContent += ` setComponentValue={setComponentValue} `
       }
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
@@ -578,7 +579,10 @@ const buildFilterStates = (components: IComponents) => {
   return filterComponents
     .map(c => {
       const stateName: any = c.id.replace(/^comp-/, '')
-      return `const [${stateName}, set${stateName}]=useState(null)`
+      return `const [${stateName}, set${stateName}]=useState(null)\n
+      useEffect(()=> {
+        setPagesIndex({}, () => reload())
+      }, [${stateName}])`
     })
     .join('\n')
 }
@@ -620,6 +624,14 @@ const buildHooks = (components: IComponents) => {
         const filterValue=c.props.filterValue2
         return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
       })
+    const variableFilters2 = Object.values(components)
+    .filter(c => c.props.filterAttribute && c.props.filterValue && c.props.dataSource==dataProvider.id)
+    .map(c => {
+      const fieldName=computeDataFieldName(c, components, dataProvider.id)
+      const filterAttribute=c.props.filterAttribute
+      const filterValue=c.props.filterValue
+      return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+    })
     const ultraVariableFilters = Object.values(components)
       .filter(c => c.props.dataSource==dataProvider.id && lodash.range(5).some(idx => !!c.props[`filterComponent_${idx}`]))
       .map(c => {
@@ -633,11 +645,25 @@ const buildHooks = (components: IComponents) => {
           }))
       })
       // TODO get Filter component 0 => 4
-    const res={constants: constantFilters, variables: [...variableFilters, ...ultraVariableFilters]}
+    const res={constants: constantFilters, variables: [...variableFilters, ...ultraVariableFilters, ...variableFilters2]}
     return res
   }
 
 
+  const getSortParams = dataSourceId => {
+    const dsComponents=lodash(components).values()
+      .filter(c => getDynamicType(c)=='Container')
+      .filter(c => c.props?.dataSource?.replace(/^comp-/, '')==dataSourceId)
+      .filter(c => !!c.props?.sortAttribute && !!c.props.sortDirection)
+      .map(c => {
+        let fieldPath=computeDataFieldName(c, components, c.props.dataSource)
+        fieldPath = fieldPath ? `${fieldPath}.${c.props?.sortAttribute}` : c.props.sortAttribute
+        const fieldParam=`sort.${fieldPath}`
+        const order=c.props.sortDirection
+        return `${fieldParam}=${order}`
+      })
+    return dsComponents.join('&')
+  }
 
   const dataProviders=getValidDataProviders(components)
   if (dataProviders.length === 0) {
@@ -697,9 +723,10 @@ const buildHooks = (components: IComponents) => {
         const dpFields = getDataProviderFields(dp).join(',')
         const limits = getLimits(dp)
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
+        const sortParams = getSortParams(dataId)
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, componentsValues)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, componentsValues)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -792,6 +819,17 @@ const getWappType = type => {
   return `Wapp${type}`
 }
 
+const storeRedirectCode= (loginUrl:string) => `
+useEffect(() => {
+  if (user===false) {
+    return
+  }
+  if (user===null) {
+    storeAndRedirect('${loginUrl}')
+  }
+}, [user])
+`
+
 const reloadOnBackScript = `
 useEffect(() => {
    const handlePopstate = () => {
@@ -817,6 +855,8 @@ export const generateCode = async (
   const { settings } = project
   const {description, metaImage, name, url, favicon32, gaTag} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
+  const loginPage=Object.values(pages).find(page => page.components?.root?.props?.tag=='LOGIN')!
+  const loginUrl=loginPage ? '/'+getPageUrl(loginPage.pageId, pages) : ''
   const extraImports: string[] = []
   const wappComponentsDeclaration = lodash(components)
     .values()
@@ -900,7 +940,8 @@ export const generateCode = async (
   :
   ''
   */
-  code = `import React, {useState, useEffect} from 'react';
+  const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
+  code = `${header}\nimport React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
   import {buildFilter} from '../dependencies/utils/filters'
   import omit from 'lodash/omit';
@@ -929,7 +970,7 @@ import { ${lucideIconImports.join(',')} } from "lucide-react";`
     : ''
 }
 
-import {ensureToken} from '../dependencies/utils/token'
+import {ensureToken, storeAndRedirect} from '../dependencies/utils/token'
 import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
@@ -983,9 +1024,10 @@ const ${componentName} = () => {
   const {user}=useUserContext()
   ${autoRedirect}
 
+
   ${hooksCode}
   ${filterStates}
-
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata

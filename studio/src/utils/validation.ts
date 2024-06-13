@@ -40,6 +40,7 @@ const checkActionsProperties = (
     if (comp.props[actionAtt]) {
       const actionName=comp.props[actionAtt]
       const required=ACTIONS[actionName].required || []
+      console.log(required)
       let actionProps=comp.props[`${actionAtt}Props`]
       try {
         actionProps=JSON.parse(actionProps)
@@ -201,7 +202,26 @@ export const validateProject = (project: ProjectState): IWarning[] => {
     .mapValues(v => v.map(p => p.pageName))
     .pickBy(v => v.length>1)
     .values()
-  console.log(`warningpages: ${JSON.stringify(warningPages, null, 2)}`)
+  const loginPages=Object.values(pages).filter(page => page.components?.root?.props?.tag=='LOGIN')
+  // Exactly one login page is required
+  if (lodash.isEmpty(loginPages)) {
+    return [`Could not found page with LOGIN tag`]
+  }
+  // Exactly one login page is required
+  if (loginPages.length>1) {
+    return [`${loginPages.length} pages ${loginPages.map(p => p.pageName)} have LOGIN tag, only one is allowed`]
+  }
+  const loginPage=loginPages[0]
+  // Login page must allow not connected
+  if (loginPage?.components.root?.props?.allowNotConnected!='true') {
+    return [`Login page '${loginPage.pageName}' must allow not connected`]
+  }
+  const indexPage=project.pages[project.rootPage]
+  // Login page must allow not connected
+  if (indexPage?.components.root?.props?.allowNotConnected!='true') {
+    return [`Index page '${indexPage.pageName}' must allow not connected`]
+  }
+
 
   const warningsComponents = lodash(pages)
     .map(p => [p.pageName, validateComponents(p.components)])

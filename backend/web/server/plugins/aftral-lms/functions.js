@@ -161,32 +161,28 @@ MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareVirtualField({model, field: 'spent_time', instance: 'Number'})
-  declareComputedField(model, 'spent_time', (userId, params, data) => {
+  declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => result?.duration || 0)
-  })
-  declareVirtualField({model, field: 'spent_time_str', instance: 'Number'})
-  declareComputedField(model, 'spent_time_str', (userId, params, data) => {
+  }})
+  declareComputedField({model, field: 'spent_time_str', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => formatDuration(result?.duration || 0))
-  })
+  }})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
-  declareComputedField(model, 'achievement_status', getBlockStatus)
+  declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
   declareVirtualField({model, field: 'resources_count', instance: 'Number'})
-  declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
-  declareComputedField(model, 'finished_resources_count', getFinishedResources)
+  declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
   declareVirtualField({model, field: 'search_text', instance: 'String', requires:'name,code'})
-  declareComputedField(model, 'resources_progress', getResourcesProgress)
-  declareVirtualField({model, field: 'resources_progress', instance: 'Number', requires:'resources_count,finished_resources_count'})
-  declareComputedField(model, 'annotation', getResourceAnnotation, setResourceAnnotation)
+  declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
+  declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
 })
 
 declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
-declareComputedField('resource', 'mine', isResourceMine)
+declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
 

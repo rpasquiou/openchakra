@@ -3,7 +3,8 @@ const { isEmailOk } = require('../../../../utils/sms')
 const { isPhoneOk } = require('../../../../utils/sms')
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS } = require('../consts')
+const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS, CALL_STATUS_TO_CALL } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -21,7 +22,7 @@ const LeadSchema = new Schema({
   email: {
     type: String,
     validate: [isEmailOk, v => `L'email '${v?.value}' est invalide`],
-    required: [true, 'L\'email est obligatoire'],
+    required: [true, `L'email est obligatoire`],
     set: v => v?.toLowerCase().trim(),
   },
   // Custom identifier
@@ -42,7 +43,7 @@ const LeadSchema = new Schema({
   },
   phone: {
     type: String,
-    validate: [value => !value || isPhoneOk(value), v => `Le numéro de téléphone '${v?.value}'' doit commencer par 0 ou +33`],
+    validate: [value => !value || isPhoneOk(value), v => `Le numéro de téléphone '${v?.value}' doit commencer par 0 ou +33`],
     set: v => v?.replace(/^0/, '+33'),
     required: false,
   },
@@ -54,11 +55,18 @@ const LeadSchema = new Schema({
   call_status: {
     type: String,
     enum: Object.keys(CALL_STATUS),
-    required: false,
+    default: CALL_STATUS_TO_CALL,
+    required: [true, `Le status d'appel est obligatoire`],
+    set: v => v || undefined,
   },
   campain: {
     type: String,
     required: false,
+  },
+  // Did the lead open the 1st campain email
+  mail_opened: {
+    type: Boolean,
+    default: false,
   },
   operator: {
     type: Schema.Types.ObjectId,
@@ -91,7 +99,9 @@ const LeadSchema = new Schema({
   }],
   call_direction: {
     type: String,
-    enum: Object.keys(CALL_DIRECTION)
+    enum: Object.keys(CALL_DIRECTION),
+    required: false,
+    set: v => v || undefined,
   },
   consent: {
     type: Boolean,
@@ -113,7 +123,7 @@ LeadSchema.index(
   { unique: true, message: 'Un prospect existe déjà avec cet email' });
 
 /* eslint-disable prefer-arrow-callback */
-LeadSchema.virtual('fullname').get(function() {
+LeadSchema.virtual('fullname', DUMMY_REF).get(function() {
   return `${this.firstname || ''} ${this.lastname || ''}`
 })
 
@@ -131,8 +141,14 @@ LeadSchema.virtual("registered_user", {
   foreignField: "email", // is equal to foreignField
 });
 
-LeadSchema.virtual('registered').get(function() {
+LeadSchema.virtual('registered', DUMMY_REF).get(function() {
   return !lodash.isEmpty(this.registered_user)
+})
+
+LeadSchema.virtual("nutrition_advices", {
+  ref: "nutritionAdvice", // The Model to use
+  localField: 'email',
+  foreignField: 'patient_email',
 })
 
 /* eslint-enable prefer-arrow-callback */
