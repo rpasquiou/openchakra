@@ -43,7 +43,7 @@ const withDynamicButton = Component => {
         return setActionAllowed(true)
       }
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
-        .then(res => setActionAllowed(res.data))
+        .then(res => setActionAllowed(res.data.allowed))
         .catch(err => console.error(err))
     }, [action, value])
 
