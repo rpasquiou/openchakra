@@ -216,12 +216,7 @@ function handleReliesOn(directAttribute, relies_on, requiredFields) {
 }
 
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = (modelName, fields, depth) => {
-  // Limit recursion depth
-  if (depth===0) {
-    //console.warn(`Build populates max recursion depth reached`)
-    return undefined
-  }
+const buildPopulates = ({modelName, fields, params, parentField}) => {
   // Retain all ref fields
   const model=getModels()[modelName]
   if (!model) {
@@ -258,8 +253,12 @@ const buildPopulates = (modelName, fields, depth) => {
   // / Build populate using att and subpopulation
   const pops=groupedAttributes.entries().map(([attributeName, fields]) => {
     const attType=attributes[attributeName].type
-    const subPopulate=buildPopulates(attType, fields, depth-1)
-    return {path: attributeName, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    const subPopulate=buildPopulates({modelName: attType, fields, params, parentField: `${parentField ? parentField+'.' : ''}${attributeName}`})
+    const limitParamName = `limit.${parentField? parentField+'.' : ''}${attributeName}`
+    const limit=params?.[limitParamName] ? parseInt(params[limitParamName])+1 : undefined
+    const pageParamName = `page.${parentField? parentField+'.' : ''}${attributeName}`
+    const page=params?.[pageParamName] ? parseInt(params[pageParamName])*parseInt(params[limitParamName]) : undefined
+    return {path: attributeName, options: {limit, skip:page}, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
   })
   return pops.value()
 }
@@ -298,7 +297,16 @@ const getModel = (id, expectedModel) => {
     })
 }
 
-const buildQuery = (model, id, fields) => {
+const buildFilter = params => {
+  const filters=Object.entries(params).filter(([key]) => key.startsWith('filter.'))
+  return Object.fromEntries(filters.map(([attName, value]) => [attName.replace(/^filter\./, ''), new RegExp(value)]))
+}
+
+const buildSort = params => {
+  return {}
+}
+
+const buildQuery = (model, id, fields, params) => {
   const modelAttributes = Object.fromEntries(getModelAttributes(model))
 
   const select = lodash(fields)
@@ -314,11 +322,18 @@ const buildQuery = (model, id, fields) => {
     .fromPairs()
     .value()
 
-  const criterion = id ? {_id: id} : {}
+  let criterion = id ? {_id: id} : {}
+  criterion={...criterion, ...buildFilter(params)}
+  console.log('criterion is', criterion)
   let query = mongoose.connection.models[model].find(criterion) //, select)
-  const populates=buildPopulates(model, fields, MAX_POPULATE_DEPTH)
-  //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
-  query = query.populate(populates)
+  query = query.collation({ locale: 'fr', strength: 2 })
+  if (params?.limit) {
+    query=query.skip((params.page || 0)*parseInt(params.limit))
+    query=query.limit(parseInt(params.limit)+1)
+ }
+  const populates=buildPopulates({modelName: model, fields, params})
+  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
+  query = query.populate(populates).sort(buildSort(params))
   return query
 }
 
@@ -524,7 +539,7 @@ const addComputedFields = (
 }
 
 const declareComputedField = (model, field, getFn, setFn) => {
-  if (getFn) {
+    if (getFn) {
     lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getFn)
   }
   if (setFn) {
@@ -533,7 +548,7 @@ const declareComputedField = (model, field, getFn, setFn) => {
 }
 
 const declareVirtualField=({model, field, ...rest}) => {
-  const enumValues=rest.enumValues ? Object.keys(rest.enumValues) : undefined
+    const enumValues=rest.enumValues ? Object.keys(rest.enumValues) : undefined
   lodash.set(DECLARED_VIRTUALS, `${model}.${field}`, {path: field, ...rest, enumValues})
   if (!lodash.isEmpty(rest.enumValues)) {
     declareEnumField({model, field, enumValues: rest.enumValues})
@@ -635,7 +650,7 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           })
       }
-      const populates=buildPopulates(model, [attribute])
+      const populates=buildPopulates({modelaName: model, fields:[attribute]})
 
       let query=mongooseModel.find({$or: [{_id: id}, {origin: id}]})
       query = populates.reduce((q, key) => q.populate(key), query)
@@ -749,7 +764,7 @@ const loadFromDb = ({model, fields, id, user, params}) => {
         return data
       }
       console.time(`Loading model ${model}`)
-      return buildQuery(model, id, fields)
+      return buildQuery(model, id, fields, params)
         .then(data => {console.timeEnd(`Loading model ${model}`); return data})
         .then(data => {
           if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
@@ -763,11 +778,6 @@ const loadFromDb = ({model, fields, id, user, params}) => {
         .then(data => {console.time(`Filtering model ${model}`); return data})
         .then(data => callFilterDataUser({model, data, id, user}))
         .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
-
-        .then(data => {console.time(`Add computed fields ${model}`); return data})
-        .then(data => Promise.all(data.map(d => addComputedFields(fields,user._id, params, d, model))))
-        .then(data => {console.timeEnd(`Add computed fields ${model}`); return data})
-        // .then(data => {console.log(`Loading data ${JSON.stringify(data, null,2)}`); return data})
         .then(data => {console.time(`Retain fields ${model}`); return data})
         .then(data =>  retainRequiredFields({data, fields}))
         .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
