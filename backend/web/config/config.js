@@ -339,7 +339,7 @@ const bookingUrl = (serviceUserId, extraParams = {}) => {
   return url
 }
 
-let _isMaster=undefined
+let _isMaster=isDevelopment() ? true :  undefined
 
 const isMaster = () => {
   return _isMaster
@@ -384,7 +384,7 @@ const setMasterStatus = () => {
 }
 
 // Delay master detection to ensure all PM2 processes have started
-setTimeout(setMasterStatus, 1000)
+!isDevelopment() && setTimeout(setMasterStatus, 1000)
 
 // Public API
 module.exports = {
