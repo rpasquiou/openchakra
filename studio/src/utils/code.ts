@@ -20,6 +20,7 @@ import {
   TEXT_TYPE,
   UPLOAD_TYPE,
   computeDataFieldName,
+  getChildrenOfType,
   getDataProviderDataType,
   getFieldsForDataProvider,
   getLimitsForDataProvider,
@@ -176,6 +177,11 @@ const buildBlock = ({
         props: lodash.cloneDeep(child.type=='Tabs' ? lodash.omit(child.props, ['dataSource']) : child.props),
       }
 
+      // Don't insert TabList if the parent Tabs is a wizard
+      if (childComponent.type=='TabList' && component.props.isWizard?.toString()=='true') {
+        return
+      }
+
       // Force TabList && TabPanel's dataSource if parent Tabs has one
       if (['TabList', 'TabPanels'].includes(childComponent.type)) {
         const tabParent=getParentOfType(components, childComponent, 'Tabs')
@@ -208,18 +214,23 @@ const buildBlock = ({
 
       propsContent += ` getComponentValue={getComponentValue} `
 
-      // Forces refresh is this compnent's value is changed
-      if (isFilterComponent(childComponent, components) || childComponent.type=='Calendar') {
         propsContent += ` setComponentValue={setComponentValue} `
-      }
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
         propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
         propsContent += ` pagesIndex={pagesIndex} `
         propsContent += ` setPagesIndex={setPagesIndex} `
       }
-      // Always create lazy Tabs
+      // Handle wizard
       if (childComponent.type=='Tabs') {
-        propsContent+=" isLazy "
+        const tabPanels=getChildrenOfType(components, childComponent, 'TabPanel')
+        propsContent += ` childPanelCount={${tabPanels.length}}`
+      }
+      // Handle Wizard buttons
+      if (childComponent.type=='Button' && ['PREVIOUS', 'NEXT', 'FINISH'].includes(childComponent.props?.tag)) {
+        const tab=getParentOfType(components, component, 'Tabs')
+        propsContent+= ` parentTab={'${tab.id}'}`
+        const tabPanels=getChildrenOfType(components, tab, 'TabPanel')
+        propsContent += ` parentTabPanelsCount={${tabPanels.length}}`
       }
       // Set component id
       propsContent += ` id='${childComponent.id}' `
@@ -272,7 +283,8 @@ const buildBlock = ({
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
             const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
+              console.log(att.enumValues)
+              propsContent += ` enum='${encode(JSON.stringify(att.enumValues))}'`
             }
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
