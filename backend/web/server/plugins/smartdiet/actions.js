@@ -9,21 +9,25 @@ const {
   CALL_STATUS_CALL_1,
   COACHING_STATUS_DROPPED,
   COACHING_STATUS_FINISHED,
-  COACHING_STATUS_STOPPED
+  COACHING_STATUS_STOPPED,
+  ROLE_EXTERNAL_DIET,
+  ROLE_ADMIN,
+  ROLE_SUPER_ADMIN
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
-  getRegisterCompany
+  getRegisterCompany,
+  canPatientStartCoaching
 } = require('./functions')
 const { generatePassword } = require('../../../utils/passwords')
 const { importLeads } = require('./leads')
 const Content = require('../../models/Content')
 const Webinar = require('../../models/Webinar')
 
-const { getHostName, getSmartdietAPIConfig } = require('../../../config/config')
+const { getHostName, getSmartdietAPIConfig, paymentPlugin } = require('../../../config/config')
 const moment = require('moment')
 const IndividualChallenge = require('../../models/IndividualChallenge')
-const { BadRequestError, NotFoundError } = require('../../utils/errors')
+const { BadRequestError, NotFoundError, ForbiddenError } = require('../../utils/errors')
 const UserSurvey = require('../../models/UserSurvey')
 const UserQuestion = require('../../models/UserQuestion')
 const Question = require('../../models/Question')
@@ -32,6 +36,7 @@ const { getModel, idEqual, loadFromDb } = require('../../utils/database')
 const { addAction, setAllowActionFn, ACTIONS } = require('../../utils/studio/actions')
 const User = require('../../models/User')
 const Group = require('../../models/Group')
+const Pack = require('../../models/Pack')
 const Company = require('../../models/Company')
 const CollectiveChallenge = require('../../models/CollectiveChallenge')
 const Team = require('../../models/Team')
@@ -42,6 +47,9 @@ const Conversation = require('../../models/Conversation')
 const Appointment = require('../../models/Appointment')
 const Coaching = require('../../models/Coaching')
 const { sendBufferToAWS } = require('../../middlewares/aws')
+const PageTag_ = require('../../models/PageTag_')
+const Purchase = require('../../models/Purchase')
+const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -217,13 +225,6 @@ const importModelData = ({ model, data }) => {
     throw new NotFoundError(`L'import du modèle ${model} n'est pas implémenté`)
   }
   return importLeads(data)
-  /**
-  return isActionAllowed({action: 'import_model_data', dataId: value, user})
-    .then(allowed => {
-      if (!allowed) throw new BadRequestError(`Vous ne pouvez accéder à ce contenu`)
-      return Content.findByIdAndUpdate(value, {$addToSet: {viewed_by: user._id}})
-    })
-  */
 }
 addAction('import_model_data', importModelData)
 
@@ -341,12 +342,53 @@ const downloadImpact = async ({value}, sender) => {
 }
 addAction('smartdiet_download_impact', downloadImpact)
 
+const buyPack = async ({value}, sender) => {
+  await isActionAllowed({action:'smartdiet_buy_pack', dataId:value, user:sender})
+  // If no value, generic "OK" return
+  if (lodash.isEmpty(value)) {
+    return {}
+  }
+  // No pack provided: the user can buy at leaast one pack
+  const model=await getModel(value)
+  if (model!='pack') {
+    return true
+  }
+  const pack=(await loadFromDb({model: 'pack', id: value, fields:['discount_price', 'payment_count', 'stripe_id'], user: sender}))[0]  
+  const purchase=await Purchase.create({customer: sender, pack})
+  const success_url=`https://${getHostName()}${API_ROOT}payment-hook?checkout_id={CHECKOUT_SESSION_ID}&success=true`
 
+  // To update purchase.external_id
+  const payment_promise=pack.payment_count>1 ? paymentPlugin.createRecurrentPayment : paymentPlugin.createSinglePayment
+  return payment_promise({
+    amount: pack.discount_price, 
+    customer_email: sender.email,
+    product_stripe_id: pack.stripe_id,
+    success_url: success_url, 
+    internal_reference: purchase._id.toString(),
+  })
+    .then(async payment => {
+      purchase.external_id=payment.id
+      purchase.status=PURCHASE_STATUS_PENDING
+      await purchase.save()
+      return {redirect: payment.url}
+    })
+}
+addAction('smartdiet_buy_pack', buyPack)
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
-    return Promise.resolve(true)
+    return true
+  }
+  if (action == 'smartdiet_buy_pack') {
+    const [loadedUser]=await loadFromDb({model: 'user', id: user._id, user, fields: ['can_buy_pack', 'latest_coachings']})
+    // If no value provided, generic authorization
+    const pack=await Pack.findById(dataId)
+    // if (lodash.isEmpty(dataId) || dataId==='undefined') {
+    if (!pack) {
+      return loadedUser.can_buy_pack 
+    }
+    return loadedUser.can_buy_pack && (!lodash.isEmpty(loadedUser.latest_coachings) || pack.checkup)
   }
   if (action == 'smartdiet_download_assessment' || action == 'smartdiet_download_impact') {
     const attributePrefix= action == 'smartdiet_download_assessment' ? 'smartdiet_assessment': 'smartdiet_impact'
@@ -358,42 +400,45 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     return Promise.resolve(!!user)
   }
   if (action == 'smartdiet_affect_lead') {
-    if (user.role != ROLE_SUPPORT) {
-      return Promise.reject(`Seul le support peut s'affecter des prospects`)
+    if (![ROLE_EXTERNAL_DIET, ROLE_SUPPORT].includes(user.role)) {
+      return Promise.reject(`Seul le support ou la diet peut s'affecter des prospects`)
     }
     return Lead.exists({_id: dataId, operator: null})
   }
   // Can i start a new coaching ?
   // TODO: send nothing instead of "undefined" for dataId
   if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
-    if (!user.role==ROLE_CUSTOMER) {
-      throw new Error(`Vous devez être un patient pour démarrer un coaching`)    
+    let patientId;
+    if ([ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_SUPPORT, ROLE_EXTERNAL_DIET].includes(user.role)) {
+      if (!actionProps?.parent) {
+        throw new Error(`Vous devez sélectionner le patient qui démarre un coaching`)    
+      }
+      return true
     }
-    // Must customer
-    const loadedUser=await User.findById(user._id)
-      .populate({path: 'latest_coachings', populate: 'appointments'})
-      .populate({path: 'company', populate: 'offers'})
-      .populate({path: 'surveys'})
+    else if (user.role==ROLE_CUSTOMER) {
+      patientId=user._id
+    }
+    else {
+      console.error(`Rôle ${user.role} sans droit à coaching`)
+      throw new Error(`Vous n'êtes pas autorisé à démarrer un coaching`)    
+    }
 
-    const latest_coaching=loadedUser.latest_coachings?.[0] || null
-    if (latest_coaching) {
-      if (![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(latest_coaching?.status)) {
-        throw new Error(`Vous avez déjà un coaching en cours`)
-      }
-      const latestApptDate = lodash.maxBy(latest_coaching.appointments, 'end_date')?.end_date
-      if (latestApptDate && moment().isSame(latestApptDate, 'year')) {
-        throw new Error(`Vous avez déjà utilisé un coaching cette année`)
-      }
-    }
-    if (!loadedUser.company?.offers?.[0]?.coaching_credit) {
-      throw new Error(`Vous n'avez pas de crédit de coaching`)
-    }
-    // Some companies require surveuy to start a coaching
-    if (loadedUser.company.coaching_requires_survey && !lodash.isEmpty(loadedUser.surveys)) {
-      throw new Error(`Vous devez remplir le questionnaire pour démarrer un coaching`)
+    // Must customer
+    return canPatientStartCoaching(patientId, user)
+      .then(res => !!res)
+  }
+
+  if (['save', 'create'].includes(action) && ['ticket', 'ticketComment'].includes(actionProps?.model)) {
+    if (user?.role!= ROLE_EXTERNAL_DIET) {
+      throw new ForbiddenError(`Vous devez être diet pour créer ou modifier un ticket`)
     }
     return true
   }
+
+  if (action=='create' && actionProps?.model=='appointment') {
+    return true
+  } 
+
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
   return promise
     .then(modelName => {
@@ -562,3 +607,4 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
 }
 
 setAllowActionFn(isActionAllowed)
+

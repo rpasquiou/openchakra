@@ -1,3 +1,6 @@
+import lodash from 'lodash'
+
+import Cookies from 'universal-cookie'
 const THUMBNAILS_DIR = 'thumbnails'
 
 export function isJsonString(str: string) {
@@ -80,3 +83,32 @@ export const imageSrcSetPaths = (originalSrc:string, withDimension=true) => {
   return srcSet
 }
 
+export const joinDelimiter = ({array, delimiter=', ', lastDelimiter=' et '}) => {
+  if (!lodash.isArray(array)) {
+    throw new Error(`array ${array} (type ${typeof array}) is not an array`)
+  }
+  if (lodash.isEmpty(array)) {
+    return ''
+  }
+  if (array.length==1) {
+    return array[0].toString()
+  }
+  const firstPart=array.slice(0, -1).join(delimiter)
+  const secondPart=array.length>1 ? array.slice(-1) : []
+  return [firstPart, secondPart].join(lastDelimiter)
+}
+
+export const formatAddress = addr => {
+  if (!addr) {
+    return null
+  }
+  const part1=addr.address
+  const part2 = [addr.city, addr.zip_code].filter(v => !!v).join(' ')
+  return [part1, part2].filter(v => !!v).join(', ')
+}
+
+export const redirectExists = () =>{
+  const cookies=new Cookies()
+  const redirect=cookies.get('redirect')
+  return !!redirect
+} 

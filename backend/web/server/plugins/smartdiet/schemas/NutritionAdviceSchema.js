@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const moment = require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
-const { GENDER } = require('../consts')
+const { GENDER, SOURCE, SOURCE_APPLICATION } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -19,7 +19,7 @@ const NutritionAdviceSchema = new Schema({
   },
   comment: {
     type: String,
-    required: true,
+    required: [true, `Le commentaire est obligatoire`],
   },
   food_document: {
     type: Schema.Types.ObjectId,
@@ -43,8 +43,6 @@ const NutritionAdviceSchema = new Schema({
   },
   age: {
     type: Number,
-    min: [18, `L'âge doit être supérieur à 18 ans`],
-    max: [130, `L'âge doit être inférieur à 130 ans`],
     required: false,
   },
   job: {
@@ -64,6 +62,13 @@ const NutritionAdviceSchema = new Schema({
     type: Number,
     index: true,
     required: false,
+  },
+  // Nutrition Advice Source
+  source: {
+    type: String,
+    enum: Object.keys(SOURCE),
+    required: true,
+    default: SOURCE_APPLICATION,
   },
 },
 {...schemaOptions}

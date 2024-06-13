@@ -118,6 +118,10 @@ const DataSourcePanel: React.FC = () => {
         setSubAttributesDisplay({})
       }
       else {
+        // TODO Solene
+        if (!components[subDataSource]) {
+          return
+        }
         const model = models[components[subDataSource].props ?.model]
         if (model) {
           const subAttrs = lodash(model.attributes)
@@ -560,7 +564,7 @@ const DataSourcePanel: React.FC = () => {
             >
               <option value={undefined}></option>
               {Object.values(components)
-                .filter(c => !!c.props.model && !!c.props.attribute )
+                .filter(c => !!(c.props.model || c.props.dataSource) && !!c.props.attribute )
                 .map((component, i) => (
                   <option key={`comp${i}`} value={component.id}>
                     {`${component.id} (${component.type})`}

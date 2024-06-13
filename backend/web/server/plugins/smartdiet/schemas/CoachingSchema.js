@@ -4,7 +4,12 @@ const {
   ROLE_CUSTOMER,
   ROLE_EXTERNAL_DIET,
   COACHING_STATUS,
-  COACHING_STATUS_NOT_STARTED
+  COACHING_STATUS_NOT_STARTED,
+  COACHING_STATUS_DROPPED,
+  COACHING_STATUS_FINISHED,
+  COACHING_STATUS_STOPPED,
+  SOURCE,
+  SOURCE_APPLICATION
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -118,7 +123,35 @@ const CoachingSchema = new Schema({
     type: Number,
     index: true,
     required: false,
-  }
+  },
+  // Pack if any bought
+  pack: {
+    type: Schema.Types.ObjectId,
+    ref: 'pack',
+    required: false,
+  },
+  // Coaching Source
+  source: {
+    type: String,
+    enum: Object.keys(SOURCE),
+    required: true,
+    default: SOURCE_APPLICATION
+  },
+  // Credits spent during company offer, required when a pack is added
+  _company_cedits_spent: {
+    type: Number,
+    required: [function() {return this.pack},  `Le nombre de séances déjà consommées est obligatoire lors de l'ajout d'un pack`],
+  },
+  // Computed
+  available_diets: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
+  // Computed
+  diet_availabilities: [{
+    type: Schema.Types.ObjectId,
+    ref: 'availability',
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
@@ -174,7 +207,10 @@ CoachingSchema.virtual('questions', {
 
 
 CoachingSchema.virtual('remaining_credits', DUMMY_REF).get(function() {
-  return (this.offer?.coaching_credit-this.spent_credits) || 0
+  const credit=this.pack ? this.pack.follow_count+(!!this.pack.checkup ? 1 : 0) + this._company_cedits_spent
+    : 
+    (this.offer?.coaching_credit || 0)
+  return (credit-this.spent_credits) || 0
 })
 
 CoachingSchema.virtual('spent_credits', {
@@ -207,18 +243,6 @@ CoachingSchema.virtual("_all_diets", {
 - remove if coaching not in diet's activities
 - keep then sort by reasons
 */
-CoachingSchema.virtual('available_diets', DUMMY_REF).get(function() {
-  const expected_app_type=this.appointment_type?._id
-  return lodash(this._all_diets)
-    // Diets allowing coaching
-    .filter(d => d.diet_coaching_enabled)
-    // Diets managing this company
-    .filter(d => d.customer_companies?.map(c => c._id).includes(this.user?.company._id))
-    // Diets having availability in the 15 next days for this kind of appointment
-    .filter(d => d.availability_ranges?.some(r => idEqual(r.appointment_type._id, expected_app_type)))
-    .orderBy(u => intersection(u.reasons, this.reasons), 'desc')
-    .value()
-})
 
 // Returns the current objectoves (i.e. the newest appointment's ones)
 CoachingSchema.virtual('current_objectives', DUMMY_REF).get(function() {
@@ -227,35 +251,15 @@ CoachingSchema.virtual('current_objectives', DUMMY_REF).get(function() {
    .head()?.objectives || []
 })
 
-// Returned availabilities are not store in database
-CoachingSchema.virtual('diet_availabilities', DUMMY_REF).get(function() {
-
-  if (!this.diet){
-    return []
-  }
-
-  const appType=this.appointment_type
-  const diet_availabilities=this.diet.availability_ranges?.filter(r => idEqual(r.appointment_type._id, appType?._id)) || []
-
-  const availabilities=lodash.range(AVAILABILITIES_RANGE_DAYS).map(day_idx => {
-    const day=moment().add(day_idx, 'day').startOf('day')
-    const ranges=diet_availabilities?.filter(r => day.isSame(r.start_date, 'day')) || []
-    if (!ranges?.length) {
-      return null
-    }
-    return ({
-      date: day,
-      ranges: lodash.orderBy(ranges, 'start_date'),
-    })
-  })
-  .filter(v => !!v)
-  return availabilities
-});
-
 // Returns the appointment type expected (1st appnt: assesment, others: followu)
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   const appType=lodash.isEmpty(this.appointments) ? this.user?.company?.assessment_appointment_type : this.user?.company?.followup_appointment_type
   return appType
+})
+
+// Returns wether this coaching is in progress or not
+CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
+  return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
 
 /* eslint-enable prefer-arrow-callback */

@@ -9,6 +9,7 @@ const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
+const AddressSchema = require('../models/AddressSchema')
 
 const LEAN_DATA=false
 
@@ -169,6 +170,9 @@ let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
 
+// MOdel => field => requires
+let DEPENDENCIES = {}
+
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
     !(modelName in DECLARED_VIRTUALS) ||
@@ -179,13 +183,19 @@ const getVirtualCharacteristics = (modelName, attName) => {
   return DECLARED_VIRTUALS[modelName][attName]
 }
 
+const isSchema = (attribute, schemaType) => {
+  return !!attribute.schema?.obj && JSON.stringify(Object.keys(attribute.schema?.obj))==JSON.stringify(Object.keys(schemaType?.obj))
+}
+
 const getAttributeCaracteristics = (modelName, att) => {
   const multiple = att.instance == 'Array'
   const suggestions = att.options?.suggestions
   const baseData = att.caster || att
   // TODO: fix type ObjectID => Object
   const type =
-    baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
+    baseData.instance == 'ObjectID' ? baseData.options.ref 
+      : isSchema(att, AddressSchema) ? 'Address'
+      : baseData.instance
   const ref = baseData.instance == 'ObjectID'
 
   // Include caster enum values (i.e. array of enums)
@@ -219,7 +229,7 @@ const getAttributeCaracteristics = (modelName, att) => {
 const getBaseModelAttributes = modelName => {
   const schema = mongoose.model(modelName).schema
   const schema_atts = Object.values(schema.paths).filter(
-    att => !att.path.startsWith('_'),
+    att => !['__v', '_id'].includes(att.path) //!att.path.startsWith('_'),
   )
   const virtuals_atts = Object.keys(schema.virtuals)
     .filter(c => c != 'id')
@@ -298,7 +308,7 @@ const getModels = () => {
 }
 
 /**
-Returns only models & attributes visible for studio users
+Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not suffixed with an '_')
 */
 const getExposedModels = () => {
   const isHidddenAttributeName = (modelName, attName) => {
@@ -306,7 +316,7 @@ const getExposedModels = () => {
   }
 
   const models=lodash(getModels())
-    .omitBy((v, k) => k=='IdentityCounter' || k=='duration')
+    .omitBy((v, k) => k=='IdentityCounter' || /_$/.test(k))
     .mapValues((v, modelName) => ({
       ...v,
       attributes: lodash(v.attributes).omitBy((v, k) => isHidddenAttributeName(modelName, k)),
@@ -323,7 +333,12 @@ function handleReliesOn(directAttribute, relies_on, requiredFields) {
 }
 
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = ({modelName, fields, filters, limits, sorts, parentField, params}) => {
+const buildPopulates = ({modelName, fields, filters, limits, sorts, parentField, params, depth}) => {
+  // Limit recursion depth
+  if (depth===0) {
+    //console.warn(`Build populates max recursion depth reached`)
+    return undefined
+  }
   // Retain all ref fields
   const model=getModels()[modelName]
   if (!model) {
@@ -365,6 +380,7 @@ const buildPopulates = ({modelName, fields, filters, limits, sorts, parentField,
     const subPopulate=buildPopulates({
       modelName: attType, fields, parentField: `${parentField ? parentField+'.' : ''}${attributeName}`,
       filters:subFilters, sorts:subSorts, limits:subLimits, params,
+      depth: depth-1,
     })
     // TODO Fix page number
     const pageParamName = `page.${parentField? parentField+'.' : ''}${attributeName}`
@@ -447,7 +463,7 @@ const buildQuery = (model, id, fields, params) => {
     query=query.skip((params.page || 0)*currentLimit)
     query=query.limit(currentLimit+1)
   }
-  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params})
+  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts, depth: MAX_POPULATE_DEPTH})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
   return query
@@ -545,7 +561,9 @@ function getRequiredFields({model, fields}) {
   while (added) {
     added = false
     lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
-      let required = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let virtualRequired = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let dependenciesRequired= lodash.get(DEPENDENCIES, `${model}.${directAttribute}.requires`) || null
+      let required=[virtualRequired, dependenciesRequired].filter(v => !lodash.isEmpty(v)).join(',')
       if (required) {
         required = required.split(',')
         if (lodash.difference(required, requiredFields).length > 0) {
@@ -702,9 +720,13 @@ const addComputedFields = (
   })
 }
 
-const declareComputedField = ({model, field, getterFn, setterFn}) => {
+const formatTime = timeMillis => {
+  return formatDuration(timeMillis ? timeMillis / 60 : 0, {leading: true})
+}
+
+const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
   if (!model || !field || !(getterFn || setterFn)) {
-    throw new Error(`${model}.${field} compute delcaration requires model, field and at least getter or setter`)
+    throw new Error(`${model}.${field} compute declaration requires model, field and at least getter or setter`)
   }
   if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
@@ -714,6 +736,9 @@ const declareComputedField = ({model, field, getterFn, setterFn}) => {
   }
   if (setterFn) {
     lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
+  }
+  if (rest.requires) {
+    declareFieldDependencies({model, field, requires: rest.requires})
   }
 }
 
@@ -731,6 +756,11 @@ const declareVirtualField=({model, field, ...rest}) => {
 const declareEnumField = ({model, field, enumValues}) => {
   lodash.set(DECLARED_ENUMS, `${model}.${field}`, enumValues)
 }
+
+const declareFieldDependencies = ({model, field, requires}) => {
+  lodash.set(DEPENDENCIES, `${model}.${field}`, {requires})
+}
+
 
 // Default filter
 let filterDataUser = ({model, data, id, user}) => data
@@ -766,6 +796,17 @@ const callPreCreateData = data => {
   return preCreateData(data)
 }
 
+// Pre create data, allows to insert extra fields, etc..
+let prePutData = data => Promise.resolve(data)
+
+const setPrePutData = fn => {
+  prePutData = fn
+}
+
+const callPrePutData = data => {
+  return prePutData(data)
+}
+
 // Post create data, allows to create extra data, etc, etc
 let postCreateData = data => Promise.resolve(data.data)
 
@@ -799,12 +840,12 @@ const callPostDeleteData = data => {
   return postDeleteData(data)
 }
 
-const putAttribute = ({id, attribute, value, user}) => {
-  let model = null
-  return getModel(id)
-    .then(res => {
-      model = res
-      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${attribute}`)
+const putAttribute = async (input_params) => {
+  let res=await getModel(input_params.id)
+      let preParams={[input_params.attribute]: input_params.value}
+      let {model, id, params, user, skip_validation} = await callPrePutData({...input_params, model: res, params: preParams})
+      const [attribute, value]=Object.entries(params)[0]
+      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${input_params.attribute}`)
       if (setter) {
         callPostPutData({model, id, attribute, value, user})
         return setter({id, attribute, value, user})
@@ -816,9 +857,11 @@ const putAttribute = ({id, attribute, value, user}) => {
         return mongooseModel.findById(id)
           .then(object => {
             object[attribute]=value
-            return object.save()
+            const validation=!!skip_validation ? {validateBeforeSave: false} : {runValidators: true}
+            return object.save({...validation})
               .then(obj => {
-                return callPostPutData({model, id, attribute, value, params:{[attribute]:value}, user, data: obj})
+                const postParams={[attribute]: value}
+                return callPostPutData({model, id, attribute, value, params:postParams, user, data: obj})
                   .then(() => obj)
               })
           })
@@ -853,7 +896,6 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           }))
         })
-    })
 
 }
 
@@ -919,13 +961,15 @@ const shareTargets = (obj1, obj2) => {
   return lodash.intersectionBy(obj1.targets, obj2.targets, t => t._id.toString()).length>0
 }
 
-const putToDb = ({model, id, params, user}) => {
-  return mongoose.connection.models[model]
-    .findById(id)
+const putToDb = async (input_params) => {
+  const {model, id, params, user, skip_validation} = await callPrePutData(input_params)
+  return mongoose.connection.models[model].findById(id)
     .then(data => {
       if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
+
       Object.keys(params).forEach(k => { data[k]=params[k] })
-      return data.save()
+      const validation=!!skip_validation ? {validateBeforeSave: false} : {}
+      return data.save(validation)
     })
     .then(data => callPostPutData({model, id, params, data, user}))
 }
@@ -963,20 +1007,12 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       }
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
-      console.time(`Loading model ${model}`)
       return buildQuery(model, id, fields, params)
-        .then(data => {console.timeEnd(`Loading model ${model}`); return data})
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
-        .then(data => {console.time(`Compute model ${model}`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
-        .then(data => {console.timeEnd(`Compute model ${model}`); return data})
-        .then(data => {console.time(`Filtering model ${model}`); return data})
-        .then(data => callFilterDataUser({model, data, id, user}))
-        .then(data => {console.timeEnd(`Filtering model ${model}`); return data})
-        .then(data => {console.time(`Retain fields ${model}`); return data})
+        .then(data => callFilterDataUser({model, data, id, user, params}))
         .then(data =>  retainRequiredFields({data, fields}))
-        .then(data => {console.timeEnd(`Retain fields ${model}`); return data})
     })
 
 }
@@ -1096,6 +1132,7 @@ module.exports = {
   handleReliesOn,
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
-  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter,
+  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
+  setPrePutData, callPrePutData,
 }
 

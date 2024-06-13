@@ -57,6 +57,7 @@ export const COMPONENTS: (ComponentType | MetaComponentType)[] = [
   'SimpleGrid',
   'Spinner',
   'Select',
+  'Slider',
   'Stack',
   'Switch',
   'Tab',

@@ -39,7 +39,7 @@ const withDynamicButton = Component => {
     const [actionAllowed, setActionAllowed]=useState(true)
 
     useEffect(()=> {
-      if (['openPage', 'openUrl'].includes(action)) {
+      if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)

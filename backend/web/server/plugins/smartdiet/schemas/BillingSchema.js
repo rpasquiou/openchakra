@@ -6,9 +6,17 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const BillingSchema = new Schema({
+  start_date: {
+    type: Date,
+    required: false,
+  },
+  end_date : {
+    type:Date,
+    required: false,
+  },
   month: {
     type: Date,
-    required: [true, `Le mois est obligatoire`],
+    required: false,
   },
   assessment_count: {
     type: Number,
@@ -36,16 +44,24 @@ const BillingSchema = new Schema({
   },
   impact_count: {
     type: Number,
-    required: true,
+    required: false,
   },
   impact_total: {
     type: Number,
-    required: true,
+    required: false,
   },
   total: {
     type: Number,
     required: true,
   },
+  moy_appointments_coachings: {
+    type: Number,
+    required: false
+  },
+  fullname: {
+    type: String,
+    required: false
+  }
 }, schemaOptions)
 
 module.exports = BillingSchema

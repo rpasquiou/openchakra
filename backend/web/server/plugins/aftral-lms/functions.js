@@ -14,7 +14,7 @@ const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
 const NodeCache=require('node-cache')
 const Message = require('../../models/Message')
-const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const User = require('../../models/User')
 const Post = require('../../models/Post')
 const { computeStatistics } = require('./statistics')
@@ -185,6 +185,10 @@ declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
+
+declareEnumField({model: 'post', field: '_feed_type', enumValues: FEED_TYPE})
+
+declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
@@ -441,13 +445,6 @@ const lockSession = async sessionId => {
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
-
-// TODO To remove
-// Lock all sessions
-Block.find({type: 'session'})
-  .then(sessions => Promise.all(sessions.map(s => lockSession(s))))
-  .then(console.log)
-  .catch(console.error)
 
 // TODO To remove
 // Compute all template programs durations

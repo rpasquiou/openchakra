@@ -1,6 +1,10 @@
 const crypto = require('crypto')
-
-const API_PATH = '/myAlfred/api'
+const lodash = require('lodash')
+const nationalities=require('i18n-nationality')
+const languages=require ('languages')
+const regionData=require('./regions.json')
+const { sortObject } = require('./text')
+const API_ROOT='/myAlfred/api/studio/'
 
 const NEEDED_VAR = [
   'MODE',
@@ -18,6 +22,137 @@ const ALL_SERVICES = ['Tous les services', null]
 
 const generate_id = () => {
   return crypto.randomBytes(20).toString('hex')
+}
+
+const GID_LEN = 40
+
+const CESU_MANDATORY='Mandatory'
+const CESU_OPTIONAL='Optional'
+const CESU_DISABLED='Disabled'
+
+const CESU = [CESU_MANDATORY, CESU_OPTIONAL, CESU_DISABLED]
+
+const SKILLS={
+  careful: {
+    label: 'Travail soigneux',
+    picture: 'careful_work',
+    entrieName: 'careful',
+  },
+  punctual: {
+    label: 'Ponctualité',
+    picture: 'punctuality',
+    entrieName: 'punctual',
+  },
+  flexible: {
+    label: 'Flexibilité',
+    picture: 'flexibility',
+    entrieName: 'flexible',
+  },
+  reactive: {
+    label: 'Réactivité',
+    picture: 'reactivity',
+    entrieName: 'reactive',
+  },
+}
+
+const MAX_DESCRIPTION_LENGTH=300
+
+const REVIEW_STATUS= {
+  NOT_MODERATED: 'Non modéré',
+  APPROVED: 'Approuvé',
+  REJECTED: 'Rejeté',
+}
+
+// Délai d'expiration des réservatins (jours après création de la résa)
+const EXPIRATION_DELAY=7
+
+// Fermeture auto notificaitons nack en secondes
+const CLOSE_NOTIFICATION_DELAY=3
+
+// Fermeture $age minimum inscription
+const ACCOUNT_MIN_AGE = 18
+
+const COMPANY_SIZE= {
+  'MICRO': '<10', // Micro-entreprise
+  'PMEPMI': '>10 <250', // PME/PMI
+  'ETI': '>250 <5000', // Micro-entreprise
+  'GRANDE': '>5000', // Grande entreprise
+}
+
+const COMPANY_ACTIVITY = {
+  'ADM': 'Administration, fonction publique',
+  'AGRO': 'Agroalimentaire',
+  'ART': "Artisanat d'art",
+  'ASSO': 'Associations',
+  'BAN': 'Banques, assurances, services financiers',
+  'CHIM': 'Chimie, plastique, conditionnement',
+  'DET': 'Commerce de détail, grande distribution',
+  'COMM': 'Communication, marketing, information',
+  'CONSTR': 'Construction, bâtiment, travaux publics',
+  'CULT': 'Culture, sports, loisirs',
+  'ENER': 'Energie',
+  'ENS': 'Enseignement, formation',
+  'ENV': "Environnement, récupération, tri, recyclage, traitement des déchets, matériaux, de l'eau",
+  'EQUIP': 'Equipement, matériel pour activités professionnelles',
+  'FAB': "Fabrication, commerce de gros d'articles destinés à la vente",
+  'GESTION': 'Gestion, administration des entreprises',
+  'HOTEL': 'Hôtellerie, restauration, tourisme',
+  'IMMO': 'Immobilier',
+  'TEXT': 'Industrie textile',
+  'INFO': 'Informatique',
+  'ING': "Ingénieurs d'études et de recherche, chercheurs",
+  'LOGIS': 'Logistique, transports',
+  'ELECTRO': 'Matériel électrique, électronique, optique',
+  'MECA': 'Mécanique, métallurgie',
+  'SIDER': 'Minerais, minéraux, sidérurgie',
+  'JURI': 'Professions juridiques',
+  'SANTE': 'Santé, action sociale',
+  'SERVICE': 'Services aux particuliers, collectivités, entreprises',
+}
+
+const MONTH_PERIOD='MONTHLY'
+const YEAR_PERIOD='ANNUALY'
+
+const BUDGET_PERIOD = {
+  [MONTH_PERIOD]: 'Mois',
+  [YEAR_PERIOD]: 'An',
+}
+
+const PRO='professional'
+const PART='particular'
+
+const CREASHOP_MODE={
+  CREATION: 'creation',
+  SERVICE_ADD: 'add',
+  SERVICE_UPDATE: 'edit',
+}
+
+const YEARS_RANGE = {
+  0: 'Entre 0 et 1 an',
+  1: 'Entre 1 et 5 ans',
+  2: 'Entre 5 et 10 ans',
+  3: 'Plus de 10 ans',
+}
+
+const REGISTER_MODE={
+  COMPLETE: 'fullRegister',
+  INCOMPLETE: 'setAlfredRegister',
+}
+
+const MICROSERVICE_MODE='MICROSERVICE'
+const CARETAKER_MODE='CARETAKER'
+
+const DASHBOARD_MODE ={
+  [MICROSERVICE_MODE]: 'microservice',
+  [CARETAKER_MODE]: 'conciergerie',
+}
+
+const PEND_EMPLOYEE_REGISTER='PEND_EMPLOYEE_REGISTER'
+const PEND_ALFRED_PRO_REGISTER='PEND_ALFRED_PRO_REGISTER'
+
+const PENDING_REASONS= {
+  [PEND_EMPLOYEE_REGISTER]: 'Inscription employé',
+  [PEND_ALFRED_PRO_REGISTER]: 'Inscription Alfred',
 }
 
 const IMAGE_EXTENSIONS='.png .jpg .gif .jpeg .pdf .svg'.toLowerCase().split(' ')
@@ -38,12 +173,51 @@ const IMAGES_WIDTHS_FOR_RESIZE = [2000, 1000, 500]
 const IMAGE_SIZE_MARKER = '_srcset:'
 const THUMBNAILS_DIR = 'thumbnails'
 
+// Not created by the payment plugin
+const PURCHASE_STATUS_NEW=`PURCHASE_STATUS_NEW`
+// Waiting for success/failure
+const PURCHASE_STATUS_PENDING=`PURCHASE_STATUS_PENDING`
+// Success
+const PURCHASE_STATUS_COMPLETE=`PURCHASE_STATUS_COMPLETE`
+// Failure
+const PURCHASE_STATUS_FAILED=`PURCHASE_STATUS_FAILED`
+
+const PURCHASE_STATUS={
+  [PURCHASE_STATUS_NEW]:`Nouveau`,
+  [PURCHASE_STATUS_PENDING]:`En cours`,
+  [PURCHASE_STATUS_COMPLETE]:`Validé`,
+  [PURCHASE_STATUS_FAILED]:`Refusé`,
+}
+
+const NATIONALITIES=sortObject(nationalities.getNames('fr'), 'FR')
+//const LANGUAGES={...NATIONALITIES}
+const LANGUAGES=Object.fromEntries(
+  languages.getAllLanguageCode().map(code => ([code, languages.getLanguageInfo(code).nativeName])).sort(v => v[1])
+)
+//sortObject
+
+const LANGUAGE_LEVEL_BEGINNER=`LANGUAGE_LEVEL_BEGINNER`
+const LANGUAGE_LEVEL_INTERMEDIATE=`LANGUAGE_LEVEL_INTERMEDIATE`
+const LANGUAGE_LEVEL_ADVANCED=`LANGUAGE_LEVEL_ADVANCED`
+const LANGUAGE_LEVEL_NATIVE=`LANGUAGE_LEVEL_NATIVE`
+
+const LANGUAGE_LEVEL={
+  [LANGUAGE_LEVEL_BEGINNER]:`Débutant`,
+  [LANGUAGE_LEVEL_INTERMEDIATE]:`Intermédiaire`,
+  [LANGUAGE_LEVEL_ADVANCED]:`Avancé`,
+  [LANGUAGE_LEVEL_NATIVE]:`Bilingue/natif`,
+}
+
+const REGIONS=lodash(regionData)
+  .mapValues(v => v.region)
+  .value()
+
 module.exports = {
   ALL_SERVICES,
   generate_id,
   NEEDED_VAR,
   IMAGE_EXTENSIONS, TEXT_EXTENSIONS,
-  XL_EXTENSIONS, API_PATH,
+  XL_EXTENSIONS, 
   PDF_EXTENSIONS,
   XL_TYPE, TEXT_TYPE, JSON_TYPE,
   CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE,
@@ -51,4 +225,6 @@ module.exports = {
   IMAGES_WIDTHS_FOR_RESIZE,
   IMAGE_SIZE_MARKER,
   THUMBNAILS_DIR,
+  PURCHASE_STATUS, PURCHASE_STATUS_NEW, PURCHASE_STATUS_PENDING, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED,
+  API_ROOT, NATIONALITIES, LANGUAGE_LEVEL, REGIONS
 }

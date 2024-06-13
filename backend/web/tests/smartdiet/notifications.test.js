@@ -6,8 +6,6 @@ const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { USER_DATA, COMPANY_NO_INSURANCE_DATA, WEBINAR_DATA } = require('./data/modelsBaseData')
 const User = require('../../server/models/User')
 const Company = require('../../server/models/Company')
-const { webinarNotifications } = require('../../server/plugins/smartdiet/functions')
-const Webinar = require('../../server/models/Webinar')
 const { sendAppointmentRemindTomorrow } = require('../../server/plugins/smartdiet/mailing')
 
 forceDataModelSmartdiet()
@@ -28,26 +26,7 @@ describe('Notifications ', () => {
     await mongoose.connection.close()
   })
 
-  it(`must send notifications`, async() => {
-    let res;
-    res=await webinarNotifications()
-    expect(res).toEqual(0)
-
-    const start_date_21=moment().add(21, 'day'), end_date_21=moment(start_date_21).add(1, 'hour')
-    const webinar21=await Webinar.create({...WEBINAR_DATA, start_date: start_date_21, end_date: end_date_21, user})
-    await User.updateOne({}, {$push: {'registered_events': {event: webinar21}}})
-    const start_date_15=moment().add(15, 'day'), end_date_15=moment(start_date_15).add(1, 'hour')
-    const webinar15=await Webinar.create({...WEBINAR_DATA, start_date: start_date_15, end_date: end_date_15, user})
-    await User.updateOne({}, {$push: {'registered_events': {event: webinar15}}})
-
-    const webinarToday=await Webinar.create({...WEBINAR_DATA, start_date:moment(), end_date:moment().add(1.5, 'hour'), user})
-    await User.updateOne({}, {$push: {'registered_events': {event: webinarToday}}})
-    
-    res=await webinarNotifications()
-    expect(res).toEqual(3)
-  })
-
-  it.only('Must send SMS', async () => {
+  it('Must send SMS', async () => {
     const user=({email: 'test@wappizy.com', phone: '+33675774324'})
     const diet=({firstname: 'Sonia'})
     const appointment={

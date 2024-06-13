@@ -1,0 +1,168 @@
+{
+  "11": {
+    "region": "Île-de-France",
+    "departements": [
+      "75",
+      "77",
+      "78",
+      "91",
+      "94",
+      "92",
+      "93",
+      "95"
+    ]
+  },
+  "24": {
+    "region": "Centre-Val de Loire",
+    "departements": [
+      "18",
+      "28",
+      "36",
+      "37",
+      "41",
+      "45"
+    ]
+  },
+  "27": {
+    "region": "Bourgogne-Franche-Comté",
+    "departements": [
+      "21",
+      "25",
+      "39",
+      "58",
+      "70",
+      "71",
+      "89",
+      "90"
+    ]
+  },
+  "28": {
+    "region": "Normandie",
+    "departements": [
+      "14",
+      "27",
+      "50",
+      "61",
+      "76"
+    ]
+  },
+  "32": {
+    "region": "Hauts-de-France",
+    "departements": [
+      "02",
+      "59",
+      "60",
+      "62",
+      "80"
+    ]
+  },
+  "44": {
+    "region": "Grand Est",
+    "departements": [
+      "08",
+      "10",
+      "51",
+      "52",
+      "54",
+      "55",
+      "57",
+      "67",
+      "68",
+      "88"
+    ]
+  },
+  "52": {
+    "region": "Pays de la Loire",
+    "departements": [
+      "44",
+      "49",
+      "53",
+      "72",
+      "85"
+    ]
+  },
+  "53": {
+    "region": "Bretagne",
+    "departements": [
+      "22",
+      "29",
+      "35",
+      "56"
+    ]
+  },
+  "75": {
+    "region": "Nouvelle-Aquitaine",
+    "departements": [
+      "16",
+      "17",
+      "19",
+      "23",
+      "24",
+      "33",
+      "40",
+      "47",
+      "64",
+      "79",
+      "86",
+      "87"
+    ]
+  },
+  "76": {
+    "region": "Occitanie",
+    "departements": [
+      "09",
+      "11",
+      "12",
+      "30",
+      "31",
+      "32",
+      "34",
+      "46",
+      "65",
+      "66",
+      "81",
+      "82"
+    ]
+  },
+  "84": {
+    "region": "Auvergne-Rhône-Alpes",
+    "departements": [
+      "01",
+      "03",
+      "42",
+      "07",
+      "48",
+      "15",
+      "43",
+      "26",
+      "38",
+      "63",
+      "69",
+      "73",
+      "74"
+    ]
+  },
+  "93": {
+    "region": "Provence-Alpes-Côte d'Azur",
+    "departements": [
+      "04",
+      "05",
+      "06",
+      "13",
+      "83",
+      "84"
+    ]
+  },
+  "94": {
+    "region": "Corse",
+    "departements": [
+      "20"
+    ]
+  },
+  "01": {
+    "region": "Guadeloupe",
+    "departements": [
+      "97"
+    ]
+  }
+}
