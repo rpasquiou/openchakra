@@ -22,7 +22,6 @@ import ColorsControl from '../controls/ColorsControl';
 import FormControl from '../controls/FormControl'
 import usePropsSelector from '../../../hooks/usePropsSelector'
 import { sortComponents } from '~utils/misc'
-import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
   const unsortedComponents=useSelector(getComponents)

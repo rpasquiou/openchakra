@@ -6,6 +6,37 @@ import moment from 'moment'
 const withWappizy = Component => {
 
   const internal = ({children, ...props}) => {
+
+    const BUTTONS=['Button', 'IconButton']
+
+    const compType=Component.displayName
+
+    if (compType=='Tabs' && props.isWizard) {
+      props.index=props.getComponentValue(props.id, props.level?.toString()) || 0
+    }
+    
+    if (BUTTONS.includes(compType) && props.tag=='PREVIOUS') {
+      props.onClick=() => props.setComponentValue(props.parentTab, Math.max(props.getComponentValue(props.parentTab)-1, 0))
+      if (!+props.getComponentValue(props.parentTab)) {
+        props.display='none'
+      }
+    }
+
+    if (BUTTONS.includes(compType) && props.tag=='NEXT') {
+      props.onClick=() => {
+        props.setComponentValue(props.parentTab, Math.max(+props.getComponentValue(props.parentTab)+1, 0))
+      }
+      if (+props.getComponentValue(props.parentTab)>=+props.parentTabPanelsCount-1) {
+        props.display='none'
+      }
+    }
+
+    if (BUTTONS.includes(compType) && props.tag=='FINISH') {
+      if (+props.getComponentValue(props.parentTab)!=(+props.parentTabPanelsCount)-1) {
+        props.display='none'
+      }
+    }
+
     const conditionalProperties = getConditionalProperties(props,props.dataSource)
 
     const [defaultIndex, setDefaultIndex]=useState(undefined)
