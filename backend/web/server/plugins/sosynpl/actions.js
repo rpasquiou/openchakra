@@ -10,7 +10,7 @@ const { getModel, loadFromDb, idEqual } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT} = require("./consts")
 const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
@@ -183,14 +183,27 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       }
     }
     if (model=='application') {
-      const applications=await loadFromDb({model: 'application', id: dataId, fields: ['status']})
-      if (!applications.length) {
+      const application=await Application.findById(dataId).populate({path: 'quotations', populate: 'details'})
+      if (!application) {
         throw new NotFoundError(`Application ${dataId} not found`)
       }
-      const application=applications[0]
+      await application.validate()
       if (application.status!=APPLICATION_STATUS_DRAFT) {
         throw new BadRequestError(`La candidature a déjà été publiée`)
       }
+      const firstQuotation=application.quotations[0]
+      if (lodash.isEmpty(firstQuotation)) {
+        throw new BadRequestError(`Le devis est obligatoire`)
+      }
+      await firstQuotation.validate()
+      if (lodash.isEmpty(firstQuotation)) {
+        throw new BadRequestError(`Le devis est obligatoire`)
+      }
+      const firstDetail=firstQuotation.details[0]
+      if (lodash.isEmpty(firstDetail)) {
+        throw new BadRequestError(`Le devis est incomplet`)
+      }
+      await firstDetail.validate()
     }
   }
   if (action=='clone') {
@@ -204,10 +217,18 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // and latest quotation is valid
   if (action=='alle_send_quotation') {
     const quotation=await Quotation.findById(dataId, {status: 1})
+      .populate([{path: 'application', populate: 'quotations'}, 'details'])
+    if (idEqual(quotation._id, quotation.application.quotations[0]?._id)) {
+      throw new BadRequestError(`Le premier devis sera envoyé avec la candidature`)
+    }
     if (quotation.status!=QUOTATION_STATUS_DRAFT) {
       throw new BadRequestError(`Le devis a déjà été envoyé`)
     }
     await quotation.validate()
+    if (lodash.isEmpty(quotation.details)) {
+      throw new BadRequestError(`Le devis est vide`)
+    }
+    await quotation.details[0].validate()
   }
   return true
 }
