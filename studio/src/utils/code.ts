@@ -215,6 +215,10 @@ const buildBlock = ({
       propsContent += ` getComponentValue={getComponentValue} `
 
         propsContent += ` setComponentValue={setComponentValue} `
+      // }
+
+      propsContent += ` getComponentAttribute={getComponentAttribute} `
+
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
         propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
         propsContent += ` pagesIndex={pagesIndex} `
@@ -288,6 +292,10 @@ const buildBlock = ({
             }
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
+            }
+            // TODO Solene: have to remove this : att must exist
+            if (!!att?.multiple) {
+              propsContent += ` isMulti `
             }
           }
           if (tp?.type) {
@@ -753,7 +761,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh, componentsValues])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
   return code
 }
 
@@ -917,10 +925,18 @@ export const generateCode = async (
     module[c] ? '@chakra-ui/react' : `./custom-components/${c}/${c}`,
   )
   */
-  const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
-  )
 
+  // Slider exists in chakra-ui but must be imported from custom components
+  const groupedComponents = lodash.groupBy(imports, c =>
+    module[c] && c!='Slider' ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
+  )
+  
+  const componentsWithAttribute=lodash(components)
+    .values()
+    .filter(c => !!c.props.attribute)
+    .map(c => [c.id, c.props.attribute])
+    .fromPairs()
+  const componentsAttributes=`const COMPONENTS_ATTRIBUTES=${JSON.stringify(componentsWithAttribute)}`
   const rootIdQuery = components.root?.props?.model
   const rootIgnoreUrlParams =
     components['root']?.props?.ignoreUrlParams == 'true'
@@ -932,6 +948,7 @@ export const generateCode = async (
       if (role && page) {
         usedRoles.push(role)
         return   `useEffect(()=>{
+            if (redirectExists()) {return}
             if (user?.role=='${role}') {window.location='/${getPageUrl(page, pages)  }'}
           }, [user])`
       }
@@ -943,6 +960,7 @@ export const generateCode = async (
   if (defaultRedirectPage) {
     const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
     autoRedirect+=`\nuseEffect(()=>{
+        if (redirectExists()) {return}
         if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
       }, [user])`
   }
@@ -952,6 +970,22 @@ export const generateCode = async (
   :
   ''
   */
+
+  const generateTagSend = () => {
+    const tagPages=Object.values(pages)
+      .filter(page => !!page.components?.root?.props?.tag)
+      .map(p => [p.components.root.props.tag, `/${getPageUrl(p.pageId, pages)}`])
+    return `useEffect(() => {
+      const tagPages=${JSON.stringify(tagPages)}
+      axios.post('/myAlfred/api/studio/tags', tagPages)
+    }, [])`
+  }
+  let renderNullCode=''
+  if(components.root.props.allowNotConnected=="false"){
+    renderNullCode+= `if(!user){
+      return null
+    }`
+  }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
   code = `${header}\nimport React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
@@ -987,6 +1021,7 @@ import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
+import { redirectExists } from '../dependencies/utils/misc'
 
 ${extraImports.join('\n')}
 ${wappComponentsDeclaration.join('\n')}
@@ -998,7 +1033,9 @@ ${componentsCodes}
 
 const ${componentName} = () => {
 
-
+  const {user}=useUserContext()
+  ${autoRedirect}
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
   /** Force reload on history.back */
   ${reloadOnBackScript}
   const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
@@ -1006,13 +1043,10 @@ const ${componentName} = () => {
   const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
 
+  ${componentsAttributes}
   const setComponentValue = (compId, value) => {
-    const impactedDataSources=Object.entries(FILTER_ATTRIBUTES)
-      .filter(([k ,v]) => v?.variables?.some(([attName, comp]) => comp==compId))
-      .map(([k, v]) => k)
-    if (impactedDataSources.length>0) {
-      const newPagesIndexes=lodash.omitBy(pagesIndex, (v, k) => impactedDataSources.some(ds => k==ds || k.startsWith(ds+'.')))
-      setPagesIndex(newPagesIndexes)
+    if (lodash.isEqual(value, componentsValues[compId])) {
+      return
     }
     setComponentsValues(s=> ({...s, [compId]: value}))
   }
@@ -1028,18 +1062,22 @@ const ${componentName} = () => {
     return value
   }
 
+  const getComponentAttribute = (compId, level) => {
+    return COMPONENTS_ATTRIBUTES[compId.split('_')[0]]
+  }
+
   // ensure token set if lost during domain change
   useEffect(() => {
     ensureToken()
   }, [])
 
-  const {user}=useUserContext()
-  ${autoRedirect}
-
-
+  
   ${hooksCode}
   ${filterStates}
   ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
+  ${generateTagSend()}
+  
+  ${renderNullCode}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata

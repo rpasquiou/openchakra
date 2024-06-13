@@ -283,12 +283,12 @@ export const ACTIONS: IActions = {
   register: {
     label: 'Register new account',
     options: {
-      ...Object.fromEntries(lodash.range(15).map((idx: number) => {
-        return [
-          `component_${idx}`,
-          ({ components }) => components
-            .filter(comp => (comp.props?.dataSource || comp.props?.model) && comp.props?.attribute)
-            .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
+      ...Object.fromEntries(lodash.range(35).map((idx:number) => {
+      return [
+        `component_${idx}`,
+        ({ components }) => components
+          .filter(comp => (comp.props?.dataSource||comp.props?.model) && comp.props?.attribute)
+          .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` }))
 
         ]
       })),
@@ -358,6 +358,30 @@ export const ACTIONS: IActions = {
     label: 'Save page as PDF',
     options: {}
   },
+  generatePDF: {
+    label: 'Generate PDF',
+    options: {
+      targetId: ({components}) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      prefix: ({components}) =>
+        components
+          .filter(c => c.type == 'Input')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required:['targetId', 'prefix']
+  },
+  generatePDF: {
+    label: 'Generate PDF',
+    options: {
+      targetId: ({components}) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      prefix: ({components}) =>
+        components
+          .filter(c => c.type == 'Input')
+          .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    required:['targetId', 'prefix']
+  },
 
   deactivateAccount: {
     label: 'Deactivate account',
@@ -400,7 +424,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_send_quotation: {
-    label: 'AE Send quotation',
+    label: 'Send quotation',
     options: {},
     next: ['openPage'],
   },
@@ -706,6 +730,46 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  validate_email: {
+    label: 'Validate email',
+    options: {},
+    next: ['openPage'],
+  },
+
+  suspend_account: {
+    label: 'Suspend account',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
+  activate_account: {
+    label: 'Activate account',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_buy_pack: {
+    label: 'SM Buy pack',
+    options: {},
+    next: ['openPage'],
+  },
+  publish: {
+    label: 'Publish',
+    options: {},
+    next: ['openPage'],
+  },
+  clone: {
+    label: 'Clone',
+    options: {},
+    next: ['openPage'],
+  },
+  refuse: {
+    label: 'Refuse',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

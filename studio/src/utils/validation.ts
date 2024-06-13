@@ -40,7 +40,6 @@ const checkActionsProperties = (
     if (comp.props[actionAtt]) {
       const actionName=comp.props[actionAtt]
       const required=ACTIONS[actionName].required || []
-      console.log(required)
       let actionProps=comp.props[`${actionAtt}Props`]
       try {
         actionProps=JSON.parse(actionProps)

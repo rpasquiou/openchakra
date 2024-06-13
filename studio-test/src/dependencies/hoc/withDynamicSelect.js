@@ -4,13 +4,19 @@ import { ACTIONS } from '../utils/actions'
 import {Select} from 'chakra-react-select'
 
 const withDynamicSelect = Component => {
-  const Internal = ({noautosave, dataSource, subDataSource, subAttribute, subAttributeDisplay, setComponentValue, isSearchable, ...props}) => {
+  const Internal = ({noautosave, dataSource, subDataSource, subAttribute, subAttributeDisplay, setComponentValue, isSearchable, isMulti, ...props}) => {
 
     let values = props.dataSourceId ? dataSource: null
     let value=lodash.get(dataSource, props.attribute)
-    value=value?._id || value
+    value=isMulti ?
+      (value ? value.map(v => v?._id || v) : [])
+      :
+      value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
+    if (props.setComponentAttribute) {
+      props.setComponentAttribute(props.id, props.attribute)
+    }
     const computeOptions = () => {
 
       const enumValues=props.enum ? JSON.parse(props.enum) : null
@@ -36,7 +42,20 @@ const withDynamicSelect = Component => {
     )
 
     const onChange = ev => {
-      const {value} = isSearchable ? ev : ev.target
+      let value=null
+      // react checkra select
+      if (isSearchable || isMulti) {
+        if (isMulti) {
+          value=ev.map(e => e.value)
+        }
+        else {
+          value=ev.value
+        }
+      }
+      else {
+        value=ev.target.value
+      }
+
       setInternalValue(value)
       if (setComponentValue) {
         setComponentValue(props.id, value)
@@ -49,6 +68,9 @@ const withDynamicSelect = Component => {
         })
           .then(() => props.reload())
           .catch(err => console.error(err))
+      }
+      if (props.onChange) {
+        
       }
     }
 
@@ -75,32 +97,25 @@ const withDynamicSelect = Component => {
       }),
     }
 
-    if (isSearchable) {
+    if (isSearchable || isMulti) {
+      const selValue=isMulti ?
+        options?.filter(opt => value.some(v => v==opt.key))
+        :
+        options?.find(opt => opt.key==value)
       return (
         <Select {...props} onChange={onChange}
-          options={options} placeholder={null}
+          value={selValue}
+          isMulti={isMulti}
+          options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
         />
       )
     }
 
-    console.log(props)
     return (
-      <Component {...props} value={internalValue} onChange={onChange}>
-        <option value={undefined}></option>
-        {refValues ?
-          refValues.map(v => (
-            <option key={v?._id} value={v?._id}>{lodash.get(v, subAttributeDisplay)}</option>
-          ))
-          :enumValues ?
-          lodash(enumValues).entries()./**sortBy(v => v[1]).*/value().map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))
-          :
-          (values || []).map(v => (
-            <option key={v._id} value={v._id}>{attribute ? lodash.get(v, attribute) : v}</option>
-          ))
-        }
+      <Component {...props} value={internalValue} onChange={onChange} >
+        <option style={{...props}} value={undefined}></option>
+        {options.map(opt => (<option style={{...props}} key={opt.key} value={opt.value}>{opt.label}</option>))}
       </Component>
     )
 

@@ -4,7 +4,8 @@ const {getDataModel} = require('../../config/config')
 let LoggedUserSchema=null
 
 try {
-  LoggedUserSchema=require(`../plugins/${getDataModel()}/schemas/UserSchema`)
+  const schemaName=getDataModel()=='sosynpl' ? 'LoggedUserSchema' : 'UserSchema'
+  LoggedUserSchema=require(`../plugins/${getDataModel()}/schemas/${schemaName}`)
   LoggedUserSchema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {

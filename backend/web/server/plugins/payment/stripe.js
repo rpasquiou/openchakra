@@ -1,7 +1,9 @@
-const moment = require('moment')
 /**
 Paiement ; https://stripe.com/docs/connect/collect-then-transfer-guide?locale=fr-FR
 */
+
+const moment = require('moment')
+const lodash = require('lodash')
 let PublicStripe=null
 let SecretStripe=null
 
@@ -166,6 +168,62 @@ const createPayment = ({source_user, amount, fee, destination_user, description,
   })
 }
 
+const createSinglePayment = async ({
+  amount, product_stripe_id, customer_email, success_url, internal_reference}) => {
+  console.log(`Initiating single payment for ${customer_email}/${product_stripe_id} ${amount}€`)
+  const checkout=await SecretStripe.checkout.sessions.create({
+    customer_email: customer_email,
+    mode: 'payment',
+    line_items: [{
+      price_data: {
+        currency: 'EUR',
+        product: product_stripe_id,
+        unit_amount: amount*100,
+      },
+      quantity:1,
+    }],
+    client_reference_id: internal_reference,
+    success_url,
+  })
+  return checkout
+}
+
+const createRecurrentPayment = async ({
+  amount, product_stripe_id, customer_email, success_url, internal_reference}) => {
+  console.log(`Initiating subscription payment for ${customer_email}/${product_stripe_id} ${amount}€`)
+  const checkout=await SecretStripe.checkout.sessions.create({
+    customer_email: customer_email,
+    mode: 'subscription',
+    line_items: [{
+      price_data: {
+        currency: 'EUR',
+        product: product_stripe_id,
+        recurring: {
+          interval: 'month',
+        },
+        unit_amount: amount*100,
+      },
+      quantity:1,
+    }],
+    client_reference_id: internal_reference,
+    success_url,
+  })
+  return checkout
+}
+
+/**
+ *  If id is provided, updates product's name.
+ * @return The product id
+ */
+const upsertProduct = async ({id, name, description}) => {
+  if (!lodash.isEmpty(id)) {
+    const product= await SecretStripe.products.update(id, {name, description})
+    return product.id
+  }
+  const product=await SecretStripe.products.create({name, description})
+  return product.id
+}
+
 const createTransfer = ({destination, amount}) => {
   return SecretStripe.transfers.create({
     amount: amount*100,
@@ -175,10 +233,18 @@ const createTransfer = ({destination, amount}) => {
 }
 
 const getCheckout = id => {
-  return SecretStripe.checkout.sessions.list()
-    .then(checkouts => {
-      return checkouts.data.find(c => c.id==id)
-    })
+  return SecretStripe.checkout.sessions.retrieve(
+    id,
+    { expand: ['subscription'],}
+  )
+}
+
+const getSubscription = id => {
+  return SecretStripe.subscriptions.retrieve(id)
+}
+
+const setSubscriptionEnd = async ({subscription_id, end_date}) => {
+  await SecretStripe.subscriptions.update(subscription_id, {cancel_at: end_date.unix()})
 }
 
 module.exports={
@@ -186,10 +252,15 @@ module.exports={
   upsertCustomer,
   getCustomers,
   createPayment,
+  createSinglePayment,
   upsertProvider,
   getProviders,
   createTransfer,
   getCheckout,
   deleteCustomer,
   deleteProvider,
+  createRecurrentPayment,
+  upsertProduct,
+  getSubscription,
+  setSubscriptionEnd,
 }

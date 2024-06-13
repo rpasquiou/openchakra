@@ -83,7 +83,14 @@ const CompanySchema = new Schema(
     // A survey is required to start a coaching
     coaching_requires_survey: {
       type: Boolean,
-    }
+    },
+    // Percent discount on packs for employees ( [0.0, 1.0[ )
+    pack_discount: {
+      type: Number,
+      validate: [function(v) { return lodash.inRange(v, 0.0, 1.0)}, `La remise sur pack doit être comprise en 0 et 1.0 (0% à 100%)`],
+      default: 0,
+      required: false,
+    },
   },
   schemaOptions,
 )
