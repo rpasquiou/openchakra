@@ -142,6 +142,35 @@ const Fonts = () => (
         font-weight: normal;
         font-style: normal;
       }
+      // Aftral LMS
+      @font-face {
+        font-family: 'Open sans';
+        src: local('Open sans'), 
+            url('fonts/OpenSans-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Poppins';
+        src: local('Poppins'), 
+            url('fonts/Poppins-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Poppins';
+        src: local('Poppins'), 
+            url('fonts/Poppins-Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Poppins';
+        src: local('Poppins'), 
+            url('fonts/Poppins-SemiBold.ttf') format('truetype');
+        font-weight: 550;
+        font-style: normal;
+      }
       `}
   />
 )
@@ -155,6 +184,8 @@ export const fontsName = [
   'inter-medium',
   'inter-semibold',
   'minion pro',
+  'Open sans',
+  'Poppins',
 ]
 
 export default Fonts
