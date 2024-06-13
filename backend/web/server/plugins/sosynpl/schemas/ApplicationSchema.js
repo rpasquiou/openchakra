@@ -15,10 +15,6 @@ const ApplicationSchema = new Schema({
     ref: 'customerFreelance',
     required: [true, `Le freelance est obligatoire`]
   },
-  description: {
-    type: String,
-    required: [true, `La description est obligatoire`],
-  },
   why_me: {
     type: String,
     required: false,
@@ -63,14 +59,6 @@ ApplicationSchema.virtual('latest_quotations', {
   localField: '_id',
   options: { sort: { creation_date: -1 }, limit:1 },
   array: true,
-})
-
-ApplicationSchema.pre('validate', async function(next) {
-  const quotations=await mongoose.models.quotation.countDocuments({application: this._id})
-  if (!quotations>0) {
-    return next(new Error(`La candidature doit contenir un devis`))
-  }
-  next()
 })
 
 module.exports = ApplicationSchema
