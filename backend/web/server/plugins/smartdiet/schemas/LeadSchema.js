@@ -22,7 +22,7 @@ const LeadSchema = new Schema({
     type: String,
     validate: [isEmailOk, v => `L'email '${v?.value}' est invalide`],
     required: [true, 'L\'email est obligatoire'],
-    set: v => v.toLowerCase().trim(),
+    set: v => v?.toLowerCase().trim(),
   },
   // Custom identifier
   identifier: {
@@ -79,11 +79,11 @@ const LeadSchema = new Schema({
     type: Date,
     required: false,
   },
-  interested_in: {
+  interested_in: [{
     type: Schema.Types.ObjectId,
     ref: "interest",
     required: false,
-  },
+  }],
   call_direction: {
     type: String,
     enum: Object.keys(CALL_DIRECTION)
