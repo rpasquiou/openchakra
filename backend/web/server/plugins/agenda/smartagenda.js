@@ -219,7 +219,7 @@ remaining_calls tells the number of recursive calls
 */
 const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls=3}) => {
   if (!(diet_id && from && to && appointment_type)) {
-    throw new Error(`diet_id/from/to/appointment_type are required`)
+    throw new Error(`diet_id/from/to/appointment_type are required:${[diet_id, from, to, appointment_type, remaining_calls]}`)
   }
 
   const params={pdo_agenda_id: diet_id, pdo_type_rdv_id: appointment_type, date_a_partir_de: from.format('YYYY-MM-DD') }
@@ -264,8 +264,8 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
         .then(dispos2 => [...dispos, ...dispos2])
     })
     .catch(err => {
-      console.error(err)
       if (err?.response?.status==404) {
+        console.warn(`Availabilities 404 for ${diet_id}`)
         return []
       }
       throw err
@@ -292,59 +292,15 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
     .then(res => res.length && console.log(`Updated/created ${res.length} appt types`))
 })
 
-// Synchronize availabilities every minute
-// ENABLED UNTIL SMARTAGENDA WEBHOOK
-!config.isDevelopment() && cron.schedule('0 * * * * *', () => {
-  synchronizeAvailabilities()
-})
-
 // Returns an array of (diet, appointmentType) for any diet
-const getDietAppointmentTypes= diet => {
-  return User.findById(diet._id)
+const getDietAppointmentTypes= async diet => {
+  const loaded_diet=await User.findById(diet._id)
     .populate({path: 'customer_companies', populate:['assessment_appointment_type','followup_appointment_type']})
-    .then(diet => {
-      return lodash(diet.customer_companies)
-        .map(c => [c.assessment_appointment_type, c.followup_appointment_type])
-        .flatten()
-        .value()
-    })
-}
-
-const synchronizeAvailabilities = () => {
-  console.log('Syncing availabilities from smartagenda')
-  const start=moment().add(0, 'days').startOf('day')
-  const end=moment().add(AVAILABILITIES_RANGE_DAYS, 'days').startOf('day')
-  return User.find({role: ROLE_EXTERNAL_DIET, smartagenda_id:{$ne :null}})
-    .then(diets => Promise.all(diets.map(d => getDietAppointmentTypes(d)))
-      .then(all_app_types => {
-        all_app_types=all_app_types.filter(v => !!v)
-        // Compute all (diet, appintment type) combinations
-        const combinations=[]
-        diets.forEach((diet, index) => {
-          all_app_types[index].forEach(app_type => {
-            if (app_type) {
-              combinations.push([diet, app_type])
-            }
-          })
-        })
-        // Get smartagenda availabilities for eahc diet/appointment type
-        return lodash.isEmpty(combinations) ?
-          Promise.resolve([])
-          :
-          runPromisesWithDelay(combinations.map(([diet, app_type]) => () => {
-            return getAvailabilities({diet_id: diet.smartagenda_id, from: start, to: end, appointment_type: app_type.smartagenda_id})
-            .then(avails => avails.map(avail => ({ user: diet._id, appointment_type: app_type._id, start_date: avail.start_date })))
-        }), 0)
-        .then(results => {
-          const params=lodash(results).map(f => f.value || []).flatten().value()
-          // Clear all then create new availabilities
-          return Range.deleteMany()
-            .then(() => Range.create(params, {runValidators: true}))
-        })
-        .then(() => Range.countDocuments())
-        .then(res => console.log(`Created ${res} availability ranges`))
-      })
-    )
+  const res=lodash(loaded_diet.customer_companies)
+    .map(c => [c.assessment_appointment_type, c.followup_appointment_type])
+    .flatten()
+    .value()
+  return res
 }
 
 
@@ -369,6 +325,5 @@ module.exports={
   HOOK_INSERT,
   HOOK_DELETE,
   HOOK_UPDATE,
-  synchronizeAvailabilities,
   getAppointmentVisioLink,
 }

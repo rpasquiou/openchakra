@@ -24,7 +24,13 @@ import usePropsSelector from '../../../hooks/usePropsSelector'
 import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
-  const components: IComponents = sortComponents(useSelector(getComponents))
+  const unsortedComponents=useSelector(getComponents)
+  const [components, setComponents]=useState({})
+
+  useEffect(() => {
+    setComponents(sortComponents(unsortedComponents))
+  }, [unsortedComponents])
+
   const activeComponent: IComponent = useSelector(getSelectedComponent)
   const { setValueFromEvent, setValue, removeValue } = useForm()
   const dataSource = usePropsSelector('dataSource')
@@ -103,6 +109,8 @@ const DataSourcePanel: React.FC = () => {
         setFilterAttributes(filterAttrs)
       }
       catch (err) {
+        console.error(err)
+        // TODO Should not raise exception
         // alert(err)
       }
       if (!subDataSource) {
@@ -110,6 +118,10 @@ const DataSourcePanel: React.FC = () => {
         setSubAttributesDisplay({})
       }
       else {
+        // TODO Solene
+        if (!components[subDataSource]) {
+          return
+        }
         const model = models[components[subDataSource].props ?.model]
         if (model) {
           const subAttrs = lodash(model.attributes)
@@ -552,7 +564,7 @@ const DataSourcePanel: React.FC = () => {
             >
               <option value={undefined}></option>
               {Object.values(components)
-                .filter(c => !!c.props.model && !!c.props.attribute )
+                .filter(c => !!(c.props.model || c.props.dataSource) && !!c.props.attribute )
                 .map((component, i) => (
                   <option key={`comp${i}`} value={component.id}>
                     {`${component.id} (${component.type})`}

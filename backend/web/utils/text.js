@@ -4,6 +4,8 @@ const stripBom = require('strip-bom')
 const moment=require('moment')
 const lodash=require('lodash')
 const externelFormatDuration=require('format-duration')
+const levenshtein = require('fast-levenshtein')
+
 const ARTICLES = 'le la les un une de des d l à'.split(/ /g)
 const SIREN_LENGTH=9
 const SIRET_LENGTH=14
@@ -49,7 +51,10 @@ const matches = (str, keywords) => {
 }
 
 const bufferToString = buff => {
-  const encoding=ced(buff)
+  let encoding=ced(buff)
+  if (encoding=='ASCII-7-bit') {
+    encoding='UTF-8'
+  }
   let text = buff.toString(encoding)
   // For MAC files
   text = stripBom(text)
@@ -106,7 +111,7 @@ const capitalize = text => {
 }
 
 const guessDelimiter = text => {
-  const delimiter=csv_string.detect(text)
+  const delimiter=csv_string.detect(text.toString())
   return delimiter
 }
 
@@ -119,7 +124,29 @@ const splitRemaining = (pattern, delimiter) => {
 }
 
 const formatDateTime = datetime => {
-  return moment(datetime).format(`[le] DD/MM/YY [à] HH:mm`)
+  return `le ${formatDate(datetime)} à ${formatTime(datetime)}`
+}
+
+const formatDate = datetime => {
+  return moment(datetime).format(`DD/MM/YY`)
+}
+
+const formatHour = datetime => {
+  return moment(datetime).format(`HH:mm`)
+}
+
+const getWordsDistance = (word1, word2) => {
+  return levenshtein.get(word1, word2)
+}
+
+const getNearestWord = (word, words, limit=undefined) => {
+  const nearest=lodash(words).minBy(w => getWordsDistance(word, w))
+  const distance=getWordsDistance(word, nearest)
+  if (distance>limit) {
+    console.error(`****** Too far\n${word}\n**** from\n${nearest}\n*** distance ${distance}`)
+    return null
+  }
+  return nearest
 }
 
 const formatDuration = durationSeconds => {
@@ -155,6 +182,27 @@ const convertDuration = value =>  {
   }
 }
 
+/**
+ * Sort object's keys accoring to the values, setting firstkey first
+ * @throws Error if firstKey not found
+ * */
+
+const sortObject = (object, firstKey) => {
+  let entries=lodash(object)
+    .entries()
+    .sortBy(([k,v ]) => normalize(v))
+    .value()
+  if (firstKey) {
+    const firstEntry=entries.find(([k, v])=> k==firstKey)
+    if (!firstEntry) {
+      throw new Error(`Could not find key ${firstKey}`)
+    }
+    entries=[firstEntry, ...entries.filter(([k, v]) => k!=firstEntry)]
+  }
+  const result=Object.fromEntries(entries) 
+  return result
+} 
+
 module.exports = {
   normalize,
   matches,
@@ -167,7 +215,9 @@ module.exports = {
   capitalize,
   guessDelimiter,
   splitRemaining,
-  formatDateTime,
+  formatDateTime, formatDate, formatHour,
+  getWordsDistance, getNearestWord,
   formatDuration,
   convertDuration,
+  sortObject,
 }

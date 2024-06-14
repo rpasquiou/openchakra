@@ -12,14 +12,18 @@ const DiplomaSchema = new Schema({
     type: Date,
     required: false,
   },
-  document: {
+  picture: {
     type: String,
     required: false,
   },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: [true, "L'utilisateur est obligatoire"],
+    required: [true, `Le diplômé est obligatoire`],
+  },
+  migration_id: {
+    type: Number,
+    required: false,
   },
 }, schemaOptions
 );

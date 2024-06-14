@@ -50,6 +50,13 @@ const getSmartAgendaConfig = () => {
   }
 }
 
+const getSmartdietAPIConfig = () => {
+  return {
+    login: process.env.SMARTDIET_API_LOGIN,
+    password: process.env.SMARTDIET_API_PASSWORD,
+  }
+}
+
 const paymentPlugin=process.env.PAYMENT_PLUGIN
   ? require(`../server/plugins/payment/${process.env.PAYMENT_PLUGIN}`)
   : null
@@ -101,6 +108,10 @@ const getHostName = () => {
     throw new Error(`HOSTDOMAIN config missing`)
   }
   return process.env.HOSTDOMAIN
+}
+
+const computeUrl = _path => {
+  return `https://${getHostName()}${_path}`
 }
 
 const getPort = () => {
@@ -283,7 +294,7 @@ const checkConfig = () => {
     if (lodash.isEmpty(process.env.S3_STUDIO_ROOTPATH)) {
       reject(`S3_STUDIO_ROOTPATH non renseigné`)
     }
-    if (!!getMailProvider() && !['mailjet', 'sendInBlue'].includes(getMailProvider())) {
+    if (!!getMailProvider() && !getMailProvider().split(',').every(mp => ['mailjet', 'sendInBlue', 'brevo'].includes(mp))) {
       reject(`Mail provider ${getMailProvider()} incorrect`)
     }
 
@@ -342,20 +353,22 @@ const bookingUrl = (serviceUserId, extraParams = {}) => {
 let _isMaster=undefined
 
 const isMaster = () => {
-  return _isMaster
+  return isDevelopment() ? true : _isMaster
 }
 
-const setMasterStatus = () => {
+const setMasterStatus = async () => {
+
   if (!lodash.isNil(_isMaster)) {
     console.log(`Master already set, leaving`)
     return
   }
+  return new Promise((resolve, reject) => {
   // Connect to the local PM2 instance
   pm2.connect(function (err) {
     if (err) {
       console.log(`No PM2: I'm the master`);
       _isMaster=true
-      return
+      return resolve()
     }
 
     // Get the list of processes
@@ -364,7 +377,7 @@ const setMasterStatus = () => {
         console.log(`No PM2 list: I'm the master`);
         _isMaster=true
         pm2.disconnect()
-        return
+        return resolve()
       }
 
       const processName=`BACKEND-${process.env.DATA_MODEL}-${process.env.BACKEND_PORT}`.toUpperCase()
@@ -374,17 +387,16 @@ const setMasterStatus = () => {
       if (!lowest_group_pid) {
         // console.log(`No PM2 process ${processName}:I'm the master`)
         _isMaster=true
-        return
+        return resolve()
       }
       _isMaster=process.pid==lowest_group_pid
-      // console.log(`PM2 processes found: I'm ${_isMaster ? '': 'not ' }the master ()`)
-      pm2.disconnect();
-    });
+      console.log(`PM2 processes found: I'm ${_isMaster ? '': 'not ' }the master ()`)
+      pm2.disconnect()
+      return resolve()
+    })
+  })
   })
 }
-
-// Delay master detection to ensure all PM2 processes have started
-setTimeout(setMasterStatus, 1000)
 
 // Public API
 module.exports = {
@@ -433,4 +445,7 @@ module.exports = {
   getMailProvider,
   getMailjetConfig,
   isMaster,
+  setMasterStatus,
+  getSmartdietAPIConfig,
+  computeUrl,
 }

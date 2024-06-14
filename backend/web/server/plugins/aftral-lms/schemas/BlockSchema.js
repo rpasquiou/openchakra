@@ -7,6 +7,7 @@ const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME, RESOURCE_TYPE, B
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
+const { DUMMY_REF } = require('../../../utils/database')
 
 function getterTemplateFirst(attribute) {
   function getter(v) {
@@ -168,15 +169,15 @@ BlockSchema.virtual('order').get(function() {
   return 0
 })
 
-BlockSchema.virtual('children_count').get(function() {
+BlockSchema.virtual('children_count', DUMMY_REF).get(function() {
   return this.children?.length || 0
 })
 
-BlockSchema.virtual('evaluation').get(function() {
+BlockSchema.virtual('evaluation', DUMMY_REF).get(function() {
   return this._evaluation
 })
 
-BlockSchema.virtual('evaluation').set(function(value) {
+BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
 })
 
 BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {

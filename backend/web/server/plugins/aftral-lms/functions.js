@@ -2,7 +2,7 @@ const Block = require('../../models/Block')
 const lodash=require('lodash')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE } = require('./consts')
 const cron=require('node-cron')
@@ -14,9 +14,11 @@ const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
 const NodeCache=require('node-cache')
 const Message = require('../../models/Message')
-const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const User = require('../../models/User')
 const Post = require('../../models/Post')
+require('../../models/Module')
+require('../../models/Sequence')
 const { computeStatistics } = require('./statistics')
 const ObjectId = mongoose.Types.ObjectId
 
@@ -135,13 +137,14 @@ const isResourceMine = (userId, params, data) => {
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
-  declareVirtualField({model, field: 'name', instance: 'Number', requires: 'origin.name'})
-  declareVirtualField({model, field: 'url', instance: 'Number', requires: 'origin.url'})
-  declareVirtualField({model, field: 'duration', instance: 'Number', requires: 'origin.duration'})
+  declareFieldDependencies({model, field: 'name', requires: 'origin.name'})
+  declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
+  declareFieldDependencies({model, field: 'duration', requires: 'origin.duration'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareVirtualField({model, field: 'duration_str', instance: 'String', requires: 'duration,origin.duration'})
+  declareFieldDependencies({model, field: 'duration_str', requires: 'duration,origin.duration'})
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
-  declareVirtualField({model, field: 'resource_type', instance: 'String', enumValues: RESOURCE_TYPE, requires: 'origin.resource_type'})
+  declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
+  declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
   declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children.children,origin.children,origin.actual_children,actual_children.origin,children.origin',
     multiple: true,
@@ -149,50 +152,38 @@ MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareVirtualField({model, field: 'actual_children', instance: 'Array',
-    multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'block'}},
-  })
-  declareVirtualField({model, field: 'origin', instance: 'block', requires: 'origin.actual_children,origin.children',
-    multiple: false,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'block'}},
-  })
-  declareVirtualField({model, field: 'spent_time', instance: 'Number'})
-  declareComputedField(model, 'spent_time', (userId, params, data) => {
+  declareFieldDependencies({model, field: 'origin', requires: 'origin.actual_children,origin.children'})
+  declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => result?.duration || 0)
-  })
-  declareVirtualField({model, field: 'spent_time_str', instance: 'Number'})
-  declareComputedField(model, 'spent_time_str', (userId, params, data) => {
+  }})
+  declareComputedField({model, field: 'spent_time_str', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => formatDuration(result?.duration || 0))
-  })
+  }})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
-  declareComputedField(model, 'achievement_status', getBlockStatus)
-  declareVirtualField({model, field: 'resources_count', instance: 'Number'})
-  declareVirtualField({model, field: 'finished_resources_count', instance: 'Number'})
-  declareComputedField(model, 'finished_resources_count', getFinishedResources)
-  declareVirtualField({model, field: 'search_text', instance: 'String', requires:'name,code'})
-  declareComputedField(model, 'resources_progress', getResourcesProgress)
-  declareVirtualField({model, field: 'resources_progress', instance: 'Number', requires:'resources_count,finished_resources_count'})
-  declareComputedField(model, 'annotation', getResourceAnnotation, setResourceAnnotation)
+  declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
+  declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
+  declareFieldDependencies({model, field: 'search_text', requires:'name,code'})
+  declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
+  declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
 })
 
-declareVirtualField({model:'program', field: 'status', instance: 'String', enumValues: PROGRAM_STATUS})
+declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
-declareComputedField('resource', 'mine', isResourceMine)
+declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
 
+declareEnumField({model: 'post', field: '_feed_type', enumValues: FEED_TYPE})
+
+declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
-  declareVirtualField({model, field: 'role', instance: 'String', enumValues: ROLES})
+  declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
 })
 
 const preCreate = ({model, params, user}) => {
@@ -336,7 +327,7 @@ const filterDataUser = ({model, data, id, user}) => {
     data=data.filter(d => !d.origin)
     // Filter my sessions
     if (model=='session') {
-      data=data.filter(d => [...d.trainers, ...d.trainees].some(v => idEqual(v._id || v, user._id)))
+      data=data.filter(d => [...(d.trainers||[]), ...(d.trainees||[])].some(v => idEqual(v._id || v, user._id)))
     }
     else if (model=='resource') {
       const resources_filter=user.role==ROLE_CONCEPTEUR ? r => (r.creator.role==ROLE_CONCEPTEUR && !r._locked)
@@ -445,13 +436,6 @@ const lockSession = async sessionId => {
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
-
-// TODO To remove
-// Lock all sessions
-Block.find({type: 'session'})
-  .then(sessions => Promise.all(sessions.map(s => lockSession(s))))
-  .then(console.log)
-  .catch(console.error)
 
 // TODO To remove
 // Compute all template programs durations

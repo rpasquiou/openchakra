@@ -1,12 +1,15 @@
 const mongoose = require('mongoose')
 const moment = require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
+const { GENDER, SOURCE, SOURCE_APPLICATION } = require('../consts')
 
 const Schema = mongoose.Schema
 
 const NutritionAdviceSchema = new Schema({
   start_date: {
     type: Date,
+    default: () => moment(),
     required: [true, 'La date de début est obligatoire']
   },
   duration: {
@@ -16,24 +19,63 @@ const NutritionAdviceSchema = new Schema({
   },
   comment: {
     type: String,
-    required: true,
+    required: [true, `Le commentaire est obligatoire`],
   },
   food_document: {
     type: Schema.Types.ObjectId,
     ref: 'foodDocument',
     required: false,
   },
-  coaching: {
+  diet: {
     type: Schema.Types.ObjectId,
-    ref: 'coaching',
-    required: [true, 'Le coaching est obligatoire'],
+    ref: 'user',
+    required: [true, `La diet est obligatoire`],
+  },
+  patient_email: {
+    type: String,
+    required: [true, `L'email du patient est obligatoire`],
+  },
+  gender: {
+    type: String,
+    enum: Object.keys(GENDER),
+    set: v => v || undefined,
+    required: false,
+  },
+  age: {
+    type: Number,
+    required: false,
+  },
+  job: {
+    type: String,
+    required: false,
+  },
+  reason: {
+    type: String,
+    required: false,
+  },
+  // Did the patient start a coahcing after this CN ?
+  led_to_coaching: {
+    type: Boolean,
+    required: false,
+  },
+  migration_id: {
+    type: Number,
+    index: true,
+    required: false,
+  },
+  // Nutrition Advice Source
+  source: {
+    type: String,
+    enum: Object.keys(SOURCE),
+    required: true,
+    default: SOURCE_APPLICATION,
   },
 },
 {...schemaOptions}
 )
 
 /* eslint-disable prefer-arrow-callback */
-NutritionAdviceSchema.virtual('end_date').get(function() {
+NutritionAdviceSchema.virtual('end_date', DUMMY_REF).get(function() {
   const end=moment(this.start_date).add(this.duration, 'minutes')
   return end.isValid() ? end : null
 })

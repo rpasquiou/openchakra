@@ -15,7 +15,16 @@ const Schema = mongoose.Schema
 const QuizzQuestionSchema = new Schema({
   title: {
     type: String,
+    index: true,
     required: [true, 'Le titre est obligatoire'],
+  },
+  // Title for synthesis
+  synthesis_label: {
+    type: String
+  },
+  // Category
+  category: {
+    type: String
   },
   type: {
     type: String,
@@ -40,12 +49,9 @@ const QuizzQuestionSchema = new Schema({
   },
   diet_private: {
   },
-  origin_id: {
+  migration_id: {
     type: Number,
-    required: false,
-  },
-  origin_quizz_id: {
-    type: Number,
+    index: true,
     required: false,
   },
 }, schemaOptions)
@@ -60,11 +66,12 @@ QuizzQuestionSchema.virtual("available_answers", {
 
 QuizzQuestionSchema.methods.cloneAsUserQuestion=function() {
   const params={
-    quizz_question: this,
+    quizz_question: this._id,
     ...lodash.omit(this.toObject(), ['_id', 'id', CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE]),
     diet: undefined,
   }
-  return mongoose.models.userQuizzQuestion.create(params)
+  const model=mongoose.model('userQuizzQuestion')
+  return model.create(params)
 }
 /* eslint-enable prefer-arrow-callback */
 
