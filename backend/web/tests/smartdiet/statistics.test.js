@@ -18,7 +18,10 @@ afterAll(async () => {
 })
 
 describe('Statistics', () => {
-
+  it.only('tests error fields', async () => {
+    const stats = await computeStatistics({ fields: ['coachings_started', 'hello']})
+    console.log(stats)
+  })
   it('must return coachings_stats', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
@@ -125,7 +128,7 @@ describe('Statistics', () => {
     return means
   }
   
-  it.only('must compute all stats for kpi coaching page with filters', async () => {
+  it('must compute all stats for kpi coaching page with filters', async () => {
     const start_date = new Date('2020-01-05T13:00:00.000Z')
     const end_date = new Date('2021-01-05T13:00:00.000Z')
     const company = '65f2f95bd449f912a30afe74'
