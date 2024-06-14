@@ -75,17 +75,6 @@ const updateBlockStatus = async ({blockId, userId}) => {
     durationDoc= await Duration.create({user: userId, block: blockId, duration: 0, status: parentClosed ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME})
   }
   if (hasToCompute && block.type=='resource') {
-    if (durationDoc.duration>block.duration) {
-      durationDoc.status=BLOCK_STATUS_FINISHED
-      durationDoc.finished_resources_count=1
-      durationDoc.progress=1
-    }
-    else if (durationDoc.duration>0) {
-      durationDoc.status=BLOCK_STATUS_CURRENT
-    }
-    else {
-      // durationDoc.status=BLOCK_STATUS_TO_COME
-    }
     await durationDoc.save().catch(console.error)
     return durationDoc
   }
@@ -99,9 +88,6 @@ const updateBlockStatus = async ({blockId, userId}) => {
     }
     else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
       durationDoc.status=BLOCK_STATUS_CURRENT
-    }
-    else {
-      // durationDoc.status=BLOCK_STATUS_TO_COME
     }
     await durationDoc.save()
       .catch(err =>  console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
@@ -119,7 +105,6 @@ const onSpentTimeChanged = async ({blockId, user}) => {
 const onBlockCountChange = async blockId => {
   const topLevels=await getSessionBlocks(blockId)
   await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
-  await Promise.all(topLevels.map(p => computeBlocksDurations(p._id)))
   return blockId
 }
 
@@ -141,9 +126,7 @@ const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'name', requires: 'origin.name'})
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
-  declareFieldDependencies({model, field: 'duration', requires: 'origin.duration'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareFieldDependencies({model, field: 'duration_str', requires: 'duration,origin.duration'})
   declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
@@ -166,7 +149,6 @@ MODELS.forEach(model => {
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
   declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
-  declareFieldDependencies({model, field: 'search_text', requires:'name,code'})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
 })
@@ -358,7 +340,7 @@ setFilterDataUser(filterDataUser)
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
     ['status', 'achievement_status', 'actual_children', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
-    'search_text', 'order', 'duration_str'
+    'order', 'duration_str'
   ])
 }
 
@@ -412,24 +394,6 @@ const computeBlocksCount = async blockId => {
   return childrenCount
 }
 
-const computeBlocksDurations = async blockId => {
-  const block=await Block.findById(blockId).populate(['children', 'actual_children', 'origin'])
-  if (block.type=='resource') {
-    if (block.origin) {
-      block.duration=block.origin.duration
-      await block.save()
-      return block.origin.duration
-    }
-    return block.duration
-  }
-  const name=await getBlockName(blockId)
-  const durations=await Promise.all(block.children.map(child => computeBlocksDurations(child._id)))
-    .then(durations => lodash.sum(durations))
-  block.duration=durations
-  await block.save()
-  return durations
-}
-
 const lockSession = async sessionId => {
   console.log('locking session', sessionId)
   const session=await Block.findById(sessionId)
@@ -441,17 +405,9 @@ const lockSession = async sessionId => {
     await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
   }
   await computeBlocksCount(session._id)
-  await computeBlocksDurations(session._id)
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
-
-// TODO To remove
-// Compute all template programs durations
-Block.find({type: 'program', _locked: false})
-.then(programs => Promise.all(programs.map(p => computeBlocksDurations(p._id))))
-.then(console.log)
-.catch(console.error)
 
 module.exports={
   lockSession,

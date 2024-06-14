@@ -64,15 +64,6 @@ const BlockSchema = new Schema({
     get: getterTemplateFirst('picture'),
     set: setterTemplateOnly('picture')
   },
-  duration: {
-    type: Number,
-    required: [function(){return this.type=='resource' && this.isTemplate()}, `La durée est obligatoire`],
-    set: v => convertDuration(v),
-  },
-  duration_str: {
-    type: String,
-    get: function() { return formatDuration(this.duration)},
-  },
   actual_children: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -136,10 +127,6 @@ const BlockSchema = new Schema({
   },
   resources_progress: {
     type: Number,
-  },
-  search_text: {
-    type: String,
-    get: function() {return `${this.name} ${this.code}`}
   },
   _locked: {
     type: Boolean,
