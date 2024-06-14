@@ -31,6 +31,7 @@ import BreadcrumbItemPreview from './previews/BreadcrumbItemPreview'
 import BreadcrumbPreview from './previews/BreadcrumbPreview'
 import IconButtonPreview from './previews/IconButtonPreview'
 import IconPreview from './previews/IconPreview'
+import AddressPreview from '~custom-components/Address/AddressPreview'
 
 type previews = {
   [index: string]: {
@@ -199,6 +200,8 @@ const ComponentPreview: React.FC<{
       return <NumberInputPreview component={component} />
     case 'IconCheck':
       return <IconCheckPreview component={component} />
+    case 'Address':
+      return <AddressPreview component={component} />
     default:
       return null
   }

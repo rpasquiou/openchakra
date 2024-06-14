@@ -38,6 +38,11 @@ const QuizzSchema = new Schema({
     type: Number,
     required: false,
   },
+  migration_id: {
+    type: Number,
+    index: true,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
@@ -49,7 +54,7 @@ QuizzSchema.methods.cloneAsUserQuizz=function() {
         quizz: this._id,
         questions,
       }
-      return mongoose.models.userQuizz.create(params)
+      return mongoose.model('userQuizz').create(params)
     })
 }
 /* eslint-enable prefer-arrow-callback */

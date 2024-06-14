@@ -108,6 +108,11 @@ const removeExtension = fullpath => {
   return path.join(pathInfo.dir, pathInfo.name)
 }
 
+// Check if first exists and is newer than second (dependencies)
+const isNewerThan= (first, second) => {
+  return fs.existsSync(first) && fs.existsSync(second) && fs.statSync(first).mtimeMs>fs.statSync(second).mtimeMs
+}
+
 module.exports = {
   createDiskMulter,
   createMemoryMulter,
@@ -117,4 +122,5 @@ module.exports = {
   PDF_FILTER,
   isScorm,
   removeExtension,
+  isNewerThan,
 }

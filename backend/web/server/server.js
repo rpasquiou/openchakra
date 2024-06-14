@@ -26,116 +26,15 @@ const {
   isDevelopment_nossl,
   config,
   getDataModel,
+  isMaster,
+  setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
-require('./models/Answer')
-require('./models/ResetToken')
-require('./models/Theme')
-require('./models/Resource')
-require('./models/Session')
-require('./models/TrainingCenter')
-require('./models/User')
-require('./models/Contact')
-require('./models/Message')
-require('./models/LoggedUser')
-require('./models/Post')
-require('./models/Event')
-require('./models/Company')
-require('./models/Drink')
-require('./models/Meal')
-require('./models/Cigar')
-require('./models/OrderItem')
-require('./models/Booking')
-require('./models/Guest')
-require('./models/CigarCategory')
-require('./models/DrinkCategory')
-require('./models/MealCategory')
-require('./models/Conversation')
-require('./models/Measure')
-require('./models/Reminder')
-require('./models/Appointment')
-require('./models/Payment')
-require('./models/Accessory')
-require('./models/AccessoryCategory')
-require('./models/Review')
-require('./models/Offer')
-require('./models/Content')
-require('./models/Key')
-require('./models/Group')
-require('./models/Target')
-require('./models/PartnerApplication')
-require('./models/Spoon')
-require('./models/CollectiveChallenge')
-require('./models/Gift')
-require('./models/SpoonGain')
-require('./models/Menu')
-require('./models/Webinar')
-require('./models/IndividualChallenge')
-require('./models/JobUser')
-require('./models/Comment')
-require('./models/Recommandation')
-require('./models/Quotation')
-require('./models/Skill')
-require('./models/Activity')
-require('./models/Experience')
-require('./models/Request')
-require('./models/Pip')
-require('./models/Diploma')
-require('./models/Photo')
-require('./models/Mission')
-require('./models/QuotationDetail')
-require('./models/Recipe')
-require('./models/Instrument')
-require('./models/Ingredient')
-require('./models/RecipeIngredient')
-require('./models/AdminDashboard')
-require('./models/Question')
-require('./models/UserQuestion')
-require('./models/UserSurvey')
-require('./models/MenuRecipe')
-require('./models/Team')
-require('./models/Association')
-require('./models/ChartPoint')
-require('./models/TeamMember')
-require('./models/ChallengePip')
-require('./models/Coaching')
-require('./models/Consultation')
-require('./models/CoachingQuestion')
-require('./models/UserCoachingQuestion')
-require('./models/Network')
-require('./models/DietComment')
-require('./models/FoodDocument')
-require('./models/Quizz')
-require('./models/QuizzQuestion')
-require('./models/UserQuizz')
-require('./models/UserQuizzQuestion')
-require('./models/Item')
-require('./models/Range')
-require('./models/Availability')
-require('./models/LogbookDay')
-require('./models/CoachingLogbook')
-require('./models/Lead')
-require('./models/AppointmentType')
-require('./models/GraphData')
-require('./models/Issue')
-require('./models/Project')
-require('./models/UserProject')
-require('./models/Module')
-require('./models/Article')
-require('./models/BestPractices')
-require('./models/Tip')
-require('./models/Emergency')
-require('./models/Step')
-require('./models/DeclineReason')
-require('./models/Interest')
-require('./models/Job')
-require('./models/NutritionAdvice')
-require('./models/Block')
-require('./models/Sequence')
-require('./models/Duration')
-require('./models/Statistics')
-require('./models/Feed')
 
+// Backend private
+require('./models/PageTag_')
+
+// Project mdels
 const {MONGOOSE_OPTIONS} = require('./utils/database')
 
 require('console-stamp')(console, '[dd/mm/yy HH:MM:ss.l]')
@@ -150,14 +49,44 @@ const studio = require('./routes/api/studio')
 const withings = getDataModel()=='dekuple' ? require('./routes/api/withings') : null
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
+const { delayedPromise } = require('../utils/promise')
+let custom_router=null
+try {
+  custom_router=require(`./plugins/${getDataModel()}/routes`).router
+}
+catch(err) {
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
+  console.warn(`No custom routes for ${getDataModel()}`)
+}
+
+let db_update_fn=null
+try {
+  db_update_fn=require(`./plugins/${getDataModel()}/database_update`)
+}
+catch(err) {
+  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
+  console.warn(`No database updates required for ${getDataModel()}`)
+}
+
+// Import all data models
+const modelsPath=path.join(__dirname, 'models')
+fs.readdirSync(modelsPath).forEach(file => {
+  if (file.endsWith('.js')) {
+    const modelName = path.basename(file, '.js')
+    require(path.join(modelsPath, file))
+  }
+})
+
 
 // TODO Terminer les notifications
 // throw new Error(`\n${'*'.repeat(30)}\n  TERMINER LES NOTIFICATIONS\n${'*'.repeat(30)}`)
 // checkConfig
 checkConfig()
+  .then(() => !isDevelopment() && delayedPromise(5000, setMasterStatus))
   .then(() => {
     return mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
       .then(conn => autoIncrement.initialize(conn))
+      .then(() => isMaster() && db_update_fn && db_update_fn())
   })
   // Connect to MongoDB
   .then(() => {
@@ -166,8 +95,8 @@ checkConfig()
   })
   .then(() => {
     // Body parser middleware
-    app.use(bodyParser.urlencoded({extended: true}))
-    app.use(bodyParser.json())
+    app.use(bodyParser.urlencoded({extended: true, limit: '5mb'}))
+    app.use(bodyParser.json({limit: '5mb'}))
 
     // Passport middleware
     app.use(passport.initialize())
@@ -205,6 +134,7 @@ checkConfig()
     // Check hostname is valid
     app.use('/myAlfred/api/studio', studio)
     !!withings && app.use('/myAlfred/api/withings', withings)
+    !!custom_router && app.use(`/myAlfred/api/${getDataModel()}`, custom_router)
 
     // const port = process.env.PORT || 5000;
     const rootPath = path.join(__dirname, '/..')

@@ -2,9 +2,9 @@ import 'dotenv/config'
 import lodash from 'lodash'
 import { ProjectState } from '~/core/models/project'
 import { PageSettings } from '../core/models/project';
-import { build, copyFile, install, start, clean } from './http'
+import { build, copyFile, install, start, clean, sendTags } from './http'
 import { generateCode, generateApp } from './code'
-import { normalizePageName, urlClean } from './misc';
+import { getPageUrl, normalizePageName, urlClean } from './misc';
 import { validateComponents , validateProject} from './validation'
 
 // If true, build target project when comilation fixed
@@ -27,9 +27,14 @@ const cleanPages = (pages:PageSettings[]) => {
 
 export const deploy = (state: ProjectState, models: any) => {
   const pages = Object.values(state.pages)
+  const deployMsg='*********** DEPLOY'
+  console.time(deployMsg)
+  const taggedPages=Object.values(state.pages).filter(page => !lodash.isEmpty(page.components?.root?.props?.tag))
+    .map(page => ({tag: page.components.root.props.tag, url: '/'+getPageUrl(page.pageId, state.pages)}))
+  console.log('tagged pages', taggedPages)
   return Promise.resolve(validateProject(state))
     .then(res => {
-      if (res) {
+            if (res) {
         throw new Error(JSON.stringify(res, null, 2))
       }
       return Promise.all(
@@ -43,6 +48,7 @@ export const deploy = (state: ProjectState, models: any) => {
       )
     })
     .then(codes => {
+      console.timeEnd(deployMsg)
       const namedCodes = lodash.zip(
         pages.map(nc => nc.pageName),
         codes,
@@ -55,10 +61,10 @@ export const deploy = (state: ProjectState, models: any) => {
     .then(async() => {
       // generate again index
       const code = await generateCode(state.rootPage, state.pages, models, state)
-      .catch(err => {
-        console.error('generate index while deploying', err)
-        return Promise.reject(`Page index :${err}`)
-      })
+        .catch(err => {
+          console.error('generate index while deploying', err)
+          return Promise.reject(`Page index :${err}`)
+        })
       return code
     })
     .then(code => {

@@ -9,6 +9,12 @@ const CoachingLogbookSchema = new Schema({
   coaching: {
     type: Schema.Types.ObjectId,
     ref: 'coaching',
+    // required: true,
+    index: true,
+  },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
     required: true,
   },
   day: {

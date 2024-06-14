@@ -1,9 +1,9 @@
 const {Upload} = require('@aws-sdk/lib-storage')
 const {S3} = require('@aws-sdk/client-s3')
 const {THUMBNAILS_DIR} = require('../../../web/utils/consts')
-const { isScorm, removeExtension } = require('../utils/filesystem')
+const fs=require('fs')
+const mime=require('mime-types')
 const path=require('path')
-const mime=require('mime')
 
 const s3 = new S3({
   region: process.env.S3_REGION,
@@ -55,52 +55,80 @@ const imageSrcSetPaths = (originalSrc, withDimension=true) => {
   return srcSet
 }
 
-const handleFile = async document => {
-  const zipEntries=await isScorm(document)
-  console.log(document.filename)
+exports.sendFileToAWS = async (fullpath, type) => {
+  const filename=path.join(process.env.S3_PROD_ROOTPATH, type, path.basename(fullpath))
+  const contents=fs.readFileSync(fullpath)
+  let mimeType=mime.lookup(fullpath)
+  if (!mimeType && /\.peg$/i.test(filename)) {
+    mimeType=mime.lookup('jpg')
+  }
 
-  if (zipEntries) {
-    const folder=removeExtension(document.filename)
-    const subDocuments=zipEntries.filter(e => !e.isDirectory).map(e => ({
-      filename: path.join(folder, e.entryName),
-      buffer: e.getData(),
-      mimetype: mime.getType(e.entryName)
-    }))
-    const res=await Promise.all(subDocuments.map(uploadFile))
-    return res.find(r => /\/story.html$/.test(r.Key))
+  if (!contents || !mimeType) {
+    console.error(`No contents or mime for`, type, fullpath)
+    return null
   }
-  else {
-    return uploadFile(document)
+
+  const params = {
+    Bucket: process.env.S3_BUCKET,
+    Key: filename,
+    Body: contents,
+    ContentType: mimeType,
   }
+
+  const upload=new Upload({client: s3,params})
+  const res=await upload.done().catch(console.error)
+  return res
 }
 
-const  uploadFile =  document => {
-  return new Promise(async (resolve, reject) => {
-    const params = {
-      Bucket: process.env.S3_BUCKET,
-      Key: document.filename,
-      Body: document.buffer,
-      ContentType: document.mimetype,
-      // ACL: 'public-read', // What's this ACL ?
-    }
+exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
+  const fullfilename=path.join(process.env.S3_PROD_ROOTPATH, type, filename)
+  const contents=buffer
 
-    await new Upload({
-      client: s3,
-      params,
-    }).done()
-      .then(res => resolve(res))
-      .catch(err => {
-        console.error(err)
-        return reject(err)
-      })
-  })
+  if (!buffer?.length || !mimeType) {
+    console.error(`No contents or mime for`, type, fullpath)
+    return null
+  }
+
+  const params = {
+    Bucket: process.env.S3_BUCKET,
+    Key: fullfilename,
+    Body: contents,
+    ContentType: mimeType,
+  }
+
+  const upload=new Upload({client: s3,params})
+  const res=await upload.done().catch(console.error)
+
+  console.log('res is', res)
+
+  return res
 }
-
 
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
 
-  const documentsToSend = req.body.documents.map(document => handleFile(document))
+  const documentsToSend = req.body.documents.map(document => {
+
+    return new Promise(async(resolve, reject) => {
+      const params = {
+        Bucket: process.env.S3_BUCKET,
+        Key: document.filename,
+        Body: document.buffer,
+        ContentType: document.mimetype,
+        // ACL: 'public-read', // What's this ACL ?
+      }
+
+      await new Upload({
+        client: s3,
+        params,
+      }).done()
+        .then(res => resolve(res))
+        .catch(err => {
+          console.error(err)
+          return reject(err)
+        })
+    })
+  })
 
   req.body.result = await Promise.all(documentsToSend)
     .catch(err => console.error(err))
@@ -125,7 +153,7 @@ exports.getFilesFromAWS = async(req, res, next) => {
 
   }
   catch (err) {
-    throw Error('Error while getting images from AWS S3 :', err)
+    throw Error(`Error while getting images from AWS S3 : ${err}`)
   }
 
   next()

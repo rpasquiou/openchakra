@@ -1,8 +1,13 @@
 const csv_parse = require('csv-parse/lib/sync')
+const fs = require('fs')
 const lodash=require('lodash')
+const moment=require('moment')
 const ExcelJS = require('exceljs')
-const {JSON_TYPE, TEXT_TYPE, XL_TYPE} = require('./consts')
+const {JSON_TYPE, TEXT_TYPE, XL_TYPE, CREATED_AT_ATTRIBUTE} = require('./consts')
 const {bufferToString} = require('./text')
+const mongoose=require('mongoose')
+const { runPromisesWithDelay } = require('../server/utils/concurrency')
+const NodeCache = require('node-cache')
 
 const guessFileType = buffer => {
   return new Promise((resolve, reject) => {
@@ -85,8 +90,8 @@ const extractXls=(bufferData, options) => {
       const first_line=options.from_line || 1
       const columnsRange=lodash.range(1, sheet.actualColumnCount+1)
       const rowsRange=lodash.range(first_line+1, sheet.actualRowCount+1)
-      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).value)
-      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).value))
+      const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).text)
+      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).text))
       if (!options.columns) {
         return {headers: headers, records: records}
       }
@@ -115,4 +120,153 @@ const extractSample = (rawData, options) => {
     })
 }
 
-module.exports={extractData, guessFileType, getTabs, extractSample}
+const mapAttribute=async ({record, mappingFn, ...rest}) => {
+  if (typeof mappingFn=='string') {
+    return record[mappingFn]
+  }
+ const res=await mappingFn({record, cache:getCache, ...rest})
+ return res
+}
+
+const mapRecord = async ({record, mapping, ...rest}) => {
+  const mapped={}
+  for (const k of Object.keys(mapping)) {
+    mapped[k]=await mapAttribute({record, mappingFn: mapping[k], ...rest})
+  }
+  return mapped
+}
+
+const dataCache = new NodeCache()
+
+const setCache = (model, migrationKey, destinationKey) => {
+  if (lodash.isNil(migrationKey)) {
+    throw new Error(`${model}:migration key is empty`)
+  }
+  if (lodash.isNil(destinationKey)) {
+    throw new Error(`${model}:${migrationKey} dest key is empty`)
+  }
+  const key = `${model}/${migrationKey}`
+  dataCache.set(key, destinationKey)
+}
+
+const getCache = (model, migrationKey) => {
+  const key=`${model}/${migrationKey}`
+  const res=dataCache.get(key)
+  return res
+}
+
+const getCacheKeys = () => {
+  return dataCache.keys()
+}
+
+const displayCache = () => {
+  console.log(dataCache)
+}
+
+const countCache = (model) => {
+  return dataCache.keys().filter(k => k.startsWith(`${model}/`)).length
+}
+
+function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
+  const identityFilter=computeIdentityFilter(identityKey, migrationKey, record)
+  return model.findOne(identityFilter, {[migrationKey]:1})
+    .then(result => {
+      if (!result) {
+        if (updateOnly) {
+          throw new Error(`Could not find ${model.modelName} matching ${JSON.stringify(identityFilter)}`)
+        }
+        return model.create({...record})
+      }
+      return model.findByIdAndUpdate(result._id, record, {runValidators:true, new: true})
+        .then(() => ({_id: result._id}))
+    })
+    .then(result => {
+      setCache(model.modelName, record[migrationKey], result._id.toString())
+      return result
+    })
+    .catch(err => {
+      const msg=`Model ${model.modelName}, record ${JSON.stringify(record)}, error(s):${err.toString()}`
+      console.error(msg)
+    })
+}
+
+const computeIdentityFilter = (identityKey, migrationKey, record) => {
+  const filter={$or: [ 
+    {[migrationKey]: record[migrationKey]},
+    {$and: identityKey.map(key => ({[key]: record[key]}))}
+  ]}
+  return filter
+}
+
+const importData = ({model, data, mapping, identityKey, migrationKey, progressCb, updateOnly, ...rest}) => {
+  if (!model || lodash.isEmpty(data) || !lodash.isObject(mapping) || lodash.isEmpty(identityKey) || lodash.isEmpty(migrationKey)) {
+    throw new Error(`Expecting model, data, mapping, identityKey, migrationKey`)
+  }
+  identityKey = Array.isArray(identityKey) ? identityKey : [identityKey]
+  console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
+  const msg=`Inserted ${model}, ${data.length} source records`
+  const mongoModel=mongoose.model(model)
+  console.time('Mapping records')
+  return Promise.all(data.map(record => mapRecord({record, mapping, ...rest})))
+    .then(mappedData => {
+      console.timeEnd('Mapping records')
+      const recordsCount=mappedData.length
+      console.time(msg)
+      return runPromisesWithDelay(mappedData.map((data, index) => () => {
+        return upsertRecord({model: mongoModel, record: data, identityKey, migrationKey, updateOnly})
+          .finally(() => progressCb && progressCb(index, recordsCount))
+      }
+      ))
+      .then(results => {
+        const rejected=lodash.zip([results, mappedData]).filter(([res, ]) => res.status=='rejected')
+        if (!lodash.isEmpty(rejected)) {
+          console.error('rejected', JSON.stringify(rejected))
+          throw new Error(JSON.stringify(rejected))
+        }
+        const createResult=(result, index) => ({
+          index,
+          success: result.status=='fulfilled',
+          error: result.reason?.message || result.reason?._message || result.reason
+        })
+        const mappedResults=results.map((r, index) => createResult(r, index))
+        return mappedResults
+      })
+    })
+    .finally(()=> {
+      delete mongoose.model(model)
+      saveCache()
+      console.timeEnd(msg)
+    })
+}
+
+const CACHE_PATH='/tmp/migration-cache'
+
+const loadCache= () => {
+  if (!fs.existsSync(CACHE_PATH)) {
+    return 
+  }
+  const contents=JSON.parse(fs.readFileSync(CACHE_PATH).toString())
+  const formatted=Object.entries(contents).map(([key, val]) => ({key, val}))
+  dataCache.mset(formatted)  
+  console.log('Loaded from cache', formatted.length, 'keys')
+}
+
+const saveCache= () => {
+  const data=dataCache.mget(dataCache.keys())
+  fs.writeFileSync(CACHE_PATH, JSON.stringify(data, null,2))
+  console.log('Saved to cache', Object.keys(data).length, 'keys')
+}
+
+module.exports={
+  extractData, 
+  guessFileType, 
+  getTabs, 
+  extractSample,
+  importData,
+  getCacheKeys,
+  displayCache,
+  cache: getCache,
+  setCache,
+  loadCache, saveCache,
+}
+

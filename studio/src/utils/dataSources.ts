@@ -1,5 +1,18 @@
 import lodash from 'lodash'
+import { DEFAULT_LIMIT } from '~dependencies/utils/consts'
 
+/**
+ * Functions calls during deploy
+    hasParentType=>398
+    getFieldsForDataProvider=>495
+    getLimitsForDataProvider=>495
+    getParentOfType=>4676
+    isSingleDataPage=>13648
+    getDataProviderDataType=>47378
+    computeDataFieldName=>54465
+
+    Deploy 47s
+ */
 export const CONTAINER_TYPE: ComponentType[] = [
   'Box',
   'Grid',
@@ -18,14 +31,14 @@ export const TEXT_TYPE: ComponentType[] = [
   'Badge',
   'ListItem',
 ]
-export const ACTION_TYPE: ComponentType[] = ['Button', 'IconButton']
+export const ACTION_TYPE: ComponentType[] = ['Button', 'IconButton', 'Calendar']
 export const IMAGE_TYPE: ComponentType[] = ['Image', 'Avatar', 'Media']
 export const PROGRESS_TYPE: ComponentType[] = ['Progress', 'CircularProgress']
 export const DATE_TYPE: ComponentType[] = ['Date']
 export const SELECT_TYPE: ComponentType[] = ['Select']
 export const SOURCE_TYPE: ComponentType[] = ['Timer', 'Chart']
 export const CHECKBOX_TYPE: ComponentType[] = ['Checkbox', 'Radio', 'Switch', 'IconCheck']
-export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat']
+export const INPUT_TYPE: ComponentType[] = ['Lexical', 'Input', 'Textarea', 'NumberInput', 'Rating', 'NumberFormat', 'Address', 'Slider']
 export const UPLOAD_TYPE: ComponentType[] = ['UploadFile']
 export const GROUP_TYPE: ComponentType[] = ['RadioGroup', 'CheckboxGroup']
 
@@ -155,15 +168,21 @@ const getComponentAttributes = (
   return attributes
 }
 
+
+// TODO Filter attributes
 export const getAvailableAttributes = (
   component: IComponent,
   components: IComponents,
   models: any,
 ): any => {
+
   const attributes = getComponentAttributes(component, components, models)
   const cardinalityAttributes = lodash.pickBy(
     attributes,
-    att => ['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) || att.multiple === isMultipleDispatcher(component),
+    att => 
+      (['RadioGroup', 'CheckboxGroup', 'Chart'].includes(component.type) 
+      || att.multiple === isMultipleDispatcher(component) )
+      || (!SELECT_TYPE.includes(component.type) || (!!att.multiple || !!att.ref || !lodash.isEmpty(att.enumValues)))
   )
   return cardinalityAttributes
 }
@@ -185,13 +204,13 @@ export const getFilterAttributes = (
   return simpleAttributes
 }
 
-const computeDataFieldName = (
+export const computeDataFieldName = (
   component: IComponent,
   components: IComponents,
   dataSourceId: string,
 ): any => {
 
-  // On dataProvider: break
+  // On dataProvider: break 
   // TODO: commented because returns null if Select has a model even if it has a subDataSource/subAttributeDisplay
   /**
   if (component.props.model) {
@@ -265,6 +284,19 @@ const computeDataFieldName = (
   return result
 }
 
+export const getLimitsForDataProvider = (
+  dataProviderId: string,
+  components: IComponents,
+  getDynamicType: any,
+): string[] => {
+
+  const containers=Object.values(components)
+    .filter(comp => comp.props.dataSource==dataProviderId)
+    .filter(comp => getDynamicType(comp)=='Container')
+  // console.log(containers.map(c => computeDataFieldName(c, components, dataProviderId)))
+  return containers.map(c => [computeDataFieldName(c, components, dataProviderId), c.props.limit || DEFAULT_LIMIT])
+}
+
 // Traverse down-up from components to dataprovider to join all fields
 export const getFieldsForDataProvider = (
   dataProviderId: string,
@@ -298,3 +330,15 @@ export const getParentOfType = (components:IComponents, comp: IComponent, type: 
 export const hasParentType = (comp: IComponent, comps: IComponents, type: ComponentType) => {
   return !!getParentOfType(comps, comp, type)
 }
+
+export const getChildrenOfType = (components:IComponents, comp: IComponent, type: ComponentType):IComponent[] => {
+  if (comp.type==type) {
+    return [comp]
+  }
+  const children=comp.children.map(childId => {
+    const child=components[childId]
+    return getChildrenOfType(components, child, type)
+  })
+  return lodash.flatten(children)
+}
+
