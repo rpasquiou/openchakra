@@ -7,6 +7,7 @@ export const getCurrentSection = (state: RootState) => state.app.currentSection
 export const getShowLeftPanel = (state: RootState) => state.app.showLeftPanel
 export const getShowWarnings = (state: RootState) => state.app.showWarnings
 export const getShowRightPanel = (state: RootState) => state.app.showRightPanel
+export const getEditDatabaseLayout = (state: RootState) => state.app.editDatabaseLayout
 
 export const getDevice = (state: RootState) => state.app.device
 

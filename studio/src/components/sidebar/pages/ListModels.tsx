@@ -6,22 +6,47 @@ import {
     Button,
     IconButton
   } from '@chakra-ui/react'
-  import React from 'react'
-  import { useSelector } from 'react-redux'
+import React from 'react'
+import { useSelector } from 'react-redux'
 import { getRoles } from '~core/selectors/roles';
-  import { getModels } from '~core/selectors/dataSources'
+import { getModels } from '~core/selectors/dataSources'
 import { Edit2Icon } from 'lucide-react';
+import usePropsSelector from '~hooks/usePropsSelector';
 
   const ListModels = () => {
     const models = useSelector(getModels)
-    const roles = useSelector(getRoles)
-    let enums = {
-        FR:"fr",
-        EN:"en",
-        DE:"de"
+    let attr = {}
+    let unsortedEnums = {}
+    
+    const getAttributes = (m:string) => {
+      const model = models[m]
+      return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
     }
 
-    console.log(models);
+    Object.keys(models).forEach((m) => {
+      const attributes = getAttributes(m);
+      attr[m] = attributes;
+    
+      attributes.forEach((attribute) => {
+        const attributeProps = models[m].attributes[attribute];
+    
+        Object.keys(attributeProps).forEach((property) => {
+          if (property === 'enumValues') {
+            unsortedEnums[attribute] = attributeProps[property];
+          }
+        });
+      });
+    });
+    const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
+    const enums: { [key: string]: any } = {};
+    sortedEnumsKeys.forEach((key) => {
+      enums[key] = unsortedEnums[key];
+    })
+    console.log(models['user'].attributes.role)
+    console.log(enums)
+    const modelEdit = usePropsSelector('modelEdit');
+    const enumEdit = usePropsSelector('enumEdit');
+
         return (
       <DarkMode>
         <Box
@@ -34,9 +59,9 @@ import { Edit2Icon } from 'lucide-react';
           p={2}
           m={0}
           as="menu"
-          bg="rgb(236, 236, 236)"
           w={'100%'}
-          h={'100%'}>
+          h={'100%'}
+          bg="rgb(236, 236, 236)">
           <Heading
             as='h2'
             color={'black'}
@@ -54,9 +79,8 @@ import { Edit2Icon } from 'lucide-react';
             p={2}
             m={0}
             as="menu"
+            h={'40vh'}
             bg="rgb(236, 236, 236)"
-            w={'100%'}
-            h={'100%'}
             border='1px'
             borderRadius={"5px"}
             borderColor={'black'}>
@@ -72,8 +96,6 @@ import { Edit2Icon } from 'lucide-react';
                 as="menu"
                 bg="rgb(236, 236, 236)"
                 color={'black'}
-                w={'100%'}
-                h={'100%'}
                 justifyContent={'center'}
                 alignItems={'center'}
                 >
@@ -103,8 +125,6 @@ import { Edit2Icon } from 'lucide-react';
             m={0}
             as="menu"
             bg="rgb(236, 236, 236)"
-            w={'100%'}
-            h={'100%'}
             border='1px'
             borderRadius={"5px"}
             borderColor={'black'}>
@@ -120,8 +140,6 @@ import { Edit2Icon } from 'lucide-react';
                 as="menu"
                 bg="rgb(236, 236, 236)"
                 color={'black'}
-                w={'100%'}
-                h={'100%'}
                 justifyContent={'center'}
                 alignItems={'center'}
                 >

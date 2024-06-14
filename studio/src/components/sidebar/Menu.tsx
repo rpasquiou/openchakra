@@ -56,6 +56,7 @@ const Menu = () => {
       title: 'Edit Schemas',
       component: <ListModels />,
       icon: '/icons/settings.svg',
+      payload: 'editDatabase',
     },
   }
 
