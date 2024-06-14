@@ -19,7 +19,9 @@ const User = require('../../models/User')
 const Post = require('../../models/Post')
 require('../../models/Module')
 require('../../models/Sequence')
+require('../../models/Search')
 const { computeStatistics } = require('./statistics')
+const { searchUsers, searchBlocks } = require('./search')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
@@ -186,6 +188,13 @@ USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
 })
 
+// search start
+declareComputedField({model: 'search', field: 'users', getterFn: searchUsers})
+declareFieldDependencies({model: 'search', field: 'blocks', requires: 'pattern'})
+declareComputedField({model: 'search', field: 'blocks', getterFn: searchBlocks})
+declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
+// search end
+
 const preCreate = ({model, params, user}) => {
   if (['resource'].includes(model)) {
     params.creator=params?.creator || user
@@ -300,7 +309,7 @@ const preprocessGet = ({model, fields, id, user, params}) => {
             return User.findById(id)
               .then(partner => {
                 const data=[{_id: partner._id, partner, messages: []}]
-                return {model, fields, id, data}
+                return {model, fields, id, data, params}
               })
           }
         }
@@ -313,11 +322,11 @@ const preprocessGet = ({model, fields, id, user, params}) => {
           })
           .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
           .value()
-        return {model, fields, id, data: convs}
+        return {model, fields, id, data: convs, params}
       })
   }
 
-  return Promise.resolve({model, fields, id})
+  return Promise.resolve({model, fields, id, user, params})
 }
 
 setPreprocessGet(preprocessGet)
