@@ -12,6 +12,7 @@ interface Attribute {
   multiple?: boolean;
   required?: boolean;
   enumValues?: { [key: string]: string };
+  default?: string;
 }
 
 interface Model {
@@ -68,6 +69,12 @@ const AttributeItem: FC<AttributeItemProps> = memo(({ modelName, attr, attribute
                 ))}
               </VStack>
             </>
+          )}
+          {attribute.default && (
+            <HStack mt={2}>
+              <Text fontWeight="bold">Default:</Text>
+              <Text>{attribute.default}</Text>
+            </HStack>
           )}
           <Button mt={4} background="#00bf91" color="white" onClick={() => onEdit(modelName, attr)}>Edit</Button>
         </AccordionPanel>
@@ -129,12 +136,14 @@ const ModelItem: FC<ModelItemProps> = memo(({ modelName, model, isOpen, onToggle
 });
 
 const EditDatabase: FC = () => {
-  const initModels = useSelector(getModels) as Models;
-  const [models, setModels] = useState<Models>(initModels);
+  const models = useSelector(getModels) as Models;
   const [openItems, setOpenItems] = useState<string[]>([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingAttribute, setEditingAttribute] = useState<{ modelName: string; attr: string } | null>(null);
   const [addingAttributeModel, setAddingAttributeModel] = useState<string | null>(null);
+  const [enums, setEnums] = useState<{ [key: string]: any }>({});
+  const [selectedEnumKey, setSelectedEnumKey] = useState<string>('');
+  const [selectedEnumValue, setSelectedEnumValue] = useState<string>('');
 
   const handleSwitchChange = useCallback((modelName: string, attr: string, key: string) => {
     setModels((prevModels) => {
@@ -177,10 +186,6 @@ const EditDatabase: FC = () => {
     onClose();
   };
 
-  useEffect(() => {
-    console.log(models);
-  }, [models]);
-
   const handleSaveAttribute = () => {
     if (editingAttribute) {
       console.log(`Saving changes to attribute ${editingAttribute.attr} in model ${editingAttribute.modelName}`);
@@ -191,10 +196,41 @@ const EditDatabase: FC = () => {
   };
 
   const renderTypeOptions = () => {
-    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Name', 'Phone Number'];
+    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Name', 'Phone'];
     const modelNames = Object.keys(models).map((modelName) => models[modelName].name);
     return [...baseTypes, ...modelNames];
   };
+
+  const getAttributes = (m: string) => {
+    const model = models[m];
+    return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
+  }
+
+  useEffect(() => {
+    const attr: { [key: string]: string[] } = {};
+    const unsortedEnums: { [key: string]: any } = {};
+    
+    Object.keys(models).forEach((m) => {
+      const attributes = getAttributes(m);
+      attr[m] = attributes;
+    
+      attributes.forEach((attribute) => {
+        const attributeProps = models[m].attributes[attribute];
+    
+        Object.keys(attributeProps).forEach((property) => {
+          if (property === 'enumValues') {
+            unsortedEnums[attribute] = attributeProps[property];
+          }
+        });
+      });
+    });
+    const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
+    const enums: { [key: string]: any } = {};
+    sortedEnumsKeys.forEach((key) => {
+      enums[key] = unsortedEnums[key];
+    });
+    setEnums(enums);
+  }, [models]);
 
   return (
     <Box
@@ -256,6 +292,24 @@ const EditDatabase: FC = () => {
                           <Input defaultValue={value} />
                         </HStack>
                       ))}
+                    <HStack>
+                      <Text fontWeight="bold">Add Enum:</Text>
+                      <Select placeholder="Select Enum" onChange={(e) => setSelectedEnumKey(e.target.value)}>
+                        {Object.keys(enums).map((enumKey) => (
+                          <option key={enumKey} value={enumKey}>{enumKey}</option>
+                        ))}
+                      </Select>
+                    </HStack>
+                    {selectedEnumKey && (
+                      <HStack>
+                        <Text fontWeight="bold">Default Value:</Text>
+                        <Select placeholder="Select Default Value" onChange={(e) => setSelectedEnumValue(e.target.value)}>
+                          {Object.keys(enums[selectedEnumKey] || {}).map((enumVal) => (
+                            <option key={enumVal} value={enumVal}>{enumVal}</option>
+                          ))}
+                        </Select>
+                      </HStack>
+                    )}
                   </VStack>
                 </VStack>
               </>
@@ -286,9 +340,23 @@ const EditDatabase: FC = () => {
                   <VStack align="start">
                     <Text fontWeight="bold">Enum Values:</Text>
                     <HStack>
-                      <Input placeholder="Key" />
-                      <Input placeholder="Value" />
+                      <Text fontWeight="bold">Add Enum:</Text>
+                      <Select placeholder="Select Enum" onChange={(e) => setSelectedEnumKey(e.target.value)}>
+                        {Object.keys(enums).map((enumKey) => (
+                          <option key={enumKey} value={enumKey}>{enumKey}</option>
+                        ))}
+                      </Select>
                     </HStack>
+                    {selectedEnumKey && (
+                      <HStack>
+                        <Text fontWeight="bold">Default Value:</Text>
+                        <Select placeholder="Select Default Value" onChange={(e) => setSelectedEnumValue(e.target.value)}>
+                          {Object.keys(enums[selectedEnumKey] || {}).map((enumVal) => (
+                            <option key={enumVal} value={enumVal}>{enumVal}</option>
+                          ))}
+                        </Select>
+                      </HStack>
+                    )}
                   </VStack>
                 </VStack>
               </>

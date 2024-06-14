@@ -1,54 +1,81 @@
 import {
-    DarkMode,
-    Box,
-    Heading,
-    Text,
-    Button,
-    IconButton
-  } from '@chakra-ui/react'
-import React from 'react'
+  DarkMode,
+  Box,
+  Heading,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  useDisclosure,
+  Text,
+  Flex
+} from '@chakra-ui/react'
+import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { getRoles } from '~core/selectors/roles';
 import { getModels } from '~core/selectors/dataSources'
-import { Edit2Icon } from 'lucide-react';
-import usePropsSelector from '~hooks/usePropsSelector';
 
-  const ListModels = () => {
-    const models = useSelector(getModels)
-    let attr = {}
-    let unsortedEnums = {}
-    
-    const getAttributes = (m:string) => {
-      const model = models[m]
-      return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
-    }
+const ListEnums = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedEnum, setSelectedEnum] = useState({});
+  const models = useSelector(getModels)
+  let unsortedEnums = {}
 
-    Object.keys(models).forEach((m) => {
-      const attributes = getAttributes(m);
-      attr[m] = attributes;
+  const getAttributes = (m: string) => {
+    const model = models[m]
+    return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
+  }
+
+  Object.keys(models).forEach((m) => {
+    const attributes = getAttributes(m);
     
-      attributes.forEach((attribute) => {
-        const attributeProps = models[m].attributes[attribute];
+    attributes.forEach((attribute) => {
+      const attributeProps = models[m].attributes[attribute];
     
-        Object.keys(attributeProps).forEach((property) => {
-          if (property === 'enumValues') {
-            unsortedEnums[attribute] = attributeProps[property];
-          }
-        });
+      Object.keys(attributeProps).forEach((property) => {
+        if (property === 'enumValues') {
+          unsortedEnums[attribute] = attributeProps[property];
+        }
       });
     });
-    const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
-    const enums: { [key: string]: any } = {};
-    sortedEnumsKeys.forEach((key) => {
-      enums[key] = unsortedEnums[key];
-    })
-    console.log(models['user'].attributes.role)
-    console.log(enums)
-    const modelEdit = usePropsSelector('modelEdit');
-    const enumEdit = usePropsSelector('enumEdit');
+  });
 
-        return (
-      <DarkMode>
+  const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
+  const enums: { [key: string]: any } = {};
+  sortedEnumsKeys.forEach((key) => {
+    enums[key] = unsortedEnums[key];
+  })
+
+  const handleEnumClick = (key) => {
+    setSelectedEnum({ key, values: enums[key] });
+    onOpen();
+  }
+
+  return (
+    <DarkMode>
+      <Box
+        overflowY="auto"
+        overflowX="visible"
+        boxShadow="xl"
+        position="relative"
+        display="grid"
+        gridTemplateRows={'auto 1fr auto'}
+        p={2}
+        m={0}
+        as="menu"
+        w={'100%'}
+        h={'100%'}
+        bg="rgb(236, 236, 236)">
+        <Heading
+          as='h2'
+          color={'black'}
+          size={'md'}
+          mb={'2'}>
+          Enums
+        </Heading>
         <Box
           overflowY="auto"
           overflowX="visible"
@@ -59,101 +86,48 @@ import usePropsSelector from '~hooks/usePropsSelector';
           p={2}
           m={0}
           as="menu"
-          w={'100%'}
-          h={'100%'}
-          bg="rgb(236, 236, 236)">
-          <Heading
-            as='h2'
-            color={'black'}
-            size={'md'}
-            mb={'2'}>
-            Models
-          </Heading>
-          <Box
-            overflowY="auto"
-            overflowX="visible"
-            boxShadow="xl"
-            position="relative"
-            display="grid"
-            gridTemplateRows={'auto 1fr auto'}
-            p={2}
-            m={0}
-            as="menu"
-            h={'40vh'}
-            bg="rgb(236, 236, 236)"
-            border='1px'
-            borderRadius={"5px"}
-            borderColor={'black'}>
-          {models && Object.keys(models).map((key) => (
-              <Box
-                fontSize={'11px'}
-                boxShadow="xl"
-                position="relative"
-                display="flex"
-                gridTemplateRows={'auto 1fr auto'}
-                p={2}
-                m={0}
-                as="menu"
-                bg="rgb(236, 236, 236)"
-                color={'black'}
-                justifyContent={'center'}
-                alignItems={'center'}
-                >
-                <Button
-                  key={key}
-                  fontSize={'12px'}>
-                    {key}
-                </Button>
-              </Box>
-            ))}
-          </Box>
-          <Heading
-            as='h2'
-            color={'black'}
-            size={'md'}
-            mb={'2'}>
-            Enums
-          </Heading>
-          <Box
-            overflowY="auto"
-            overflowX="visible"
-            boxShadow="xl"
-            position="relative"
-            display="grid"
-            gridTemplateRows={'auto 1fr auto'}
-            p={2}
-            m={0}
-            as="menu"
-            bg="rgb(236, 236, 236)"
-            border='1px'
-            borderRadius={"5px"}
-            borderColor={'black'}>
+          bg="rgb(236, 236, 236)"
+          border='1px'
+          borderRadius={"5px"}
+          borderColor={'black'}>
           {enums && Object.keys(enums).map((key) => (
-              <Box
-                fontSize={'11px'}
-                boxShadow="xl"
-                position="relative"
-                display="flex"
-                gridTemplateRows={'auto 1fr auto'}
-                p={2}
-                m={0}
-                as="menu"
-                bg="rgb(236, 236, 236)"
-                color={'black'}
-                justifyContent={'center'}
-                alignItems={'center'}
-                >
-                <Button
-                  key={key}
-                  fontSize={'12px'}>
-                    {key}
-                </Button>
-              </Box>
-            ))}
-          </Box>
+            <Box
+              key={key}
+              p={1}
+              border='1px'
+              borderRadius={"5px"}
+              borderColor={'black'}
+              cursor="pointer"
+              onClick={() => handleEnumClick(key)}
+              mb={2}>
+              <Text fontSize={'12px'} color={'black'}>{key}</Text>
+            </Box>
+          ))}
         </Box>
-      </DarkMode>
-    );
-  };
-  
-  export default ListModels;
+
+        <Modal isOpen={isOpen} onClose={onClose} size="md">
+          <ModalOverlay />
+          <ModalContent background='#f4f4f4'>
+            <ModalHeader>{selectedEnum.key}</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              {selectedEnum.values && Object.keys(selectedEnum.values).map((valueKey) => (
+                <Flex key={valueKey} p={1} background='#f4f4f4' border='1px' borderRadius={"5px"} borderColor={'black'} mb={1} justifyContent="space-between">
+                  <Text fontSize={'12px'} fontWeight="bold" width="45%">{valueKey}</Text>
+                  <Text fontSize={'12px'} width="45%" textAlign={'end'}>{selectedEnum.values[valueKey]}</Text>
+                </Flex>
+              ))}
+            </ModalBody>
+            <ModalFooter>
+              <Button colorScheme="teal" mr={3} onClick={onClose}>
+                Close
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </Box>
+    </DarkMode>
+  );
+};
+
+export default ListEnums;
