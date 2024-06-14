@@ -305,7 +305,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     }
     if (model=='currentFutureAppointment') {
       params['filter.end_date']={$gte: moment()}
-    }Z
+    }
     if (model=='pastAppointment') {
       params['filter.end_date']={$lt: moment()}
     }
