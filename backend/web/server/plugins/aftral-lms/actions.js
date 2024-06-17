@@ -109,18 +109,22 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
-  // if (action=='lockSession') {
-  //   return Block.findById(dataId, {_locked:1})
-  //     .then(res => res && !res?._locked)
-  // }
   if (['play', 'resume', 'replay'].includes(action)) {
     const block=await Block.findOne({_id: dataId, type: 'resource'})
-    if (!block) { throw new NotFoundError(`Ressource introuvable`)}
+    if (!block) { 
+      throw new NotFoundError(`Ressource introuvable`)
+    }
     const parent=await Block.findOne({actual_achildren: dataId})
     const duration=await Duration.findOne({block: dataId, user})
-    return ((action=='play' && duration?.status==BLOCK_STATUS_TO_COME)
-      || (action=='resume' && duration?.status==BLOCK_STATUS_CURRENT)
-      || (action=='replay' && duration?.status==BLOCK_STATUS_FINISHED && !parent?.closed))
+    if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
+      throw new NotFoundError(`Cette ressource ne peut être jouée`)
+    }
+    if (action=='resume' && duration?.status!=BLOCK_STATUS_CURRENT) {
+      throw new NotFoundError(`Cette ressource ne peut être jouée`)
+    }
+    if (action=='replay' && duration?.status!=BLOCK_STATUS_FINISHED && !parent?.closed) {
+      throw new NotFoundError(`Cette ressource ne peut être rejouée`)
+    }
   }
   return true
 }

@@ -102,6 +102,9 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(BLOCK_STATUS),
   },
+  achievement_rule: {
+    type: String,
+  },
   url: {
     type: String,
     required: [function() {return this.type=='resource' && this.isTemplate()}, `L'url est obligatoire`],
@@ -145,6 +148,7 @@ const BlockSchema = new Schema({
   annotation: {
     type: String,
   },
+
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.methods.isTemplate = function() {

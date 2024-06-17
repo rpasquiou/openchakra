@@ -38,7 +38,7 @@ const searchBlocks = async (userId, params, data) => {
   const page=parseInt(params?.['page.blocks']) || undefined
   const orFilter = generateFilter({attributes: ['name', 'code'], pattern: data.pattern, or: true})
   const andFilter = generateFilter({attributes: ['name', 'code'], pattern: data.pattern, or: false})
-  let query=Block.find(andFilter)
+  let query=Block.find(andFilter).sort({type:1})
   if (page) {
     query=query.skip(page*limit)
   }
@@ -46,8 +46,9 @@ const searchBlocks = async (userId, params, data) => {
     query=query.limit(limit+1)
   }
   let res=await query
+  console.log('searched', andFilter, 'found', res.length)
   if (lodash.isEmpty(res)) {
-    query=Block.find(orFilter)
+    query=Block.find(orFilter).sort({type:1})
     if (page) {
       query=query.skip(page*limit)
     }
@@ -55,6 +56,7 @@ const searchBlocks = async (userId, params, data) => {
       query=query.limit(limit+1)
     }
     res=await query
+    console.log('searched', orFilter, 'found', res.length)
   }
   return res
 }
