@@ -156,7 +156,7 @@ BlockSchema.methods.isTemplate = function() {
   return !this.origin
 }
 
-BlockSchema.virtual('order').get(function() {
+BlockSchema.virtual('order', DUMMY_REF).get(function() {
   return 0
 })
 
