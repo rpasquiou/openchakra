@@ -60,7 +60,33 @@ const Editor: React.FC = () => {
         if (!res.data) {
           throw new Error()
         }
+        let unsortedEnums = {}
+        const getAttributes = (m: string) => {
+          const model = res.data[m]
+          return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
+        }
+
+        Object.keys(res.data).forEach((m) => {
+          const attributes = getAttributes(m);
+          
+          attributes.forEach((attribute) => {
+            const attributeProps = res.data[m].attributes[attribute];
+          
+            Object.keys(attributeProps).forEach((property) => {
+              if (property === 'enumValues') {
+                unsortedEnums[attribute] = attributeProps[property];
+              }
+            });
+          });
+        });
+
+        const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
+        const enums: { [key: string]: any } = {};
+        sortedEnumsKeys.forEach((key) => {
+          enums[key] = unsortedEnums[key];
+        })
         dispatch.dataSources.setModels(res.data)
+        dispatch.enums.setEnums(enums)
       })
       .catch(err => {
         alert(`Could not get models from backend:${err}`)

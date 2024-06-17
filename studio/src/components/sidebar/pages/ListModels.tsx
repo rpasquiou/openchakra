@@ -12,47 +12,72 @@ import {
   Button,
   useDisclosure,
   Text,
-  Flex
+  Flex,
+  Input,
+  IconButton,
 } from '@chakra-ui/react'
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { getModels } from '~core/selectors/dataSources'
+import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons';
+import { getEnums } from '~core/selectors/enums';
 
 const ListEnums = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedEnum, setSelectedEnum] = useState({});
-  const models = useSelector(getModels)
-  let unsortedEnums = {}
-
-  const getAttributes = (m: string) => {
-    const model = models[m]
-    return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
-  }
-
-  Object.keys(models).forEach((m) => {
-    const attributes = getAttributes(m);
-    
-    attributes.forEach((attribute) => {
-      const attributeProps = models[m].attributes[attribute];
-    
-      Object.keys(attributeProps).forEach((property) => {
-        if (property === 'enumValues') {
-          unsortedEnums[attribute] = attributeProps[property];
-        }
-      });
-    });
-  });
-
-  const sortedEnumsKeys = Object.keys(unsortedEnums).sort();
-  const enums: { [key: string]: any } = {};
-  sortedEnumsKeys.forEach((key) => {
-    enums[key] = unsortedEnums[key];
-  })
-
+  const [newEnumKey, setNewEnumKey] = useState('');
+  const [newEnumValue, setNewEnumValue] = useState('');
+  const [newEnumLabel, setNewEnumLabel] = useState('');
+  const [editingKey, setEditingKey] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+  const [editingLabel, setEditingLabel] = useState('');
+  
+  const enums = useSelector(getEnums)
   const handleEnumClick = (key) => {
     setSelectedEnum({ key, values: enums[key] });
     onOpen();
   }
+
+  const handleAddEnum = () => {
+    if (newEnumKey && newEnumValue) {
+      setSelectedEnum((prevState) => ({
+        ...prevState,
+        values: {
+          ...prevState.values,
+          [newEnumKey]: { value: newEnumValue, label: newEnumLabel || '' },
+        },
+      }));
+      setNewEnumKey('');
+      setNewEnumValue('');
+      setNewEnumLabel('');
+    }
+  };
+
+  const handleEditEnum = (key) => {
+    setEditingKey(key);
+    setEditingValue(selectedEnum.values[key]);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingKey) {
+      setSelectedEnum((prevState) => ({
+        ...prevState,
+        values: {
+          ...prevState.values,
+          [editingKey]: { value: editingValue, label: editingLabel || '' },
+        },
+      }));
+      setEditingKey(null);
+      setEditingValue('');
+    }
+  };
+
+  const handleDeleteEnum = (key) => {
+    setSelectedEnum((prevState) => {
+      const newValues = { ...prevState.values };
+      delete newValues[key];
+      return { ...prevState, values: newValues };
+    });
+  };
 
   return (
     <DarkMode>
@@ -113,10 +138,63 @@ const ListEnums = () => {
             <ModalBody>
               {selectedEnum.values && Object.keys(selectedEnum.values).map((valueKey) => (
                 <Flex key={valueKey} p={1} background='#f4f4f4' border='1px' borderRadius={"5px"} borderColor={'black'} mb={1} justifyContent="space-between">
-                  <Text fontSize={'12px'} fontWeight="bold" width="45%">{valueKey}</Text>
-                  <Text fontSize={'12px'} width="45%" textAlign={'end'}>{selectedEnum.values[valueKey]}</Text>
+                  {editingKey === valueKey ? (
+                    <>
+                      <Input
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        placeholder="Value"
+                        width="30%"
+                      />
+                      <Input
+                        value={editingLabel}
+                        onChange={(e) => setEditingLabel(e.target.value)}
+                        placeholder="Label (optional)"
+                        width="30%"
+                      />
+                      <IconButton
+                        icon={<AddIcon />}
+                        onClick={handleSaveEdit}
+                        aria-label="Save"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <Text fontSize={'12px'} fontWeight="bold" width="30%">{valueKey}</Text>
+                      <Text fontSize={'12px'} width="30%" textAlign={'center'}>{selectedEnum.values[valueKey]}</Text>
+                      <IconButton
+                        icon={<EditIcon />}
+                        onClick={() => handleEditEnum(valueKey)}
+                        aria-label="Edit"
+                      />
+                      <IconButton
+                        icon={<DeleteIcon />}
+                        onClick={() => handleDeleteEnum(valueKey)}
+                        aria-label="Delete"
+                      />
+                    </>
+                  )}
                 </Flex>
               ))}
+              <Flex p={1} background='#f4f4f4' border='1px' borderRadius={"5px"} borderColor={'black'} mb={1} justifyContent="space-between">
+                <Input
+                  value={newEnumKey}
+                  onChange={(e) => setNewEnumKey(e.target.value)}
+                  placeholder="Key"
+                  width="30%"
+                />
+                <Input
+                  value={newEnumValue}
+                  onChange={(e) => setNewEnumValue(e.target.value)}
+                  placeholder="Value"
+                  width="30%"
+                />
+                <IconButton
+                  icon={<AddIcon />}
+                  onClick={handleAddEnum}
+                  aria-label="Add"
+                />
+              </Flex>
             </ModalBody>
             <ModalFooter>
               <Button colorScheme="teal" mr={3} onClick={onClose}>
