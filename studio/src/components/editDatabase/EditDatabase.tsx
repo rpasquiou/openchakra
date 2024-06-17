@@ -6,6 +6,7 @@ import {
 } from '@chakra-ui/react'
 import { useSelector } from 'react-redux'
 import { getModels } from '~core/selectors/dataSources'
+import { getEnums } from '~core/selectors/enums'
 
 interface Attribute {
   type?: string
@@ -226,31 +227,9 @@ const EditDatabase: FC = () => {
     const model = models[m]
     return Object.keys(model.attributes).filter(attr => !attr.includes('.'))
   }
-
+  const enumsFromBack = useSelector(getEnums)
   useEffect(() => {
-    const attr: { [key: string]: string[] } = {}
-    const unsortedEnums: { [key: string]: any } = {}
-    
-    Object.keys(models).forEach((m) => {
-      const attributes = getAttributes(m)
-      attr[m] = attributes
-    
-      attributes.forEach((attribute) => {
-        const attributeProps = models[m].attributes[attribute]
-    
-        Object.keys(attributeProps).forEach((property) => {
-          if (property === 'enumValues') {
-            unsortedEnums[attribute] = attributeProps[property]
-          }
-        })
-      })
-    })
-    const sortedEnumsKeys = Object.keys(unsortedEnums).sort()
-    const enums: { [key: string]: any } = {}
-    sortedEnumsKeys.forEach((key) => {
-      enums[key] = unsortedEnums[key]
-    })
-    setEnums(enums)
+    setEnums(enumsFromBack)
   }, [models])
 
   const handleAddModelOpen = () => {
