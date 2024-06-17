@@ -3,7 +3,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining } = require('../../../utils/text')
 const { importData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR } = require('./consts')
 const { sendFileToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 require('../../models/Resource')
@@ -54,7 +54,7 @@ const importResources = async (root_path, recursive) => {
     name: t[2],
     resource_type: t[3]
   }))
-  const userId=(await User.findOne({email: 'hello+concepteur@wappizy.com'}))?._id
+  const userId=(await User.findOne({role: ROLE_CONCEPTEUR}))?._id
   return importData({model: 'resource', data: records, mapping: RESOURCE_MAPPING(userId), identityKey: RESOURCE_KEY, migrationKey: RESOURCE_KEY})
 }
 
