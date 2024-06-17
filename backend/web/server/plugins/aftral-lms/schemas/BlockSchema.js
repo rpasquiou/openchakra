@@ -11,7 +11,7 @@ const { DUMMY_REF } = require('../../../utils/database')
 
 function getterTemplateFirst(attribute) {
   function getter(v) {
-    if (this.isTemplate()) {
+    if (!this.origin) {
       return v
     }
     return this.origin?.[attribute]
@@ -31,7 +31,7 @@ function getterMeFirst(attribute) {
 
 function setterTemplateOnly(attribute) {
   function setter(v) {
-    if (this.isTemplate()) {
+    if (!this.origin) {
       return v
     }
     throw new Error(`Setting ${attribute} forbidden`)
@@ -42,7 +42,9 @@ function setterTemplateOnly(attribute) {
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [function()  {return this.isTemplate()}, `Le nom est obligatoire`],
+    required: [function()  {return !this.origin}, `Le nom est obligatoire`],
+    index: true,
+    unique: true,
     get: getterTemplateFirst('name'),
     set: setterTemplateOnly('name')
   },
@@ -76,20 +78,20 @@ const BlockSchema = new Schema({
   // Closed: must finish children in order
   closed: {
     type: Boolean,
-    default: function() { return this.isTemplate() ? false : null},
-    required:[function() { return this.isTemplate()}, `L'état fermé (O/N) est obligatoire`],
+    default: function() { return !this.origin ? false : null},
+    required:[function() { return !this.origin}, `L'état fermé (O/N) est obligatoire`],
     get: getterMeFirst('closed'),
   },
   masked: {
     type: Boolean,
-    default: function() { return this.isTemplate() ? false : null},
-    required:[function() {return  this.isTemplate()}, `L'état masqué est obligatoire`],
+    default: function() { return !this.origin ? false : null},
+    required:[function() {return  !this.origin}, `L'état masqué est obligatoire`],
     get: getterMeFirst('masked'),
   },
   optional: {
     type: Boolean,
-    default: function() { return this.isTemplate() ? false : null},
-    required:[function() {return  this.isTemplate()}, `L'état optionnel est obligatoire`],
+    default: function() { return !this.origin ? false : null},
+    required:[function() {return  !this.origin}, `L'état optionnel est obligatoire`],
     get: getterMeFirst('masked'),
   },
   origin: {
@@ -107,13 +109,13 @@ const BlockSchema = new Schema({
   },
   url: {
     type: String,
-    required: [function() {return this.type=='resource' && this.isTemplate()}, `L'url est obligatoire`],
+    required: [function() {return this.type=='resource' && !this.origin}, `L'url est obligatoire`],
     get: getterTemplateFirst('url'),
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    required: [function(){ return this.type=='resource' && this.isTemplate()}, `Le type de ressource est obligatoire`],
+    required: [function(){ return this.type=='resource' && !this.origin}, `Le type de ressource est obligatoire`],
     get: getterTemplateFirst('resource_type'),
   },
   spent_time: {
@@ -151,10 +153,9 @@ const BlockSchema = new Schema({
 
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
-BlockSchema.methods.isTemplate = function() {
-  // console.log(`I'm a template`, !this.origin)
+BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
   return !this.origin
-}
+})
 
 BlockSchema.virtual('order', DUMMY_REF).get(function() {
   return 0
@@ -174,5 +175,9 @@ BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
 BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.origin ? this.origin.children : this.actual_children
 })
+
+BlockSchema.index(
+  { name: 1},
+  { unique: true, message: 'Un menu existe déjà pour ce repas' });
 
 module.exports = BlockSchema

@@ -351,7 +351,7 @@ const cloneAndLock = blockId => {
       const allChildren=[block.origin, ...block.actual_children].filter(v => !!v)
       return Promise.all(allChildren.map(c => cloneAndLock(c)))
         .then(children=> {
-          if (!block.isTemplate()) {
+          if (!block.is_template) {
             return children[0]
           }
           const cloned=cloneNodeData(block)
