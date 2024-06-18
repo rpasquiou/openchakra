@@ -152,6 +152,9 @@ MODELS.forEach(model => {
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
   declareVirtualField({model, field: 'is_template', instance: 'Boolean'})
+  declareVirtualField({model, field: 'search_text', instance: 'String', requires: 'code,name',
+    dbFilter: value => ({$or:[{name: value}, {code: value}]}),
+  })
 })
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})

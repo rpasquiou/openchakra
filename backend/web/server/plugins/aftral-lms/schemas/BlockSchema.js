@@ -133,10 +133,6 @@ const BlockSchema = new Schema({
   resources_progress: {
     type: Number,
   },
-  search_text: {
-    type: String,
-    get: function() {return `${this.name} ${this.code}`}
-  },
   _locked: {
     type: Boolean,
     default: false,
@@ -187,6 +183,10 @@ BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
 
 BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.origin ? this.origin.children : this.actual_children
+})
+
+BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
+  return `${this.name} ${this.code}`
 })
 
 BlockSchema.index(
