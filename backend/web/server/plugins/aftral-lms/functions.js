@@ -151,6 +151,7 @@ MODELS.forEach(model => {
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
+  declareVirtualField({model, field: 'is_template', instance: 'Boolean'})
 })
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
