@@ -8,7 +8,8 @@ const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'aftral-lms' : `test${moment().unix()}`
 const DROP=!ORIGINAL_DB
 
-const ROOT = path.join(__dirname, './data/Ressources')
+// const ROOT = path.join(__dirname, './data/Ressources')
+const ROOT='/home/seb/Téléchargements/resources'
 
 jest.setTimeout(120000)
 

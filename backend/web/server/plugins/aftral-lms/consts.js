@@ -37,7 +37,7 @@ const RESOURCE_TYPE={
   [RESOURCE_TYPE_VISIO]:"Classe virtuelle",
   [RESOURCE_TYPE_PDF]:"Pdf",
   [RESOURCE_TYPE_WORD]:"Word",
-  [RESOURCE_TYPE_EXCEL]:"Word",
+  [RESOURCE_TYPE_EXCEL]:"Excel",
   [RESOURCE_TYPE_PPT]:"Powerpoint",
   [RESOURCE_TYPE_VIDEO]:"Video",
   [RESOURCE_TYPE_QUIZZ]:"Quizz",
