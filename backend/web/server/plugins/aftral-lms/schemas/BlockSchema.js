@@ -189,8 +189,8 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
   return `${this.name} ${this.code}`
 })
 
-BlockSchema.index(
-  { name: 1},
-  { unique: true, message: 'Un menu existe déjà pour ce repas' });
+// BlockSchema.index(
+//   { name: 1},
+//   { unique: true, message: 'Un bkoc de même nom existe déjà' });
 
 module.exports = BlockSchema
