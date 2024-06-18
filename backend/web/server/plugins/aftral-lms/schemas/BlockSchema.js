@@ -154,6 +154,15 @@ const BlockSchema = new Schema({
   annotation: {
     type: String,
   },
+  access_condition: {
+    type: Boolean,
+    set: function(v) {
+      if (!this.origin) {
+        throw new Error(`La condition d'accès n'est possible que si ce bloc a un parent`)
+      }
+      return v
+    }
+  },
 
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
