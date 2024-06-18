@@ -282,10 +282,21 @@ export const ACTIONS = {
       return comp
     }).filter(c => !!c)
     const actualComponentIds=components.map(c => c.getAttribute('id'))
-    const body = Object.fromEntries(actualComponentIds.map(id => {
-      return [getComponentAttribute(id, level), getComponentValue(id, level)||null]
-    }))
-
+    const valueEntries = actualComponentIds.map(id => {
+      return [getComponentAttribute(id, level), getComponentValue(id, level) || null]
+    })
+    const body = {}
+    // Fill body. Duplicated keys are inserted only if value is not null/undefined
+    valueEntries.forEach(([key, value]) => {
+      if (key in body) {
+        if (!!value) {
+          body[key]=value
+        }
+      }
+      else {
+        body[key]=value
+      }
+    })
     const bodyJson=lodash.mapValues(body, v => JSON.stringify(v))
     const entityExists=!!dataSource?._id
     const httpAction=entityExists ? axios.put : axios.post
