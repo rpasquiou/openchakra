@@ -60,7 +60,7 @@ const withDynamicSelect = Component => {
       if (setComponentValue) {
         setComponentValue(props.id, value)
       }
-      if (!noautosave) {
+      if (!!dataSource && !noautosave) {
         ACTIONS.putValue({
           context: dataSource?._id,
           value: value,
@@ -108,12 +108,13 @@ const withDynamicSelect = Component => {
           isMulti={isMulti}
           options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
+          onBlur={props.reload}
         />
       )
     }
 
     return (
-      <Component {...props} value={internalValue} onChange={onChange} >
+      <Component {...props} value={internalValue} onChange={onChange} onBlur={props.reload}>
         <option style={{...props}} value={undefined}></option>
         {options.map(opt => (<option style={{...props}} key={opt.key} value={opt.value}>{opt.label}</option>))}
       </Component>
