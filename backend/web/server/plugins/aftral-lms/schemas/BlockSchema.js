@@ -133,6 +133,10 @@ const BlockSchema = new Schema({
   resources_progress: {
     type: Number,
   },
+  search_text: {
+    type: String,
+    get: function() {return `${this.name} ${this.code}`}
+  },
   _locked: {
     type: Boolean,
     default: false,
