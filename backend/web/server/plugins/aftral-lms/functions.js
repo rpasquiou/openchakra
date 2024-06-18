@@ -104,6 +104,7 @@ const onSpentTimeChanged = async ({blockId, user}) => {
 
 const onBlockCountChange = async blockId => {
   const topLevels=await getSessionBlocks(blockId)
+  console.log(`top levels are`, topLevels)
   await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
   return blockId
 }
@@ -371,7 +372,7 @@ const cloneAndLock = blockId => {
 const getSessionBlocks = async session_id => {
   const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
   if (lodash.isEmpty(parents)) {
-    return session_id
+    return []
   }
   return Promise.all(parents.map(p => getSessionBlocks(p._id)))
     .then(res => lodash.flattenDeep(res))
