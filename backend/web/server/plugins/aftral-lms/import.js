@@ -55,6 +55,7 @@ const importResources = async (root_path, recursive) => {
     resource_type: t[3]
   }))
   const userId=(await User.findOne({role: ROLE_CONCEPTEUR}))?._id
+  console.log('importing', records.length, 'resources')
   return importData({model: 'resource', data: records, mapping: RESOURCE_MAPPING(userId), identityKey: RESOURCE_KEY, migrationKey: RESOURCE_KEY})
 }
 
