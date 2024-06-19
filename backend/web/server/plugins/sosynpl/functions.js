@@ -165,6 +165,12 @@ FREELANCE_MODELS.forEach(model => {
     const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
     declareVirtualField({model, field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
   })
+  declareVirtualField({model, field: 'sent_applications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'application' }
+    },
+  })
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
