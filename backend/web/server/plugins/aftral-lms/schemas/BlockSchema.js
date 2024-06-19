@@ -159,7 +159,10 @@ const BlockSchema = new Schema({
       return v
     }
   },
-
+  // Annotation set by trainee
+  success_message: {
+    type: String,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
