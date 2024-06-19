@@ -15,6 +15,7 @@ const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require(".
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
 const { computeSuggestedFreelances } = require("./search");
+const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 
 // TODO move in DB migration
@@ -270,6 +271,7 @@ declareVirtualField({model: 'application', field: 'latest_quotations', instance:
     options: { ref: 'quotation' }
   }
 })
+declareVirtualField({model: 'application', field: 'serial_number', requires: '_counter', instance: 'String'})
 /** Application end */
 
 /** Announce suggestion start */
@@ -366,7 +368,11 @@ const preCreate = async ({model, params, user}) => {
     return { model, params, user, skip_validation: true }
   }
   if (model=='application') {
-    params.announce=params.announce || params.parent
+    const parentModel=await getModel(params.parent)
+    if (parentModel=='announceSuggestion') {
+      params.parent=(await AnnounceSugggestion.findById(params.parent))?.announce?._id
+    }
+    params.announce=params.parent
     params.freelance = params.freelance || user._id
     return { model, params, user, skip_validation: true}
   }
