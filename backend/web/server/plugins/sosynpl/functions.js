@@ -289,6 +289,7 @@ declareVirtualField({model: 'quotation', field: 'details', instance: 'Array', mu
 declareVirtualField({model: 'quotation', field: 'ht_total', instance: 'Number', requires: 'details.ht_total'})
 declareVirtualField({model: 'quotation', field: 'ttc_total', instance: 'Number', requires: 'details.ttc_total'})
 declareVirtualField({model: 'quotation', field: 'vat_total', instance: 'Number', requires: 'details.vat_total'})
+declareVirtualField({model: 'quotation', field: 'quantity_total', instance: 'Number', requires: 'details.quantity'})
 declareVirtualField({model: 'quotation', field: 'net_revenue', instance: 'Number', requires: 'ttc_total'})
 declareVirtualField({model: 'quotation', field: 'serial_number', requires: '_counter', instance: 'String'})
 declareEnumField({model: 'quotation', field: 'status', instance: 'String', enumValues: QUOTATION_STATUS})
