@@ -242,12 +242,12 @@ declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATIO
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
 declareVirtualField({model: 'announce', field: 'status', enumValues: ANNOUNCE_STATUS, requires: 'publication_date'})
-declareVirtualField({model: 'announce', field: 'applications', instance: 'Array', multiple: true,
+declareVirtualField({model: 'announce', field: 'received_applications', instance: 'Array', multiple: true,
 caster: {
   instance: 'ObjectID',
   options: { ref: 'application' }
 },})
-declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number'})
+declareVirtualField({model: 'announce', field: 'received_applications_count', instance: 'Number'})
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
 // SOFT SKILLS
