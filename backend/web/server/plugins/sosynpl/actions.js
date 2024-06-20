@@ -15,6 +15,7 @@ const {clone} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
+const { canStartMission, startMission } = require("./mission")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -130,6 +131,13 @@ const refuseAction = async ({value, reason}, user) => {
 }
 addAction('refuse', refuseAction)
 
+const acceptAction = async ({value, reason}, user) => {
+  const ok=await isActionAllowed({action:'accept', dataId: value, user})
+  if (!ok) {return false}
+  return startMission(value)
+}
+addAction('accept', acceptAction)
+
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   console.log('allow', action, dataId, actionProps)
@@ -230,6 +238,15 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     }
     await quotation.details[0].validate()
   }
+
+  if (action=='accept') {
+    const foundModel=await getModel(dataId)
+    if (foundModel!='application') {
+      throw new BadRequestError(`Ne peut être accepté`)
+    }
+    await canStartMission(dataId)
+  }
+
   return true
 }
 

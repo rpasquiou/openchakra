@@ -1077,5 +1077,13 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  accept: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'accept',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+  },
 
 }

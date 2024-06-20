@@ -309,6 +309,10 @@ declareVirtualField({model: 'quotationDetail', field: 'ttc_total', instance: 'Nu
 declareVirtualField({model: 'quotationDetail', field: 'vat_total', instance: 'Number', requires: 'ht_total,vat_rate'})
 /** QuotationDetail end */
 
+/** Mission start */
+declareVirtualField({model: 'mission', field: 'progress', instance: 'Number'})
+/** Mission end */
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
