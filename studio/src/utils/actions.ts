@@ -718,6 +718,11 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+  accept: {
+    label: 'Accept',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
