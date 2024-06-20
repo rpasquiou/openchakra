@@ -269,13 +269,13 @@ AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
   return this.publication_date ? ANNOUNCE_STATUS_ACTIVE : ANNOUNCE_STATUS_DRAFT
 })
 
-AnnounceSchema.virtual('applications', {
+AnnounceSchema.virtual('received_applications', {
   ref: 'application',
   foreignField: 'announce',
   localField: '_id',
 })
 
-AnnounceSchema.virtual('applications_count', {
+AnnounceSchema.virtual('received_applications_count', {
   ref: 'application',
   foreignField: 'announce',
   localField: '_id',
