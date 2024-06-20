@@ -12,7 +12,7 @@ const clone = async announce_id => {
     publication_date: undefined,
     selected_freelances: undefined,
     accepted_application: undefined,
-    _id: undefined, id: undefined})
+    _id: undefined, id: undefined, _counter: undefined})
   await cloned.save({validateBeforeSave: false})
   return cloned
 }

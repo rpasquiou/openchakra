@@ -62,6 +62,24 @@ QuotationSchema.virtual('net_revenue', DUMMY_REF).get(function() {
   return this.ttc_total*(1-FREELANCE_COMMISSION_RATE)
 })
 
+QuotationSchema.virtual('quantity_total', DUMMY_REF).get(function() {
+  return lodash(this.details).map(d => d.quantity).sum()
+})
+
+QuotationSchema.virtual('average_daily_rate_ht', DUMMY_REF).get(function() {
+  if (!this.ht_total || !this.quantity_total) {
+    return undefined
+  }
+  return this.ht_total/this.quantity_total
+})
+
+QuotationSchema.virtual('average_daily_rate_ttc', DUMMY_REF).get(function() {
+  if (!this.ttc_total || !this.quantity_total) {
+    return undefined
+  }
+  return this.ttc_total/this.quantity_total
+})
+
 // Manage announce serial number
 if (mongoose.connection) {
   autoIncrement.initialize(mongoose.connection) // Ensure autoincrement is initalized

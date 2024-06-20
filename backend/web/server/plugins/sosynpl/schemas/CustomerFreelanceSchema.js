@@ -413,6 +413,13 @@ CustomerFreelanceSchema.virtual('received_suggestions', {
   foreignField: 'freelance',
 })
 
+// Freelance : sent applications
+CustomerFreelanceSchema.virtual('sent_applications', {
+  ref: 'application',
+  localField: '_id',
+  foreignField: 'freelance',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 

@@ -15,6 +15,7 @@ const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require(".
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
 const { computeSuggestedFreelances } = require("./search");
+const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 
 // TODO move in DB migration
@@ -164,6 +165,12 @@ FREELANCE_MODELS.forEach(model => {
     const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
     declareVirtualField({model, field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
   })
+  declareVirtualField({model, field: 'sent_applications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'application' }
+    },
+  })
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -270,6 +277,7 @@ declareVirtualField({model: 'application', field: 'latest_quotations', instance:
     options: { ref: 'quotation' }
   }
 })
+declareVirtualField({model: 'application', field: 'serial_number', requires: '_counter', instance: 'String'})
 /** Application end */
 
 /** Announce suggestion start */
@@ -287,9 +295,12 @@ declareVirtualField({model: 'quotation', field: 'details', instance: 'Array', mu
 declareVirtualField({model: 'quotation', field: 'ht_total', instance: 'Number', requires: 'details.ht_total'})
 declareVirtualField({model: 'quotation', field: 'ttc_total', instance: 'Number', requires: 'details.ttc_total'})
 declareVirtualField({model: 'quotation', field: 'vat_total', instance: 'Number', requires: 'details.vat_total'})
+declareVirtualField({model: 'quotation', field: 'quantity_total', instance: 'Number', requires: 'details.quantity'})
 declareVirtualField({model: 'quotation', field: 'net_revenue', instance: 'Number', requires: 'ttc_total'})
 declareVirtualField({model: 'quotation', field: 'serial_number', requires: '_counter', instance: 'String'})
 declareEnumField({model: 'quotation', field: 'status', instance: 'String', enumValues: QUOTATION_STATUS})
+declareVirtualField({model: 'quotation', field: 'average_daily_rate_ht', instance: 'Number', requires: 'quantity_total,ht_total'})
+declareVirtualField({model: 'quotation', field: 'average_daily_rate_ttc', instance: 'Number', requires: 'quantity_total,ttc_total'})
 /** Quotation end */
 
 /** QuotationDetail start */
@@ -366,7 +377,11 @@ const preCreate = async ({model, params, user}) => {
     return { model, params, user, skip_validation: true }
   }
   if (model=='application') {
-    params.announce=params.announce || params.parent
+    const parentModel=await getModel(params.parent)
+    if (parentModel=='announceSuggestion') {
+      params.parent=(await AnnounceSugggestion.findById(params.parent))?.announce?._id
+    }
+    params.announce=params.parent
     params.freelance = params.freelance || user._id
     return { model, params, user, skip_validation: true}
   }
