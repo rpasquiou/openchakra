@@ -23,6 +23,22 @@ const QuotationSchema = new Schema({
     type: String,
     required: false,
   },
+  deliverable: {
+    type: String,
+    required: false,
+  },
+  detail: {
+    type: String,
+    required: false,
+  },
+  start_date: {
+    type: Date,
+    required: [true, `La date de début estimée est obligatoire`],
+  },
+  end_date: {
+    type: String,
+    required: [true, `La date de fin estimée est obligatoire`],
+  },
   // Refence for freelance internal use
   reference: {
     type: String,
