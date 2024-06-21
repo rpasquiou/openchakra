@@ -10,12 +10,12 @@ const { getModel, loadFromDb, idEqual } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT} = require("./consts")
 const {clone, canCancel} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
-const { canAcceptApplication, acceptApplication } = require("./application")
+const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -128,16 +128,16 @@ const refuseAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'refuse', dataId: value, user})
   if (!ok) {return false}
   // Ensure is announce or announceSuggestion
-  const model=await getModel(value, ['announce','announceSuggestion'])
+  const model=await getModel(value, ['application','announceSuggestion'])
   let filter={freelance: user._id}
-  if (model=='announce') {
-    filter={...filter, announce: value}
+  if (model=='application') {
+    return refuseApplication(value)
   }
   else { // Is announceSuggestion
     filter={_id: value}
+    const update={status: ANNOUNCE_SUGGESTION_REFUSED, refuse_date: moment(), refuse_reason: reason}
+    return AnnounceSuggestion.findOneAndUpdate(filter, update)
   }
-  const update={status: ANNOUNCE_SUGGESTION_REFUSED, refuse_date: moment(), refuse_reason: reason}
-  return AnnounceSuggestion.findOneAndUpdate(filter, update)
 }
 addAction('refuse', refuseAction)
 
@@ -273,6 +273,18 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     await canCancel({dataId, userId: user._id})
   }
 
+  if (action=='refuse') {
+    const foundModel=await getModel(value, ['announceSuggestion', 'application'])
+    if (model=='application') {
+      await canRefuseApplication(dataId)
+    }
+    else {
+      const sugg=await AnnounceSuggestion.findById(dataId)
+      if (!(sugg.status==ANNOUNCE_SUGGESTION_SENT)) {
+        throw new ForbiddenError(`La suggestion ne peut être refusée`)
+      }
+    }
+  }
   return true
 }
 

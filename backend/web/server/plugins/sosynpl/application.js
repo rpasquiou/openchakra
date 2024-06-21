@@ -3,7 +3,7 @@ const { loadFromDb } = require('../../utils/database')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const Mission = require('../../models/Mission')
 const Application = require('../../models/Application')
-const { APPLICATION_STATUS_REFUSED, REFUSE_REASON_PROVIDED, APPLICATION_STATUS_ACCEPTED } = require('./consts')
+const { APPLICATION_STATUS_REFUSED, REFUSE_REASON_PROVIDED, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, APPLICATION_STATUS } = require('./consts')
 
 const canAcceptApplication = async applicationId => {
   const missionExists = await Mission.exists({ application: applicationId })
@@ -40,6 +40,17 @@ const acceptApplication = async applicationId => {
 
 }
 
+const canRefuseApplication = async applicationId => {
+  const application=await Application.findById(applicationId)
+  if (application.status==APPLICATION_STATUS_SENT) {
+    throw new ForbiddenError(`La candidature ne peut être refuse:${APPLICATION_STATUS[application.status]}`)
+  }
+}
+
+const refuseApplication = async applicationId => {
+  return Application.findByIdAndUpdate(applicationId, {status: APPLICATION_STATUS_REFUSED, refuse_date: moment()})
+}
+
 module.exports = {
-  canAcceptApplication, acceptApplication,
+  canAcceptApplication, acceptApplication, canRefuseApplication, refuseApplication
 }
