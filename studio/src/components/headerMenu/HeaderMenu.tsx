@@ -42,13 +42,13 @@ const HeaderMenu = () => {
       <CustomMenuButton
         // rightIcon={<ChevronDownIcon path="" />}
         size="xs"
-        variant="ghost"
-        color={'white'}
+        variant="help"
+        color="#00bf91"
         _hover={{
-          backgroundColor: 'teal.500',
+          backgroundColor: '#00bf91',
         }}
         _focus={{
-          backgroundColor: 'teal.500',
+          backgroundColor: '#00bf91',
         }}
       >
         <img src="/icons/editor.svg" height={30} alt="" />

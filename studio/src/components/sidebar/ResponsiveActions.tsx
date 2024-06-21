@@ -51,7 +51,7 @@ const ResponsiveActions = () => {
               w={'38px'}
               h={'38px'}
               borderRadius="full"
-              bg={isChecked ? '#fccb85' : 'gray.200'}
+              bg={isChecked ? '#ffaf66' : '#f4f4f4'}
             >
               <Image
                 p={'0.5rem'}

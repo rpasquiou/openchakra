@@ -314,18 +314,18 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
   if (model == 'adminDashboard') {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
-      return Promise.resolve({ model, fields, id, data: [] })
+      return Promise.resolve({ model, fields, id, params, data: [] })
     }
-    id= params['filter.company']
-    if (user.role == ROLE_RH) {
-      id = user.company._id
-    }
-    const company = params['filter.company'] ? params['filter.company'] : undefined
+    let company = params['filter.company'] ? params['filter.company'] : undefined
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
+    id= params['filter.company']
+    if (user.role == ROLE_RH) {
+      company = user.company._id
+    }
     return computeStatistics({ fields, company, start_date, end_date, diet})
-      .then(stats => ({ model, fields, id, data: [stats] }))
+      .then(stats => ({ model, fields, id, params, data: [stats] }))
   }
 
   if (model=='billing') {

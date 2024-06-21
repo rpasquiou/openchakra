@@ -66,7 +66,7 @@ const Menu = () => {
           <img
             className="logo"
             src="/images/wappizyLogo.svg"
-            width={150}
+            width={175}
             alt="Logo"
           />
           <ul className="menu">
@@ -119,8 +119,8 @@ const Menu = () => {
 const StyledMenu = styled.div<activemenu>`
   position: relative;
   --panel-width: 300px;
-  --primary-color: #5bbdc5;
-  --secondary-color: rgb(20, 19, 37);
+  --primary-color: #F4F4F4;
+  --secondary-color: #2e2e2e;
 
   .leftpanel {
     height: 100%;
@@ -142,7 +142,8 @@ const StyledMenu = styled.div<activemenu>`
   }
 
   .highlight {
-    background-color: var(--primary-color);
+    background-color: #9186fc;
+    color: #2e2e2e;
   }
 
   .menu {
@@ -174,7 +175,7 @@ const StyledMenu = styled.div<activemenu>`
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: white;
+    color: #f4f4f4;
   }
 
   li img {
@@ -208,13 +209,13 @@ const StyledMenu = styled.div<activemenu>`
 
   .sidebar {
     grid-area: sidebar;
-    color: white;
+    color: #2e2e2e;
   }
 
   .buildermode {
     margin-left: -2rem;
     z-index: 1;
-    color: white;
+    color: #2e2e2e;
     position: absolute;
     top: 45%;
     width: 55px;
