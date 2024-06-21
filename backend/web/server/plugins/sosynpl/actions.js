@@ -200,6 +200,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
         throw new BadRequestError(`La candidature a déjà été publiée`)
       }
       const firstQuotation=application.quotations[0]
+      await firstQuotation.validate()
       if (lodash.isEmpty(firstQuotation)) {
         throw new BadRequestError(`Le devis est obligatoire`)
       }
