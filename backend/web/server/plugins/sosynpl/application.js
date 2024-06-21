@@ -44,13 +44,16 @@ const acceptApplication = async applicationId => {
 
 const canRefuseApplication = async applicationId => {
   const application=await Application.findById(applicationId)
-  if (application.status==APPLICATION_STATUS_SENT) {
-    throw new ForbiddenError(`La candidature ne peut être refuse:${APPLICATION_STATUS[application.status]}`)
+  if (application.status!=APPLICATION_STATUS_SENT) {
+    throw new ForbiddenError(`La candidature ne peut être refusée:${APPLICATION_STATUS[application.status]}`)
   }
 }
 
 const refuseApplication = async applicationId => {
-  return Application.findByIdAndUpdate(applicationId, {status: APPLICATION_STATUS_REFUSED, refuse_date: moment()})
+  const application=await Application.findById(applicationId)
+  application.status=APPLICATION_STATUS_REFUSED
+  application.refuse_date=moment()
+  return application.save()
 }
 
 module.exports = {
