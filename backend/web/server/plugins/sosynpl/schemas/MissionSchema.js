@@ -10,6 +10,16 @@ const MissionSchema = new Schema({
     ref: 'application',
     required: [true, `La candidature est obligatoire`],
   },
+  customer: {
+    type: Schema.Types.ObjectId,
+    ref: 'application',
+    required: [true, `Le client est obligatoire`],
+  },
+  freelance: {
+    type: Schema.Types.ObjectId,
+    ref: 'application',
+    required: [true, `Le freelance est obligatoire`],
+  },
   title: {
     type: String,
     required: [true,  `Le nom de mission est obligatoire`],

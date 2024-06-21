@@ -15,7 +15,7 @@ const {clone, canCancel} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
-const { canStartMission, startMission } = require("./mission")
+const { canAcceptApplication, acceptApplication } = require("./application")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -144,7 +144,7 @@ addAction('refuse', refuseAction)
 const acceptApplicationAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'accept', dataId: value, user})
   if (!ok) {return false}
-  return startMission(value)
+  return acceptApplication(value)
 }
 addAction('accept', acceptApplicationAction)
 
@@ -262,7 +262,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (foundModel!='application') {
       throw new BadRequestError(`Ne peut être accepté`)
     }
-    await canStartMission(dataId)
+    await canAcceptApplication(dataId)
   }
 
   if (action=='alle_cancel_mission') {
