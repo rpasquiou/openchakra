@@ -3,7 +3,7 @@ const { loadFromDb } = require('../../utils/database')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const Mission = require('../../models/Mission')
 const Application = require('../../models/Application')
-const { APPLICATION_STATUS_REFUSED, REFUSE_REASON_PROVIDED, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, APPLICATION_STATUS } = require('./consts')
+const { APPLICATION_STATUS_REFUSED, REFUSE_REASON_PROVIDED, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, APPLICATION_STATUS, ANNOUNCE_STATUS_PROVIDED } = require('./consts')
 
 // TODO: customer & freelance must have the required documents
 const canAcceptApplication = async applicationId => {
@@ -30,6 +30,8 @@ const acceptApplication = async applicationId => {
   application.status = APPLICATION_STATUS_ACCEPTED
   application.accept_date = moment()
   await application.save()
+  application.announce.status=ANNOUNCE_STATUS_PROVIDED
+  await application.announce.save()
   console.log(application)
   return Mission.create({
     title: application.announce.title,
