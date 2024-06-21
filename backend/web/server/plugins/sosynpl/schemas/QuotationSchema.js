@@ -106,6 +106,10 @@ QuotationSchema.virtual('vat_customer_commission', DUMMY_REF).get(function() {
   return this.ht_customer_commission*SOSYNPL_COMMISSION_VAT_RATE
 })
 
+QuotationSchema.virtual('ttc_customer_total', DUMMY_REF).get(function() {
+  return this.ttc_total+this.ttc_customer_commission
+})
+
 QuotationSchema.virtual('quantity_total', DUMMY_REF).get(function() {
   return lodash(this.details).map(d => d.quantity).sum()
 })

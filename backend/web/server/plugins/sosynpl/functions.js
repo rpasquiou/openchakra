@@ -308,6 +308,7 @@ declareVirtualField({model: 'quotation', field: 'average_daily_rate_ttc', instan
 declareVirtualField({model: 'quotation', field: 'ht_customer_commission', instance: 'Number', requires: 'ht_total'})
 declareVirtualField({model: 'quotation', field: 'ttc_customer_commission', instance: 'Number', requires: 'ttc_total'})
 declareVirtualField({model: 'quotation', field: 'vat_customer_commission', instance: 'Number', requires: 'ht_customer_commission'})
+declareVirtualField({model: 'quotation', field: 'ttc_customer_total', instance: 'Number', requires: 'ttc_total,ttc_customer_commission'})
 /** Quotation end */
 
 

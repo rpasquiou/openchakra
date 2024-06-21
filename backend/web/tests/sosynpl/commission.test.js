@@ -35,9 +35,11 @@ describe('Test commission computing', () => {
       label: 'hop',
       vat_rate: 0.2,
     })
-    const fns=[() => Quotation.findById(quotation._id).populate('details'),
+    const fns=[
+      () => Quotation.findById(quotation._id).populate('details'),
       async() => (await loadFromDb({model: 'quotation', id: quotation._id, 
-      fields:['quantity_total','average_daily_rate_ht','average_daily_rate_ttc','ht_total','ttc_total','vat_total','ht_freelance_commission','ttc_freelance_commission','vat_freelance_commission','ttc_net_revenue','ht_net_revenue','ht_customer_commission','ttc_customer_commission','vat_customer_commission']}))[0]]
+        fields:['quantity_total','average_daily_rate_ht','average_daily_rate_ttc','ht_total','ttc_total','vat_total','ht_freelance_commission','ttc_freelance_commission','vat_freelance_commission','ttc_net_revenue','ht_net_revenue','ht_customer_commission','ttc_customer_commission','vat_customer_commission','ttc_customer_total']}))[0]
+    ]
     const test=fns.map(fn => fn()
       .then(loaded => {
         expect(loaded.quantity_total).toEqual(10)
@@ -54,6 +56,7 @@ describe('Test commission computing', () => {
         expect(loaded.ht_customer_commission).toEqual(30)
         expect(loaded.ttc_customer_commission).toEqual(36)
         expect(loaded.vat_customer_commission).toEqual(6)
+        expect(loaded.ttc_customer_total).toEqual(276)
       }))
     return Promise.all(test)
   })
