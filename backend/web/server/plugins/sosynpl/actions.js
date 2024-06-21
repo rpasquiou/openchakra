@@ -138,6 +138,13 @@ const acceptAction = async ({value, reason}, user) => {
 }
 addAction('accept', acceptAction)
 
+const sendQuotationAction = async ({value, reason}, user) => {
+  const ok=await isActionAllowed({action:'alle_send_quotation', dataId: value, user})
+  if (!ok) {return false}
+  return sendQuotation(value)
+}
+addAction('alle_send_quotation', sendQuotationAction)
+
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   console.log('allow', action, dataId, actionProps)

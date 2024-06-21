@@ -33,10 +33,11 @@ const QuotationSchema = new Schema({
   },
   start_date: {
     type: Date,
+    min: [() => moment(), `La mission ne peut débuter avant maintenant`],
     required: [true, `La date de début estimée est obligatoire`],
   },
   end_date: {
-    type: String,
+    type: Date,
     required: [true, `La date de fin estimée est obligatoire`],
   },
   // Refence for freelance internal use
