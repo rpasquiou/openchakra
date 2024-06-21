@@ -141,12 +141,12 @@ const refuseAction = async ({value, reason}, user) => {
 }
 addAction('refuse', refuseAction)
 
-const acceptAction = async ({value, reason}, user) => {
+const acceptApplicationAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'accept', dataId: value, user})
   if (!ok) {return false}
   return startMission(value)
 }
-addAction('accept', acceptAction)
+addAction('accept', acceptApplicationAction)
 
 const sendQuotationAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'alle_send_quotation', dataId: value, user})
@@ -270,7 +270,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (foundModel!='announce') {
       throw new BadRequestError(`Ne peut être annulé`)
     }
-    await canCancel({datdaId, user._id})
+    await canCancel({dataId, userId: user._id})
   }
 
   return true
