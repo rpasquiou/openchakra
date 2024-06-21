@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
 const {schemaOptions} = require('../../../utils/schemas')
-const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT } = require('../consts')
+const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT, APPLICATION_REFUSE_REASON, APPLICATION_STATUS_REFUSED } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -31,6 +31,11 @@ const ApplicationSchema = new Schema({
     enum: Object.keys(APPLICATION_STATUS),
     default: APPLICATION_STATUS_DRAFT,
     required: [true, `Le statut est obligatoire`],
+  },
+  refuse_reason: {
+    type: String,
+    enum: Object.keys(APPLICATION_REFUSE_REASON),
+    required: [function() { return this.status==APPLICATION_STATUS_REFUSED}, `La raison de refus est obligatoire`],
   },
   _counter: {
     type: Number,

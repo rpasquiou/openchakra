@@ -398,7 +398,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_cancel_mission: {
-    label: 'AE Cancel mission',
+    label: 'Cancel',
     options: {},
     next: ['openPage'],
   },

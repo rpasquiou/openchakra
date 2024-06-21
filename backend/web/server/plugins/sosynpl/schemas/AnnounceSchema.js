@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
-const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS, ANNOUNCE_STATUS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -258,15 +258,17 @@ const AnnounceSchema = new Schema({
   },
   _counter: {
     type: Number,
-  }
+  },
+  status: {
+    type: String,
+    enum: Object.keys(ANNOUNCE_STATUS),
+    default: ANNOUNCE_STATUS_DRAFT,
+    required: true,
+  },
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
   return lodash.isNil(this.budget) ? null : this.budget*(1+COMMISSION)
-})
-
-AnnounceSchema.virtual('status', DUMMY_REF).get(function() {
-  return this.publication_date ? ANNOUNCE_STATUS_ACTIVE : ANNOUNCE_STATUS_DRAFT
 })
 
 AnnounceSchema.virtual('received_applications', {

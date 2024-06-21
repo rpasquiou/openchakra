@@ -10,8 +10,8 @@ const { getModel, loadFromDb, idEqual } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT} = require("./consts")
-const {clone} = require('./announce')
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE} = require("./consts")
+const {clone, canCancel} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
@@ -87,6 +87,7 @@ const publishApplication = async ({value}, user) => {
 const publishAnnounce = async ({value}, user) => {
   const announce=await Announce.findById(value)
   announce.publication_date=moment()
+  announce.status=ANNOUNCE_STATUS_ACTIVE
   // Save also validates the model
   await announce.save()
   // If selected freelances, create announce_suggesitons and send mails
@@ -105,6 +106,15 @@ const publishAnnounce = async ({value}, user) => {
   return announce
 }
 addAction('publish', publishAction)
+
+
+const cancelAnnounceAction = async ({value}, user) => {
+  const ok=await isActionAllowed({action:'alle_cancel_mission', dataId: value, user})
+  if (!ok) {return false}
+  return cancelAnnounceAction(({dataId: value}))
+}
+
+addAction('alle_cancel_mission', cancelAnnounceAction)
 
 const cloneAction = async ({value}, user) => {
   const ok=await isActionAllowed({action:'clone', dataId: value, user})
@@ -253,6 +263,14 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       throw new BadRequestError(`Ne peut être accepté`)
     }
     await canStartMission(dataId)
+  }
+
+  if (action=='alle_cancel_mission') {
+    const foundModel=await getModel(dataId)
+    if (foundModel!='announce') {
+      throw new BadRequestError(`Ne peut être annulé`)
+    }
+    await canCancel({datdaId, user._id})
   }
 
   return true

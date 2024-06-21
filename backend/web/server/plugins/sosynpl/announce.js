@@ -1,5 +1,8 @@
 const Announce=require('../../models/Announce')
 const LanguageLevel=require('../../models/LanguageLevel')
+const { idEqual } = require('../../utils/database')
+const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
+const { ANNOUNCE_STATUS_CANCELED, APPLICATION_STATUS_REFUSED, REFUSE_REASON_CANCELED } = require('./consts')
 
 const clone = async announce_id => {
   const origin=await Announce.findById(announce_id)
@@ -17,6 +20,32 @@ const clone = async announce_id => {
   return cloned
 }
 
+// Announce can be cancelled if the user is the publisher && no mission exists
+const canCancel = async ({dataId, userId}) => {
+  const announce=await Announce.findById(dataId).populate('received_applications')
+  if (!idEqual(userId, announce.user)) {
+    throw new ForbiddenError(`Vous n'avez pas le droit d'annuler cette annonce`)
+  }
+  const missionExists=await Mission.exists({application: {$in: announce.received_applications}})
+  if (missionExists) {
+    throw new BadRequestError(`Une mission est déjà en cours`)
+  }
+}
+
+const cancelAnnounce = async ({dataId}) => {
+  const announce=await Announce.findById(dataId, {status: ANNOUNCE_STATUS_CANCELED}).populate('applications')
+  if (!announce) {
+    throw new NotFoundError( `Announce introuvable`)
+  }
+  announce.status=ANNOUNCE_STATUS_CANCELED
+  await announce.save()
+  await Promise.all(announce.applications.map(a => {
+    a.status=APPLICATION_STATUS_REFUSED
+    a.refuse_reason=REFUSE_REASON_CANCELED
+    return a.save()
+  }))
+}
+
 module.exports={
-  clone,
+  clone, canCancel, cancelAnnounce,
 }
