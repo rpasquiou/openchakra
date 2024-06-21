@@ -169,7 +169,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (applicationExists) {
       throw new ForbiddenError(`Vous avez déjà envoyé une proposition pour cette annonce`)
     }
-    const annouce=await Announce.findById(dataId)
+    const announce=await Announce.findById(dataId)
     if (!(announce.status==ANNOUNCE_STATUS_ACTIVE)) {
       throw new ForbiddenError(`Cette annonce n'est pas active`)
     }
