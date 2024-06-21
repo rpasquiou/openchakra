@@ -5,6 +5,7 @@ const Mission = require('../../models/Mission')
 const Application = require('../../models/Application')
 const { APPLICATION_STATUS_REFUSED, REFUSE_REASON_PROVIDED, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, APPLICATION_STATUS } = require('./consts')
 
+// TODO: customer & freelance must have the required documents
 const canAcceptApplication = async applicationId => {
   const missionExists = await Mission.exists({ application: applicationId })
   if (missionExists) {
@@ -19,6 +20,7 @@ const canAcceptApplication = async applicationId => {
   }
 }
 
+// TODO: generate contracts on mission creation
 const acceptApplication = async applicationId => {
   const application = await Application.findById(applicationId).populate('announce').populate('latest_quotations')
   await Application.updateMany(

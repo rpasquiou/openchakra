@@ -1,3 +1,4 @@
+const moment=require('moment')
 const Announce=require('../../models/Announce')
 const LanguageLevel=require('../../models/LanguageLevel')
 const Mission = require('../../models/Mission')
@@ -34,15 +35,16 @@ const canCancel = async ({dataId, userId}) => {
 }
 
 const cancelAnnounce = async ({dataId}) => {
-  const announce=await Announce.findById(dataId, {status: ANNOUNCE_STATUS_CANCELED}).populate('applications')
+  const announce=await Announce.findById(dataId).populate('received_applications')
   if (!announce) {
     throw new NotFoundError( `Announce introuvable`)
   }
   announce.status=ANNOUNCE_STATUS_CANCELED
-  await announce.save()
-  await Promise.all(announce.applications.map(a => {
+  await announce.save().catch(console.error)
+  await Promise.all(announce.received_applications.map(a => {
     a.status=APPLICATION_STATUS_REFUSED
     a.refuse_reason=REFUSE_REASON_CANCELED
+    a.refuse_date=moment()
     return a.save()
   }))
 }

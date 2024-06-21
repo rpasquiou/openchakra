@@ -11,7 +11,7 @@ const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
 const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT} = require("./consts")
-const {clone, canCancel} = require('./announce')
+const {clone, canCancel, cancelAnnounce} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
@@ -111,7 +111,7 @@ addAction('publish', publishAction)
 const cancelAnnounceAction = async ({value}, user) => {
   const ok=await isActionAllowed({action:'alle_cancel_mission', dataId: value, user})
   if (!ok) {return false}
-  return cancelAnnounceAction(({dataId: value}))
+  return cancelAnnounce(({dataId: value}))
 }
 
 addAction('alle_cancel_mission', cancelAnnounceAction)
