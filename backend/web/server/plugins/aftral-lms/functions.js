@@ -69,10 +69,10 @@ MODELS.forEach(model => {
     dbFilter: value => ({$or:[{name: value}, {code: value}]}),
   })
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
-})
+  declareVirtualField({model, field: 'has_homework', type: 'Boolean'})
+  declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
+  })
 
-declareVirtualField({model: 'resource', field: 'has_homework', type: 'Boolean'})
-declareEnumField({model: 'resource', field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})

@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS, BLOCK_STATUS_TO_COME, RESOURCE_TYPE, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE}=require('../consts')
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
@@ -168,6 +168,35 @@ const BlockSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'badge',
   }],
+  achievement_rule: {
+    type: String,
+    enum: Object.keys(ACHIEVEMENT_RULE),
+    require: false,
+  },
+  success_note: {
+    type: Number,
+    required: [
+      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
+      `La note de réussite est obligatoire`
+    ],
+  },
+  success_scale: {
+    type: Boolean,
+    required: [
+      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !this.success_note}, 
+      `Le mode barème est obligatoire s'il n'y a pas de note de réussite`
+    ],
+  },
+  // computed
+  homeworks: [{
+    type: Schema.Types.ObjectId,
+    ref: 'homework',
+  }],
+  max_attempts: {
+    type: Number,
+    set: v => v || null,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
@@ -196,6 +225,17 @@ BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).
 BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return `${this.name} ${this.code}`
 })
+
+BlockSchema.virtual('has_homework').get(function(value) {
+  if (this.achievement_rule==ACHIEVEMENT_RULE_HOMEWORK) {
+    return true
+  }
+  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type==RESOURCE_TYPE_SCORM) {
+    return true
+  }
+  return false
+})
+
 
 // BlockSchema.index(
 //   { name: 1},

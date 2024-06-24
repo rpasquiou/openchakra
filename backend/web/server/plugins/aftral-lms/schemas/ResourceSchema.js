@@ -14,10 +14,6 @@ const ResourceSchema = new Schema({
     ref: 'user',
     required: [true, 'Le créateur est obligatoire'],
   },
-  _evaluation: {
-    type: Boolean,
-    required: false,
-  },
   optional: {
     type: Boolean,
     default: false,
@@ -26,53 +22,6 @@ const ResourceSchema = new Schema({
   mine: {
     type: Boolean,
   },
-  achievement_rule: {
-    type: String,
-    enum: Object.keys(ACHIEVEMENT_RULE),
-    require: false,
-  },
-  success_note: {
-    type: Number,
-    required: [
-      function() {this.ACHIEVEMENT_RULE==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
-      `La note de réussite est obligatoire`
-    ],
-  },
-  success_scale: {
-    type: Boolean,
-    required: [
-      function() {this.ACHIEVEMENT_RULE==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !this.success_note}, 
-      `Le mode barèmùe est obligatoire s'il n'y a pas de note de réussite`
-    ],
-  },
-  // computed
-  homeworks: [{
-    type: Schema.Types.ObjectId,
-    ref: 'homework',
-  }],
-  max_attempts: {
-    type: Number,
-    set: v => v || null,
-    required: false,
-  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
-
-ResourceSchema.virtual('evaluation').get(function(value) {
-  return this._evaluation
-})
-
-ResourceSchema.virtual('evaluation').set(function(value) {
-  this._evaluation=value
-})
-
-ResourceSchema.virtual('has_homework').get(function(value) {
-  if (this.achievement_rule==ACHIEVEMENT_RULE_HOMEWORK) {
-    return true
-  }
-  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type==RESOURCE_TYPE_SCORM) {
-    return true
-  }
-  return false
-})
 
 module.exports = ResourceSchema
