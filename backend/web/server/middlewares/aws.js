@@ -4,6 +4,8 @@ const {THUMBNAILS_DIR} = require('../../../web/utils/consts')
 const fs=require('fs')
 const mime=require('mime-types')
 const path=require('path')
+const { isCompletionStatement } = require('@babel/types')
+const { isScorm, removeExtension } = require('../utils/filesystem')
 
 const s3 = new S3({
   region: process.env.S3_REGION,
@@ -55,6 +57,27 @@ const imageSrcSetPaths = (originalSrc, withDimension=true) => {
   return srcSet
 }
 
+const uploadFile =  document => {
+  return new Promise(async (resolve, reject) => {
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: document.filename,
+      Body: document.buffer,
+      ContentType: document.mimetype,
+      // ACL: 'public-read', // What's this ACL ?
+    }
+
+    await new Upload({
+      client: s3,
+      params,
+    }).done()
+      .then(res => resolve(res))
+      .catch(err => {
+        console.error(err)
+        return reject(err)
+      })
+  })
+}
 exports.sendFileToAWS = async (fullpath, type) => {
   const filename=path.join(process.env.S3_PROD_ROOTPATH, type, path.basename(fullpath))
   const contents=fs.readFileSync(fullpath)
@@ -106,8 +129,25 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
 
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
+  if (req.body.documents.length>1) {
+    throw new Error(`AWS today now one file max`)
+  }
+  let document=req.body.documents[0]
+  let documents=[document]
+  const scorm=await isScorm({buffer: documents[0].buffer})
+  if (!!scorm) {
+    const directory=removeExtension(document.filename)
+    documents=scorm.map(scormEntry => ({
+      filename: path.join(directory, scormEntry.entryName),
+      buffer: scormEntry.getData(),
+      mimeType: mime.lookup(scormEntry.entryName),
+    }))
+    const res=await Promise.all(documents.map(uploadFile))
+    req.body.result=res.filter(r => /\/story.html$/.test(r.Key))
+    return next()
+  }
 
-  const documentsToSend = req.body.documents.map(document => {
+  const documentsToSend = documents.map(document => {
 
     return new Promise(async(resolve, reject) => {
       const params = {
