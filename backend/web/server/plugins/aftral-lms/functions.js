@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -162,6 +162,7 @@ MODELS.forEach(model => {
 
 declareVirtualField({model: 'resource', field: 'has_homework', type: 'Boolean'})
 declareEnumField({model: 'resource', field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
+declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 
