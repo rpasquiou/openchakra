@@ -78,8 +78,8 @@ export const mediaWrapper = ({
       /></div>) || (null)
 
   const orgExt=getExtension(src.toLowerCase())
-  const ext = ['doc', 'docx'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
-
+  const ext = ['doc', 'docx', 'xls', 'xlsx'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+      
   switch (ext) {
     case 'mp4':
     case 'webm':
