@@ -4,15 +4,13 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
-const cron=require('node-cron')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
 const Resource = require('../../models/Resource')
 const Session = require('../../models/Session')
 const { BadRequestError } = require('../../utils/errors')
-const NodeCache=require('node-cache')
 const Message = require('../../models/Message')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const User = require('../../models/User')
@@ -23,106 +21,19 @@ require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks } = require('./resources')
-const ObjectId = mongoose.Types.ObjectId
-
-const NAMES_CACHE=new NodeCache()
+const { getBlockStatus } = require('./block')
+const { getBlockName } = require('./block')
+const { getFinishedResources } = require('./resources')
+const { getResourcesProgress } = require('./resources')
+const { updateBlockStatus } = require('./block')
+const { getResourceAnnotation } = require('./resources')
+const { setResourceAnnotation } = require('./resources')
+const { isResourceMine } = require('./resources')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
-const getBlockName = async blockId => {
-  let result=NAMES_CACHE.get(blockId.toString())
-  if (!result) {
-    const block=await Block.findById(blockId, {name:1, type:1})
-    result=`${block.type}-${block.name} ${blockId}`
-    NAMES_CACHE.set(blockId.toString(), result)
-  }
-  return result
-}
-
-const getFinishedResources = (userId, params, data) => {
-  return Duration.findOne({block: data._id, user: userId}, {finished_resources_count:1})
-    .then(duration => duration?.finished_resources_count || 0)
-}
-
-const getResourcesProgress = async (userId, params, data) => {
-  return Duration.findOne({block: data._id, user: userId}, {progress:1})
-    .then(duration => duration?.progress || 0)
-}
-
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const getBlockStatus = async (userId, params, data) => {
-  return Duration.findOne({block: data._id, user: userId}, {status:1})
-    .then(duration => duration?.status || null)
-}
-
-/** Update block status is the main function
- * It computes, for each block level:
- * - the FINISHED/CURRENT/TO_COME status
- * - the finished resources count
- * - the progress
- * Each block returns to its parent an object:
- * - duration : the time spent
- * - finished_resources_count: the number of finished resources
- */
-const updateBlockStatus = async ({blockId, userId}) => {
-  const name=await getBlockName(blockId)
-  const block=await Block.findById(blockId)
-  let durationDoc=await Duration.findOne({user: userId, block: blockId})
-  const hasToCompute=!!durationDoc
-  if (!durationDoc) {
-    const parent=await Block.findOne({actual_children: blockId})
-    const parentClosed=parent ? parent.closed : false
-    durationDoc= await Duration.create({user: userId, block: blockId, duration: 0, status: parentClosed ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME})
-  }
-  if (hasToCompute && block.type=='resource') {
-    await durationDoc.save().catch(console.error)
-    return durationDoc
-  }
-  const allDurations=await Promise.all(block.actual_children.map(child => updateBlockStatus({blockId: child._id, userId})))
-  if (hasToCompute) {
-    durationDoc.duration=lodash(allDurations).sumBy('duration')
-    durationDoc.finished_resources_count=lodash(allDurations).sumBy('finished_resources_count')
-    durationDoc.progress=durationDoc.finished_resources_count/block.resources_count
-    if (allDurations.every(d => d.status==BLOCK_STATUS_FINISHED)) {
-      durationDoc.status=BLOCK_STATUS_FINISHED
-    }
-    else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
-      durationDoc.status=BLOCK_STATUS_CURRENT
-    }
-    await durationDoc.save()
-      .catch(err =>  console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
-  }
-  return durationDoc
-}
-
-const onSpentTimeChanged = async ({blockId, user}) => {
-  const block=await Block.findById(blockId, {session:1})
-  const msg=`Update session time/status for ${await getBlockName(blockId)}`
-  const res=await updateBlockStatus({blockId: block.session[0]._id, userId: user._id})
-  return res
-}
-
-const onBlockCountChange = async blockId => {
-  const topLevels=await getSessionBlocks(blockId)
-  console.log(`top levels are`, topLevels)
-  await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
-  return blockId
-}
-
-const getResourceAnnotation = (userId, params, data) => {
-  return Duration.findOne({user: userId, block: data._id})
-    .then(duration => duration?.annotation)
-}
-
-const setResourceAnnotation = ({id, attribute, value, user}) => {
-  return Duration.updateOne({user: user, block: id}, {annotation: value})
-}
-
-const isResourceMine = (userId, params, data) => {
-  return Promise.resolve(idEqual(userId, data.creator._id))
-}
-  
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
@@ -425,8 +336,6 @@ const lockSession = async sessionId => {
 
 module.exports={
   lockSession,
-  onSpentTimeChanged,
-  onBlockCountChange,
   getSessionBlocks,
   computeBlocksCount,
 }

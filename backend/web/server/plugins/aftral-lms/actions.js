@@ -3,11 +3,10 @@ const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
 const Duration = require('../../models/Duration')
 const Resource = require('../../models/Resource')
-const { getModel, idEqual } = require('../../utils/database')
+const { idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const {lockSession, onSpentTimeChanged, getSessionBlocks, computeBlocksCount, onBlockCountChange } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
