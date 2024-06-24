@@ -104,9 +104,6 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(BLOCK_STATUS),
   },
-  achievement_rule: {
-    type: String,
-  },
   url: {
     type: String,
     required: [function() {return this.type=='resource' && !this.origin}, `L'url est obligatoire`],

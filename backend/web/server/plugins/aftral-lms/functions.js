@@ -4,7 +4,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE } = require('./consts')
 const cron=require('node-cron')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
@@ -22,6 +22,7 @@ require('../../models/Sequence')
 require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
+const { getUserHomeworks } = require('./resources')
 const ObjectId = mongoose.Types.ObjectId
 
 const NAMES_CACHE=new NodeCache()
@@ -156,7 +157,11 @@ MODELS.forEach(model => {
   declareVirtualField({model, field: 'search_text', instance: 'String', requires: 'code,name',
     dbFilter: value => ({$or:[{name: value}, {code: value}]}),
   })
+  declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
 })
+
+declareVirtualField({model: 'resource', field: 'has_homework', type: 'Boolean'})
+declareEnumField({model: 'resource', field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 
@@ -185,6 +190,9 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 const preCreate = ({model, params, user}) => {
   if (['resource'].includes(model)) {
     params.creator=params?.creator || user
+  }
+  if ('homework'==model) {
+    params.trainee=user
   }
   if (model=='post') {
     params.author=user

@@ -93,7 +93,7 @@ const createMemoryMulter = fileFilter => {
 }
 
 const isScorm = async ({buffer}) => {
-  let zip
+  let zip=null
   try { zip=new AdmZip(buffer)} catch { return false }
   const entry=zip.getEntries().find(e => e.entryName=='imsmanifest.xml')
   if (!entry) { return false}
