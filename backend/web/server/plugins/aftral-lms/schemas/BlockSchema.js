@@ -173,17 +173,24 @@ const BlockSchema = new Schema({
     enum: Object.keys(ACHIEVEMENT_RULE),
     require: false,
   },
-  success_note: {
+  success_note_min: {
     type: Number,
     required: [
       function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
-      `La note de réussite est obligatoire`
+      `La note de réussite minimale est obligatoire`
+    ],
+  },
+  success_note_max: {
+    type: Number,
+    required: [
+      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
+      `La note de réussite maximale est obligatoire`
     ],
   },
   success_scale: {
     type: Boolean,
     required: [
-      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !this.success_note}, 
+      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !(!!this.success_note_min || !!this.success_note_max)}, 
       `Le mode barème est obligatoire s'il n'y a pas de note de réussite`
     ],
   },

@@ -7,6 +7,7 @@ const { idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
+const { onBlockCountChange } = require('./block')
 
 const ACCEPTS={
   session: ['program'],
