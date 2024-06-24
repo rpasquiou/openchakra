@@ -32,7 +32,7 @@ import FormControl from '../inspector/controls/FormControl'
 import usePropsSelector from '../../hooks/usePropsSelector'
 
 //const FILTERABLE_COMPONENT_TYPES=['RadioGroup', 'Input']
-const FILTERABLE_COMPONENT_TYPES=['RadioGroup', 'Input', 'Select', 'Checkbox', 'IconCheck']
+const FILTERABLE_COMPONENT_TYPES=['RadioGroup', 'Input', 'Select']
 
 export const withFilters = Component => {
 
