@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE, SCALE}=require('../consts')
 
 const HomeworkSchema = new Schema({
   trainee: {
@@ -22,9 +22,14 @@ const HomeworkSchema = new Schema({
     type: String,
     required: false,
   },
-  // Note is set by the trainer
+  // Note or scale is set by the trainer
   note: {
     type: Number,
+    required: false,
+  },
+  scale: {
+    type: String,
+    enum: Object.keys(SCALE),
     required: false,
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})

@@ -33,8 +33,15 @@ const ResourceSchema = new Schema({
   success_note: {
     type: Number,
     required: [
-      function() {this.ACHIEVEMENT_RULE==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM}, 
+      function() {this.ACHIEVEMENT_RULE==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
       `La note de réussite est obligatoire`
+    ],
+  },
+  success_scale: {
+    type: Boolean,
+    required: [
+      function() {this.ACHIEVEMENT_RULE==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !this.success_note}, 
+      `Le mode barèmùe est obligatoire s'il n'y a pas de note de réussite`
     ],
   },
   // computed
