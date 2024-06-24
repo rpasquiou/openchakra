@@ -243,7 +243,7 @@ const filterDataUser = ({model, data, id, user}) => {
     data=data.filter(d => !d.origin)
     // Filter my sessions
     if (model=='session') {
-      data=data.filter(d => [...(d.trainers||[]), ...(d.trainees||[])].some(v => idEqual(v._id || v, user._id)))
+      data=data.filter(d => [...(d.trainers||[]), ...(d.trainees||[])].some(v => user.role==ROLE_CONCEPTEUR || idEqual(v._id || v, user._id)))
     }
     else if (model=='resource') {
       const resources_filter=user.role==ROLE_CONCEPTEUR ? r => (r.creator.role==ROLE_CONCEPTEUR && !r._locked)
