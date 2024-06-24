@@ -50,7 +50,7 @@ const ResourceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'homework',
   }],
-  attempt_count: {
+  max_attempts: {
     type: Number,
     set: v => v || null,
     required: false,
