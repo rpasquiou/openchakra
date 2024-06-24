@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE, ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM}=require('../consts')
+const { number } = require('yargs')
 
 const ResourceSchema = new Schema({
   shortName: {
@@ -49,6 +50,11 @@ const ResourceSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'homework',
   }],
+  attempt_count: {
+    type: Number,
+    set: v => v || null,
+    required: false,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.virtual('evaluation').get(function(value) {
