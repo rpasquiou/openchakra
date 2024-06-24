@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK}=require('../consts')
 const { formatDuration, convertDuration } = require('../../../../utils/text')
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
@@ -175,24 +175,12 @@ const BlockSchema = new Schema({
   },
   success_note_min: {
     type: Number,
-    required: [
-      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
-      `La note de réussite minimale est obligatoire`
-    ],
   },
   success_note_max: {
     type: Number,
-    required: [
-      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM} && !this.success_scale, 
-      `La note de réussite maximale est obligatoire`
-    ],
   },
   success_scale: {
     type: Boolean,
-    required: [
-      function() {this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM && !(!!this.success_note_min || !!this.success_note_max)}, 
-      `Le mode barème est obligatoire s'il n'y a pas de note de réussite`
-    ],
   },
   // computed
   homeworks: [{
@@ -243,6 +231,24 @@ BlockSchema.virtual('has_homework').get(function(value) {
   return false
 })
 
+// Validate Succes achievemnt
+BlockSchema.pre('validate', function(next) {
+  // If this is a type resource and achievement rule is success and this is not a scorm,
+  // must select between min/max notes and scale
+  console.log(`This:`, this)
+  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM) {
+    if (!this.success_scale) {
+      if (!this.success_note_min) {
+        return next(new Error(`La note minimale est obligatoire`))
+      }
+      if (!this.success_note_max) {
+        return next(new Error(`La note maximale est obligatoire`))
+      }
+    }
+  }
+
+  return next()
+})
 
 // BlockSchema.index(
 //   { name: 1},
