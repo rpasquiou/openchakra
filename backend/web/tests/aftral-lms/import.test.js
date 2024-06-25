@@ -9,9 +9,9 @@ const DBNAME=ORIGINAL_DB ? 'aftral-lms' : `test${moment().unix()}`
 const DROP=!ORIGINAL_DB
 
 // const ROOT = path.join(__dirname, './data/Ressources')
-const ROOT='/home/seb/Téléchargements/resources'
+const ROOT='/home/seb/Téléchargements/resources/Current'
 
-jest.setTimeout(120000)
+jest.setTimeout(10*60*1000)
 
 describe('Test imports', () => {
 

@@ -42,7 +42,7 @@ function setterTemplateOnly(attribute) {
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [function()  {return !this.origin}, `Le nom est obligatoire`],
+    required: [function()  {return !this?.origin}, `Le nom est obligatoire`],
     index: true,
     unique: true,
     get: getterTemplateFirst('name'),
@@ -106,13 +106,13 @@ const BlockSchema = new Schema({
   },
   url: {
     type: String,
-    required: [function() {return this.type=='resource' && !this.origin}, `L'url est obligatoire`],
+    required: [function() {return this?.type=='resource' && !this?.origin}, `L'url est obligatoire`],
     get: getterTemplateFirst('url'),
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    required: [function(){ return this.type=='resource' && !this.origin}, `Le type de ressource est obligatoire`],
+    required: [function(){ return this?.type=='resource' && !this?.origin}, `Le type de ressource est obligatoire`],
     get: getterTemplateFirst('resource_type'),
   },
   spent_time: {
@@ -235,7 +235,6 @@ BlockSchema.virtual('has_homework').get(function(value) {
 BlockSchema.pre('validate', function(next) {
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
-  console.log(`This:`, this)
   if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM) {
     if (!this.success_scale) {
       if (!this.success_note_min) {

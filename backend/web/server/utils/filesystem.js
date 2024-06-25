@@ -100,7 +100,11 @@ const isScorm = async ({buffer}) => {
   const contents=entry.getData().toString('utf-8')
   const imsmanifest = xml2js(contents, { compact: true })
   const scormVersion = imsmanifest?.manifest?._attributes?.version
-  return scormVersion ? zip.getEntries() : false
+  const mainResource = imsmanifest?.manifest?.resources?.resource?._attributes?.href
+  if (scormVersion && mainResource) {
+    return ({version: scormVersion, entrypoint: mainResource, entries: zip.getEntries()})
+  }
+  return false
 }
 
 const removeExtension = fullpath => {

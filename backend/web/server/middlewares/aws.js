@@ -6,6 +6,7 @@ const mime=require('mime-types')
 const path=require('path')
 const { isCompletionStatement } = require('@babel/types')
 const { isScorm, removeExtension } = require('../utils/filesystem')
+const { runPromisesWithDelay } = require('../utils/concurrency')
 
 const s3 = new S3({
   region: process.env.S3_REGION,
@@ -70,10 +71,11 @@ const uploadFile =  document => {
     await new Upload({
       client: s3,
       params,
+      queueSize: 4,
     }).done()
       .then(res => resolve(res))
       .catch(err => {
-        console.error(err)
+        console.error(params.Key, err)
         return reject(err)
       })
   })
@@ -137,13 +139,19 @@ exports.sendFilesToAWS = async(req, res, next) => {
   const scorm=await isScorm({buffer: documents[0].buffer})
   if (!!scorm) {
     const directory=removeExtension(document.filename)
-    documents=scorm.map(scormEntry => ({
+    documents=scorm.entries.map(scormEntry => ({
       filename: path.join(directory, scormEntry.entryName),
       buffer: scormEntry.getData(),
-      mimeType: mime.lookup(scormEntry.entryName),
+      mimetype: mime.lookup(scormEntry.entryName),
     }))
-    const res=await Promise.all(documents.map(uploadFile))
-    req.body.result=res.filter(r => /\/story.html$/.test(r.Key))
+    const res=await runPromisesWithDelay(documents.map(d => () => uploadFile(d)))
+    const nok=res.filter(r => r.status!='fulfilled')
+    if (nok.length>0) {
+      throw new Error(JSON.stringify(nok))
+    }
+    const {entrypoint}=scorm
+    const epRegex=new RegExp(`/${entrypoint}$`)
+    req.body.result=res.map(r => r.value).filter(r => epRegex.test(r.Key))
     return next()
   }
 
