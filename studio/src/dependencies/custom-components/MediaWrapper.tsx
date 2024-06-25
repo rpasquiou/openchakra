@@ -79,6 +79,16 @@ export const mediaWrapper = ({
 
   const orgExt=getExtension(src.toLowerCase())
   const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+  // TODO: must handle actual src with LMS system
+  // Preview for scorms
+  if (ext=='html') {
+    const parsedUrl = new URL(src)
+    // Replace the last part of the path with 'story.html'
+    const pathParts = parsedUrl.pathname.split('/')
+    pathParts[pathParts.length - 1] = 'story.html'
+    parsedUrl.pathname = pathParts.join('/')
+    src=parsedUrl.toString()
+  }
 
   switch (ext) {
     case 'mp4':
