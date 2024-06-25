@@ -69,9 +69,6 @@ const withDynamicSelect = Component => {
           .then(() => props.reload())
           .catch(err => console.error(err))
       }
-      if (props.onChange) {
-        
-      }
     }
 
     const chakraStyles={
@@ -99,22 +96,21 @@ const withDynamicSelect = Component => {
 
     if (isSearchable || isMulti) {
       const selValue=isMulti ?
-        options?.filter(opt => value.some(v => v==opt.key))
-        :
-        options?.find(opt => opt.key==value)
+      options?.filter(opt => internalValue.some(v => v==opt.key))
+      :
+      options?.find(opt => opt.key==internalValue)
       return (
         <Select {...props} onChange={onChange}
           value={selValue}
           isMulti={isMulti}
           options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
-          onBlur={props.reload}
         />
       )
     }
 
     return (
-      <Component {...props} value={internalValue} onChange={onChange} onBlur={props.reload}>
+      <Component {...props} value={internalValue} onChange={onChange}>
         <option style={{...props}} value={undefined}></option>
         {options.map(opt => (<option style={{...props}} key={opt.key} value={opt.value}>{opt.label}</option>))}
       </Component>
