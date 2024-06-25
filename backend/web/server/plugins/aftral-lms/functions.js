@@ -240,12 +240,6 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const filterDataUser = async ({model, data, id, user}) => {
-  // Return only ProductCode not already used in programes
-  if (model=='productCode') {
-    const programs=await Program.find({}, {codes:1})
-    const codes=lodash(programs).map('codes').flatten().uniqBy(v => v.toString()).value()
-    data=lodash(data).differenceBy(codes, v => v._id.toString()).value()
-  }
   if (MODELS.includes(model) && !id) {
     data=data.filter(d => !d.origin)
     // Filter my sessions
