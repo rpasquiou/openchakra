@@ -9,7 +9,11 @@ const ProgramSchema = new Schema({
     enum: Object.keys(PROGRAM_STATUS),
     default: PROGRAM_STATUS_DRAFT,
     required: [true, `Le status est obligatoire`],
-  }
+  },
+  codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode',
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ProgramSchema

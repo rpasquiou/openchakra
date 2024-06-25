@@ -18,6 +18,7 @@ const Post = require('../../models/Post')
 require('../../models/Module')
 require('../../models/Sequence')
 require('../../models/Search')
+const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks } = require('./resources')
@@ -238,7 +239,13 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 
 setPreprocessGet(preprocessGet)
 
-const filterDataUser = ({model, data, id, user}) => {
+const filterDataUser = async ({model, data, id, user}) => {
+  // Return only ProductCode not already used in programes
+  if (model=='productCode') {
+    const programs=await Program.find({}, {codes:1})
+    const codes=lodash(programs).map('codes').flatten().uniqBy(v => v.toString()).value()
+    data=lodash(data).differenceBy(codes, v => v._id.toString()).value()
+  }
   if (MODELS.includes(model) && !id) {
     data=data.filter(d => !d.origin)
     // Filter my sessions
