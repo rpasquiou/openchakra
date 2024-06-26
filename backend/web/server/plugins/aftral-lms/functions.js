@@ -22,7 +22,7 @@ const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks } = require('./resources')
-const { getBlockStatus } = require('./block')
+const { getBlockStatus, setParentSession, computeBlocksCount } = require('./block')
 const { getBlockName } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
@@ -273,36 +273,6 @@ const cloneAndLock = blockId => {
     })
   }
 
-const getSessionBlocks = async session_id => {
-  const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
-  if (lodash.isEmpty(parents)) {
-    return []
-  }
-  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
-    .then(res => lodash.flattenDeep(res))
-    .then(res => res.filter(v => !!v))
-  return result
-}
-
-const setParentSession = async (session_id) => {
-  const allBlocks=await getSessionBlocks(session_id)
-  return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
-}
-
-const computeBlocksCount = async blockId => {
-  const block=await Block.findById(blockId).populate(['children', 'actual_chlidren', 'origin'])
-  if (block.type=='resource') {
-    block.resources_count=1
-    await block.save()
-    return 1
-  }
-  const name=await getBlockName(blockId)
-  const childrenCount=await Promise.all(block.children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
-  block.resources_count=childrenCount
-  await block.save()
-  return childrenCount
-}
-
 const lockSession = async sessionId => {
   console.log('locking session', sessionId)
   const session=await Block.findById(sessionId)
@@ -320,6 +290,4 @@ const lockSession = async sessionId => {
 
 module.exports={
   lockSession,
-  getSessionBlocks,
-  computeBlocksCount,
 }

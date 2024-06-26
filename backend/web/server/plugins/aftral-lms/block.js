@@ -3,9 +3,24 @@ const NodeCache=require('node-cache')
 const Block = require("../../models/Block");
 const Duration = require("../../models/Duration");
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
-const { getSessionBlocks, computeBlocksCount } = require('./functions');
 
 const NAMES_CACHE=new NodeCache()
+
+const setParentSession = async (session_id) => {
+  const allBlocks=await getSessionBlocks(session_id)
+  return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
+}
+
+const getSessionBlocks = async session_id => {
+  const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
+  if (lodash.isEmpty(parents)) {
+    return []
+  }
+  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
+    .then(res => lodash.flattenDeep(res))
+    .then(res => res.filter(v => !!v))
+  return result
+}
 
 const getBlockStatus = async (userId, params, data) => {
   return Duration.findOne({ block: data._id, user: userId }, { status: 1 })
@@ -67,7 +82,22 @@ const onBlockCountChange = async (blockId) => {
   await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
   return blockId
 }
+
+const computeBlocksCount = async blockId => {
+  const block=await Block.findById(blockId).populate(['children', 'actual_chlidren', 'origin'])
+  if (block.type=='resource') {
+    block.resources_count=1
+    await block.save()
+    return 1
+  }
+  const name=await getBlockName(blockId)
+  const childrenCount=await Promise.all(block.children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
+  block.resources_count=childrenCount
+  await block.save()
+  return childrenCount
+}
+
 module.exports={
-  onBlockCountChange, getBlockStatus, getBlockName, updateBlockStatus,
+  onBlockCountChange, getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, computeBlocksCount,
 }
 

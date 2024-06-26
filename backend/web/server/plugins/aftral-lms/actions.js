@@ -52,6 +52,7 @@ const addChildAction = ({parent, child}, user) => {
 addAction('addChild', addChildAction)
 
 const removeChildAction = ({parent, child}, user) => {
+  console.log('removing', child, 'from', parent)
   if (user.role!=ROLE_CONCEPTEUR) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
