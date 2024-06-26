@@ -177,8 +177,13 @@ const preprocessGet = ({model, fields, id, user, params}) => {
     id = user?._id || 'INVALIDID'
   }
   // Add resource.creator.role to filter after
-  if (model=='resource') {
+  if (['program', 'module', 'sequence', 'resource', 'block'].includes(model)) {
     fields=[...fields, 'creator']
+    // Full list: only return template blocks not included in sessions
+    if (!id) {
+      params['filter._locked']=false // No session data
+      params['filter.origin']=null // Templates only
+      }
   }
 
   if (model == 'contact') {
@@ -238,30 +243,6 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 }
 
 setPreprocessGet(preprocessGet)
-
-const filterDataUser = async ({model, data, id, user}) => {
-  if (MODELS.includes(model) && !id) {
-    data=data.filter(d => !d.origin)
-    // Filter my sessions
-    if (model=='session') {
-      data=data.filter(d => [...(d.trainers||[]), ...(d.trainees||[])].some(v => user.role==ROLE_CONCEPTEUR || idEqual(v._id || v, user._id)))
-    }
-    else if (model=='resource') {
-      const resources_filter=user.role==ROLE_CONCEPTEUR ? r => (r.creator.role==ROLE_CONCEPTEUR && !r._locked)
-      :
-      user.role==ROLE_FORMATEUR ? r => (r.creator.role==ROLE_CONCEPTEUR || idEqual(r.creator._id, user._id)) && !r._locked
-      :
-      () => false
-      data=data.filter(resources_filter)
-    }
-    else {
-      if (user.role==ROLE_CONCEPTEUR) { data=data.filter(b => !b._locked)}
-    }
-  }
-  return Promise.resolve(data)
-}
-
-setFilterDataUser(filterDataUser)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
