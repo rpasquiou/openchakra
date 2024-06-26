@@ -78,7 +78,7 @@ export const mediaWrapper = ({
       /></div>) || (null)
 
   const orgExt=getExtension(src.toLowerCase())
-  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
   // TODO: must handle actual src with LMS system
   // Preview for scorms
   if (ext=='html') {
