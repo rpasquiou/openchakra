@@ -178,7 +178,9 @@ const preprocessGet = ({model, fields, id, user, params}) => {
   }
   // Add resource.creator.role to filter after
   if (['program', 'module', 'sequence', 'resource', 'block'].includes(model)) {
-    fields=[...fields, 'creator']
+    if (model=='resource') {
+      fields=[...fields, 'creator']
+    }
     // Full list: only return template blocks not included in sessions
     if (!id) {
       params['filter._locked']=false // No session data
