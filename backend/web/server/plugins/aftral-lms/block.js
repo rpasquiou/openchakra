@@ -101,8 +101,10 @@ const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
   }
+  const parent=await Block.findById(parentId).populate('children_count')
+  const newOrder=parent.children_count+1
   const block=await Block.findById(blockId).populate('children')
-  const newBlock=new Block({...block.toObject(), id: undefined, _id: undefined, origin: blockId, parent: parentId})
+  const newBlock=new Block({order: newOrder, ...block.toObject(), id: undefined, _id: undefined, origin: blockId, parent: parentId})
   await newBlock.save()
   let children=await Promise.all(block.children.map(childId => cloneTree(childId, newBlock._id)))
   newBlock.children=children.map(c => c._id)

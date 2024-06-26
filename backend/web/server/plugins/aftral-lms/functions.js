@@ -39,7 +39,6 @@ const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
-  declareVirtualField({model, field: 'order', instance: 'Number'})
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
@@ -250,7 +249,7 @@ setPreprocessGet(preprocessGet)
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
     ['status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
-    'order', 'duration_str'
+    'duration_str'
   ])
 }
 

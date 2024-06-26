@@ -50,6 +50,10 @@ const BlockSchema = new Schema({
     ref: 'block',
     required: [function(){ return !!this.origin}, `Le parent est obligatoire`]
   },
+  order: {
+    type: Number,
+    required: [function() { return this.parent}, `L'ordre est obligatoire`]
+  },
   code: {
     type: String,
     required: false,
@@ -191,14 +195,11 @@ BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
   return !this.origin
 })
 
-BlockSchema.virtual('order', DUMMY_REF).get(function() {
-  return 0
-})
-
 BlockSchema.virtual('children', {
   ref: 'block',
   localField: '_id',
-  foreignField: 'parent'
+  foreignField: 'parent',
+  options: {sort: 'order'}
 })
 
 BlockSchema.virtual('children_count', {

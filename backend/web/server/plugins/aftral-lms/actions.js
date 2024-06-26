@@ -20,19 +20,21 @@ const acceptsChild= (pType, cType) => {
   return ACCEPTS[pType]?.includes(cType)
 }
 
-const moveChildInParent= (parentId, childId, up) => {
-  return Block.findById(parentId)
-    .then(parent => {
-      if (!parent) { throw new NotFoundError(`Parent introuvable`)}
-      const children=parent.children.map(c => c._id.toString())
-      const childIdx=children.indexOf(childId)
-      if (childIdx==-1) { throw new NotFoundError(`Enfant introuvable`)}
-      if (up && childIdx==0) { throw new BadRequestError(`Déjà premier de la liste`)}
-      if (!up && childIdx==children.length-1) { throw new BadRequestError(`Déjà dernier de la liste`)}
-      const otherIdx=up ? childIdx-1 : childIdx+1
-      const newChildren=swapArray(children, childIdx, otherIdx)
-      return Block.findByIdAndUpdate(parentId, {actual_children: newChildren})
-    })
+const moveChildInParent= async (parentId, childId, up) => {
+  const delta=up ? -1 : 1
+  const childrenCount=await Block.findById(parentId).populate('children_count')
+  const child=await Block.findById(childId)
+  const newOrder=child.order+delta
+  if (newOrder<1) {
+    throw new ForbiddenError(`Déjà en tête de liste`)
+  }
+  if (newOrder>=childrenCount) {
+    throw new ForbiddenError(`Déjà en fin de liste`)
+  }
+  const brother=await Block.findOne({parent: parentId, order: child.order+delta})
+  child.order=newOrder
+  brother.order=brother.order-delta
+  return Promise.all([child.save(), brother.save()])
 }
 
 const addChildAction = ({parent, child}, user) => {
