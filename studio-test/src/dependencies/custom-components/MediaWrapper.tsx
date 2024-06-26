@@ -122,7 +122,11 @@ export const mediaWrapper = ({
     case 'docx':
     case 'xls':
     case 'xlsx':
-      return (
+    case 'ppt':
+    case 'pptx':
+    case 'pps':
+    case 'ppsx':
+            return (
         <>
         <iframe
           title={src}
