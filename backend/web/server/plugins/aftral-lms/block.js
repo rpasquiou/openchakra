@@ -97,7 +97,20 @@ const computeBlocksCount = async blockId => {
   return childrenCount
 }
 
+const cloneTree = async (blockId, parentId) => {
+  if (!blockId || !parentId) {
+    throw new Error(`childId and parentId are expected`)
+  }
+  const block=await Block.findById(blockId).populate('children')
+  const newBlock=new Block({...block.toObject(), id: undefined, _id: undefined, origin: blockId, parent: parentId})
+  await newBlock.save()
+  let children=await Promise.all(block.children.map(childId => cloneTree(childId, newBlock._id)))
+  newBlock.children=children.map(c => c._id)
+  return newBlock.save()
+}
+
 module.exports={
   onBlockCountChange, getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, computeBlocksCount,
+  cloneTree,
 }
 

@@ -7,7 +7,7 @@ const { idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { onBlockCountChange } = require('./block')
+const { onBlockCountChange, cloneTree } = require('./block')
 
 const ACCEPTS={
   session: ['program'],
@@ -24,7 +24,7 @@ const moveChildInParent= (parentId, childId, up) => {
   return Block.findById(parentId)
     .then(parent => {
       if (!parent) { throw new NotFoundError(`Parent introuvable`)}
-      const children=parent.actual_children.map(c => c._id.toString())
+      const children=parent.children.map(c => c._id.toString())
       const childIdx=children.indexOf(childId)
       if (childIdx==-1) { throw new NotFoundError(`Enfant introuvable`)}
       if (up && childIdx==0) { throw new BadRequestError(`Déjà premier de la liste`)}
@@ -44,9 +44,9 @@ const addChildAction = ({parent, child}, user) => {
       const [pType, cType]=[parent?.type, child?.type]
       if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
       if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
-      return mongoose.model(cType).create({origin: child._id, creator: user})
+      return cloneTree(child._id, parent._id)
     })
-    .then(linkedChild => Block.findByIdAndUpdate(parent, {$addToSet: {actual_children: linkedChild}}))
+    .then(createdChild => Block.findByIdAndUpdate(parent, {$addToSet: {children: createdChild}}))
     .then(() => onBlockCountChange(parent))
 }
 addAction('addChild', addChildAction)

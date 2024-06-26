@@ -38,20 +38,18 @@ setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
 
 MODELS.forEach(model => {
-  declareFieldDependencies({model, field: 'name', requires: 'origin.name'})
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
   declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
+  declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
-  declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children.children,origin.children,origin.actual_children,actual_children.origin,children.origin',
+  declareVirtualField({model, field: 'children', instance: 'Array',
     multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareFieldDependencies({model, field: 'origin', requires: 'origin.actual_children,origin.children'})
   declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => result?.duration || 0)
@@ -101,6 +99,9 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
 const preCreate = ({model, params, user}) => {
+  if (model=='session') {
+    throw new Error(`La création de session n'est pas finalisée`)
+  }
   if (['resource'].includes(model)) {
     params.creator=params?.creator || user
   }
@@ -248,7 +249,7 @@ setPreprocessGet(preprocessGet)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
-    ['status', 'achievement_status', 'actual_children', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
+    ['status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
     'order', 'duration_str'
   ])
 }

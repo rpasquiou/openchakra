@@ -42,11 +42,13 @@ function setterTemplateOnly(attribute) {
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [function()  {return !this?.origin}, `Le nom est obligatoire`],
+    required: [true, `Le nom est obligatoire`],
     index: true,
-    unique: true,
-    get: getterTemplateFirst('name'),
-    set: setterTemplateOnly('name')
+  },
+  parent: {
+    type: Schema.Types.ObjectId,
+    ref: 'block',
+    required: [function(){ return !!this.origin}, `Le parent est obligatoire`]
   },
   code: {
     type: String,
@@ -65,15 +67,6 @@ const BlockSchema = new Schema({
     required: false,
     get: getterTemplateFirst('picture'),
     set: setterTemplateOnly('picture')
-  },
-  actual_children: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'block',
-      required:[true, `L'enfant est obligatoire`],
-    }],
-    required: true,
-    default: [],
   },
   // Closed: must finish children in order
   closed: {
@@ -202,8 +195,17 @@ BlockSchema.virtual('order', DUMMY_REF).get(function() {
   return 0
 })
 
-BlockSchema.virtual('children_count', DUMMY_REF).get(function() {
-  return this.children?.length || 0
+BlockSchema.virtual('children', {
+  ref: 'block',
+  localField: '_id',
+  foreignField: 'parent'
+})
+
+BlockSchema.virtual('children_count', {
+  ref: 'block',
+  localField: '_id',
+  foreignField: 'parent',
+  count: true,
 })
 
 BlockSchema.virtual('evaluation', DUMMY_REF).get(function() {
@@ -211,10 +213,6 @@ BlockSchema.virtual('evaluation', DUMMY_REF).get(function() {
 })
 
 BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
-})
-
-BlockSchema.virtual('children', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
-  return this.origin ? this.origin.children : this.actual_children
 })
 
 BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
