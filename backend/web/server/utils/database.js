@@ -805,7 +805,7 @@ const callPreCreateData = data => {
 }
 
 // Pre create data, allows to insert extra fields, etc..
-let prePutData = data => Promise.resolve(data)
+let prePutData = async data => data
 
 const setPrePutData = fn => {
   prePutData = fn
@@ -970,6 +970,8 @@ const shareTargets = (obj1, obj2) => {
 }
 
 const putToDb = async (input_params) => {
+  const modelBefore=await getModel(input_params.id) 
+  input_params.model=modelBefore
   const {model, id, params, user, skip_validation} = await callPrePutData(input_params)
   return mongoose.connection.models[model].findById(id)
     .then(data => {
