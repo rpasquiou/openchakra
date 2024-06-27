@@ -22,7 +22,7 @@ const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks } = require('./resources')
-const { getBlockStatus, setParentSession, computeBlocksCount, getAttribute, LINKED_ATTRIBUTES } = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
 const { getBlockName } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
@@ -286,7 +286,6 @@ const lockSession = async sessionId => {
     const cloned= await Promise.all(session.actual_children.map(c => cloneAndLock(c)))
     await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
   }
-  await computeBlocksCount(session._id)
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }

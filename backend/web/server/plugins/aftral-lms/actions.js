@@ -7,7 +7,7 @@ const { idEqual } = require('../../utils/database')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { onBlockCountChange, cloneTree } = require('./block')
+const { cloneTree } = require('./block')
 
 const ACCEPTS={
   session: ['program'],
@@ -54,23 +54,18 @@ const addChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {$addToSet: {children: createdChild}})
   const parentsOrigin=await Block.find({origin: parent._id})
   await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
-  await onBlockCountChange(parent)
 }
 addAction('addChild', addChildAction)
 
-const removeChildAction = ({parent, child}, user) => {
+const removeChildAction = async ({parent, child}, user) => {
   console.log('removing', child, 'from', parent)
   if (user.role!=ROLE_CONCEPTEUR) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
-  return Promise.all([Block.findById(parent),Block.findById(child)])
-    .then(([parentObj, childObj]) => {
-      if (!parentObj) { throw new NotFoundError(`Can not find parent ${parent}`)}
-      if (!childObj) { throw new NotFoundError(`Can not find child ${child}`)}
-      if (!parentObj.children.find(v => idEqual(v._id, child))) { throw new BadRequestError(`Parent ${parent} has not child ${child}`)}
-      return Promise.all([Block.deleteOne({_id: child}), Block.updateOne({_id: parent}, {$pull: {actual_children: child}})])
-    })
-    .then(() => onBlockCountChange(parent))
+  await Block.findByIdAndDelete(child)
+  // Propagate deletion
+  const linkedChildren=await Block.find({origin: child}).populate('parent')
+  await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))
 }
 addAction('removeChild', removeChildAction)
 

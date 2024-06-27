@@ -80,27 +80,6 @@ const updateBlockStatus = async ({ blockId, userId }) => {
   }
   return durationDoc
 }
-const onBlockCountChange = async (blockId) => {
-  const topLevels = await getSessionBlocks(blockId)
-  console.log(`top levels are`, topLevels)
-  await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
-  return blockId
-}
-
-const computeBlocksCount = async blockId => {
-  const block=await Block.findById(blockId).populate(['children', 'actual_chlidren', 'origin'])
-  if (block.type=='resource') {
-    block.resources_count=1
-    await block.save()
-    return 1
-  }
-  const name=await getBlockName(blockId)
-  const childrenCount=await Promise.all(block.children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
-  block.resources_count=childrenCount
-  await block.save()
-  return childrenCount
-}
-
 const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
@@ -139,7 +118,7 @@ const getAttribute = attName => async (userId, params, data) => {
 }
 
 module.exports={
-  onBlockCountChange, getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, computeBlocksCount,
+  getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES,
 }
 
