@@ -42,7 +42,13 @@ function setterTemplateOnly(attribute) {
 const BlockSchema = new Schema({
   name: {
     type: String,
-    required: [true, `Le nom est obligatoire`],
+    // required: [true, `Le nom est obligatoire`],
+    // set: function(v) {
+    //   if (!!this.origin) {
+    //     throw new Error(`Le changement de nom est interdit`)
+    //   }
+    //   return v
+    // },
     index: true,
   },
   parent: {
@@ -57,43 +63,44 @@ const BlockSchema = new Schema({
   code: {
     type: String,
     required: false,
-    get: getterTemplateFirst('code'),
-    set: setterTemplateOnly('code')
+    // get: getterTemplateFirst('code'),
+    // set: setterTemplateOnly('code')
   },
   description: {
     type: String,
     required: false,
-    get: getterTemplateFirst('description'),
-    set: setterTemplateOnly('description')
+    // get: getterTemplateFirst('description'),
+    // set: setterTemplateOnly('description')
   },
   picture: {
     type: String,
     required: false,
-    get: getterTemplateFirst('picture'),
-    set: setterTemplateOnly('picture')
+    // get: getterTemplateFirst('picture'),
+    // set: setterTemplateOnly('picture')
   },
   // Closed: must finish children in order
   closed: {
     type: Boolean,
-    default: function() { return !this.origin ? false : null},
-    required:[function() { return !this.origin}, `L'état fermé (O/N) est obligatoire`],
-    get: getterMeFirst('closed'),
+    // default: function() { return !this.origin ? false : null},
+    // required:[function() { return !this.origin}, `L'état fermé (O/N) est obligatoire`],
+    //get: getterMeFirst('closed'),
   },
   masked: {
     type: Boolean,
-    default: function() { return !this.origin ? false : null},
-    required:[function() {return  !this.origin}, `L'état masqué est obligatoire`],
-    get: getterMeFirst('masked'),
+    // default: function() { return !this.origin ? false : null},
+    // required:[function() {return  !this.origin}, `L'état masqué est obligatoire`],
+    // get: getterMeFirst('masked'),
   },
   optional: {
     type: Boolean,
-    default: function() { return !this.origin ? false : null},
-    required:[function() {return  !this.origin}, `L'état optionnel est obligatoire`],
-    get: getterMeFirst('masked'),
+    // default: function() { return !this.origin ? false : null},
+    // required:[function() {return  !this.origin}, `L'état optionnel est obligatoire`],
+    // get: getterMeFirst('masked'),
   },
   origin: {
     type: Schema.Types.ObjectId,
     ref: 'block',
+    indx: true,
     required:false,
   },
   // TODO Compute actual status

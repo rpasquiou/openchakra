@@ -22,7 +22,7 @@ const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks } = require('./resources')
-const { getBlockStatus, setParentSession, computeBlocksCount } = require('./block')
+const { getBlockStatus, setParentSession, computeBlocksCount, getAttribute, LINKED_ATTRIBUTES } = require('./block')
 const { getBlockName } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
@@ -69,7 +69,10 @@ MODELS.forEach(model => {
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
   declareVirtualField({model, field: 'has_homework', type: 'Boolean'})
   declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
-  })
+  LINKED_ATTRIBUTES.forEach(attName => 
+    declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
+  )
+})
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
