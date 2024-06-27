@@ -60,7 +60,7 @@ const withDynamicSelect = Component => {
       if (setComponentValue) {
         setComponentValue(props.id, value)
       }
-      if (!!dataSource && !noautosave) {
+      if (!!dataSource && !noautosave && !props.model) {
         ACTIONS.putValue({
           context: dataSource?._id,
           value: value,
