@@ -20,10 +20,10 @@ const acceptsChild= (pType, cType) => {
   return ACCEPTS[pType]?.includes(cType)
 }
 
-const moveChildInParent= async (parentId, childId, up) => {
+const moveChildInParent= async (childId, up) => {
   const delta=up ? -1 : 1
-  const childrenCount=await Block.findById(parentId).populate('children_count')
-  const child=await Block.findById(childId)
+  const child=await Block.findById(childId).populate({path: 'parent', populate: 'children_count'})
+  const childrenCount=child.parent.children_count
   const newOrder=child.order+delta
   if (newOrder<1) {
     throw new ForbiddenError(`Déjà en tête de liste`)
@@ -31,10 +31,15 @@ const moveChildInParent= async (parentId, childId, up) => {
   if (newOrder>=childrenCount) {
     throw new ForbiddenError(`Déjà en fin de liste`)
   }
-  const brother=await Block.findOne({parent: parentId, order: child.order+delta})
+  const brother=await Block.findOne({parent: child.parent, order: child.order+delta})
+  if (!brother) {
+    throw new Error('No brother')
+  }
   child.order=newOrder
   brother.order=brother.order-delta
-  return Promise.all([child.save(), brother.save()])
+  await Promise.all([child.save(), brother.save()])
+  const linkedBlocks=await Block.find({origin: childId})
+  return Promise.all(linkedBlocks.map(block => moveChildInParent(block._id, up)))
 }
 
 const addChildAction = ({parent, child}, user) => {
@@ -69,13 +74,13 @@ const removeChildAction = ({parent, child}, user) => {
 }
 addAction('removeChild', removeChildAction)
 
-const levelUpAction = ({parent, child}, user) => {
-  return moveChildInParent(parent, child, true)
+const levelUpAction = ({child}, user) => {
+  return moveChildInParent(child, true)
 }
 addAction('levelUp', levelUpAction)
 
-const levelDownAction = ({parent, child}, user) => {
-  return moveChildInParent(parent, child, false)
+const levelDownAction = ({child}, user) => {
+  return moveChildInParent(child, false)
 }
 addAction('levelDown', levelDownAction)
 
