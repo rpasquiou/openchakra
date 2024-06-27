@@ -15,12 +15,12 @@ const MissionSchema = new Schema({
   },
   customer: {
     type: Schema.Types.ObjectId,
-    ref: 'application',
+    ref: 'customerFreelance',
     required: [true, `Le client est obligatoire`],
   },
   freelance: {
     type: Schema.Types.ObjectId,
-    ref: 'application',
+    ref: 'customerFreelance',
     required: [true, `Le freelance est obligatoire`],
   },
   title: {
