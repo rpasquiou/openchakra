@@ -327,6 +327,11 @@ declareVirtualField({
   instance: 'String', enumValues: MISSION_STATUS})
 /** Mission end */
 
+/** Report start */
+declareVirtualField({model: 'report', field: 'status', requires: '', instance: 'String', enumValues: MISSION_STATUS})
+declareVirtualField({model: 'report', field: 'serial_number', requires: '_counter', instance: 'String'})
+/** Report end */
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
