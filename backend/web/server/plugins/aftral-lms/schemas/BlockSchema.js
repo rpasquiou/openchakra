@@ -179,7 +179,8 @@ const BlockSchema = new Schema({
   achievement_rule: {
     type: String,
     enum: Object.keys(ACHIEVEMENT_RULE),
-    require: false,
+    set: v => v || undefined,
+    required: false,
   },
   success_note_min: {
     type: Number,
