@@ -42,19 +42,19 @@ const moveChildInParent= async (childId, up) => {
   return Promise.all(linkedBlocks.map(block => moveChildInParent(block._id, up)))
 }
 
-const addChildAction = ({parent, child}, user) => {
+const addChildAction = async ({parent, child}, user) => {
   if (user.role!=ROLE_CONCEPTEUR) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
-  return Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
-    .then(([parent, child]) => {
-      const [pType, cType]=[parent?.type, child?.type]
-      if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
-      if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
-      return cloneTree(child._id, parent._id)
-    })
-    .then(createdChild => Block.findByIdAndUpdate(parent, {$addToSet: {children: createdChild}}))
-    .then(() => onBlockCountChange(parent))
+  [parent, child] = await Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
+  const [pType, cType]=[parent?.type, child?.type]
+  if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
+  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
+  const createdChild = await cloneTree(child._id, parent._id)
+  await Block.findByIdAndUpdate(parent, {$addToSet: {children: createdChild}})
+  const parentsOrigin=await Block.find({origin: parent._id})
+  await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
+  await onBlockCountChange(parent)
 }
 addAction('addChild', addChildAction)
 

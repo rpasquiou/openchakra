@@ -16,8 +16,8 @@ const ResourceSchema = new Schema({
   },
   optional: {
     type: Boolean,
-    default: false,
-    required: [true, `Le caractère optionnel est obligatoire`],
+    default: null,
+    required: false,
   },
   mine: {
     type: Boolean,

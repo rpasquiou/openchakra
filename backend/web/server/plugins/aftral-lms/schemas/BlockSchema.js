@@ -81,18 +81,22 @@ const BlockSchema = new Schema({
   // Closed: must finish children in order
   closed: {
     type: Boolean,
+    default: null,
     // default: function() { return !this.origin ? false : null},
     // required:[function() { return !this.origin}, `L'état fermé (O/N) est obligatoire`],
     //get: getterMeFirst('closed'),
   },
   masked: {
     type: Boolean,
+    default: null,
     // default: function() { return !this.origin ? false : null},
     // required:[function() {return  !this.origin}, `L'état masqué est obligatoire`],
     // get: getterMeFirst('masked'),
   },
   optional: {
     type: Boolean,
+    default: null,
+    required: false,
     // default: function() { return !this.origin ? false : null},
     // required:[function() {return  !this.origin}, `L'état optionnel est obligatoire`],
     // get: getterMeFirst('masked'),

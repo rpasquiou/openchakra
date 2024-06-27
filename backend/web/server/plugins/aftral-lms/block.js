@@ -6,7 +6,7 @@ const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK
 
 const NAMES_CACHE=new NodeCache()
 
-const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code']
+const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition']
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
 
@@ -108,24 +108,31 @@ const cloneTree = async (blockId, parentId) => {
   const parent=await Block.findById(parentId).populate('children_count')
   const newOrder=parent.children_count+1
   const block=await Block.findById(blockId).populate('children')
-  const newBlock=new Block({
-    order: newOrder, 
-    ...block.toObject(), id: undefined, _id: undefined, origin: blockId, parent: parentId,
-  ...NULLED_ATTRIBUTES})
+  let blockData={
+    order: newOrder,
+    ...lodash.omit(block.toObject(), [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
+    id: undefined, _id: undefined, origin: blockId, parent: parentId,
+    ...NULLED_ATTRIBUTES,
+  }
+  const newBlock=new Block({...blockData})
   await newBlock.save()
-  let children=await Promise.all(block.children.map(childId => cloneTree(childId, newBlock._id)))
+  let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
   newBlock.children=children.map(c => c._id)
   return newBlock.save()
 }
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
+  const log=false && attName=='optional' && data.type=='resource' ? console.log : () => {}
+  data=await Block.findById(data._id)
+  log('getting', attName, 'in', data)
   if (!lodash.isNil(data[attName])) {
+    log(data)
+    log('found', attName, 'in', data._id, ':', data[attName])
     return data[attName]
   }
   if (data.origin) {
-    const origin=await Block.findById(data.origin)
-    const res=await getAttribute(attName)(userId, params, origin)
+    const res=await getAttribute(attName)(userId, params, data.origin)
     return res
   }
   return null
