@@ -321,6 +321,7 @@ declareVirtualField({model: 'quotationDetail', field: 'vat_total', instance: 'Nu
 
 /** Mission start */
 declareVirtualField({model: 'mission', field: 'progress', instance: 'Number'})
+declareVirtualField({model: 'mission', field: 'serial_number', requires: '_counter', instance: 'String'})
 /** Mission end */
 
 const soSynplRegister = props => {

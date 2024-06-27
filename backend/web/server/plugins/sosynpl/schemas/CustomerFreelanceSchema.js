@@ -327,16 +327,22 @@ const CustomerFreelanceSchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 
+CustomerFreelanceSchema.virtual('customer_missions', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'customer',
+})
+
 CustomerFreelanceSchema.virtual('freelance_missions', {
   ref: 'mission',
   localField: '_id',
-  foreignField: 'customerFreelance',
+  foreignField: 'freelance',
 })
 
 CustomerFreelanceSchema.virtual('recommandations', {
   ref: 'recommandation',
   localField: '_id',
-  foreignField: 'customerFreelance',
+  foreignField: 'freelance',
 })
 
 CustomerFreelanceSchema.virtual('communications', {
