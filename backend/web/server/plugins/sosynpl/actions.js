@@ -16,6 +16,7 @@ const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
+const { canAcceptReport, sendReport, acceptReport, refuseReport } = require("./report")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -128,15 +129,18 @@ const refuseAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'refuse', dataId: value, user})
   if (!ok) {return false}
   // Ensure is announce or announceSuggestion
-  const model=await getModel(value, ['application','announceSuggestion'])
+  const model=await getModel(value, ['application','announceSuggestion', 'report'])
   let filter={freelance: user._id}
   if (model=='application') {
     return refuseApplication(value)
   }
-  else { // Is announceSuggestion
+  if (model=='announceSuggestion') {
     filter={_id: value}
     const update={status: ANNOUNCE_SUGGESTION_REFUSED, refuse_date: moment(), refuse_reason: reason}
     return AnnounceSuggestion.findOneAndUpdate(filter, update)
+  }
+  if (model=='report') {
+    return refuseReport(value)
   }
 }
 addAction('refuse', refuseAction)
@@ -144,14 +148,26 @@ addAction('refuse', refuseAction)
 const acceptApplicationAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'accept', dataId: value, user})
   if (!ok) {return false}
-  return acceptApplication(value)
+  const foundModel=await getModel(value, ['report', 'application'])
+  if (foundModel=='application') {
+    return acceptApplication(value)
+  }
+  if (foundModel=='report') {
+    return acceptReport(value)
+  }
 }
 addAction('accept', acceptApplicationAction)
 
 const sendQuotationAction = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'alle_send_quotation', dataId: value, user})
   if (!ok) {return false}
-  return sendQuotation(value)
+  const model=await getModel(value, ['quotation', 'report'])
+  if (model=='report') {
+    return sendReport(value)
+  }
+  if (model=='quotation') {
+    return sendQuotation(value)
+  }
 }
 addAction('alle_send_quotation', sendQuotationAction)
 
@@ -246,19 +262,25 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Can send quotatiojn if not the first (because will be sent during application publication)
   // and latest quotation is valid
   if (action=='alle_send_quotation') {
-    const quotation=await Quotation.findById(dataId, {status: 1})
-      .populate([{path: 'application', populate: 'quotations'}, 'details'])
-    if (idEqual(quotation._id, quotation.application.quotations[0]?._id)) {
-      throw new BadRequestError(`Le premier devis sera envoyé avec la candidature`)
+    const foundModel=await getModel(dataId, ['report', 'quotation'])
+    if (foundModel=='quotation') {
+      const quotation=await Quotation.findById(dataId, {status: 1})
+        .populate([{path: 'application', populate: 'quotations'}, 'details'])
+      if (idEqual(quotation._id, quotation.application.quotations[0]?._id)) {
+        throw new BadRequestError(`Le premier devis sera envoyé avec la candidature`)
+      }
+      if (quotation.status!=QUOTATION_STATUS_DRAFT) {
+        throw new BadRequestError(`Le devis a déjà été envoyé`)
+      }
+      await quotation.validate()
+      if (lodash.isEmpty(quotation.details)) {
+        throw new BadRequestError(`Le devis est vide`)
+      }
+      await quotation.details[0].validate()
     }
-    if (quotation.status!=QUOTATION_STATUS_DRAFT) {
-      throw new BadRequestError(`Le devis a déjà été envoyé`)
+    if (foundModel=='report') {
+      return sendReport(dataId)
     }
-    await quotation.validate()
-    if (lodash.isEmpty(quotation.details)) {
-      throw new BadRequestError(`Le devis est vide`)
-    }
-    await quotation.details[0].validate()
   }
 
   if (action=='accept') {
@@ -283,15 +305,18 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   }
 
   if (action=='refuse') {
-    const foundModel=await getModel(dataId, ['announceSuggestion', 'application'])
+    const foundModel=await getModel(dataId, ['announceSuggestion', 'application', 'report'])
     if (foundModel=='application') {
-      await canRefuseApplication(dataId)
+      return await canRefuseApplication(dataId)
     }
-    else {
+    if (foundModel=='announceSuggestion') {
       const sugg=await AnnounceSuggestion.findById(dataId)
       if (!(sugg.status==ANNOUNCE_SUGGESTION_SENT)) {
         throw new ForbiddenError(`La suggestion ne peut être refusée`)
       }
+    }
+    if (foundModel=='report') {
+      return refuseReport(dataId)
     }
   }
   return true
