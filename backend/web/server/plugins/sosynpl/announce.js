@@ -4,7 +4,7 @@ const LanguageLevel=require('../../models/LanguageLevel')
 const Mission = require('../../models/Mission')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
-const { ANNOUNCE_STATUS_CANCELED, APPLICATION_STATUS_REFUSED, REFUSE_REASON_CANCELED } = require('./consts')
+const { ANNOUNCE_STATUS_CANCELED, APPLICATION_STATUS_REFUSED, REFUSE_REASON_CANCELED, ANNOUNCE_STATUS_DRAFT } = require('./consts')
 
 const clone = async announce_id => {
   const origin=await Announce.findById(announce_id)
@@ -12,12 +12,15 @@ const clone = async announce_id => {
   const clonedLanguages=await Promise.all(languages.map(l => LanguageLevel.create({language: l.language, level: l.level})))
   const cloned=new Announce({
     ...origin.toObject(), 
+    start_date: null,
     title: `Copie de ${origin.title}`,
     languages: clonedLanguages.map(l => l.id), 
     publication_date: undefined,
     selected_freelances: undefined,
     accepted_application: undefined,
-    _id: undefined, id: undefined, _counter: undefined})
+    _id: undefined, id: undefined, _counter: undefined,
+    status: ANNOUNCE_STATUS_DRAFT,
+  })
   await cloned.save({validateBeforeSave: false})
   return cloned
 }
