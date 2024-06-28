@@ -320,11 +320,11 @@ declareVirtualField({model: 'quotationDetail', field: 'vat_total', instance: 'Nu
 /** QuotationDetail end */
 
 /** Mission start */
-// declareVirtualField({model: 'mission', field: 'progress', instance: 'Number'})
 declareVirtualField({model: 'mission', field: 'serial_number', requires: '_counter', instance: 'String'})
 declareVirtualField({
   model: 'mission', field: 'status', requires: 'start_date,end_date,freelance_finish_date,customer_finish_date,close_date', 
   instance: 'String', enumValues: MISSION_STATUS})
+declareVirtualField({model: 'mission', field: 'report', instance: 'report'})
 /** Mission end */
 
 /** Report start */
