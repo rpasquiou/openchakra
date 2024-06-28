@@ -19,7 +19,7 @@ const CertificationSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, `La description est obligatoire`],
+    required: false,
   },
   school_name: {
     type: String,

@@ -15,7 +15,7 @@ const CommunicationSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, `La description est obligatoire`],
+    required: false,
   },
   date: {
     type: String,
