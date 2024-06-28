@@ -173,7 +173,6 @@ addAction('alle_send_quotation', sendQuotationAction)
 
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
-  console.log('allow', action, dataId, actionProps)
   if (action=='validate_email') {
     return true
   }

@@ -392,8 +392,10 @@ const preCreate = async ({model, params, user}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
-  if (model=='languageLevel') {
-    params.user=params.parent
+  if (['software', 'languageLevel'].includes(model)) {
+    if (!params.parent) {
+      throw new Error(`Parent parameter is required`)
+    }
   }
   // Announce will be validated on "publish action"
   if (model=='announce') {
@@ -436,7 +438,7 @@ const postCreate = async ({model, params, data}) => {
   }
   if (model=='software' && params.parent) {
     const parentModel=await getModel(params.parent)
-    if (['freelance', 'user'].includes(parentModel)) {
+    if (['customerFreelance', 'user'].includes(parentModel)) {
       await Freelance.findByIdAndUpdate(params.parent, {$addToSet: {softwares: data._id}})
     }
     if (parentModel=='announce') {
@@ -445,7 +447,7 @@ const postCreate = async ({model, params, data}) => {
   }
   if (model=='languageLevel' && params.parent) {
     const parentModel=await getModel(params.parent)
-    if (['freelance', 'user'].includes(parentModel)) {
+    if (['customerFreelance', 'user'].includes(parentModel)) {
       await Freelance.findByIdAndUpdate(params.parent, {$addToSet: {languages: data._id}})
     }
     if (parentModel=='announce') {
