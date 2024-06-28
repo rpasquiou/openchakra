@@ -263,10 +263,15 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
 
   if (action=='accept') {
     const foundModel=await getModel(dataId)
-    if (foundModel!='application') {
+    if (['report', 'application'].includes(foundModel)) {
       throw new BadRequestError(`Ne peut être accepté`)
     }
-    await canAcceptApplication(dataId)
+    if (foundModel=='application') {
+      await canAcceptApplication(dataId)
+    }
+    if (foundModel=='report') {
+      await canAcceptReport(dataId)
+    }
   }
 
   if (action=='alle_cancel_mission') {
