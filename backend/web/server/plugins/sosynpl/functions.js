@@ -324,7 +324,12 @@ declareVirtualField({model: 'mission', field: 'serial_number', requires: '_count
 declareVirtualField({
   model: 'mission', field: 'status', requires: 'start_date,end_date,freelance_finish_date,customer_finish_date,close_date', 
   instance: 'String', enumValues: MISSION_STATUS})
-declareVirtualField({model: 'mission', field: 'report', instance: 'report'})
+declareVirtualField({model: 'mission', field: 'report', instance: 'report', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'report' }
+  }
+})
 /** Mission end */
 
 /** Report start */
