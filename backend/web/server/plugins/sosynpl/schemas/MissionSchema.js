@@ -86,11 +86,11 @@ MissionSchema.virtual('status', DUMMY_REF).get(function() {
   return MISSION_STATUS_CURRENT
 })
 
-MissionSchema.virtual('report', {
+// TODO: when declared as justOne, there is no access to mission.report.* from a Mission datasource
+MissionSchema.virtual('reports', {
   ref: 'report',
   localField: '_id',
   foreignField: 'mission',
-  jutSone: true,
 })
 /* eslint-enable prefer-arrow-callback */
 
