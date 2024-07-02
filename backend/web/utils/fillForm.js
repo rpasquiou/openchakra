@@ -17,9 +17,10 @@ const defaultData = ['1', '2', '3', '5']
 const args = process.argv.slice(2)
 
 async function main() {
+    console.log(args)
     try {
         if (args[0] === 'fieldStructure') {
-            const link = args[1] || defaultLink
+            const link = args[1]
             console.table(await logFormFields(link))
         } else if (args[0] === 'fillForm') {
             const link = args[1] || defaultLink
@@ -96,5 +97,6 @@ module.exports={
     getPDFBytes,
     copyPDF,
     logFormFields,
-    fillForm
+    fillForm,
+    savePDFFile,
 }
