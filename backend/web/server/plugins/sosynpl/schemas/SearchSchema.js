@@ -31,11 +31,11 @@ const SearchSchema = new Schema({
     enum: Object.keys(WORK_MODE),
     required: false,
   },
-  work_duration: {
+  work_durations: [{
     type: String,
     enum: Object.keys(WORK_DURATION),
-    required: false,
-  },
+    required: true,
+  }],
   experience: {
     type: String,
     enum: Object.keys(EXPERIENCE),

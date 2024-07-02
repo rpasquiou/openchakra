@@ -1,7 +1,7 @@
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const User = require("../../models/User")
-const { ROLE_FREELANCE } = require("./consts")
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS } = require("./consts")
 const { buildPopulates, loadFromDb } = require('../../utils/database')
 const { computeDistanceKm } = require('../../../utils/functions')
 
