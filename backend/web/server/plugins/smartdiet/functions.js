@@ -1512,6 +1512,21 @@ declareVirtualField({
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
+declareVirtualField({ model: 'nutritionAdvice', field: 'certificate', type: 'String', requires: 'end_date,_lead.firstname,_lead.lastname,_user.firstname,_user.lastname'})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_lead', instance: 'lead', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'lead' }
+  },
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_user', instance: 'user', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'user' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_coaching_enabled', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_site_enabled', instance: 'Number' })

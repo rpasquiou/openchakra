@@ -3,6 +3,10 @@ const moment = require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
 const { GENDER, SOURCE, SOURCE_APPLICATION } = require('../consts')
+const { copyPDF } = require('../../../../utils/fillForm')
+const { API_ROOT } = require('../../../../utils/consts')
+const { NotFound } = require('@aws-sdk/client-s3')
+const { formatDateTime } = require('../../../../utils/text')
 
 const Schema = mongoose.Schema
 
@@ -75,10 +79,34 @@ const NutritionAdviceSchema = new Schema({
 )
 
 /* eslint-disable prefer-arrow-callback */
+NutritionAdviceSchema.virtual('_lead', {
+  ref: 'lead',
+  localField: 'patient_email',
+  foreignField: 'email',
+  justOne: true,
+})
+
+NutritionAdviceSchema.virtual('_user', {
+  ref: 'user',
+  localField: 'patient_email',
+  foreignField: 'email',
+  justOne: true,
+})
+
+
 NutritionAdviceSchema.virtual('end_date', DUMMY_REF).get(function() {
   const end=moment(this.start_date).add(this.duration, 'minutes')
   return end.isValid() ? end : null
 })
+
+NutritionAdviceSchema.virtual('certificate', DUMMY_REF).get(function() {
+  const data=this._user || this._lead
+  if (!data) {
+    throw new NotFound(`No lead/user for email ${patient_email}`)
+  }
+  return `${API_ROOT}form?model=attestation_conseil_nutrition_carcept.pdf&firstname=${data.firstname}&lastname=${data.lastname}&date=${formatDateTime(this.start_date)}`
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = NutritionAdviceSchema
