@@ -208,6 +208,7 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
+const { getNutAdviceCertificate } = require('./nutritionAdvice')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -1512,7 +1513,11 @@ declareVirtualField({
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
-declareVirtualField({ model: 'nutritionAdvice', field: 'certificate', type: 'String', requires: 'end_date,_lead.firstname,_lead.lastname,_user.firstname,_user.lastname'})
+declareComputedField({ 
+  model: 'nutritionAdvice', field: 'certificate', type: 'String', 
+  requires: 'start_date,_user.firstname,_user.lastname,_certificate,_user.company.nutadvice_certificate_template,_user.company.name',
+  getterFn: getNutAdviceCertificate,
+})
 declareVirtualField({
   model: 'nutritionAdvice', field: '_lead', instance: 'lead', multiple: false,
   caster: {
