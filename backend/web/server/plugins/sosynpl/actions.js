@@ -184,9 +184,17 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     if (applicationExists) {
       throw new ForbiddenError(`Vous avez déjà envoyé une proposition pour cette annonce`)
     }
-    const announce=await Announce.findById(dataId)
-    if (!(announce.status==ANNOUNCE_STATUS_ACTIVE)) {
-      throw new ForbiddenError(`Cette annonce n'est pas active`)
+    const foundModel=await getModel(dataId, ['announce', 'announceSuggestion'])
+    const data=await mongoose.model(foundModel).findById(dataId)
+    if (foundModel=='announce') {
+      if (!(data.status==ANNOUNCE_STATUS_ACTIVE)) {
+        throw new ForbiddenError(`Cette annonce n'est pas active`)
+      }
+    }
+    if (foundModel=='announceSuggestion') {
+      if (!(data.status==ANNOUNCE_SUGGESTION_SENT)) {
+        throw new ForbiddenError(`Cette proposition est déjà accepté ou refusée`)
+      }
     }
   }
   if (action=='deactivateAccount') {
