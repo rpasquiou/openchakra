@@ -333,7 +333,7 @@ declareVirtualField({model: 'mission', field: 'reports', instance: 'Array', mult
 /** Mission end */
 
 /** Report start */
-declareVirtualField({model: 'report', field: 'status', instance: 'String', enumValues: REPORT_STATUS})
+declareEnumField({model: 'report', field: 'status', instance: 'String', enumValues: REPORT_STATUS})
 declareVirtualField({model: 'report', field: 'serial_number', requires: '_counter', instance: 'String'})
 declareVirtualField({model: 'report', field: 'quotation', instance: 'quotation'})
 /** Report end */

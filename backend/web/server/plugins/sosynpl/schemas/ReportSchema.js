@@ -17,11 +17,11 @@ const ReportSchema = new Schema({
     type: String,
     enum: Object.keys(REPORT_STATUS),
     default: REPORT_STATUS_DRAFT,
-    required: [true, `Le statut du report d'activité est obligatoire`],
+    required: [true, `Le statut du rapport d'activité est obligatoire`],
   },
   comment: {
     type: String,
-    required: [true, `Le commentaire est oobligatoire`]
+    required: [true, `Le commentaire est obligatoire`]
   },
   sent_date: {
     type: Date,
