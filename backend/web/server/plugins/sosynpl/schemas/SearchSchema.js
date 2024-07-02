@@ -14,6 +14,10 @@ const SearchSchema = new Schema({
     enum: Object.keys(SEARCH_MODE),
     required: [true, `Le mode de recherche (${Object.values(SEARCH_MODE).join(',')}) est obligatoire`]
   },
+  pattern: {
+    type: String,
+    required: false,
+  },
   city: {
     type: AddressSchema,
     required: false,
