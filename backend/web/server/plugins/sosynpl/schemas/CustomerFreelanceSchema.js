@@ -249,9 +249,6 @@ const CustomerFreelanceSchema = new Schema({
   available_from: {
     type: Date,
     set: d => lodash.isNil(d) ? d : moment(d).startOf('day'),
-    validate: [
-      function(value) { return !isFreelance(this) || lodash.isNil(value) || moment(value).isAfter(moment())}, 
-      `La date de disponibilité doit être dans le futur`],
     required: false,
   },
   // END AVAILABILITY
