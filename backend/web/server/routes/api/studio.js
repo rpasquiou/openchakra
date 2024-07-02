@@ -511,6 +511,10 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
     .then(result => res.json(result))
 })
 
+router.get('/form', passport.authenticate('cookie', {session: false}), (req, res) => {
+  console.log('Query is', req.query)
+})
+
 router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()

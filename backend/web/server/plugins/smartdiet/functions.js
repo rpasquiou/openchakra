@@ -208,6 +208,7 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
+const { getNutAdviceCertificate } = require('./nutritionAdvice')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -1512,6 +1513,25 @@ declareVirtualField({
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
+declareComputedField({ 
+  model: 'nutritionAdvice', field: 'certificate', type: 'String', 
+  requires: 'start_date,_user.firstname,_user.lastname,_certificate,_user.company.nutadvice_certificate_template,_user.company.name',
+  getterFn: getNutAdviceCertificate,
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_lead', instance: 'lead', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'lead' }
+  },
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_user', instance: 'user', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'user' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_coaching_enabled', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_site_enabled', instance: 'Number' })
