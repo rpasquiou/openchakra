@@ -338,6 +338,13 @@ declareVirtualField({model: 'report', field: 'serial_number', requires: '_counte
 declareVirtualField({model: 'report', field: 'quotation', instance: 'quotation'})
 /** Report end */
 
+/** Search start */
+declareEnumField({model: 'search', field: 'work_mode', instance: 'String', enumValues: WORK_MODE})
+declareEnumField({model: 'search', field: 'work_duration', instance: 'String', enumValues: WORK_DURATION})
+declareEnumField({model: 'search', field: 'experience', instance: 'String', enumValues: EXPERIENCE})
+declareEnumField({model: 'search', field: 'pilars', instance: 'String', enumValues: SS_PILAR})
+/** Search end */
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
