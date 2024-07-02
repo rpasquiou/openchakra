@@ -1,4 +1,5 @@
 const { BadRequestError } = require("../../utils/errors")
+const Report = require('../../models/Report')
 const { REPORT_STATUS, REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE, REPORT_STATUS_SENT, REPORT_STATUS_ACCEPTED } = require("./consts")
 
 // TODO: customer & freelance must have the required documents
