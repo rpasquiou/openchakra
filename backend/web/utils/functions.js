@@ -4,21 +4,22 @@ const {convertDistance} = require('geolib')
 
 const isEmpty = require('../server/validation/is-empty')
 
+// Computes using AddressSchema
 const computeDistanceKm = (latlon1, latlon2) => {
   if (isEmpty(latlon1) || isEmpty(latlon2)) {
     return null
   }
-  if (isEmpty(latlon1.lat) || isEmpty(latlon1.lng)) {
+  if (isEmpty(latlon1?.latitude) || isEmpty(latlon1?.longitude)) {
     return null
   }
-  if (isEmpty(latlon2.lat) || isEmpty(latlon2.lng)) {
+  if (isEmpty(latlon2?.longitude) || isEmpty(latlon2?.latitude)) {
     return null
   }
   try {
     return convertDistance(
       getDistance(
-        {latitude: latlon1.lat, longitude: latlon1.lng},
-        {latitude: latlon2.lat, longitude: latlon2.lng},
+        {latitude: latlon1.latitude, longitude: latlon1.longitude},
+        {latitude: latlon2.latitude, longitude: latlon2.longitude},
       ),
       'km',
     )

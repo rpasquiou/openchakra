@@ -12,7 +12,7 @@ const SearchSchema = new Schema({
   mode: {
     type: String,
     enum: Object.keys(SEARCH_MODE),
-    required: [true, `Le mode de recherche (${Object.values(SEARCH_MODE).join(',')}) est obligatoire`]
+    required: false,
   },
   pattern: {
     type: String,

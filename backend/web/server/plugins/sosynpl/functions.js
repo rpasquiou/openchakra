@@ -14,7 +14,7 @@ const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
-const { computeSuggestedFreelances } = require("./search");
+const { computeSuggestedFreelances, searchFreelances } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 
@@ -339,11 +339,14 @@ declareVirtualField({model: 'report', field: 'quotation', instance: 'quotation'}
 /** Report end */
 
 /** Search start */
+const SEARCH_FIELDS='available,city,city_radius,experience,expertises,max_daily_rate,min_daily_rate,pattern,pilars,sectors,work_duration,work_mode,mode'
 declareEnumField({model: 'search', field: 'mode', instance: 'String', enumValues: SEARCH_MODE})
 declareEnumField({model: 'search', field: 'work_mode', instance: 'String', enumValues: WORK_MODE})
 declareEnumField({model: 'search', field: 'work_duration', instance: 'String', enumValues: WORK_DURATION})
 declareEnumField({model: 'search', field: 'experience', instance: 'String', enumValues: EXPERIENCE})
 declareEnumField({model: 'search', field: 'pilars', instance: 'String', enumValues: SS_PILAR})
+declareComputedField({model: 'search', field: 'profiles', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
+declareComputedField({model: 'search', field: 'missions', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
 /** Search end */
 
 const soSynplRegister = props => {
