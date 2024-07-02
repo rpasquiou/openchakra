@@ -523,7 +523,7 @@ const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) 
     },]
     : []
   const dateMatch = {}
-  const companyFilterr = companyFilter.$ne != null ?
+  const companyFilterr = companyFilter.$ne != 'null' ?
     [
       {
         $lookup: {

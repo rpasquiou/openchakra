@@ -1,10 +1,11 @@
 const mongoose = require('mongoose')
-const { computeStatistics } = require('../../server/plugins/smartdiet/functions')
+const { computeStatistics, preProcessGetFORBIDDEN } = require('../../server/plugins/smartdiet/functions')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const moment = require('moment')
-const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN, COACHING_STATUS_FINISHED } = require('../../server/plugins/smartdiet/consts')
+const { ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET, ROLE_ADMIN, COACHING_STATUS_FINISHED, ROLE_RH } = require('../../server/plugins/smartdiet/consts')
 const Appointment = require('../../server/models/Appointment')
 const Coaching = require('../../server/models/Coaching')
+const User = require('../../server/models/User')
 
 jest.setTimeout(30000000)
 
@@ -116,11 +117,34 @@ describe('Statistics', () => {
 
     return allMeasures
   }
-  it.only('must calculate all fields and their perfs', async () => {
+  it('must calculate all fields and their perfs', async () => {
     const allMeasures = await runTestsForFields(allFields, 1)
     const meanDurations = computeMeanDuration(allMeasures)
     console.table(meanDurations)
   })
-
-  
+  it.only('checks results if user is RH', async() => {
+    const user = await User.findOne({role:ROLE_RH})
+    const params = []
+    params['limit'] = 30
+    const fields=[
+      'coachings_started',
+      'coachings_ongoing',
+      'coachings_stopped',
+      'coachings_dropped',
+      'coachings_finished',
+      'coachings_renewed',
+      'nut_advices',
+      'ratio_dropped_started',
+      'ratio_stopped_started',
+      'ratio_appointments_coachings',
+      'coachings_gender_female',
+      'coachings_gender_male',
+      'coachings_gender_non_binary',
+      'coachings_gender_unknown',
+      'coachings_stats',
+    ]
+    const model = 'adminDashboard'
+    const result = await preProcessGetFORBIDDEN({model, fields, user, params})
+    console.log(result)
+  })
 })
