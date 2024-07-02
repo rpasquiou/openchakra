@@ -19,10 +19,6 @@ interface Attribute {
   default?: string
 }
 
-interface Models {
-  [key: string]: Model
-}
-
 interface AttributeItemProps {
   modelName: string
   attr: string
@@ -31,7 +27,7 @@ interface AttributeItemProps {
 }
 
 const AttributeItem: FC<AttributeItemProps> = memo(({ modelName, attr, attribute, onEdit }) => {
-  const predefinedTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Adress', 'Ref']
+  const predefinedTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Address', 'Ref']
   const isRefType = !predefinedTypes.includes(attribute.type || '')
   
   return (
@@ -90,7 +86,6 @@ const AttributeItem: FC<AttributeItemProps> = memo(({ modelName, attr, attribute
   )
 })
 
-
 interface ModelItemProps {
   modelName: string
   model: Model
@@ -148,6 +143,16 @@ const EditDatabase: FC = () => {
   const [modelSchemas, setModelSchemas] = useState(models)
   const [newModelName, setNewModelName] = useState('')
 
+  const [newAttributeName, setNewAttributeName] = useState('')
+  const [newAttributeType, setNewAttributeType] = useState('')
+  const [newAttributeRef, setNewAttributeRef] = useState('')
+  const [newAttributeLocalField, setNewAttributeLocalField] = useState('')
+  const [newAttributeForeignField, setNewAttributeForeignField] = useState('')
+  const [newAttributeMultiple, setNewAttributeMultiple] = useState(false)
+  const [newAttributeRequired, setNewAttributeRequired] = useState(false)
+  const [newAttributeEnumKey, setNewAttributeEnumKey] = useState('')
+  const [newAttributeEnumValue, setNewAttributeEnumValue] = useState('')
+
   function filterAttributes(obj) {
     const result = {}
 
@@ -180,10 +185,6 @@ const EditDatabase: FC = () => {
   const [enums, setEnums] = useState<{ [key: string]: any }>({})
   const [selectedEnumKey, setSelectedEnumKey] = useState<string>('')
   const [selectedEnumValue, setSelectedEnumValue] = useState<string>('')
-  const [selectedType, setSelectedType] = useState<string>('')
-  const [selectedRef, setSelectedRef] = useState<string>('')
-  const [selectedLocalField, setSelectedLocalField] = useState<string>('')
-  const [selectedForeignField, setSelectedForeignField] = useState<string>('')
 
   const handleToggle = useCallback((modelName: string) => {
     setOpenItems((prevOpenItems) =>
@@ -194,12 +195,31 @@ const EditDatabase: FC = () => {
   }, [])
 
   const handleEditAttribute = useCallback((modelName: string, attr: string) => {
+    const attribute = modelSchemas[modelName].attributes[attr];
     setEditingAttribute({ modelName, attr })
+    setNewAttributeName(attr)
+    setNewAttributeType(attribute.type || '')
+    setNewAttributeRef(attribute.ref || '')
+    setNewAttributeLocalField(attribute.localField || '')
+    setNewAttributeForeignField(attribute.foreignField || '')
+    setNewAttributeMultiple(attribute.multiple || false)
+    setNewAttributeRequired(attribute.required || false)
+    setNewAttributeEnumKey(Object.keys(attribute.enumValues || {})[0] || '')
+    setNewAttributeEnumValue(attribute.default || '')
     onOpen()
-  }, [onOpen])
+  }, [onOpen, modelSchemas])
 
   const handleAddAttribute = useCallback((modelName: string) => {
     setAddingAttributeModel(modelName)
+    setNewAttributeName('')
+    setNewAttributeType('')
+    setNewAttributeRef('')
+    setNewAttributeLocalField('')
+    setNewAttributeForeignField('')
+    setNewAttributeMultiple(false)
+    setNewAttributeRequired(false)
+    setNewAttributeEnumKey('')
+    setNewAttributeEnumValue('')
     onOpen()
   }, [onOpen])
 
@@ -211,15 +231,77 @@ const EditDatabase: FC = () => {
 
   const handleSaveAttribute = () => {
     if (editingAttribute) {
-      
+      const { modelName, attr } = editingAttribute
+      const updatedAttribute = {
+        type: newAttributeType,
+        ref: newAttributeType === 'Ref' ? newAttributeRef : undefined,
+        localField: newAttributeType === 'Ref' ? newAttributeLocalField : undefined,
+        foreignField: newAttributeType === 'Ref' ? newAttributeForeignField : undefined,
+        multiple: newAttributeMultiple,
+        required: newAttributeRequired,
+        enumValues: newAttributeEnumKey ? enums[newAttributeEnumKey] : undefined,
+        default: newAttributeEnumValue,
+      }
+      setModelSchemas((prevState) => ({
+        ...prevState,
+        [modelName]: {
+          ...prevState[modelName],
+          attributes: {
+            ...prevState[modelName].attributes,
+            [attr]: updatedAttribute,
+          },
+        },
+      }))
     } else if (addingAttributeModel) {
-      
+      const newAttribute = {
+        type: newAttributeType,
+        ref: newAttributeType === 'Ref' ? newAttributeRef : undefined,
+        localField: newAttributeType === 'Ref' ? newAttributeLocalField : undefined,
+        foreignField: newAttributeType === 'Ref' ? newAttributeForeignField : undefined,
+        multiple: newAttributeMultiple,
+        required: newAttributeRequired,
+        enumValues: newAttributeEnumKey ? enums[newAttributeEnumKey] : undefined,
+        default: newAttributeEnumValue,
+      }
+      setModelSchemas((prevState) => {
+        const updatedModel = {
+          ...prevState[addingAttributeModel],
+          attributes: {
+            ...prevState[addingAttributeModel].attributes,
+            [newAttributeName]: newAttribute,
+          },
+        };
+        updatedModel.attributes = sortAttributes(updatedModel.attributes); // Sort attributes
+        return {
+          ...prevState,
+          [addingAttributeModel]: updatedModel,
+        };
+      });
     }
+    // Reset states
+    setNewAttributeName('')
+    setNewAttributeType('')
+    setNewAttributeRef('')
+    setNewAttributeLocalField('')
+    setNewAttributeForeignField('')
+    setNewAttributeMultiple(false)
+    setNewAttributeRequired(false)
+    setNewAttributeEnumKey('')
+    setNewAttributeEnumValue('')
     handleModalClose()
   }
 
+  const sortAttributes = (attributes) => {
+    return Object.keys(attributes)
+      .sort()
+      .reduce((sortedAttributes, key) => {
+        sortedAttributes[key] = attributes[key];
+        return sortedAttributes;
+      }, {});
+  }
+
   const renderTypeOptions = () => {
-    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Adress', 'Ref']
+    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Address', 'Ref']
     return baseTypes
   }
 
@@ -242,18 +324,18 @@ const EditDatabase: FC = () => {
 
   const handleAddModel = () => {
     if (newModelName) {
-      setModelSchemas(prevState => ({
+      setModelSchemas((prevState) => ({
         ...prevState,
         [newModelName]: {
           name: newModelName,
-          attributes: {}
-        }
+          attributes: {},
+        },
       }))
       setNewModelName('')
       handleAddModelClose()
     }
   }
-
+  
   return (
     <Box
       overflowY="auto"
@@ -264,7 +346,8 @@ const EditDatabase: FC = () => {
       m={0}
       w={'100%'}
       h={'100%'}
-      bg="rgb(236, 236, 236)">
+      bg="rgb(236, 236, 236)"
+    >
       <HStack mb={4}>
         <Button background="#00bf91" color="#f4f4f4" onClick={handleAddModelOpen}>Add Model Schema</Button>
       </HStack>
@@ -281,7 +364,7 @@ const EditDatabase: FC = () => {
           />
         ))}
       </Accordion>
-
+  
       <Modal isOpen={isAddModelOpen} onClose={handleAddModelClose}>
         <ModalOverlay />
         <ModalContent>
@@ -303,7 +386,7 @@ const EditDatabase: FC = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
-
+  
       <Modal isOpen={isOpen} onClose={handleModalClose}>
         <ModalOverlay />
         <ModalContent>
@@ -316,17 +399,17 @@ const EditDatabase: FC = () => {
                 <VStack spacing={3} mt={4} alignItems="start">
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Type:</Text>
-                    <Select defaultValue={models[editingAttribute.modelName].attributes[editingAttribute.attr].type} onChange={(e) => setSelectedType(e.target.value)}>
+                    <Select value={newAttributeType} onChange={(e) => setNewAttributeType(e.target.value)}>
                       {renderTypeOptions().map((type) => (
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </Select>
                   </HStack>
-                  {selectedType === 'Ref' && (
+                  {newAttributeType === 'Ref' && (
                     <>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Reference Model:</Text>
-                        <Select onChange={(e) => setSelectedRef(e.target.value)}>
+                        <Select value={newAttributeRef} onChange={(e) => setNewAttributeRef(e.target.value)}>
                           {Object.keys(models).map((modelName) => (
                             <option key={modelName} value={modelName}>{models[modelName].name}</option>
                           ))}
@@ -334,7 +417,7 @@ const EditDatabase: FC = () => {
                       </HStack>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Local Field:</Text>
-                        <Select onChange={(e) => setSelectedLocalField(e.target.value)}>
+                        <Select value={newAttributeLocalField} onChange={(e) => setNewAttributeLocalField(e.target.value)}>
                           {getAttributes(editingAttribute.modelName).map((attr) => (
                             <option key={attr} value={attr}>{attr}</option>
                           ))}
@@ -342,8 +425,8 @@ const EditDatabase: FC = () => {
                       </HStack>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Foreign Field:</Text>
-                        <Select onChange={(e) => setSelectedForeignField(e.target.value)}>
-                          {selectedRef && getAttributes(selectedRef).map((attr) => (
+                        <Select value={newAttributeForeignField} onChange={(e) => setNewAttributeForeignField(e.target.value)}>
+                          {newAttributeRef && getAttributes(newAttributeRef).map((attr) => (
                             <option key={attr} value={attr}>{attr}</option>
                           ))}
                           <option key='id' value='id'>id</option>
@@ -353,34 +436,39 @@ const EditDatabase: FC = () => {
                   )}
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Multiple:</Text>
-                    <Checkbox isChecked={models[editingAttribute.modelName].attributes[editingAttribute.attr].multiple} />
+                    <Checkbox
+                      isChecked={newAttributeMultiple}
+                      onChange={(e) => setNewAttributeMultiple(e.target.checked)}
+                    />
                   </HStack>
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Required:</Text>
-                    <Checkbox isChecked={models[editingAttribute.modelName].attributes[editingAttribute.attr].required} />
+                    <Checkbox
+                      isChecked={newAttributeRequired}
+                      onChange={(e) => setNewAttributeRequired(e.target.checked)}
+                    />
                   </HStack>
                   <VStack alignItems="start">
                     <Text fontWeight="bold">Enum Values:</Text>
-                    {models[editingAttribute.modelName].attributes[editingAttribute.attr].enumValues &&
-                      Object.entries(models[editingAttribute.modelName].attributes[editingAttribute.attr].enumValues).map(([key, value]) => (
-                        <HStack key={key} justifyContent="start">
-                          <Text>{key}:</Text>
-                          <Input defaultValue={value} />
-                        </HStack>
-                      ))}
+                    {Object.entries(enums[newAttributeEnumKey] || {}).map(([key, value]) => (
+                      <HStack key={key} justifyContent="start">
+                        <Text>{key}:</Text>
+                        <Input defaultValue={value} />
+                      </HStack>
+                    ))}
                     <HStack justifyContent="start">
                       <Text fontWeight="bold">Add Enum:</Text>
-                      <Select placeholder="Select Enum" onChange={(e) => setSelectedEnumKey(e.target.value)}>
+                      <Select placeholder="Select Enum" value={newAttributeEnumKey} onChange={(e) => setNewAttributeEnumKey(e.target.value)}>
                         {Object.keys(enums).map((enumKey) => (
                           <option key={enumKey} value={enumKey}>{enumKey}</option>
                         ))}
                       </Select>
                     </HStack>
-                    {selectedEnumKey && (
+                    {newAttributeEnumKey && (
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Default Value:</Text>
-                        <Select placeholder="Select Default Value" onChange={(e) => setSelectedEnumValue(e.target.value)}>
-                          {Object.keys(enums[selectedEnumKey] || {}).map((enumVal) => (
+                        <Select placeholder="Select Default Value" value={newAttributeEnumValue} onChange={(e) => setNewAttributeEnumValue(e.target.value)}>
+                          {Object.keys(enums[newAttributeEnumKey] || {}).map((enumVal) => (
                             <option key={enumVal} value={enumVal}>{enumVal}</option>
                           ))}
                         </Select>
@@ -395,21 +483,21 @@ const EditDatabase: FC = () => {
                 <VStack spacing={3} mt={4} alignItems="start">
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Name:</Text>
-                    <Input placeholder="Attribute Name" />
+                    <Input value={newAttributeName} placeholder="Attribute Name" onChange={(e) => setNewAttributeName(e.target.value)} />
                   </HStack>
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Type:</Text>
-                    <Select onChange={(e) => setSelectedType(e.target.value)}>
+                    <Select value={newAttributeType} onChange={(e) => setNewAttributeType(e.target.value)}>
                       {renderTypeOptions().map((type) => (
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </Select>
                   </HStack>
-                  {selectedType === 'Ref' && (
+                  {newAttributeType === 'Ref' && (
                     <>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Reference Model:</Text>
-                        <Select onChange={(e) => setSelectedRef(e.target.value)}>
+                        <Select value={newAttributeRef} onChange={(e) => setNewAttributeRef(e.target.value)}>
                           {Object.keys(models).map((modelName) => (
                             <option key={modelName} value={modelName}>{models[modelName].name}</option>
                           ))}
@@ -417,7 +505,7 @@ const EditDatabase: FC = () => {
                       </HStack>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Local Field:</Text>
-                        <Select onChange={(e) => setSelectedLocalField(e.target.value)}>
+                        <Select value={newAttributeLocalField} onChange={(e) => setNewAttributeLocalField(e.target.value)}>
                           {getAttributes(addingAttributeModel).map((attr) => (
                             <option key={attr} value={attr}>{attr}</option>
                           ))}
@@ -425,8 +513,8 @@ const EditDatabase: FC = () => {
                       </HStack>
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Foreign Field:</Text>
-                        <Select onChange={(e) => setSelectedForeignField(e.target.value)}>
-                          {selectedRef && getAttributes(selectedRef).map((attr) => (
+                        <Select value={newAttributeForeignField} onChange={(e) => setNewAttributeForeignField(e.target.value)}>
+                          {newAttributeRef && getAttributes(newAttributeRef).map((attr) => (
                             <option key={attr} value={attr}>{attr}</option>
                           ))}
                           <option key='id' value='id'>id</option>
@@ -436,28 +524,40 @@ const EditDatabase: FC = () => {
                   )}
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Multiple:</Text>
-                    <Checkbox />
+                    <Checkbox
+                      isChecked={newAttributeMultiple}
+                      onChange={(e) => setNewAttributeMultiple(e.target.checked)}
+                    />
                   </HStack>
                   <HStack justifyContent="start">
                     <Text fontWeight="bold">Required:</Text>
-                    <Checkbox />
+                    <Checkbox
+                      isChecked={newAttributeRequired}
+                      onChange={(e) => setNewAttributeRequired(e.target.checked)}
+                    />
                   </HStack>
                   <VStack alignItems="start">
                     <Text fontWeight="bold">Enum Values:</Text>
+                    {Object.entries(enums[newAttributeEnumKey] || {}).map(([key, value]) => (
+                      <HStack key={key} justifyContent="start">
+                        <Text>{key}:</Text>
+                        <Input defaultValue={value} />
+                      </HStack>
+                    ))}
                     <HStack justifyContent="start">
                       <Text fontWeight="bold">Add Enum:</Text>
-                      <Select placeholder="Select Enum" onChange={(e) => setSelectedEnumKey(e.target.value)}>
+                      <Select placeholder="Select Enum" value={newAttributeEnumKey} onChange={(e) => setNewAttributeEnumKey(e.target.value)}>
                         {Object.keys(enums).map((enumKey) => (
                           <option key={enumKey} value={enumKey}>{enumKey}</option>
                         ))}
                       </Select>
                     </HStack>
-                    {selectedEnumKey && (
+                    {newAttributeEnumKey && (
                       <HStack justifyContent="start">
                         <Text fontWeight="bold">Default Value:</Text>
-                        <Select placeholder="Select Default Value" onChange={(e) => setSelectedEnumValue(e.target.value)}>
-                          {Object.keys(enums[selectedEnumKey]).map((enumVal) => (
-                            <option key={enumVal} value={enumVal}>{enums[selectedEnumKey][enumVal]}</option>
+                        <Select placeholder="Select Default Value" value={newAttributeEnumValue} onChange={(e) => setNewAttributeEnumValue(e.target.value)}>
+                          {Object.keys(enums[newAttributeEnumKey] || {}).map((enumVal) => (
+                            <option key={enumVal} value={enumVal}>{enumVal}</option>
                           ))}
                         </Select>
                       </HStack>
@@ -478,5 +578,4 @@ const EditDatabase: FC = () => {
     </Box>
   )
 }
-
 export default EditDatabase
