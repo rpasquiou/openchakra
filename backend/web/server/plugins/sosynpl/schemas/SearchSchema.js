@@ -68,11 +68,11 @@ const SearchSchema = new Schema({
   },
   profiles: [{
     type: Schema.Types.ObjectId,
-    ref: 'mission',
+    ref: 'customerFreelance',
   }],
   missions: [{
     type: Schema.Types.ObjectId,
-    ref: 'customerFreelance',
+    ref: 'mission',
   }],
 }, schemaOptions)
 
