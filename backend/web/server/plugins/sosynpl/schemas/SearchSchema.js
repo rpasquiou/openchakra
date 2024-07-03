@@ -39,12 +39,12 @@ const SearchSchema = new Schema({
   experiences: [{
     type: String,
     enum: Object.keys(EXPERIENCE),
-    required: false,
+    required: true,
   }],
   pilars: [{
     type: String,
     enum: Object.keys(SS_PILAR),
-    required: false,
+    required: true,
   }],
   sectors: [{
     type: Schema.Types.ObjectId,
