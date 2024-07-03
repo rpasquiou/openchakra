@@ -37,13 +37,16 @@ const searchFreelances = async (userId, params, data, fields)  => {
   if (filter.available) {
     filter.availability=AVAILABILITY_ON
   }
-  if (!lodash.isEmpty(data.min_daily_rate) || !lodash.isEmpty(data.max_daily_rate)) {
+  if (!!data.min_daily_rate || !!data.max_daily_rate) {
+    console.log('i have rates', data.min_daily_rate, data.max_daily_rate)
     filter.rate={}
-    if (!!filter.min_daily_rate) {
-      filter.rate['$gte']=data.min_daily_rate
+    if (!!data.min_daily_rate) {
+      console.log('i have a min')
+      filter.rate={...filter.rate, $gte: data.min_daily_rate}
     }
-    if (!!filter.max_daily_rate) {
-      filter.rate['$lte']=data.max_daily_rate
+    if (!!data.max_daily_rate) {
+      console.log('i have a max')
+      filter.rate={...filter.rate, $lte: data.max_daily_rate}
     }
   }
 
