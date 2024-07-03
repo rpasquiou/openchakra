@@ -26,21 +26,21 @@ const SearchSchema = new Schema({
     type: Number,
     required: false,
   },
-  work_mode: {
+  work_modes: [{
     type: String,
     enum: Object.keys(WORK_MODE),
     required: false,
-  },
+  }],
   work_durations: [{
     type: String,
     enum: Object.keys(WORK_DURATION),
     required: true,
   }],
-  experience: {
+  experiences: [{
     type: String,
     enum: Object.keys(EXPERIENCE),
     required: false,
-  },
+  }],
   pilars: [{
     type: String,
     enum: Object.keys(SS_PILAR),
