@@ -41,14 +41,6 @@ const withDynamicCheckboxGroup = Component => {
     return (
       <div {...props} key={internalValue} value={internalValue}>
       <Component {...props} id={undefined} onChange={onChange} value={internalValue}>
-        {enumValues ?
-          <Flex flexDirection={props.flexDirection} justifyContent={props.justifyContent}>
-          {
-            Object.keys(enumValues).map((k, idx) => <Flex flexDirection='row'><Radio value={k} />{enumValues[k]}</Flex>)
-          }
-          </Flex>
-          :null
-        }
         <div>{children}</div>
       </Component>
       </div>
