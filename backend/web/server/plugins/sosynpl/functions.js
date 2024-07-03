@@ -339,11 +339,11 @@ declareVirtualField({model: 'report', field: 'quotation', instance: 'quotation'}
 /** Report end */
 
 /** Search start */
-const SEARCH_FIELDS='available,city,city_radius,experience,expertises,max_daily_rate,min_daily_rate,pattern,pilars,sectors,work_durations,work_mode,mode'
+const SEARCH_FIELDS='available,city,city_radius,experiences,expertises,max_daily_rate,min_daily_rate,pattern,pilars,sectors,work_durations,work_modes,mode'
 declareEnumField({model: 'search', field: 'mode', instance: 'String', enumValues: SEARCH_MODE})
-declareEnumField({model: 'search', field: 'work_mode', instance: 'String', enumValues: WORK_MODE})
+declareEnumField({model: 'search', field: 'work_modes', instance: 'String', enumValues: WORK_MODE})
 declareEnumField({model: 'search', field: 'work_durations', instance: 'Array', enumValues: WORK_DURATION})
-declareEnumField({model: 'search', field: 'experience', instance: 'String', enumValues: EXPERIENCE})
+declareEnumField({model: 'search', field: 'experiences', instance: 'String', enumValues: EXPERIENCE})
 declareEnumField({model: 'search', field: 'pilars', instance: 'String', enumValues: SS_PILAR})
 declareComputedField({model: 'search', field: 'profiles', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
 declareComputedField({model: 'search', field: 'missions', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
