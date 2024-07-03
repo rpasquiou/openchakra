@@ -17,7 +17,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
   const filter={role: ROLE_FREELANCE}
   if (data.pattern?.trim()) {
     const regExp=new RegExp(data.pattern, 'i')
-    filter.description={$or :TEXT_SEARCH_FIELDS.map(f => ({[f]: regExp}))}
+    TEXT_SEARCH_FIELDS.forEach(field => filter[field]=regExp)
   }
   if (!lodash.isEmpty(data.work_modes)) {
     filter.work_mode={$in: data.work_modes}
@@ -49,6 +49,8 @@ const searchFreelances = async (userId, params, data, fields)  => {
       filter.rate['$lte']=data.max_daily_rate
     }
   }
+
+  console.log('filter', filter)
   let candidates=await CustomerFreelance.find({...filter})
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
