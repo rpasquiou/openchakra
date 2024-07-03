@@ -10,14 +10,14 @@ const withDynamicCheckboxGroup = Component => {
   const Internal = ({children, noautosave, ...props}) => {
     const dataSource=props.dataSource
     const enumValues=props.enum ? JSON.parse(props.enum) : null
-    const computed = props.dataSource ? lodash.get(props.dataSource, props.attribute).map(v => lodash.isObject(v) ? v._id : v) : []
+    const computed = props.dataSource ? (lodash.get(props.dataSource, props.attribute)||[]).map(v => lodash.isObject(v) ? v._id : v) : []
     const [internalValue, setInternalValue] = useState(computed)
 
     // Refresh on new data
     useEffect(() => {
       const dataSource=props.dataSource
       const enumValues=props.enum ? JSON.parse(props.enum) : null
-      const computed = props.dataSource ? lodash.get(props.dataSource, props.attribute).map(v => lodash.isObject(v) ? v._id : v) : []
+      const computed = props.dataSource ? (lodash.get(props.dataSource, props.attribute)||[]).map(v => lodash.isObject(v) ? v._id : v) : []
       setInternalValue(computed)
     }, [props.dataSource, props.attribute])
     // TODO: set comp value because value store in the component is not recognized as an array
