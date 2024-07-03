@@ -14,7 +14,7 @@ const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
-const { computeSuggestedFreelances, searchFreelances } = require("./search");
+const { computeSuggestedFreelances, searchFreelances, countFreelances } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 
@@ -346,6 +346,7 @@ declareEnumField({model: 'search', field: 'work_durations', instance: 'Array', e
 declareEnumField({model: 'search', field: 'experiences', instance: 'String', enumValues: EXPERIENCE})
 declareEnumField({model: 'search', field: 'pilars', instance: 'String', enumValues: SS_PILAR})
 declareComputedField({model: 'search', field: 'profiles', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
+declareComputedField({model: 'search', field: 'profiles_count', instance: 'Number', requires: SEARCH_FIELDS, getterFn: countFreelances })
 declareComputedField({model: 'search', field: 'missions', instance: 'Array', requires: SEARCH_FIELDS, getterFn: searchFreelances })
 /** Search end */
 

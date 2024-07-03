@@ -61,6 +61,12 @@ const searchFreelances = async (userId, params, data, fields)  => {
   return candidates
 }
 
+// TODO: database should compute fields using dependency tree, so I can get data.profiles.length
+const countFreelances = async (userId, params, data, fields)  => {
+  const freelances=await searchFreelances(userId, params, data, fields)
+  return freelances.length
+}
+
 module.exports={
-  computeSuggestedFreelances, searchFreelances,
+  computeSuggestedFreelances, searchFreelances, countFreelances,
 }

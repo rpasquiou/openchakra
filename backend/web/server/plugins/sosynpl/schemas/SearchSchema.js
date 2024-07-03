@@ -70,10 +70,16 @@ const SearchSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'customerFreelance',
   }],
+  profiles_count: {
+    type: Number,
+  },
   missions: [{
     type: Schema.Types.ObjectId,
     ref: 'mission',
   }],
+  missions_count: {
+    type: Number,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
