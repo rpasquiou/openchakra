@@ -29,7 +29,7 @@ const SearchSchema = new Schema({
   work_modes: [{
     type: String,
     enum: Object.keys(WORK_MODE),
-    required: false,
+    required: true,
   }],
   work_durations: [{
     type: String,
