@@ -22,9 +22,6 @@ const searchFreelances = async (userId, params, data, fields)  => {
   if (!lodash.isEmpty(data.work_modes)) {
     filter.work_mode={$in: data.work_modes}
   }
-  if (!lodash.isEmpty(data.experiences)) {
-    filter.experiences={$in: data.experiences}
-  }
   if (!lodash.isEmpty(data.work_durations)) {
     filter.work_duration={$in: data.work_durations}
   }
