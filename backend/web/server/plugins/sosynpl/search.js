@@ -14,10 +14,10 @@ const TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 const searchFreelances = async (userId, params, data, fields)  => {
   
   console.log('Filtering with', data)
-  const filter={role: ROLE_FREELANCE}
+  let filter={role: ROLE_FREELANCE}
   if (data.pattern?.trim()) {
     const regExp=new RegExp(data.pattern, 'i')
-    TEXT_SEARCH_FIELDS.forEach(field => filter[field]=regExp)
+    filter={...filter, $or: TEXT_SEARCH_FIELDS.map(field => ({[field]:regExp}))}
   }
   if (!lodash.isEmpty(data.work_modes)) {
     filter.work_mode={$in: data.work_modes}
