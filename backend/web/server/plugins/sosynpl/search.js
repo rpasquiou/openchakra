@@ -89,7 +89,7 @@ const searchAnnounces = async (userId, params, data, fields)  => {
   }
 
   console.log('filter', filter)
-  let candidates=await Announce.find({...filter})
+  let candidates=await Announce.find({...filter}).populate('user')
 
   // Filter city & distance
   if (!lodash.isEmpty(data.city)) {
