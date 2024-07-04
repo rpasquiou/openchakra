@@ -1,5 +1,6 @@
 const User = require("../../models/User")
 const Announce = require("../../models/Announce")
+const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE } = require("./consts")
@@ -401,6 +402,11 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   if (['freelance', 'customer'].includes(model)) {
     const role=model=='freelance' ? ROLE_FREELANCE : ROLE_CUSTOMER
     return({model: 'customerFreelance', fields, id, user, params: {...params, 'filter.role': role}})
+  }
+  // User gets a new search: create it
+  if (model=='search' && !id) {
+    const newSearch=await Search.create({})
+    return { model, fields, id: newSearch._id, user, params }
   }
   return { model, fields, id, user, params }
 }
