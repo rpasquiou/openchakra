@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
-const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_DAYS, ANNOUNCE_STATUS} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_WORK_DAYS, ANNOUNCE_STATUS, DURATION_UNIT_DAYS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -286,7 +286,7 @@ AnnounceSchema.virtual('received_applications_count', {
 
 AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
   if (!!this.duration && !!this.duration_unit && !!this.budget) {
-    return this.budget/(this.duration*DURATION_UNIT_DAYS[this.duration_unit])
+    return this.budget/(this.duration*DURATION_UNIT_WORK_DAYS[this.duration_unit])
   }
   return null
 })
@@ -311,6 +311,13 @@ AnnounceSchema.virtual('serial_number', DUMMY_REF).get(function() {
     return undefined
   }
   return `A${moment().format('YY')}${this._counter.toString().padStart(5, 0)}`
+})
+
+AnnounceSchema.virtual('_duration_days', DUMMY_REF).get(function() {
+  if (!this.duration || !this.duration_unit) {
+    return null
+  }
+  return this.duration*DURATION_UNIT_DAYS[this.duration_unit]
 })
 
 module.exports = AnnounceSchema
