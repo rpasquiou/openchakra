@@ -76,7 +76,7 @@ const User = require('../../models/User')
 let ROLES={}
 try{
   ROLES=require(`../../plugins/${getDataModel()}/consts`).ROLES
-  RES_TO_COME=require(`../../plugins/${getDataModel()}/consts`).RES_TO_COME
+  //RES_TO_COME=require(`../../plugins/${getDataModel()}/consts`).RES_TO_COME
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
