@@ -14,7 +14,6 @@ const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 
 const searchFreelances = async (userId, params, data, fields)  => {
   
-  // console.log('Filtering profiles with', data)
   let filter={role: ROLE_FREELANCE}
   if (data.pattern?.trim()) {
     const regExp=new RegExp(data.pattern, 'i')
@@ -42,16 +41,13 @@ const searchFreelances = async (userId, params, data, fields)  => {
     console.log('i have rates', data.min_daily_rate, data.max_daily_rate)
     filter.rate={}
     if (!!data.min_daily_rate) {
-      console.log('i have a min')
       filter.rate={...filter.rate, $gte: data.min_daily_rate}
     }
     if (!!data.max_daily_rate) {
-      console.log('i have a max')
       filter.rate={...filter.rate, $lte: data.max_daily_rate}
     }
   }
 
-  console.log('filter', filter)
   let candidates=await CustomerFreelance.find({...filter})
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
@@ -85,27 +81,12 @@ const searchAnnounces = async (userId, params, data, fields)  => {
   if (!lodash.isEmpty(data.experiences)) {
     filter.experience={$in: data.experiences}
   }
-  // if (!lodash.isEmpty(data.sectors)) {
-  //   filter.work_sector={$in: data.sectors}
-  // }
-  // if (!lodash.isEmpty(data.expertises)) {
-  //   filter.expertises={$in: data.expertises}
-  // }
-  // if (!!data.available) {
-  //   filter.availability=AVAILABILITY_ON
-  // }
-  // if (!!data.min_daily_rate || !!data.max_daily_rate) {
-  //   console.log('i have rates', data.min_daily_rate, data.max_daily_rate)
-  //   filter.rate={}
-  //   if (!!data.min_daily_rate) {
-  //     console.log('i have a min')
-  //     filter.rate={...filter.rate, $gte: data.min_daily_rate}
-  //   }
-  //   if (!!data.max_daily_rate) {
-  //     console.log('i have a max')
-  //     filter.rate={...filter.rate, $lte: data.max_daily_rate}
-  //   }
-  // }
+  if (!lodash.isEmpty(data.sectors)) {
+    filter.sectors={$in: data.sectors}
+  }
+  if (!lodash.isEmpty(data.expertises)) {
+    filter.expertises={$in: data.expertises}
+  }
 
   console.log('filter', filter)
   let candidates=await Announce.find({...filter})
@@ -113,7 +94,8 @@ const searchAnnounces = async (userId, params, data, fields)  => {
   // Filter city & distance
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
-      const distance=computeDistanceKm(c.address, data.city)
+      const distance=computeDistanceKm(c.city, data.city)
+      console.log('city', c.city, 'distance', distance, 'to', data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
@@ -122,15 +104,24 @@ const searchAnnounces = async (userId, params, data, fields)  => {
   if (!lodash.isEmpty(data.work_durations)) {
     candidates=candidates.filter(c => {
       const matches=data.work_durations.find(duration => DURATION_FILTERS[duration](c._duration_days))
-      console.log('testing', c._duration_days, 'with', data.work_durations, 'matches', !!matches)
       return matches
     })
   }
+
+  // Filter price rates
+  if (!!data.min_daily_rate) {
+    candidates = candidates.filter(c => c.average_daily_rate >= data.min_daily_rate)
+  }
+  if (!!data.max_daily_rate) {
+    candidates = candidates.filter(c => c.average_daily_rate <= data.max_daily_rate)
+  }
+
   return candidates
 }
 
 const countAnnounce = async (userId, params, data, fields)  => {
-  return 0
+  const announces=await searchAnnounces(userId, params, data, fields)
+  return announces.length
 }
 
 module.exports={
