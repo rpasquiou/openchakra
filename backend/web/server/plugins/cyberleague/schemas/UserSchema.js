@@ -60,7 +60,7 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'company',
     index: true,
-    required: false,
+    required: false,ROLE
   },
   expertises: [{
     type: Schema.Types.ObjectId,
