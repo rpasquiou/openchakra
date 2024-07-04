@@ -423,7 +423,7 @@ const preCreate = async ({model, params, user}) => {
   }
   if (model=='report') {
     params.mission=params.mission || params.parent
-    return { model, params, user }
+    return { model, params, user, skip_validation: true  }
   }
   if (model=='application') {
     const parentModel=await getModel(params.parent)
