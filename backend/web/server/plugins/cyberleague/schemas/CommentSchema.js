@@ -33,12 +33,4 @@ const CommentSchema = new Schema(
   schemaOptions,
 )
 
-// Returns my reviewz
-CommentSchema.virtual('children', {
-  ref: 'comment', // The Model to use
-  localField: '_id', // Find in Model, where localField
-  foreignField: 'parent', // is equal to foreignField
-})
-
-
 module.exports = CommentSchema

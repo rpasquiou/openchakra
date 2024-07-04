@@ -1,14 +1,14 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
-const { CONTENTS_TYPE } = require('../../smartdiet/consts')
+const { CONTENT_TYPE } = require('../consts')
 
 const Schema = mongoose.Schema
 
 const ContentSchema = new Schema({
   type: {
     type: String, 
-    enum: Object.keys(CONTENTS_TYPE),
+    enum: Object.keys(CONTENT_TYPE),
     required: [true, `Le type de contenu est obligatoire`]
   },
   creator: {

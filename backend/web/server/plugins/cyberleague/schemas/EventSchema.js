@@ -41,8 +41,4 @@ const EventSchema = new Schema({
   }]
 }, schemaOptions)
 
-EventSchema.virtual('duration', DUMMY_REF).get(function () {
-  return moment(this.end_date).diff(this.start_date, 'minutes')
-})
-
 module.exports = EventSchema

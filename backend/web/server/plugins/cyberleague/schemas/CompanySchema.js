@@ -53,9 +53,9 @@ const CompanySchema = new Schema(
       type: String,
       required: false,
     },
-    targets: {
+    expertises: {
       type: Schema.Types.ObjectId,
-      ref: 'target',
+      ref: 'expertise',
       index: true,
       required: false
     },
