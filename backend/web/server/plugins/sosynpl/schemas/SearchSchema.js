@@ -73,11 +73,11 @@ const SearchSchema = new Schema({
   profiles_count: {
     type: Number,
   },
-  missions: [{
+  announces: [{
     type: Schema.Types.ObjectId,
-    ref: 'mission',
+    ref: 'announce',
   }],
-  missions_count: {
+  announces_count: {
     type: Number,
   },
 }, schemaOptions)
