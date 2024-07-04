@@ -254,7 +254,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       }
       const firstDetail=firstQuotation.details[0]
       if (lodash.isEmpty(firstDetail)) {
-        throw new BadRequestError(`Le devis est incomplet`)
+        throw new BadRequestError(`Le devis n'a aucune ligne de détail`)
       }
       await firstDetail.validate()
     }
