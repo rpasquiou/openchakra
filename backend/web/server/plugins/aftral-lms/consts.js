@@ -31,6 +31,7 @@ const RESOURCE_TYPE_LINK=`RESOURCE_TYPE_LINK`
 const RESOURCE_TYPE_H5P=`RESOURCE_TYPE_H5P`
 const RESOURCE_TYPE_INFOGRAPHY=`RESOURCE_TYPE_INFOGRAPHY`
 const RESOURCE_TYPE_AUDIO=`RESOURCE_TYPE_AUDIO`
+const RESOURCE_TYPE_FOLDER=`RESOURCE_TYPE_FOLDER`
 
 const RESOURCE_TYPE={
   [RESOURCE_TYPE_SCORM]:"Scorm",
@@ -45,6 +46,21 @@ const RESOURCE_TYPE={
   [RESOURCE_TYPE_H5P]:"Ressource H5P",
   [RESOURCE_TYPE_INFOGRAPHY]:"Infographie",
   [RESOURCE_TYPE_AUDIO]:"Audio",
+  [RESOURCE_TYPE_FOLDER]:"Dossier",
+}
+
+//'doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'
+const RESOURCE_TYPE_EXT={
+  [RESOURCE_TYPE_SCORM]: ['.html', '.htm'],
+  [RESOURCE_TYPE_VISIO]:"Classe virtuelle",
+  [RESOURCE_TYPE_PDF]: '.pdf',
+  [RESOURCE_TYPE_WORD]: ['.doc', '.docx'],
+  [RESOURCE_TYPE_EXCEL]: ['.xls', '.xlsx'],
+  [RESOURCE_TYPE_PPT]: ['.pps', '.ppsx', '.ppt', '.pptx'],
+  [RESOURCE_TYPE_VIDEO]: ['.mp4', '.webm'],
+  [RESOURCE_TYPE_LINK]: [],
+  [RESOURCE_TYPE_AUDIO]: ['.mp3','.wav','.flac','.aac','.ogg','.wma','.m4a','.aiff'],
+  [RESOURCE_TYPE_FOLDER]: ['.zip'],
 }
 
 const PROGRAM_STATUS_DRAFT="PROGRAM_STATUS_DRAFT"
@@ -112,5 +128,5 @@ module.exports={
     FEED_TYPE, FEED_TYPE_GENERAL, FEED_TYPE_GROUP, FEED_TYPE_SESSION, RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF,
     RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD,
     ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK, ACHIEVEMENT_RULE_SUCCESS,
-    SCALE,
+    SCALE, RESOURCE_TYPE_EXT,
 }

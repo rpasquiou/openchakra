@@ -21,7 +21,7 @@ require('../../models/Search')
 const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks } = require('./resources')
+const { getUserHomeworks, getResourceType } = require('./resources')
 const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
 const { getBlockName } = require('./block')
 const { getFinishedResources } = require('./resources')
@@ -100,7 +100,7 @@ declareComputedField({model: 'search', field: 'blocks', getterFn: searchBlocks})
 declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
-const preCreate = ({model, params, user}) => {
+const preCreate = async ({model, params, user}) => {
   if (model=='session') {
     throw new Error(`La création de session n'est pas finalisée`)
   }
@@ -109,6 +109,10 @@ const preCreate = ({model, params, user}) => {
   }
   if ('homework'==model) {
     params.trainee=user
+  }
+  if (model=='resource') {
+    const foundResourceType=await getResourceType(params.url)
+    params.resource_type=foundResourceType
   }
   if (model=='post') {
     params.author=user

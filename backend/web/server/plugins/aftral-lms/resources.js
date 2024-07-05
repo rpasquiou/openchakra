@@ -1,8 +1,10 @@
+const path = require('path')
 const Block = require("../../models/Block")
 const Duration = require("../../models/Duration")
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
 const { getBlockName, updateBlockStatus } = require("./block")
+const { RESOURCE_TYPE_EXT } = require('./consts')
 
 const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
@@ -38,6 +40,16 @@ const onSpentTimeChanged = async ({ blockId, user }) => {
   return res
 }
 
+const getResourceType = async url => {
+  const extension=path.extname(url)
+  const res=Object.entries(RESOURCE_TYPE_EXT).find(([type, extensions]) => extensions.includes(extension))
+  if (!res) {
+    throw new Error(`Type de ressource inconnu`)
+  }
+  return res[0]
+}
+
 module.exports={
   getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getResourceType,
 }
