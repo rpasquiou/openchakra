@@ -31,3 +31,5 @@ declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
+
+declareVirtualField({model: 'module', field: 'type', instance: 'String', enumValues: CONTENT_TYPE})

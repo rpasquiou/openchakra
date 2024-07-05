@@ -15,7 +15,7 @@ const ModuleSchema = new Schema({
   },
   trophy: {
     type: Schema.Types.ObjectId,
-    ref: 'trophy',
+    ref: 'gift',
     required: false,
   },
   coin: {
