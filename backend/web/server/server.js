@@ -30,6 +30,8 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
+// TODO: if not explicit require, chapter is not found in mongoose
+require('./models/Chapter')
 
 // Backend private
 require('./models/PageTag_')

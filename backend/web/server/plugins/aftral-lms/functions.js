@@ -35,7 +35,7 @@ const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
+const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session', 'chapter']
 
 MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
