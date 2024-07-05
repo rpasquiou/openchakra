@@ -59,13 +59,18 @@ const CompanySchema = new Schema(
       index: true,
       required: false
     },
-    baseline: {
+    bullshit_text: {
       type: String,
       required: false,
     },
     certifications: [{
       type: Schema.Types.ObjectId,
       ref: 'certification',
+      required: false,
+    }],
+    followed_by: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
       required: false,
     }]
   },
@@ -77,5 +82,18 @@ CompanySchema.virtual('users', {
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
 });
+
+CompanySchema.virtual('followers', {
+  ref: 'user',
+  localField: '_id',
+  foreignField: 'companies_following'
+})
+
+CompanySchema.virtual('followers_count', {
+  ref: 'user',
+  localField: '_id',
+  foreignField: 'companies_following',
+  count: true,
+})
 
 module.exports = CompanySchema

@@ -74,15 +74,9 @@ const UserSchema = new Schema({
     index: true,
     required: false,
   }],
-  users_following: [{
+  followers: [{
     type: Schema.Types.ObjectId,
     ref: 'user',
-    index: true,
-    required: false,
-  }],
-  companies_following: [{
-    type: Schema.Types.ObjectId,
-    ref: 'company',
     index: true,
     required: false,
   }],
@@ -93,10 +87,36 @@ const UserSchema = new Schema({
   }]
   }, {...schemaOptions})
 
-/* eslint-disable prefer-arrow-callback */
-// Required for register validation only
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
-/* eslint-enable prefer-arrow-callback */
+UserSchema.virtual('followers_count', DUMMY_REF).get(function() {
+  return this.followers?.length || 0
+})
+
+UserSchema.virtual('users_following', {
+  ref:'user',
+  localField:'_id',
+  foreignField:'followed_by',
+})
+
+UserSchema.virtual('users_following_count', {
+  ref:'user',
+  localField:'_id',
+  foreignField:'followed_by',
+  count: true,
+})
+
+UserSchema.virtual('companies_following', {
+  ref:'company',
+  localField:'_id',
+  foreignField:'followed_by',
+})
+
+UserSchema.virtual('companies_following_count', {
+  ref:'company',
+  localField:'_id',
+  foreignField:'followed_by',
+  count:true,
+})
 
 module.exports = UserSchema

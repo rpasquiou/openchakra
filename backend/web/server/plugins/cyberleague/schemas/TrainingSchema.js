@@ -9,10 +9,6 @@ const TrainingSchema = new Schema({
     ref: 'member',
     require: [true, `Le membre est obligatoire`],
   },
-  title: {
-    type: String,
-    required: [true, `Le titre est obligatoire`],
-  },
   start_date: {
     type: Date,
     required: [true, `La date de début est obligatoire`],
@@ -25,15 +21,6 @@ const TrainingSchema = new Schema({
     type: String,
     required: false,
   },
-  expertises: {
-    type: Schema.Types.ObjectId,
-    ref: 'expertise',
-    required: [true, `L' expertise est obligatoire`]
-  },
-  level: {
-    type: Number,
-    required: [true, `Le niveau d'expertise est obligatoire`]
-  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

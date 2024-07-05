@@ -3,10 +3,10 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const ModuleSchema = new Schema({
-  ressources: [{
+const CLModuleSchema = new Schema({
+  resources: [{
     type: Schema.Types.ObjectID,
-    ref: 'ressource',
+    ref: 'resource',
     required: true,
   }],
   name: {
@@ -24,4 +24,4 @@ const ModuleSchema = new Schema({
   }
 }, schemaOptions)
 
-module.exports = ModuleSchema
+module.exports = CLModuleSchema

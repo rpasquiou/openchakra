@@ -32,7 +32,7 @@ const ContentSchema = new Schema({
     type: String,
     required: false,
   },
-  source: {
+  source: { // Example: Le Monde
     type: String,
     required: false
   },
