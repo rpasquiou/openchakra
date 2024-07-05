@@ -6,7 +6,7 @@ const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK
 
 const NAMES_CACHE=new NodeCache()
 
-const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition']
+const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition', 'resource_type']
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
 
