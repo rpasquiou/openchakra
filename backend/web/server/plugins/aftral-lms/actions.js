@@ -12,6 +12,7 @@ const { cloneTree } = require('./block')
 const ACCEPTS={
   session: ['program'],
   program: ['chapter', 'module'],
+  chapter: ['module'],
   module: ['sequence'],
   sequence: ['resource'],
 }
