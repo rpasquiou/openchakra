@@ -707,13 +707,13 @@ const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMAL
 
 const NUTADVICE_MAPPING={
   migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.DATE).unix()}`),
-  start_date: 'DATE',
+  start_date: 'date',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
   gender: ({record}) => getGender(record.gender),
   age: ({record}) => (+record.age && +record.age>=18) ? +record.age : null,
   job: ({record}) => NUT_JOB[+record.job_type],
-  comment: ({record}) => NUT_SUBJECT[record.SUBJECT],
+  comment: ({record}) => NUT_SUBJECT[record.subject],
   reason: ({record}) => NUT_REASON[record.reason],
   led_to_coaching: ({record}) => +record.coaching>0,
 }
