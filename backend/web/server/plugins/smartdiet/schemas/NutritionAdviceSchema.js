@@ -33,6 +33,7 @@ const NutritionAdviceSchema = new Schema({
   },
   patient_email: {
     type: String,
+    set : v => v && v.toLowerCase() || v,
     required: [true, `L'email du patient est obligatoire`],
   },
   gender: {

@@ -706,7 +706,7 @@ const FODD_DOCUMENT_MIGRATION_KEY='migration_id'
 const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined
 
 const NUTADVICE_MAPPING={
-  migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.DATE).unix()}`),
+  migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.date).unix()}`),
   start_date: 'date',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',

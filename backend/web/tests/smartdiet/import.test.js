@@ -77,7 +77,7 @@ describe('Test imports', () => {
   })
 
   it('must import companies', async () => {
-    const res = await importCompanies(path.join(ROOT, 'smart_project.csv'))
+    await importCompanies(path.join(ROOT, 'smart_project.csv'))
     const companies=await Company.find()
     expect(companies.length).toEqual(15)
   })
