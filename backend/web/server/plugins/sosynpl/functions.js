@@ -125,6 +125,13 @@ MODELS.forEach(model => {
       options: { ref: 'mission'}
     }
   })
+  declareVirtualField({
+    model, field: 'pinned_freelances', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'freelance' }
+    },
+  })
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser', 'customerFreelance']

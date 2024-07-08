@@ -64,6 +64,12 @@ const UserSchema = new Schema({
 // Required for register validation only
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
+UserSchema.virtual('pinned_freelances', {
+  ref: 'customer',
+  localField: '_id',
+  foreignField: 'pinned_by',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

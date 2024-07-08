@@ -320,6 +320,15 @@ const CustomerFreelanceSchema = new Schema({
     default: [],
     required: false,
   },
+  pinned_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'customer',
+      required: false
+    }],
+    required: false,
+    default: [],
+  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
