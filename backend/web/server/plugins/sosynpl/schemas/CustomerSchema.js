@@ -279,13 +279,12 @@ const CustomerSchema = new Schema({
     enum: Object.keys(SUSPEND_REASON),
     set: v => v || undefined,
     required: false,
-  applications: {
+  },
+  applications: [{
     type: Schema.Types.ObjectId,
     required: false,
-    multiple: true,
     ref: 'application'
-  }
-  },
+  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
