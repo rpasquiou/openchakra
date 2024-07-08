@@ -30,6 +30,7 @@ const { updateBlockStatus } = require('./block')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
+const { getAvailableCodes } = require('./program')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -77,6 +78,7 @@ MODELS.forEach(model => {
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
+declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
@@ -252,6 +254,12 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 }
 
 setPreprocessGet(preprocessGet)
+
+const filterDataUser = async ({model, data, id, user}) => {
+  return data
+}
+
+setFilterDataUser(filterDataUser)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 

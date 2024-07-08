@@ -15,7 +15,15 @@ const ProgramSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'productCode',
   }],
+  available_codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode'
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+/* eslint-disable prefer-arrow-callback */
+/* eslint-enable prefer-arrow-callback */
+
 
 ProgramSchema.pre('validate', function(next) {
   return mongoose.models['program'].findOne(

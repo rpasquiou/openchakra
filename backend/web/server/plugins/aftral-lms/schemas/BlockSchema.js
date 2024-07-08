@@ -206,7 +206,6 @@ BlockSchema.virtual('has_homework').get(function(value) {
 BlockSchema.pre('validate', function(next) {
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
-  console.log(this)
   if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM) {
     if (!this.success_scale) {
       if (!this.success_note_min) {
