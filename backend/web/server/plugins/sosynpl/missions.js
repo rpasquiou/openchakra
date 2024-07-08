@@ -25,6 +25,24 @@ const current_missions_count = async (user) => {
   return current_missions_count
 }
 
+const coming_missions_count = async (user) => {
+  const currentDate = moment().toDate()
+
+  const matchCondition = {
+    ...(user.role === ROLE_CUSTOMER ? { customer: mongoose.Types.ObjectId(user._id) } : {}),
+    ...(user.role === ROLE_FREELANCE ? { freelance: mongoose.Types.ObjectId(user._id) } : {}),
+    start_date: { $gt: currentDate },
+  }
+
+  const coming_missions_count = await Mission.aggregate([
+    {
+      $match: matchCondition
+    }
+  ])
+
+  return coming_missions_count
+}
+
 module.exports = {
-  current_missions_count
+  current_missions_count, coming_missions_count
 }

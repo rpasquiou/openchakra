@@ -110,6 +110,12 @@ MODELS.forEach(model => {
       options: { ref: 'mission'}
     }
   })
+  declareVirtualField({model, field: 'coming_missions_count', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'mission'}
+    }
+  })
 })
 
 const FREELANCE_MODELS=['freelance', 'loggedUser', 'genericUser', 'customerFreelance']
