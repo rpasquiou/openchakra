@@ -273,6 +273,10 @@ const AnnounceSchema = new Schema({
     }],
     default: [],
     required: false,
+  },
+  pins: {
+    type: Boolean,
+    required: false,
   }
 }, schemaOptions)
 

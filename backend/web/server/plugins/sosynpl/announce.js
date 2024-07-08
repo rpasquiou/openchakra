@@ -52,6 +52,16 @@ const cancelAnnounce = async ({dataId}) => {
   }))
 }
 
+const isPinned = (userId, params, data) => {
+  const pinned = data?.pinned_by?.some(l => idEqual(l._id, userId))
+  return pinned
+}
+
+const setPinned = ({ id, attribute, value, user }) => {
+  const upd=!!value ? { $addToSet: { pinned_by: user._id }} : { $pullAll: { pinned_by: [user._id] }}
+  return Announce.findByIdAndUpdate(id, upd)
+}
+
 module.exports={
-  clone, canCancel, cancelAnnounce,
+  clone, canCancel, cancelAnnounce, isPinned, setPinned,
 }
