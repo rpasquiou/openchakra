@@ -265,6 +265,15 @@ const AnnounceSchema = new Schema({
     default: ANNOUNCE_STATUS_DRAFT,
     required: true,
   },
+  pinned_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'freelance',
+      required: false,
+    }],
+    default: [],
+    required: false,
+  }
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {

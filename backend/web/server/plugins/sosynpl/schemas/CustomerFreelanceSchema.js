@@ -319,7 +319,7 @@ const CustomerFreelanceSchema = new Schema({
     }],
     default: [],
     required: false,
-  }
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -421,6 +421,12 @@ CustomerFreelanceSchema.virtual('sent_applications', {
   ref: 'application',
   localField: '_id',
   foreignField: 'freelance',
+})
+
+CustomerFreelanceSchema.virtual('pinned_announces', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'pinned_by',
 })
 
 /* eslint-enable prefer-arrow-callback */

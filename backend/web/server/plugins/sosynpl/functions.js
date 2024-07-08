@@ -36,6 +36,15 @@ ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
+  if(!['user','customer','admin'].includes(model)){
+    declareVirtualField({
+      model, field: 'pinned_announces', instance: 'Array', multiple: true,
+      caster: {
+        instance: 'ObjectID',
+        options: { ref: 'announce' }
+      },
+    })
+  }
   declareVirtualField({model, field: 'password2', type: 'String'})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
   declareVirtualField({model, field: 'shortname', type: 'String', requires: 'firstname,lastname'})
