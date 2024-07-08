@@ -50,6 +50,14 @@ const UserSchema = new Schema({
     get: function() {return `${this.firstname} ${this.lastname[0]}.`},
     set: () => {}
   },
+  picture: {
+    type: String,
+    required: false,
+  },
+  company_logo: {
+    type: String,
+    required: false,
+  }
   }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
