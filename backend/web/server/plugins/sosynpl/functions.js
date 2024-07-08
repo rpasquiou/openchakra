@@ -353,6 +353,15 @@ declareComputedField({model: 'search', field: 'announces', instance: 'Array', re
 declareComputedField({model: 'search', field: 'announces_count', instance: 'Number', requires: SEARCH_FIELDS, getterFn: countAnnounce })
 /** Search end */
 
+//Customer
+declareVirtualField({
+  model: 'customer', field: 'applications', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'application' }
+  },
+})
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
