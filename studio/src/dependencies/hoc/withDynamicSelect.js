@@ -22,7 +22,21 @@ const withDynamicSelect = Component => {
       const enumValues=props.enum ? JSON.parse(props.enum) : null
       let refValues=null
       if (subDataSource) {
-        refValues=lodash.get(subDataSource, subAttribute, subDataSource)
+        if (props.dataSourceId==props.subDataSourceId) {
+          refValues=[dataSource]
+        }
+        else {
+          refValues=subDataSource
+        }
+        console.log('dataSource', JSON.stringify(dataSource))
+        if (subAttribute) {
+          refValues=refValues.map(subData => lodash.get(subData, subAttribute))
+        }
+        refValues=lodash.flatten(refValues)
+        if (!!refValues[0]?._id) {
+          refValues=lodash.uniqBy(refValues, '_id')
+        }
+        
       }
       const attribute = props.attribute
 
