@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@hpcc-js/wasm": "^2.18.0",
+    "nomnoml": "^1.6.2",
+    "plantuml-encoder": "^1.4.0",
+    "viz.js": "^2.1.2"
+  }
+}

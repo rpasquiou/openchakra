@@ -1,266 +1,132 @@
-import React, { useState, useEffect, useCallback, FC, memo } from 'react';
+import React, { useState, useEffect, useCallback, FC, memo } from 'react'
 import {
   Box, Heading, Text, VStack, HStack, Button, Input, Checkbox, Select,
   Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter, ModalBody, ModalCloseButton, useDisclosure, Switch
-} from '@chakra-ui/react';
-import { useSelector } from 'react-redux';
-import { getModels } from '~core/selectors/dataSources';
-import { getEnums } from '~core/selectors/enums';
-
-
-interface Attribute {
-  type?: string;
-  ref?: boolean;
-  localField?: string;
-  foreignField?: string;
-  multiple?: boolean;
-  required?: boolean;
-  enumValues?: { [key: string]: string };
-  default?: string;
-}
-
-interface AttributeItemProps {
-  modelName: string;
-  attr: string;
-  attribute: Attribute;
-  onEdit: (modelName: string, attr: string) => void;
-}
-
-const AttributeItem: FC<AttributeItemProps> = memo(({ modelName, attr, attribute, onEdit }) => {
-  const predefinedTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Address'];
-  const isRefType = attribute.ref;
-
-  return (
-    <Box border="1px" borderColor="#2e2e2e" borderRadius="md" mb={2} p={4} width="100%" bg="#d0eddf">
-      <Accordion allowToggle>
-        <AccordionItem>
-          <h2>
-            <AccordionButton _expanded={{ bg: "#00bf91", color: "white" }}>
-              <Box flex="1" textAlign="left" fontWeight="bold">{attr}</Box>
-              <AccordionIcon />
-            </AccordionButton>
-          </h2>
-          <AccordionPanel pb={4}>
-            <Text><Text as="span" fontWeight="bold">Type:</Text> {isRefType ? 'Ref' : attribute.type}</Text>
-            {isRefType && <Text><Text as="span" fontWeight="bold">Ref:</Text> {attribute.type}</Text>}
-            {attribute.localField && <Text><Text as="span" fontWeight="bold">Local Field:</Text> {attribute.localField}</Text>}
-            {attribute.foreignField && <Text><Text as="span" fontWeight="bold">Foreign Field:</Text> {attribute.foreignField}</Text>}
-            {typeof attribute.multiple !== 'undefined' && (
-              <HStack mt={2}>
-                <Text fontWeight="bold">Multiple:</Text>
-                <Switch isChecked={attribute.multiple} isReadOnly />
-              </HStack>
-            )}
-            {typeof attribute.required !== 'undefined' && (
-              <HStack mt={2}>
-                <Text fontWeight="bold">Required:</Text>
-                <Switch isChecked={attribute.required} isReadOnly />
-              </HStack>
-            )}
-            {attribute.enumValues && (
-              <>
-                <HStack mt={2}>
-                  <Text fontWeight="bold">Enum Values:</Text>
-                </HStack>
-                <VStack align="start" border="1px" borderColor="#2e2e2e" borderRadius="md" p={2} maxH="150px" overflowY="auto">
-                  {Object.keys(attribute.enumValues).map((key) => (
-                    <HStack key={key} justifyContent="start">
-                      <Text fontWeight="bold" fontSize="sm">{key}:</Text>
-                      <Text>{attribute.enumValues![key]}</Text>
-                    </HStack>
-                  ))}
-                </VStack>
-              </>
-            )}
-            {attribute.default && (
-              <HStack mt={2} justifyContent="start">
-                <Text fontWeight="bold">Default:</Text>
-                <Text>{attribute.default}</Text>
-              </HStack>
-            )}
-            <Button mt={4} bg="#00bf91" color="white" onClick={() => onEdit(modelName, attr)}>Edit</Button>
-          </AccordionPanel>
-        </AccordionItem>
-      </Accordion>
-    </Box>
-  );
-});
-
-
-interface ModelItemProps {
-  modelName: string;
-  model: any;
-  isOpen: boolean;
-  onToggle: () => void;
-  onEditAttribute: (modelName: string, attr: string) => void;
-  onAddAttribute: (modelName: string) => void;
-  onEditSchema: (modelName: string) => void;
-  onDeleteSchema: (modelName: string) => void;
-}
-
-const ModelItem: FC<ModelItemProps> = memo(({ modelName, model, isOpen, onToggle, onEditAttribute, onAddAttribute, onEditSchema, onDeleteSchema }) => {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && !loaded) {
-      setLoaded(true);
-    }
-  }, [isOpen, loaded]);
-
-  return (
-    <AccordionItem isExpanded={isOpen} border="1px" borderColor="#2e2e2e" borderRadius="md" mb={4} bg="#f4f4f4">
-      <h2>
-        <AccordionButton onClick={onToggle} _expanded={{ bg: "#00bf91", color: "white" }}>
-          <Box flex="1" textAlign="left" fontWeight="bold" fontSize="xl">
-            {model.name}
-          </Box>
-          <AccordionIcon />
-        </AccordionButton>
-      </h2>
-      <AccordionPanel pb={4}>
-        <HStack mb={4}>
-          <Button bg="#00bf91" color="#f4f4f4" onClick={() => onAddAttribute(modelName)}>Add Attribute</Button>
-          <Button bg="#ffc107" color="#f4f4f4" onClick={() => onEditSchema(modelName)}>Edit Schema</Button>
-          <Button bg="#dc3545" color="#f4f4f4" onClick={() => onDeleteSchema(modelName)}>Delete Schema</Button>
-        </HStack>
-        {loaded ? (
-          <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)", xl: "repeat(4, 1fr)" }} gap={4} width="100%">
-            {Object.keys(model.attributes)
-              .filter((attr) => !attr.includes('.'))
-              .map((attr) => (
-                <AttributeItem
-                  key={attr}
-                  modelName={modelName}
-                  attr={attr}
-                  attribute={model.attributes[attr]}
-                  onEdit={onEditAttribute}
-                />
-              ))}
-          </Box>
-        ) : (
-          <Text>Loading...</Text>
-        )}
-      </AccordionPanel>
-    </AccordionItem>
-  );
-});
+} from '@chakra-ui/react'
+import { useSelector } from 'react-redux'
+import { getModels } from '~core/selectors/dataSources'
+import { getEnums } from '~core/selectors/enums'
+import AttributeItem from './AttributeItem'
+import ModelItem from './ModelItem'
+import Diagram from './Diagram'; // Import Diagram component
 
 const EditDatabase: FC = () => {
-  const models = useSelector(getModels);
-  const [modelSchemas, setModelSchemas] = useState(models);
-  const [newModelName, setNewModelName] = useState('');
+  const models = useSelector(getModels)
+  const [modelSchemas, setModelSchemas] = useState(models)
+  const [newModelName, setNewModelName] = useState('')
 
-  const [newAttributeName, setNewAttributeName] = useState('');
-  const [newAttributeType, setNewAttributeType] = useState('Date');
-  const [newAttributeRef, setNewAttributeRef] = useState('');
-  const [newAttributeLocalField, setNewAttributeLocalField] = useState('');
-  const [newAttributeForeignField, setNewAttributeForeignField] = useState('');
-  const [newAttributeMultiple, setNewAttributeMultiple] = useState(false);
-  const [newAttributeRequired, setNewAttributeRequired] = useState(false);
-  const [newAttributeEnumKey, setNewAttributeEnumKey] = useState('');
-  const [newAttributeEnumValue, setNewAttributeEnumValue] = useState('');
+  const [newAttributeName, setNewAttributeName] = useState('')
+  const [newAttributeType, setNewAttributeType] = useState('Date')
+  const [newAttributeRef, setNewAttributeRef] = useState('')
+  const [newAttributeLocalField, setNewAttributeLocalField] = useState('')
+  const [newAttributeForeignField, setNewAttributeForeignField] = useState('')
+  const [newAttributeMultiple, setNewAttributeMultiple] = useState(false)
+  const [newAttributeRequired, setNewAttributeRequired] = useState(false)
+  const [newAttributeEnumKey, setNewAttributeEnumKey] = useState('')
+  const [newAttributeEnumValue, setNewAttributeEnumValue] = useState('')
+
+  const [isDiagramVisible, setIsDiagramVisible] = useState(false); // State for diagram visibility
 
   const filterAttributes = (obj: any) => {
-    const result: any = {};
+    const result: any = {}
     for (const schemaName in obj) {
-      const schema = obj[schemaName];
-      const filteredAttributes: any = {};
+      const schema = obj[schemaName]
+      const filteredAttributes: any = {}
       for (const attr in schema.attributes) {
         if (!attr.includes('.')) {
-          filteredAttributes[attr] = schema.attributes[attr];
+          filteredAttributes[attr] = schema.attributes[attr]
         }
       }
       result[schemaName] = {
         ...schema,
         attributes: filteredAttributes,
-      };
+      }
     }
-    return result;
-  };
+    return result
+  }
 
-  const filteredObject = filterAttributes(models);
-  const [openItems, setOpenItems] = useState<string[]>([]);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [editingAttribute, setEditingAttribute] = useState<{ modelName: string; attr: string } | null>(null);
-  const [addingAttributeModel, setAddingAttributeModel] = useState<string | null>(null);
-  const [isAddModelOpen, setAddModelOpen] = useState(false);
-  const [editingSchemaModel, setEditingSchemaModel] = useState<string | null>(null);
-  const [enums, setEnums] = useState<{ [key: string]: any }>({});
-  const [selectedEnumKey, setSelectedEnumKey] = useState<string>('');
-  const [selectedEnumValue, setSelectedEnumValue] = useState<string>('');
+  const filteredObject = filterAttributes(models)
+  const [openItems, setOpenItems] = useState<string[]>([])
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [editingAttribute, setEditingAttribute] = useState<{ modelName: string; attr: string } | null>(null)
+  const [addingAttributeModel, setAddingAttributeModel] = useState<string | null>(null)
+  const [isAddModelOpen, setAddModelOpen] = useState(false)
+  const [editingSchemaModel, setEditingSchemaModel] = useState<string | null>(null)
+  const [enums, setEnums] = useState<{ [key: string]: any }>({})
+  const [selectedEnumKey, setSelectedEnumKey] = useState<string>('')
 
   const handleToggle = useCallback((modelName: string) => {
     setOpenItems((prevOpenItems) =>
       prevOpenItems.includes(modelName)
         ? prevOpenItems.filter((item) => item !== modelName)
         : [...prevOpenItems, modelName]
-    );
-  }, []);
+    )
+  }, [])
 
   const handleEditAttribute = useCallback((modelName: string, attr: string) => {
-    const attribute = modelSchemas[modelName].attributes[attr];
-    setEditingAttribute({ modelName, attr });
-    setNewAttributeName(attr);
-    setNewAttributeType(attribute.type || '');
-    setNewAttributeRef(attribute.ref ? attribute.type : '');
-    setNewAttributeLocalField(attribute.localField || '');
-    setNewAttributeForeignField(attribute.foreignField || '');
-    setNewAttributeMultiple(attribute.multiple || false);
-    setNewAttributeRequired(attribute.required || false);
-    setNewAttributeEnumKey(Object.keys(attribute.enumValues || {})[0] || '');
-    setNewAttributeEnumValue(attribute.default || '');
-    onOpen();
-  }, [onOpen, modelSchemas]);
+    const attribute = modelSchemas[modelName].attributes[attr]
+    setEditingAttribute({ modelName, attr })
+    setNewAttributeName(attr)
+    setNewAttributeType(attribute.type || '')
+    setNewAttributeRef(attribute.ref ? attribute.type : '')
+    setNewAttributeLocalField(attribute.localField || '')
+    setNewAttributeForeignField(attribute.foreignField || '')
+    setNewAttributeMultiple(attribute.multiple || false)
+    setNewAttributeRequired(attribute.required || false)
+    setNewAttributeEnumKey(Object.keys(attribute.enumValues || {})[0] || '')
+    setNewAttributeEnumValue(attribute.default || '')
+    onOpen()
+  }, [onOpen, modelSchemas])
 
   const handleAddAttribute = useCallback((modelName: string) => {
-    setAddingAttributeModel(modelName);
-    setNewAttributeName('');
-    setNewAttributeType('Date');
-    setNewAttributeRef('');
-    setNewAttributeLocalField('');
-    setNewAttributeForeignField('');
-    setNewAttributeMultiple(false);
-    setNewAttributeRequired(false);
-    setNewAttributeEnumKey('');
-    setNewAttributeEnumValue('');
-    onOpen();
-  }, [onOpen]);
+    setAddingAttributeModel(modelName)
+    setNewAttributeName('')
+    setNewAttributeType('Date')
+    setNewAttributeRef('')
+    setNewAttributeLocalField('')
+    setNewAttributeForeignField('')
+    setNewAttributeMultiple(false)
+    setNewAttributeRequired(false)
+    setNewAttributeEnumKey('')
+    setNewAttributeEnumValue('')
+    onOpen()
+  }, [onOpen])
 
   const handleEditSchema = useCallback((modelName: string) => {
-    setEditingSchemaModel(modelName);
-    setNewModelName(modelName);
-    setAddModelOpen(true);
-  }, []);
+    setEditingSchemaModel(modelName)
+    setNewModelName(modelName)
+    setAddModelOpen(true)
+  }, [])
 
   const handleDeleteSchema = useCallback((modelName: string) => {
     for (const schemaName in modelSchemas) {
-      const schema = modelSchemas[schemaName];
+      const schema = modelSchemas[schemaName]
       for (const attr in schema.attributes) {
-        const attribute = schema.attributes[attr];
+        const attribute = schema.attributes[attr]
         if (attribute.ref && attribute.type === modelName) {
-          alert(`Cannot delete schema "${modelName}" because it is referenced by schema "${schemaName}".`);
-          return;
+          alert(`Cannot delete schema "${modelName}" because it is referenced by schema "${schemaName}".`)
+          return
         }
       }
     }
 
     setModelSchemas((prevState) => {
-      const updatedSchemas = { ...prevState };
-      delete updatedSchemas[modelName];
-      return updatedSchemas;
-    });
-  }, [modelSchemas]);
+      const updatedSchemas = { ...prevState }
+      delete updatedSchemas[modelName]
+      return updatedSchemas
+    })
+  }, [modelSchemas])
 
   const handleModalClose = () => {
-    setEditingAttribute(null);
-    setAddingAttributeModel(null);
-    onClose();
-  };
+    setEditingAttribute(null)
+    setAddingAttributeModel(null)
+    onClose()
+  }
 
   const handleSaveAttribute = () => {
     if (editingAttribute) {
-      const { modelName, attr } = editingAttribute;
+      const { modelName, attr } = editingAttribute
       const updatedAttribute = {
         type: newAttributeType,
         ref: newAttributeType === 'Ref' ? true : undefined,
@@ -270,7 +136,7 @@ const EditDatabase: FC = () => {
         required: newAttributeRequired,
         enumValues: newAttributeEnumKey ? enums[newAttributeEnumKey] : undefined,
         default: newAttributeEnumValue,
-      };
+      }
       setModelSchemas((prevState) => ({
         ...prevState,
         [modelName]: {
@@ -280,7 +146,7 @@ const EditDatabase: FC = () => {
             [attr]: updatedAttribute,
           },
         },
-      }));
+      }))
     } else if (addingAttributeModel) {
       const newAttribute = {
         type: newAttributeType,
@@ -291,7 +157,7 @@ const EditDatabase: FC = () => {
         required: newAttributeRequired,
         enumValues: newAttributeEnumKey ? enums[newAttributeEnumKey] : undefined,
         default: newAttributeEnumValue,
-      };
+      }
       setModelSchemas((prevState) => {
         const updatedModel = {
           ...prevState[addingAttributeModel],
@@ -299,73 +165,62 @@ const EditDatabase: FC = () => {
             ...prevState[addingAttributeModel].attributes,
             [newAttributeName]: newAttribute,
           },
-        };
-        updatedModel.attributes = sortAttributes(updatedModel.attributes);
+        }
+        updatedModel.attributes = sortAttributes(updatedModel.attributes)
         return {
           ...prevState,
           [addingAttributeModel]: updatedModel,
-        };
-      });
+        }
+      })
     }
-    setNewAttributeName('');
+    setNewAttributeName('')
     setNewAttributeType('Date'); // Reset to default type
-    setNewAttributeRef('');
-    setNewAttributeLocalField('');
-    setNewAttributeForeignField('');
-    setNewAttributeMultiple(false);
-    setNewAttributeRequired(false);
-    setNewAttributeEnumKey('');
-    setNewAttributeEnumValue('');
-    handleModalClose();
-  };
+    setNewAttributeRef('')
+    setNewAttributeLocalField('')
+    setNewAttributeForeignField('')
+    setNewAttributeMultiple(false)
+    setNewAttributeRequired(false)
+    setNewAttributeEnumKey('')
+    setNewAttributeEnumValue('')
+    handleModalClose()
+  }
 
   const handleDeleteAttribute = useCallback((modelName: string, attr: string) => {
-    for (const schemaName in modelSchemas) {
-      const schema = modelSchemas[schemaName];
-      for (const attributeName in schema.attributes) {
-        const attribute = schema.attributes[attributeName];
-        if (attribute.ref && attribute.type === modelName && attribute.localField === attr) {
-          alert(`Cannot delete attribute "${attr}" in schema "${modelName}" because it is referenced by schema "${schemaName}".`);
-          return;
-        }
-      }
-    }
-
     setModelSchemas((prevState) => {
-      const updatedSchemas = { ...prevState };
-      delete updatedSchemas[modelName].attributes[attr];
-      return updatedSchemas;
-    });
-  }, [modelSchemas]);
+      const updatedSchemas = { ...prevState }
+      delete updatedSchemas[modelName].attributes[attr]
+      return updatedSchemas
+    })
+  }, [])
 
   const sortAttributes = (attributes: any) => {
     return Object.keys(attributes)
       .sort()
       .reduce((sortedAttributes, key) => {
-        sortedAttributes[key] = attributes[key];
-        return sortedAttributes;
-      }, {});
-  };
+        sortedAttributes[key] = attributes[key]
+        return sortedAttributes
+      }, {})
+  }
 
   const renderTypeOptions = () => {
-    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Address', 'Ref'];
-    return baseTypes;
-  };
+    const baseTypes = ['Date', 'Number', 'String', 'Boolean', 'Email', 'Phone', 'URL', 'Address', 'Ref']
+    return baseTypes
+  }
 
   const getAttributes = (m: string) => {
-    const model = fakeModels[m];
-    return Object.keys(model.attributes).filter(attr => !attr.includes('.'));
-  };
+    const model = fakeModels[m]
+    return Object.keys(model.attributes).filter(attr => !attr.includes('.'))
+  }
 
   const handleAddModelOpen = () => {
-    setAddModelOpen(true);
-  };
+    setAddModelOpen(true)
+  }
 
   const handleAddModelClose = () => {
-    setAddModelOpen(false);
-    setEditingSchemaModel(null);
-    setNewModelName('');
-  };
+    setAddModelOpen(false)
+    setEditingSchemaModel(null)
+    setNewModelName('')
+  }
 
   const handleAddModel = () => {
     if (newModelName) {
@@ -375,29 +230,29 @@ const EditDatabase: FC = () => {
           name: newModelName,
           attributes: {},
         },
-      }));
-      setNewModelName('');
-      handleAddModelClose();
+      }))
+      setNewModelName('')
+      handleAddModelClose()
     }
-  };
+  }
 
   const handleSaveModel = () => {
     if (editingSchemaModel) {
       if (newModelName) {
         setModelSchemas((prevState) => {
-          const updatedSchemas = { ...prevState };
-          const modelData = updatedSchemas[editingSchemaModel];
-          delete updatedSchemas[editingSchemaModel];
-          updatedSchemas[newModelName] = modelData;
-          updatedSchemas[newModelName].name = newModelName;
-          return updatedSchemas;
-        });
+          const updatedSchemas = { ...prevState }
+          const modelData = updatedSchemas[editingSchemaModel]
+          delete updatedSchemas[editingSchemaModel]
+          updatedSchemas[newModelName] = modelData
+          updatedSchemas[newModelName].name = newModelName
+          return updatedSchemas
+        })
       }
     } else {
-      handleAddModel();
+      handleAddModel()
     }
-    handleAddModelClose();
-  };
+    handleAddModelClose()
+  }
 
   return (
     <Box
@@ -413,7 +268,11 @@ const EditDatabase: FC = () => {
     >
       <HStack mb={4}>
         <Button bg="#00bf91" color="#f4f4f4" onClick={handleAddModelOpen}>Add Model Schema</Button>
+        <Button bg="#00bf91" color="#f4f4f4" onClick={() => setIsDiagramVisible(!isDiagramVisible)}>
+          {isDiagramVisible ? 'Hide Diagram' : 'Show Diagram'}
+        </Button>
       </HStack>
+      {isDiagramVisible && <Diagram />}
       <Accordion allowMultiple>
         {Object.keys(modelSchemas).map((modelName) => (
           <ModelItem
@@ -426,6 +285,7 @@ const EditDatabase: FC = () => {
             onAddAttribute={handleAddAttribute}
             onEditSchema={handleEditSchema}
             onDeleteSchema={handleDeleteSchema}
+            onDeleteAttribute={handleDeleteAttribute}
           />
         ))}
       </Accordion>
@@ -641,7 +501,7 @@ const EditDatabase: FC = () => {
         </ModalContent>
       </Modal>
     </Box>
-  );
-};
+  )
+}
 
-export default EditDatabase;
+export default EditDatabase
