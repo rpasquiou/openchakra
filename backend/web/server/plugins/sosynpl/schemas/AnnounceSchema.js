@@ -274,7 +274,7 @@ const AnnounceSchema = new Schema({
     default: [],
     required: false,
   },
-  pins: {
+  pinned: {
     type: Boolean,
     required: false,
   }
