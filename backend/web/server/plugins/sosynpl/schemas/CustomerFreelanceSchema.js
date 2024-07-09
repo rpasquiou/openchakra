@@ -332,6 +332,10 @@ const CustomerFreelanceSchema = new Schema({
     }],
     required: false,
     default: [],
+  },
+  pinned: {
+    type: Boolean,
+    required: false,
   }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
