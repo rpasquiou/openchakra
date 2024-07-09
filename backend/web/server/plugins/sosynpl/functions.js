@@ -118,13 +118,13 @@ MODELS.forEach(model => {
       options: { ref: 'announceSuggestion' }
     },
   })
-  declareVirtualField({model, field: 'current_missions_count', instance: 'Array', multiple: true,
+  declareVirtualField({model, field: 'current_missions', requires: 'role', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'mission'}
     }
   })
-  declareVirtualField({model, field: 'coming_missions_count', instance: 'Array', multiple: true,
+  declareVirtualField({model, field: 'coming_missions', requires: 'role', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'mission'}

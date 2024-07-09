@@ -4,6 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
 const { ROLES, DEACTIVATION_REASON } = require('../consts')
+const { getCurrentMissions, getComingMissions } = require('../missions')
 
 const Schema = mongoose.Schema
 
@@ -70,6 +71,9 @@ UserSchema.virtual('pinned_freelances', {
   foreignField: 'pinned_by',
 })
 
+UserSchema.virtual('current_missions', DUMMY_REF).get(getCurrentMissions(this))
+
+UserSchema.virtual('coming_missions', DUMMY_REF).get(getComingMissions(this))
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
