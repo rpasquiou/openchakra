@@ -263,6 +263,11 @@ const postPutData = async ({model, id, attribute, data, user}) => {
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
   }
+  // Test attribute (in case of PUT) or undefined (in case of SAVE)
+  if (model=='resource' && [undefined, 'url'].includes(attribute)) {
+    const resType=await getResourceType(data.url)
+    await mongoose.models[model].findByIdAndUpdate(id, {$set: {resource_type: resType}})
+  }
   return data
 }
 
