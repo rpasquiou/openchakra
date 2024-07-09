@@ -52,7 +52,7 @@ const addChildAction = async ({parent, child}, user) => {
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
   if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
   const createdChild = await cloneTree(child._id, parent._id)
-  await Block.findByIdAndUpdate(parent, {$addToSet: {children: createdChild}})
+  await Block.findByIdAndUpdate(parent, {last_updater: user})
   const parentsOrigin=await Block.find({origin: parent._id})
   await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
 }
@@ -64,6 +64,7 @@ const removeChildAction = async ({parent, child}, user) => {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
   await Block.findByIdAndDelete(child)
+  await Block.findByIdAndUpdate(parent, {last_updater: user})
   // Propagate deletion
   const linkedChildren=await Block.find({origin: child}).populate('parent')
   await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))

@@ -100,6 +100,7 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 
 const preCreate = async ({model, params, user}) => {
   params.creator=user
+  params.last_updater=user
   if (model=='session') {
     throw new Error(`La création de session n'est pas finalisée`)
   }
