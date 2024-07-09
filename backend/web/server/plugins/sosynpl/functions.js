@@ -51,7 +51,7 @@ MODELS.forEach(model => {
     })
   }
   if(!['admin','user']){
-    declareVirtualField({model, field: 'received_suggestion_count', type: 'Number'})
+    declareVirtualField({model, field: 'received_suggestions_count', type: 'Number'})
   }
   declareVirtualField({model, field: 'password2', type: 'String'})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
