@@ -51,6 +51,7 @@ const UploadFile = ({
   const [uploadInfo, setUploadInfo] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [s3File, setS3File] = useState<string|null>()
+  const [isDragging, setDragging]=useState<boolean>(false)
 
   useEffect(() => {
     if (!!model && clearComponents.includes(props.id)) {
@@ -132,10 +133,42 @@ const UploadFile = ({
   // SAU to propagate attribute
   const pr={...props, attribute, value: s3File}
 
+  const onDragOver = e => {
+    e.preventDefault()
+    setDragging(true)
+  }
+
+  const onDragLeave = e => {
+    e.preventDefault()
+    setDragging(false)
+  }
+
+  const onDrop = e => {
+    e.preventDefault();
+    setDragging(false)
+    for (const item of e.dataTransfer.items) {
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          onFileNameChange({preventDefault: () => {}, target: {files: [file]}})
+          return
+        }
+      }
+    }      
+  }
+  
+  if (isDragging) {
+    pr.filter='invert(100%)'
+  }
+
   return (
     <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'}>
       <form id="uploadressource">
-        <UploadZone>
+        <UploadZone
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
           <input type="file" onChange={onFileNameChange} />
           {/* Whatever in children, it bring focus on InputFile */}
           {children}

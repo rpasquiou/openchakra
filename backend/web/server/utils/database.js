@@ -805,7 +805,7 @@ const callPreCreateData = data => {
 }
 
 // Pre create data, allows to insert extra fields, etc..
-let prePutData = data => Promise.resolve(data)
+let prePutData = async data => data
 
 const setPrePutData = fn => {
   prePutData = fn
@@ -835,6 +835,17 @@ const setPostPutData = fn => {
 
 const callPostPutData = data => {
   return postPutData(data)
+}
+
+// Pre delete data
+let preDeleteData = data => Promise.resolve(data)
+
+const setPreDeleteData = fn => {
+  preDeleteData = fn
+}
+
+const callPreDeleteData = data => {
+  return preDeleteData(data)
 }
 
 // Post delete data
@@ -935,7 +946,8 @@ const removeData = dataId => {
         ])
           .then(() => data.delete())
       }
-      return data.delete()
+      return callPreDeleteData({model, data})
+        .then(({data}) => data.delete())
         .then(d => callPostDeleteData({model, data:d}))
     })
 }
@@ -970,6 +982,8 @@ const shareTargets = (obj1, obj2) => {
 }
 
 const putToDb = async (input_params) => {
+  const modelBefore=await getModel(input_params.id) 
+  input_params.model=modelBefore
   const {model, id, params, user, skip_validation} = await callPrePutData(input_params)
   return mongoose.connection.models[model].findById(id)
     .then(data => {
@@ -1141,6 +1155,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, setPreDeleteData,
 }
 

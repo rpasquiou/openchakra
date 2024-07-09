@@ -1179,5 +1179,9 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  // TODO: reload does nothing as DynamincButotn reloads if action is ok
+  reload: async (params) => {
+    return null
+  },
 
 }

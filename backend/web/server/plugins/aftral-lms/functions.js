@@ -1,16 +1,14 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
-const Resource = require('../../models/Resource')
+require('../../models/Resource')
 const Session = require('../../models/Session')
-const { BadRequestError } = require('../../utils/errors')
 const Message = require('../../models/Message')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const User = require('../../models/User')
@@ -18,40 +16,36 @@ const Post = require('../../models/Post')
 require('../../models/Module')
 require('../../models/Sequence')
 require('../../models/Search')
-const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks } = require('./resources')
-const { getBlockStatus } = require('./block')
-const { getBlockName } = require('./block')
+const { getUserHomeworks, getResourceType } = require('./resources')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
 const { updateBlockStatus } = require('./block')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
+const { getAvailableCodes } = require('./program')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session']
+const BLOCK_MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session', 'chapter']
 
-MODELS.forEach(model => {
-  declareFieldDependencies({model, field: 'name', requires: 'origin.name'})
+BLOCK_MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
-  declareVirtualField({model, field: 'order', instance: 'Number'})
-  declareVirtualField({model, field: 'children_count', instance: 'Number', requires: 'children,actual_children,origin.children,origin.actual_children'})
+  declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
   declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
-  declareVirtualField({model, field: 'children', instance: 'Array', requires: 'actual_children.children,origin.children,origin.actual_children,actual_children.origin,children.origin',
+  declareVirtualField({model, field: 'children', instance: 'Array',
     multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareFieldDependencies({model, field: 'origin', requires: 'origin.actual_children,origin.children'})
   declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
     return Duration.findOne({user: userId, block: data._id}, {duration:1})
       .then(result => result?.duration || 0)
@@ -72,11 +66,15 @@ MODELS.forEach(model => {
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
   declareVirtualField({model, field: 'has_homework', type: 'Boolean'})
   declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
-  })
+  LINKED_ATTRIBUTES.forEach(attName => 
+    declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
+  )
+})
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
+declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
 
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
@@ -100,12 +98,21 @@ declareComputedField({model: 'search', field: 'blocks', getterFn: searchBlocks})
 declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
-const preCreate = ({model, params, user}) => {
+const preCreate = async ({model, params, user}) => {
+  params.creator=user
+  params.last_updater=user
+  if (model=='session') {
+    throw new Error(`La création de session n'est pas finalisée`)
+  }
   if (['resource'].includes(model)) {
     params.creator=params?.creator || user
   }
   if ('homework'==model) {
     params.trainee=user
+  }
+  if (model=='resource') {
+    const foundResourceType=await getResourceType(params.url)
+    params.resource_type=foundResourceType
   }
   if (model=='post') {
     params.author=user
@@ -178,7 +185,9 @@ const preprocessGet = ({model, fields, id, user, params}) => {
   }
   // Add resource.creator.role to filter after
   if (['program', 'module', 'sequence', 'resource', 'block'].includes(model)) {
-    fields=[...fields, 'creator']
+    if (model=='resource') {
+      fields=[...fields, 'creator']
+    }
     // Full list: only return template blocks not included in sessions
     if (!id) {
       params['filter._locked']=false // No session data
@@ -244,10 +253,46 @@ const preprocessGet = ({model, fields, id, user, params}) => {
 
 setPreprocessGet(preprocessGet)
 
+const filterDataUser = async ({model, data, id, user}) => {
+  return data
+}
+
+setFilterDataUser(filterDataUser)
+
+const postPutData = async ({model, id, attribute, data, user}) => {
+  if (BLOCK_MODELS.includes(model)) {
+    await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
+  }
+  // Test attribute (in case of PUT) or undefined (in case of SAVE)
+  if (model=='resource' && [undefined, 'url'].includes(attribute)) {
+    const resType=await getResourceType(data.url)
+    await mongoose.models[model].findByIdAndUpdate(id, {$set: {resource_type: resType}})
+  }
+  return data
+}
+
+setPostPutData(postPutData)
+
+const preDeleteData = async ({model, data}) => {
+  if (BLOCK_MODELS.includes(model)) {
+    const hasLinkedBlock=await Block.exists({origin: data._id})
+    if (hasLinkedBlock) {
+      throw new Error(`Cette donnée est utilisée et ne peut être supprimée`)
+    }
+    const hasParent=await Block.exists({_id: data._id, parent: {$ne: null}})
+    if (hasParent) {
+      throw new Error(`Can not delete ; use removeChild instead`)
+    }
+  }
+  return {model, data}
+}
+
+setPreDeleteData(preDeleteData)
+
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
-    ['status', 'achievement_status', 'actual_children', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
-    'order', 'duration_str'
+    ['status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
+    'duration_str'
   ])
 }
 
@@ -271,36 +316,6 @@ const cloneAndLock = blockId => {
     })
   }
 
-const getSessionBlocks = async session_id => {
-  const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
-  if (lodash.isEmpty(parents)) {
-    return []
-  }
-  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
-    .then(res => lodash.flattenDeep(res))
-    .then(res => res.filter(v => !!v))
-  return result
-}
-
-const setParentSession = async (session_id) => {
-  const allBlocks=await getSessionBlocks(session_id)
-  return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
-}
-
-const computeBlocksCount = async blockId => {
-  const block=await Block.findById(blockId).populate(['children', 'actual_chlidren', 'origin'])
-  if (block.type=='resource') {
-    block.resources_count=1
-    await block.save()
-    return 1
-  }
-  const name=await getBlockName(blockId)
-  const childrenCount=await Promise.all(block.children.map(child => computeBlocksCount(child._id))).then(counts => lodash.sum(counts))
-  block.resources_count=childrenCount
-  await block.save()
-  return childrenCount
-}
-
 const lockSession = async sessionId => {
   console.log('locking session', sessionId)
   const session=await Block.findById(sessionId)
@@ -311,13 +326,10 @@ const lockSession = async sessionId => {
     const cloned= await Promise.all(session.actual_children.map(c => cloneAndLock(c)))
     await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
   }
-  await computeBlocksCount(session._id)
   await setParentSession(session._id)
   await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
 }
 
 module.exports={
   lockSession,
-  getSessionBlocks,
-  computeBlocksCount,
 }

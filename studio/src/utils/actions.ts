@@ -770,6 +770,11 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+  reload: {
+    label: 'Reload',
+    options: {},
+    next: [],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

@@ -70,9 +70,6 @@ let ACTIONS = {
   },
 
   delete: ({id}) => {
-    if (getDataModel()=='aftral-lms') {
-      throw new ForbiddenError(`La suppression est interdite`)
-    }
     return removeData(id)
   },
 

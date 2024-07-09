@@ -5,20 +5,20 @@ import { useRouter } from 'next/router'
 import { ACTIONS } from '../utils/actions'
 import { MESSAGES } from '../utils/messages'
 import {
-  extractFiltersFromProps,
   getConditionalProperties,
 } from '../utils/filters'
-import {Error, Information} from '../utils/notifications'
+import {displayError, displaySuccess} from '../utils/notifications'
+import { useToast } from '@chakra-ui/react';
 
 const withDynamicButton = Component => {
 
   const Internal = props => {
 
-    const [errorMessage, setErrorMessage]=useState(null)
-    const [infoMessage, setInfoMessage]=useState(null)
     const [insideAction, setInsideAction]=useState(false)
 
     const router = useRouter()
+    const toast=useToast()
+
     const query = new URLSearchParams(router?.asPath)
     let value = props.dataSource
     if (props.attribute) {
@@ -50,7 +50,7 @@ const withDynamicButton = Component => {
     if (action) {
       onClick = () => {
         if (!ACTIONS[action]) {
-          return setErrorMessage(`Undefined action ${action}`)
+          return displayError({toast, message:`Undefined action ${action}`})
         }
         setInsideAction(true)
         return ACTIONS[action]({
@@ -65,7 +65,7 @@ const withDynamicButton = Component => {
         })
           .then(res => {
             if (props.confirmationmessage && MESSAGES[action]) {
-              setInfoMessage(MESSAGES[action])
+              displaySuccess({toast, message: MESSAGES[action]})
             }
             if (!nextAction) {
               return true
@@ -96,7 +96,7 @@ const withDynamicButton = Component => {
           .catch(err => {
             console.error(err)
             if (err.response?.status!=502) {
-              setErrorMessage(err.response?.data || err)
+              displayError({toast, message: err.response?.data || err})
             }
           })
           .finally(() => {
@@ -114,16 +114,12 @@ const withDynamicButton = Component => {
       return null
     }
     return (
-      <>
       <Component disabled={!actionAllowed}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
       />
-      {errorMessage && <Error message={errorMessage} onClose={()=>setErrorMessage(null)}/>}
-      {infoMessage && <Information message={infoMessage} onClose={()=>setInfoMessage(null)}/>}
-      </>
     )
   }
 

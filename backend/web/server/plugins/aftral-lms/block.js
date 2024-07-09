@@ -1,11 +1,30 @@
 const lodash = require("lodash");
 const NodeCache=require('node-cache')
-const Block = require("../../models/Block");
+const mongoose=require('mongoose')
 const Duration = require("../../models/Duration");
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
-const { getSessionBlocks, computeBlocksCount } = require('./functions');
 
 const NAMES_CACHE=new NodeCache()
+
+const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition', 'resource_type']
+
+const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
+
+const setParentSession = async (session_id) => {
+  const allBlocks=await getSessionBlocks(session_id)
+  return Block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
+}
+
+const getSessionBlocks = async session_id => {
+  const parents = await Block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
+  if (lodash.isEmpty(parents)) {
+    return []
+  }
+  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
+    .then(res => lodash.flattenDeep(res))
+    .then(res => res.filter(v => !!v))
+  return result
+}
 
 const getBlockStatus = async (userId, params, data) => {
   return Duration.findOne({ block: data._id, user: userId }, { status: 1 })
@@ -61,13 +80,45 @@ const updateBlockStatus = async ({ blockId, userId }) => {
   }
   return durationDoc
 }
-const onBlockCountChange = async (blockId) => {
-  const topLevels = await getSessionBlocks(blockId)
-  console.log(`top levels are`, topLevels)
-  await Promise.all(topLevels.map(p => computeBlocksCount(p._id)))
-  return blockId
+const cloneTree = async (blockId, parentId) => {
+  if (!blockId || !parentId) {
+    throw new Error(`childId and parentId are expected`)
+  }
+  const parent=await Block.findById(parentId).populate('children_count')
+  const newOrder=parent.children_count+1
+  const block=await Block.findById(blockId).populate('children')
+  let blockData={
+    order: newOrder,
+    ...lodash.omit(block.toObject(), [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
+    id: undefined, _id: undefined, origin: blockId, parent: parentId,
+    ...NULLED_ATTRIBUTES,
+  }
+  const newBlock=new Block({...blockData})
+  await newBlock.save()
+  let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
+  newBlock.children=children.map(c => c._id)
+  return newBlock.save()
 }
+
+// Gets attribute from this data, else from its origin
+const getAttribute = attName => async (userId, params, data) => {
+  const log=false && attName=='optional' && data.type=='resource' ? console.log : () => {}
+  data=await mongoose.models.block.findById(data._id)
+  log('getting', attName, 'in', data)
+  if (!lodash.isNil(data[attName])) {
+    log(data)
+    log('found', attName, 'in', data._id, ':', data[attName])
+    return data[attName]
+  }
+  if (data.origin) {
+    const res=await getAttribute(attName)(userId, params, data.origin)
+    return res
+  }
+  return null
+}
+
 module.exports={
-  onBlockCountChange, getBlockStatus, getBlockName, updateBlockStatus,
+  getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, 
+  cloneTree, getAttribute, LINKED_ATTRIBUTES,
 }
 

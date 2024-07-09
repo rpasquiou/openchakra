@@ -6,6 +6,7 @@ const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT}=require('../co
 const ProductCodeSchema = new Schema({
   code: {
     type: String,
+    set : v => v ? v.toUpperCase() : v,
     required: [true, `Le code est obligatoire`],
   }
 }, {...schemaOptions})
