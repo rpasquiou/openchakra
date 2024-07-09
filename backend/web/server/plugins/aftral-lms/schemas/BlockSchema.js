@@ -9,6 +9,15 @@ const { childSchemas } = require('./ResourceSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const BlockSchema = new Schema({
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: [true, `Le créateur est obligatoire`],
+  },
+  last_updater: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  },
   name: {
     type: String,
     // required: [true, `Le nom est obligatoire`],

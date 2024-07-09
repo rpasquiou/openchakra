@@ -1,16 +1,14 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
-const Resource = require('../../models/Resource')
+require('../../models/Resource')
 const Session = require('../../models/Session')
-const { BadRequestError } = require('../../utils/errors')
 const Message = require('../../models/Message')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const User = require('../../models/User')
@@ -18,12 +16,10 @@ const Post = require('../../models/Post')
 require('../../models/Module')
 require('../../models/Sequence')
 require('../../models/Search')
-const Program = require('../../models/Program')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType } = require('./resources')
 const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
-const { getBlockName } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
 const { updateBlockStatus } = require('./block')
@@ -36,9 +32,9 @@ const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
 setMaxPopulateDepth(MAX_POPULATE_DEPTH)
 
-const MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session', 'chapter']
+const BLOCK_MODELS=['block', 'program', 'module', 'sequence', 'resource', 'session', 'chapter']
 
-MODELS.forEach(model => {
+BLOCK_MODELS.forEach(model => {
   declareFieldDependencies({model, field: 'url', requires: 'origin.url'})
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
@@ -103,6 +99,7 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
 const preCreate = async ({model, params, user}) => {
+  params.creator=user
   if (model=='session') {
     throw new Error(`La création de session n'est pas finalisée`)
   }
@@ -260,6 +257,15 @@ const filterDataUser = async ({model, data, id, user}) => {
 }
 
 setFilterDataUser(filterDataUser)
+
+const postPutData = async ({model, id, attribute, data, user}) => {
+  if (BLOCK_MODELS.includes(model)) {
+    await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
+  }
+  return data
+}
+
+setPostPutData(postPutData)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
