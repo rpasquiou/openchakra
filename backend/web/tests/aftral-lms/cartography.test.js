@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
 const { getDatabaseUri } = require('../../config/config')
+require('../../server/models/Chapter')
 require('../../server/plugins/aftral-lms/functions')
 const {MONGOOSE_OPTIONS}=require('../../server/utils/database')
 const Block=require('../../server/models/Block')
-const { getAscendantPaths } = require('../../server/plugins/aftral-lms/cartography')
+const { getTemplateForBlock, getPathsForTemplate } = require('../../server/plugins/aftral-lms/cartography')
 
 describe('Test cartogrpahy', () => {
 
@@ -15,11 +16,25 @@ describe('Test cartogrpahy', () => {
     await mongoose.connection.close()
   })
 
-  it('must get proper ascendants', async() => {
-    const blocks=await Block.find({code: /17777/})
-    console.log(blocks.map(b => [b._id, b._locked]))
-    // const paths=await getAscendantPaths(blocks[3]._id)
-    // console.log(paths)
+  it('must find the original template', async() => {
+    // Try any non-template block
+    const loadedBlock=await Block.findOne({origin: {$ne: null}})
+    let foundTemplate=await getTemplateForBlock(loadedBlock._id)
+    expect(foundTemplate.origin).toBeFalsy()
+    // Try any template block
+    const loadedTemplate=await Block.findOne({origin: null})
+    foundTemplate=await getTemplateForBlock(loadedTemplate._id)
+    expect(loadedTemplate._id).toEqual(foundTemplate._id)
+  })
+
+  it.only('must find the paths', async() => {
+    // Try any non-template block
+    // const block=await Block.findOne({type: 'resource', origin: null})
+    // console.log('block.name', block.name)
+    // const template=await getTemplateForBlock(block)
+    // const paths=await getPathsForTemplate(block._id)
+    const paths=await getPathsForTemplate('6687f254d8e10b5d9ac7186e')
+    console.log(paths)
   })
 
 })

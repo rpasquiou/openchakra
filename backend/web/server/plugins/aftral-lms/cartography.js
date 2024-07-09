@@ -1,13 +1,39 @@
 const Block = require("../../models/Block")
+const { loadFromDb } = require("../../utils/database")
 
-const getAscendantPaths = async blockId => {
-  const parents=await Block.find({$or: [{origin: blockId}, {actual_children: blockId}]})
-  // console.group(parents.map(p => [p._id, p.type, p.name]))
-  console.group(parents.map(p => [p.type, p.name]))
-  const ascendants=await Promise.all(parents.map(p => getAscendantPaths(p._id)))
-  console.groupEnd()
+const getTemplateForBlock = async blockId => {
+  const block=await Block.findById(blockId)
+  if (!block) {
+    throw new Error('Block does not exists')
+  }
+  if (!block.origin) {
+    return block
+  }
+  return getTemplateForBlock(block.origin)
+}
+
+const _getPathsForTemplate = async blockId => {
+  let res=[]
+  const block=await Block.findById(blockId)
+  if (block?.parent) {
+    res=[block.parent]
+  }
+  const origins=await Block.find({origin: blockId})
+  res=[...res, ...origins.map(o => o._id)]
+  let obtained=block ? [block._id]: []
+  for (const r of res) {
+    obtained=[...obtained, ...await _getPathsForTemplate(r)]
+  }
+  return [...res, ...obtained]
+}
+
+const getPathsForTemplate = async blockId => {
+  const res=await _getPathsForTemplate(blockId)
+  const blocks=await Block.find({_id: {$in: res}, origin: null})
+  console.log(blocks.map(b => [b.type, b.name]))
+  return blocks
 }
 
 module.exports= {
-  getAscendantPaths,
+  getTemplateForBlock, getPathsForTemplate,
 }
