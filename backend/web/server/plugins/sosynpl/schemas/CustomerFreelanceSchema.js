@@ -450,7 +450,7 @@ CustomerFreelanceSchema.virtual('availability_update_days', DUMMY_REF).get(funct
   return moment().diff(this.availability_last_update, 'days') || undefined
 })
 
-CustomerFreelanceSchema.virtual('received_suggestions', {
+CustomerFreelanceSchema.virtual('received_suggestions_count', {
   ref: 'announceSuggestion',
   localField: '_id',
   foreignField: 'freelance',
