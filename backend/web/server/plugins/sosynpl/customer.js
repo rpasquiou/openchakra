@@ -1,23 +1,14 @@
-const mongoose = require('mongoose');
-const Customer = require("../../models/Customer");
-const User = require('../../models/User');
+const mongoose = require('mongoose')
+const User = require('../../models/User')
+const Announce = require('../../models/Announce')
 
-const applications = async (user) => {
-  const applications = await User.aggregate([
-    { $match: { _id: mongoose.Types.ObjectId(user.id) } },
-    {
-      $lookup: {
-        from: 'announces',
-        localField: '_id',
-        foreignField: 'user',
-        as: 'announces',
-      }
-    },
-    { $unwind: '$announces' },
+const getApplications = async (user) => {
+  const applications = await Announce.aggregate([
+    { $match: { user: mongoose.Types.ObjectId(user.id) } },
     {
       $lookup: {
         from: 'applications',
-        localField: 'announces._id',
+        localField: '_id',
         foreignField: 'announce',
         as: 'applications',
       }
@@ -39,9 +30,9 @@ const applications = async (user) => {
     {
       $replaceRoot: { newRoot: '$applications' }
     }
-  ]);
+  ])
 
-  return applications;
-};
+  return applications
+}
 
-module.exports = applications;
+module.exports = getApplications

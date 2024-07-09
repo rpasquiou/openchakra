@@ -7,6 +7,7 @@ const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { NATIONALITIES } = require('../../../../utils/consts')
+const getApplications = require('../customer')
 
 const Schema = mongoose.Schema
 
@@ -280,11 +281,6 @@ const CustomerSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
-  applications: [{
-    type: Schema.Types.ObjectId,
-    required: false,
-    ref: 'application'
-  }],
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -312,6 +308,8 @@ CustomerSchema.virtual('announces', {
   localField: '_id',
   foreignField: 'user',
 })
+
+CustomerSchema.virtual('applications', DUMMY_REF).get(getApplications)
 
 /* eslint-enable prefer-arrow-callback */
 

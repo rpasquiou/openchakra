@@ -71,9 +71,9 @@ UserSchema.virtual('pinned_freelances', {
   foreignField: 'pinned_by',
 })
 
-UserSchema.virtual('current_missions', DUMMY_REF).get(getCurrentMissions(this))
+UserSchema.virtual('current_missions', DUMMY_REF).get(getCurrentMissions)
 
-UserSchema.virtual('coming_missions', DUMMY_REF).get(getComingMissions(this))
+UserSchema.virtual('coming_missions', DUMMY_REF).get(getComingMissions)
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

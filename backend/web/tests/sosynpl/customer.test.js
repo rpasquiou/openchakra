@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { ROLE_CUSTOMER, ROLE_FREELANCE } = require('../../server/plugins/sosynpl/consts')
 const User = require('../../server/models/User')
-const applications = require('../../server/plugins/sosynpl/customer')
+const getApplications = require('../../server/plugins/sosynpl/customer')
 
 describe('Customer', () => {
 
@@ -16,7 +16,7 @@ describe('Customer', () => {
 
   it('must return customer_applications', async () => {
     const customer = await User.findOne({role: ROLE_CUSTOMER})
-    const apps = await applications(customer)
+    const apps = await getApplications(customer)
     expect(apps).toBeTruthy()
   })
 })
