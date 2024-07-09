@@ -18,6 +18,7 @@ const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,compute
 const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
+const { isPinned, setPinned } = require("./announce");
 const moment = require('moment')
 
 // TODO move in DB migration
@@ -294,6 +295,7 @@ declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', 
     declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
 })
 declareVirtualField({model: 'announce', field: 'serial_number', requires: '_counter', instance: 'String'})
+declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: isPinned, setterFn: setPinned })
 /** Announce end */
 
 
