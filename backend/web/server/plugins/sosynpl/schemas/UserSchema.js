@@ -58,8 +58,12 @@ const UserSchema = new Schema({
   company_logo: {
     type: String,
     required: false,
+  },
+  company_name: {
+    type: String,
+    required: false
   }
-  }, {...schemaOptions})
+}, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
 // Required for register validation only
