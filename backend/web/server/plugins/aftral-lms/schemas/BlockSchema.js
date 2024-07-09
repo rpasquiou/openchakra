@@ -7,6 +7,7 @@ const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS
 const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
 const { DUMMY_REF } = require('../../../utils/database')
+const Block = require('../../../models/Block')
 
 const BlockSchema = new Schema({
   creator: {
@@ -212,7 +213,12 @@ BlockSchema.virtual('has_homework').get(function(value) {
 })
 
 // Validate Succes achievemnt
-BlockSchema.pre('validate', function(next) {
+BlockSchema.pre('validate', async function(next) {
+  // #36 Can't create two templates with same type and same name
+  const exists=await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name})
+  if (exists) {
+    return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà`))
+  }
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
   if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM) {
