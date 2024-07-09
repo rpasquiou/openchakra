@@ -215,7 +215,7 @@ BlockSchema.virtual('has_homework').get(function(value) {
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
   // #36 Can't create two templates with same type and same name
-  const exists=await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name})
+  const exists=await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
   if (exists) {
     return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà`))
   }
