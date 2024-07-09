@@ -1,7 +1,7 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
 const Duration = require('../../models/Duration')
@@ -267,6 +267,22 @@ const postPutData = async ({model, id, attribute, data, user}) => {
 }
 
 setPostPutData(postPutData)
+
+const preDeleteData = async ({model, data}) => {
+  if (BLOCK_MODELS.includes(model)) {
+    const hasLinkedBlock=await Block.exists({origin: data._id})
+    if (hasLinkedBlock) {
+      throw new Error(`Cette donnée est utilisée et ne peut être supprimée`)
+    }
+    const hasParent=await Block.exists({_id: data._id, parent: {$ne: null}})
+    if (hasParent) {
+      throw new Error(`Can not delete ; use removeChild instead`)
+    }
+  }
+  return {model, data}
+}
+
+setPreDeleteData(preDeleteData)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 

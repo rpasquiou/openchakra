@@ -837,6 +837,17 @@ const callPostPutData = data => {
   return postPutData(data)
 }
 
+// Pre delete data
+let preDeleteData = data => Promise.resolve(data)
+
+const setPreDeleteData = fn => {
+  preDeleteData = fn
+}
+
+const callPreDeleteData = data => {
+  return preDeleteData(data)
+}
+
 // Post delete data
 let postDeleteData = data => Promise.resolve(data)
 
@@ -935,7 +946,8 @@ const removeData = dataId => {
         ])
           .then(() => data.delete())
       }
-      return data.delete()
+      return callPreDeleteData({model, data})
+        .then(({data}) => data.delete())
         .then(d => callPostDeleteData({model, data:d}))
     })
 }
@@ -1143,6 +1155,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, setPreDeleteData,
 }
 
