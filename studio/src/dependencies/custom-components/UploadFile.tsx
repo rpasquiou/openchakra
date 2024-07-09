@@ -165,7 +165,7 @@ const UploadFile = ({
     <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'}>
       <form id="uploadressource">
         <UploadZone
-          onDragEnter={onDragOver}
+          onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
         >
