@@ -236,6 +236,10 @@ const CustomerFreelanceSchema = new Schema({
     default: AVAILABILITY_UNDEFINED,
     required: function() {return isFreelance(this)},
   },
+  availability_last_update: {
+    type: Date,
+    required: false,
+  },
   available_days_per_week: {
     type: Number,
     min: [MIN_DAYS_PER_WEEK, `Vous devez sélectionner entre ${MIN_DAYS_PER_WEEK} et ${MAX_DAYS_PER_WEEK} jours de disponibilité par semaine`],
@@ -436,6 +440,10 @@ CustomerFreelanceSchema.virtual('pinned_announces', {
   ref: 'announce',
   localField: '_id',
   foreignField: 'pinned_by',
+})
+
+CustomerFreelanceSchema.virtual('availability_update_days', DUMMY_REF).get(function(){
+  return moment().diff(this.availability_last_update, 'days') || undefined
 })
 
 /* eslint-enable prefer-arrow-callback */

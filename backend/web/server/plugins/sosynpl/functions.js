@@ -18,6 +18,7 @@ const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,compute
 const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
+const moment = require('moment')
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -36,6 +37,9 @@ ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
+  if(!['admin','customer'].includes(model)){
+    declareVirtualField({model, field: 'availability_update_days', type: 'Number'})
+  }
   if(!['user','customer','admin'].includes(model)){
     declareVirtualField({
       model, field: 'pinned_announces', instance: 'Array', multiple: true,
@@ -525,6 +529,12 @@ const prePutData = async ({model, id, params, user}) => {
   // Skip validaaiton for these models. Will be validated on publish action
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
+  }
+  const targetUser = await User.findById(id, {availability:1})
+  if(!!params.availability && params.availability!= targetUser.availability) {
+    params.availability_last_update = moment()
+    console.log(params)
+    return {model, id, params, user}
   }
   return {model, id, params, user}
 }
