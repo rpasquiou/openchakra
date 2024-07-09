@@ -171,6 +171,13 @@ const BlockSchema = new Schema({
     set: v => v || null,
     required: false,
   },
+  // Duration in seconds
+  duration: {
+    type: Number,
+    set: function(v) {
+      return this.type=='resource' ? v : undefined
+    }
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
