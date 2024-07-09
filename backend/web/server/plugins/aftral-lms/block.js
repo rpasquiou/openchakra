@@ -1,6 +1,6 @@
 const lodash = require("lodash");
 const NodeCache=require('node-cache')
-const Block = require("../../models/Block");
+const mongoose=require('mongoose')
 const Duration = require("../../models/Duration");
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
 
@@ -103,7 +103,7 @@ const cloneTree = async (blockId, parentId) => {
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
   const log=false && attName=='optional' && data.type=='resource' ? console.log : () => {}
-  data=await Block.findById(data._id)
+  data=await mongoose.models.block.findById(data._id)
   log('getting', attName, 'in', data)
   if (!lodash.isNil(data[attName])) {
     log(data)

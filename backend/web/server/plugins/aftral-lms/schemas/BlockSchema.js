@@ -8,6 +8,7 @@ const { THUMBNAILS_DIR } = require('../../../../utils/consts')
 const { childSchemas } = require('./ResourceSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const Block = require('../../../models/Block')
+const { getAttribute } = require('../block')
 
 const BlockSchema = new Schema({
   creator: {
@@ -228,7 +229,9 @@ BlockSchema.pre('validate', async function(next) {
   }
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
-  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type!=RESOURCE_TYPE_SCORM) {
+  const resourceType=await getAttribute('resource_type')(null, null, {_id: this._id})
+  console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
+  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && resourceType!=RESOURCE_TYPE_SCORM) {
     if (!this.success_scale) {
       if (!this.success_note_min) {
         return next(new Error(`La note minimale est obligatoire`))
