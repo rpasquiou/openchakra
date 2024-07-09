@@ -49,6 +49,8 @@ MODELS.forEach(model => {
         options: { ref: 'announce' }
       },
     })
+  }
+  if(!['admin','user']){
     declareVirtualField({model, field: 'received_suggestion_count', type: 'Number'})
   }
   declareVirtualField({model, field: 'password2', type: 'String'})
