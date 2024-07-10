@@ -27,7 +27,8 @@ const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
 const { getAvailableCodes } = require('./program')
-const { getPathsForBlock } = require('./cartography')
+const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
+const Program = require('../../models/Program')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -284,6 +285,13 @@ const preDeleteData = async ({model, data}) => {
     const hasParent=await Block.exists({_id: data._id, parent: {$ne: null}})
     if (hasParent) {
       throw new Error(`Can not delete ; use removeChild instead`)
+    }
+  }
+  else if (model=='productCode') {
+    const usedPrograms=await Program.find({codes: data._id})
+    if (!lodash.isEmpty(usedPrograms)) {
+      const templates=await Promise.all(usedPrograms.map(p => getTemplateForBlock(p._id)))
+      throw new Error(`Ce code est utilisé par ${templates.map(t => t.name)}`)
     }
   }
   return {model, data}
