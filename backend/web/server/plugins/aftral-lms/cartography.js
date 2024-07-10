@@ -8,7 +8,7 @@ const PathSchema = new mongoose.Schema({
   }],
 })
 
-const pathModel=mongoose.model('path', PathSchema)
+const Path=mongoose.model('path', PathSchema)
 
 const getTemplateForBlock = async blockId => {
   const block=await Block.findById(blockId)
@@ -26,7 +26,7 @@ const getPathsForResource = async (blockId) => {
   let res=[]
   if (block) {
     const template=await getTemplateForBlock(block._id)
-    res=[{id: template._id, name: template.name, type:template.type}]
+    res=[new Block({_id: template._id, name: template.name, type:template.type})]
     // console.log('path', idx, block.type, block._id, block.name)
     if (block.parent) {
       res=[...res, ...await getPathsForResource(block.parent._id)]
@@ -35,19 +35,20 @@ const getPathsForResource = async (blockId) => {
   return res
 }
 
-const getPathsForTemplate = async (blockId) => {
+const getAllPathsForBlock = async (blockId) => {
   const block=await Block.findById(blockId)
-  let res=[await getPathsForResource(blockId)]
-  console.log(res[0].map(b => `${b.type}-${b.name}`).join('/'))
-  // console.log('res is', res)
+  let res=[new Path({blocks: await getPathsForResource(blockId)})]
   const linkeds=await Block.find({origin: blockId})
   for (const linked of linkeds) {
-    res=[...res, await getPathsForTemplate(linked._id)]
-    // console.log('res is', res)
+    res=[...res, ...await getPathsForTemplate(linked._id)]
   }
   return res
 }
 
+const getPathsForBlock = async (_userID, _params, blockId) => {
+  const allPaths=await getAllPathsForBlock(blockId)
+}
+
 module.exports= {
-  getTemplateForBlock, getPathsForTemplate,
+  getTemplateForBlock, getPathsForBlock,
 }

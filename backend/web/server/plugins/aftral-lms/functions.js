@@ -27,6 +27,7 @@ const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
 const { getAvailableCodes } = require('./program')
+const { getPathsForBlock } = require('./cartography')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -69,12 +70,7 @@ BLOCK_MODELS.forEach(model => {
   LINKED_ATTRIBUTES.forEach(attName => 
     declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
   )
-  declareVirtualField({model, field: 'used_in', instance: 'Array',
-    multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'path'}},
-  })
+  declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
