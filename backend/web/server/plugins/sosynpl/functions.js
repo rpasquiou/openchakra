@@ -472,6 +472,21 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     const newSearch=await Search.create({})
     return { model, fields, id: newSearch._id, user, params }
   }
+  if (model == 'conversation') {
+    if (id) {
+      return Conversation.findById(id)
+        .then(conv => {
+          const res=conv || Conversation.getFromUsers(user._id, id)
+          return res
+        })
+        .then(conv => {
+          return {model, fields, id: conv._id, params }
+        })
+    }
+    else {
+      params['filter.users']=user._id
+    }
+  }
   return { model, fields, id, user, params }
 }
 
@@ -512,7 +527,11 @@ const preCreate = async ({model, params, user}) => {
     params.quotation=params.quotation || params.parent
     return { model, params, user}
   }
-
+  if (['message'].includes(model)) {
+    params.sender = user
+    return Conversation.getFromUsers(user, params.destinee)
+      .then(c => ({model, params:{...params, conversation: c._id}}))
+  }
   return Promise.resolve({model, params})
 }
 
@@ -573,6 +592,18 @@ const filterDataUser = async ({ model, data, id, user }) => {
 }
 
 setFilterDataUser(filterDataUser)
+
+const getConversationPartner = (userId, params, data) => {
+  return Conversation.findById(data._id, {users:1})
+    .then(conv => {
+      return conv.getPartner(userId) 
+    })
+    .then(partner => {
+      return User.findById(partner._id).populate('company')
+    })
+}
+
+declareComputedField({model: 'conversation', field: 'partner', getterFn: getConversationPartner})
 
 //**** CRONS start*/
 
