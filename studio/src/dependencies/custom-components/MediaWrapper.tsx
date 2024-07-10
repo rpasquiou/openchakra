@@ -80,14 +80,26 @@ export const mediaWrapper = ({
   const orgExt=getExtension(src.toLowerCase())
   const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
   // TODO: must handle actual src with LMS system
-  // Preview for scorms
   if (ext=='html') {
     const parsedUrl = new URL(src)
-    // Replace the last part of the path with 'story.html'
-    const pathParts = parsedUrl.pathname.split('/')
-    pathParts[pathParts.length - 1] = 'story.html'
-    parsedUrl.pathname = pathParts.join('/')
-    src=parsedUrl.toString()
+    // Embed youtube
+    if (/youtube.com/.test(parsedUrl.hostname)) {
+      const videoId=parsedUrl.searchParams.get('v')
+      src=`https://www.youtube.com/embed/${videoId}`
+    }
+    // Embed video
+    else if (/vimeo.com/.test(parsedUrl.hostname)) {
+      const videoId=parsedUrl.pathname.replace(/\//g, '')
+      src=`https://player.vimeo.com/video/${videoId}`
+    }
+    // Preview for scorms TODO really useful ?
+    else {
+      // Replace the last part of the path with 'story.html'
+      const pathParts = parsedUrl.pathname.split('/')
+      pathParts[pathParts.length - 1] = 'story.html'
+      parsedUrl.pathname = pathParts.join('/')
+      src=parsedUrl.toString()
+    }
   }
 
   switch (ext) {
