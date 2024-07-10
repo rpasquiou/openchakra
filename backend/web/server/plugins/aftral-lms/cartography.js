@@ -1,5 +1,14 @@
+const mongoose=require('mongoose')
 const Block = require("../../models/Block")
-const { loadFromDb } = require("../../utils/database")
+
+const PathSchema = new mongoose.Schema({
+  blocks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'block'
+  }],
+})
+
+const pathModel=mongoose.model('path', PathSchema)
 
 const getTemplateForBlock = async blockId => {
   const block=await Block.findById(blockId)
@@ -12,26 +21,31 @@ const getTemplateForBlock = async blockId => {
   return getTemplateForBlock(block.origin)
 }
 
-const _getPathsForTemplate = async blockId => {
-  let res=[]
+const getPathsForResource = async (blockId) => {
   const block=await Block.findById(blockId)
-  if (block?.parent) {
-    res=[block.parent]
+  let res=[]
+  if (block) {
+    const template=await getTemplateForBlock(block._id)
+    res=[{id: template._id, name: template.name, type:template.type}]
+    // console.log('path', idx, block.type, block._id, block.name)
+    if (block.parent) {
+      res=[...res, ...await getPathsForResource(block.parent._id)]
+    }
   }
-  const origins=await Block.find({origin: blockId})
-  res=[...res, ...origins.map(o => o._id)]
-  let obtained=block ? [block._id]: []
-  for (const r of res) {
-    obtained=[...obtained, ...await _getPathsForTemplate(r)]
-  }
-  return [...res, ...obtained]
+  return res
 }
 
-const getPathsForTemplate = async blockId => {
-  const res=await _getPathsForTemplate(blockId)
-  const blocks=await Block.find({_id: {$in: res}, origin: null})
-  console.log(blocks.map(b => [b.type, b.name]))
-  return blocks
+const getPathsForTemplate = async (blockId) => {
+  const block=await Block.findById(blockId)
+  let res=[await getPathsForResource(blockId)]
+  console.log(res[0].map(b => `${b.type}-${b.name}`).join('/'))
+  // console.log('res is', res)
+  const linkeds=await Block.find({origin: blockId})
+  for (const linked of linkeds) {
+    res=[...res, await getPathsForTemplate(linked._id)]
+    // console.log('res is', res)
+  }
+  return res
 }
 
 module.exports= {

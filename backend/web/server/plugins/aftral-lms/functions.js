@@ -69,6 +69,12 @@ BLOCK_MODELS.forEach(model => {
   LINKED_ATTRIBUTES.forEach(attName => 
     declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
   )
+  declareVirtualField({model, field: 'used_in', instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'path'}},
+  })
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})

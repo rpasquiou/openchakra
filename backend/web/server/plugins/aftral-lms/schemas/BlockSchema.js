@@ -9,6 +9,7 @@ const { childSchemas } = require('./ResourceSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const Block = require('../../../models/Block')
 const { getAttribute } = require('../block')
+const { getPathsForTemplate } = require('../cartography')
 
 const BlockSchema = new Schema({
   creator: {
@@ -218,6 +219,10 @@ BlockSchema.virtual('has_homework').get(function(value) {
     return true
   }
   return false
+})
+
+BlockSchema.virtual('used_in').get(function(value) {
+  return []
 })
 
 // Validate Succes achievemnt
