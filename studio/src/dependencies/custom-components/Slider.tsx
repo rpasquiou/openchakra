@@ -5,9 +5,9 @@ import * as icons from 'lucide-react'
 
 
 const Slider = React.forwardRef((props, ref) => {
-  const { backgroundColor, ...rest } = props
+
   return (
-    <input type={'range'} {...props} orientation={'ver'} style={backgroundColor ? {backgroundColor}: {}}/>
+    <input type={'range'} {...props} orientation={'ver'}/>
   )
   }
 );
