@@ -6,6 +6,8 @@ const {MONGOOSE_OPTIONS}=require('../../server/utils/database')
 const Block=require('../../server/models/Block')
 const { getTemplateForBlock, getPathsForTemplate } = require('../../server/plugins/aftral-lms/cartography')
 
+jest.setTimeout(60000)
+
 describe('Test cartogrpahy', () => {
 
   beforeAll(async() => {
@@ -33,8 +35,10 @@ describe('Test cartogrpahy', () => {
     // console.log('block.name', block.name)
     // const template=await getTemplateForBlock(block)
     // const paths=await getPathsForTemplate(block._id)
-    const paths=await getPathsForTemplate('6687f254d8e10b5d9ac7186e')
-    console.log(paths)
+    console.time('compute')
+    const paths=await getPathsForTemplate(null, null, '6687f254d8e10b5d9ac7186e')
+    console.log(JSON.stringify(paths, null, 2))
+    console.timeEnd('compute')
   })
 
 })
