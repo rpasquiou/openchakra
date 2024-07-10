@@ -400,23 +400,6 @@ declareVirtualField({
   },
 })
 
-//Conversation
-declareVirtualField({
-  model: 'conversation', field: 'messages', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'message' }
-  },
-})
-declareVirtualField({model: 'conversation', field: 'messages_count', instance: 'Number'})
-declareVirtualField({
-  model: 'conversation', field: 'latest_messages', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'message' }
-  },
-})
-
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
