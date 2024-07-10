@@ -40,7 +40,7 @@ const getAllPathsForBlock = async (blockId) => {
   let res=[new Path({blocks: await getPathsForResource(blockId)})]
   const linkeds=await Block.find({origin: blockId})
   for (const linked of linkeds) {
-    res=[...res, ...await getPathsForTemplate(linked._id)]
+    res=[...res, ...await getAllPathsForBlock(linked._id)]
   }
   return res
 }
