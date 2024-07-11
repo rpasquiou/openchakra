@@ -531,6 +531,11 @@ const preCreate = async ({ model, params, user }) => {
       params.diet_private = user._id
     }
   }
+  if (model=='nutritionAdvice') {
+    if (!(user.role==ROLE_EXTERNAL_DIET)) {
+      throw new Error(`Seule une diet peut créer un conseil nut`)
+    }
+  }
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
@@ -584,7 +589,7 @@ const preCreate = async ({ model, params, user }) => {
         if (nextAppt) {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
-        diet=latest_coaching.diet
+        diet=user
 
         if (isAppointment) {
           const start=moment(params.start_date)
@@ -603,7 +608,7 @@ const preCreate = async ({ model, params, user }) => {
             })
         }
         else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, ...params } }
         }
       })
   }
