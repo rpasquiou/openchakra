@@ -327,7 +327,7 @@ const CustomerFreelanceSchema = new Schema({
   pinned_by: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'customer',
+      ref: 'customerFreelance',
       required: false
     }],
     required: false,

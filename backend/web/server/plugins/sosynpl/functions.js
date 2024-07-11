@@ -72,7 +72,7 @@ MODELS.forEach(model => {
       options: { ref: 'mission' }
     },
   })
-  declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn, setterFn: setterPinnedFn })
+  declareComputedField({model, field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn(model), setterFn: setterPinnedFn(model) })
   declareVirtualField({
     model, field: 'customer_missions', instance: 'Array', multiple: true,
     caster: {
@@ -299,7 +299,7 @@ declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', 
     declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
 })
 declareVirtualField({model: 'announce', field: 'serial_number', requires: '_counter', instance: 'String'})
-declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn, setterFn: setterPinnedFn })
+declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn('announce'), setterFn: setterPinnedFn('announce') })
 /** Announce end */
 
 

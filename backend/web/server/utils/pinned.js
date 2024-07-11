@@ -1,13 +1,14 @@
 const mongoose = require('mongoose')
+const { idEqual } = require('./database')
 
-const setterPinnedFn = async (model) => {
+const setterPinnedFn = (model) => {
   return async ({ id, attribute, value, user }) => {
     const upd=!!value ? { $addToSet: { pinned_by: user._id }} : { $pullAll: { pinned_by: [user._id] }}
     return mongoose.models[model].findByIdAndUpdate(id, upd)
   }
 }
 
-const getterPinnedFn = async (model) => {
+const getterPinnedFn = (model) => {
   return async (userId, params, data) => {
     const pinned = data?.pinned_by?.some(l => idEqual(l._id, userId))
     return pinned
