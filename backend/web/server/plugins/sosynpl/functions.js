@@ -489,8 +489,13 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       return Conversation.findById(id)
         .then(async(conv) => {
           if(!conv){
-            const exist = await User.findById(id)
-            if(!exist) throw new Error(`${id} is not a valid user`)
+            const partner = await User.findById(id)
+            if(!partner) {
+              throw new Error(`${id} is not a valid user`)
+            }
+            if (idEqual(partner._id, user._id)) {
+              throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
+            }
           }
           const res=conv || Conversation.getFromUsers(user._id, id)
           return res
@@ -545,8 +550,9 @@ const preCreate = async ({model, params, user}) => {
   }
   if (['message'].includes(model)) {
     params.sender = user
-    return Conversation.getFromUsers(user, params.destinee)
-      .then(c => ({model, params:{...params, conversation: c._id}}))
+    const conversation=await Conversation.findById(params.parent)
+    params.conversation=conversation
+    params.receiver=await conversation.getPartner(user)
   }
   return Promise.resolve({model, params})
 }

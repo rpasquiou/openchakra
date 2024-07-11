@@ -29,6 +29,7 @@ const MessageSchema = new Schema({
   },
   mine: {
     type: Boolean,
+    default: false,
     required: false,
   }
 }, schemaOptions)
