@@ -21,12 +21,15 @@ const MessageSchema = new Schema({
   receiver: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required:[function(){!this?.receiver && !this?.group}, 'Un destinataire ou groupe est obligatoire'],
+    required:[true, 'Un destinataire est obligatoire'],
   },
   attachment: {
     type: String,
     required: false,
   },
+  mine: {
+    type: Boolean,
+    required: false,
+  }
 }, schemaOptions)
-
 module.exports = MessageSchema
