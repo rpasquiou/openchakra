@@ -4,7 +4,7 @@ require('../../server/models/Chapter')
 require('../../server/plugins/aftral-lms/functions')
 const {MONGOOSE_OPTIONS}=require('../../server/utils/database')
 const Block=require('../../server/models/Block')
-const { getTemplateForBlock, getPathsForTemplate } = require('../../server/plugins/aftral-lms/cartography')
+const { getTemplateForBlock, getPathsForBlock } = require('../../server/plugins/aftral-lms/cartography')
 
 jest.setTimeout(60000)
 
@@ -36,7 +36,7 @@ describe('Test cartogrpahy', () => {
     // const template=await getTemplateForBlock(block)
     // const paths=await getPathsForTemplate(block._id)
     console.time('compute')
-    const paths=await getPathsForTemplate(null, null, '6687f254d8e10b5d9ac7186e')
+    const paths=await getPathsForBlock(null, null, '6687f254d8e10b5d9ac7186e')
     console.log(JSON.stringify(paths, null, 2))
     console.timeEnd('compute')
   })
