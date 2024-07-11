@@ -487,7 +487,11 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   if (model == 'conversation') {
     if (id) {
       return Conversation.findById(id)
-        .then(conv => {
+        .then(async(conv) => {
+          if(!conv){
+            const exist = await User.findById(id)
+            if(!exist) throw new Error(`${id} is not a valid user`)
+          }
           const res=conv || Conversation.getFromUsers(user._id, id)
           return res
         })
