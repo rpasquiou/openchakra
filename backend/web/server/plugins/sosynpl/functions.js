@@ -41,10 +41,10 @@ ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
-  if(!['admin','customer'].includes(model)){
+  if(!['admin','customer'].includes(model)){ //['loggedUser', 'user', 'freelance', 'genericUser', 'customerFreelance']
     declareVirtualField({model, field: 'availability_update_days', type: 'Number'})
   }
-  if(!['user','customer','admin'].includes(model)){
+  if(!['user','customer','admin'].includes(model)){//['loggedUser', 'freelance', 'genericUser', 'customerFreelance']
     declareVirtualField({
       model, field: 'pinned_announces', instance: 'Array', multiple: true,
       caster: {
@@ -394,15 +394,6 @@ declareComputedField({model: 'search', field: 'announces', instance: 'Array', re
 declareComputedField({model: 'search', field: 'announces_count', instance: 'Number', requires: SEARCH_FIELDS, getterFn: countAnnounce })
 /** Search end */
 
-//Customer
-declareVirtualField({
-  model: 'customer', field: 'applications', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'application' }
-  },
-})
-
 //Conversation
 declareVirtualField({
   model: 'conversation', field: 'messages', instance: 'Array', multiple: true,
@@ -421,6 +412,18 @@ declareVirtualField({
 })
 //Message
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+
+//CustomerFreelance
+const CUSTOMERFREELANCEMODELS = ['loggedUser', 'genericUser', 'customerFreelance', 'freelance']
+CUSTOMERFREELANCEMODELS.forEach(model => {
+  declareVirtualField({
+    model, field: 'applications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'application' }
+    },
+  })
+})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)

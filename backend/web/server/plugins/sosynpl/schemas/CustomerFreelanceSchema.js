@@ -14,6 +14,7 @@ const IBANValidator = require('iban-validator-js')
 const {ROLE_CUSTOMER, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVITY_STATE, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_STANDBY, ACTIVITY_STATE_SUSPENDED} = require('../consts')
 const siret = require('siret')
 const { NATIONALITIES } = require('../../../../utils/consts')
+const {getApplications} = require('../customerFreelance')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -456,6 +457,8 @@ CustomerFreelanceSchema.virtual('received_suggestions_count', {
   foreignField: 'freelance',
   count: true,
 })
+
+CustomerFreelanceSchema.virtual('applications', DUMMY_REF).get(function(){/*return getApplications(this)*/})
 
 /* eslint-enable prefer-arrow-callback */
 

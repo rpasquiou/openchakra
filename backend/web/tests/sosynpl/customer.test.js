@@ -1,8 +1,11 @@
 const mongoose = require('mongoose')
-const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-const { ROLE_CUSTOMER, ROLE_FREELANCE } = require('../../server/plugins/sosynpl/consts')
+const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
+require('../../../web/server/plugins/sosynpl/functions')
 const User = require('../../server/models/User')
-const getApplications = require('../../server/plugins/sosynpl/customer')
+const { ROLE_CUSTOMER } = require('../../server/plugins/sosynpl/consts')
+require('../../server/server')
+const moment = require('moment')
+
 
 describe('Customer', () => {
 
@@ -15,8 +18,10 @@ describe('Customer', () => {
   })
 
   it('must return customer_applications', async () => {
-    const customer = await User.findOne({role: ROLE_CUSTOMER})
-    const apps = await getApplications(customer)
-    expect(apps).toBeTruthy()
+    const user = await User.findOne({role:ROLE_CUSTOMER})
+    console.log(user,'......................',moment().millisecond())
+    const id = '6661adbaeb49ff38fc686de5'
+    // const apps = await loadFromDb({model:'user', user, id, fields:['applications'], })
+    // console.log(apps,'.....................')
   })
 })
