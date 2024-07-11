@@ -425,6 +425,10 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   })
 })
 
+//Evaluation
+declareVirtualField({model: 'evaluation', field: 'customer_average_note', requires:'customer_note_quality,customer_note_deadline,customer_note_team,customer_note_reporting', instance: 'Number'})
+declareVirtualField({model: 'evaluation', field: 'freelance_average_note', requires:'freelance_note_interest,freelance_note_organisation,freelance_note_integration,freelance_note_communication', instance: 'Number'})
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
