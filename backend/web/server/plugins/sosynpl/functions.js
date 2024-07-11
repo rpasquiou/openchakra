@@ -20,7 +20,7 @@ const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 const moment = require('moment');
 const { getterPinnedFn, setterPinnedFn } = require("../../utils/pinned");
-const { default: isMine } = require("./message");
+const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message')
 
@@ -420,7 +420,7 @@ declareVirtualField({
   },
 })
 //Message
-// declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)

@@ -1,7 +1,9 @@
 const { idEqual } = require("../../utils/database")
 
-const isMine = (user, sender) => {
-  return idEqual(user, sender)
+const isMine = async (userId, params, data)  => {
+  return idEqual(userId, data.sender)
 }
 
-exports.isMine = isMine
+module.exports={
+  isMine
+}
