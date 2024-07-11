@@ -29,22 +29,7 @@ const Slider = React.forwardRef((props, ref) => {
     pb,
     p,
     borderRadius,
-    min = 0,
-    max = 100,
-    initialSliderValue = 50,
-    ...rest
   } = props
-
-  const [sliderValue, setSliderValue] = useState(initialSliderValue);
-
-  useEffect(() => {
-    setSliderValue(initialSliderValue);
-  }, [initialSliderValue]);
-
-  const handleSliderChange = useCallback((value) => {
-    setSliderValue(value);
-    console.log(value, 'Value updated');
-  }, []);
 
   const chakraStyles = useStyleConfig("Slider", {
     baseStyle: {
@@ -67,15 +52,20 @@ const Slider = React.forwardRef((props, ref) => {
     }
   });
 
+  const chakraOnChange = value => {
+    console.log('changed', value)
+    props.onChange && props.onChange({target: {value: value}})
+  }
+
   return (
+    <>
+    { /* TODO ChakraSlider updates value only if this input range is here. Why ? */ }
+    <input type='range' {...props} onChange={undefined} ref={ref} style={{display:'none'}}/>
     <ChakraSlider
       ref={ref}
-      min={min}
-      max={max}
-      value={sliderValue}
-      onChange={(v) => handleSliderChange(v)}
+      {...props}
+      onChange={chakraOnChange}
       __css={chakraStyles.container}
-      {...rest}
     >
       <SliderTrack
         bg={backgroundColor}
@@ -91,6 +81,7 @@ const Slider = React.forwardRef((props, ref) => {
         overflow="hidden"
       />
     </ChakraSlider>
+    </>
   );
 });
 
