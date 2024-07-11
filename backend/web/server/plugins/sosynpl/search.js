@@ -49,6 +49,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
   }
 
   let candidates=await CustomerFreelance.find({...filter})
+  console.log(data,'********************************')
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
       const distance=computeDistanceKm(c.address, data.city)
