@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 
 const setterPinnedFn = async (model) => {
-  return ({ id, attribute, value, user }) => {
+  return async ({ id, attribute, value, user }) => {
     const upd=!!value ? { $addToSet: { pinned_by: user._id }} : { $pullAll: { pinned_by: [user._id] }}
     return mongoose.models[model].findByIdAndUpdate(id, upd)
   }
