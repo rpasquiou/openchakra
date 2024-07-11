@@ -4,10 +4,7 @@ const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK}=require('../consts')
-const { THUMBNAILS_DIR } = require('../../../../utils/consts')
-const { childSchemas } = require('./ResourceSchema')
 const { DUMMY_REF } = require('../../../utils/database')
-const Block = require('../../../models/Block')
 const { getAttribute } = require('../block')
 
 const BlockSchema = new Schema({
