@@ -246,6 +246,9 @@ BlockSchema.pre('validate', async function(next) {
   return next()
 })
 
+BlockSchema.virtual('plain_url', DUMMY_REF).set(function() {
+  console.log(this)
+})
 // BlockSchema.index(
 //   { name: 1},
 //   { unique: true, message: 'Un bkoc de même nom existe déjà' });

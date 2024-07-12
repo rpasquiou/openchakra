@@ -72,6 +72,7 @@ BLOCK_MODELS.forEach(model => {
     declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
   )
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
+  declareVirtualField({model, field: 'plain_url', type: 'String'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
