@@ -1,9 +1,9 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE } = require('./consts')
 const Duration = require('../../models/Duration')
 const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
@@ -18,7 +18,7 @@ require('../../models/Sequence')
 require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules } = require('./resources')
 const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
@@ -29,6 +29,8 @@ const { isResourceMine } = require('./resources')
 const { getAvailableCodes } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
+const Resource = require('../../models/Resource')
+const { parseAsync } = require('@babel/core')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -66,7 +68,6 @@ BLOCK_MODELS.forEach(model => {
     dbFilter: value => ({$or:[{name: value}, {code: value}]}),
   })
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
-  declareVirtualField({model, field: 'has_homework', type: 'Boolean'})
   declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
   LINKED_ATTRIBUTES.forEach(attName => 
     declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
@@ -83,6 +84,8 @@ declareComputedField({model: 'program', field: 'available_codes', requires: 'cod
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
+declareComputedField({model: 'resource', field: 'available_achievement_rules', requires:'resource_type', getterFn: getAchievementRules})
+
 
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
 
@@ -103,20 +106,27 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
 const preCreate = async ({model, params, user}) => {
-  params.creator=user
-  params.last_updater=user
+  params.creator=params.creator || user._id
+  params.last_updater=user._id
   if (model=='session') {
     throw new Error(`La création de session n'est pas finalisée`)
-  }
-  if (['resource'].includes(model)) {
-    params.creator=params?.creator || user
   }
   if ('homework'==model) {
     params.trainee=user
   }
   if (model=='resource') {
-    const foundResourceType=await getResourceType(params.url)
-    params.resource_type=foundResourceType
+    if (!params.url && !params.plain_url) {
+      throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
+    }
+    if (params.plain_url) {
+      params.resource_type=RESOURCE_TYPE_LINK
+      params.url=params.plain_url
+    }
+    else {
+      const foundResourceType=await getResourceType(params.url)
+      params.resource_type=foundResourceType
+    }
+    params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
   }
   if (model=='post') {
     params.author=user
@@ -133,6 +143,33 @@ const preCreate = async ({model, params, user}) => {
 }
 
 setPreCreateData(preCreate)
+
+const prePut = async ({model, id, params, user, skip_validation}) => {
+  if (model=='resource') {
+    const block=await Resource.findById(id, {resource_type:1, origin:1})
+    if (!block.origin) {
+      if (!params.url && !params.plain_url) {
+        throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
+      }
+      if (params.plain_url) {
+        params.resource_type=RESOURCE_TYPE_LINK
+        params.url=params.plain_url
+      }
+      else {
+        const foundResourceType=await getResourceType(params.url)
+        params.resource_type=foundResourceType
+      }
+      if (block.resource_type!=params.resource_type) {
+        throw new Error(`Le type de ressource ne peut changer`)
+      }
+      params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
+    }
+
+  }
+  return {model, id, params, user, skip_validation}
+}
+
+setPrePutData(prePut)
 
 const getContacts = user => {
   console.log('user is', user)
@@ -266,11 +303,6 @@ setFilterDataUser(filterDataUser)
 const postPutData = async ({model, id, attribute, data, user}) => {
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
-  }
-  // Test attribute (in case of PUT) or undefined (in case of SAVE)
-  if (model=='resource' && [undefined, 'url'].includes(attribute)) {
-    const resType=await getResourceType(data.url)
-    await mongoose.models[model].findByIdAndUpdate(id, {$set: {resource_type: resType}})
   }
   return data
 }

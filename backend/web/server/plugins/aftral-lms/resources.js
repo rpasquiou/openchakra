@@ -4,7 +4,7 @@ const Duration = require("../../models/Duration")
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
 const { getBlockName, updateBlockStatus } = require("./block")
-const { RESOURCE_TYPE_EXT } = require('./consts')
+const { RESOURCE_TYPE_EXT, AVAILABLE_ACHIEVEMENT_RULES } = require('./consts')
 
 const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
@@ -49,7 +49,11 @@ const getResourceType = async url => {
   return res[0]
 }
 
+const getAchievementRules = async (userId, params, data) => {
+  return AVAILABLE_ACHIEVEMENT_RULES[data.resource_type]
+}
+
 module.exports={
   getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType,
+  getResourceType, getAchievementRules,
 }

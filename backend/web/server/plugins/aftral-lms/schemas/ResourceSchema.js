@@ -1,8 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, RESOURCE_TYPE, ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM}=require('../consts')
-const { number } = require('yargs')
+const {BLOCK_DISCRIMINATOR}=require('../consts')
 
 const ResourceSchema = new Schema({
   shortName: {

@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, ACHIEVEMENT_RULE_HOMEWORK}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { getAttribute } = require('../block')
 
@@ -19,13 +19,7 @@ const BlockSchema = new Schema({
   },
   name: {
     type: String,
-    // required: [true, `Le nom est obligatoire`],
-    // set: function(v) {
-    //   if (!!this.origin) {
-    //     throw new Error(`Le changement de nom est interdit`)
-    //   }
-    //   return v
-    // },
+    required: [function()  {return !this.origin}, `Le nom est obligatoire`],
     index: true,
   },
   parent: {
@@ -84,11 +78,17 @@ const BlockSchema = new Schema({
   url: {
     type: String,
     default: null,
+    set: function(v) {
+      return !this.origin ? v : undefined
+    },
     required: [function() {return this?.type=='resource' && !this?.origin}, `L'url est obligatoire`],
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
+    set: function(v) {
+      return !this.origin ? v : undefined
+    },
     required: [function(){ return this?.type=='resource' && !this?.origin}, `Le type de ressource est obligatoire`],
   },
   spent_time: {
@@ -148,6 +148,11 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(ACHIEVEMENT_RULE),
     set: v => v || undefined,
+    required: [function() {return !this.origin}, `La règle d'achèvement est obligatoire`],
+  },
+  available_achievement_rules: {
+    type: [String],
+    default: [],
     required: false,
   },
   success_note_min: {
@@ -211,20 +216,11 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
   return `${this.name} ${this.code}`
 })
 
-BlockSchema.virtual('has_homework').get(function(value) {
-  if (this.achievement_rule==ACHIEVEMENT_RULE_HOMEWORK) {
-    return true
-  }
-  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && this.resource_type==RESOURCE_TYPE_SCORM) {
-    return true
-  }
-  return false
-})
-
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
+  console.log('prevlidate', this)
   // #36 Can't create two templates with same type and same name
-  const exists=await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
+  const exists=!!this.name && await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
   if (exists) {
     return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà`))
   }
@@ -246,9 +242,8 @@ BlockSchema.pre('validate', async function(next) {
   return next()
 })
 
-BlockSchema.virtual('plain_url', DUMMY_REF).set(function() {
-  console.log(this)
-})
+BlockSchema.virtual('plain_url', DUMMY_REF)
+
 // BlockSchema.index(
 //   { name: 1},
 //   { unique: true, message: 'Un bkoc de même nom existe déjà' });
