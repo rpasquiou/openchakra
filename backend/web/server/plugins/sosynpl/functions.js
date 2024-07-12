@@ -275,7 +275,7 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 
 /** Announce start */
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
-declareComputedField({model: 'announce', field: 'suggested_freelances', getterFn: computeSuggestedFreelances})
+declareComputedField({model: 'announce', field: 'suggested_freelances', require: 'experiences', getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})

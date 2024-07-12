@@ -1,13 +1,77 @@
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const User = require("../../models/User")
-const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS } = require("./consts")
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE } = require("./consts")
 const { buildPopulates, loadFromDb } = require('../../utils/database')
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
+const { REGIONS_FULL } = require('../../../utils/consts')
 
-const computeSuggestedFreelances = async (userId, params, data)  => {
-  return CustomerFreelance.find()
+const computeSuggestedFreelances = async (userId, params, data) => {
+  const MAP_WORKMODE = {
+    0: WORK_MODE_SITE,
+    5: WORK_MODE_REMOTE,
+  }
+
+  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE;
+
+  const workDuration =
+    data._duration_days < 30
+      ? WORK_DURATION_LESS_1_MONTH
+      : data._duration_days > 180
+      ? WORK_DURATION_MORE_6_MONTH
+      : WORK_DURATION__1_TO_6_MONTHS
+
+  const getRegionFromZipcode = (zipcode) => {
+    const departmentCode = zipcode.toString().substring(0, 2);
+    const region = lodash.pickBy(REGIONS_FULL, (region) =>
+      region.departements.includes(departmentCode)
+    )
+    return Object.keys(region)[0] || null
+  }
+
+  const mobilityFilter = () => {
+    if (data.homework_days === 5) {
+      return {}
+    }
+    if (data.mobility === MOBILITY_FRANCE) {
+      return { mobility: MOBILITY_FRANCE }
+    }
+    if (data.mobility === MOBILITY_NONE) {
+      const regionKey = getRegionFromZipcode(data.city.zipcode);
+      return {
+        $or: [
+          {
+            mobility: MOBILITY_CITY,
+            $expr: {
+              $lt: [
+                computeDistanceKm(data.city, '$mobility_city'),
+                '$mobility_city_distance',
+              ],
+            },
+          },
+          {
+            mobility: MOBILITY_REGIONS,
+            mobility_regions: { $in: [regionKey] },
+          },
+        ],
+      }
+    }
+    else return {}
+  }
+
+  const filter = {
+    main_job: data.job,
+    work_sector: { $in: data.sectors },
+    expertises: { $in: data.expertises },
+    softwares: { $in: data.softwares },
+    languages: { $in: data.languages },
+    main_experience: { $in: data.experience },
+    work_mode: workMode,
+    work_duration: workDuration,
+    ...mobilityFilter(),
+  }
+  return CustomerFreelance.find(filter)
 }
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
