@@ -2263,7 +2263,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 // Synchronize diets & customer smartagenda accounts
 cron.schedule('0 0 2 * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: { $in: [ROLE_EXTERNAL_DIET, ROLE_CUSTOMER] }, smartagenda_id: null })
+  return User.find({ role: { $in: [ROLE_EXTERNAL_DIET, ROLE_CUSTOMER] }, smartagenda_id: {$in: [null, '']}})
     .then(users => {
       return Promise.allSettled(users.map(user => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
