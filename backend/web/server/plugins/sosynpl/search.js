@@ -2,18 +2,21 @@ const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const User = require("../../models/User")
 const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE } = require("./consts")
-const { buildPopulates, loadFromDb } = require('../../utils/database')
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 
 const computeSuggestedFreelances = async (userId, params, data) => {
+  if( !data.job || !data.start_date){
+    console.log("missing attributes on announce")
+    return []
+  }
   const MAP_WORKMODE = {
     0: WORK_MODE_SITE,
     5: WORK_MODE_REMOTE,
   }
 
-  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE;
+  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
 
   const workDuration =
     data._duration_days < 30
@@ -60,6 +63,13 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     else return {}
   }
 
+  const availableFilter = {
+    $or: [
+      {available: true,},
+      {$lte: ['$available_from', data.start_date]}
+    ]
+  }
+
   const filter = {
     main_job: data.job,
     work_sector: { $in: data.sectors },
@@ -70,8 +80,12 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     work_mode: workMode,
     work_duration: workDuration,
     ...mobilityFilter(),
+    ...availableFilter,
   }
   return CustomerFreelance.find(filter)
+  /*TODO:
+  Sort by pilars
+   */
 }
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
