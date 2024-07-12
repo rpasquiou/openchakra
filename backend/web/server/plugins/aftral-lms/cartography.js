@@ -53,7 +53,6 @@ const getPathsForBlock = async (userID, params, blockId) => {
   const pathToString=path => path.blocks.map(b => `${b.type}-${b.name}`).join('/')+'/'
   const isPrefix= (p1, p2) => {
     const pref=p1!=p2 && p2.startsWith(p1)
-    console.log(p1, 'prefifx of', p2, pref)
     return pref
   }
   let filteredPaths=allPaths.filter(p => !allPaths.some(op => isPrefix(pathToString(p), pathToString(op))))
