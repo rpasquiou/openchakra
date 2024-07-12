@@ -74,6 +74,7 @@ BLOCK_MODELS.forEach(model => {
   )
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
+  declareComputedField({model, field: 'available_achievement_rules', requires:'resource_type', getterFn: getAchievementRules})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -84,7 +85,6 @@ declareComputedField({model: 'program', field: 'available_codes', requires: 'cod
 declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
-declareComputedField({model: 'resource', field: 'available_achievement_rules', requires:'resource_type', getterFn: getAchievementRules})
 
 
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
