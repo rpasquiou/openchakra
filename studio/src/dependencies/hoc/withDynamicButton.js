@@ -38,13 +38,18 @@ const withDynamicButton = Component => {
 
     const [actionAllowed, setActionAllowed]=useState(true)
 
+    function checkAllowed() {
+      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
+        .then(res => setActionAllowed(res.data))
+        .catch(err => console.error(err))
+    }
+
     useEffect(()=> {
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
-      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
-        .then(res => setActionAllowed(res.data.allowed))
-        .catch(err => console.error(err))
+      checkAllowed()
+
     }, [action, value])
 
     if (action) {
@@ -102,25 +107,25 @@ const withDynamicButton = Component => {
           .finally(() => {
             setInsideAction(false)
           })
+        }
       }
-    }
-    const conditionalProperties = getConditionalProperties(
-      props,
-      props.dataSource,
-    )
-
-    // Hide if action unavailable and hideIfForbidden is set
-    if (props.hideIfForbidden && !actionAllowed) {
-      return null
-    }
-    return (
-      <>
+      const conditionalProperties = getConditionalProperties(
+        props,
+        props.dataSource,
+      )
+      
+      // Hide if action unavailable and hideIfForbidden is set
+      if (props.hideIfForbidden && !actionAllowed) {
+        return null
+      }
+      return (
+        <>
       <Component disabled={!actionAllowed}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
-      />
+        />
       {errorMessage && <Error message={errorMessage} onClose={()=>setErrorMessage(null)}/>}
       {infoMessage && <Information message={infoMessage} onClose={()=>setInfoMessage(null)}/>}
       </>

@@ -3,6 +3,10 @@ const moment = require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
 const { GENDER, SOURCE, SOURCE_APPLICATION } = require('../consts')
+const { copyPDF } = require('../../../../utils/fillForm')
+const { API_ROOT } = require('../../../../utils/consts')
+const { NotFound } = require('@aws-sdk/client-s3')
+const { formatDateTime } = require('../../../../utils/text')
 
 const Schema = mongoose.Schema
 
@@ -70,15 +74,32 @@ const NutritionAdviceSchema = new Schema({
     required: true,
     default: SOURCE_APPLICATION,
   },
+  _certificate: {
+    type: String,
+    required: false,
+  },
+  // Computed Lazily created and stoer under _certificate
+  certificate: {
+    type: String,
+  }
 },
 {...schemaOptions}
 )
 
 /* eslint-disable prefer-arrow-callback */
+NutritionAdviceSchema.virtual('_user', {
+  ref: 'user',
+  localField: 'patient_email',
+  foreignField: 'email',
+  justOne: true,
+})
+
+
 NutritionAdviceSchema.virtual('end_date', DUMMY_REF).get(function() {
   const end=moment(this.start_date).add(this.duration, 'minutes')
   return end.isValid() ? end : null
 })
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = NutritionAdviceSchema

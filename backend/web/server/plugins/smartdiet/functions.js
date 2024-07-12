@@ -208,6 +208,7 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
+const { getNutAdviceCertificate } = require('./nutritionAdvice')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -314,18 +315,18 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
   if (model == 'adminDashboard') {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
-      return Promise.resolve({ model, fields, id, data: [] })
+      return Promise.resolve({ model, fields, id, params, data: [] })
     }
-    id= params['filter.company']
-    if (user.role == ROLE_RH) {
-      id = user.company._id
-    }
-    const company = params['filter.company'] ? params['filter.company'] : undefined
+    let company = params['filter.company'] ? params['filter.company'] : undefined
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
+    id= params['filter.company']
+    if (user.role == ROLE_RH) {
+      company = user.company._id
+    }
     return computeStatistics({ fields, company, start_date, end_date, diet})
-      .then(stats => ({ model, fields, id, data: [stats] }))
+      .then(stats => ({ model, fields, id, params, data: [stats] }))
   }
 
   if (model=='billing') {
@@ -530,6 +531,11 @@ const preCreate = async ({ model, params, user }) => {
       params.diet_private = user._id
     }
   }
+  if (model=='nutritionAdvice') {
+    if (!(user.role==ROLE_EXTERNAL_DIET)) {
+      throw new Error(`Seule une diet peut créer un conseil nut`)
+    }
+  }
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
@@ -583,7 +589,7 @@ const preCreate = async ({ model, params, user }) => {
         if (nextAppt) {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
-        diet=latest_coaching.diet
+        diet=user
 
         if (isAppointment) {
           const start=moment(params.start_date)
@@ -602,7 +608,7 @@ const preCreate = async ({ model, params, user }) => {
             })
         }
         else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, ...params } }
         }
       })
   }
@@ -1512,6 +1518,25 @@ declareVirtualField({
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
+declareComputedField({ 
+  model: 'nutritionAdvice', field: 'certificate', type: 'String', 
+  requires: 'start_date,_user.firstname,_user.lastname,_certificate,_user.company.nutadvice_certificate_template,_user.company.name',
+  getterFn: getNutAdviceCertificate,
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_lead', instance: 'lead', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'lead' }
+  },
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_user', instance: 'user', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'user' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_coaching_enabled', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_site_enabled', instance: 'Number' })
@@ -1544,10 +1569,6 @@ declareVirtualField({
 
 const APP_MODELS=['appointment','currentFutureAppointment','pastAppointment']
 APP_MODELS.forEach(model => {
-  declareVirtualField({
-    model: model, field: 'order', instance: 'Number',
-    requires: 'coaching.appointments',
-  })
   declareVirtualField({
     model: model, field: 'status', instance: 'String',
     requires: 'start_date,end_date,validated', enumValues: APPOINTMENT_STATUS,
@@ -2240,7 +2261,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 0 * * * *', () => {
+cron.schedule('0 0 2 * * *', () => {
   console.log(`Smartagenda accounts sync`)
   return User.find({ role: { $in: [ROLE_EXTERNAL_DIET, ROLE_CUSTOMER] }, smartagenda_id: null })
     .then(users => {

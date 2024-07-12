@@ -407,6 +407,11 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   }
   // Can i start a new coaching ?
   // TODO: send nothing instead of "undefined" for dataId
+  if (action=='create' && actionProps.model=='nutritionAdvice') {
+    if (!(user.role==ROLE_EXTERNAL_DIET)) {
+      throw new Error(`Seule une diet peut créer un conseil nut`)
+    }
+  }
   if (['save', 'create'].includes(action) && actionProps?.model=='coaching' && (action=='create' || (lodash.isEmpty(dataId) || dataId=="undefined"))) {
     let patientId;
     if ([ROLE_ADMIN, ROLE_SUPER_ADMIN, ROLE_SUPPORT, ROLE_EXTERNAL_DIET].includes(user.role)) {

@@ -56,7 +56,7 @@ const Sidebar = () => {
         p={2}
         m={0}
         as="menu"
-        bg="rgb(236, 236, 236)"
+        bg="#f4f4f4"
         w={'100%'}
         h={'100%'}
       >
@@ -73,7 +73,7 @@ const Sidebar = () => {
             boxShadow="md"
             bg="rgba(255, 255, 255, 1)"
             _hover={{
-              borderColor: 'rgba(255, 255, 255, 0.08)',
+              borderColor: '#2e2e2e',
             }}
             zIndex={0}
           />

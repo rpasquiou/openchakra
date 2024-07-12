@@ -28,7 +28,9 @@ import '~custom-components/Slider/SliderInit'
 import Menu from '~components/sidebar/Menu'
 import MediasContainer from '~components/MediasContainer'
 import { getMediasLayout } from '../core/selectors/app'
+import { getEditDatabaseLayout } from '../core/selectors/app'
 import WarningEnv from '~components/warnings/WarningEnv'
+import EditDatabase from '~components/editDatabase/EditDatabase'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -36,6 +38,7 @@ const App = () => {
   useShortcuts()
 
   const mediasLayout = useSelector(getMediasLayout)
+  const editDatabaseLayout = useSelector(getEditDatabaseLayout)
 
   return (
     <>
@@ -51,7 +54,7 @@ const App = () => {
           {/* <Sidebar /> */}
           <EditorErrorBoundary>
             <Box bg="white" flex={1} position="relative" overflow={'hidden'}>
-              {mediasLayout ? <MediasContainer /> : <Editor />}
+              {mediasLayout ? <MediasContainer /> : editDatabaseLayout ? <EditDatabase/> : <Editor />}
             </Box>
           </EditorErrorBoundary>
           <WarningEnv />
