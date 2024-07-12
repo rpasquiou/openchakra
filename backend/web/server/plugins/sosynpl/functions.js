@@ -75,7 +75,7 @@ MODELS.forEach(model => {
       options: { ref: 'mission' }
     },
   })
-  declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn, setterFn: setterPinnedFn })
+  declareComputedField({model, field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn(model), setterFn: setterPinnedFn(model) })
   declareVirtualField({
     model, field: 'customer_missions', instance: 'Array', multiple: true,
     caster: {
@@ -302,7 +302,7 @@ declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', 
     declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  
 })
 declareVirtualField({model: 'announce', field: 'serial_number', requires: '_counter', instance: 'String'})
-declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn, setterFn: setterPinnedFn })
+declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by', getterFn: getterPinnedFn('announce'), setterFn: setterPinnedFn('announce') })
 /** Announce end */
 
 
@@ -428,6 +428,15 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
 //Evaluation
 declareVirtualField({model: 'evaluation', field: 'customer_average_note', requires:'customer_note_quality,customer_note_deadline,customer_note_team,customer_note_reporting', instance: 'Number'})
 declareVirtualField({model: 'evaluation', field: 'freelance_average_note', requires:'freelance_note_interest,freelance_note_organisation,freelance_note_integration,freelance_note_communication', instance: 'Number'})
+
+//Customer
+declareVirtualField({
+  model: 'customer', field: 'applications', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'application' }
+  },
+})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
