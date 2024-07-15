@@ -16,7 +16,7 @@ const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
-const { canAcceptReport, sendReport, acceptReport, refuseReport } = require("./report")
+const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport } = require("./report")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -286,7 +286,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       await quotation.details[0].validate()
     }
     if (foundModel=='report') {
-      return sendReport(dataId)
+      return canSendReport(dataId)
     }
   }
 
