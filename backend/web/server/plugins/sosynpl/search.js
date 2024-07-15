@@ -1,13 +1,94 @@
+/*TODO:
+  - computeSuggestedFreelances doesn't get data, filters on mongo request don't work
+  - Misc : we get suggested_freelances once every 5 tests
+*/
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const User = require("../../models/User")
-const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS } = require("./consts")
-const { buildPopulates, loadFromDb } = require('../../utils/database')
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
+const { REGIONS_FULL } = require('../../../utils/consts')
 
-const computeSuggestedFreelances = async (userId, params, data)  => {
-  return CustomerFreelance.find()
+const computeSuggestedFreelances = async (userId, params, data) => {
+  if (!data.job || !data.start_date) {
+    console.log("missing attributes on announce")
+    return []
+  }
+
+  const MAP_WORKMODE = {
+    0: WORK_MODE_SITE,
+    5: WORK_MODE_REMOTE,
+  }
+
+  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
+
+  const durationDays = data.duration*DURATION_UNIT_DAYS[data.duration_unit]
+  const workDuration =
+  durationDays < 30
+      ? WORK_DURATION_LESS_1_MONTH
+      : durationDays > 180
+      ? WORK_DURATION_MORE_6_MONTH
+      : WORK_DURATION__1_TO_6_MONTHS
+
+  const getRegionFromZipcode = (zipcode) => {
+    const departmentCode = zipcode.toString().substring(0, 2)
+    const region = lodash.pickBy(REGIONS_FULL, (region) =>
+      region.departements.includes(departmentCode)
+    )
+    return Object.keys(region)[0] || null
+  }
+
+  const mobilityFilter = () => {
+    if (data.homework_days === 5) {
+      return {}
+    }
+    if (data.mobility === MOBILITY_FRANCE) {
+      return { mobility: MOBILITY_FRANCE }
+    }
+    return {}
+  }
+
+  const availabilityFilter = {
+    $or: [
+      { availability: AVAILABILITY_ON },
+      { available_from: { $lte: data.start_date } },
+    ],
+  }
+
+  const filter = {
+    main_job: data.job,
+    work_sector: { $in: data.sectors },
+    expertises: { $in: data.expertises },
+    softwares: { $in: data.softwares },
+    languages: { $in: data.languages },
+    main_experience: { $in: data.experience },
+    work_mode: workMode,
+    work_duration: workDuration,
+    $and:[
+      mobilityFilter(),
+      availabilityFilter
+    ],
+  }
+  const suggestions = await CustomerFreelance.find(filter)
+  const regionKey = getRegionFromZipcode(data.city.zip_code)
+  if (data.mobility === MOBILITY_NONE) {
+    return suggestions.filter(s => {
+      return (
+        (s.mobility === MOBILITY_CITY && computeDistanceKm(data.city, s.mobility_city) < s.mobility_city_distance) ||
+        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(regionKey))
+      )
+    })
+  }
+  if(data.mobility === MOBILITY_REGIONS) {
+    return suggestions.filter(s => {
+      return (
+        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.regions)) ||
+        (s.mobility === MOBILITY_CITY && data.regions.includes(getRegionFromZipcode(s.mobility_city.zip_code)))
+      )
+    })
+  }
+  return suggestions
 }
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
