@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { getAttribute } = require('../block')
 
@@ -150,11 +150,6 @@ const BlockSchema = new Schema({
     set: v => v || undefined,
     required: [function() {return !this.origin}, `La règle d'achèvement est obligatoire`],
   },
-  available_achievement_rules: {
-    type: [String],
-    default: [],
-    required: false,
-  },
   success_note_min: {
     type: Number,
   },
@@ -228,6 +223,12 @@ BlockSchema.pre('validate', async function(next) {
   // must select between min/max notes and scale
   const resourceType=await getAttribute('resource_type')(null, null, {_id: this._id})
   console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
+  const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
+  if (this.achievement_rule && !allowedAchievementRules.includes(this.achievement_rule)) {
+    const ruleName=ACHIEVEMENT_RULE[this.achievement_rule]
+    const resourcetypeName=RESOURCE_TYPE[resourceType]
+    throw new Error(`La règle d'achèvement ${ruleName} est invalide pour un ressource ${resourcetypeName}`)
+  }
   if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && resourceType!=RESOURCE_TYPE_SCORM) {
     if (!this.success_scale) {
       if (!this.success_note_min) {
