@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const moment = require('moment')
-const { faker } = require('@faker-js/faker')
 const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
 const Announce = require('../../server/models/Announce')
 const Job = require('../../server/models/Job')
@@ -11,6 +10,9 @@ const LanguageLevel = require('../../server/models/LanguageLevel')
 const CustomerFreelance = require('../../server/models/CustomerFreelance')
 const SoftSkill = require('../../server/models/SoftSkill')
 const JobFile = require('../../server/models/JobFile')
+const { LANGUAGE_LEVEL_ADVANCED } = require('../../utils/consts')
+const { EXPERIENCE_EXPERT, DURATION_MONTH, MOBILITY_FRANCE, SOURCE_RECOMMANDATION, WORK_MODE_REMOTE_SITE, WORK_DURATION__1_TO_6_MONTHS, AVAILABILITY_ON, AVAILABILITY_OFF, MOBILITY_CITY, MOBILITY_NONE } = require('../../server/plugins/sosynpl/consts')
+const { computeDistanceKm } = require('../../utils/functions')
 require('../../server/plugins/sosynpl/functions')
 require('../../server/plugins/sosynpl/announce')
 require('../../server/models/JobFile')
@@ -18,7 +20,7 @@ require('../../server/models/Application')
 
 
 describe('Search', () => {
-  let job, sector, expertise1, expertise2, expertise3, software, language, announce, customerFreelance
+  let job, sector, expertise1, expertise2, expertise3, software, language, announce, customerFreelance, rouen, msa, dieppe
   let softSkillComm, softSkillConflict, softSkillTeamWork
 
   beforeAll(async () => {
@@ -32,31 +34,48 @@ describe('Search', () => {
     expertise2 = await Expertise.create({ name: 'Java' })
     expertise3 = await Expertise.create({ name: 'Python' })
     software = await Software.create({ name: 'VS Code' })
-    language = await LanguageLevel.create({ language: 'fr', level: 'LANGUAGE_LEVEL_ADVANCED' })
+    language = await LanguageLevel.create({ language: 'fr', level: LANGUAGE_LEVEL_ADVANCED })
     softSkillComm = await SoftSkill.create({ name: 'Communication', value: 'SOFT_SKILL_COMM' })
     softSkillTeamWork = await SoftSkill.create({ name: 'TeamWork', value: 'SOFT_SKILL_TEAMWORK'})
     softSkillConflict = await SoftSkill.create({ name: 'Conflict', value: 'SOFT_SKILL_CONFLICT'})
-
+    rouen = {
+      address: 'Place du Vieux-Marché',
+      city: 'Rouen',
+      zip_code: '76000',
+      country: 'France',
+      latitude: 49.4431,
+      longitude: 1.0993,
+    }
+    msa = {
+      address: 'Place Colbert',
+      city: 'Mont Saint Aignan',
+      zip_code: '76130',
+      country: 'France',
+      latitude: 49.4655,
+      longitude: 1.0877,
+    }
+    dieppe = {
+      address: 'Place Nationale',
+      city: 'Dieppe',
+      zip_code: '76200',
+      country: 'France',
+      latitude: 49.9225,
+      longitude: 1.0781,
+    }
     announce = await Announce.create({
       user: new mongoose.Types.ObjectId(),
       job: job._id,
-      title: faker.name.jobTitle(),
-      experience: ['EXPERIENCE_EXPERT'],
-      start_date: moment(),
-      duration: faker.datatype.number({ min: 1, max: 12 }),
-      duration_unit: 'DURATION_MONTH',
+      title: 'Senior Developer',
+      experience: [EXPERIENCE_EXPERT],
+      start_date: new Date(2024, 6, 20),
+      duration: 3, 
+      duration_unit: DURATION_MONTH,
       sectors: [sector._id],
-      city: {
-        address: faker.address.streetAddress(),
-        city: faker.address.city(),
-        zip_code: faker.address.zipCode(),
-        country: faker.address.country()
-      },
-      homework_days: faker.datatype.number({ min: 0, max: 5 }),
-      mobility: 'MOBILITY_FRANCE',
-      mobility_days_per_month: faker.datatype.number({ min: 1, max: 30 }),
-      budget: faker.datatype.number({ min: 1000, max: 10000 }),
-      budget_hidden: faker.datatype.boolean(),
+      homework_days: 3, 
+      mobility: MOBILITY_NONE,
+      mobility_days_per_month: 10, 
+      budget: 5000, 
+      budget_hidden: false, 
       expertises: [expertise1._id, expertise2._id, expertise3._id],
       pinned_expertises: [expertise1._id],
       softwares: [software._id],
@@ -64,18 +83,22 @@ describe('Search', () => {
       gold_soft_skills: [softSkillComm._id],
       silver_soft_skills: [softSkillTeamWork._id],
       bronze_soft_skills: [softSkillConflict._id],
+      city: msa,
     })
 
     customerFreelance = await CustomerFreelance.create({
-      password: faker.internet.password(),
-      email: faker.internet.email(),
-      lastname: faker.name.lastName(),
-      firstname: faker.name.firstName(),
-      source: 'SOURCE_RECOMMANDATION',
+      password: 'password123',
+      availability: AVAILABILITY_OFF,
+      available_from: new Date(2024,6,19),
+      available_days_per_week: 5,
+      email: 'sample@example.com',
+      lastname: 'Doe',
+      firstname: 'John',
+      source: SOURCE_RECOMMANDATION,
       curriculum: new mongoose.Types.ObjectId(),
       experience: new mongoose.Types.ObjectId(),
-      motivation: faker.lorem.sentence(),
-      main_job: job._id,
+      motivation: 'Motivated to work on challenging projects',
+      main_job: job,
       gold_soft_skills: [softSkillComm._id],
       silver_soft_skills: [softSkillTeamWork._id],
       bronze_soft_skills: [softSkillConflict._id],
@@ -83,21 +106,23 @@ describe('Search', () => {
       expertises: [expertise1._id],
       siren: '923145171',
       legal_status: 'EI',
-      company_name: faker.company.name(),
-      position: faker.name.jobTitle(),
+      company_name: 'Sample Company',
+      position: 'Lead Developer',
       softwares: [software._id],
       languages: [language._id],
-      main_experience: 'EXPERIENCE_EXPERT',
-      work_mode: 'WORK_MODE_REMOTE_SITE',
-      work_duration: ['WORK_DURATION__1_TO_6_MONTHS'],
-      mobility: 'MOBILITY_FRANCE',
+      main_experience: EXPERIENCE_EXPERT,
+      work_mode: WORK_MODE_REMOTE_SITE,
+      work_duration: [WORK_DURATION__1_TO_6_MONTHS],
+      mobility: MOBILITY_CITY,
+      mobility_city: rouen,
+      mobility_city_distance: 10,
       cgu_accepted: true,
       phone: '0606060606',
       address: {
-        address: faker.address.streetAddress(),
-        city: faker.address.city(),
-        zip_code: faker.address.zipCode(),
-        country: faker.address.country()
+        address: '123 Main St',
+        city: 'Sample City',
+        zip_code: '12345',
+        country: 'Sample Country'
       }
     })
   })
@@ -109,12 +134,11 @@ describe('Search', () => {
 
   test('should find suggested freelances based on announce criteria', async () => {
     const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
-      fields:'suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
+      fields:'city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
-
-    console.log(customerFreelance)
-    console.log(announce)
-    console.log("suggestion:",loadedAnnounce[0].suggested_freelances)
-    console.log("freelance:",customerFreelance.fullname)
+    const suggestion = loadedAnnounce[0].suggested_freelances[0]
+    // console.dir(customerFreelance, { depth: null, colors: true, maxArrayLength: null })
+    // console.dir(announce, { depth: null, colors: true, maxArrayLength: null })  
+    expect(String(customerFreelance._id)).toMatch(String(suggestion.id))
   })
 })
