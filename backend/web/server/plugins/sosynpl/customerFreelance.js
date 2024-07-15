@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 const Announce = require('../../models/Announce')
+const Evaluation = require('../../models/Evaluation')
+const { ROLE_FREELANCE, ROLE_CUSTOMER } = require('./consts')
 
 const getApplications = async (user) => {
   console.log(user)
@@ -35,4 +37,22 @@ const getApplications = async (user) => {
   return applications
 }
 
-module.exports = {getApplications}
+const computeNotes = async (user, role) => {
+  const rolePrefix = `${role.toLowerCase()}_`
+  const evals = user[`${rolePrefix}evaluations`]
+
+  const NOTES = evals.reduce((notes, eval) => {
+    Object.keys(eval).forEach(key => {
+      if (key.startsWith(rolePrefix) && !key.includes('average')) {
+        notes.push(eval[key]);
+      }
+    });
+    return notes
+  }, [])
+
+  const validNotes = lodash.filter(NOTES, note => !lodash.isNil(note))
+  return lodash.mean(validNotes)
+}
+
+
+module.exports = {getApplications, computeNotes}

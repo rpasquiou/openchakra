@@ -212,6 +212,20 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'application' }
     },
   })
+  declareVirtualField({model, field: 'customer_evaluations', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'evaluation' }
+    },
+  })
+  declareVirtualField({model, field: 'freelance_evaluations', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'evaluation' }
+    },
+  })
+  declareVirtualField({model, field: 'customer_average_note', instance: 'Number', requires: 'customer_evaluations'})
+  declareVirtualField({model, field: 'freelance_average_note', instance: 'Number', requires: 'freelance_evaluations'})
 })
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
