@@ -46,27 +46,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     if (data.mobility === MOBILITY_FRANCE) {
       return { mobility: MOBILITY_FRANCE }
     }
-    if (data.mobility === MOBILITY_NONE) {
-      const regionKey = getRegionFromZipcode(data.city.zip_code)
-      return {
-        $or: [
-          {
-            mobility: MOBILITY_CITY,
-            $expr: {
-              $lt: [
-                computeDistanceKm(data.city, "$mobility_city"),
-                '$mobility_city_distance',
-              ],
-            },
-          },
-          {
-            mobility: MOBILITY_REGIONS,
-            mobility_regions: { $in: [regionKey] },
-          },
-        ],
-      }
-    }
-    return true
+    return {}
   }
 
   const availabilityFilter = {
@@ -91,6 +71,15 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     ],
   }
   const suggestions = await CustomerFreelance.find(filter)
+  if (data.mobility === MOBILITY_NONE) {
+    const regionKey = getRegionFromZipcode(data.city.zip_code);
+    return suggestions.filter(s => {
+      return (
+        (s.mobility === MOBILITY_CITY && computeDistanceKm(data.city, s.mobility_city) < s.mobility_city_distance) ||
+        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(regionKey))
+      )
+    })
+  }
   return suggestions
 }
 
