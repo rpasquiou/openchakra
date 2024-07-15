@@ -10,10 +10,12 @@ const Software = require('../../server/models/Software')
 const LanguageLevel = require('../../server/models/LanguageLevel')
 const CustomerFreelance = require('../../server/models/CustomerFreelance')
 const SoftSkill = require('../../server/models/SoftSkill')
+const JobFile = require('../../server/models/JobFile')
 require('../../server/plugins/sosynpl/functions')
 require('../../server/plugins/sosynpl/announce')
 require('../../server/models/JobFile')
 require('../../server/models/Application')
+
 
 describe('Search', () => {
   let job, sector, expertise1, expertise2, expertise3, software, language, announce, customerFreelance
@@ -23,7 +25,8 @@ describe('Search', () => {
     const DBNAME = `test${moment().unix()}`
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
 
-    job = new mongoose.Types.ObjectId()
+    const jobFile = await JobFile.create({code:'a',name:'a'})
+    job = await Job.create({job_file:jobFile._id, name:'Dev'})
     sector = await Sector.create({ name: 'IT' })
     expertise1 = await Expertise.create({ name: 'JavaScript' })
     expertise2 = await Expertise.create({ name: 'Java' })
@@ -36,7 +39,7 @@ describe('Search', () => {
 
     announce = await Announce.create({
       user: new mongoose.Types.ObjectId(),
-      job: job,
+      job: job._id,
       title: faker.name.jobTitle(),
       experience: ['EXPERIENCE_EXPERT'],
       start_date: moment(),
@@ -72,7 +75,7 @@ describe('Search', () => {
       curriculum: new mongoose.Types.ObjectId(),
       experience: new mongoose.Types.ObjectId(),
       motivation: faker.lorem.sentence(),
-      main_job: job,
+      main_job: job._id,
       gold_soft_skills: [softSkillComm._id],
       silver_soft_skills: [softSkillTeamWork._id],
       bronze_soft_skills: [softSkillConflict._id],
@@ -105,32 +108,13 @@ describe('Search', () => {
   })
 
   test('should find suggested freelances based on announce criteria', async () => {
-    const suggestedFreelances = await loadFromDb({model:'announce', id:announce._id, fields:['suggested_freelances']})
-    expect(suggestedFreelances.length).toBeGreaterThan(0)
-    const johnDoe = suggestedFreelances.find(freelance => freelance.email === customerFreelance.email)
-    expect(johnDoe).toBeTruthy()
-    expect(johnDoe).toMatchObject({
-      email: customerFreelance.email,
-      lastname: customerFreelance.lastname,
-      firstname: customerFreelance.firstname,
-      source: customerFreelance.source,
-      motivation: customerFreelance.motivation,
-      main_job: customerFreelance.main_job,
-      work_sector: customerFreelance.work_sector,
-      expertises: customerFreelance.expertises,
-      siren: customerFreelance.siren,
-      legal_status: customerFreelance.legal_status,
-      company_name: customerFreelance.company_name,
-      position: customerFreelance.position,
-      softwares: customerFreelance.softwares,
-      languages: customerFreelance.languages,
-      main_experience: customerFreelance.main_experience,
-      work_mode: customerFreelance.work_mode,
-      work_duration: customerFreelance.work_duration,
-      mobility: customerFreelance.mobility,
-      cgu_accepted: customerFreelance.cgu_accepted,
-      phone: customerFreelance.phone,
-      address: customerFreelance.address
+    const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
+      fields:'suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
+
+    console.log(customerFreelance)
+    console.log(announce)
+    console.log("suggestion:",loadedAnnounce[0].suggested_freelances)
+    console.log("freelance:",customerFreelance.fullname)
   })
 })

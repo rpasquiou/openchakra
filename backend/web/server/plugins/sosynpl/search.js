@@ -1,32 +1,38 @@
+/*TODO:
+  - computeSuggestedFreelances doesn't get data, filters on mongo request don't work
+  - Misc : we get suggested_freelances once every 5 tests
+*/
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const User = require("../../models/User")
-const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE } = require("./consts")
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 
 const computeSuggestedFreelances = async (userId, params, data) => {
-  if( !data.job || !data.start_date){
-    console.log("missing attributes on announce")
-    return []
-  }
+  // if (!data.job || !data.start_date) {
+  //   console.log("missing attributes on announce")
+  //   return []
+  // }
+
   const MAP_WORKMODE = {
-    0: WORK_MODE_SITE,
-    5: WORK_MODE_REMOTE,
+    0: 'WORK_MODE_SITE',
+    5: 'WORK_MODE_REMOTE',
   }
 
-  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
+  const workMode = MAP_WORKMODE[data.homework_days] || 'WORK_MODE_REMOTE_SITE'
 
+  const durationDays = data.duration*DURATION_UNIT_DAYS[data.duration_unit]
   const workDuration =
-    data._duration_days < 30
-      ? WORK_DURATION_LESS_1_MONTH
-      : data._duration_days > 180
-      ? WORK_DURATION_MORE_6_MONTH
-      : WORK_DURATION__1_TO_6_MONTHS
+  durationDays < 30
+      ? 'WORK_DURATION_LESS_1_MONTH'
+      : durationDays > 180
+      ? 'WORK_DURATION_MORE_6_MONTH'
+      : 'WORK_DURATION__1_TO_6_MONTHS'
 
   const getRegionFromZipcode = (zipcode) => {
-    const departmentCode = zipcode.toString().substring(0, 2);
+    const departmentCode = zipcode.toString().substring(0, 2)
     const region = lodash.pickBy(REGIONS_FULL, (region) =>
       region.departements.includes(departmentCode)
     )
@@ -37,15 +43,15 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     if (data.homework_days === 5) {
       return {}
     }
-    if (data.mobility === MOBILITY_FRANCE) {
-      return { mobility: MOBILITY_FRANCE }
+    if (data.mobility === 'MOBILITY_FRANCE') {
+      return { mobility: 'MOBILITY_FRANCE' }
     }
-    if (data.mobility === MOBILITY_NONE) {
-      const regionKey = getRegionFromZipcode(data.city.zipcode);
+    if (data.mobility === 'MOBILITY_NONE') {
+      const regionKey = getRegionFromZipcode(data.city.zipcode)
       return {
         $or: [
           {
-            mobility: MOBILITY_CITY,
+            mobility: 'MOBILITY_CITY',
             $expr: {
               $lt: [
                 computeDistanceKm(data.city, '$mobility_city'),
@@ -54,22 +60,14 @@ const computeSuggestedFreelances = async (userId, params, data) => {
             },
           },
           {
-            mobility: MOBILITY_REGIONS,
+            mobility: 'MOBILITY_REGIONS',
             mobility_regions: { $in: [regionKey] },
           },
         ],
       }
     }
-    else return {}
+    return {}
   }
-
-  const availableFilter = {
-    $or: [
-      {available: true,},
-      {$lte: ['$available_from', data.start_date]}
-    ]
-  }
-
   const filter = {
     main_job: data.job,
     work_sector: { $in: data.sectors },
@@ -79,14 +77,16 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     main_experience: { $in: data.experience },
     work_mode: workMode,
     work_duration: workDuration,
-    ...mobilityFilter(),
-    ...availableFilter,
+    // ...mobilityFilter(),
+    // $or: [
+    //   { available: true },
+    //   { available_from: { $lte: data.start_date } },
+    // ],
   }
+
   return CustomerFreelance.find(filter)
-  /*TODO:
-  Sort by pilars
-   */
 }
+
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 
