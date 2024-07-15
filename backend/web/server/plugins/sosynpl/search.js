@@ -71,12 +71,20 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     ],
   }
   const suggestions = await CustomerFreelance.find(filter)
+  const regionKey = getRegionFromZipcode(data.city.zip_code)
   if (data.mobility === MOBILITY_NONE) {
-    const regionKey = getRegionFromZipcode(data.city.zip_code);
     return suggestions.filter(s => {
       return (
         (s.mobility === MOBILITY_CITY && computeDistanceKm(data.city, s.mobility_city) < s.mobility_city_distance) ||
         (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(regionKey))
+      )
+    })
+  }
+  if(data.mobility === MOBILITY_REGIONS) {
+    return suggestions.filter(s => {
+      return (
+        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.regions)) ||
+        (s.mobility === MOBILITY_CITY && data.regions.includes(getRegionFromZipcode(s.mobility_city.zip_code)))
       )
     })
   }

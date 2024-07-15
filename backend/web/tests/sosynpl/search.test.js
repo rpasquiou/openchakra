@@ -10,8 +10,8 @@ const LanguageLevel = require('../../server/models/LanguageLevel')
 const CustomerFreelance = require('../../server/models/CustomerFreelance')
 const SoftSkill = require('../../server/models/SoftSkill')
 const JobFile = require('../../server/models/JobFile')
-const { LANGUAGE_LEVEL_ADVANCED } = require('../../utils/consts')
-const { EXPERIENCE_EXPERT, DURATION_MONTH, MOBILITY_FRANCE, SOURCE_RECOMMANDATION, WORK_MODE_REMOTE_SITE, WORK_DURATION__1_TO_6_MONTHS, AVAILABILITY_ON, AVAILABILITY_OFF, MOBILITY_CITY, MOBILITY_NONE } = require('../../server/plugins/sosynpl/consts')
+const { LANGUAGE_LEVEL_ADVANCED, REGIONS } = require('../../utils/consts')
+const { EXPERIENCE_EXPERT, DURATION_MONTH, MOBILITY_FRANCE, SOURCE_RECOMMANDATION, WORK_MODE_REMOTE_SITE, WORK_DURATION__1_TO_6_MONTHS, AVAILABILITY_ON, AVAILABILITY_OFF, MOBILITY_CITY, MOBILITY_NONE, MOBILITY_REGIONS } = require('../../server/plugins/sosynpl/consts')
 const { computeDistanceKm } = require('../../utils/functions')
 require('../../server/plugins/sosynpl/functions')
 require('../../server/plugins/sosynpl/announce')
@@ -20,7 +20,7 @@ require('../../server/models/Application')
 
 
 describe('Search', () => {
-  let job, sector, expertise1, expertise2, expertise3, software, language, announce, customerFreelance, rouen, msa, dieppe
+  let job, sector, expertise1, expertise2, expertise3, software, language, announce, customerFreelance, rouen, msa, dieppe, lyon
   let softSkillComm, softSkillConflict, softSkillTeamWork
 
   beforeAll(async () => {
@@ -62,6 +62,14 @@ describe('Search', () => {
       latitude: 49.9225,
       longitude: 1.0781,
     }
+    lyon = {
+      address: 'Place Bellecour',
+      city: 'Lyon',
+      zip_code: '69002',
+      country: 'France',
+      latitude: 45.7579,
+      longitude: 4.8321,
+    }    
     announce = await Announce.create({
       user: new mongoose.Types.ObjectId(),
       job: job._id,
@@ -72,7 +80,8 @@ describe('Search', () => {
       duration_unit: DURATION_MONTH,
       sectors: [sector._id],
       homework_days: 3, 
-      mobility: MOBILITY_NONE,
+      mobility: MOBILITY_REGIONS,
+      regions: [Object.keys(REGIONS)[2], Object.keys(REGIONS)[3]],
       mobility_days_per_month: 10, 
       budget: 5000, 
       budget_hidden: false, 
@@ -115,6 +124,7 @@ describe('Search', () => {
       work_duration: [WORK_DURATION__1_TO_6_MONTHS],
       mobility: MOBILITY_CITY,
       mobility_city: rouen,
+      mobility_regions: [Object.keys(REGIONS)[3]],
       mobility_city_distance: 10,
       cgu_accepted: true,
       phone: '0606060606',
@@ -134,11 +144,9 @@ describe('Search', () => {
 
   test('should find suggested freelances based on announce criteria', async () => {
     const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
-      fields:'city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
+      fields:'regions,city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
     const suggestion = loadedAnnounce[0].suggested_freelances[0]
-    // console.dir(customerFreelance, { depth: null, colors: true, maxArrayLength: null })
-    // console.dir(announce, { depth: null, colors: true, maxArrayLength: null })  
     expect(String(customerFreelance._id)).toMatch(String(suggestion.id))
   })
 })
