@@ -1,8 +1,8 @@
 const mongoose = require('mongoose')
-const User = require('../../models/User')
 const Announce = require('../../models/Announce')
 
 const getApplications = async (user) => {
+  console.log(user)
   const applications = await Announce.aggregate([
     { $match: { user: mongoose.Types.ObjectId(user.id) } },
     {
@@ -35,4 +35,4 @@ const getApplications = async (user) => {
   return applications
 }
 
-module.exports = getApplications
+module.exports = {getApplications}

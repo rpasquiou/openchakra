@@ -20,6 +20,9 @@ const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 const moment = require('moment');
 const { getterPinnedFn, setterPinnedFn } = require("../../utils/pinned");
+const {isMine} = require("./message");
+const Conversation=require('../../models/Conversation')
+const Message=require('../../models/Message')
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -38,10 +41,10 @@ ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
-  if(!['admin','customer'].includes(model)){
+  if(!['admin','customer'].includes(model)){ //['loggedUser', 'user', 'freelance', 'genericUser', 'customerFreelance']
     declareVirtualField({model, field: 'availability_update_days', type: 'Number'})
   }
-  if(!['user','customer','admin'].includes(model)){
+  if(!['user','customer','admin'].includes(model)){//['loggedUser', 'freelance', 'genericUser', 'customerFreelance']
     declareVirtualField({
       model, field: 'pinned_announces', instance: 'Array', multiple: true,
       caster: {
@@ -395,6 +398,41 @@ declareComputedField({model: 'search', field: 'announces', instance: 'Array', re
 declareComputedField({model: 'search', field: 'announces_count', instance: 'Number', requires: SEARCH_FIELDS, getterFn: countAnnounce })
 /** Search end */
 
+//Conversation
+declareVirtualField({
+  model: 'conversation', field: 'messages', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'message' }
+  },
+})
+declareVirtualField({model: 'conversation', field: 'messages_count', instance: 'Number'})
+declareVirtualField({
+  model: 'conversation', field: 'latest_messages', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'message' }
+  },
+})
+//Message
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+
+//CustomerFreelance
+const CUSTOMERFREELANCEMODELS = ['loggedUser', 'genericUser', 'customerFreelance', 'freelance']
+CUSTOMERFREELANCEMODELS.forEach(model => {
+  declareVirtualField({
+    model, field: 'applications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'application' }
+    },
+  })
+})
+
+//Evaluation
+declareVirtualField({model: 'evaluation', field: 'customer_average_note', requires:'customer_note_quality,customer_note_deadline,customer_note_team,customer_note_reporting', instance: 'Number'})
+declareVirtualField({model: 'evaluation', field: 'freelance_average_note', requires:'freelance_note_interest,freelance_note_organisation,freelance_note_integration,freelance_note_communication', instance: 'Number'})
+
 //Customer
 declareVirtualField({
   model: 'customer', field: 'applications', instance: 'Array', multiple: true,
@@ -459,6 +497,30 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     const newSearch=await Search.create({})
     return { model, fields, id: newSearch._id, user, params }
   }
+  if (model == 'conversation') {
+    if (id) {
+      return Conversation.findById(id)
+        .then(async(conv) => {
+          if(!conv){
+            const partner = await User.findById(id)
+            if(!partner) {
+              throw new Error(`${id} is not a valid user`)
+            }
+            if (idEqual(partner._id, user._id)) {
+              throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
+            }
+          }
+          const res=conv || Conversation.getFromUsers(user._id, id)
+          return res
+        })
+        .then(conv => {
+          return {model, fields, id: conv._id, params }
+        })
+    }
+    else {
+      params['filter.users']=user._id
+    }
+  }
   return { model, fields, id, user, params }
 }
 
@@ -499,7 +561,12 @@ const preCreate = async ({model, params, user}) => {
     params.quotation=params.quotation || params.parent
     return { model, params, user}
   }
-
+  if (['message'].includes(model)) {
+    params.sender = user
+    const conversation=await Conversation.findById(params.parent)
+    params.conversation=conversation
+    params.receiver=await conversation.getPartner(user)
+  }
   return Promise.resolve({model, params})
 }
 
@@ -560,6 +627,18 @@ const filterDataUser = async ({ model, data, id, user }) => {
 }
 
 setFilterDataUser(filterDataUser)
+
+const getConversationPartner = (userId, params, data) => {
+  return Conversation.findById(data._id, {users:1})
+    .then(conv => {
+      return conv.getPartner(userId) 
+    })
+    .then(partner => {
+      return User.findById(partner._id).populate('company')
+    })
+}
+
+declareComputedField({model: 'conversation', field: 'partner', getterFn: getConversationPartner})
 
 //**** CRONS start*/
 

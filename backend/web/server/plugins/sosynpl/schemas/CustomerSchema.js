@@ -7,7 +7,6 @@ const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { NATIONALITIES } = require('../../../../utils/consts')
-const getApplications = require('../customer')
 
 const Schema = mongoose.Schema
 
@@ -308,8 +307,6 @@ CustomerSchema.virtual('announces', {
   localField: '_id',
   foreignField: 'user',
 })
-
-CustomerSchema.virtual('applications', DUMMY_REF).get(getApplications)
 
 /* eslint-enable prefer-arrow-callback */
 

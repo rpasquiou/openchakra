@@ -213,10 +213,8 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
-      // if (isFilterComponent(childComponent, components)) {
-        propsContent += ` setComponentValue={setComponentValue} `
-      // }
-
+      propsContent += ` setComponentValue={setComponentValue} `
+      
       propsContent += ` getComponentAttribute={getComponentAttribute} `
 
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {

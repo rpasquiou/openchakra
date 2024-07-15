@@ -28,7 +28,7 @@ const Clear = () => {
               variant="ghost"
               color={'white'}
               _hover={{
-                backgroundColor: 'teal.500',
+                backgroundColor: '#00bf91',
               }}
             >
               <img src="/icons/clear.svg" height={30} alt="" />
