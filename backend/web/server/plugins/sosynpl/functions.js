@@ -22,7 +22,8 @@ const moment = require('moment');
 const { getterPinnedFn, setterPinnedFn } = require("../../utils/pinned");
 const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
-const Message=require('../../models/Message')
+const Message=require('../../models/Message');
+const { REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, MANDATORY_ATTRIBUTES } = require("./freelance");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -439,6 +440,13 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     caster: {
       instance: 'ObjectID',
       options: { ref: 'application' }
+    },
+  })
+  declareVirtualField({model, field: 'profile_completion', requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES, 'missing_attributes'].join(','), instance: 'Number'})
+  declareVirtualField({
+    model, field: 'missing_attributes', instance: 'Array', multiple: true, requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES].join(','),
+    caster: {
+      instance: 'String',
     },
   })
 })

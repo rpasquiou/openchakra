@@ -5,7 +5,10 @@ const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
 const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
-  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR} = require('../consts')
+  MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR,
+  CF_MAX_GOLD_SOFT_SKILLS,
+  CF_MAX_SILVER_SOFT_SKILLS,
+  CF_MAX_BRONZE_SOFT_SKILLS} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
@@ -15,6 +18,7 @@ const {ROLE_CUSTOMER, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVIT
 const siret = require('siret')
 const { NATIONALITIES } = require('../../../../utils/consts')
 const {getApplications, getNotes, computeNotes} = require('../customerFreelance')
+const { missingAttributes, profileCompletion } = require('../freelance')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -33,10 +37,6 @@ const MAX_REGIONS=3
 
 const MIN_DAYS_PER_WEEK=1
 const MAX_DAYS_PER_WEEK=5
-
-const MAX_GOLD_SOFT_SKILLS=1
-const MAX_SILVER_SOFT_SKILLS=2
-const MAX_BRONZE_SOFT_SKILLS=3
 
 const MIN_SOFTWARES=1
 
@@ -265,7 +265,7 @@ const CustomerFreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [function(skills) {return !isFreelance(this) || skills?.length<=MAX_GOLD_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_GOLD_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) {return !isFreelance(this) || skills?.length<=CF_MAX_GOLD_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${CF_MAX_GOLD_SOFT_SKILLS} compétence(s)`]
   },
   silver_soft_skills: {
     type: [{
@@ -274,7 +274,7 @@ const CustomerFreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [function(skills) {return !isFreelance(this) || skills?.length<=MAX_SILVER_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_SILVER_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) {return !isFreelance(this) || skills?.length<=CF_MAX_SILVER_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${CF_MAX_SILVER_SOFT_SKILLS} compétence(s)`]
   },
   bronze_soft_skills: {
     type: [{
@@ -283,7 +283,7 @@ const CustomerFreelanceSchema = new Schema({
       required: true,
     }],
     default: [],
-    validate: [function(skills) { return !isFreelance(this) || skills?.length<=MAX_BRONZE_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
+    validate: [function(skills) { return !isFreelance(this) || skills?.length<=CF_MAX_BRONZE_SOFT_SKILLS}, `Vous pouvez choisir jusqu'à ${CF_MAX_BRONZE_SOFT_SKILLS} compétence(s)`]
   },
   // Computed depending on gold/silver/bronze soft skills
   available_gold_soft_skills: {
@@ -479,6 +479,10 @@ CustomerFreelanceSchema.virtual('customer_average_note', DUMMY_REF).get(function
 CustomerFreelanceSchema.virtual('freelance_average_note', DUMMY_REF).get(function(){
   return computeNotes(this, 'freelance')
 })
+
+CustomerFreelanceSchema.virtual('profile_completion', DUMMY_REF).get(function(){return profileCompletion(this)})
+
+CustomerFreelanceSchema.virtual('missing_attributes', DUMMY_REF).get(function(){return missingAttributes(this)})
 
 /* eslint-enable prefer-arrow-callback */
 
