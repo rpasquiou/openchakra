@@ -177,7 +177,13 @@ const searchAnnounces = async (userId, params, data, fields)  => {
     filter.expertises={$in: data.expertises}
   }
 
-  let candidates=await Announce.find({...filter}).populate('user')
+  fields=[...fields, 'pinned_by', 'pinned']
+  params=lodash(filter)
+  .mapKeys((v,k) => `filter.${k}`)
+  .value()
+
+  // let candidates=await Announce.find({...filter}).populate('user')
+  let candidates=await loadFromDb({model: 'announce', user: userId, fields, params})
 
   // Filter city & distance
   if (!lodash.isEmpty(data.city)) {
@@ -204,6 +210,7 @@ const searchAnnounces = async (userId, params, data, fields)  => {
     candidates = candidates.filter(c => c.average_daily_rate <= data.max_daily_rate)
   }
 
+  candidates=candidates.map(c => new Announce(c))
   return candidates
 }
 
