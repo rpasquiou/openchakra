@@ -19,7 +19,7 @@ const fillSms = (pattern, values) => {
 }
 
 const PHONE_REGEX=/(^0[67]\d{8}$)|(^\+33[67]\d{8}$)/
-const HOMEPHONE_REGEX=/(^0[01234589]\d{8}$)|(^\+33[01234589]\d{8}$)/
+const HOMEPHONE_REGEX=/(^0[1234589]\d{8}$)|(^\+33[1234589]\d{8}$)/
 
 const isPhoneOk = (value, acceptHomePhone) => {
   if (!value) {
