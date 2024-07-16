@@ -48,13 +48,19 @@ const searchFreelances = async (userId, params, data, fields)  => {
     }
   }
 
-  let candidates=await CustomerFreelance.find({...filter})
+  params=lodash(filter)
+    .mapKeys((v,k) => `filter.${k}`)
+    .value()
+
+  fields=[...fields, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned']
+  let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params}) // await CustomerFreelance.find({...filter})
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
       const distance=computeDistanceKm(c.address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
+  candidates=candidates.map(c => new CustomerFreelance(c))
   return candidates
 }
 
@@ -88,7 +94,6 @@ const searchAnnounces = async (userId, params, data, fields)  => {
     filter.expertises={$in: data.expertises}
   }
 
-  console.log('filter', filter)
   let candidates=await Announce.find({...filter}).populate('user')
 
   // Filter city & distance
