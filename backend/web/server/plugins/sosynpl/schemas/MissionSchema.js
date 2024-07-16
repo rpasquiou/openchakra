@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 const moment = require("moment")
+const lodash = require("lodash")
 const { schemaOptions } = require('../../../utils/schemas');
 const autoIncrement = require('mongoose-auto-increment')
 const { DUMMY_REF } = require("../../../utils/database");
@@ -34,10 +35,6 @@ const MissionSchema = new Schema({
   end_date: {
     type: Date,
     required: [true, `La date de fin est obligatoire`],
-  },
-  // Total budget / somme des CRAs déclarés
-  progress: {
-    type: Number,
   },
   _counter: {
     type: Number,
@@ -92,6 +89,24 @@ MissionSchema.virtual('reports', {
   localField: '_id',
   foreignField: 'mission',
 })
+
+MissionSchema.virtual('budget', DUMMY_REF).get(function() {
+  return this.application?.latest_quotations?.[0]?.ht_total
+})
+
+MissionSchema.virtual('paid_amount', DUMMY_REF).get(function() {
+  const paid=lodash(this.reports).map(r => r.latest_quotations).flatten().map(q => q.ht_total).sum()
+  return paid
+})
+
+MissionSchema.virtual('unpaid_amount', DUMMY_REF).get(function() {
+  return this.budget-this.paid_amount
+})
+
+MissionSchema.virtual('progress', DUMMY_REF).get(function() {
+  return !!this.budget ? this.paid_amount/this.budget: 0
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 

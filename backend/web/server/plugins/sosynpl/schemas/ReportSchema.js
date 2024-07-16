@@ -50,6 +50,14 @@ ReportSchema.virtual('quotation', {
   foreignField: 'report',
 })
 
+ReportSchema.virtual('latest_quotations', {
+  ref: 'quotation',
+  foreignField: 'report',
+  localField: '_id',
+  options: { sort: { creation_date: -1 }, limit:1 },
+  array: true,
+})
+
 // Manage announce serial number
 if (mongoose.connection) {
   autoIncrement.initialize(mongoose.connection) // Ensure autoincrement is initalized

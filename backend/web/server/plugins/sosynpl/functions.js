@@ -392,12 +392,22 @@ declareVirtualField({model: 'mission', field: 'reports', instance: 'Array', mult
     options: { ref: 'report' }
   }
 })
+declareVirtualField({model: 'mission', field: 'budget', instance: 'Number', requires: 'application.latest_quotations.ht_total'})
+declareVirtualField({model: 'mission', field: 'progress', instance: 'Number', requires: 'budget,paid_amount'})
+declareVirtualField({model: 'mission', field: 'paid_amount', instance: 'Number', requires: 'reports.latest_quotations.ht_total'})
+declareVirtualField({model: 'mission', field: 'unpaid_amount', instance: 'Number', requires: 'budget,paid_amount'})
 /** Mission end */
 
 /** Report start */
 declareEnumField({model: 'report', field: 'status', instance: 'String', enumValues: REPORT_STATUS})
 declareVirtualField({model: 'report', field: 'serial_number', requires: '_counter', instance: 'String'})
 declareVirtualField({model: 'report', field: 'quotation', instance: 'quotation'})
+declareVirtualField({model: 'report', field: 'latest_quotations', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'quotation' }
+  }
+})
 /** Report end */
 
 /** Search start */
