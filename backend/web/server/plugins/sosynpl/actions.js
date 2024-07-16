@@ -140,7 +140,7 @@ const refuseAction = async ({value, reason}, user) => {
     return AnnounceSuggestion.findOneAndUpdate(filter, update)
   }
   if (model=='report') {
-    return refuseReport(value)
+    return refuseReport({value, reason})
   }
 }
 addAction('refuse', refuseAction)

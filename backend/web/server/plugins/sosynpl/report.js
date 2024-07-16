@@ -26,9 +26,10 @@ const canRefuseReport = async reportId => {
   return true
 }
 
-const refuseReport = async reportId => {
-  const report=await Report.findById(reportId)
+const refuseReport = async ({value, reason}) => {
+  const report=await Report.findById(value)
   report.refuse_date=moment()
+  report.refuse_reason=reason
   report.status=REPORT_STATUS_DISPUTE
   return report.save()
 }

@@ -19,10 +19,6 @@ const ReportSchema = new Schema({
     default: REPORT_STATUS_DRAFT,
     required: [true, `Le statut du rapport d'activité est obligatoire`],
   },
-  comment: {
-    type: String,
-    required: [true, `Le commentaire est obligatoire`]
-  },
   sent_date: {
     type: Date,
     required: [function() {return this.status==REPORT_STATUS_SENT}, `La date d'envoi est obligatoire`]
