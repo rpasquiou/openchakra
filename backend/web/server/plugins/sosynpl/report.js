@@ -5,25 +5,32 @@ const { REPORT_STATUS, REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE, REPORT_STATUS
 
 // TODO: customer & freelance must have the required documents
 const canAcceptReport = async reportId => {
-  const report=await Report.findById(erportId)
+  const report=await Report.findById(reportId)
   if (report.status!=REPORT_STATUS_SENT) {
     throw new BadRequestError(`Un rapport dans l'état ${REPORT_STATUS[report.status]} ne peut être accepté`)
   }
 }
 
 const acceptReport = async reportId => {
-  return Report.findByIdAndUpdate(reportId, {status: REPORT_STATUS_ACCEPTED, accept_date: moment()})
+  const report=await Report.findById(reportId)
+  report.accepted_date=moment()
+  report.status=REPORT_STATUS_ACCEPTED
+  return report.save()
 }
 
 const canRefuseReport = async reportId => {
-  const report=await Report.findById(erportId)
+  const report=await Report.findById(reportId)
   if (report.status!=REPORT_STATUS_SENT) {
     throw new BadRequestError(`Un rapport dans l'état ${REPORT_STATUS[report.status]} ne peut être refusé`)
   }
+  return true
 }
 
 const refuseReport = async reportId => {
-  return Report.findByIdAndUpdate(reportId, {status: REPORT_STATUS_DISPUTE, accept_date: moment()})
+  const report=await Report.findById(reportId)
+  report.refuse_date=moment()
+  report.status=REPORT_STATUS_DISPUTE
+  return report.save()
 }
 
 const canSendReport = async reportId => {
