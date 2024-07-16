@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
-const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
+const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
 const Freelance = require('../../server/models/Freelance')
 const JobFile = require('../../server/models/JobFile')
 const { JOB_FILE_DATA, JOB_DATA, SECTOR_DATA, CATEGORY_DATA, FREELANCE_DATA, CUSTOMER_DATA } = require('./data/base_data')
@@ -18,13 +18,16 @@ const { LANGUAGE_LEVEL_ADVANCED } = require('../../utils/consts')
 const Application = require('../../server/models/Application')
 const Mission = require('../../server/models/Mission')
 const Evaluation = require('../../server/models/Evaluation')
+const User = require('../../server/models/User')
+require('../../server/plugins/sosynpl/functions')
+const CustomerFreelance = require('../../server/models/CustomerFreelance')
 
 jest.setTimeout(30000000)
 
 describe('Evaluation', ()=> {
-  let freelance, announce, application, evaluation, sector, expertise1, expertise2, expertise3, software, language, customer, mission
+  let freelance, announce, application, evaluation, sector, expertise1, expertise2, expertise3, software, language, customer, mission, announce2, application2, evaluation2, mission2
   beforeAll(async () => {
-    const DBNAME=`evalTest`
+    const DBNAME=`sosynpl`
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
@@ -35,7 +38,7 @@ describe('Evaluation', ()=> {
     expertise1 = await Expertise.create({ name: 'JavaScript' })
     expertise2 = await Expertise.create({ name: 'Java' })
     expertise3 = await Expertise.create({ name: 'Python' })
-    freelance=(await Freelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]}))
+    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]}))
     await Promise.all(lodash.range(4).map(idx => HardSkill.create({name: `Skill 1-${idx}`, code: '12', job_file: jobFile, category: category1})))
     await Promise.all(lodash.range(2).map(idx => HardSkill.create({name: `Skill 2-${idx}`, code: '12', job_file: jobFile, category: category2})))
     language = await LanguageLevel.create({ language: 'fr', level: LANGUAGE_LEVEL_ADVANCED })
@@ -49,7 +52,7 @@ describe('Evaluation', ()=> {
       longitude: 1.0993,
     }
 
-    customer=await Customer.create({...CUSTOMER_DATA})
+    customer=await CustomerFreelance.create({...CUSTOMER_DATA}).catch(console.error)
 
     announce=await Announce.create({
       user:customer._id, 
@@ -87,8 +90,64 @@ describe('Evaluation', ()=> {
       customer: customer._id,
       freelance: freelance._id,
       mission: mission._id,
-      creation_date: new Date()
+      creation_date: new Date(),
+      freelance_note_quality: 2,
+      freelance_note_deadline: 2,
+      freelance_note_team: 4,
+      freelance_note_reporting: 4,
+      customer_note_interest: 5,
+      customer_note_organisation: 5,
+      customer_note_integration: 5,
+      customer_note_communication: 2,
     })
+
+    //second
+    announce2=await Announce.create({
+      user:customer._id, 
+      title:'dev',
+      experience: Object.keys(EXPERIENCE)[0], 
+      duration: 2,
+      duration_unit: DURATION_MONTH,
+      budget: '6969669',
+      mobility_days_per_month : 2,
+      mobility: MOBILITY_NONE,
+      city: rouen,
+      sectors: [sector._id],
+      expertises: [expertise1._id, expertise2._id, expertise3._id],
+      pinned_expertises: [expertise1._id, expertise2._id, expertise3._id],
+      softwares: [software._id],
+      languages: [language._id],
+    })
+
+    application2 = await Application.create({
+      announce: announce2._id,
+      customer: customer._id,
+      freelance: freelance._id,
+    })
+
+    mission2 = await Mission.create({
+      application: application2._id,
+      customer: customer._id,
+      freelance:freelance._id,
+      title:'dev',
+      start_date: new Date(),
+      end_date: new Date('2025-06-06'),
+    })
+
+    evaluation2 = await Evaluation.create({
+      customer: customer._id,
+      freelance: freelance._id,
+      mission: mission2._id,
+      creation_date: new Date(),
+      freelance_note_quality: 1,
+      freelance_note_deadline: 1,
+      freelance_note_team: 1,
+      freelance_note_reporting: 1,
+      customer_note_interest: 5,
+      customer_note_organisation: 5,
+      customer_note_integration: 5,
+      customer_note_communication: 5,
+    })  
   })
   
   afterAll(async () => {
@@ -97,5 +156,9 @@ describe('Evaluation', ()=> {
   })
 
   it('must get evaluations', async()=>{
+    const customerEval = await loadFromDb({model:'customerFreelance', id:customer._id, fields:'customer_evaluations,freelance_evaluations,customer_average_note,freelance_average_note'.split(',')})
+    console.log(customerEval[0])
+    console.log(mission._id, mission2._id)
+    expect(customerEval.customer_average_note).toEqual(1)
   })
 })
