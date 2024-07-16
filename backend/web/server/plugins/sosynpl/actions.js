@@ -174,9 +174,9 @@ addAction('alle_send_quotation', sendQuotationAction)
 
 const finishMission = async ({value}, user) => {
   const ROLE_ATTRIBUTE={
-    ROLE_CUSTOMER: 'customer_finish_date',
-    ROLE_FREELANCE: 'freelance_finish_date',
-    ROLE_ADMIN: 'close_date',
+    [ROLE_CUSTOMER]: 'customer_finish_date',
+    [ROLE_FREELANCE]: 'freelance_finish_date',
+    [ROLE_ADMIN]: 'close_date',
   }
   const attribute=ROLE_ATTRIBUTE[user.role]
   if (!attribute) {
