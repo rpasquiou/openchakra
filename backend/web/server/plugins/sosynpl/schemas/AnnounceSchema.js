@@ -101,7 +101,7 @@ const AnnounceSchema = new Schema({
     type: Number,
     required: [function() { return this.mobility!=MOBILITY_NONE}, `Le nombre de jours de déplacements par mois est obligatoire`],
   },
-  regions: {
+  mobility_regions: {
     type: [{
       type: String,
       enum: Object.keys(REGIONS)

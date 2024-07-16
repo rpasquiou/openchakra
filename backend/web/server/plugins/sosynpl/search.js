@@ -32,7 +32,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
       : WORK_DURATION__1_TO_6_MONTHS
 
   const getRegionFromZipcode = (zipcode) => {
-    const departmentCode = zipcode.toString().substring(0, 2)
+    const departmentCode = String(zipcode).substring(0, 2)
     const region = lodash.pickBy(REGIONS_FULL, (region) =>
       region.departements.includes(departmentCode)
     )
@@ -71,7 +71,8 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     ],
   }
   const suggestions = await CustomerFreelance.find(filter)
-  const regionKey = getRegionFromZipcode(data.city.zip_code)
+  let regionKey 
+  if(data.city && data.city.zip_code) regionKey = getRegionFromZipcode(data.city.zip_code)
   if (data.mobility === MOBILITY_NONE) {
     return suggestions.filter(s => {
       return (
@@ -83,8 +84,8 @@ const computeSuggestedFreelances = async (userId, params, data) => {
   if(data.mobility === MOBILITY_REGIONS) {
     return suggestions.filter(s => {
       return (
-        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.regions)) ||
-        (s.mobility === MOBILITY_CITY && data.regions.includes(getRegionFromZipcode(s.mobility_city.zip_code)))
+        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.mobility_regions)) ||
+        (s.mobility === MOBILITY_CITY && data.mobility_regions.includes(getRegionFromZipcode(s.mobility_city.zip_code)))
       )
     })
   }
