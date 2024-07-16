@@ -81,7 +81,7 @@ describe('Search', () => {
       sectors: [sector._id],
       homework_days: 3, 
       mobility: MOBILITY_REGIONS,
-      regions: [Object.keys(REGIONS)[2], Object.keys(REGIONS)[3]],
+      mobility_regions: [Object.keys(REGIONS)[2], Object.keys(REGIONS)[3]],
       mobility_days_per_month: 10, 
       budget: 5000, 
       budget_hidden: false, 
@@ -142,9 +142,9 @@ describe('Search', () => {
     await mongoose.connection.close()
   })
 
-  test('should find suggested freelances based on announce criteria', async () => {
+  it('should find suggested freelances based on announce criteria', async () => {
     const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
-      fields:'regions,city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
+      fields:'mobility_regions,city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
     const suggestion = loadedAnnounce[0].suggested_freelances[0]
     expect(String(customerFreelance._id)).toMatch(String(suggestion.id))

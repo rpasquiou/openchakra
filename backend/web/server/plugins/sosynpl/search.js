@@ -16,6 +16,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     console.log("missing attributes on announce")
     return []
   }
+  console.table({completion: data.profile_completion})
 
   const MAP_WORKMODE = {
     0: WORK_MODE_SITE,
