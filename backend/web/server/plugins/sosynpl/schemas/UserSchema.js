@@ -70,7 +70,7 @@ const UserSchema = new Schema({
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
 UserSchema.virtual('pinned_freelances', {
-  ref: 'customer',
+  ref: 'customerFreelance',
   localField: '_id',
   foreignField: 'pinned_by',
 })

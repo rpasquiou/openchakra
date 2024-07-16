@@ -298,7 +298,7 @@ const AnnounceSchema = new Schema({
   pinned_by: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'freelance',
+      ref: 'customerFreelance',
       required: false,
     }],
     default: [],
