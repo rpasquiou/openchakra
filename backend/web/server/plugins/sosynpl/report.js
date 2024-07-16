@@ -28,9 +28,16 @@ const refuseReport = async reportId => {
 
 const canSendReport = async reportId => {
   const report=await Report.findById(reportId).populate({path: 'quotation', populate: 'details'})
-  if (![REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE].includes(report)) {
+  if (![REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE].includes(report.status)) {
     throw new BadRequestError(`Un rapport dans l'état ${REPORT_STATUS[report.status]} ne peut être envoyé`)
   }
+  if (!(report.quotation?.length>0)) {
+    throw new BadRequestError(`Un rapport sans devis ne peut être envoyé`)
+  }
+  if (!(report.quotation[0].details.length>0)) {
+    throw new BadRequestError(`Un rapport avec un devis incomplet ne peut être envoyé`)
+  }
+  return true
 }
 
 const sendReport = async reportId => {
