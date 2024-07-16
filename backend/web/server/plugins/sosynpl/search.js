@@ -90,6 +90,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
       )
     })
   }
+  suggestions = suggestions.filter(s=>s.profile_completion == 1)
   return suggestions
 }
 
