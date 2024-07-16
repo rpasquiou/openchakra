@@ -27,7 +27,7 @@ const refuseReport = async reportId => {
 }
 
 const canSendReport = async reportId => {
-  const report=await Report.findById(reportId).poulate({path: 'quotation', populate: 'details'})
+  const report=await Report.findById(reportId).populate({path: 'quotation', populate: 'details'})
   if (![REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE].includes(report)) {
     throw new BadRequestError(`Un rapport dans l'état ${REPORT_STATUS[report.status]} ne peut être envoyé`)
   }
