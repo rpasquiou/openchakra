@@ -12,7 +12,7 @@ const profileCompletion = (user) => {
   const totalAttr = REQUIRED_ATTRIBUTES.length + MANDATORY_ATTRIBUTES.length + 1; // +1 for the soft skills
   let validated = 0
   if(user['missing_attributes']) validated = totalAttr - user['missing_attributes'].length
-  return validated / totalAttr *100
+  return validated / totalAttr
 }
 
 const missingAttributes = (user) => {
