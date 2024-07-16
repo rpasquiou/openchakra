@@ -32,6 +32,7 @@
     "framer-motion": "^7.5.3",
     "html2canvas": "^1.4.1",
     "http-proxy-middleware": "^2.0.6",
+    "jodit-react": "^4.1.2",
     "jspdf": "^2.5.1",
     "jszip": "^3.10.1",
     "lexical": "^0.9.0",
