@@ -437,7 +437,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_finish_mission: {
-    label: 'AE Finish mission',
+    label: 'Finish mission',
     options: {},
     next: ['openPage'],
   },

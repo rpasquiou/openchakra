@@ -10,13 +10,14 @@ const { getModel, loadFromDb, idEqual } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT, ROLE_FREELANCE, MISSION_STATUS_CURRENT, MISSION_STATUS, ROLE_CUSTOMER, MISSION_STATUS_FREELANCE_FINISHED} = require("./consts")
 const {clone, canCancel, cancelAnnounce} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
 const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
 const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
 const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport, canRefuseReport } = require("./report")
+const Mission = require("../../models/Mission")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -171,6 +172,20 @@ const sendQuotationAction = async ({value, reason}, user) => {
 }
 addAction('alle_send_quotation', sendQuotationAction)
 
+const finishMission = async ({value}, user) => {
+  const ROLE_ATTRIBUTE={
+    ROLE_CUSTOMER: 'customer_finish_date',
+    ROLE_FREELANCE: 'freelance_finish_date',
+    ROLE_ADMIN: 'close_date',
+  }
+  const attribute=ROLE_ATTRIBUTE[user.role]
+  if (!attribute) {
+    throw new ForbiddenError(`Vous n'avez pas le droit de terminer une mission`)
+  }
+  return Mission.findByIdAndUpdate(value._id, {[attribute]: moment()})
+}
+addAction('alle_finish_mission', finishMission)
+
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='validate_email') {
@@ -323,7 +338,21 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
       }
     }
     if (foundModel=='report') {
-      return canRefuseReport(dataId)
+      await canRefuseReport(dataId)
+    }
+  }
+
+  if (action=='alle_finish_mission') {
+    const mission=await Mission.findById(dataId)
+    const role=user.role
+    if (!idEqual(mission.freelance._id, user._id) && !idEqual(mission.customer._id, user._id)) {
+      throw new ForbiddenError(`Vous n'avez pas de droit sur cette mission`)
+    }
+    if (role==ROLE_FREELANCE && mission.status!=MISSION_STATUS_CURRENT) {
+      throw new ForbiddenError(`Vous ne pouvez terminer une mission dans l'état ${MISSION_STATUS[mission.status]}`)
+    }
+    if (role==ROLE_CUSTOMER && mission.status!=MISSION_STATUS_FREELANCE_FINISHED) {
+      throw new ForbiddenError(`Vous ne pouvez terminer une mission dans l'état ${MISSION_STATUS[mission.status]}`)
     }
   }
   return true
