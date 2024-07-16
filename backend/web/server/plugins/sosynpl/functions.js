@@ -306,11 +306,15 @@ declareVirtualField({model: 'announce', field: 'received_applications_count', in
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
 declareVirtualField({model: 'announce', field: '_duration_days', instance: 'Number'})
+declareEnumField({model: 'announce', field: 'mobility_regions', enumValues: REGIONS})
 // SOFT SKILLS
 declareComputedField({model: 'announce', field: 'available_gold_soft_skills', getterFn: computeAvailableGoldSoftSkills})
 declareComputedField({model: 'announce', field: 'available_silver_soft_skills', requires: 'gold_soft_skills', getterFn: computeAvailableSilverSoftSkills})
 declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', requires: 'gold_soft_skills,silver_soft_skills', getterFn: computeAvailableBronzeSoftSkills})
   // Declare virtuals for each pilar
+  /*TODO:
+  Codé avec le cul
+   */
   Object.keys(SS_PILAR).forEach(pilar => {
     const virtualName=pilar.replace(/^SS_/, '').toLowerCase()
     declareVirtualField({model: 'announce', field: virtualName, instance: 'Number', requires: 'gold_soft_skills,silver_soft_skills,bronze_soft_skills'})  

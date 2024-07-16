@@ -2,11 +2,12 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
-const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_WORK_DAYS, ANNOUNCE_STATUS, DURATION_UNIT_DAYS, APPLICATION_STATUS_SENT} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_WORK_DAYS, ANNOUNCE_STATUS, DURATION_UNIT_DAYS, APPLICATION_STATUS_SENT, MOBILITY_REGIONS} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { computePilar } = require('../soft_skills')
+const { REGIONS } = require('../../../../utils/consts')
 
 const Schema = mongoose.Schema
 
@@ -100,6 +101,35 @@ const AnnounceSchema = new Schema({
     type: Number,
     required: [function() { return this.mobility!=MOBILITY_NONE}, `Le nombre de jours de déplacements par mois est obligatoire`],
   },
+  mobility_regions: {
+    type: [{
+      type: String,
+      enum: Object.keys(REGIONS)
+    }],
+    required: true,
+    default: [],
+    validate: [
+      {
+        validator: function(value) {
+          if (this.mobility === MOBILITY_REGIONS) {
+            return value.length >= 1
+          }
+          return true
+        },
+        message: 'Le nombre de régions minimum est 1',
+      },
+      {
+        validator: function(value) {
+          if (this.mobility === MOBILITY_REGIONS) {
+            return value.length <= 3
+          }
+          return true
+        },
+        message: 'Le nombre de régions maximum est 3',
+      }
+    ]
+  },
+  
   budget: {
     type: Number,
     required: [true, `Le budget est obligatoire`]
