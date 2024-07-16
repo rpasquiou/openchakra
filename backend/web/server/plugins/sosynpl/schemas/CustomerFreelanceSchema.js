@@ -472,9 +472,13 @@ CustomerFreelanceSchema.virtual('freelance_evaluations', {
   foreignField: 'freelance',
 })
 
-CustomerFreelanceSchema.virtual('customer_average_note', DUMMY_REF).get(function(){computeNotes(this, 'customer')})
+CustomerFreelanceSchema.virtual('customer_average_note', DUMMY_REF).get(function(){
+  return computeNotes(this, 'customer')
+})
 
-CustomerFreelanceSchema.virtual('freelance_average_note', DUMMY_REF).get(function(){computeNotes(this, 'freelance')})
+CustomerFreelanceSchema.virtual('freelance_average_note', DUMMY_REF).get(function(){
+  return computeNotes(this, 'freelance')
+})
 
 /* eslint-enable prefer-arrow-callback */
 

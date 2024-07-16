@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
+const moment=require('moment')
 const lodash = require('lodash')
 const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
-const Freelance = require('../../server/models/Freelance')
 const JobFile = require('../../server/models/JobFile')
 const { JOB_FILE_DATA, JOB_DATA, SECTOR_DATA, CATEGORY_DATA, FREELANCE_DATA, CUSTOMER_DATA } = require('./data/base_data')
 const Job = require('../../server/models/Job')
@@ -9,7 +9,6 @@ const Sector = require('../../server/models/Sector')
 const HardSkillCategory = require('../../server/models/HardSkillCategory')
 const HardSkill = require('../../server/models/HardSkill')
 const Expertise = require('../../server/models/Expertise')
-const Customer = require('../../server/models/Customer')
 const Announce = require('../../server/models/Announce')
 const { EXPERIENCE, DURATION_UNIT_DAYS, DURATION_UNIT, MOBILITY_NONE, DURATION_MONTH } = require('../../server/plugins/sosynpl/consts')
 const Software = require('../../server/models/Software')
@@ -18,16 +17,18 @@ const { LANGUAGE_LEVEL_ADVANCED } = require('../../utils/consts')
 const Application = require('../../server/models/Application')
 const Mission = require('../../server/models/Mission')
 const Evaluation = require('../../server/models/Evaluation')
-const User = require('../../server/models/User')
 require('../../server/plugins/sosynpl/functions')
 const CustomerFreelance = require('../../server/models/CustomerFreelance')
 
 jest.setTimeout(30000000)
 
 describe('Evaluation', ()=> {
+
+  const DBNAME=`test${moment().unix()}`
+
   let freelance, announce, application, evaluation, sector, expertise1, expertise2, expertise3, software, language, customer, mission, announce2, application2, evaluation2, mission2
+
   beforeAll(async () => {
-    const DBNAME=`sosynpl`
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
@@ -38,7 +39,6 @@ describe('Evaluation', ()=> {
     expertise1 = await Expertise.create({ name: 'JavaScript' })
     expertise2 = await Expertise.create({ name: 'Java' })
     expertise3 = await Expertise.create({ name: 'Python' })
-    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]}))
     await Promise.all(lodash.range(4).map(idx => HardSkill.create({name: `Skill 1-${idx}`, code: '12', job_file: jobFile, category: category1})))
     await Promise.all(lodash.range(2).map(idx => HardSkill.create({name: `Skill 2-${idx}`, code: '12', job_file: jobFile, category: category2})))
     language = await LanguageLevel.create({ language: 'fr', level: LANGUAGE_LEVEL_ADVANCED })
@@ -53,6 +53,8 @@ describe('Evaluation', ()=> {
     }
 
     customer=await CustomerFreelance.create({...CUSTOMER_DATA}).catch(console.error)
+
+    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector]}))
 
     announce=await Announce.create({
       user:customer._id, 
@@ -155,10 +157,13 @@ describe('Evaluation', ()=> {
     await mongoose.connection.close()
   })
 
-  it('must get evaluations', async()=>{
-    const customerEval = await loadFromDb({model:'customerFreelance', id:customer._id, fields:'customer_evaluations,freelance_evaluations,customer_average_note,freelance_average_note'.split(',')})
-    console.log(customerEval[0])
-    console.log(mission._id, mission2._id)
-    expect(customerEval.customer_average_note).toEqual(1)
+  it('must get customer evaluations', async()=>{
+    const [customerEval] = await loadFromDb({model:'customerFreelance', id:customer._id, fields:'customer_average_note'.split(',')})
+    expect(customerEval.customer_average_note).toEqual(4.625)
+  })
+
+  it('must get freelance evaluations', async()=>{
+    const [freelanceEval] = await loadFromDb({model:'customerFreelance', id:freelance._id, fields:'freelance_average_note'.split(',')})
+    expect(freelanceEval.freelance_average_note).toEqual(2)
   })
 })
