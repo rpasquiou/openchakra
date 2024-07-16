@@ -665,7 +665,7 @@ const addComputedFields = (
   data,
   model,
 ) => {
-  fields=getFieldsToCompute({model, fields: originalFields})
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
