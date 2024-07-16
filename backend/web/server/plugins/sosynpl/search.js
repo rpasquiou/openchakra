@@ -9,6 +9,7 @@ const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
+const { loadFromDb } = require('../../utils/database')
 
 const computeSuggestedFreelances = async (userId, params, data) => {
   if (!data.job || !data.start_date) {
