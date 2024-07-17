@@ -221,25 +221,27 @@ BlockSchema.pre('validate', async function(next) {
   }
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
-  const resourceType=await getAttribute('resource_type')(null, null, {_id: this._id})
-  console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
-  const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
-  if (this.achievement_rule && !allowedAchievementRules.includes(this.achievement_rule)) {
-    const ruleName=ACHIEVEMENT_RULE[this.achievement_rule]
-    const resourcetypeName=RESOURCE_TYPE[resourceType]
-    throw new Error(`La règle d'achèvement ${ruleName} est invalide pour un ressource ${resourcetypeName}`)
-  }
-  if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && resourceType!=RESOURCE_TYPE_SCORM) {
-    if (!this.success_scale) {
-      if (!this.success_note_min) {
-        return next(new Error(`La note minimale est obligatoire`))
-      }
-      if (!this.success_note_max) {
-        return next(new Error(`La note maximale est obligatoire`))
+  if (this.type=='resource') {
+    const resourceType=await getAttribute('resource_type')(null, null, {_id: this._id})
+    console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
+    const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
+    // TODO allowedAchievementRules may be null if the block is not still inserted in DB
+    if (this.achievement_rule && allowedAchievementRules &&  !allowedAchievementRules.includes(this.achievement_rule)) {
+      const ruleName=ACHIEVEMENT_RULE[this.achievement_rule]
+      const resourcetypeName=RESOURCE_TYPE[resourceType]
+      throw new Error(`La règle d'achèvement ${ruleName} est invalide pour un ressource ${resourcetypeName}`)
+    }
+    if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && resourceType!=RESOURCE_TYPE_SCORM) {
+      if (!this.success_scale) {
+        if (!this.success_note_min) {
+          return next(new Error(`La note minimale est obligatoire`))
+        }
+        if (!this.success_note_max) {
+          return next(new Error(`La note maximale est obligatoire`))
+        }
       }
     }
   }
-
   return next()
 })
 
