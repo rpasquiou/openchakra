@@ -337,7 +337,12 @@ const CustomerFreelanceSchema = new Schema({
   pinned: {
     type: Boolean,
     required: false,
-  }
+  },
+  iban: {
+    type: String,
+    validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
+    required: false,
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
