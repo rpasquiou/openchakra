@@ -11,12 +11,15 @@ const CustomerFreelance = require('../../server/models/CustomerFreelance')
 const SoftSkill = require('../../server/models/SoftSkill')
 const JobFile = require('../../server/models/JobFile')
 const { LANGUAGE_LEVEL_ADVANCED, REGIONS } = require('../../utils/consts')
-const { EXPERIENCE_EXPERT, DURATION_MONTH, MOBILITY_FRANCE, SOURCE_RECOMMANDATION, WORK_MODE_REMOTE_SITE, WORK_DURATION__1_TO_6_MONTHS, AVAILABILITY_ON, AVAILABILITY_OFF, MOBILITY_CITY, MOBILITY_NONE, MOBILITY_REGIONS } = require('../../server/plugins/sosynpl/consts')
+const { EXPERIENCE_EXPERT, DURATION_MONTH, MOBILITY_FRANCE, SOURCE_RECOMMANDATION, WORK_MODE_REMOTE_SITE, WORK_DURATION__1_TO_6_MONTHS, AVAILABILITY_ON, AVAILABILITY_OFF, MOBILITY_CITY, MOBILITY_NONE, MOBILITY_REGIONS, COMPANY_SIZE_LESS_10 } = require('../../server/plugins/sosynpl/consts')
 const { computeDistanceKm } = require('../../utils/functions')
 require('../../server/plugins/sosynpl/functions')
 require('../../server/plugins/sosynpl/announce')
 require('../../server/models/JobFile')
 require('../../server/models/Application')
+require('../../server/models/Expertise')
+require('../../server/models/Experience')
+require('../../server/models/Training')
 
 
 describe('Search', () => {
@@ -80,7 +83,8 @@ describe('Search', () => {
       duration_unit: DURATION_MONTH,
       sectors: [sector._id],
       homework_days: 3, 
-      mobility: MOBILITY_REGIONS,
+      mobility: MOBILITY_FRANCE,
+      mobility_city: rouen,
       mobility_regions: [Object.keys(REGIONS)[2], Object.keys(REGIONS)[3]],
       mobility_days_per_month: 10, 
       budget: 5000, 
@@ -122,7 +126,7 @@ describe('Search', () => {
       main_experience: EXPERIENCE_EXPERT,
       work_mode: WORK_MODE_REMOTE_SITE,
       work_duration: [WORK_DURATION__1_TO_6_MONTHS],
-      mobility: MOBILITY_CITY,
+      mobility: MOBILITY_FRANCE,
       mobility_city: rouen,
       mobility_regions: [Object.keys(REGIONS)[3]],
       mobility_city_distance: 10,
@@ -133,7 +137,12 @@ describe('Search', () => {
         city: 'Sample City',
         zip_code: '12345',
         country: 'Sample Country'
-      }
+      },
+      company_size: COMPANY_SIZE_LESS_10,
+      picture: 'hi',
+      description: 'dev',
+      rate: '5',
+
     })
   })
 
@@ -143,10 +152,15 @@ describe('Search', () => {
   })
 
   it('should find suggested freelances based on announce criteria', async () => {
+    const fields = ['missing_attributes','profile_completion']
+    const [user] = await loadFromDb({model:'customerFreelance', id: customerFreelance._id, fields})
+    console.log("loaded user using lodash", user.missing_attributes, user.profile_completion)
+
     const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
       fields:'mobility_regions,city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
     const suggestion = loadedAnnounce[0].suggested_freelances[0]
+    console.log(suggestion)
     expect(String(customerFreelance._id)).toMatch(String(suggestion.id))
   })
 })
