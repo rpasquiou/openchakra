@@ -32,11 +32,6 @@ const HomeworkSchema = new Schema({
     enum: Object.keys(SCALE),
     required: false,
   },
-  // Correction par le formateur
-  correction: {
-    type: String,
-    required: false,
-  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = HomeworkSchema
