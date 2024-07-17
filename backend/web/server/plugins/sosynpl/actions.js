@@ -18,6 +18,7 @@ const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
 const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport, canRefuseReport } = require("./report")
 const Mission = require("../../models/Mission")
+const Evaluation = require("../../models/Evaluation")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -181,6 +182,15 @@ const finishMission = async ({value}, user) => {
   const attribute=ROLE_ATTRIBUTE[user.role]
   if (!attribute) {
     throw new ForbiddenError(`Vous n'avez pas le droit de terminer une mission`)
+  }
+  // Create evaluation if the freelance finished the mission
+  if (user.role==ROLE_FREELANCE) {
+    const mission=await Mission.findById(value._id)
+    await Evaluation.findOneAndUpdate(
+      {mission: value._id},
+      {mission: value._id, customer: mission.customer, freelance: mission.freelance},
+      {upsert: true}
+    )
   }
   return Mission.findByIdAndUpdate(value._id, {[attribute]: moment()})
 }
