@@ -1,6 +1,5 @@
 /*TODO:
-  - computeSuggestedFreelances doesn't get data, filters on mongo request don't work
-  - Misc : we get suggested_freelances once every 5 tests
+  - Loaded user misses experiences and trainings
 */
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
@@ -24,9 +23,9 @@ const computeSuggestedFreelances = async (userId, params, data) => {
 
   const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
 
-  const durationDays = data.duration*DURATION_UNIT_DAYS[data.duration_unit]
+  const durationDays = data.duration * DURATION_UNIT_DAYS[data.duration_unit]
   const workDuration =
-  durationDays < 30
+    durationDays < 30
       ? WORK_DURATION_LESS_1_MONTH
       : durationDays > 180
       ? WORK_DURATION_MORE_6_MONTH
@@ -66,14 +65,21 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     main_experience: { $in: data.experience },
     work_mode: workMode,
     work_duration: workDuration,
-    $and:[
+    $and: [
       mobilityFilter(),
       availabilityFilter
     ],
   }
-  const suggestions = await CustomerFreelance.find(filter)
+
+  let suggestions = await CustomerFreelance.find(filter)
+
+  console.log("Fetched suggestions:", suggestions[0].missing_attributes, suggestions[0].profile_completion)
+
+  suggestions = suggestions.filter(s => Number(s.profile_completion) === 1)
+
   let regionKey 
   if(data.city && data.city.zip_code) regionKey = getRegionFromZipcode(data.city.zip_code)
+
   if (data.mobility === MOBILITY_NONE) {
     return suggestions.filter(s => {
       return (
@@ -82,7 +88,8 @@ const computeSuggestedFreelances = async (userId, params, data) => {
       )
     })
   }
-  if(data.mobility === MOBILITY_REGIONS) {
+
+  if (data.mobility === MOBILITY_REGIONS) {
     return suggestions.filter(s => {
       return (
         (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.mobility_regions)) ||
@@ -90,9 +97,10 @@ const computeSuggestedFreelances = async (userId, params, data) => {
       )
     })
   }
-  suggestions = suggestions.filter(s=>s.profile_completion == 1)
+
   return suggestions
 }
+
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 

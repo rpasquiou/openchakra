@@ -28,7 +28,7 @@ describe('Profile Completion', ()=> {
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
     const job=await Job.create({...JOB_DATA, job_file: jobFile})
     sector=await Sector.create({...SECTOR_DATA})
-    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector],picture:"hi", mobility: MOBILITY_CITY, work_mode: WORK_MODE_REMOTE, rate: 5, description: 'hi', company_size: COMPANY_SIZE_LESS_10}))
+    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector],/*picture:"hi",*/ mobility: MOBILITY_CITY, work_mode: WORK_MODE_REMOTE, rate: 5, description: 'hi', company_size: COMPANY_SIZE_LESS_10}))
   })
 
   afterAll(async () => {
