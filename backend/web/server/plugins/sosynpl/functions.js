@@ -23,7 +23,7 @@ const { getterPinnedFn, setterPinnedFn } = require("../../utils/pinned");
 const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message');
-const { REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, MANDATORY_ATTRIBUTES } = require("./freelance");
+const { FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES } = require("./freelance");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -454,9 +454,16 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
   declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
-  declareVirtualField({model, field: 'profile_completion', requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES, 'missing_attributes'].join(','), instance: 'Number'})
+  declareVirtualField({model, field: 'freelance_profile_completion', requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes'].join(','), instance: 'Number'})
   declareVirtualField({
-    model, field: 'missing_attributes', instance: 'Array', multiple: true, requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES].join(','),
+    model, field: 'freelance_missing_attributes', instance: 'Array', multiple: true, requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES].join(','),
+    caster: {
+      instance: 'String',
+    },
+  })
+  declareVirtualField({model, field: 'customer_profile_completion', requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'customer_missing_attributes'].join(','), instance: 'Number'})
+  declareVirtualField({
+    model, field: 'customer_missing_attributes', instance: 'Array', multiple: true, requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES].join(','),
     caster: {
       instance: 'String',
     },
@@ -475,7 +482,6 @@ declareVirtualField({
     options: { ref: 'application' }
   },
 })
-
 //Mission
 declareVirtualField({model: 'mission', field: 'evaluation', instance: 'evaluation'})
 
