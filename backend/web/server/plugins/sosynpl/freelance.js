@@ -9,11 +9,20 @@ const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft
 const MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
 
 const profileCompletion = (user) => {
-  const totalAttr = REQUIRED_ATTRIBUTES.length + MANDATORY_ATTRIBUTES.length + 1; // +1 for the soft skills
-  let validated = 0
-  if(user['missing_attributes']) validated = totalAttr - user['missing_attributes'].length
-  return validated / totalAttr
-}
+  if (!user['missing_attributes'] || user['missing_attributes'].length === 0) return 1
+  const missing = user['missing_attributes']
+  let result = 0
+  const requiredMissing = REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
+  if (requiredMissing === 0) result += 40
+  else result += 5 * (REQUIRED_ATTRIBUTES.length - requiredMissing)
+
+  const mandatoryMissing = MANDATORY_ATTRIBUTES.filter(attr => missing.includes(attr)).length
+  const mandatoryPenalty = Math.floor((60 / MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
+  
+  result += 60 - mandatoryPenalty
+
+  return result/100
+};
 
 const missingAttributes = (user) => {
   let missingAttr = [];
