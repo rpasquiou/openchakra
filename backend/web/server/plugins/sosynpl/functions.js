@@ -24,6 +24,8 @@ const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message');
 const { REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, MANDATORY_ATTRIBUTES } = require("./freelance");
+const { computeStatistics, usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount } = require("./statistic");
+const Statistic = require("../../models/Statistic");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -474,6 +476,13 @@ declareVirtualField({
   },
 })
 
+//Statistic
+declareComputedField({model:'statistic', field:'users_count', getterFn: usersCount})
+declareComputedField({model:'statistic', field:'customers_count', getterFn: customersCount})
+declareComputedField({model:'statistic', field:'freelances_count', getterFn: freelancesCount})
+declareComputedField({model:'statistic', field:'current_missions_count', getterFn: currentMissionsCount})
+declareComputedField({model:'statistic', field:'coming_missions_count', getterFn: comingMissionsCount})
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
@@ -552,6 +561,13 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     else {
       params['filter.users']=user._id
     }
+  }
+  if (model == 'statistic') {
+    // if(user.role == ROLE_ADMIN){
+      await Statistic.deleteMany()
+      const s= Statistic.create({})
+      id = s._id
+    // }
   }
   return { model, fields, id, user, params }
 }
