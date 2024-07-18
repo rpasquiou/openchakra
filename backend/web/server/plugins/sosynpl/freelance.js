@@ -1,33 +1,29 @@
-/*TODO:
-- See with client how he wants completion, in older version, it never reaches 100%
-*/
-
 const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS } = require("./consts")
 
-const REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
+const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
 
-const profileCompletion = (user) => {
-  if (!user['missing_attributes'] || user['missing_attributes'].length === 0) return 1
-  const missing = user['missing_attributes']
+const freelanceProfileCompletion = (user) => {
+  if (!user['freelance_missing_attributes'] || user['freelance_missing_attributes'].length === 0) return 1
+  const missing = user['freelance_missing_attributes']
   let result = 0
-  const requiredMissing = REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
+  const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
   if (requiredMissing === 0) result += 40
-  else result += 5 * (REQUIRED_ATTRIBUTES.length - requiredMissing)
+  else result += 5 * (FREELANCE_REQUIRED_ATTRIBUTES.length - requiredMissing)
 
-  const mandatoryMissing = MANDATORY_ATTRIBUTES.filter(attr => missing.includes(attr)).length
-  const mandatoryPenalty = Math.floor((60 / MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
+  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(attr)).length
+  const mandatoryPenalty = Math.floor((60 / FREELANCE_MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
   
   result += 60 - mandatoryPenalty
 
   return result/100
 };
 
-const missingAttributes = (user) => {
+const freelanceMissingAttributes = (user) => {
   let missingAttr = [];
   let i=0;
-  [...REQUIRED_ATTRIBUTES, ...MANDATORY_ATTRIBUTES].forEach(attr => {
+  [...FREELANCE_REQUIRED_ATTRIBUTES, ...FREELANCE_MANDATORY_ATTRIBUTES].forEach(attr => {
     if (!user[attr]) missingAttr = [...missingAttr, attr]
   })
   if (
@@ -38,4 +34,4 @@ const missingAttributes = (user) => {
   return missingAttr
 }
 
-module.exports = { missingAttributes, profileCompletion, REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, MANDATORY_ATTRIBUTES }
+module.exports = { freelanceMissingAttributes, freelanceProfileCompletion, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES }

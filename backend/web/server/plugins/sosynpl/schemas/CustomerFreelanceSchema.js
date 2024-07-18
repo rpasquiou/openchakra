@@ -18,7 +18,8 @@ const {ROLE_CUSTOMER, LEGAL_STATUS, SUSPEND_REASON, DEACTIVATION_REASON, ACTIVIT
 const siret = require('siret')
 const { NATIONALITIES } = require('../../../../utils/consts')
 const {getApplications, getNotes, computeNotes} = require('../customerFreelance')
-const { missingAttributes, profileCompletion } = require('../freelance')
+const { freelanceProfileCompletion, freelanceMissingAttributes } = require('../freelance')
+const { customerProfileCompletion, customerMissingAttributes } = require('../customer')
 
 const MIN_SECTORS=1
 const MAX_SECTORS=5
@@ -499,9 +500,14 @@ CustomerFreelanceSchema.virtual('freelance_evaluations_count', {
   count: true,
 })
 
-CustomerFreelanceSchema.virtual('profile_completion', DUMMY_REF).get(function(){return profileCompletion(this)})
+CustomerFreelanceSchema.virtual('freelance_profile_completion', DUMMY_REF).get(function(){return freelanceProfileCompletion(this)})
 
-CustomerFreelanceSchema.virtual('missing_attributes', DUMMY_REF).get(function(){return missingAttributes(this)})
+CustomerFreelanceSchema.virtual('freelance_missing_attributes', DUMMY_REF).get(function(){return freelanceMissingAttributes(this)})
+
+CustomerFreelanceSchema.virtual('customer_profile_completion', DUMMY_REF).get(function(){return customerProfileCompletion(this)})
+
+CustomerFreelanceSchema.virtual('customer_missing_attributes', DUMMY_REF).get(function(){return customerMissingAttributes(this)})
+
 
 /* eslint-enable prefer-arrow-callback */
 
