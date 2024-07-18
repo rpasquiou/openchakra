@@ -4,6 +4,8 @@ const { idEqual } = require("../../utils/database")
 const { RESOURCE_TYPE_EXT } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
+const Block = require('../../models/Block')
+const lodash=require('lodash')
 
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
@@ -60,7 +62,15 @@ const getResourceType = async url => {
   return res[0]
 }
 
+const getResourcesCount = async (userId, params, data) => {
+  const block=await Block.findById(data._id).populate('children')
+  if (block.type=='resource') {
+    return 1
+  }
+  return lodash.sum(await Promise.all(block.children.map(child => getResourcesCount(userId, params, child))))
+}
+
 module.exports={
   getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType, getBlockSpentTime, getBlockSpentTimeStr,
+  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount,
 }
