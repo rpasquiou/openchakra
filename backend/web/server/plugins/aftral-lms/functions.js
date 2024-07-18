@@ -40,7 +40,6 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
-  declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
   declareVirtualField({model, field: 'children', instance: 'Array',
     multiple: true,
     caster: {

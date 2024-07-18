@@ -153,11 +153,6 @@ const BlockSchema = new Schema({
     type: Boolean,
     required: false,
   },
-  // Un devoir doit être rendu
-  homework_required: {
-    type: Boolean,
-    required: false,
-  },
   // computed
   homeworks: [{
     type: Schema.Types.ObjectId,
@@ -174,6 +169,12 @@ const BlockSchema = new Schema({
     set: function(v) {
       return this.type=='resource' ? v : undefined
     }
+  },
+  // This resource will be included in notes report
+  evaluation: {
+    type: Boolean,
+    default: null,
+    required:false,
   },
   used_in: [{
     type: Schema.Types.ObjectId,
@@ -197,13 +198,6 @@ BlockSchema.virtual('children_count', {
   localField: '_id',
   foreignField: 'parent',
   count: true,
-})
-
-BlockSchema.virtual('evaluation', DUMMY_REF).get(function() {
-  return this._evaluation
-})
-
-BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
 })
 
 BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
