@@ -87,7 +87,7 @@ addAction('levelDown', levelDownAction)
 const addSpentTimeAction = async ({id, duration}, user) => {
   await Progress.findOneAndUpdate(
     {user, block: id},
-    {user, block: id, spent_time: {$inc: duration}},
+    {user, block: id, $inc: {spent_time: duration/1000}},
     {upsert: true, new: true})
   console.warn('Update spent time')
 }

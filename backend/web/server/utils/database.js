@@ -711,7 +711,6 @@ const addComputedFields = (
           Object.keys(requiredCompFields).map(f =>
             requiredCompFields[f](newUserId, queryParams, data)
               .then(res => {
-                console.log('setting', res, 'on', 'f', data._id)
                 data[f] = res
                 return data
               })

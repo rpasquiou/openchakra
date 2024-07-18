@@ -14,7 +14,8 @@ const ProgressSchema = new Schema({
     ref: 'user',
     required: [true, `L'apprenant est obligatoire`],
   },
-  spent_duration: {
+  // TIme spent on resource in seconds
+  spent_time: {
     type: Number,
   },
   annotation: {
