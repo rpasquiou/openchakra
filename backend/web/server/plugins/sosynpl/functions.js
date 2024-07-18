@@ -456,6 +456,10 @@ declareVirtualField({
   },
 })
 
+//Mission
+declareVirtualField({
+  model: 'mission', field: 'evaluation', instance: 'Evaluation'})
+
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
