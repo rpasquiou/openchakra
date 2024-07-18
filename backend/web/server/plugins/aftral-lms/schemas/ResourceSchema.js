@@ -21,11 +21,6 @@ const ResourceSchema = new Schema({
   mine: {
     type: Boolean,
   },
-  // Correction par le formateur
-  correction: {
-    type: String,
-    required: false,
-  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ResourceSchema
