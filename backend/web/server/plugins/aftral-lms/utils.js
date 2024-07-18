@@ -1,19 +1,30 @@
-const Block = require('../../models/Block')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
+const { loadFromDb } = require('../../utils/database')
+require('../../models/Chapter')
+require('./functions')
 
 const attributes={
-  'type': b => b['type'],
+  'type': b => b.type,
   'name': b => b.name,
-  'closed': b => b.closed ? 'FERME' : 'OUVERT',
+  'code': b => b.code,
   // 'masked': b => b.masked ? 'MASQUE': 'VISIBLE',
   // 'optional': b => b.optional ? 'OPTIONEL': 'OBLIGATOIRE',
 }
 
+let required=[]
+
+for (let index = 0; index < 12; index++) {
+  required.push(...Object.keys(attributes).map(f => `${'children.'.repeat(index)}${f}`))
+}
+
 const displayTree = async rootId => {
-  const block=await Block.findById(rootId).lean()
+  const [block]=await loadFromDb({
+    model: 'block', id: rootId, 
+    fields:required,
+  })
   console.log('\n'+Object.entries(attributes).map(([att, f]) => f(block)).join(','))
   console.group()
-  await runPromisesWithDelay(block.actual_children.map(child => () => displayTree(child._id)))
+  await runPromisesWithDelay(block.children.map(child => () => displayTree(child._id)))
   console.groupEnd()
 }
 

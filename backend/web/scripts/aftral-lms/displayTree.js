@@ -15,4 +15,7 @@ const display = async() => {
 }
 
 display()
+  .then(console.log)
+  .catch(console.error)
+  .finally(() => process.exit(0))
 
