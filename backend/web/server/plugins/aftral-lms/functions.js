@@ -4,8 +4,6 @@ const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE } = require('./consts')
-const Duration = require('../../models/Duration')
-const { formatDuration } = require('../../../utils/text')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -18,11 +16,10 @@ require('../../models/Sequence')
 require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr } = require('./resources')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES} = require('./block')
 const { getFinishedResources } = require('./resources')
 const { getResourcesProgress } = require('./resources')
-const { updateBlockStatus } = require('./block')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
@@ -50,14 +47,8 @@ BLOCK_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
-    return Duration.findOne({user: userId, block: data._id}, {duration:1})
-      .then(result => result?.duration || 0)
-  }})
-  declareComputedField({model, field: 'spent_time_str', getterFn: (userId, params, data) => {
-    return Duration.findOne({user: userId, block: data._id}, {duration:1})
-      .then(result => formatDuration(result?.duration || 0))
-  }})
+  declareComputedField({model, field: 'spent_time', getterFn: getBlockSpentTime})
+  declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
   declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
@@ -80,8 +71,6 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
-
-declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
@@ -330,7 +319,7 @@ setPreDeleteData(preDeleteData)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
-    ['status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
+    [...LINKED_ATTRIBUTES, 'status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
     'duration_str'
   ])
 }

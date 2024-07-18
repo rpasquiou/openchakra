@@ -1,14 +1,12 @@
 const mongoose=require('mongoose')
-const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
-const Duration = require('../../models/Duration')
-const Resource = require('../../models/Resource')
-const { idEqual } = require('../../utils/database')
-const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
+const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
+const Progress = require('../../models/Progress')
+
 
 const ACCEPTS={
   session: ['program'],
@@ -87,18 +85,11 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  const block=await Block.findById(id, {_locked:1})
-  if (!block._locked) {
-    throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
-  }
-  const durationDoc=await Duration.findOne({block, user})
-  if (durationDoc.status==BLOCK_STATUS_UNAVAILABLE) {
-    throw new ForbiddenError(`addSpentTime forbidden on unavailable resource`)
-  }
-  durationDoc.duration+=duration/1000
-  await durationDoc.save()
-  console.log('Duration block is', durationDoc)
-  return onSpentTimeChanged({blockId: id, user})
+  await Progress.findOneAndUpdate(
+    {user, block: id},
+    {user, block: id, spent_time: {$inc: duration}},
+    {upsert: true, new: true})
+  console.warn('Update spent time')
 }
 addAction('addSpentTime', addSpentTimeAction)
 
@@ -124,8 +115,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     if (!block) { 
       throw new NotFoundError(`Ressource introuvable`)
     }
-    const parent=await Block.findOne({actual_achildren: dataId})
-    const duration=await Duration.findOne({block: dataId, user})
+    console.warn('ici plus de duration')
+    const duration=null
+    const parent=null
+    console.warn('ici plus de duration')
     if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
       // throw new NotFoundError(`Cette ressource ne peut être jouée`)
     }

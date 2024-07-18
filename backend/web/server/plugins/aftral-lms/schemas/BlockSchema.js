@@ -79,17 +79,11 @@ const BlockSchema = new Schema({
   url: {
     type: String,
     default: null,
-    set: function(v) {
-      return !this.origin ? v : undefined
-    },
     required: [function() {return this?.type=='resource' && !this?.origin}, `L'url est obligatoire`],
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    set: function(v) {
-      return !this.origin ? v : undefined
-    },
     required: [function(){ return this?.type=='resource' && !this?.origin}, `Le type de ressource est obligatoire`],
   },
   spent_time: {
@@ -126,12 +120,6 @@ const BlockSchema = new Schema({
   },
   access_condition: {
     type: Boolean,
-    set: function(v) {
-      if (!this.origin) {
-        throw new Error(`La condition d'accès n'est possible que si ce bloc a un parent`)
-      }
-      return v
-    }
   },
   // Annotation set by trainee
   success_message: {
