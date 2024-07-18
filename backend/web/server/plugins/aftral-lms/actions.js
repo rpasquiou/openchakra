@@ -127,13 +127,13 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     const parent=await Block.findOne({actual_achildren: dataId})
     const duration=await Duration.findOne({block: dataId, user})
     if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
-      throw new NotFoundError(`Cette ressource ne peut être jouée`)
+      // throw new NotFoundError(`Cette ressource ne peut être jouée`)
     }
     if (action=='resume' && duration?.status!=BLOCK_STATUS_CURRENT) {
-      throw new NotFoundError(`Cette ressource ne peut être jouée`)
+      // throw new NotFoundError(`Cette ressource ne peut être jouée`)
     }
     if (action=='replay' && duration?.status!=BLOCK_STATUS_FINISHED && !parent?.closed) {
-      throw new NotFoundError(`Cette ressource ne peut être rejouée`)
+      // throw new NotFoundError(`Cette ressource ne peut être rejouée`)
     }
   }
   return true
