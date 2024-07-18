@@ -452,6 +452,8 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
       options: { ref: 'application' }
     },
   })
+  declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
+  declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
   declareVirtualField({model, field: 'profile_completion', requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES, 'missing_attributes'].join(','), instance: 'Number'})
   declareVirtualField({
     model, field: 'missing_attributes', instance: 'Array', multiple: true, requires:[...REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...MANDATORY_ATTRIBUTES].join(','),
