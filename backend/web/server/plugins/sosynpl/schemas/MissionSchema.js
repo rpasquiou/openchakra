@@ -109,5 +109,11 @@ MissionSchema.virtual('progress', DUMMY_REF).get(function() {
 
 /* eslint-enable prefer-arrow-callback */
 
+MissionSchema.virtual('evaluation', {
+  ref: 'evaluation',
+  localField: '_id',
+  foreignField: 'mission',
+  justOne: true,
+})
 
 module.exports = MissionSchema;
