@@ -26,8 +26,11 @@ const ProgramSchema = new Schema({
 
 
 ProgramSchema.pre('validate', function(next) {
+  if (!!this.origin) {
+    return next()
+  }
   return mongoose.models['program'].findOne(
-    {_id: {$ne : this._id}, codes: {$in : this.codes}}
+    {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}
   ).populate('codes')
   .then(program => {
     if (program) { 

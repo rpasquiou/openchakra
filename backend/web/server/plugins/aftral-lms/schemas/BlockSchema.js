@@ -149,7 +149,7 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(ACHIEVEMENT_RULE),
     set: v => v || undefined,
-    required: [function() {return !this.origin}, `La règle d'achèvement est obligatoire`],
+    required: [function() {return this.type=='resource' && !this.origin}, `La règle d'achèvement est obligatoire`],
   },
   success_note_min: {
     type: Number,
@@ -163,23 +163,11 @@ const BlockSchema = new Schema({
   //Mode devoir
   homework_mode: {
     type: Boolean,
-    set: function(v) {
-      if (this.type!='resource' || !this.origin) {
-        throw new BadRequestError(`Le mode devoir est possible uniquement sur une ressource non template`)
-      }
-      return v
-    },
     required: false,
   },
   // Un devoir doit être rendu
   homework_required: {
     type: Boolean,
-    set: function(v) {
-      if (this.type!='resource' || !this.origin) {
-        throw new BadRequestError(`Le mode devoir à rendre est possible uniquement sur une ressource non template`)
-      }
-      return v
-    },
     required: false,
   },
   // computed
@@ -236,7 +224,6 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
 
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
-  console.log('prevlidate', this)
   // #36 Can't create two templates with same type and same name
   const exists=!!this.name && await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
   if (exists) {

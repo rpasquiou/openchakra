@@ -107,9 +107,6 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
-  if (model=='session') {
-    throw new Error(`La création de session n'est pas finalisée`)
-  }
   if ('homework'==model) {
     params.trainee=user
   }
@@ -358,18 +355,17 @@ const cloneAndLock = blockId => {
     })
   }
 
-const lockSession = async sessionId => {
-  console.log('locking session', sessionId)
-  const session=await Block.findById(sessionId)
-  if (session._locked) {
-    console.warn(`Session`, session._id, `is already locked`)
+const lockSession = async blockId => {
+  console.log('locking block', blockId)
+  const block=await Block.findById(blockId).populate('children')
+  if (block._locked) {
+    console.warn(`Session`, block._id, `is already locked`)
+    return
   }
-  else {
-    const cloned= await Promise.all(session.actual_children.map(c => cloneAndLock(c)))
-    await Block.findByIdAndUpdate(session._id, {$set: {actual_children: cloned, _locked: true}})
-  }
-  await setParentSession(session._id)
-  await Promise.all(session.trainees.map(trainee => updateBlockStatus({blockId: session._id, userId: trainee._id})))
+  console.log('locking', block.type, block._id)
+  block._locked=true
+  await block.save()
+  await Promise.all(block.children.map(b => lockSession(b._id)))
 }
 
 module.exports={

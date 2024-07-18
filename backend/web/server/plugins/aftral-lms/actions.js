@@ -8,6 +8,7 @@ const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const { cloneTree } = require('./block')
+const { lockSession } = require('./functions')
 
 const ACCEPTS={
   session: ['program'],
@@ -55,6 +56,10 @@ const addChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {last_updater: user})
   const parentsOrigin=await Block.find({origin: parent._id})
   await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
+  // If a child was added to sesison : lock it
+  if (pType=='session') {
+    await lockSession(parent._id)
+  }
 }
 addAction('addChild', addChildAction)
 
