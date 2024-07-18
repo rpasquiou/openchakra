@@ -74,6 +74,7 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(BLOCK_STATUS),
     set: v => v || undefined,
+    default: null,
     required: false,
   },
   url: {

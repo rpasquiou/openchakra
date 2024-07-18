@@ -6,6 +6,7 @@ const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHE
 const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
+const { isDevelopment } = require('../../../config/config')
 
 
 const ACCEPTS={
@@ -106,6 +107,20 @@ addAction('play', resourceAction('play'))
 addAction('resume', resourceAction('resume'))
 addAction('replay', resourceAction('replay'))
 
+// TODO dev only
+if (isDevelopment()) {
+  const forceFinishResource = async ({value}, user) => {
+    await Progress.findOneAndUpdate(
+      {user, block: value._id},
+      {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
+      {upsert: true, new: true}
+    )
+  }
+
+  addAction('alle_finish_mission', forceFinishResource)
+}
+
+
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
@@ -115,10 +130,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     if (!block) { 
       throw new NotFoundError(`Ressource introuvable`)
     }
-    console.warn('ici plus de duration')
+    console.warn('implement action play/resume/replay')
     const duration=null
     const parent=null
-    console.warn('ici plus de duration')
+    console.warn('implement action play/resume/replay')
     if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
       // throw new NotFoundError(`Cette ressource ne peut être jouée`)
     }

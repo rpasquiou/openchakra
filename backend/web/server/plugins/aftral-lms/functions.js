@@ -93,6 +93,10 @@ declareComputedField({model: 'search', field: 'blocks', getterFn: searchBlocks})
 declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
 
+// Progress start
+declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
+// Progress end
+
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id

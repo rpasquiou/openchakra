@@ -28,7 +28,7 @@ const getSessionBlocks = async session_id => {
 }
 
 const getBlockStatus = async (userId, params, data) => {
-  return (await Progress.findOne({ block: data._id, user: userId }))?.status
+  return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
 }
 
 const getBlockName = async (blockId) => {
