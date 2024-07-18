@@ -441,6 +441,8 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
       options: { ref: 'application' }
     },
   })
+  declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
+  declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
 })
 
 //Evaluation

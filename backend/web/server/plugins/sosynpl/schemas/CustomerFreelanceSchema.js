@@ -480,6 +480,20 @@ CustomerFreelanceSchema.virtual('freelance_average_note', DUMMY_REF).get(functio
   return computeNotes(this, 'freelance')
 })
 
+CustomerFreelanceSchema.virtual('customer_evaluations_count', {
+  ref: 'evaluation',
+  localField: '_id',
+  foreignField: 'customer',
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('freelance_evaluations_count', {
+  ref: 'evaluation',
+  localField: '_id',
+  foreignField: 'freelance',
+  count: true,
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
