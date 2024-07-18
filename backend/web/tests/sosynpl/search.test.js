@@ -140,7 +140,7 @@ describe('Search', () => {
       },
       company_size: COMPANY_SIZE_LESS_10,
       picture: 'hi',
-      description: 'dev',
+      //description: 'dev',
       rate: '5',
 
     })
@@ -152,15 +152,12 @@ describe('Search', () => {
   })
 
   it('should find suggested freelances based on announce criteria', async () => {
-    const fields = ['missing_attributes','profile_completion']
-    const [user] = await loadFromDb({model:'customerFreelance', id: customerFreelance._id, fields})
-    console.log("loaded user using lodash", user.missing_attributes, user.profile_completion)
-
+    console.time('loading')
     const loadedAnnounce = await loadFromDb({model:'announce', id:announce._id, 
       fields:'mobility_regions,city,mobility,suggested_freelances,gold_soft_skills,silver_soft_skills,bronze_soft_skills,start_date,job,sectors,expertises,softwares,languages,experience,_duration_days,duration_unit,duration'.split(',')
     })
+    console.timeEnd('loading')
     const suggestion = loadedAnnounce[0].suggested_freelances[0]
-    console.log(suggestion)
     expect(String(customerFreelance._id)).toMatch(String(suggestion.id))
   })
 })

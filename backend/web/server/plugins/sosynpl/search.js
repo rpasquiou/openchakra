@@ -9,28 +9,9 @@ const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 const { loadFromDb } = require('../../utils/database')
+const { freelanceMissingAttributes } = require('./freelance')
 
 const computeSuggestedFreelances = async (userId, params, data) => {
-  if (!data.job || !data.start_date) {
-    console.log("missing attributes on announce")
-    return []
-  }
-
-  const MAP_WORKMODE = {
-    0: WORK_MODE_SITE,
-    5: WORK_MODE_REMOTE,
-  }
-
-  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
-
-  const durationDays = data.duration * DURATION_UNIT_DAYS[data.duration_unit]
-  const workDuration =
-    durationDays < 30
-      ? WORK_DURATION_LESS_1_MONTH
-      : durationDays > 180
-      ? WORK_DURATION_MORE_6_MONTH
-      : WORK_DURATION__1_TO_6_MONTHS
-
   const getRegionFromZipcode = (zipcode) => {
     const departmentCode = String(zipcode).substring(0, 2)
     const region = lodash.pickBy(REGIONS_FULL, (region) =>
@@ -39,68 +20,98 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     return Object.keys(region)[0] || null
   }
 
-  const mobilityFilter = () => {
-    if (data.homework_days === 5) {
-      return {}
+  const MAP_WORKMODE = {
+    0: WORK_MODE_SITE,
+    5: WORK_MODE_REMOTE,
+  }
+
+  const durationDays = data.duration * DURATION_UNIT_DAYS[data.duration_unit]
+  const workDuration =
+    durationDays < 30
+      ? WORK_DURATION_LESS_1_MONTH
+      : durationDays > 180
+      ? WORK_DURATION_MORE_6_MONTH
+      : WORK_DURATION__1_TO_6_MONTHS
+  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
+
+  const POWERS = {
+    main_job: 1,
+    work_sector: 1,
+    expertises: 1,
+    softwares: 1,
+    languages: 1,
+    main_experience: 1,
+    work_mode: 1,
+    work_duration: 1,
+    mobility: 1,
+    freelance_profile_completion: 1,
+    availability: 1,
+  }
+
+  const incrementScore = (condition, scoreKey) => (condition ? POWERS[scoreKey] : 0)
+
+  const frWithScore = {}
+  let freelances = await CustomerFreelance.find({ role: ROLE_FREELANCE })
+    .populate('experiences')
+    .populate('trainings')
+
+  freelances = freelances.filter(freelance => freelance.freelance_profile_completion === 1)
+
+  freelances.forEach((freelance) => {
+    let score = 0
+    let regionKey
+
+    score += incrementScore(freelance.main_job && String(freelance.main_job) === String(data.job._id), 'main_job')
+    score += incrementScore(freelance.work_sector && data.sectors.some(sector => String(sector._id) === String(freelance.work_sector)), 'work_sector')
+    score += incrementScore(freelance.expertises && data.expertises.some(exp => String(freelance.expertises).includes(String(exp._id))), 'expertises')
+    score += incrementScore(freelance.softwares && data.softwares.some(sw => String(freelance.softwares).includes(String(sw._id))), 'softwares')
+    score += incrementScore(freelance.languages && data.languages.some(lang => String(freelance.languages).includes(String(lang._id))), 'languages')
+    score += incrementScore(freelance.main_experience && data.experience.includes(freelance.main_experience), 'main_experience')
+    score += incrementScore(freelance.work_mode && freelance.work_mode === (data.homework_days === 5 ? WORK_MODE_REMOTE : workMode), 'work_mode')
+    score += incrementScore(freelance.work_duration && freelance.work_duration.includes(workDuration), 'work_duration')
+
+    if (data.city && data.city.zip_code) {
+      regionKey = getRegionFromZipcode(data.city.zip_code)
     }
-    if (data.mobility === MOBILITY_FRANCE) {
-      return { mobility: MOBILITY_FRANCE }
+
+    if (freelance.mobility == MOBILITY_FRANCE) {
+      score += POWERS.mobility
+    } else {
+      if (data.mobility === MOBILITY_NONE) {
+        if (
+          (freelance.mobility === MOBILITY_CITY &&
+            computeDistanceKm(data.city, freelance.mobility_city) < freelance.mobility_city_distance) ||
+          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions.includes(regionKey))
+        ) {
+          score += POWERS.mobility
+        }
+      } else if (data.mobility === MOBILITY_REGIONS) {
+        if (
+          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions.includes(data.mobility_regions)) ||
+          (freelance.mobility === MOBILITY_CITY && data.mobility_regions.includes(getRegionFromZipcode(freelance.mobility_city.zip_code)))
+        ) {
+          score += POWERS.mobility
+        }
+      }
     }
-    return {}
-  }
 
-  const availabilityFilter = {
-    $or: [
-      { availability: AVAILABILITY_ON },
-      { available_from: { $lte: data.start_date } },
-    ],
-  }
+    score += incrementScore(freelance.freelance_profile_completion && freelance.freelance_profile_completion === 1, 'freelance_profile_completion')
+    score += incrementScore(
+      (freelance.availability && freelance.availability === AVAILABILITY_ON) ||
+      (freelance.available_from && new Date(freelance.available_from) <= new Date(data.start_date)),
+      'availability'
+    )
 
-  const filter = {
-    main_job: data.job,
-    work_sector: { $in: data.sectors },
-    expertises: { $in: data.expertises },
-    softwares: { $in: data.softwares },
-    languages: { $in: data.languages },
-    main_experience: { $in: data.experience },
-    work_mode: workMode,
-    work_duration: workDuration,
-    $and: [
-      mobilityFilter(),
-      availabilityFilter
-    ],
-  }
+    frWithScore[freelance._id] = score
+  })
 
-  let suggestions = await CustomerFreelance.find(filter)
+  const sortedFreelances = Object.keys(frWithScore)
+    .sort((a, b) => frWithScore[b] - frWithScore[a])
+    .slice(0, 5)
+    .map(id => freelances.find(f => f._id.toString() === id))
 
-  console.log("Fetched suggestions:", suggestions[0].missing_attributes, suggestions[0].profile_completion)
-
-  suggestions = suggestions.filter(s => Number(s.profile_completion) === 1)
-
-  let regionKey 
-  if(data.city && data.city.zip_code) regionKey = getRegionFromZipcode(data.city.zip_code)
-
-  if (data.mobility === MOBILITY_NONE) {
-    return suggestions.filter(s => {
-      return (
-        (s.mobility === MOBILITY_CITY && computeDistanceKm(data.city, s.mobility_city) < s.mobility_city_distance) ||
-        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(regionKey))
-      )
-    })
-  }
-
-  if (data.mobility === MOBILITY_REGIONS) {
-    return suggestions.filter(s => {
-      return (
-        (s.mobility === MOBILITY_REGIONS && s.mobility_regions.includes(data.mobility_regions)) ||
-        (s.mobility === MOBILITY_CITY && data.mobility_regions.includes(getRegionFromZipcode(s.mobility_city.zip_code)))
-      )
-    })
-  }
-
-  return suggestions
+  return sortedFreelances
 }
-
 
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 
