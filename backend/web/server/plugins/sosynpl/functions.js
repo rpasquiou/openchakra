@@ -477,8 +477,7 @@ declareVirtualField({
 })
 
 //Mission
-declareVirtualField({
-  model: 'mission', field: 'evaluation', instance: 'Evaluation'})
+declareVirtualField({model: 'mission', field: 'evaluation', instance: 'evaluation'})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
