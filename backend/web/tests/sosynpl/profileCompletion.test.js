@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const moment=require('moment')
-const lodash = require('lodash')
 const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
 const JobFile = require('../../server/models/JobFile')
 const Job = require('../../server/models/Job')
@@ -8,9 +7,7 @@ const Sector = require('../../server/models/Sector')
 const { JOB_FILE_DATA, JOB_DATA, SECTOR_DATA, FREELANCE_DATA, CUSTOMER_DATA } = require('./data/base_data')
 require('../../server/plugins/sosynpl/functions')
 const CustomerFreelance = require('../../server/models/CustomerFreelance')
-const { REQUIRED_ATTRIBUTES, MANDATORY_ATTRIBUTES, SOFT_SKILLS_ATTR } = require('../../server/plugins/sosynpl/freelance')
 const { MOBILITY_CITY, WORK_MODE_REMOTE, COMPANY_SIZE_LESS_10 } = require('../../server/plugins/sosynpl/consts')
-const Customer = require('../../server/models/Customer')
 require('../../server/models/Application')
 require('../../server/models/Expertise')
 require('../../server/models/Experience')
@@ -38,13 +35,14 @@ describe('Profile Completion', ()=> {
     await mongoose.connection.close()
   })
 
-  it('checks for freelance missing attributes', async() => {
+  it.only('checks for freelance missing attributes', async() => {
     const fields = ['freelance_missing_attributes']
     const [user] = await loadFromDb({model:'customerFreelance', id: freelance._id, fields})
     expect(user.freelance_missing_attributes.length).toBeGreaterThanOrEqual(0)
+    console.log(user.freelance_missing_attributes)
   })
 
-  it('checks for freelance profile completion', async() => {
+  it.only('checks for freelance profile completion', async() => {
     const fields = ['freelance_profile_completion']
     const [user] = await loadFromDb({model:'customerFreelance', id: freelance._id, fields})
     expect(user.freelance_profile_completion).toBeGreaterThanOrEqual(0)
@@ -54,6 +52,7 @@ describe('Profile Completion', ()=> {
     const fields = ['customer_missing_attributes']
     const [user] = await loadFromDb({model:'customer', id: customer._id, fields})
     expect(user.customer_missing_attributes.length).toBeGreaterThanOrEqual(0)
+    console.table(user.customer_missing_attributes)
   })
 
   it.only('checks for customer profile completion', async() => {

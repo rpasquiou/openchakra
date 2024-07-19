@@ -413,6 +413,60 @@ const CF_MAX_GOLD_SOFT_SKILLS=1
 const CF_MAX_SILVER_SOFT_SKILLS=2
 const CF_MAX_BRONZE_SOFT_SKILLS=3
 
+//Freelance profile completion
+const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
+const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+
+const FREELANCE_OUTPUT_ATTRIBUTES = {
+  firstname : `Prénom`,
+  lastname : `Nom`,
+  main_job : `Métier principal`,
+  work_duration : `Durée de mission souhaitée`,
+  position : `Intitulé du poste`,
+  experience : `Expérience dans le poste`,
+  main_experience : `Expérience principale`,
+  soft_skills : `Soft Skills`,
+  picture : `Photo de profil`,
+  company_size : `Taille de l'entreprise`,
+  work_mode : `Mode de travail`,
+  mobility : `Mobilité`,
+  work_sector : `Secteur d'activité`,
+  expertises : `Compétences`,
+  experiences : `Expériences`,
+  trainings : `Formations`,
+  description : `Pourquoi moi?`,
+  rate : `Taux journalier moyen`
+}
+
+//Customer profile completion
+const CUSTOMER_REQUIRED_ATTRIBUTES = ['firstname','lastname','position','phone','email','password','siren','company_name']
+const CUSTOMER_ANNOUNCE_ATTRIBUTES = ['company_logo','sector','description','company_size']
+const CUSTOMER_CONTRACT_ATTRIBUTES = ['legal_status','registration_city','social_capital','headquarter_address','billing_contact_address','billing_contact_firstname','billing_contact_lastname','billing_contact_email']
+
+const CUSTOMER_OUTPUT_ATTRIBUTES = {
+  firstname:'Prénom',
+  lastname:'Nom',
+  position:'Intitulé du poste',
+  phone:'Numéro de téléphone',
+  mail:'Adresse mail',
+  password:'Mot de passe',
+  siren:'SIREN',
+  company_name:`Nom de l'entreprise`,
+  company_logo:'Logo',
+  sector:`Secteur d'activité`,
+  description:`Description de l'entreprise`,
+  company_size:`Taille de l'entreprise`,
+  legal_status:`Statut de l'entreprise`,
+  registration_city:`Ville d'immatriculation`,
+  social_capital:`Capitale de l'entreprise`,
+  headquarter_address:`Adresse du siège de l'entreprise`,
+  billing_contact_address:`Àdresse de facturation`,
+  billing_contact_firstname:`Prénom du contact de facturation`,
+  billing_contact_lastname:`Nom du contact de facturation`,
+  billing_contact_email:`Email du contact de facturation`,
+}
+
 module.exports={
   SOSYNPL, ROLES, COMPANY_SIZE, WORK_MODE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_MODE_SITE, WORK_DURATION, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, VALID_STATUS, VALID_STATUS_PENDING, SOURCE,
   DISCRIMINATOR_KEY, DISC_CUSTOMER, DISC_FREELANCE, DISC_ADMIN, DISC_CUSTOMER_FREELANCE, EXPERIENCE, EXPERIENCE_EXPERIMENTED, EXPERIENCE_EXPERT, EXPERIENCE_JUNIOR, EXPERIENCE_SENIOR, ROLE_CUSTOMER, ROLE_FREELANCE, ROLE_ADMIN,
@@ -432,5 +486,7 @@ module.exports={
   REPORT_STATUS, REPORT_STATUS_DRAFT, REPORT_STATUS_DISPUTE, REPORT_STATUS_SENT, REPORT_STATUS_PAID, REPORT_STATUS_ACCEPTED,
   SEARCH_MODE, DEFAULT_SEARCH_RADIUS, DURATION_UNIT_DAYS, DURATION_FILTERS, DURATION_MONTH,SOURCE_RECOMMANDATION, EVALUATION_MIN, EVALUATION_MAX, DURATION_MONTH, CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS,
   COMPANY_SIZE_LESS_10,MISSION_STATUS_CLOSED,
+  FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES,
+  CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_ANNOUNCE_ATTRIBUTES, CUSTOMER_CONTRACT_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES
 }
 
