@@ -61,7 +61,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     let score = 0
     let regionKey
 
-    score += incrementScore(freelance.main_job && String(freelance.main_job) === String(data.job._id), 'main_job')
+    score += incrementScore(freelance.main_job && String(freelance.main_job) === String(data.job), 'main_job')
     score += incrementScore(freelance.work_sector && data.sectors.some(sector => String(sector._id) === String(freelance.work_sector)), 'work_sector')
     score += incrementScore(freelance.expertises && data.expertises.some(exp => String(freelance.expertises).includes(String(exp._id))), 'expertises')
     score += incrementScore(freelance.softwares && data.softwares.some(sw => String(freelance.softwares).includes(String(sw._id))), 'softwares')
