@@ -238,15 +238,15 @@ const SOFT_SKILL_MANAGE=`SOFT_SKILL_MANAGE`
 
 const SOFT_SKILLS={
   [SOFT_SKILL_COMM]:`Communication`,
-  [SOFT_SKILL_TEAMWORK]:`Travail en équipe`,
-  [SOFT_SKILL_CONFLICT]:`Gestion des conflits`,
-  [SOFT_SKILL_CHANGE]:`Promoteur du changement`,
-  [SOFT_SKILL_FEDERATE]:`Capacité à fédérer`,
-  [SOFT_SKILL_CREATIVE]:`Créativité, curiosité`,
-  [SOFT_SKILL_ADAPTATION]:`Adaptabilité`,
-  [SOFT_SKILL_ANALYSIS]:`Analyse, prise de recul`,
-  [SOFT_SKILL_ORGANIZATION]:`Organisation`,
-  [SOFT_SKILL_MANAGE]:`Diriger, manager`,
+  [SOFT_SKILL_TEAMWORK]:`Collaboration`,
+  [SOFT_SKILL_CONFLICT]:`Médiation des conflits`,
+  [SOFT_SKILL_CHANGE]:`Promotion du changement`,
+  [SOFT_SKILL_FEDERATE]:`Leadership collaboratif`,
+  [SOFT_SKILL_CREATIVE]:`Inventivité, Curiosité`,
+  [SOFT_SKILL_ADAPTATION]:`Adaptabilité, Flexibilité`,
+  [SOFT_SKILL_ANALYSIS]:`Synthèse, Réflexion`,
+  [SOFT_SKILL_ORGANIZATION]:`Organisation, Planification`,
+  [SOFT_SKILL_MANAGE]:`Décision, persévérance`,
 }
 
 const DURATION_DAY=`DURATION_DAY`
