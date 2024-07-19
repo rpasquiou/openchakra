@@ -566,7 +566,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   if (model == 'statistic') {
     // if(user.role == ROLE_ADMIN){
       await Statistic.deleteMany()
-      const s= Statistic.create({})
+      const s=await Statistic.create({})
       id = s._id
     // }
   }
