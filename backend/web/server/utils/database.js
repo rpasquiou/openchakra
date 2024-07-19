@@ -308,7 +308,7 @@ const getModels = () => {
 }
 
 /**
-Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not suffixed with an '_')
+Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not prefixed with an '_')
 */
 const getExposedModels = () => {
   const isHidddenAttributeName = (modelName, attName) => {
@@ -962,12 +962,12 @@ const differenceSet = (ids1, ids2) => {
   return lodash.differenceBy(ids1, ids2, v => JSON.stringify(v._id || v))
 }
 
-// Checks wether ids intersect
+// Checks whether ids intersect
 const intersection = (ids1, ids2) => {
   return lodash.intersectionBy(ids1, ids2, v => JSON.stringify(v._id || v)).length
 }
 
-// Checks wether ids intersect
+// Checks whether ids intersect
 const setIntersects = (ids1, ids2) => {
   const inter_length=intersection(ids1, ids2)
   return inter_length>0

@@ -67,7 +67,7 @@ EventSchema.virtual('payments', {
 })
 
 /**
- TODO: should rather be a virtual function insteadd of this trick
+ TODO: should rather be a virtual function instead of this trick
  BUT: if it's a function, mongoose asks got foreignField declaration during populate
  THEN: exclude fields are marked as computed in buildPopulate(s)
  */

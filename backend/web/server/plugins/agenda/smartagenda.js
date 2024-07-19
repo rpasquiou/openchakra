@@ -213,7 +213,7 @@ const getAppointmentTypes = () => {
 }
 
 /**
-Get availabilities for a diet and appontment type (i.e. prestation)
+Get availabilities for a diet and appointment type (i.e. prestation)
 As smartagenda only returns about one week of availabilities, call twice
 remaining_calls tells the number of recursive calls
 */

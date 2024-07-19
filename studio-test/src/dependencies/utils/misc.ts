@@ -33,7 +33,7 @@ export const matcher = (pattern:string, elements:Array<any>, attribute:string) =
   const andExp=new RegExp(patternElements.map(att => `(?=.*${att})`).join(''))
   const andResult=elements.filter(d =>andExp.test(normalize(d[attribute])))
   return andResult
-  // TODO: if required, search with ANY ppattern element
+  // TODO: if required, search with ANY pattern element
   /**
   if (andResult.length>0) {
     return andResult
