@@ -24,7 +24,7 @@ const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message');
 const { REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, MANDATORY_ATTRIBUTES } = require("./freelance");
-const { computeStatistics, usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount } = require("./statistic");
+const { usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount, registrationStatistic } = require("./statistic");
 const Statistic = require("../../models/Statistic");
 
 // TODO move in DB migration
@@ -477,11 +477,12 @@ declareVirtualField({
 })
 
 //Statistic
-declareComputedField({model:'statistic', field:'users_count', getterFn: usersCount})
-declareComputedField({model:'statistic', field:'customers_count', getterFn: customersCount})
-declareComputedField({model:'statistic', field:'freelances_count', getterFn: freelancesCount})
-declareComputedField({model:'statistic', field:'current_missions_count', getterFn: currentMissionsCount})
-declareComputedField({model:'statistic', field:'coming_missions_count', getterFn: comingMissionsCount})
+declareComputedField({model:'statistic', field:'users_count', instance: 'Number', getterFn: usersCount})
+declareComputedField({model:'statistic', field:'customers_count', instance: 'Number',getterFn: customersCount})
+declareComputedField({model:'statistic', field:'freelances_count', instance: 'Number',getterFn: freelancesCount})
+declareComputedField({model:'statistic', field:'current_missions_count', instance: 'Number',getterFn: currentMissionsCount})
+declareComputedField({model:'statistic', field:'coming_missions_count', instance: 'Number',getterFn: comingMissionsCount})
+declareComputedField({model:'statistic', field:'registrations_statistic', instance: 'Array', getterFn: registrationStatistic})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)

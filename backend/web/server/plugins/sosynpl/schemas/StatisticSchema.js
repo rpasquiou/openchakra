@@ -1,6 +1,5 @@
 const mongoose = require("mongoose")
-const { schemaOptions } = require('../../../utils/schemas');
-const { DUMMY_REF } = require("../../../utils/database");
+const { schemaOptions } = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema;
 
@@ -24,8 +23,12 @@ const StatisticSchema = new Schema({
   coming_missions_count: {
     type: Number,
     required: false,
-  }
-}, schemaOptions
-)
+  },
+  registrations_statistic: [{
+    type: Schema.Types.ObjectId,
+    ref: 'measure',
+    required: false,
+  }]
+}, {...schemaOptions})
 
 module.exports = StatisticSchema
