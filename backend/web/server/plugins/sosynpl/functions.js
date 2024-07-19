@@ -24,6 +24,8 @@ const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message');
 const { FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES } = require("./freelance");
+const { usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount, registrationStatistic } = require("./statistic");
+const Statistic = require("../../models/Statistic");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -482,6 +484,14 @@ declareVirtualField({
     options: { ref: 'application' }
   },
 })
+
+//Statistic
+declareComputedField({model:'statistic', field:'users_count', instance: 'Number', getterFn: usersCount})
+declareComputedField({model:'statistic', field:'customers_count', instance: 'Number',getterFn: customersCount})
+declareComputedField({model:'statistic', field:'freelances_count', instance: 'Number',getterFn: freelancesCount})
+declareComputedField({model:'statistic', field:'current_missions_count', instance: 'Number',getterFn: currentMissionsCount})
+declareComputedField({model:'statistic', field:'coming_missions_count', instance: 'Number',getterFn: comingMissionsCount})
+declareComputedField({model:'statistic', field:'registrations_statistic', instance: 'Array', getterFn: registrationStatistic})
 //Mission
 declareVirtualField({model: 'mission', field: 'evaluation', instance: 'evaluation',
   caster: {
@@ -568,6 +578,13 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     else {
       params['filter.users']=user._id
     }
+  }
+  if (model == 'statistic') {
+    // if(user.role == ROLE_ADMIN){
+      await Statistic.deleteMany()
+      const s=await Statistic.create({})
+      id = s._id
+    // }
   }
   return { model, fields, id, user, params }
 }
