@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
-const { registrationStatistic } = require('../../server/plugins/sosynpl/statistic')
 const Statistic = require('../../server/models/Statistic')
 
 require('../../server/models/User')
@@ -22,13 +21,8 @@ describe('Statistic', () => {
 
   it.only('must return users_count', async() => {
     const stat = await Statistic.create({})
-    const [s] = await loadFromDb({model: 'statistic', fields:['users_count','current_missions_count'], id:stat._id})
-    console.log(await Statistic.find({}))
-    console.log(s)
-  })
-
-  it('must return users per month', async () => {
-    const measures = await registrationStatistic()
-    expect(measures).toBeTruthy()
+    const fields = ['users_count','current_missions_count','registrations_statistic']
+    const [s] = await loadFromDb({model: 'statistic', fields, id:stat._id})
+    expect(s.registrations_statistic.length).toEqual(12)
   })
 })

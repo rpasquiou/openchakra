@@ -44,19 +44,16 @@ const registrationStatistic = async () => {
       }
     }
   })
-  const measures = Object.keys(result).map(date => {
-    return new Measure({
+  const measures = await Promise.all(Object.keys(result).map(date => {
+    const measure = new Measure({
       date: moment(date).toDate(),
       customers_count: result[date].customers_count,
       freelance_count: result[date].freelances_count
     })
-  })
+    return measure.save()
+  }))
 
-  for (const measure of measures) {
-    await measure.save()
-  }
-
-  return result
+  return measures
 }
 
 module.exports={
