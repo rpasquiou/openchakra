@@ -446,8 +446,8 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
 })
 
 //Evaluation
-declareVirtualField({model: 'evaluation', field: 'customer_average_note', requires:'customer_note_quality,customer_note_deadline,customer_note_team,customer_note_reporting', instance: 'Number'})
-declareVirtualField({model: 'evaluation', field: 'freelance_average_note', requires:'freelance_note_interest,freelance_note_organisation,freelance_note_integration,freelance_note_communication', instance: 'Number'})
+declareVirtualField({model: 'evaluation', field: 'customer_average_note', requires:'customer_note_interest,customer_note_organisation,customer_note_integration,customer_note_communication', instance: 'Number'})
+declareVirtualField({model: 'evaluation', field: 'freelance_average_note', requires:'freelance_note_quality,freelance_note_deadline,freelance_note_team,freelance_note_reporting', instance: 'Number'})
 
 //Customer
 declareVirtualField({

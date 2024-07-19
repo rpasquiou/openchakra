@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { EVALUATION_MIN, EVALUATION_MAX } = require('../consts')
 const lodash=require('lodash')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -83,7 +84,7 @@ const EvaluationSchema = new Schema({
   },
 }, { ...schemaOptions })
 
-EvaluationSchema.virtual('freelance_average_note').get(function(){
+EvaluationSchema.virtual('freelance_average_note',DUMMY_REF).get(function(){
   const NOTES = [
     this.freelance_note_deadline, 
     this.freelance_note_quality, 
@@ -94,7 +95,7 @@ EvaluationSchema.virtual('freelance_average_note').get(function(){
   return lodash.mean(validNotes)
 })
 
-EvaluationSchema.virtual('customer_average_note').get(function(){
+EvaluationSchema.virtual('customer_average_note', DUMMY_REF).get(function(){
   const NOTES = [
     this.customer_note_communication,
     this.customer_note_integration,
