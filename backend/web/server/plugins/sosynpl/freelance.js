@@ -1,8 +1,4 @@
-const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS } = require("./consts")
-
-const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
-const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS, FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES } = require("./consts")
 
 const freelanceProfileCompletion = (user) => {
   if (!user['freelance_missing_attributes'] || user['freelance_missing_attributes'].length === 0) return 1
@@ -24,14 +20,14 @@ const freelanceMissingAttributes = (user) => {
   let missingAttr = [];
   let i=0;
   [...FREELANCE_REQUIRED_ATTRIBUTES, ...FREELANCE_MANDATORY_ATTRIBUTES].forEach(attr => {
-    if (!user[attr]) missingAttr = [...missingAttr, attr]
+    if (!user[attr]) missingAttr = [...missingAttr, FREELANCE_OUTPUT_ATTRIBUTES[attr]]
   })
   if (
     !user['gold_soft_skills'] && !user['gold_soft_skills'].length === CF_MAX_GOLD_SOFT_SKILLS &&
     !user['silver_soft_skills'] && !user['silver_soft_skills'].length === CF_MAX_SILVER_SOFT_SKILLS &&
     !user['bronze_soft_skills'] && !user['bronze_soft_skills'].length === CF_MAX_BRONZE_SOFT_SKILLS
-  ) missingAttr= [...missingAttr, 'Soft_Skills']
+  ) missingAttr= [...missingAttr, FREELANCE_OUTPUT_ATTRIBUTES['soft_skills']]
   return missingAttr
 }
 
-module.exports = { freelanceMissingAttributes, freelanceProfileCompletion, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES }
+module.exports = { freelanceMissingAttributes, freelanceProfileCompletion }
