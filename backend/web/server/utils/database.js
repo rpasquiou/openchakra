@@ -212,6 +212,10 @@ const getAttributeCaracteristics = (modelName, att) => {
       throw new Error(`${modelName}.${att.path}:no declared enum`)
     }
     const enumObjectKeys=Object.keys(enumObject)
+    // Allow null in enums if attribute is not required
+    if (!att.options.required) {
+      enumObjectKeys.push(null)
+    }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
       throw new Error(`${modelName}.${att.path}:inconsistent enum:${JSON.stringify(enumValues)}/${JSON.stringify(enumObjectKeys)}`)
     }
