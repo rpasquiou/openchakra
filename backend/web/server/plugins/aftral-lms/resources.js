@@ -70,16 +70,16 @@ const getResourcesCount = async (userId, params, data) => {
   return lodash.sum(await Promise.all(block.children.map(child => getResourcesCount(userId, params, child))))
 }
 
-const canPlay = async ({ action, dataId, user }) => {
-  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_TO_COME
+const canPlay = async ({dataId, user }) => {
+  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_TO_COME
 }
 
-const canResume = async ({ action, dataId, user }) => {
-  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_CURRENT
+const canResume = async ({dataId, user }) => {
+  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_CURRENT
 }
 
-const canReplay = async ({ action, dataId, user }) => {
-  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_FINISHED
+const canReplay = async ({dataId, user }) => {
+  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_FINISHED
 }
 
 module.exports={
