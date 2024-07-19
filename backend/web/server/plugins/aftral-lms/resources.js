@@ -1,7 +1,7 @@
 const path = require('path')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
@@ -70,7 +70,19 @@ const getResourcesCount = async (userId, params, data) => {
   return lodash.sum(await Promise.all(block.children.map(child => getResourcesCount(userId, params, child))))
 }
 
+const canPlay = async ({ action, dataId, user }) => {
+  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_TO_COME
+}
+
+const canResume = async ({ action, dataId, user }) => {
+  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_CURRENT
+}
+
+const canReplay = async ({ action, dataId, user }) => {
+  return (await getProgress(user, dataId))?.status==BLOCK_STATUS_FINISHED
+}
+
 module.exports={
   getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount,
+  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
 }

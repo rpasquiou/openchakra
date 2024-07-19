@@ -7,7 +7,7 @@ const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK
 const NAMES_CACHE=new NodeCache()
 
 const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition', 
-'resource_type', 'homework_mode', 'homework_required', 'url', 'evaluation']
+'resource_type', 'homework_mode', 'url', 'evaluation']
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
 
@@ -65,8 +65,6 @@ const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 20})
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
-  const log=attName=='url' ? (...params) => console.log(data._id, ...params) : () => {}
-  log('getting attribute', attName)
   const key=`${data._id}/${attName}`
   if (ATTRIBUTES_CACHE.has(key)) {
     return ATTRIBUTES_CACHE.get(key)
@@ -74,23 +72,18 @@ const getAttribute = attName => async (userId, params, data) => {
   data=await mongoose.models.block.findById(data._id)
   if (!data) {
     ATTRIBUTES_CACHE.set(key, null)
-    log('null')
     return null
   }
   if (!lodash.isNil(data[attName])) {
     ATTRIBUTES_CACHE.set(key, data[attName])
-    log(data[attName])
     return data[attName]
   }
   if (data.origin) {
-    log('searching on origin', data.origin)
     const res=await getAttribute(attName)(userId, params, data.origin)
     ATTRIBUTES_CACHE.set(key, res)
-    log(res)
     return res
   }
   ATTRIBUTES_CACHE.set(key, null)
-  log('null')
   return null
 }
 

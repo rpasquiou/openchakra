@@ -1,9 +1,9 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -28,6 +28,8 @@ const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
 const { parseAsync } = require('@babel/core')
+const Progress = require('../../models/Progress')
+const { BadRequestError } = require('../../utils/errors')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -348,19 +350,59 @@ const cloneAndLock = blockId => {
     })
   }
 
-const lockSession = async blockId => {
-  console.log('locking block', blockId)
+const setSessionInitialStatus = async (blockId, trainees) => {
   const block=await Block.findById(blockId).populate('children')
-  if (block._locked) {
-    console.warn(`Session`, block._id, `is already locked`)
+  console.log(block.type, block.children.map(c => c._id))
+  if (block.type=='resource') {
+    console.log('set all children', trainees)
+    await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
+      {block: block._id, user: t._id},
+      {block: block._id, user: t._id, achievement_staus: BLOCK_STATUS_TO_COME},
+      {upsert: true}
+    )
+    ))
     return
   }
-  console.log('locking', block.type, block._id)
+  if (block.type=='session') {
+    trainees=block.trainees
+  }
+  return setSessionInitialStatus(block.children[0], trainees)
+}
+
+const forceLinkedAttributes = async blockId => {
+  const [loaded]=await loadFromDb({model: 'block', id: blockId, fields: LINKED_ATTRIBUTES})
+  const linkedAttributes=lodash.pickBy(loaded, (v,k) => LINKED_ATTRIBUTES.includes(k))
+  return Block.findByIdAndUpdate(blockId, linkedAttributes)
+}
+
+const lockSession = async blockId => {
+  const block=await Block.findById(blockId).populate('children')
+  if (block.type=='session') {
+    if (lodash.isEmpty(block.trainers)) {
+      throw new BadRequestError(`Démarrage session impossible: pas de formateur`)
+    }
+    if (lodash.isEmpty(block.trainees)) {
+      throw new BadRequestError(`Démarrage session impossible: pas d'apprenant`)
+    }
+    if (lodash.isEmpty(block.children)) {
+      throw new BadRequestError(`Démarrage session impossible: pas de programme`)
+    }
+  }
+  if (block._locked) {
+    console.warn(`Session block`, block._id, `is already locked but next actions will be executed`)
+  }
+  if (block.type=='session') {
+    setSessionInitialStatus(block._id)
+  }
+  // Force attributes
+  if (!['session', 'resource'].includes(block.type)) {
+    await forceLinkedAttributes(blockId)
+  }
   block._locked=true
   await block.save()
   await Promise.all(block.children.map(b => lockSession(b._id)))
 }
 
 module.exports={
-  lockSession,
+  lockSession, setSessionInitialStatus
 }

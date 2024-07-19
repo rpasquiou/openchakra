@@ -7,6 +7,7 @@ const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { isDevelopment } = require('../../../config/config')
+const { canPlay, canResume, canReplay } = require('./resources')
 
 
 const ACCEPTS={
@@ -55,10 +56,6 @@ const addChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {last_updater: user})
   const parentsOrigin=await Block.find({origin: parent._id})
   await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
-  // If a child was added to sesison : lock it
-  if (pType=='session') {
-    await lockSession(parent._id)
-  }
 }
 addAction('addChild', addChildAction)
 
@@ -125,24 +122,9 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
-  if (['play', 'resume', 'replay'].includes(action)) {
-    const block=await Block.findOne({_id: dataId, type: 'resource'})
-    if (!block) { 
-      throw new NotFoundError(`Ressource introuvable`)
-    }
-    console.warn('implement action play/resume/replay')
-    const duration=null
-    const parent=null
-    console.warn('implement action play/resume/replay')
-    if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
-      // throw new NotFoundError(`Cette ressource ne peut être jouée`)
-    }
-    if (action=='resume' && duration?.status!=BLOCK_STATUS_CURRENT) {
-      // throw new NotFoundError(`Cette ressource ne peut être jouée`)
-    }
-    if (action=='replay' && duration?.status!=BLOCK_STATUS_FINISHED && !parent?.closed) {
-      // throw new NotFoundError(`Cette ressource ne peut être rejouée`)
-    }
+  const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
+  if (actionFn) {
+    return actionFn({action, dataId, user})
   }
   return true
 }
