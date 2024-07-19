@@ -280,6 +280,13 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       })
   }
 
+  if (model=='session') {
+    if (user.role==ROLE_APPRENANT) {
+      console.log('params', params)
+      params['filter._locked']=true
+      params['filter.trainees']=user._id
+    }
+  }
   return Promise.resolve({model, fields, id, user, params})
 }
 
@@ -357,7 +364,7 @@ const setSessionInitialStatus = async (blockId, trainees) => {
     console.log('set all children', trainees)
     await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
       {block: block._id, user: t._id},
-      {block: block._id, user: t._id, achievement_staus: BLOCK_STATUS_TO_COME},
+      {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
       {upsert: true}
     )
     ))
