@@ -72,7 +72,7 @@ const BlockSchema = new Schema({
   // TODO Compute actual status
   achievement_status: {
     type: String,
-    enum: Object.keys(BLOCK_STATUS),
+    enum: [null, ...Object.keys(BLOCK_STATUS)],
     set: v => v || undefined,
     default: null,
     required: false,
