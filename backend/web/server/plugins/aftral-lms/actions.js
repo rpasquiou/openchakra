@@ -6,8 +6,8 @@ const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHE
 const { cloneTree, onBlockFinished } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
-const { isDevelopment } = require('../../../config/config')
 const { canPlay, canResume, canReplay } = require('./resources')
+const { isProduction } = require('../../../config/config')
 
 
 const ACCEPTS={
@@ -105,7 +105,7 @@ addAction('resume', resourceAction('resume'))
 addAction('replay', resourceAction('replay'))
 
 // TODO dev only
-if (isDevelopment()) {
+if (!isProduction()) {
   const forceFinishResource = async ({value}, user) => {
     await Progress.findOneAndUpdate(
       {user, block: value._id},
