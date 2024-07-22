@@ -551,7 +551,7 @@ const getNextLevelFields = fields => {
   return result
 }
 
-// TODO this causes bug bugChildrenTrainersTraineesCHioldren. Why ?
+// TODO this causes bug bugChildrenTrainersTraineesChildren. Why ?
 const secondLevelFieldsCache=new NodeCache()
 
 function getRequiredFields({model, fields}) {
