@@ -33,4 +33,7 @@ const MessageSchema = new Schema({
     required: false,
   }
 }, schemaOptions)
+
+MessageSchema.virtual('display_date', DUMMY_REF).get(function() {return this.creation_date})
+
 module.exports = MessageSchema
