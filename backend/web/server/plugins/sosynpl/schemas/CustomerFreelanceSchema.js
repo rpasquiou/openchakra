@@ -344,6 +344,22 @@ const CustomerFreelanceSchema = new Schema({
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
+  identity_proof_1: {
+    type: String,
+    required: false,
+  },
+  identity_proof_2: {
+    type: String,
+    required: false,
+  },
+  vigilance_certificate: {
+    type: String,
+    required: false,
+  },
+  kbis: {
+    type: String,
+    required: false,
+  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
