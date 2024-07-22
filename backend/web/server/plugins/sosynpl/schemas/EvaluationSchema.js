@@ -6,6 +6,12 @@ const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
+const ATTRIBUTE_COND = {
+  min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
+  max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
+  default: null,
+}
+
 const EvaluationSchema = new Schema({
   creation_date: {
     type: Date,
@@ -37,58 +43,42 @@ const EvaluationSchema = new Schema({
   freelance_note_quality: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   freelance_note_deadline: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   freelance_note_team: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   freelance_note_reporting: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   customer_note_interest: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   customer_note_organisation: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   customer_note_integration: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
   customer_note_communication: {
     type: Number,
     required: false,
-    min: [EVALUATION_MIN, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    max: [EVALUATION_MAX, `la valeur minimum doit être comprise entre ${EVALUATION_MIN} et ${EVALUATION_MAX}`],
-    default: null,
+    ...ATTRIBUTE_COND,
   },
 }, { ...schemaOptions })
 
