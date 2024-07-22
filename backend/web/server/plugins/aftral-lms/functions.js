@@ -227,13 +227,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   // If a student loads a resource, mark as CURRENT
-  if (model=='resource') {
+  if (model=='resource' && !!id) {
     const res=await Block.findById(id)
     // If in session && user is student, set to current
     if (res._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block: id, user},
-        {block: id, user, achievement_status: BLOCK_STATUS_CURRENT},
+        {block: id, user, achievement_status: BLOCK_STATUS_CURRENT, consult: true, consult_partial: true, join_partial: true, download: true},
         {upsert: true},
       )
       await onBlockCurrent(user, id)
