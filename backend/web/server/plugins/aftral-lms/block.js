@@ -3,7 +3,6 @@ const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
-const Block = require("../../models/Block");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -112,8 +111,22 @@ const onBlockFinished = async (user, blockId) => {
   }
 }
 
+// Set all parents to current
+const onBlockCurrent = async (user, blockId) => {
+  const parent=(await mongoose.models.block.findById(blockId, {parent:1})).parent
+  if (parent) {
+    await Progress.findOneAndUpdate(
+      {block: parent._id, user},
+      {block: parent._id, user, achievement_status: BLOCK_STATUS_CURRENT},
+      {upsert: true}
+    )    
+    return onBlockCurrent(user, parent._id)
+  }
+}
+
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
-  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished
+  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent,
 }
 

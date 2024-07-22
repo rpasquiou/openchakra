@@ -3,7 +3,7 @@ const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -17,7 +17,7 @@ require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockCurrent} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -209,7 +209,7 @@ const getFeeds = async (user, id) => {
   return Promise.all(ids.map(sessId => getFeed(sessId)))
 }
 
-const preprocessGet = ({model, fields, id, user, params}) => {
+const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
@@ -226,6 +226,19 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       }
   }
 
+  // If a student loads a resource, mark as CURRENT
+  if (model=='resource') {
+    const res=await Block.findById(id)
+    // If in session && user is student, set to current
+    if (res._locked && user.role==ROLE_APPRENANT) {
+      await Progress.findOneAndUpdate(
+        {block: id, user},
+        {block: id, user, achievement_status: BLOCK_STATUS_CURRENT},
+        {upsert: true},
+      )
+      await onBlockCurrent(user, id)
+    }
+  }
   if (model == 'contact') {
     return getContacts(user, id)
       .then(res => {
