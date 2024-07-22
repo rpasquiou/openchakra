@@ -19,6 +19,10 @@ const getBlockResources= async blockId => {
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
 }
+
+const blockHasStatus = async ({user, block, status}) => {
+  return Progress.exists({user, block, achievement_status: status})
+}
 const getBlockSpentTime = async (userId, params, data) => {
   return (await getProgress({user: userId, block: data._id}))?.spent_time || 0
 }
@@ -34,8 +38,9 @@ const getUserHomeworks = async (userId, params, data) => {
 
 const getFinishedResourcesCount = async (userId, params, data) => {
   const resourceIds=await getBlockResources(data._id)
-  const finished=await Promise.all(resourceIds.map(id => Progress.exists({user: userId, block: id, achievement_status: BLOCK_STATUS_FINISHED})))
-  return finished.filter(v => !!v).length
+  const finished=await Promise.all(resourceIds.map(id => blockHasStatus({user: userId, block: id, status: BLOCK_STATUS_FINISHED})))
+  const res=finished.filter(v => !!v).length
+  return res
 }
 
 const getResourcesProgress = async (userId, params, data) => {
@@ -79,15 +84,15 @@ const getResourcesCount = async (userId, params, data) => {
 }
 
 const canPlay = async ({dataId, user }) => {
-  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_TO_COME
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_TO_COME})
 }
 
 const canResume = async ({dataId, user }) => {
-  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_CURRENT
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_CURRENT})
 }
 
 const canReplay = async ({dataId, user }) => {
-  return (await getProgress({user, block:dataId}))?.achievement_status==BLOCK_STATUS_FINISHED
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
 module.exports={

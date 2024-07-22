@@ -17,7 +17,7 @@ require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockCurrent} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -233,10 +233,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (res._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block: id, user},
-        {block: id, user, achievement_status: BLOCK_STATUS_CURRENT, consult: true, consult_partial: true, join_partial: true, download: true},
+        {block: id, user, consult: true, consult_partial: true, join_partial: true, download: true},
         {upsert: true},
       )
-      await onBlockCurrent(user, id)
+      await onBlockAction(user, id)
     }
   }
   if (model == 'contact') {

@@ -3,7 +3,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining } = require('../../../utils/text')
 const { importData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, RESOURCE_TYPE_SCORM } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, RESOURCE_TYPE_SCORM, DEFAULT_ACHIEVEMENT_RULE } = require('./consts')
 const { sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const { removeExtension } = require('../../utils/filesystem')
@@ -27,6 +27,7 @@ const RESOURCE_MAPPING= userId => ({
   },
   filepath: 'filepath',
   resource_type: 'resource_type',
+  achievement_rule: 'achievement_rule',
   creator: () => userId,
 })
 
@@ -59,7 +60,11 @@ const importResources = async (root_path) => {
   }
   let filepaths=[]
   const cb = async (directory,subdirectories, paths) => {
-    filepaths.push(...paths.map(p => [path.join(directory, p), ...splitCodeName(p), getResourceType(p)]))
+    filepaths.push(...paths.map(p => {
+      const resType=getResourceType(p)
+      const defaultRule=DEFAULT_ACHIEVEMENT_RULE[resType]
+      return [path.join(directory, p), ...splitCodeName(p), resType, defaultRule]
+    }))
   }
   console.log('filepaths', filepaths)
   const files=await file.walkSync(root_path, cb)
@@ -67,7 +72,8 @@ const importResources = async (root_path) => {
     filepath: t[0],
     code: t[1],
     name: removeExtension(t[2]),
-    resource_type: t[3]
+    resource_type: t[3],
+    achievement_rule: t[4],
   }))
   const userId=(await User.findOne({role: ROLE_CONCEPTEUR}))?._id
   console.log('importing', records.length, 'resources')

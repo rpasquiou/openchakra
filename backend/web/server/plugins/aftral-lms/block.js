@@ -2,7 +2,7 @@ const lodash = require("lodash");
 const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK } = require("./consts");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -113,7 +113,7 @@ const onBlockFinished = async (user, blockId) => {
 
 // Set all parents to current
 const onBlockCurrent = async (user, blockId) => {
-  const parent=(await mongoose.models.block.findById(blockId, {parent:1})).parent
+  const parent=(await mongoose.models.block.findById(blockId, {parent:1}))?.parent
   if (parent) {
     await Progress.findOneAndUpdate(
       {block: parent._id, user},
@@ -124,9 +124,29 @@ const onBlockCurrent = async (user, blockId) => {
   }
 }
 
+const onBlockAction = async (user, blockId) => {
+  const progress=await Progress.findOne({user, block: blockId})
+  const rule=await getAttribute('achievement_rule')(user._id, null, {_id: blockId})
+  const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
+  const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
+  await Progress.findOneAndUpdate(
+    {block: blockId, user},
+    {block: blockId, user, achievement_status: status},
+    {upsert: true}
+  )
+  if (finished) {
+    console.log(`Block ${blockId} finished`)
+    onBlockFinished(user, blockId)
+  }
+  else {
+    console.log(`Block ${blockId} becomes current`)
+    onBlockCurrent(user, blockId)
+  }
+}
+
 
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
-  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent,
+  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
 }
 

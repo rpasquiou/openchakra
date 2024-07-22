@@ -26,7 +26,32 @@ const ProgressSchema = new Schema({
   achievement_status: {
     type: String,
     enum: Object.keys(BLOCK_STATUS),
-  }
+    index: true,
+  },
+  consult: {
+    type: Boolean
+  },
+  success: {
+    type: Boolean,
+  },
+  finished: {
+    type: Boolean,
+  },
+  consult_partial: {
+    type: Boolean
+  },
+  consult_full: {
+    type: Boolean
+  },
+  join_partial: {
+    type: Boolean
+  },
+  join_full: {
+    type: Boolean
+  },
+  download: {
+    type: Boolean
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ProgressSchema
