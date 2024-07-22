@@ -50,7 +50,7 @@ ConversationSchema.virtual('latest_messages', {
 
 ConversationSchema.statics.getFromUsersApplication = async function(user1, user2, applicationId) {
   if (!user1 || !user2 || !applicationId) {
-    return null
+    throw new Error(`Expected all, got : \nuser1:${user1}\nuser2:${user2}\napplicationId:${applicationId}`)
   }
   let conversation=await this.findOne({$and: [{users: user1},{users: user2}], application: applicationId})
   if (!conversation) {

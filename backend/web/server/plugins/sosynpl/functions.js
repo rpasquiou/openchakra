@@ -562,7 +562,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
         .then(async(conv) => {
           if(!conv){
             const model = getModel(id, ['mission','application'])
-            let customer, freelance, partner, application
+            let customer, freelance, application
             if(model == 'mission') {
               const mission = await Mission.findById(id)
               ({customer, application, freelance} = mission)
@@ -572,7 +572,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
               customer = application.announce.user
               freelance = application.freelance
             }
-            partner = idEqual(user._id, customer._id) ? freelance : customer
+            const partner = idEqual(user._id, customer._id) ? freelance : customer
             if(!partner) {
               throw new Error(`${id} is not a valid user`)
             }
