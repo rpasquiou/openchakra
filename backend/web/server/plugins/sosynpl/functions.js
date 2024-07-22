@@ -494,7 +494,7 @@ declareComputedField({model:'statistic', field:'current_missions_count', instanc
 declareComputedField({model:'statistic', field:'coming_missions_count', instance: 'Number',getterFn: comingMissionsCount})
 declareComputedField({model:'statistic', field:'registrations_statistic', instance: 'Array', getterFn: registrationStatistic})
 //Mission
-declareVirtualField({model: 'mission', field: 'evaluation', instance: 'evaluation',
+declareVirtualField({model: 'mission', field: 'evaluation', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'evaluation' }

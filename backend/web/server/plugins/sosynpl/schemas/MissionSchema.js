@@ -1,3 +1,8 @@
+/* TODO:
+  - make evaluation single object and not multiple
+  - make studio accept objects (have evaluation.customer instead of starting from a flex with evaluation to access customer)
+*/
+
 const mongoose = require("mongoose")
 const moment = require("moment")
 const lodash = require("lodash")
@@ -113,7 +118,6 @@ MissionSchema.virtual('evaluation', {
   ref: 'evaluation',
   localField: '_id',
   foreignField: 'mission',
-  justOne: true,
 })
 
 module.exports = MissionSchema;
