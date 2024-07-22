@@ -8,11 +8,13 @@ const ProgressSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'block',
     required: [true, `Le bloc est obligatoire`],
+    index: true,
   },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, `L'apprenant est obligatoire`],
+    index: true,
   },
   // TIme spent on resource in seconds
   spent_time: {

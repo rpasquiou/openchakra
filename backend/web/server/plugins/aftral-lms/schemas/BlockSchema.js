@@ -26,7 +26,8 @@ const BlockSchema = new Schema({
   parent: {
     type: Schema.Types.ObjectId,
     ref: 'block',
-    required: [function(){ return !!this.origin}, `Le parent est obligatoire`]
+    required: [function(){ return !!this.origin}, `Le parent est obligatoire`],
+    index: true,
   },
   order: {
     type: Number,

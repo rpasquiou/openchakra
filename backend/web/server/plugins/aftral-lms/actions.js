@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { cloneTree } = require('./block')
+const { cloneTree, onBlockFinished } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { isDevelopment } = require('../../../config/config')
@@ -112,6 +112,7 @@ if (isDevelopment()) {
       {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
       {upsert: true, new: true}
     )
+    await onBlockFinished(user, value._id)
   }
 
   addAction('alle_finish_mission', forceFinishResource)

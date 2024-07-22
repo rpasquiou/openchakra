@@ -3,6 +3,7 @@ const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
+const Block = require("../../models/Block");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -87,8 +88,32 @@ const getAttribute = attName => async (userId, params, data) => {
   return null
 }
 
+const isFinished = async (user, blockId) => {
+  return Progress.exists({user, block: blockId, achievement_status: BLOCK_STATUS_FINISHED})
+}
+
+const onBlockFinished = async (user, blockId) => {
+  const block=await mongoose.models.block.findById(blockId)
+  if (!block.parent) {
+    return
+  }
+
+  const parentBlock = await mongoose.models.block.findById(block.parent).populate('children')
+  const allChildrenFinished = (await Promise.all(parentBlock.children.map(c => isFinished(user, c._id)))).every(v => !!v)
+  console.log('all childrenfinished', allChildrenFinished)
+
+  if (allChildrenFinished) {
+    await Progress.findOneAndUpdate(
+      {block: parentBlock._id, user},
+      {block: parentBlock._id, user, achievement_status: BLOCK_STATUS_FINISHED},
+      {upsert: true}
+    )
+    await onBlockFinished(user, parentBlock._id)
+  }
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
-  cloneTree, getAttribute, LINKED_ATTRIBUTES
+  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished
 }
 

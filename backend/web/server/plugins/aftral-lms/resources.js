@@ -1,11 +1,20 @@
 const path = require('path')
+const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
 const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
-const lodash=require('lodash')
+
+const getBlockResources= async blockId => {
+  const block=await Block.findById(blockId).populate('children')
+  if (block.type=='resource') {
+    return block._id
+  }
+  let subIds=await Promise.all(block.children.map(c => getBlockResources(c._id)))
+  return lodash.flattenDeep(subIds)
+}
 
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
@@ -23,14 +32,16 @@ const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
 }
 
-const getFinishedResources = async (userId, params, data) => {
-  // TODO implement
-  return 0
+const getFinishedResourcesCount = async (userId, params, data) => {
+  const resourceIds=await getBlockResources(data._id)
+  const finished=await Promise.all(resourceIds.map(id => Progress.exists({user: userId, block: id, achievement_status: BLOCK_STATUS_FINISHED})))
+  return finished.filter(v => !!v).length
 }
 
 const getResourcesProgress = async (userId, params, data) => {
-  // TODO implement
-  return 0
+  const finished=await getFinishedResourcesCount(userId, params, data)
+  const total=await getResourcesCount(userId, params, data)
+  return finished/total
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
@@ -63,11 +74,8 @@ const getResourceType = async url => {
 }
 
 const getResourcesCount = async (userId, params, data) => {
-  const block=await Block.findById(data._id).populate('children')
-  if (block.type=='resource') {
-    return 1
-  }
-  return lodash.sum(await Promise.all(block.children.map(child => getResourcesCount(userId, params, child))))
+  const subResourcesIds=await getBlockResources(data._id)
+  return subResourcesIds.length
 }
 
 const canPlay = async ({dataId, user }) => {
@@ -83,6 +91,6 @@ const canReplay = async ({dataId, user }) => {
 }
 
 module.exports={
-  getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
 }
