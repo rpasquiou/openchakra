@@ -358,21 +358,13 @@ const cloneAndLock = blockId => {
 
 const setSessionInitialStatus = async (blockId, trainees) => {
   const block=await Block.findById(blockId).populate('children')
-  console.log(block.type, block.children.map(c => c._id))
-  if (block.type=='resource') {
-    console.log('set all children', trainees)
-    await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
+  await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
       {block: block._id, user: t._id},
       {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
       {upsert: true}
     )
-    ))
-    return
-  }
-  if (block.type=='session') {
-    trainees=block.trainees
-  }
-  return setSessionInitialStatus(block.children[0], trainees)
+  ))
+  return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
 }
 
 const forceLinkedAttributes = async blockId => {
@@ -398,7 +390,7 @@ const lockSession = async blockId => {
     console.warn(`Session block`, block._id, `is already locked but next actions will be executed`)
   }
   if (block.type=='session') {
-    setSessionInitialStatus(block._id)
+    setSessionInitialStatus(block._id, block.trainees)
   }
   // Force attributes
   if (!['session', 'resource'].includes(block.type)) {
