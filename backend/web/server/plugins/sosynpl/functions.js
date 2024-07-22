@@ -444,6 +444,7 @@ declareVirtualField({
 })
 //Message
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+declareVirtualField({model: 'message', field: 'display_date', instance: 'String', requires: 'creation_date'})
 
 //CustomerFreelance
 const CUSTOMERFREELANCEMODELS = ['loggedUser', 'genericUser', 'customerFreelance', 'freelance']
