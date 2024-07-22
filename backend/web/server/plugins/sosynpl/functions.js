@@ -25,6 +25,8 @@ const Conversation=require('../../models/Conversation')
 const Message=require('../../models/Message');
 const { usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount, registrationStatistic } = require("./statistic");
 const Statistic = require("../../models/Statistic");
+const Mission = require("../../models/Mission");
+const Application = require("../../models/Application");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -558,8 +560,22 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (id) {
       return Conversation.findById(id)
         .then(async(conv) => {
+          let partner, application
           if(!conv){
-            const partner = await User.findById(id)
+            const model = getModel(id, ['mission','application'])
+            let customer, freelance
+            if(model == 'mission') {
+              const mission = await Mission.find({id})
+              customer = mission.customer
+              freelance = mission.freelance
+              application = mission.application
+            }
+            else {
+              application = await Application.find({id}).populate('announce')
+              customer = application.announce.user
+              freelance = application.freelance
+            }
+            idEqual(user._id, customer._id) ? partner = freelance : partner = customer
             if(!partner) {
               throw new Error(`${id} is not a valid user`)
             }
@@ -567,7 +583,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
               throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
             }
           }
-          const res=conv || Conversation.getFromUsers(user._id, id)
+          const res=conv || Conversation.getFromUsers(user._id, partner, application._id)
           return res
         })
         .then(conv => {
