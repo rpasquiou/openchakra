@@ -560,31 +560,28 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (id) {
       return Conversation.findById(id)
         .then(async(conv) => {
-          let partner, application
           if(!conv){
             const model = getModel(id, ['mission','application'])
-            let customer, freelance
+            let customer, freelance, partner, application
             if(model == 'mission') {
-              const mission = await Mission.find({id})
-              customer = mission.customer
-              freelance = mission.freelance
-              application = mission.application
+              const mission = await Mission.findById(id)
+              ({customer, application, freelance} = mission)
             }
             else {
-              application = await Application.find({id}).populate('announce')
+              application = await Application.findById(id).populate('announce')
               customer = application.announce.user
               freelance = application.freelance
             }
-            idEqual(user._id, customer._id) ? partner = freelance : partner = customer
+            partner = idEqual(user._id, customer._id) ? freelance : customer
             if(!partner) {
               throw new Error(`${id} is not a valid user`)
             }
             if (idEqual(partner._id, user._id)) {
               throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
             }
+            conv = Conversation.getFromUsersApplication(user._id, partner._id, application._id)
           }
-          const res=conv || Conversation.getFromUsers(user._id, partner, application._id)
-          return res
+          return conv
         })
         .then(conv => {
           return {model, fields, id: conv._id, params }
