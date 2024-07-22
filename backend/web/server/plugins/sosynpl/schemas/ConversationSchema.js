@@ -16,7 +16,12 @@ const ConversationSchema = new Schema({
   partner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user',
-  }
+  },
+  application: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'application',
+    required: [true, `L'application est obligatoire`]
+  },
 },
 schemaOptions)
 
