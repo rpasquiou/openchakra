@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { cloneTree, onBlockFinished } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -104,6 +104,10 @@ addAction('play', resourceAction('play'))
 addAction('resume', resourceAction('resume'))
 addAction('replay', resourceAction('replay'))
 
+addAction('next', async ({id}, user) => getNextResource(id, user))
+
+addAction('previous', async ({id}, user) => getPreviousResource(id, user))
+
 // TODO dev only
 if (!isProduction()) {
   const forceFinishResource = async ({value}, user) => {
@@ -126,6 +130,12 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
   if (actionFn) {
     return actionFn({action, dataId, user})
+  }
+  if (action=='next') {
+    await getNextResource(dataId, user)
+  }
+  if (action=='previous') {
+    await getPreviousResource(dataId, user)
   }
   return true
 }

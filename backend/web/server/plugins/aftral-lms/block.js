@@ -3,6 +3,8 @@ const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK } = require("./consts");
+const { getBlockResources } = require("./resources");
+const { idEqual } = require("../../utils/database");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -144,9 +146,42 @@ const onBlockAction = async (user, blockId) => {
   }
 }
 
+// Return the session for this block
+const getBlockSession = async blockId => {
+  const block=await mongoose.models.block.findById(blockId, {type:1, parent:1})
+  if (block.type=='session') {
+    return block._id
+  }
+  if (!block.parent) {
+    throw new Error(`${blockId}: no session found and no parent`)
+  }
+  return getBlockSession(block.parent)
+}
+
+const getNextResource= async (blockId, user) => {
+  const session=await getBlockSession(blockId)
+  const resources=await getBlockResources(session)
+  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
+  if (!brothers[0]) {
+    throw new Error('Pas de ressource suivante')
+  }
+  return {_id: brothers[0]}
+}
+
+const getPreviousResource= async (blockId, user) => {
+  const session=await getBlockSession(blockId)
+  let resources=await getBlockResources(session)
+  resources.reverse()
+  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
+  if (!brothers[0]) {
+    throw new Error('Pas de ressource suivante')
+  }
+  return {_id: brothers[0]}
+}
 
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
+  getNextResource, getPreviousResource,
 }
 

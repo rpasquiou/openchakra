@@ -73,14 +73,6 @@ let ACTIONS = {
     return removeData(id)
   },
 
-  next: ({id}, user, referrer) => {
-    return getNext(id, user, referrer)
-  },
-
-  previous: ({id}) => {
-    return getPrevious(id)
-  },
-
   session: ({id}) => {
     return getSession(id)
   },

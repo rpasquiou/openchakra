@@ -1,3 +1,4 @@
+const mongoose = require('mongoose')
 const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
@@ -5,10 +6,9 @@ const { idEqual } = require("../../utils/database")
 const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
-const Block = require('../../models/Block')
 
 const getBlockResources= async blockId => {
-  const block=await Block.findById(blockId).populate('children')
+  const block=await mongoose.models.block.findById(blockId).populate('children')
   if (block.type=='resource') {
     return block._id
   }
@@ -98,4 +98,5 @@ const canReplay = async ({dataId, user }) => {
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
+  getBlockResources,
 }
