@@ -20,7 +20,6 @@ const ResourceSchema = new Schema({
   },
   mine: {
     type: Boolean,
-    default: null,
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
