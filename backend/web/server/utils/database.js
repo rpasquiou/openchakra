@@ -735,6 +735,14 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
   if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }
+  const mongoModel=mongoose.models[model]
+  if (!mongoModel) {
+    console.error(`Can't find model for`, model)
+    process.exit(0)
+  }
+  if (mongoModel.schema.paths[field].defaultValue === undefined){
+     throw new Error(`Virtual ${model}.${field} needs a default value`)
+  }
   if (getterFn) {
     lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn)
   }
