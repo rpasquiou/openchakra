@@ -1,43 +1,72 @@
+const mongoose = require('mongoose')
 const path = require('path')
-const Block = require("../../models/Block")
-const Duration = require("../../models/Duration")
+const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { getBlockName, updateBlockStatus } = require("./block")
-const { RESOURCE_TYPE_EXT } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
+const Progress = require('../../models/Progress')
+const { formatDuration } = require('../../../utils/text')
+
+const getBlockResources= async blockId => {
+  const block=await mongoose.models.block.findById(blockId).populate('children')
+  if (block.type=='resource') {
+    return block._id
+  }
+  let subIds=await Promise.all(block.children.map(c => getBlockResources(c._id)))
+  return lodash.flattenDeep(subIds)
+}
+
+const getProgress = async ({user, block}) => {
+  return Progress.findOne({user, block})
+}
+
+const blockHasStatus = async ({user, block, status}) => {
+  return Progress.exists({user, block, achievement_status: status})
+}
+const getBlockSpentTime = async (userId, params, data) => {
+  return (await getProgress({user: userId, block: data._id}))?.spent_time || 0
+}
+
+const getBlockSpentTimeStr = async (userId, params, data) => {
+  const spentTime= await getBlockSpentTime(userId, params, data)
+  return formatDuration(spentTime || 0)
+}
 
 const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
 }
 
-const getFinishedResources = (userId, params, data) => {
-  return Duration.findOne({ block: data._id, user: userId }, { finished_resources_count: 1 })
-    .then(duration => duration?.finished_resources_count || 0)
+const getFinishedResourcesCount = async (userId, params, data) => {
+  const resourceIds=await getBlockResources(data._id)
+  const finished=await Promise.all(resourceIds.map(id => blockHasStatus({user: userId, block: id, status: BLOCK_STATUS_FINISHED})))
+  const res=finished.filter(v => !!v).length
+  return res
 }
 
 const getResourcesProgress = async (userId, params, data) => {
-  return Duration.findOne({ block: data._id, user: userId }, { progress: 1 })
-    .then(duration => duration?.progress || 0)
+  const finished=await getFinishedResourcesCount(userId, params, data)
+  const total=await getResourcesCount(userId, params, data)
+  return finished/total
 }
 
-const getResourceAnnotation = (userId, params, data) => {
-  return Duration.findOne({ user: userId, block: data._id })
-    .then(duration => duration?.annotation)
+const getResourceAnnotation = async (userId, params, data) => {
+  return (await getProgress({user: userId, block: data._id}))?.annotation
 }
 
-const setResourceAnnotation = ({ id, attribute, value, user }) => {
-  return Duration.updateOne({ user: user, block: id }, { annotation: value })
+const setResourceAnnotation = async ({ id, attribute, value, user }) => {
+  return Progress.findOneAndUpdate(
+    {user: user, block: id},
+    {user: user, block: id, annotation: value},
+    {upsert: true, new: true})
 }
 
-const isResourceMine = (userId, params, data) => {
-  return Promise.resolve(idEqual(userId, data.creator._id))
+const isResourceMine = async (userId, params, data) => {
+  return idEqual(userId, data.creator?._id)
 }
 
 const onSpentTimeChanged = async ({ blockId, user }) => {
-  const block = await Block.findById(blockId, { session: 1 })
-  const msg = `Update session time/status for ${await getBlockName(blockId)}`
-  const res = await updateBlockStatus({ blockId: block.session[0]._id, userId: user._id })
-  return res
+  // TODO implement
+  throw new Error('not implemented')
 }
 
 const getResourceType = async url => {
@@ -49,7 +78,25 @@ const getResourceType = async url => {
   return res[0]
 }
 
+const getResourcesCount = async (userId, params, data) => {
+  const subResourcesIds=await getBlockResources(data._id)
+  return subResourcesIds.length
+}
+
+const canPlay = async ({dataId, user }) => {
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_TO_COME})
+}
+
+const canResume = async ({dataId, user }) => {
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_CURRENT})
+}
+
+const canReplay = async ({dataId, user }) => {
+  return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
+}
+
 module.exports={
-  getFinishedResources, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType,
+  getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
+  getBlockResources,
 }

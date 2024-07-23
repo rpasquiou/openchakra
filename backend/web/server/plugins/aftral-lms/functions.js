@@ -1,11 +1,9 @@
 const Block = require('../../models/Block')
 const lodash=require('lodash')
 const {
-  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData,
+  declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE } = require('./consts')
-const Duration = require('../../models/Duration')
-const { formatDuration } = require('../../../utils/text')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -18,11 +16,9 @@ require('../../models/Sequence')
 require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES } = require('./block')
-const { getFinishedResources } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction} = require('./block')
 const { getResourcesProgress } = require('./resources')
-const { updateBlockStatus } = require('./block')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
@@ -31,6 +27,8 @@ const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
 const { parseAsync } = require('@babel/core')
+const Progress = require('../../models/Progress')
+const { BadRequestError } = require('../../utils/errors')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -43,24 +41,17 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'children_count', instance: 'Number'})
   declareFieldDependencies({model, field: 'resource_type', requires: 'origin.resource_type'})
   declareEnumField({model, field: 'resource_type', enumValues: RESOURCE_TYPE})
-  declareVirtualField({model, field: 'evaluation', instance: 'Boolean'})
   declareVirtualField({model, field: 'children', instance: 'Array',
     multiple: true,
     caster: {
       instance: 'ObjectID',
       options: {ref: 'block'}},
   })
-  declareComputedField({model, field: 'spent_time', getterFn: (userId, params, data) => {
-    return Duration.findOne({user: userId, block: data._id}, {duration:1})
-      .then(result => result?.duration || 0)
-  }})
-  declareComputedField({model, field: 'spent_time_str', getterFn: (userId, params, data) => {
-    return Duration.findOne({user: userId, block: data._id}, {duration:1})
-      .then(result => formatDuration(result?.duration || 0))
-  }})
+  declareComputedField({model, field: 'spent_time', getterFn: getBlockSpentTime})
+  declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
   declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
-  declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResources})
+  declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
   declareVirtualField({model, field: 'is_template', instance: 'Boolean'})
@@ -74,14 +65,13 @@ BLOCK_MODELS.forEach(model => {
   )
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
+  declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
-
-declareEnumField({model:'duration', field: 'status', enumValues: BLOCK_STATUS})
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
@@ -103,6 +93,10 @@ declareFieldDependencies({model: 'search', field: 'blocks', requires: 'pattern'}
 declareComputedField({model: 'search', field: 'blocks', getterFn: searchBlocks})
 declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // search end
+
+// Progress start
+declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
+// Progress end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -215,13 +209,13 @@ const getFeeds = async (user, id) => {
   return Promise.all(ids.map(sessId => getFeed(sessId)))
 }
 
-const preprocessGet = ({model, fields, id, user, params}) => {
+const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
   }
   // Add resource.creator.role to filter after
-  if (['program', 'module', 'sequence', 'resource', 'block'].includes(model)) {
+  if (BLOCK_MODELS.includes(model)) {
     if (model=='resource') {
       fields=[...fields, 'creator']
     }
@@ -232,6 +226,19 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       }
   }
 
+  // If a student loads a resource, mark as CURRENT
+  if (model=='resource' && !!id) {
+    const res=await Block.findById(id)
+    // If in session && user is student, set to current
+    if (res._locked && user.role==ROLE_APPRENANT) {
+      await Progress.findOneAndUpdate(
+        {block: id, user},
+        {block: id, user, consult: true, consult_partial: true, join_partial: true, download: true},
+        {upsert: true},
+      )
+      await onBlockAction(user, id)
+    }
+  }
   if (model == 'contact') {
     return getContacts(user, id)
       .then(res => {
@@ -285,6 +292,13 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       })
   }
 
+  if (model=='session') {
+    if (user.role==ROLE_APPRENANT) {
+      console.log('params', params)
+      params['filter._locked']=true
+      params['filter.trainees']=user._id
+    }
+  }
   return Promise.resolve({model, fields, id, user, params})
 }
 
@@ -330,7 +344,7 @@ setPreDeleteData(preDeleteData)
 
 const cloneNodeData = node => {
   return lodash.omit(node.toObject(), 
-    ['status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
+    [...LINKED_ATTRIBUTES, 'status', 'achievement_status', 'children', '_id', 'id', 'spent_time', 'creation_date', 'update_date',
     'duration_str'
   ])
 }
@@ -355,19 +369,51 @@ const cloneAndLock = blockId => {
     })
   }
 
-const lockSession = async blockId => {
-  console.log('locking block', blockId)
+const setSessionInitialStatus = async (blockId, trainees) => {
   const block=await Block.findById(blockId).populate('children')
-  if (block._locked) {
-    console.warn(`Session`, block._id, `is already locked`)
-    return
+  await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
+      {block: block._id, user: t._id},
+      {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
+      {upsert: true}
+    )
+  ))
+  return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
+}
+
+const forceLinkedAttributes = async blockId => {
+  const [loaded]=await loadFromDb({model: 'block', id: blockId, fields: LINKED_ATTRIBUTES})
+  const linkedAttributes=lodash.pickBy(loaded, (v,k) => LINKED_ATTRIBUTES.includes(k))
+  return Block.findByIdAndUpdate(blockId, linkedAttributes)
+}
+
+const lockSession = async blockId => {
+  const block=await Block.findById(blockId).populate('children')
+  if (block.type=='session') {
+    if (lodash.isEmpty(block.trainers)) {
+      throw new BadRequestError(`Démarrage session impossible: pas de formateur`)
+    }
+    if (lodash.isEmpty(block.trainees)) {
+      throw new BadRequestError(`Démarrage session impossible: pas d'apprenant`)
+    }
+    if (lodash.isEmpty(block.children)) {
+      throw new BadRequestError(`Démarrage session impossible: pas de programme`)
+    }
   }
-  console.log('locking', block.type, block._id)
+  if (block._locked) {
+    console.warn(`Session block`, block._id, `is already locked but next actions will be executed`)
+  }
+  if (block.type=='session') {
+    setSessionInitialStatus(block._id, block.trainees)
+  }
+  // Force attributes
+  if (!['session', 'resource'].includes(block.type)) {
+    await forceLinkedAttributes(blockId)
+  }
   block._locked=true
   await block.save()
   await Promise.all(block.children.map(b => lockSession(b._id)))
 }
 
 module.exports={
-  lockSession,
+  lockSession, setSessionInitialStatus
 }

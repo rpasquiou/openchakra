@@ -1,13 +1,15 @@
 const lodash = require("lodash");
 const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
-const Duration = require("../../models/Duration");
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require("./consts");
+const Progress = require("../../models/Progress")
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK } = require("./consts");
+const { getBlockResources } = require("./resources");
+const { idEqual } = require("../../utils/database");
 
 const NAMES_CACHE=new NodeCache()
 
 const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition', 
-'resource_type', 'homework_mode', 'homework_required']
+'resource_type', 'homework_mode', 'url', 'evaluation', 'achievement_rule']
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
 
@@ -28,9 +30,8 @@ const getSessionBlocks = async session_id => {
 }
 
 const getBlockStatus = async (userId, params, data) => {
-  return Duration.findOne({ block: data._id, user: userId }, { status: 1 })
-    .then(duration => duration?.status || null);
-};
+  return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
+}
 
 const getBlockName = async (blockId) => {
   let result = NAMES_CACHE.get(blockId.toString())
@@ -42,45 +43,6 @@ const getBlockName = async (blockId) => {
   return result
 }
 
-/** Update block status is the main function
- * It computes, for each block level:
- * - the FINISHED/CURRENT/TO_COME status
- * - the finished resources count
- * - the progress
- * Each block returns to its parent an object:
- * - duration : the time spent
- * - finished_resources_count: the number of finished resources
- */
-const updateBlockStatus = async ({ blockId, userId }) => {
-  const name = await getBlockName(blockId)
-  const block = await mongoose.models.block.findById(blockId)
-  let durationDoc = await Duration.findOne({ user: userId, block: blockId })
-  const hasToCompute = !!durationDoc
-  if (!durationDoc) {
-    const parent = await mongoose.models.block.findOne({ actual_children: blockId })
-    const parentClosed = parent ? parent.closed : false
-    durationDoc = await Duration.create({ user: userId, block: blockId, duration: 0, status: parentClosed ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME })
-  }
-  if (hasToCompute && block.type == 'resource') {
-    await durationDoc.save().catch(console.error)
-    return durationDoc
-  }
-  const allDurations = await Promise.all(block.actual_children.map(child => updateBlockStatus({ blockId: child._id, userId })))
-  if (hasToCompute) {
-    durationDoc.duration = lodash(allDurations).sumBy('duration')
-    durationDoc.finished_resources_count = lodash(allDurations).sumBy('finished_resources_count')
-    durationDoc.progress = durationDoc.finished_resources_count / block.resources_count
-    if (allDurations.every(d => d.status == BLOCK_STATUS_FINISHED)) {
-      durationDoc.status = BLOCK_STATUS_FINISHED
-    }
-    else if (allDurations.some(d => [BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(d.status))) {
-      durationDoc.status = BLOCK_STATUS_CURRENT
-    }
-    await durationDoc.save()
-      .catch(err => console.error(name, 'finished', durationDoc.finished_resources_count, 'total', block.resources_count, 'progress NaN'))
-  }
-  return durationDoc
-}
 const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
@@ -127,8 +89,99 @@ const getAttribute = attName => async (userId, params, data) => {
   return null
 }
 
+const isFinished = async (user, blockId) => {
+  return Progress.exists({user, block: blockId, achievement_status: BLOCK_STATUS_FINISHED})
+}
+
+const onBlockFinished = async (user, blockId) => {
+  const block=await mongoose.models.block.findById(blockId)
+  if (!block.parent) {
+    return
+  }
+
+  const parentBlock = await mongoose.models.block.findById(block.parent).populate('children')
+  const allChildrenFinished = (await Promise.all(parentBlock.children.map(c => isFinished(user, c._id)))).every(v => !!v)
+  console.log('all childrenfinished', allChildrenFinished)
+
+  if (allChildrenFinished) {
+    await Progress.findOneAndUpdate(
+      {block: parentBlock._id, user},
+      {block: parentBlock._id, user, achievement_status: BLOCK_STATUS_FINISHED},
+      {upsert: true}
+    )
+    await onBlockFinished(user, parentBlock._id)
+  }
+}
+
+// Set all parents to current
+const onBlockCurrent = async (user, blockId) => {
+  const parent=(await mongoose.models.block.findById(blockId, {parent:1}))?.parent
+  if (parent) {
+    await Progress.findOneAndUpdate(
+      {block: parent._id, user},
+      {block: parent._id, user, achievement_status: BLOCK_STATUS_CURRENT},
+      {upsert: true}
+    )    
+    return onBlockCurrent(user, parent._id)
+  }
+}
+
+const onBlockAction = async (user, blockId) => {
+  const progress=await Progress.findOne({user, block: blockId})
+  const rule=await getAttribute('achievement_rule')(user._id, null, {_id: blockId})
+  const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
+  const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
+  await Progress.findOneAndUpdate(
+    {block: blockId, user},
+    {block: blockId, user, achievement_status: status},
+    {upsert: true}
+  )
+  if (finished) {
+    console.log(`Block ${blockId} finished`)
+    onBlockFinished(user, blockId)
+  }
+  else {
+    console.log(`Block ${blockId} becomes current`)
+    onBlockCurrent(user, blockId)
+  }
+}
+
+// Return the session for this block
+const getBlockSession = async blockId => {
+  const block=await mongoose.models.block.findById(blockId, {type:1, parent:1})
+  if (block.type=='session') {
+    return block._id
+  }
+  if (!block.parent) {
+    throw new Error(`${blockId}: no session found and no parent`)
+  }
+  return getBlockSession(block.parent)
+}
+
+const getNextResource= async (blockId, user) => {
+  const session=await getBlockSession(blockId)
+  const resources=await getBlockResources(session)
+  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
+  if (!brothers[0]) {
+    throw new Error('Pas de ressource suivante')
+  }
+  return {_id: brothers[0]}
+}
+
+const getPreviousResource= async (blockId, user) => {
+  const session=await getBlockSession(blockId)
+  let resources=await getBlockResources(session)
+  resources.reverse()
+  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
+  if (!brothers[0]) {
+    throw new Error('Pas de ressource suivante')
+  }
+  return {_id: brothers[0]}
+}
+
 module.exports={
-  getBlockStatus, getBlockName, updateBlockStatus, getSessionBlocks, setParentSession, 
-  cloneTree, getAttribute, LINKED_ATTRIBUTES,
+  getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
+  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
+  getNextResource, getPreviousResource,
 }
 

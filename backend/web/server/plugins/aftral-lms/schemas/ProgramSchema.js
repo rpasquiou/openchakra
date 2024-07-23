@@ -26,8 +26,12 @@ const ProgramSchema = new Schema({
 
 
 ProgramSchema.pre('validate', function(next) {
+  // For non-template: exit
   if (!!this.origin) {
     return next()
+  }
+  if (lodash.isEmpty(this.codes)) {
+    return next(new Error(`Au moins un code produit attendu`))
   }
   return mongoose.models['program'].findOne(
     {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}

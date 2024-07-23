@@ -26,7 +26,8 @@ const BlockSchema = new Schema({
   parent: {
     type: Schema.Types.ObjectId,
     ref: 'block',
-    required: [function(){ return !!this.origin}, `Le parent est obligatoire`]
+    required: [function(){ return !!this.origin}, `Le parent est obligatoire`],
+    index: true,
   },
   order: {
     type: Number,
@@ -72,24 +73,19 @@ const BlockSchema = new Schema({
   // TODO Compute actual status
   achievement_status: {
     type: String,
-    enum: Object.keys(BLOCK_STATUS),
+    enum: [null, ...Object.keys(BLOCK_STATUS)],
     set: v => v || undefined,
+    default: null,
     required: false,
   },
   url: {
     type: String,
     default: null,
-    set: function(v) {
-      return !this.origin ? v : undefined
-    },
     required: [function() {return this?.type=='resource' && !this?.origin}, `L'url est obligatoire`],
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    set: function(v) {
-      return !this.origin ? v : undefined
-    },
     required: [function(){ return this?.type=='resource' && !this?.origin}, `Le type de ressource est obligatoire`],
   },
   spent_time: {
@@ -126,12 +122,6 @@ const BlockSchema = new Schema({
   },
   access_condition: {
     type: Boolean,
-    set: function(v) {
-      if (!this.origin) {
-        throw new Error(`La condition d'accès n'est possible que si ce bloc a un parent`)
-      }
-      return v
-    }
   },
   // Annotation set by trainee
   success_message: {
@@ -165,11 +155,6 @@ const BlockSchema = new Schema({
     type: Boolean,
     required: false,
   },
-  // Un devoir doit être rendu
-  homework_required: {
-    type: Boolean,
-    required: false,
-  },
   // computed
   homeworks: [{
     type: Schema.Types.ObjectId,
@@ -186,6 +171,12 @@ const BlockSchema = new Schema({
     set: function(v) {
       return this.type=='resource' ? v : undefined
     }
+  },
+  // This resource will be included in notes report
+  evaluation: {
+    type: Boolean,
+    default: null,
+    required:false,
   },
   used_in: [{
     type: Schema.Types.ObjectId,
@@ -209,13 +200,6 @@ BlockSchema.virtual('children_count', {
   localField: '_id',
   foreignField: 'parent',
   count: true,
-})
-
-BlockSchema.virtual('evaluation', DUMMY_REF).get(function() {
-  return this._evaluation
-})
-
-BlockSchema.virtual('evaluation', DUMMY_REF).set(function(value) {
 })
 
 BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {

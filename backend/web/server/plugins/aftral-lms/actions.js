@@ -1,14 +1,14 @@
 const mongoose=require('mongoose')
-const { swapArray } = require('../../../utils/functions')
 const Block = require('../../models/Block')
-const Duration = require('../../models/Duration')
-const Resource = require('../../models/Resource')
-const { idEqual } = require('../../utils/database')
-const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
+const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { cloneTree } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource } = require('./block')
 const { lockSession } = require('./functions')
+const Progress = require('../../models/Progress')
+const { canPlay, canResume, canReplay } = require('./resources')
+const { isProduction } = require('../../../config/config')
+
 
 const ACCEPTS={
   session: ['program'],
@@ -56,10 +56,6 @@ const addChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {last_updater: user})
   const parentsOrigin=await Block.find({origin: parent._id})
   await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
-  // If a child was added to sesison : lock it
-  if (pType=='session') {
-    await lockSession(parent._id)
-  }
 }
 addAction('addChild', addChildAction)
 
@@ -87,18 +83,11 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  const block=await Block.findById(id, {_locked:1})
-  if (!block._locked) {
-    throw new ForbiddenError(`addSpentTime forbidden on models/templates`)
-  }
-  const durationDoc=await Duration.findOne({block, user})
-  if (durationDoc.status==BLOCK_STATUS_UNAVAILABLE) {
-    throw new ForbiddenError(`addSpentTime forbidden on unavailable resource`)
-  }
-  durationDoc.duration+=duration/1000
-  await durationDoc.save()
-  console.log('Duration block is', durationDoc)
-  return onSpentTimeChanged({blockId: id, user})
+  await Progress.findOneAndUpdate(
+    {user, block: id},
+    {user, block: id, $inc: {spent_time: duration/1000}},
+    {upsert: true, new: true})
+  console.warn('Update spent time')
 }
 addAction('addSpentTime', addSpentTimeAction)
 
@@ -115,26 +104,38 @@ addAction('play', resourceAction('play'))
 addAction('resume', resourceAction('resume'))
 addAction('replay', resourceAction('replay'))
 
+addAction('next', async ({id}, user) => getNextResource(id, user))
+
+addAction('previous', async ({id}, user) => getPreviousResource(id, user))
+
+// TODO dev only
+if (!isProduction()) {
+  const forceFinishResource = async ({value}, user) => {
+    await Progress.findOneAndUpdate(
+      {user, block: value._id},
+      {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
+      {upsert: true, new: true}
+    )
+    await onBlockFinished(user, value._id)
+  }
+
+  addAction('alle_finish_mission', forceFinishResource)
+}
+
+
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='addChild') {
     if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
-  if (['play', 'resume', 'replay'].includes(action)) {
-    const block=await Block.findOne({_id: dataId, type: 'resource'})
-    if (!block) { 
-      throw new NotFoundError(`Ressource introuvable`)
-    }
-    const parent=await Block.findOne({actual_achildren: dataId})
-    const duration=await Duration.findOne({block: dataId, user})
-    if (action=='play' && duration?.status!=BLOCK_STATUS_TO_COME) {
-      throw new NotFoundError(`Cette ressource ne peut être jouée`)
-    }
-    if (action=='resume' && duration?.status!=BLOCK_STATUS_CURRENT) {
-      throw new NotFoundError(`Cette ressource ne peut être jouée`)
-    }
-    if (action=='replay' && duration?.status!=BLOCK_STATUS_FINISHED && !parent?.closed) {
-      throw new NotFoundError(`Cette ressource ne peut être rejouée`)
-    }
+  const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
+  if (actionFn) {
+    return actionFn({action, dataId, user})
+  }
+  if (action=='next') {
+    await getNextResource(dataId, user)
+  }
+  if (action=='previous') {
+    await getPreviousResource(dataId, user)
   }
   return true
 }
