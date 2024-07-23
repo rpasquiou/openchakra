@@ -81,8 +81,7 @@ const withDynamicButton = Component => {
               fireClear: props.fireClear,
               ...res,
             }
-            // UGLY!! Shoud block ain thread until dialog closed
-            return setTimeout(() => ACTIONS[nextAction](params), 1000)
+            return ACTIONS[nextAction](params)
           })
           .then(() => {
             if (action!='openPage') {
