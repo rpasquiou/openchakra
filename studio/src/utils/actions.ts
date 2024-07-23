@@ -775,6 +775,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: [],
   },
+  back: {
+    label: 'Navigation back',
+    options: {},
+    next: [],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
