@@ -19,6 +19,7 @@ const ProgressSchema = new Schema({
   // TIme spent on resource in seconds
   spent_time: {
     type: Number,
+    default: 0,
   },
   annotation: {
     type: String,

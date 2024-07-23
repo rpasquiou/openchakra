@@ -29,6 +29,17 @@ const getSessionBlocks = async session_id => {
   return result
 }
 
+const getParentBlocks = async blockId => {
+  const res=[]
+  let block=await mongoose.models.block.findById(blockId, {parent:1})
+  console.log('block', blockId)
+  while (block.parent) {
+    res.push(block.parent._id)
+    block=await mongoose.models.block.findById(block.parent, {parent:1})
+  }
+  return res
+}
+
 const getBlockStatus = async (userId, params, data) => {
   return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
 }
@@ -182,6 +193,6 @@ const getPreviousResource= async (blockId, user) => {
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
-  getNextResource, getPreviousResource,
+  getNextResource, getPreviousResource, getParentBlocks,
 }
 

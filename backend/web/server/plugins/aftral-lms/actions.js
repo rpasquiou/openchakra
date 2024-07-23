@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
-const { cloneTree, onBlockFinished, getNextResource, getPreviousResource } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -83,12 +83,14 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  await Progress.findOneAndUpdate(
-    {user, block: id},
-    {user, block: id, $inc: {spent_time: duration/1000}},
-    {upsert: true, new: true})
-  console.warn('Update spent time')
+  const toUpdate=[id, ...(await getParentBlocks(id))]
+  return Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
+    {user, block: blockId},
+    {user, block: blockId, $inc: {spent_time: duration/1000}},
+    {upsert: true, new: true}
+    )))
 }
+
 addAction('addSpentTime', addSpentTimeAction)
 
 const lockSessionAction = async ({value}, user) => {
