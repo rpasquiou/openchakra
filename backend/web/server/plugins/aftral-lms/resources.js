@@ -55,8 +55,8 @@ const getResourceAnnotation = async (userId, params, data) => {
 
 const setResourceAnnotation = async ({ id, attribute, value, user }) => {
   return Progress.findOneAndUpdate(
-    {user: userId, block: id},
-    {user: userId, block: id, annotation: value},
+    {user: user, block: id},
+    {user: user, block: id, annotation: value},
     {upsert: true, new: true})
 }
 
