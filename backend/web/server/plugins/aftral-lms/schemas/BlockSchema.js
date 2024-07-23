@@ -22,6 +22,7 @@ const BlockSchema = new Schema({
     type: String,
     required: [function()  {return !this.origin}, `Le nom est obligatoire`],
     index: true,
+    default: null,
   },
   parent: {
     type: Schema.Types.ObjectId,
@@ -87,21 +88,27 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
     required: [function(){ return this?.type=='resource' && !this?.origin}, `Le type de ressource est obligatoire`],
+    default: null,
   },
   spent_time: {
     type: Number,
+    default: null,
   },
   spent_time_str: {
     type: String,
+    default: null,
   },
   resources_count: {
     type: Number,
+    default: null,
   },
   finished_resources_count: {
     type: Number,
+    default: null,
   },
   resources_progress: {
     type: Number,
+    default: null,
   },
   _locked: {
     type: Boolean,
@@ -119,9 +126,11 @@ const BlockSchema = new Schema({
   // Annotation set by trainee
   annotation: {
     type: String,
+    default: null,
   },
   access_condition: {
     type: Boolean,
+    default: null,
   },
   // Annotation set by trainee
   success_message: {
@@ -140,6 +149,7 @@ const BlockSchema = new Schema({
     enum: Object.keys(ACHIEVEMENT_RULE),
     set: v => v || undefined,
     required: [function() {return this.type=='resource' && !this.origin}, `La règle d'achèvement est obligatoire`],
+    default: null,
   },
   success_note_min: {
     type: Number,
@@ -154,6 +164,7 @@ const BlockSchema = new Schema({
   homework_mode: {
     type: Boolean,
     required: false,
+    default: null,
   },
   // computed
   homeworks: [{
