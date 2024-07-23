@@ -9,6 +9,7 @@ import {
 } from '../utils/filters'
 import {displayError, displaySuccess} from '../utils/notifications'
 import { useToast } from '@chakra-ui/react';
+import { useVisible } from 'react-hooks-visible';
 
 const withDynamicButton = Component => {
 
@@ -16,8 +17,11 @@ const withDynamicButton = Component => {
 
     const [insideAction, setInsideAction]=useState(false)
 
+
     const router = useRouter()
     const toast=useToast()
+
+    const [targetRef, visible] = useVisible()
 
     const query = new URLSearchParams(router?.asPath)
     let value = props.dataSource
@@ -39,13 +43,16 @@ const withDynamicButton = Component => {
     const [actionAllowed, setActionAllowed]=useState(true)
 
     useEffect(()=> {
+      if (!visible) {
+        return
+      }
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => setActionAllowed(res.data.allowed))
         .catch(err => console.error(err))
-    }, [action, value])
+    }, [action, value, visible])
 
     if (action) {
       onClick = () => {
@@ -118,6 +125,7 @@ const withDynamicButton = Component => {
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
+        ref={targetRef}
       />
     )
   }

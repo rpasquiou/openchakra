@@ -7753,6 +7753,11 @@ react-focus-lock@^2.9.2:
     use-callback-ref "^1.3.0"
     use-sidecar "^1.1.2"
 
+react-hooks-visible@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/react-hooks-visible/-/react-hooks-visible-1.1.1.tgz#67a12a395b670067fe9d2ce25cb4d84788a83a3b"
+  integrity sha512-ACBaW/wKv/pfNh36MpDKoh8fL6nAsw7OHyUYj5RLefVMxoe/PrUIupwpafk8juLPX3v+yDuobSI3EcSvJYeUWg==
+
 react-hotkeys-hook@^2.4.0:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/react-hotkeys-hook/-/react-hotkeys-hook-2.4.1.tgz#9e495cbe9872a2bcf9b0f8ff776f031064d33968"
