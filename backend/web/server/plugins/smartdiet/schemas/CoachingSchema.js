@@ -251,13 +251,13 @@ CoachingSchema.virtual('current_objectives', DUMMY_REF).get(function() {
    .head()?.objectives || []
 })
 
-// Returns the appointment type expected (1st appnt: assesment, others: followu)
+// Returns the appointment type expected (1st appnt: assesment, others: followup)
 CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
   const appType=lodash.isEmpty(this.appointments) ? this.user?.company?.assessment_appointment_type : this.user?.company?.followup_appointment_type
   return appType
 })
 
-// Returns wether this coaching is in progress or not
+// Returns whether this coaching is in progress or not
 CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
   return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
 })
