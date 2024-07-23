@@ -4,7 +4,6 @@ const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_ANNOUNCE_ATTRIBUTES, CUSTOMER_CONTRACT_ATTRIBUTES } = require("./consts")
-const Customer=require('../../models/Customer')
 const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -22,7 +21,6 @@ const moment = require('moment');
 const { getterPinnedFn, setterPinnedFn } = require("../../utils/pinned");
 const {isMine} = require("./message");
 const Conversation=require('../../models/Conversation')
-const Message=require('../../models/Message');
 const { usersCount, customersCount, freelancesCount, currentMissionsCount, comingMissionsCount, registrationStatistic } = require("./statistic");
 const Statistic = require("../../models/Statistic");
 const Mission = require("../../models/Mission");
@@ -449,6 +447,20 @@ declareVirtualField({model: 'message', field: 'display_date', instance: 'String'
 //CustomerFreelance
 const CUSTOMERFREELANCEMODELS = ['loggedUser', 'genericUser', 'customerFreelance', 'freelance']
 CUSTOMERFREELANCEMODELS.forEach(model => {
+  declareVirtualField({
+    model, field: 'freelance_reports', instance: 'Array', multiple: true, requires:'freelance_missions.reports',
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'report' }
+    },
+  })
+  declareVirtualField({
+    model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports',
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'report' }
+    },
+  })
   declareVirtualField({
     model, field: 'applications', instance: 'Array', multiple: true,
     caster: {

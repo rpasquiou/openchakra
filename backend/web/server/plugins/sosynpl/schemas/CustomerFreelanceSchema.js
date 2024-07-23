@@ -524,6 +524,18 @@ CustomerFreelanceSchema.virtual('customer_profile_completion', DUMMY_REF).get(fu
 
 CustomerFreelanceSchema.virtual('customer_missing_attributes', DUMMY_REF).get(function(){return customerMissingAttributes(this)})
 
+CustomerFreelanceSchema.virtual('customer_reports', DUMMY_REF).get(function() {
+  return this.customer_missions 
+    ? Object.keys(this.customer_missions).map(key => this.customer_missions[key].reports).flat()
+    : []
+})
+
+CustomerFreelanceSchema.virtual('freelance_reports', DUMMY_REF).get(function() {
+  return this.freelance_missions 
+    ? Object.keys(this.freelance_missions).map(key => this.freelance_missions[key].reports).flat()
+    : []
+})
+
 
 /* eslint-enable prefer-arrow-callback */
 
