@@ -344,6 +344,11 @@ const CustomerFreelanceSchema = new Schema({
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
+  dedicated_admin: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
