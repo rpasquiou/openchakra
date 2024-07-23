@@ -84,7 +84,7 @@ const withDynamicButton = Component => {
             return ACTIONS[nextAction](params)
           })
           .then(() => {
-            if (action!='openPage') {
+            if (action!='openPage' && nextAction!='openPage') {
               console.log(`Action ${action} fires reload`)
               props.reload()
             }
