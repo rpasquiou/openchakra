@@ -574,27 +574,32 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       return Conversation.findById(id)
         .then(async(conv) => {
           if(!conv){
-            const model = await getModel(id, ['mission','application'])
-            let customerId, freelanceId, application
-            if(model == 'mission') {
+            const model = await getModel(id, ['mission','application','customerFreelance'])
+            let customerId, freelanceId, applicationId, partnerId
+            if(model == 'customerFreelance') {
+              partnerId = id
+            }
+            else if(model == 'mission') {
               const mission = await Mission.findById(id)
               customerId = mission.customer
               freelanceId = mission.freelance
-              application = mission.application
+              applicationId = mission.application._id
+              partnerId = idEqual(user._id, customerId) ? freelanceId : customerId
             }
-            else {
-              application = await Application.findById(id).populate('announce')
+            else if(model == 'application' ) {
+              const application = await Application.findById(id).populate('announce')
               customerId = application.announce.user
               freelanceId = application.freelance
+              partnerId = idEqual(user._id, customerId) ? freelanceId : customerId
+              applicationId = application._id
             }
-            const partnerId = idEqual(user._id, customerId) ? freelanceId : customerId
-            if(!partnerId) {
-              throw new Error(`${id} is not a valid user`)
-            }
-            if (idEqual(partnerId, user._id)) {
-              throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
-            }
-            conv = Conversation.getFromUsersApplication(user._id, partnerId, application._id)
+              if(!partnerId) {
+                throw new Error(`${id} is not a valid user`)
+              }
+              if (idEqual(partnerId, user._id)) {
+                throw new Error(`Vous ne pouvez avoir de conversation avec vous-même`)
+              }
+              conv = Conversation.getFromUsers({user1:user._id, user2:partnerId, applicationId})
           }
           return conv
         })
