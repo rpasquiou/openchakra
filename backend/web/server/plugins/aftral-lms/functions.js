@@ -17,7 +17,7 @@ require('../../models/Search')
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -379,38 +379,50 @@ const setSessionInitialStatus = async (blockId, trainees) => {
   return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
 }
 
-const forceLinkedAttributes = async blockId => {
-  const [loaded]=await loadFromDb({model: 'block', id: blockId, fields: LINKED_ATTRIBUTES})
-  const linkedAttributes=lodash.pickBy(loaded, (v,k) => LINKED_ATTRIBUTES.includes(k))
-  return Block.findByIdAndUpdate(blockId, linkedAttributes)
+const forceLinkedAttributes = async block => {
+  return Promise.all(LINKED_ATTRIBUTES.map(async k => {
+    const v=await getAttribute(k)(null, null, block)
+    const modifiedV=LINKED_ATTRIBUTES_CONVERSION[k](v, block._id)
+    block[k]=modifiedV
+  }))
 }
 
 const lockSession = async blockId => {
-  const block=await Block.findById(blockId).populate('children')
-  if (block.type=='session') {
-    if (lodash.isEmpty(block.trainers)) {
-      throw new BadRequestError(`Démarrage session impossible: pas de formateur`)
+  const toManage=[await Block.findById(blockId)]
+  while (toManage.length>0) {
+    let block=toManage.pop()
+    if (!block) {
+      throw new Error('blcok numm')
     }
-    if (lodash.isEmpty(block.trainees)) {
-      throw new BadRequestError(`Démarrage session impossible: pas d'apprenant`)
+    const children=await Block.find({parent: block._id})
+    if (block.type=='session') {
+      if (lodash.isEmpty(block.trainers)) {
+        throw new BadRequestError(`Démarrage session impossible: pas de formateur`)
+      }
+      if (lodash.isEmpty(block.trainees)) {
+        throw new BadRequestError(`Démarrage session impossible: pas d'apprenant`)
+      }
+      if (lodash.isEmpty(children)) {
+        throw new BadRequestError(`Démarrage session impossible: pas de programme`)
+      }
     }
-    if (lodash.isEmpty(block.children)) {
-      throw new BadRequestError(`Démarrage session impossible: pas de programme`)
+    if (block._locked) {
+      console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
     }
+    if (block.type=='session') {
+      setSessionInitialStatus(block._id, block.trainees)
+    }
+
+    // Force attributes
+    if (!['session', 'resource'].includes(block.type)) {
+      // block.type=='program' && console.log('block before', {...block.toObject(), children: undefined})
+      await forceLinkedAttributes(block)
+      // block.type=='program' && console.log('block after', {...block.toObject(), children: undefined})
+    }
+    block._locked=true
+    await block.save({validateBeforeSave: false}).catch(console.error)
+    toManage.push(...children)
   }
-  if (block._locked) {
-    console.warn(`Session block`, block._id, `is already locked but next actions will be executed`)
-  }
-  if (block.type=='session') {
-    setSessionInitialStatus(block._id, block.trainees)
-  }
-  // Force attributes
-  if (!['session', 'resource'].includes(block.type)) {
-    await forceLinkedAttributes(blockId)
-  }
-  block._locked=true
-  await block.save()
-  await Promise.all(block.children.map(b => lockSession(b._id)))
 }
 
 module.exports={

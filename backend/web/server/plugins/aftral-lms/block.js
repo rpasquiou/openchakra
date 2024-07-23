@@ -5,11 +5,27 @@ const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual } = require("../../utils/database");
+const Block = require("../../models/Block");
 
 const NAMES_CACHE=new NodeCache()
 
-const LINKED_ATTRIBUTES=['name', 'closed', 'description', 'picture', 'optional', 'code', 'access_condition', 
-'resource_type', 'homework_mode', 'url', 'evaluation', 'achievement_rule']
+const LINKED_ATTRIBUTES_CONVERSION={
+  name: (v,id) => { if (v) {return v}; throw new Error ( `${id} Name is mandatory`)},
+  closed: v => v || false,
+  masked: v => v || false,
+  description: lodash.identity,
+  picture: lodash.identity, 
+  optional : v => v || false, 
+  code: lodash.identity, 
+  access_condition: v => v || false, 
+  resource_type: lodash.identity,
+  homework_mode: lodash.identity,
+  url: lodash.identity,
+  evaluation: v => v || false,
+  achievement_rule : lodash.identity
+}
+
+const LINKED_ATTRIBUTES=Object.keys(LINKED_ATTRIBUTES_CONVERSION)
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
 
@@ -18,15 +34,17 @@ const setParentSession = async (session_id) => {
   return mongoose.models.block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
 }
 
-const getSessionBlocks = async session_id => {
-  const parents = await mongoose.models.block.find({$or: [{origin: session_id}, {actual_children: session_id}]}, {_id:1})
-  if (lodash.isEmpty(parents)) {
-    return []
+const getSessionBlocks = async block => {
+  if (!(block instanceof mongoose.Model)) {
+    throw new Error(`Expecting mongoose object`)
   }
-  return Promise.all(parents.map(p => getSessionBlocks(p._id)))
-    .then(res => lodash.flattenDeep(res))
-    .then(res => res.filter(v => !!v))
-  return result
+  const res=[block]
+  if (block.children===undefined) {
+    await block.populate('children').execPopulate()
+  }
+  const subChildren=await Promise.all(block.children.map(child => getSessionBlocks(child)))
+  res.push(...lodash.flatten(subChildren))
+  return res
 }
 
 const getParentBlocks = async blockId => {
@@ -78,11 +96,16 @@ const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 20})
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
+  if (data.constructor.name!='model') {
+    throw new Error(`Expecting mongoose object:`, JSON.stringify(data))
+  }
+  if (!!data._locked && data.type!='resource' && !!data[attName]) {
+    return data[attName]
+  }
   const key=`${data._id}/${attName}`
   if (ATTRIBUTES_CACHE.has(key)) {
     return ATTRIBUTES_CACHE.get(key)
   }
-  data=await mongoose.models.block.findById(data._id)
   if (!data) {
     ATTRIBUTES_CACHE.set(key, null)
     return null
@@ -91,6 +114,11 @@ const getAttribute = attName => async (userId, params, data) => {
     ATTRIBUTES_CACHE.set(key, data[attName])
     return data[attName]
   }
+
+  if (data.origin?.constructor.name != 'model') {
+    await data.populate('origin').execPopulate()
+  }
+
   if (data.origin) {
     const res=await getAttribute(attName)(userId, params, data.origin)
     ATTRIBUTES_CACHE.set(key, res)
@@ -139,7 +167,8 @@ const onBlockCurrent = async (user, blockId) => {
 
 const onBlockAction = async (user, blockId) => {
   const progress=await Progress.findOne({user, block: blockId})
-  const rule=await getAttribute('achievement_rule')(user._id, null, {_id: blockId})
+  const rule=await getAttribute('achievement_rule')(user._id, null, await mongoose.models.block.findById(blockId))
+  console.log('rule is', rule)
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
   await Progress.findOneAndUpdate(
@@ -185,7 +214,7 @@ const getPreviousResource= async (blockId, user) => {
   resources.reverse()
   const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
   if (!brothers[0]) {
-    throw new Error('Pas de ressource suivante')
+    throw new Error('Pas de ressource précédente')
   }
   return {_id: brothers[0]}
 }
@@ -193,6 +222,6 @@ const getPreviousResource= async (blockId, user) => {
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
-  getNextResource, getPreviousResource, getParentBlocks,
+  getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
 }
 
