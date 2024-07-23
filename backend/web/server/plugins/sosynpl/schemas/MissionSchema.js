@@ -100,7 +100,8 @@ MissionSchema.virtual('budget', DUMMY_REF).get(function() {
 })
 
 MissionSchema.virtual('paid_amount', DUMMY_REF).get(function() {
-  const paid=lodash(this.reports).map(r => r.latest_quotations).flatten().map(q => q.ht_total).sum()
+  console.log('*****',this.reports)
+  const paid=lodash(this.reports).map(r => r.latest_quotations).flatten()/*.map(q => q.ht_total).sum()*/
   return paid
 })
 
