@@ -448,14 +448,14 @@ declareVirtualField({model: 'message', field: 'display_date', instance: 'String'
 const CUSTOMERFREELANCEMODELS = ['loggedUser', 'genericUser', 'customerFreelance', 'freelance']
 CUSTOMERFREELANCEMODELS.forEach(model => {
   declareVirtualField({
-    model, field: 'freelance_reports', instance: 'Array', multiple: true, requires:'freelance_missions.reports',
+    model, field: 'freelance_reports', instance: 'Array', multiple: true, requires:'freelance_missions.reports.mission.customer.fullname',
     caster: {
       instance: 'ObjectID',
       options: { ref: 'report' }
     },
   })
   declareVirtualField({
-    model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports',
+    model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports.mission.freelance.fullname',
     caster: {
       instance: 'ObjectID',
       options: { ref: 'report' }
