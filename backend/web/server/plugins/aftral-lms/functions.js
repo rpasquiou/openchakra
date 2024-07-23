@@ -215,7 +215,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     id = user?._id || 'INVALIDID'
   }
   // Add resource.creator.role to filter after
-  if (['program', 'module', 'sequence', 'resource', 'block'].includes(model)) {
+  if (BLOCK_MODELS.includes(model)) {
     if (model=='resource') {
       fields=[...fields, 'creator']
     }
