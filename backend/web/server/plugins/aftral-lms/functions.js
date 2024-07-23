@@ -294,7 +294,6 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   if (model=='session') {
     if (user.role==ROLE_APPRENANT) {
-      console.log('params', params)
       params['filter._locked']=true
       params['filter.trainees']=user._id
     }

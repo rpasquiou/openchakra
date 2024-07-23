@@ -10,7 +10,7 @@ const { formatDuration } = require('../../../utils/text')
 const getBlockResources= async blockId => {
   const block=await mongoose.models.block.findById(blockId).populate('children')
   if (block.type=='resource') {
-    return block._id
+    return [block._id]
   }
   let subIds=await Promise.all(block.children.map(c => getBlockResources(c._id)))
   return lodash.flattenDeep(subIds)
