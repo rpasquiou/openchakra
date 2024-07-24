@@ -78,9 +78,10 @@ const NutritionAdviceSchema = new Schema({
     type: String,
     required: false,
   },
-  // Computed Lazily created and stoer under _certificate
+  // Computed Lazily created and store under _certificate
   certificate: {
     type: String,
+    required: false,
   }
 },
 {...schemaOptions}

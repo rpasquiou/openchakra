@@ -152,6 +152,25 @@ const CoachingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'availability',
   }],
+  // Assessment certificate
+  _assessment_certificate: {
+    type: String,
+    required: false,
+  },
+  assessment_certificate: {
+    type: String,
+    required: false,
+  },
+  // Coaching end certificate
+  _final_certificate: {
+    type: String,
+    required: false,
+  },
+  // Computed Lazily created and store under _certificate
+  final_certificate: {
+    type: String,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
