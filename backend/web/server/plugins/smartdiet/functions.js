@@ -2300,7 +2300,7 @@ cron.schedule('0 */10 * * * *', () => {
     })
 })
 
-const agendaHookFn = received => {
+const agendaHookFn = async received => {
   // Check validity
   console.log(`Received hook ${JSON.stringify(received)}`)
   const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet } } } = received
@@ -2324,20 +2324,21 @@ const agendaHookFn = received => {
       User.findOne({ smartagenda_id: client_id, role: ROLE_CUSTOMER }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(([diet, user, appointment_type]) => {
+      .then(async ([diet, user, appointment_type]) => {
         if (!(diet && user && appointment_type)) {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
-          .then(coaching => {
+          .then(async coaching => {
             if (!coaching) {
               throw new Error(`No coaching defined`)
             }
+            const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
             return Appointment.findOneAndUpdate(
               { smartagenda_id: objId },
               {
                 coaching: coaching, appointment_type, smartagenda_id: objId,
-                start_date: start_date_gmt, end_date: end_date_gmt,
+                start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
                 user, diet,
               },
               { upsert: true, runValidators: true }
@@ -2353,13 +2354,14 @@ const agendaHookFn = received => {
       Appointment.findOne({ smartagenda_id: objId }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(([appointment, appointment_type]) => {
+      .then(async ([appointment, appointment_type]) => {
         if (!(appointment && appointment_type)) {
           throw new Error(`Update appointment missing info:${!!appointment} ${!!appointment_type}`)
         }
+        const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
         return Appointment.updateOne(
           { smartagenda_id: objId },
-          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt }
+          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }
         )
       })
       .then(console.log)
