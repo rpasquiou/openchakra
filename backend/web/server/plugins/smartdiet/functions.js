@@ -2028,8 +2028,18 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
   const fetchAndCache = async (field, func, params) => {
     if (cache[field]) return;
     cache[field] = true;
-    const functionResult = await func(params);
-    result[field] = functionResult;
+    try {
+      if (typeof func !== 'function') {
+        console.error(`Error: ${func} is not a function`);
+        result[field] = undefined;
+        return;
+      }
+      const functionResult = await func(params);
+      result[field] = functionResult;
+    } catch (error) {
+      console.error(`Error while executing ${func}:`, error);
+      result[field] = undefined;
+    }
   };
 
   const handleRatios = async (field) => {
@@ -2054,10 +2064,15 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
       if (!cache['coachings_ongoing']) {
         await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet });
       }
-      const appts = await kpi.validated_appts({company, start_date, end_date, diet})
-      result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
-        ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
-        : 0;
+      try {
+        const appts = await kpi.validated_appts({company, start_date, end_date, diet});
+        result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
+          ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
+          : 0;
+      } catch (error) {
+        console.error('Error calculating ratio_appointments_coaching:', error);
+        result['ratio_appointments_coaching'] = undefined;
+      }
     }
   };
 
@@ -2091,6 +2106,7 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
 };
 
 exports.computeStatistics = computeStatistics;
+
 
 
 /** Upsert PARTICULARS company */
