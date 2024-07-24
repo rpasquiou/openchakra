@@ -10,9 +10,12 @@ const customerProfileCompletion = (user) => {
 
 const customerMissingAttributes = (user) => {
   let missingAttr = []
-  let i=0;
-  [...CUSTOMER_REQUIRED_ATTRIBUTES, ...CUSTOMER_ANNOUNCE_ATTRIBUTES, ...CUSTOMER_CONTRACT_ATTRIBUTES].forEach(attr => {
-    if (!user[attr]) missingAttr = [...missingAttr, CUSTOMER_OUTPUT_ATTRIBUTES[attr]]
+  const allAttributes = [...CUSTOMER_REQUIRED_ATTRIBUTES, ...CUSTOMER_ANNOUNCE_ATTRIBUTES, ...CUSTOMER_CONTRACT_ATTRIBUTES]
+  allAttributes.forEach((attr, index) => {
+    if (!user[attr]) {
+      const attributeString = index === allAttributes.length - 1 ? CUSTOMER_OUTPUT_ATTRIBUTES[attr] : `${CUSTOMER_OUTPUT_ATTRIBUTES[attr]} `
+      missingAttr = [...missingAttr, attributeString]
+    }
   })
   return missingAttr
 }

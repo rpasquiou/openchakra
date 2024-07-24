@@ -14,19 +14,26 @@ const freelanceProfileCompletion = (user) => {
   result += 60 - mandatoryPenalty
 
   return result/100
-};
+}
 
 const freelanceMissingAttributes = (user) => {
-  let missingAttr = [];
-  let i=0;
-  [...FREELANCE_REQUIRED_ATTRIBUTES, ...FREELANCE_MANDATORY_ATTRIBUTES].forEach(attr => {
-    if (!user[attr]) missingAttr = [...missingAttr, FREELANCE_OUTPUT_ATTRIBUTES[attr]]
+  let missingAttr = []
+  const allAttributes = [...FREELANCE_REQUIRED_ATTRIBUTES, ...FREELANCE_MANDATORY_ATTRIBUTES]
+  allAttributes.forEach((attr, index) => {
+    if (!user[attr]) {
+      const attributeString = `${FREELANCE_OUTPUT_ATTRIBUTES[attr]} `
+      missingAttr = [...missingAttr, attributeString]
+    }
   })
   if (
-    !user['gold_soft_skills'] && !user['gold_soft_skills'].length === CF_MAX_GOLD_SOFT_SKILLS &&
-    !user['silver_soft_skills'] && !user['silver_soft_skills'].length === CF_MAX_SILVER_SOFT_SKILLS &&
-    !user['bronze_soft_skills'] && !user['bronze_soft_skills'].length === CF_MAX_BRONZE_SOFT_SKILLS
-  ) missingAttr= [...missingAttr, FREELANCE_OUTPUT_ATTRIBUTES['soft_skills']]
+    (!user['gold_soft_skills'] || user['gold_soft_skills'].length !== CF_MAX_GOLD_SOFT_SKILLS) ||
+    (!user['silver_soft_skills'] || user['silver_soft_skills'].length !== CF_MAX_SILVER_SOFT_SKILLS) ||
+    (!user['bronze_soft_skills'] || user['bronze_soft_skills'].length !== CF_MAX_BRONZE_SOFT_SKILLS)
+  ) {
+    missingAttr = [...missingAttr, `${FREELANCE_OUTPUT_ATTRIBUTES['soft_skills']}`]
+  } else {
+    missingAttr[missingAttr.length - 1] = missingAttr[missingAttr.length - 1].trim()
+  }
   return missingAttr
 }
 

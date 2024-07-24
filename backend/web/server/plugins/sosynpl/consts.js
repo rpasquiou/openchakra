@@ -459,7 +459,7 @@ const CUSTOMER_OUTPUT_ATTRIBUTES = {
   company_size:`Taille de l'entreprise`,
   legal_status:`Statut de l'entreprise`,
   registration_city:`Ville d'immatriculation`,
-  social_capital:`Capitale de l'entreprise`,
+  social_capital:`Capital de l'entreprise`,
   headquarter_address:`Adresse du siège de l'entreprise`,
   billing_contact_address:`Àdresse de facturation`,
   billing_contact_firstname:`Prénom du contact de facturation`,
