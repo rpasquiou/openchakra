@@ -1,5 +1,6 @@
 const mongoose=require('mongoose')
 const moment=require('moment')
+const path = require('path')
 const fs=require('fs')
 const lodash=require('lodash')
 const {getDatabaseUri}=require('../config/config')
@@ -7,6 +8,7 @@ const { runPromisesWithDelay } = require('../server/utils/concurrency')
 const { stringify }=require('csv-stringify/sync')
 require('../server/models/Ingredient')
 require('../server/models/Team')
+require('../server/models/TeamMember')
 require('../server/models/Instrument')
 require('../server/models/Interest')
 require('../server/models/MenuRecipe')
@@ -29,59 +31,68 @@ require('../server/plugins/smartdiet/functions')
 
 const ModelData = {}
 
-const addData = async (model, records) => {
-  (ModelData[model] = ModelData[model] || []).push(...records);
-}
-
-const mapArray = (model, localField, foreignField) =>
-  ({record,value}) => {
-    const mapped=(value||[]).map(v => ({[localField]: record._id, [foreignField]:v}))
-    addData(model, mapped)
+const addData = (key, records) => {
+  console.log('Adding', records.length, 'to', key)
+  if (!!ModelData[key]) {
+    throw new Error(`key ${key} exists`)
   }
-const mapRecord = async (mapping, record) => {
-  const res={...record}
-  Object.entries(mapping).forEach(([key, mappingFn]) => {
-    res[key]=mappingFn({record, value:res[key]})      
-  })
-  return res
+  if (!ModelData[key]) {
+    ModelData[key]=[]
+  }
+  ModelData[key]=records
 }
 
 const exportModel = async model => {
   const collectionName=model.collection.collectionName
   const modelName=model.modelName
-  const msg=`Exporting ${collectionName}`
-  console.time(msg)
-  const nonVirtual=Object.keys(model.schema.paths).filter(att => !/^__/.test(att))
-  const data=await model.find({}, Object.fromEntries(nonVirtual.map(v => [v, 1]))).lean()
-  const mapping=lodash({...model.schema.paths})
-    .values()
-    .filter(attDef => attDef.instance=='Array' || attDef.instance=='Date')
-    .map(attDef => [attDef.path, attDef.instance=='Array' ? mapArray(`${modelName}_${attDef.path}`, `${collectionName}_id`, attDef.path) : ({value}) => value && moment(value) || value])
-    .fromPairs()
-    .value()
-  const mapped=await Promise.all(data.map(d => mapRecord(mapping, d)))
-  await addData(collectionName, mapped)
-  console.timeEnd(msg)
+  console.log(`Exporting ${modelName}/${collectionName}`)
+  let data=await model.collection.find({}).toArray()
+  // Set same keys to each record
+  const allKeys=lodash(data).map(d => Object.keys(d)).flatten().uniq().map(k => [k, undefined]).fromPairs().value()
+  data=data.map(d => ({...allKeys, ...d}))
+  // Format date attributes
+  const dateAttributes=lodash(model.schema.paths).values().filter(att => att.instance=='Date').map('path').value()
+  if (dateAttributes.length>0) {
+    data=data.map(d => lodash.mapValues(d, (v, k) => dateAttributes.includes(k) && !!v ? moment(v).format('YYYY-MM-DD HH:mm:ss') : v))
+  }
+  addData(collectionName, data)
 }
 
-const exportDatabase = async () => {
+const isDerivedModel = (model, models) => {
+  return models.some(m => m.discriminators?.[model.modelName])
+}
+
+const exportDatabase = async (destinationDirectory) => {
     await mongoose.connect(getDatabaseUri())
-    console.log('connected to', getDatabaseUri())
-    const models=mongoose.modelNames().sort()
-    await runPromisesWithDelay(models.map(modelName => () => {
-      return exportModel(mongoose.models[modelName])
-    }))
-    Object.entries(ModelData)
-      .filter(([modelName, records]) => records.length>0)
+    console.log('Connected to', getDatabaseUri())
+    const models=Object.values(mongoose.models)
+    let baseModels=models.filter(m => !isDerivedModel(m, models))
+    baseModels=lodash.sortBy(baseModels, m => m.modelName)
+    console.log('Exporting models', baseModels.map(m => m.modelName))
+    const res=await runPromisesWithDelay(baseModels.map(model => () => exportModel(model)))
+    const errors=res.filter(r=> r.status=='rejected').map(r => r.reason)
+    if (errors.length>0) {
+      throw new Error(errors.join('\n'))
+    }
+    return Object.entries(ModelData)
+      .filter(([, records]) => records.length>0)
       .map(([modelName, records]) => {
-      const fileName=`${modelName}.csv`
-      const stringified=stringify(records, {header:true, delimiter: ';'})
-      fs.writeFileSync(fileName, stringified)      
-    })
+        const fileName=path.join(destinationDirectory,`${modelName}.csv`)
+        console.log(`Exporting model ${modelName} to ${fileName}`)
+        const stringified=stringify(records, {header:true, delimiter: ';'})
+        fs.writeFileSync(fileName, stringified)      
+      })
+}
+
+const destinationDir=process.argv[2]
+
+if (!destinationDir) {
+  console.error(`Usage: ${process.argv.join(' ')} <destination_directory`)
+  process.exit(1)
 }
 
 console.time('Exporting database')
-exportDatabase()
+exportDatabase(destinationDir)
   .then(() => console.timeEnd('Exporting database'))
   .catch(console.error)
   .finally(() => process.exit(0))
