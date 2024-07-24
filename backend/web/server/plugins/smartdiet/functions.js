@@ -208,7 +208,7 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
-const { getNutAdviceCertificate } = require('./nutritionAdvice')
+const { getNutAdviceCertificate } = require('./certificate')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
