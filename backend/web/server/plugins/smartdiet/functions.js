@@ -208,7 +208,7 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
-const { getNutAdviceCertificate } = require('./certificate')
+const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -1399,6 +1399,14 @@ declareVirtualField({
 })
 declareVirtualField({model: 'coaching', field: '_last_appointment', instance: 'appointment'})
 declareVirtualField({model: 'coaching', field: 'in_progress', instance: 'Boolean', requires: 'status'})
+declareComputedField({model: 'coaching', field: 'assessment_certificate', type: 'String', 
+  requires: 'user.firstname,user.lastname,user.company.name,_assessment_certificate',
+  getterFn: getAssessmentCertificate,
+})
+declareComputedField({model: 'coaching', field: 'final_certificate', type: 'String', 
+  requires: 'user.firstname,user.lastname,user.company.name,_final_certificate',
+  getterFn: getFinalCertificate,
+})
 
 
 declareEnumField({ model: 'userCoachingQuestion', field: 'status', enumValues: COACHING_QUESTION_STATUS })
