@@ -1,9 +1,9 @@
 echo "Exporting smartdiet database started at `date`"
 source /home/ec2-user/.bashrc
-cd /home/ec2-user
+cd ~
 rm -rf ./export
 mkdir export
-/usr/bin/python3 -m alfred.db_export.full_export smartdiet export 
+node ~/workspace/smartdiet/backend/web/scripts/exportDatabase export
 current_date_time=$(date +"%y%m%d-%H%M%S")
 filename="smartdiet-${current_date_time}.zip"
 zip -r /tmp/$filename export
