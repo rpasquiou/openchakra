@@ -10,7 +10,7 @@ const Block = require("../../models/Block");
 const NAMES_CACHE=new NodeCache()
 
 const LINKED_ATTRIBUTES_CONVERSION={
-  name: (v,id) => { if (v) {return v}; throw new Error ( `${id} Name is mandatory`)},
+  name: lodash.identity,
   closed: v => v || false,
   masked: v => v || false,
   description: lodash.identity,
@@ -28,6 +28,12 @@ const LINKED_ATTRIBUTES_CONVERSION={
 const LINKED_ATTRIBUTES=Object.keys(LINKED_ATTRIBUTES_CONVERSION)
 
 const NULLED_ATTRIBUTES=Object.fromEntries(LINKED_ATTRIBUTES.map(att => ([att, undefined])))
+
+const ensureMongooseModel = data => {
+  if (data.constructor.name != 'model') {
+    throw new Error(`Expecting mongoose object:`, JSON.stringify(data));
+  }
+}
 
 const setParentSession = async (session_id) => {
   const allBlocks=await getSessionBlocks(session_id)
@@ -96,12 +102,7 @@ const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 20})
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
-  if (data.constructor.name!='model') {
-    throw new Error(`Expecting mongoose object:`, JSON.stringify(data))
-  }
-  if (!!data._locked && data.type!='resource' && !!data[attName]) {
-    return data[attName]
-  }
+  ensureMongooseModel(data);
   const key=`${data._id}/${attName}`
   if (ATTRIBUTES_CACHE.has(key)) {
     return ATTRIBUTES_CACHE.get(key)
@@ -128,61 +129,61 @@ const getAttribute = attName => async (userId, params, data) => {
   return null
 }
 
-const isFinished = async (user, blockId) => {
-  return Progress.exists({user, block: blockId, achievement_status: BLOCK_STATUS_FINISHED})
+const isFinished = async (user, block) => {
+  return Progress.exists({user, block, achievement_status: BLOCK_STATUS_FINISHED})
 }
 
-const onBlockFinished = async (user, blockId) => {
-  const block=await mongoose.models.block.findById(blockId)
+const onBlockFinished = async (user, block) => {
+  ensureMongooseModel(block)
+  await block.populate('parent').execPopulate()
   if (!block.parent) {
     return
   }
-
-  const parentBlock = await mongoose.models.block.findById(block.parent).populate('children')
-  const allChildrenFinished = (await Promise.all(parentBlock.children.map(c => isFinished(user, c._id)))).every(v => !!v)
-  console.log('all childrenfinished', allChildrenFinished)
+  await block.parent.populate('children').execPopulate()
+  const allChildrenFinished = (await Promise.all(block.parent.children.map(c => isFinished(user, c)))).every(v => !!v)
 
   if (allChildrenFinished) {
     await Progress.findOneAndUpdate(
-      {block: parentBlock._id, user},
-      {block: parentBlock._id, user, achievement_status: BLOCK_STATUS_FINISHED},
+      {block: block.parent, user},
+      {block: block.parent, user, achievement_status: BLOCK_STATUS_FINISHED},
       {upsert: true}
     )
-    await onBlockFinished(user, parentBlock._id)
+    await onBlockFinished(user, block.parent)
   }
 }
 
 // Set all parents to current
-const onBlockCurrent = async (user, blockId) => {
-  const parent=(await mongoose.models.block.findById(blockId, {parent:1}))?.parent
-  if (parent) {
+const onBlockCurrent = async (user, block) => {
+  ensureMongooseModel(block)
+  await block.populate('parent').execPopulate()
+  if (block.parent) {
     await Progress.findOneAndUpdate(
-      {block: parent._id, user},
-      {block: parent._id, user, achievement_status: BLOCK_STATUS_CURRENT},
+      {block: block.parent._id, user},
+      {block: block.parent._id, user, achievement_status: BLOCK_STATUS_CURRENT},
       {upsert: true}
     )    
-    return onBlockCurrent(user, parent._id)
+    return onBlockCurrent(user, block.parent)
   }
 }
 
-const onBlockAction = async (user, blockId) => {
-  const progress=await Progress.findOne({user, block: blockId})
-  const rule=await getAttribute('achievement_rule')(user._id, null, await mongoose.models.block.findById(blockId))
+const onBlockAction = async (user, block) => {
+  const progress=await Progress.findOne({user, block})
+  const rule=await getAttribute('achievement_rule')(user._id, null, block)
   console.log('rule is', rule)
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
   await Progress.findOneAndUpdate(
-    {block: blockId, user},
-    {block: blockId, user, achievement_status: status},
+    {block, user},
+    {block, user, achievement_status: status},
     {upsert: true}
   )
   if (finished) {
-    console.log(`Block ${blockId} finished`)
-    onBlockFinished(user, blockId)
+    console.log(`Block ${block._id} finished`)
+    onBlockFinished(user, block)
   }
   else {
-    console.log(`Block ${blockId} becomes current`)
-    onBlockCurrent(user, blockId)
+    console.log(`Block ${block._id} becomes current`)
+    onBlockCurrent(user, block)
   }
 }
 
@@ -224,4 +225,5 @@ module.exports={
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
 }
+
 

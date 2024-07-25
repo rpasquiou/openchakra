@@ -33,16 +33,19 @@ ProgramSchema.pre('validate', function(next) {
   if (lodash.isEmpty(this.codes)) {
     return next(new Error(`Au moins un code produit attendu`))
   }
-  return mongoose.models['program'].findOne(
-    {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}
-  ).populate('codes')
-  .then(program => {
-    if (program) { 
-      const usedCodes=lodash(program.codes).intersectionBy(this.codes, v => v._id.toString()).map('code')
-      return next(new Error(`Le programme ${program.name} utilise déjà le(s) code(s) ${usedCodes}`))
-    }
-    return next()
-  })
+  if (!this._locked && !this.origin) {
+    return mongoose.models['program'].findOne(
+      {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}
+    ).populate('codes')
+    .then(program => {
+      if (program) { 
+        const usedCodes=lodash(program.codes).intersectionBy(this.codes, v => v._id.toString()).map('code')
+        return next(new Error(`Le programme ${program.name} utilise déjà le(s) code(s) ${usedCodes}`))
+      }
+      return next()
+    })
+  }
+  return next()
 })
 
 module.exports = ProgramSchema

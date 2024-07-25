@@ -25,7 +25,7 @@ describe('Test models computations', () => {
     await setSessionInitialStatus(session._id)
   })
 
-  it('must lock session', async() => {
+  it.only('must lock session', async() => {
     const sessions=await Block.find({type: 'session'})
     await Promise.all(sessions.map(s => lockSession(s._id)))
   })
@@ -35,7 +35,7 @@ describe('Test models computations', () => {
     let blocks=await getSessionBlocks(session)
   })
 
-  it.only('must test types', async() => {
+  it('must test types', async() => {
     const session=await Block.findOne({_locked: true, origin: {$ne: null}})
     console.log(session.origin.constructor.name)
     await session.populate('origin').execPopulate()

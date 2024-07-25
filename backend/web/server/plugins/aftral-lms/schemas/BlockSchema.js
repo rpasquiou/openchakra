@@ -20,7 +20,7 @@ const BlockSchema = new Schema({
   },
   name: {
     type: String,
-    required: [function()  {return !this.origin}, `Le nom est obligatoire`],
+    required: [function()  {return (!!this._locked || !this.origin)}, `Le nom est obligatoire`],
     index: true,
   },
   parent: {
@@ -67,27 +67,25 @@ const BlockSchema = new Schema({
   origin: {
     type: Schema.Types.ObjectId,
     ref: 'block',
-    indx: true,
+    index: true,
     required:false,
   },
   // TODO Compute actual status
   achievement_status: {
     type: String,
-    enum: [null, ...Object.keys(BLOCK_STATUS)],
+    enum: Object.keys(BLOCK_STATUS),
     set: v => v || undefined,
-    default: null,
     required: false,
   },
   url: {
     type: String,
     default: null,
-    required: [function() {return this?.type=='resource' && !this?.origin}, `L'url est obligatoire`],
+    required: [function() {return this.type=='resource' && (!!this._locked || !this.origin)}, `L'url est obligatoire`],
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    //required: [function(){ return this?.type=='resource' && !this?.origin}, function() {return `${this._id} Le type de ressource est obligatoire`}],
-    required: [function(){ return this?.type=='resource' && !!this?._locked}, function() {return `${this._id} Le type de ressource est obligatoire`}],
+    required: [function(){ return this.type=='resource' && (!!this._locked || !this.origin)}, `Le type de ressource est obligatoire`],
   },
   spent_time: {
     type: Number,
@@ -140,7 +138,7 @@ const BlockSchema = new Schema({
     type: String,
     enum: Object.keys(ACHIEVEMENT_RULE),
     set: v => v || undefined,
-    required: [function() {return this.type=='resource' && !this.origin}, `La règle d'achèvement est obligatoire`],
+    required: [function() {return this.type=='resource' && (!!this._locked || !this.origin)}, `La règle d'achèvement est obligatoire`],
   },
   success_note_min: {
     type: Number,
@@ -210,15 +208,16 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
   // #36 Can't create two templates with same type and same name
-  if (!this._locked) {
-    const exists=!!this.name && await mongoose.models.block.exists({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
-    return next(new Error(`${this._id} Un modèle ${this.type} nommé "${this.name}" existe déjà`))
+  if (!this.origin && this.type=='resource' && !this.name) {
+    const sameOne=await mongoose.models.block.findOne({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
+    if (sameOne) {
+      return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà ${this._id} ${sameOne._id}`))
+    }
   }
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
   if (!this._locked && this.type=='resource') {
     const resourceType=await getAttribute('resource_type')(null, null, this)
-    console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
     const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
     // TODO allowedAchievementRules may be null if the block is not still inserted in DB
     if (this.achievement_rule && allowedAchievementRules &&  !allowedAchievementRules.includes(this.achievement_rule)) {

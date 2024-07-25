@@ -228,15 +228,15 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   // If a student loads a resource, mark as CURRENT
   if (model=='resource' && !!id) {
-    const res=await Block.findById(id)
+    const block=await Block.findById(id)
     // If in session && user is student, set to current
-    if (res._locked && user.role==ROLE_APPRENANT) {
+    if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
-        {block: id, user},
-        {block: id, user, consult: true, consult_partial: true, join_partial: true, download: true},
+        {block, user},
+        {block, user, consult: true, consult_partial: true, join_partial: true, download: true},
         {upsert: true},
       )
-      await onBlockAction(user, id)
+      await onBlockAction(user, block)
     }
   }
   if (model == 'contact') {
@@ -380,8 +380,10 @@ const setSessionInitialStatus = async (blockId, trainees) => {
 }
 
 const forceLinkedAttributes = async block => {
+  const log=/669fadcc3d858662e785fe16/.test(block._id.toString()) ? console.log : () => {}
   return Promise.all(LINKED_ATTRIBUTES.map(async k => {
     const v=await getAttribute(k)(null, null, block)
+    log('attribute', k, v)
     const modifiedV=LINKED_ATTRIBUTES_CONVERSION[k](v, block._id)
     block[k]=modifiedV
   }))
@@ -414,13 +416,14 @@ const lockSession = async blockId => {
     }
 
     // Force attributes
-    if (!['session', 'resource'].includes(block.type)) {
-      // block.type=='program' && console.log('block before', {...block.toObject(), children: undefined})
+    if (!['session'].includes(block.type)) {
       await forceLinkedAttributes(block)
-      // block.type=='program' && console.log('block after', {...block.toObject(), children: undefined})
     }
     block._locked=true
-    await block.save({validateBeforeSave: false}).catch(console.error)
+    await block.save().catch(err => {
+      err.message=`${block._id}:${err}`
+      throw err
+    })
     toManage.push(...children)
   }
 }
