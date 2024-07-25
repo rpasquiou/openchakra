@@ -514,106 +514,34 @@ const nut_advices = async ({ companyFilter, company, diet, start_date, end_date 
 
 exports.nut_advices = nut_advices
 
-const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) => {
-  const dietFilter = diet ? 
-    [{
-      $match:{
-        diet:mongoose.Types.ObjectId(diet)
+const coachings_renewed = async ({ company, diet, start_date, end_date }) => {
+  const dateFilter = end_date ? { start_date: { $lt: new Date(end_date) } } : {}
+  const dietFilter = diet ? { diet: mongoose.Types.ObjectId(diet) } : {}
+
+  const companyFilter = company ? [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user'
       }
-    },]
-    : []
-  const dateMatch = {}
-  const companyFilterr = companyFilter.$ne != 'null' ?
-    [
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'user',
-          foreignField: '_id',
-          as: 'userDetails'
-        }
-      },
-      {
-        $unwind: '$userDetails'
-      },
-      {
-        $match: {
-          'userDetails.company': companyFilter
-        }
-      },
-    ]
-    : []
-  if (start_date!='undefined') {
-    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date)}}
-  }
-  else if (end_date!='undefined') {
-    dateMatch.$match = {'firstAppointment.start_date':{$lte:new Date(end_date)}}
-  }
-  else if(end_date!='undefined' && start_date!='undefined'){
-    dateMatch.$match = {'firstAppointment.start_date':{$gte:new Date(start_date), $lte:new Date(end_date)}}
-  }
-  // const result = await Coaching.aggregate([
-  //   ...dietFilter,
-  //   ...companyFilterr,
-  //   {
-  //     $sort: { 'appointments.start_date': 1 }
-  //   },
-  //   {
-  //     $group: {
-  //       _id: '$_id',
-  //       user: { $first: '$user' },
-  //       firstAppointment: { $first: '$appointments' }
-  //     }
-  //   },
-  //   {...dateMatch},
-  //   {
-  //     $group: {
-  //       _id: '$user',
-  //       coachingCount: { $sum: 1 }
-  //     }
-  //   },
-    
-  //   {
-  //     $addFields: {
-  //       adjustedCount: { $max: [{ $subtract: ['$coachingCount', 1] }, 0] }
-  //     }
-  //   },
-    
-  //   {
-  //     $group: {
-  //       _id: null,
-  //       totalRenewed: { $sum: '$adjustedCount' }
-  //     }
-  //   },
-  //   {
-  //     $project: {
-  //       _id: 0,
-  //       totalRenewed: 1
-  //     }
-  //   }
-  // ]).exec()
+    },
+    { $unwind: '$user' },
+    { $match: { 'user.company': mongoose.Types.ObjectId(company) } }
+  ] : []
 
   const result = await Appointment.aggregate([
     {
       $match: {
-        ...diet ? { diet: mongoose.Types.ObjectId(diet) } : {},
-        validated: true,
-        ...(start_date || end_date) ? 
-          { start_date: { 
-            ...start_date ? { $gte: new Date(moment(start_date).startOf('day').toDate()) } : {},
-            ...end_date ? { $lte: new Date(moment(end_date).endOf('day').toDate()) } : {}
-          }} 
-          : {}
+        ...dateFilter,
+        ...dietFilter,
       }
     },
-    ...companyFilterr,
-    {
-      $sort: { start_date: 1 },
-    },
+    ...companyFilter,
     {
       $group: {
         _id: '$coaching',
-        start_date: { $first: '$start_date' },
         user: { $first: '$user' }
       }
     },
@@ -624,28 +552,32 @@ const coachings_renewed = async ({ companyFilter, diet, start_date, end_date }) 
       }
     },
     {
-      $project: {
-        _id: 1,
-        coachingCount: { $subtract: ['$coachingCount', 1] }
+      $addFields: {
+        adjustedCoachingCount: { $subtract: ['$coachingCount', 1] }
+      }
+    },
+    {
+      $match: {
+        adjustedCoachingCount: { $gt: 0 }
       }
     },
     {
       $group: {
         _id: null,
-        totalCoachingCount: { $sum: '$coachingCount' },
-        users: { $push: { userId: '$_id', coachingCount: '$coachingCount' } }
+        totalAdjustedCount: { $sum: '$adjustedCoachingCount' }
       }
     },
     {
       $project: {
         _id: 0,
-        totalCoachingCount: 1,
-        users: 1
+        totalAdjustedCount: 1
       }
     }
   ])
-  return result.length > 0 ? result[0].totalCoachingCount : 0
+  const totalAdjustedCount = result.length > 0 ? result[0].totalAdjustedCount : 0
+  return totalAdjustedCount
 }
+
 exports.coachings_renewed = coachings_renewed
 
 const ratio_stopped_started = async ({companyFilter, diet, start_date, end_date}) => {

@@ -19,37 +19,37 @@ afterAll(async () => {
 
 describe('Statistics', () => {
   const start_date = new Date('2020-01-05T13:00:00.000Z')
-  const end_date = new Date('2021-01-05T13:00:00.000Z')
+  const end_date = new Date('2023-01-01T13:00:00.000Z')
   const id = '65f2f95bd449f912a30afe74'
   const diet = '65f2faa6234cec144a11fb3f'
 
   const fields = {
     number: [
-      // 'coachings_started',
-      // 'coachings_ongoing',
-      // 'coachings_stopped',
-      // 'coachings_dropped',
-      // 'coachings_finished',
+      'coachings_started',
+      'coachings_ongoing',
+      'coachings_stopped',
+      'coachings_dropped',
+      'coachings_finished',
       'coachings_renewed',
-      // 'nut_advices',
-      // 'ratio_dropped_started',
-      // 'ratio_stopped_started',
-      // 'ratio_appointments_coaching',
-      // 'coachings_gender_female',
-      // 'coachings_gender_male',
-      // 'coachings_gender_non_binary',
-      // 'coachings_gender_unknown',
-      // 'jobs_total',
-      // 'join_reasons_total',
-      // 'decline_reasons_total',
-      // 'webinars_by_company_total',
+      'nut_advices',
+      'ratio_dropped_started',
+      'ratio_stopped_started',
+      'ratio_appointments_coaching',
+      'coachings_gender_female',
+      'coachings_gender_male',
+      'coachings_gender_non_binary',
+      'coachings_gender_unknown',
+      'jobs_total',
+      'join_reasons_total',
+      'decline_reasons_total',
+      'webinars_by_company_total',
     ],
     complex: [
-      // 'coachings_stats',
-      // 'jobs_details',
-      // 'join_reasons_details',
-      // 'decline_reasons_details',
-      // 'webinars_by_company_details'
+      'coachings_stats',
+      'jobs_details',
+      'join_reasons_details',
+      'decline_reasons_details',
+      'webinars_by_company_details'
     ]
   }
 
@@ -57,12 +57,12 @@ describe('Statistics', () => {
 
   const combinations = [
     { label: 'no params', filters: {} },
-    // { label: 'diet', filters: { diet: diet } },
-    // { label: 'start_date', filters: { start_date: start_date } },
-    // { label: 'end_date', filters: { end_date: end_date } },
-    // { label: 'company', filters: { company: id } },
-    // { label: 'all but company', filters: { diet: diet, start_date: start_date, end_date: end_date } },
-    // { label: 'all', filters: { company: id, start_date: start_date, end_date: end_date, diet: diet } },
+    { label: 'diet', filters: { diet: diet } },
+    { label: 'start_date', filters: { start_date: start_date } },
+    { label: 'end_date', filters: { end_date: end_date } },
+    { label: 'company', filters: { company: id } },
+    { label: 'all but company', filters: { diet: diet, start_date: start_date, end_date: end_date } },
+    { label: 'all', filters: { company: id, start_date: start_date, end_date: end_date, diet: diet } },
   ]
 
   const computeMeanDuration = (measures) => {
@@ -94,7 +94,6 @@ describe('Statistics', () => {
           const noww = moment()
           const stats = await computeStatistics({ fields: [field], ...combination.filters })
           measure(combination.label + ' ' + field, moment().diff(noww, 'milliseconds'))
-          console.table(stats)
           try {
             if (fields.number.includes(field)) {
               expect(stats[field]).toBeGreaterThanOrEqual(0)
@@ -117,12 +116,12 @@ describe('Statistics', () => {
 
     return allMeasures
   }
-  it('must calculate all fields and their perfs', async () => {
+  it.only('must calculate all fields and their perfs', async () => {
     const allMeasures = await runTestsForFields(allFields, 1)
     const meanDurations = computeMeanDuration(allMeasures)
     console.table(meanDurations)
   })
-  it.only('checks results if user is RH', async() => {
+  it('checks results if user is RH', async() => {
     const user = await User.findOne({role:ROLE_RH})
     const params = []
     params['limit'] = 30
