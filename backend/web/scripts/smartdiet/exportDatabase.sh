@@ -1,7 +1,6 @@
 echo "Exporting smartdiet database started at `date`"
 source /home/ec2-user/.bashrc
 cd ~
-cd ~
 rm -rf ./export
 mkdir export
 node ~/studio-smartdiet-demo/backend/web/scripts/exportDatabase export
