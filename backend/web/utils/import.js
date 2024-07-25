@@ -167,7 +167,7 @@ const countCache = (model) => {
   return dataCache.keys().filter(k => k.startsWith(`${model}/`)).length
 }
 
-function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
+function upsertRecord({model, record, identityKey, migrationKey, updateOnly, origin}) {
   const identityFilter=computeIdentityFilter(identityKey, migrationKey, record)
   return model.findOne(identityFilter, {[migrationKey]:1})
     .then(result => {
@@ -185,7 +185,7 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
       return result
     })
     .catch(err => {
-      const msg=`Model ${model.modelName}, record ${JSON.stringify(record)}, error(s):${err.toString()}`
+      const msg=`Model ${model.modelName}, from ${JSON.stringify(origin)} to record ${JSON.stringify(record)}, error(s):${err.toString()}`
       console.error(msg)
     })
 }
@@ -212,8 +212,8 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
       console.timeEnd('Mapping records')
       const recordsCount=mappedData.length
       console.time(msg)
-      return runPromisesWithDelay(mappedData.map((data, index) => () => {
-        return upsertRecord({model: mongoModel, record: data, identityKey, migrationKey, updateOnly})
+      return runPromisesWithDelay(mappedData.map((record, index) => () => {
+        return upsertRecord({model: mongoModel, record, identityKey, migrationKey, updateOnly, origin: data[index]})
           .finally(() => progressCb && progressCb(index, recordsCount))
       }
       ))

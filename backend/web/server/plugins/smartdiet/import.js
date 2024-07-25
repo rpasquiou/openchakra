@@ -116,36 +116,12 @@ const replaceInFile = (path, replaces) => {
   }
 }
 
-const fixPatients = async directory => {
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''], [/orange\.f\\\n/g, 'orange.f'],
-    [/\@hotmailfr"/g, '@hotmail.fr"'], [/\@orange\.f"/g, '@orange.fr"'], [/\@hotmail\.fr2/g, '@hotmail.fr'],
-    [/\@gmailcom"/g, '@gmail.com"'], [/\@gmail\.c"/g, '@gmail.com"'], [/\@aolcom"/g, '@aol.com"'], [/\@orangefr"/g, '@orange.fr"'], 
-    [/@sfr"/g, '@sfr.fr"'], [/\@yahoofr/g, "@yahoo.fr"], [/\@hotmailcom"/g, 'hotmail.com"'], [/\@neuffr"/g, '@neuf.fr"'], 
-    [/\@msncom"/g, '@msn.com"'], [/\@gmail"/g, '@gmail.com"'], [/\@free.f"/g, '@free.fr"'], [/\@orange,fr/g, 'orange.fr'],
-    [/\@live\.f"/g, '@live.fr"'], [/\@yahoo\.f"/g, '@yahoo.fr"'], [/francksurgis\.\@live\.fr/g, 'francksurgis@live.fr'],
-    [/\@outlook\.f"/g, '@outlook.fr"'], [/\@yahoo"/g, '@yahoo.fr"'], [/\@lapos"/g, '@laposte.net"'], [/\@lapost"/g, '@laposte.net"'],
-    [/yanis69240hotmail.com/g, 'yanis69240@hotmail.com']
-
-  ]
-
-  replaceInFile(path.join(directory, 'smart_patient.csv'), REPLACES)
-}
-
-const fixDiets = directory => {
-  const REPLACES=[['UPPER(lastname)', 'lastname'], [/\\"/g, "'"], ]
-  replaceInFile(path.join(directory, 'smart_diets.csv'), REPLACES)
-}
-
 const fixAppointments = async directory => {
   const INPUT=path.join(directory, 'smart_consultation.csv')
   const MIS_INPUT=path.join(directory, 'smart_mis.csv')
   const EO_INPUT=path.join(directory, 'smart_eo.csv')
   const OUTPUT=path.join(directory, 'wapp_consultation.csv')
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''],
-  ]
-  replaceInFile(INPUT, REPLACES)
+
   let records=await loadRecords(INPUT)
 
   if (isNewerThan(OUTPUT, INPUT) && isNewerThan(OUTPUT, MIS_INPUT) && isNewerThan(OUTPUT, EO_INPUT)) {
@@ -192,32 +168,6 @@ const fixQuizz = directory => {
     [/.quivalences/g, 'Equivalences'],
   ]
   replaceInFile(path.join(directory, 'smart_quiz.csv'), REPLACES)
-}
-
-const fixQuizzQuestions = directory => {
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''],
-  ]
-  replaceInFile(path.join(directory, 'smart_question.csv'), REPLACES)
-}
-
-const fixObjectives = directory => {
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''],
-  ]
-  replaceInFile(path.join(directory, 'smart_objective.csv'), REPLACES)
-}
-
-const fixMessages = directory => {
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''],
-  ]
-  replaceInFile(path.join(directory, 'smart_message.csv'), REPLACES)
-}
-
-const fixSummary = directory => {
-  const REPLACES=[ [/\r/g, ''], [/\\"/g, "'"], [/\\\\/g, ''],]
-  replaceInFile(path.join(directory, 'smart_summary.csv'), REPLACES)
 }
 
 const fixSpecs = directory => {
@@ -353,16 +303,7 @@ const generateProgress = async directory => {
 
 
 const fixFoodDocuments = async directory => {
-  const REPLACES=[
-    [/\\"/g, "'"], [/\\\\/g, ''], [/’/g, "'"]
-  ]
-  replaceInFile(path.join(directory, 'smart_fiche.csv'), REPLACES)
-  const fichesRecords=await loadRecords(path.join(directory, 'smart_fiche.csv'))
   const mappingRecords=await loadRecords(path.join(directory, 'mapping_fiche.csv'))
-  const getMappingName = originalName => {
-    const mappingName=mappingRecords.find(record => record.smart_name==originalName)?.wapp_name
-    return mappingName
-  }
   // Check existence of mapped names in DB
   const missingDbDocuments=(await Promise.all(
     mappingRecords
@@ -438,19 +379,11 @@ const generateFoodPrograms = async directory => {
 
 const fixFiles = async directory => {
   console.log('Fixing files')
-  await fixPatients(directory)
-  await fixDiets(directory)
   await fixAppointments(directory)
   await fixQuizz(directory)
-  await fixQuizzQuestions(directory)
-  await fixObjectives(directory)
-  await fixMessages(directory)
-  await fixSummary(directory)
   await generateMessages(directory)
   await fixSpecs(directory)
   await generateProgress(directory)
-  // Moved in import function
-  //await fixFoodDocuments(directory)
   await generateQuizz(directory)
   await generateFoodPrograms(directory)
   console.log('Fixed files')
@@ -773,14 +706,14 @@ const FODD_DOCUMENT_MIGRATION_KEY='migration_id'
 const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMALE : undefined
 
 const NUTADVICE_MAPPING={
-  migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.DATE).unix()}`),
-  start_date: 'DATE',
+  migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.date).unix()}`),
+  start_date: 'date',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
   gender: ({record}) => getGender(record.gender),
   age: ({record}) => (+record.age && +record.age>=18) ? +record.age : null,
   job: ({record}) => NUT_JOB[+record.job_type],
-  comment: ({record}) => NUT_SUBJECT[record.SUBJECT],
+  comment: ({record}) => NUT_SUBJECT[record.subject],
   reason: ({record}) => NUT_REASON[record.reason],
   led_to_coaching: ({record}) => +record.coaching>0,
 }
