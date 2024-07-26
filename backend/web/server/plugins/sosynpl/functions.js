@@ -676,6 +676,10 @@ const preCreate = async ({model, params, user, skip_validation}) => {
   if (model == 'recommandation') {
     skip_validation=true
   }
+  if (model == 'question' ) {
+    skip_validation = true
+    params.announce = params.parent
+  }
   return Promise.resolve({model, params, user, skip_validation})
 }
 
