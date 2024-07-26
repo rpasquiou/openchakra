@@ -1,3 +1,5 @@
+import { isClient } from "./dependencies/utils/misc";
+
 export class LMSAPI {
     constructor() {
       this.initialized = false;
@@ -107,7 +109,6 @@ export class LMSAPI {
     }
 
     Commit(p) {
-      console.log('commit', p)
       return this.LMSCommit()
     }
 
@@ -126,12 +127,13 @@ export function getAPI() {
     return theAPI;
 }
 
-const API=getAPI()
 
-if (process.browser) {
+if (isClient()) {
   // alert('creating API')
+  const API=getAPI()
   window.API=API
   window.API_1484_11=API
+  console.log(window.API)
 }
 
 
