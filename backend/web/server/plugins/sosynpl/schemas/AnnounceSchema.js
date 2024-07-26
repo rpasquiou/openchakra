@@ -369,4 +369,10 @@ AnnounceSchema.virtual('_duration_days', DUMMY_REF).get(function() {
   return this.duration*DURATION_UNIT_DAYS[this.duration_unit]
 })
 
+AnnounceSchema.virtual('questions', {
+  ref: 'question',
+  localField: '_id',
+  foreignField: 'announce',
+})
+
 module.exports = AnnounceSchema

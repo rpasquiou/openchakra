@@ -513,6 +513,13 @@ declareVirtualField({model: 'mission', field: 'evaluation', instance: 'Array', m
     options: { ref: 'evaluation' }
   },
 })
+//Announce Questions
+declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', multiple: true,
+  caster :{
+    instance: 'ObjectID',
+    options: { ref: 'question' }
+  }
+})
 
 const soSynplRegister = props => {
   console.log(`Register with ${JSON.stringify(props)}`)
@@ -618,6 +625,8 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       id = s._id
     // }
   }
+  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
+  if (model == 'question' && !id) params['filter.announce'] = null
   return { model, fields, id, user, params }
 }
 
