@@ -2287,8 +2287,9 @@ false && cron.schedule('0 0 * * * *', async () => {
 // Synchronize diets & customer smartagenda accounts
 cron.schedule('0 */10 * * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({email:1}).limit(100)
+  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({creation_date:1}).limit(50)
     .then(users => {
+      console.log(`Sync users % smartagenda`, users.map(u => [u.role, u.email, u.creation_date]))
       return Promise.allSettled(users.map(user => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
