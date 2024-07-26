@@ -209,6 +209,7 @@ const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
+const { historicize } = require('./history')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -653,6 +654,9 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
       appt.validated=true
       await appt.save().catch(console.error)
     }
+  }
+  if (model=='lead') {
+    //await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
   }
   return Promise.resolve(params)
 }
