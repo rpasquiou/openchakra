@@ -442,29 +442,6 @@ router.post('/payment-hook', (req, res) => {
   return res.json()
 })
 
-// Not protected to allow external recommandations
-router.post('/recommandation', (req, res) => {
-  let params=req.body
-  const context= req.query.context
-  const user=req.user
-  const model = 'recommandation'
-  params.model=model
-
-  if (!model) {
-    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
-  }
-
-  return callPreCreateData({model, params, user})
-    .then(({model, params}) => {
-      return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
-        .then(([data]) => {
-          return callPostCreateData({model, params, data, user})
-        })
-        .then(data => res.json(data))
-    })
-})
-
 router.get('/statTest', (req, res) => {
   const data=lodash.range(360)
     .map(v => {
