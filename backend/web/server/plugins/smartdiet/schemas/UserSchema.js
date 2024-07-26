@@ -344,6 +344,15 @@ const UserSchema = new Schema({
   diet_comment: {
     type: String,
   },
+  // Box handling
+  box_sent_date: {
+    type: Date,
+    required: false,
+  },
+  box_batch_code: {
+    type: Date,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
