@@ -632,7 +632,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
 setPreprocessGet(preProcessGet)
 
-const preCreate = async ({model, params, user}) => {
+const preCreate = async ({model, params, user, skip_validation}) => {
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
@@ -673,7 +673,10 @@ const preCreate = async ({model, params, user}) => {
     params.conversation=conversation
     params.receiver=await conversation.getPartner(user)
   }
-  return Promise.resolve({model, params})
+  if (model == 'recommandation') {
+    skip_validation=true
+  }
+  return Promise.resolve({model, params, user, skip_validation})
 }
 
 setPreCreateData(preCreate)
