@@ -44,6 +44,7 @@ const UserQuizz = require('../../models/UserQuizz')
 const { isNewerThan } = require('../../utils/filesystem')
 const pairing =require('@progstream/cantor-pairing')
 const FoodDocument = require('../../models/FoodDocument')
+const Offer = require('../../models/Offer')
 const DEFAULT_PASSWORD='DEFAULT'
 
 const ASS_PRESTATION_DURATION=45
@@ -384,7 +385,8 @@ const fixFiles = async directory => {
   await generateMessages(directory)
   await fixSpecs(directory)
   await generateProgress(directory)
-  await generateQuizz(directory)
+  console.warn('*'.repeat(40), 'HERE HAVE TO GENERATE QUIZZ JUST BEFORE IMPORT', '*'.repeat(40),)
+  // await generateQuizz(directory)
   await generateFoodPrograms(directory)
   console.log('Fixed files')
 }
@@ -530,6 +532,23 @@ const DIET_MAPPING={
   source: () => 'import',
 }
 
+const companyOffersCache=new NodeCache()
+
+const getUserOffer = async (user, date) => {
+  if (!user) {
+    console.warn(`User not found`)
+    return null
+  }
+  const key=user.company._id.toString()
+  let offers=companyOffersCache.get(key)
+  if (!offers) {
+    offers=await Offer.find({company: user.company}).sort({validity_start: -1}).lean()
+    companyOffersCache.set(key, offers)
+  }
+  const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
+  return offer?._id
+}
+
 const DIET_KEY='email'
 const DIET_MIGRATION_KEY='migration_id'
 
@@ -538,9 +557,7 @@ const COACHING_MAPPING={
   user: ({cache, record}) => cache('user', record.SDPATIENTID),
   offer: async ({cache, record}) => {
     const user=await User.findById(cache('user', record.SDPATIENTID))
-      .populate({path: 'company', populate: 'current_offer'})
-    const offer=user?.company?.current_offer?._id
-    return offer
+    return getUserOffer(user, record.orderdate)
   },
   migration_id: 'SDPROGRAMID',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
