@@ -2,17 +2,16 @@ const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_S
 
 const freelanceProfileCompletion = (user) => {
   if (!user['freelance_missing_attributes'] || user['freelance_missing_attributes'].length === 0) return 1
-  const missing = user['freelance_missing_attributes']
+  const missing = user['freelance_missing_attributes'].map(attribute => attribute.trim())
   let result = 0
   const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
   if (requiredMissing === 0) result += 40
   else result += 5 * (FREELANCE_REQUIRED_ATTRIBUTES.length - requiredMissing)
-
-  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(attr)).length
+  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr])).length
   const mandatoryPenalty = Math.floor((60 / FREELANCE_MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
   
   result += 60 - mandatoryPenalty
-
+  console.log(result, '**', mandatoryMissing, requiredMissing)
   return result/100
 }
 

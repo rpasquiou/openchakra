@@ -440,31 +440,17 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
 }
 
 //Customer profile completion
-const CUSTOMER_REQUIRED_ATTRIBUTES = ['firstname','lastname','position','phone','email','password','siren','company_name']
-const CUSTOMER_ANNOUNCE_ATTRIBUTES = ['company_logo','sector','description','company_size']
-const CUSTOMER_CONTRACT_ATTRIBUTES = ['legal_status','registration_city','social_capital','headquarter_address','billing_contact_address','billing_contact_firstname','billing_contact_lastname','billing_contact_email']
+const CUSTOMER_REQUIRED_ATTRIBUTES = ['siren','company_size','description','company_logo','headquarter_address','legal_status','company_name']
 
 const CUSTOMER_OUTPUT_ATTRIBUTES = {
-  firstname:'Prénom',
-  lastname:'Nom',
-  position:'Intitulé du poste',
-  phone:'Numéro de téléphone',
-  mail:'Adresse mail',
-  password:'Mot de passe',
   siren:'SIREN',
   company_name:`Nom de l'entreprise`,
   company_logo:'Logo',
-  sector:`Secteur d'activité`,
   description:`Description de l'entreprise`,
   company_size:`Taille de l'entreprise`,
   legal_status:`Statut de l'entreprise`,
   registration_city:`Ville d'immatriculation`,
-  social_capital:`Capital de l'entreprise`,
   headquarter_address:`Adresse du siège de l'entreprise`,
-  billing_contact_address:`Àdresse de facturation`,
-  billing_contact_firstname:`Prénom du contact de facturation`,
-  billing_contact_lastname:`Nom du contact de facturation`,
-  billing_contact_email:`Email du contact de facturation`,
 }
 
 module.exports={
@@ -487,6 +473,6 @@ module.exports={
   SEARCH_MODE, DEFAULT_SEARCH_RADIUS, DURATION_UNIT_DAYS, DURATION_FILTERS, DURATION_MONTH,SOURCE_RECOMMANDATION, EVALUATION_MIN, EVALUATION_MAX, DURATION_MONTH, CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS,
   COMPANY_SIZE_LESS_10,MISSION_STATUS_CLOSED,
   FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES,
-  CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_ANNOUNCE_ATTRIBUTES, CUSTOMER_CONTRACT_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES
+  CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES
 }
 

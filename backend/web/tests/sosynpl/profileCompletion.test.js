@@ -46,13 +46,13 @@ describe('Profile Completion', ()=> {
     const fields = ['freelance_profile_completion']
     const [user] = await loadFromDb({model:'customerFreelance', id: freelance._id, fields})
     expect(user.freelance_profile_completion).toBeGreaterThanOrEqual(0)
+    console.log(user.freelance_profile_completion)
   })
 
   it.only('checks for customer missing attributes', async() => {
     const fields = ['customer_missing_attributes']
     const [user] = await loadFromDb({model:'customer', id: customer._id, fields})
     expect(user.customer_missing_attributes.length).toBeGreaterThanOrEqual(0)
-    console.table(user.customer_missing_attributes)
   })
 
   it.only('checks for customer profile completion', async() => {
