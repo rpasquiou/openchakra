@@ -2,6 +2,7 @@ import React from 'react'
 import {IconButton} from '@chakra-ui/react'
 import { DownloadIcon } from '@chakra-ui/icons'
 import { imageSrcSetPaths } from '../utils/misc'
+import '../../scorm'
 
 export const getExtension = (filename: string) =>
   filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename
@@ -95,12 +96,14 @@ export const mediaWrapper = ({
     // Preview for scorms TODO really useful ?
     else {
       // Replace the last part of the path with 'story.html'
-      const pathParts = parsedUrl.pathname.split('/')
-      pathParts[pathParts.length - 1] = 'story.html'
-      parsedUrl.pathname = pathParts.join('/')
-      src=parsedUrl.toString()
+      // const pathParts = parsedUrl.pathname.split('/')
+      // pathParts[pathParts.length - 1] = 'story.html'
+      // parsedUrl.pathname = pathParts.join('/')
+      // src=parsedUrl.toString()
     }
   }
+
+  src='https://localhost:4301/scorm/index_lms.html'
 
   switch (ext) {
     case 'mp4':
