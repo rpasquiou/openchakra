@@ -74,7 +74,6 @@ const Timer = ({
     /* If counter is running, no more ping sent */
     useInterval(
       () => {
-        console.log(`Interval, dataSource:${JSON.stringify(dataSource)}`)
         if (dataSource) {
           try {
             axios
@@ -83,7 +82,6 @@ const Timer = ({
                 id: dataSource._id,
                 duration: RESSOURCE_SENDING_PERIOD,
               })
-              .then(() => console.log(`sent data time for ${dataSource}`))
               .catch(err =>
                 console.error(`erreur send data time for ${dataSource}:${err}`),
               )
