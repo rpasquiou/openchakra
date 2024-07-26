@@ -546,6 +546,7 @@ const preCreate = async ({ model, params, user }) => {
     if (user.role != ROLE_CUSTOMER) {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
       customer_id = params.parent
+      diet=user
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -585,12 +586,14 @@ const preCreate = async ({ model, params, user }) => {
         }
         // Check appointment to come
         const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
-        console.log('next appt', nextAppt)
         if (nextAppt) {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
-        diet=user
 
+        if (user.role==ROLE_CUSTOMER) {
+          diet=latest_coaching.diet
+        }
+        
         if (isAppointment) {
           const start=moment(params.start_date)
           return getAvailabilities({
