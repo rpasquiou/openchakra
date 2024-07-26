@@ -2287,9 +2287,8 @@ false && cron.schedule('0 0 * * * *', async () => {
 // Synchronize diets & customer smartagenda accounts
 cron.schedule('0 */10 * * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: {$in: [ROLE_EXTERNAL_DIET, ROLE_CUSTOMER] }, smartagenda_id: {$in: [null, '']}}).limit(100)
+  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({email:1}).limit(100)
     .then(users => {
-      console.log('Updating', users.map(u => [u.email, u.role]))
       return Promise.allSettled(users.map(user => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
@@ -2309,6 +2308,10 @@ cron.schedule('0 */10 * * * *', () => {
                   return user.save()
                 })
                 .catch(console.error)
+            }
+            else if (user.role == ROLE_EXTERNAL_DIET) {
+              user.smartagenda_id=null
+              return user.save()
             }
           })
           .catch(err => console.log(`User ${user.email}/${user.role} error ${err}`))
