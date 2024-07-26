@@ -282,6 +282,11 @@ const UserSchema = new Schema({
     type: Boolean,
     required: false,
   },
+  diet_calls_enabled: {
+    type: Boolean,
+    validate: [function(v) {return !v || this.role!=ROLE_EXTERNAL_DIET}, `Appels sortants autorisés aux diets uniquement`],
+    required: false,
+  },
   // END TODO: handle multiple enum declaration
   // TODO :set to ACTIVE when profile is 100%
   registration_status: {
