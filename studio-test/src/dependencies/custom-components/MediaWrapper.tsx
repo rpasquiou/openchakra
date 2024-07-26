@@ -94,16 +94,14 @@ export const mediaWrapper = ({
       src=`https://player.vimeo.com/video/${videoId}`
     }
     // Preview for scorms TODO really useful ?
-    else {
-      // Replace the last part of the path with 'story.html'
-      // const pathParts = parsedUrl.pathname.split('/')
-      // pathParts[pathParts.length - 1] = 'story.html'
-      // parsedUrl.pathname = pathParts.join('/')
-      // src=parsedUrl.toString()
-    }
+    // else {
+    //   // Replace the last part of the path with 'story.html'
+    //   const pathParts = parsedUrl.pathname.split('/')
+    //   pathParts[pathParts.length - 1] = 'story.html'
+    //   parsedUrl.pathname = pathParts.join('/')
+    //   src=parsedUrl.toString()
+    // }
   }
-
-  src='https://localhost:4301/scorm/index_lms.html'
 
   switch (ext) {
     case 'mp4':
