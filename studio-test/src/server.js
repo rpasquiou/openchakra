@@ -12,6 +12,7 @@ const bodyParser = require('body-parser')
 const nextApp = prod ? next({prod}) : next({dev})
 const routes = require('./routes')
 const routerHandler = routes.getRequestHandler(nextApp)
+const AWS = require('aws-sdk')
 const glob = require('glob')
 const cors = require('cors')
 const fs = require('fs')
@@ -35,6 +36,33 @@ checkConfig()
       secure: isSecure
     })
   );
+  
+  // TODO Move this proxy in backend ?
+  AWS.config.update({
+    accessKeyId: process.env.S3_ID,
+    secretAccessKey: process.env.S3_SECRET,
+    region: process.env.S3_REGION,
+  })
+  
+  const S3 = new AWS.S3()
+
+  app.use('/SCORM', 
+    createProxyMiddleware({
+      target: `https://${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}.amazonaws.com`,
+      changeOrigin: true,
+      secure: isSecure,
+      onProxyReq: async (proxyReq, req, res) => {
+        const s3Params = {Bucket: 'my-alfred-data-test',Key: decodeURI(proxyReq.path).replace(/^\/SCORM\//, '')}
+        const url=S3.getSignedUrl('getObject', s3Params)
+        proxyReq.path=url
+      },
+      onProxyRes: (proxyRes) => {
+        // console.log('After:', proxyRes)
+          proxyRes.headers['Content-Security-Policy'] = "frame-ancestors 'self' https://localhost";
+          proxyRes.headers['X-Frame-Options'] = "ALLOW-FROM https://localhost";
+      }
+    })
+  )
 
   // Body parser middleware
   app.use(bodyParser.urlencoded({extended: false}))
