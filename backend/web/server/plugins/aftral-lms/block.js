@@ -32,7 +32,6 @@ const getSessionBlocks = async session_id => {
 const getParentBlocks = async blockId => {
   const res=[]
   let block=await mongoose.models.block.findById(blockId, {parent:1})
-  console.log('block', blockId)
   while (block.parent) {
     res.push(block.parent._id)
     block=await mongoose.models.block.findById(block.parent, {parent:1})
