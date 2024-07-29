@@ -625,6 +625,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       id = s._id
     // }
   }
+  if (model == 'question') params.creator=user
   //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
   if (model == 'question' && !id) params['filter.announce'] = null
   return { model, fields, id, user, params }
