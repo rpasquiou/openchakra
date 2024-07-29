@@ -114,12 +114,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
 const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 
 const searchFreelances = async (userId, params, data, fields)  => {
-  
   let filter={role: ROLE_FREELANCE}
-  if (data.pattern?.trim()) {
-    const regExp=new RegExp(data.pattern, 'i')
-    filter={...filter, $or: PROFILE_TEXT_SEARCH_FIELDS.map(field => ({[field]:regExp}))}
-  }
   if (!lodash.isEmpty(data.work_modes)) {
     filter.work_mode={$in: data.work_modes}
   }
@@ -148,20 +143,38 @@ const searchFreelances = async (userId, params, data, fields)  => {
       filter.rate={...filter.rate, $lte: data.max_daily_rate}
     }
   }
+  
+  fields=[...fields, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
+  let candidates = {}
+  
+  if (data.pattern?.trim()) {
+    const regExp = new RegExp(data.pattern, 'i')
+    const allCandidates = await Promise.all(Object.keys(PROFILE_TEXT_SEARCH_FIELDS).map(async (field) => {
+      const newFilter = { ...filter, [PROFILE_TEXT_SEARCH_FIELDS[field]]: regExp }
+      const newParams = lodash(newFilter)
+        .mapKeys((v, k) => `filter.${k}`)
+        .value()
+      const cand = await loadFromDb({ model: 'customerFreelance', user: userId, filter: newFilter, params: newParams, fields })
+      return cand
+    }))
 
-  params=lodash(filter)
-    .mapKeys((v,k) => `filter.${k}`)
-    .value()
+    candidates = Object.assign({}, ...allCandidates)
+  }
 
-  fields=[...fields, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned']
-  let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params}) // await CustomerFreelance.find({...filter})
+  else {
+    const params=lodash(filter)
+        .mapKeys((v,k) => `filter.${k}`)
+        .value()
+    candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params})
+  }
+
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
       const distance=computeDistanceKm(c.address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
-  candidates=candidates.map(c => new CustomerFreelance(c))
+  candidates=Object.keys(candidates).map(c => new CustomerFreelance(candidates[c]))
   return candidates
 }
 
@@ -174,32 +187,49 @@ const countFreelances = async (userId, params, data, fields)  => {
 const ANNOUNCE_TEXT_SEARCH_FIELDS=['description', 'expectation', 'company_description','team_description']
 
 const searchAnnounces = async (userId, params, data, fields)  => {
-  // console.log('Filtering announces with', data)
 
   let filter={status: ANNOUNCE_STATUS_ACTIVE}
 
-  if (data.pattern?.trim()) {
-    const regExp=new RegExp(data.pattern, 'i')
-    filter={...filter, $or: ANNOUNCE_TEXT_SEARCH_FIELDS.map(field => ({[field]:regExp}))}
-  }
-  // if (!lodash.isEmpty(data.work_modes)) {
-  //   filter.work_mode={$in: data.work_modes}
-  // }
   if (!lodash.isEmpty(data.experiences)) {
     filter.experience={$in: data.experiences}
   }
+  
   if (!lodash.isEmpty(data.sectors)) {
     filter.sectors={$in: data.sectors}
   }
+  
   if (!lodash.isEmpty(data.expertises)) {
     filter.expertises={$in: data.expertises}
   }
 
-  fields=[...fields, 'pinned_by', 'pinned']
+  if (data.pattern?.trim()) {
+    let candidates = []
+    const regExp=new RegExp(data.pattern, 'i')
+    ANNOUNCE_TEXT_SEARCH_FIELDS.forEach(async(field) => { 
+      const newFilter = {...filter, ...{[field]:regExp}}
+      const cand = await processFilters(params, fields, data, newFilter, userId)
+      candidates = [...candidates, ...cand]
+    })
+    console.log(candidates)
+    return candidates
+  }
+
+  else {
+    return await processFilters(params, fields, data, filter, userId)
+  }
+
+
+  // if (!lodash.isEmpty(data.work_modes)) {
+  //   filter.work_mode={$in: data.work_modes}
+  // }
+  
+}
+
+const processFilters = async (params, f, data, filter, userId) => {
+  let fields=[...f, 'pinned_by', 'pinned']
   params=lodash(filter)
   .mapKeys((v,k) => `filter.${k}`)
   .value()
-
   // let candidates=await Announce.find({...filter}).populate('user')
   let candidates=await loadFromDb({model: 'announce', user: userId, fields, params})
 

@@ -11,7 +11,6 @@ const freelanceProfileCompletion = (user) => {
   const mandatoryPenalty = Math.floor((60 / FREELANCE_MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
   
   result += 60 - mandatoryPenalty
-  console.log(result, '**', mandatoryMissing, requiredMissing)
   return result/100
 }
 
