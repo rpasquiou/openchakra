@@ -31,6 +31,8 @@ if (getDataModel()=='all-inclusive') {
 
 const {DEFAULT_ROLE} = require(`../../plugins/${getDataModel()}/consts`)
 
+const { stringify }=require('csv-stringify/sync')
+
 let ACTIONS = {
   put: ({parent, attribute, value}, user) => {
     const parsedValue=value ? JSON.parse(value) : value
@@ -140,6 +142,13 @@ let ACTIONS = {
       })
   },
 
+  export_csv: () => {
+    return loadFromDb({model: 'user', fields: ['role', 'creation_date', 'email', 'firstname','lastname']})
+      .then((model) => {
+        const csv=stringify(model, {header:true, delimiter: ';'})
+        return Promise.resolve(csv)
+      })
+  },
 }
 
 let ALLOW_ACTION= () => Promise.resolve(true)

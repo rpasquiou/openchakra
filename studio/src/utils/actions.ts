@@ -780,6 +780,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: [],
   },
+  export_csv: {
+    label: `Export CSV`,
+    options: {},
+    next: [],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

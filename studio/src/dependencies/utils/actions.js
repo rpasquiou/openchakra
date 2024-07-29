@@ -1184,4 +1184,12 @@ return Promise.allSettled(imagePromises)
     return null
   },
 
+  export_csv: (...props) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'export_csv',
+      //value: value?._id,
+    }
+    return axios.post(url, body)
+  }
 }
