@@ -567,6 +567,10 @@ const COACHING_MAPPING={
 const COACHING_KEY=['user', CREATED_AT_ATTRIBUTE]
 const COACHING_MIGRATION_KEY='migration_id'
 
+// APPT status : 1 : new, 2: done, 3: paid
+
+const EXPORT_DATE=moment('2024-06-18')
+
 const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
   coaching: ({cache, record}) => cache('coaching', record.SDPROGRAMID),
   start_date: 'date',
@@ -582,7 +586,7 @@ const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
     return diet
   },
   user: async ({cache, record}) => (await Coaching.findById(cache('coaching', record.SDPROGRAMID), {user:1}))?.user,
-  validated: ({record}) => +record.status>1,
+  validated: ({record}) => +record.status>1 || EXPORT_DATE.isBefore(record.date),
 })
 
 
@@ -785,7 +789,9 @@ const progressCb = step => (index, total)=> {
 }
 
 const updateImportedCoachingStatus = async () => {
-  const coachings=await Coaching.find({status: COACHING_STATUS_NOT_STARTED, migration_id: {$ne: null}}, {_id:1})
+  console.log('**** Update coaching status')
+  console.time('Update coaching status')
+  const coachings=await Coaching.find({migration_id: {$ne: null}}, {_id:1})
   const step=Math.floor(coachings.length/10)
   await runPromisesWithDelay(coachings.map((coaching, idx) => () => {
     if (idx%step==0) {
@@ -794,6 +800,8 @@ const updateImportedCoachingStatus = async () => {
     return updateCoachingStatus(coaching._id)
       .catch(err => console.error(`Coaching ${coaching._id}:${err}`))
   }))
+  console.timeEnd('Update coaching status')
+  console.log('******************** Updated coaching status')
 }
 
 const updateDietCompanies = async () => {
@@ -882,6 +890,12 @@ const ensureSurvey = coaching => {
 
 
 const importCoachings = async input_file => {
+  // Cache company offers
+  const companies=await Company.find()
+    .populate({path: 'offers', sort: {validity_start: -1}})
+    .lean()
+  companies.forEach(company => companyOffersCache.set(company._id.toString(), company.offers))
+  console.log(`Cached ${companies.length} companies`)
   return loadRecords(input_file)
     .then(records => {
       // Map SM patient to its SM coaching

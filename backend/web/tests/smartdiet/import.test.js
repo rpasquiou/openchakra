@@ -150,17 +150,6 @@ describe('Test imports', () => {
     expect(appts.some(a => /pas regardé ce que/.test(a.note))).toBeTruthy()
   })
 
-  it('must update coaching status', async () => {
-    const coachings=await Coaching.find({migration_id: {$ne: null}, status: {$in: [null, COACHING_STATUS_NOT_STARTED]}})
-    const step=Math.ceil(coachings.length/10)
-    await runPromisesWithDelay(coachings.map((c, idx) => () => {
-      if (idx%step==0) {
-        console.log(idx, '/', coachings.length)
-      }
-      return updateCoachingStatus(c).catch(console.error)
-    }))
-  })
-
   it('must upsert measures', async () => {
     let res = await importMeasures(path.join(ROOT, 'smart_measure.csv'))
     const user=await User.findOne({email: PATIENT_EMAIL})

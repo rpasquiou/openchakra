@@ -23,7 +23,7 @@ const updateCoachingStatus = async coaching_id => {
     coaching.status=COACHING_STATUS_NOT_STARTED
   }
   // Started it 1 appointment
-  if (coaching.status==COACHING_STATUS_NOT_STARTED && !!coaching._last_appointment) {
+  if (coaching._last_appointment) {
     coaching.status=COACHING_STATUS_STARTED
     // Set progress quizz
     if (!coaching.progress) {
