@@ -142,7 +142,8 @@ let ACTIONS = {
       })
   },
 
-  export_csv: () => {
+  export_csv: (props) => {
+    //TODO specify with props
     return loadFromDb({model: 'user', fields: ['role', 'creation_date', 'email', 'firstname','lastname']})
       .then((model) => {
         const csv=stringify(model, {header:true, delimiter: ';'})
