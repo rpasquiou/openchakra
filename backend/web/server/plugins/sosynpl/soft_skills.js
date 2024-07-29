@@ -175,9 +175,15 @@ const computeAvailableBronzeSoftSkills =  async (userId, params, data) => {
 
 const mapMedals = owner => {
   let medals={}
-  owner.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
-  owner.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
-  owner.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
+  if(owner.gold_soft_skills) {
+    owner.gold_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_GOLD)
+  }
+  if(owner.silver_soft_skills)  {
+    owner.silver_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_SILVER)
+  }
+  if(owner.bronze_soft_skills)  {
+    owner.bronze_soft_skills.forEach(softSkill => medals[softSkill.value]=SS_MEDALS_BRONZE)
+  }
   return medals
 }
 

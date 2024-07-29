@@ -257,8 +257,6 @@ const processFilters = async (params, f, data, filter, userId) => {
   if (!!data.max_daily_rate) {
     candidates = candidates.filter(c => c.average_daily_rate <= data.max_daily_rate)
   }
-
-  candidates=candidates.map(c => new Announce(c))
   return candidates
 }
 
