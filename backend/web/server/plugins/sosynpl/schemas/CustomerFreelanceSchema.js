@@ -345,9 +345,13 @@ const CustomerFreelanceSchema = new Schema({
     required: false,
   },
   dedicated_admin: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: false
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: false
+    }],
+    default: [],
+    required: false,
   },
   identity_proof_1: {
     type: String,
