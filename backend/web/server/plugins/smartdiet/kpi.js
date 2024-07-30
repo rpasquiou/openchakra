@@ -695,8 +695,9 @@ const coachings_calc = async ({company, start_date, end_date, diet, status}) => 
     {
       $match: {
         'appointments.validated':true,
-        ...start_date ? { 'appointments.start_date': { $gte: new Date(start_date) } } : {},
-        ...end_date ? { 'appointments.start_date': { $lte: new Date(end_date) } } : {}
+        'appointments.order':1,
+        ...start_date ? { 'appointments.start_date': { $gte: moment(start_date).toDate() } } : {},
+        ...end_date ? { 'appointments.end_date': { $lte: moment(end_date).toDate() } } : {}
       }
     },
     ...companyFilter,
