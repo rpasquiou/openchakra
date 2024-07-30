@@ -612,8 +612,9 @@ const coachings_started = async ({ company, diet, start_date, end_date }) => {
     {
       $match:{
         ...diet ? { diet: mongoose.Types.ObjectId(diet) } : {},
-        ...start_date ? { start_date: { $gte: new Date(moment(start_date).startOf('day')) } } : {},
-        ...end_date ? { start_date: { $lte: new Date(moment(end_date).endOf('day')) } } : {},
+        ...start_date ? { start_date: { $gte: moment(start_date).toDate() } } : {},
+        ...end_date ? { end_date: { $lte: moment(end_date).toDate() } } : {},
+        order: 1,
         validated:true,
       }
     },
