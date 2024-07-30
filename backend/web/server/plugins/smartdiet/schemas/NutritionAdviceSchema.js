@@ -37,6 +37,7 @@ const NutritionAdviceSchema = new Schema({
   },
   patient_email: {
     type: String,
+    set : v => v && v.toLowerCase() || v,
     required: [true, `L'email du patient est obligatoire`],
   },
   gender: {
@@ -78,9 +79,10 @@ const NutritionAdviceSchema = new Schema({
     type: String,
     required: false,
   },
-  // Computed Lazily created and stoer under _certificate
+  // Computed Lazily created and store under _certificate
   certificate: {
     type: String,
+    required: false,
   }
 },
 {...schemaOptions}
