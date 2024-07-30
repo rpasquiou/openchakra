@@ -129,7 +129,6 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
 
   const endDate = params['filter.end_date'] ? moment(params['filter.end_date']) : moment()
 
-  console.log(`Computing from ${startDate} to ${endDate}`)
   const months = []
   let current = moment(startDate)
   while (current.isSameOrBefore(endDate, 'month')) {
