@@ -33,7 +33,7 @@ const SIB_IDS={
   // SMS
   APPOINTMENT_REMIND_TOMORROW: 200,
   // CUSTOMERS
-  FORGOT_PASSWORD: 4995801, // OK
+  FORGOT_PASSWORD: 88, // OK
   LEAD_ONBOARDING: 4982108,
   /**
   SATISFY_SURVEY: 4996126,
@@ -97,8 +97,8 @@ const sendForgotPassword = ({user, password}) => {
     notification: SIB_IDS.FORGOT_PASSWORD,
     destinee: user,
     params: {
-      FIRSTNAME: user.firstname,
-      PASSWORD: password,
+      firstname: user.firstname,
+      password: password,
     },
   })
 }
