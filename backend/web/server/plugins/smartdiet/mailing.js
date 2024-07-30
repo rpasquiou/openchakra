@@ -46,7 +46,7 @@ const SIB_IDS={
   MEASURES_REMAINER: 5010216,
   */
   // DIETS
-  DIET_PREREGISTER_2_DIET: 4852839,
+  DIET_PREREGISTER_2_DIET: 111,
   DIET_PREREGISTER_2_ADMIN: 5034812,
   /**
   DIET_VALIDATED_2_DIET: 5027161,
@@ -108,7 +108,7 @@ const sendDietPreRegister2Diet = ({user}) => {
     notification: SIB_IDS.DIET_PREREGISTER_2_DIET,
     destinee: user,
     params: {
-      FIRSTNAME: user.firstname,
+      firstname: user.firstname,
     },
   })
 }
