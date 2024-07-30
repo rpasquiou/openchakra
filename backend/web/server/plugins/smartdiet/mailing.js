@@ -117,10 +117,6 @@ const sendDietPreRegister2Admin = ({user, admin}) => {
   return sendNotification({
     notification: SIB_IDS.DIET_PREREGISTER_2_ADMIN,
     destinee: admin,
-    params: {
-      FIRSTNAME: user.firstname,
-      LASTNAME: user.lastname,
-    },
   })
 }
 
