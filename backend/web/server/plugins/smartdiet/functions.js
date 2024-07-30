@@ -656,7 +656,7 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
     }
   }
   if (model=='lead') {
-    //await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
+    await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
   }
   return Promise.resolve(params)
 }
@@ -1723,6 +1723,10 @@ declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORIT
 /** Purchase START */
 declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 /** Purchase END  */
+
+/** History START */
+// declareEnumField({model: 'history', field: 'docModel', enumValues: {lead: 'Lead'}})
+/** History END  */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})

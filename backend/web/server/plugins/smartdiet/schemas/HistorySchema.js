@@ -7,13 +7,14 @@ const HistorySchema = new Schema({
   source: {
     type: Schema.Types.ObjectId,
     required: true,
-    refPath: 'docModel'
+    ref: 'lead',
+    // refPath: 'docModel'
   },
-  docModel: {
-    type: String,
-    required: true,
-    enum: ['lead']
-  },
+  // docModel: {
+  //   type: String,
+  //   required: true,
+  //   enum: ['lead']
+  // },
   attribute: {
     type: String,
   },
@@ -24,7 +25,5 @@ const HistorySchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
-
-mongoose.model('history', HistorySchema)
 
 module.exports = HistorySchema
