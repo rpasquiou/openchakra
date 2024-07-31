@@ -91,6 +91,18 @@ const CompanySchema = new Schema(
       default: 0,
       required: false,
     },
+    nutadvice_certificate_template: {
+      type: String,
+      required: false,
+    },
+    assessment_certificate_template: {
+      type: String,
+      required: false,
+    },
+    coaching_certificate_template: {
+      type: String,
+      required: false,
+    },
   },
   schemaOptions,
 )

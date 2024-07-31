@@ -59,12 +59,12 @@ const Deploy = () => {
 }
 
 const DeployButton = styled.button`
-  color: ${props => props.disabled ? 'var(--primary-color)' : 'white'};
+  color: ${props => props.disabled ? '#f4f4f4' : '#f4f4f4'};
   display: flex;
   height: min-content;
   font-weight: bold;
   border-radius: 1rem;
-  background-color: ${props => props.disabled ? 'white' : 'var(--primary-color)'};
+  background-color: ${props => props.disabled ? '#00bf91' : '#00bf91'};
   padding-inline: 0.7rem;
   padding-block: 0.2rem;
 `

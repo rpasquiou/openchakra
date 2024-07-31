@@ -8,93 +8,77 @@
 
 */}
 
+const axios = require('axios')
 const { PDFDocument, PDFTextField, PDFButton } = require('pdf-lib')
 const fs = require('fs').promises
-
+const validator=require('validator')
 const defaultLink='./form.pdf'
 const defaultOutputLink='./finalform.pdf'
 const defaultData = ['1', '2', '3', '5']
 const args = process.argv.slice(2)
 
-async function main() {
-    try {
-        if (args[0] === 'fieldStructure') {
-            const link = args[1] || defaultLink
-            console.table(await logFormFields(link))
-        } else if (args[0] === 'fillForm') {
-            const link = args[1] || defaultLink
-            const data = args[2] || defaultData
-            const output = args[3] || defaultOutputLink
-            const pdf= await fillForm(link, data)
-            await savePDFFile(pdf)
-            console.log("Form filled successfully.")
-        }
-    } catch (error) {
-        console.error('Error:', error)
-    }
-}
-
 async function getPDFBytes(filePath) {
-    const pdf = await fs.readFile(filePath)
-    return pdf.buffer
+  const isUrl=validator.isURL(filePath)
+  if (isUrl) {
+    const {data}=await axios.get(filePath, {responseType: 'arraybuffer'})
+    return data
+  }
+  const pdf = await fs.readFile(filePath)
+  return pdf.buffer
 }
 
 async function copyPDF(sourceLink) {
-    const pdfBytes = await getPDFBytes(sourceLink)
-    const pdf = await PDFDocument.load(pdfBytes)
-    return pdf
+  const pdfBytes = await getPDFBytes(sourceLink)
+  const pdf = await PDFDocument.load(pdfBytes)
+  return pdf
 }
 
 async function logFormFields(sourceLink){
-    const sourcePDFBytes=await getPDFBytes(sourceLink)
-    const sourcePDF = await PDFDocument.load(sourcePDFBytes)
-    const form = sourcePDF.getForm()
-    const fields = form.getFields()
-    const fieldInfo={}
-    for(const field of fields){
-        fieldInfo[field.getName()]=field.acroField.constructor.name
-    }
-    return fieldInfo
+  const sourcePDFBytes=await getPDFBytes(sourceLink)
+  const sourcePDF = await PDFDocument.load(sourcePDFBytes)
+  return Object.fromEntries(
+    sourcePDF.getForm().getFields().map(field => [field.getName(), field.acroField.constructor.name])
+  )
+}
+
+const setFieldValue = (form, field, value) => {
+  const fieldType=field.constructor.name
+  if (fieldType === 'PDFTextField') {
+    field.setText(value)
+  } else if (fieldType === 'PDFButton') {
+    field.setImage(value)
+  }
+  else {
+    console.warn(`Can not set value for field type ${fieldType}`)
+  }
 }
 
 async function fillForm(sourceLink, data) {
-    const sourcePDFBytes = await getPDFBytes(sourceLink)
-    const sourcePDF = await PDFDocument.load(sourcePDFBytes)
-    const form = sourcePDF.getForm()
-    const fields = form.getFields()
-    if (fields.length != data.length) {
-        console.log("Data length does not match the number of form fields")
-        return false
+  const sourcePDFBytes = await getPDFBytes(sourceLink)
+  const sourcePDF = await PDFDocument.load(sourcePDFBytes)
+  const form = sourcePDF.getForm()
+  
+  Object.entries(data).forEach(([fieldName, fieldValue]) => {
+    const field=form.getFieldMaybe(fieldName)
+    if (!field) {
+      return console.warn(`Found no field ${fieldName}`)
     }
-    
-    fields.forEach((field, index) => {
-        const fieldName = field.getName()
-        const fieldType = field.constructor.name
-
-        if (index < data.length) {
-            if (fieldType === 'PDFTextField') {
-                const textField = form.getTextField(fieldName)
-                textField.setText(data[index])
-            } else if (fieldType === 'PDFButton') {
-                const button = form.getButton(fieldName)
-                button.setImage(data[index])
-            }
-        }
-    })
-    return sourcePDF
+    setFieldValue(form, field, fieldValue)
+  })
+  form.flatten()
+  return sourcePDF
 }
 
 async function savePDFFile(pdf, outputFilePath) {
-    const pdfBytes= await pdf.save()
-    const buffer = Buffer.from(pdfBytes)
-    await fs.writeFile(outputFilePath, buffer)
+  const pdfBytes= await pdf.save()
+  const buffer = Buffer.from(pdfBytes)
+  await fs.writeFile(outputFilePath, buffer)
 }
-
-main()
 
 module.exports={
     getPDFBytes,
     copyPDF,
     logFormFields,
-    fillForm
+    fillForm,
+    savePDFFile,
 }

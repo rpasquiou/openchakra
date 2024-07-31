@@ -3,18 +3,17 @@ const mongoose=require('mongoose')
 const moment=require('moment')
 const { PHONE_REGEX, isPhoneOk } = require("../../../utils/sms")
 const User = require("../../models/User")
-const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED } = require('./consts')
+const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_FINISHED } = require('./consts')
 const Appointment = require('../../models/Appointment')
 const Company = require('../../models/Company')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const Coaching = require('../../models/Coaching')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
 const Message = require('../../models/Message')
 const Conversation = require('../../models/Conversation')
 const { idEqual } = require('../../utils/database')
 const Offer = require('../../models/Offer')
 const Quizz = require('../../models/Quizz')
-const { updateCoachingStatus } = require('./coaching')
+const { updateApptsOrder } = require('./coaching')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -33,9 +32,12 @@ const normalizePhones = async () => {
       user.phone=null
       return user.save()
     }
-    user.phone=user.phone.replace(/^0/, '+33').replace(/ /g, '')
-    log(`Normalized for`, user.email, 'to', user.phone)
-    return user.save()
+    const modified=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
+    user.phone=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
+    if (modified!=user.phone) {
+      log(`Normalized for`, user.email, 'to', user.phone)
+      return user.save()
+    }
   }
 
   // Normalize user phones
@@ -208,6 +210,19 @@ const setOffersOnCoachings = () => {
     //   })
 }
 
+const updateAppointmentsOrder = async () => {
+  const apptsToUpdate=await Appointment.exists({order: null})
+  if (apptsToUpdate) {
+    const appts=await Appointment.find({order: null}, {coaching:1})
+    const coachingIds=lodash.uniq(appts.map(app => app.coaching._id.toString()))
+    console.log('Update', coachingIds.length, 'coaching appointments orders')
+    return Promise.all(coachingIds.map(id => updateApptsOrder(id)))
+  }
+  else {
+    console.log('Update no coaching appointments orders')    
+  }
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizePhones()
@@ -220,6 +235,7 @@ const databaseUpdate = async () => {
   await upgradeCompanyOffers()
   //await setOffersOnCoachings() NOOOO
   await setCoachingAssQuizz()
+  await updateAppointmentsOrder()
 }
 
 module.exports=databaseUpdate

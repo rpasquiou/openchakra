@@ -13,6 +13,7 @@ export type AppState = {
   showCode: boolean
   inputTextFocused: boolean
   overlay: undefined | Overlay
+  editDatabaseLayout : boolean
 }
 
 const appSections: {
@@ -21,6 +22,7 @@ const appSections: {
     showRightPanel: boolean
     mediasLayout: boolean
     pageLayout: boolean
+    editDatabaseLayout : boolean
   }
 } = {
   pages: {
@@ -28,19 +30,29 @@ const appSections: {
     showRightPanel: true,
     pageLayout: true,
     mediasLayout: false,
+    editDatabaseLayout: false,
   },
   components: {
     showLeftPanel: true,
     showRightPanel: true,
     pageLayout: true,
     mediasLayout: false,
+    editDatabaseLayout: false,
   },
   medias: {
     showLeftPanel: true,
     showRightPanel: false,
     pageLayout: false,
     mediasLayout: true,
+    editDatabaseLayout: false,
   },
+  editDatabase: {
+    showLeftPanel: true,
+    showRightPanel: false,
+    pageLayout: false,
+    mediasLayout: false,
+    editDatabaseLayout: true,
+  }
 }
 
 const app = createModel({
@@ -56,6 +68,8 @@ const app = createModel({
     showCode: false,
     inputTextFocused: false,
     overlay: undefined,
+    editDatabaseLayout: false
+    
   } as AppState,
   reducers: {
     selectDevice(state: AppState, selectedDevice: string): AppState {
@@ -83,6 +97,13 @@ const app = createModel({
       return {
         ...state,
         inputTextFocused: !state.inputTextFocused,
+      }
+    },
+    toggleEditDatabase(state: AppState): AppState {
+      return {
+        ...state,
+        editDatabaseLayout: !state.editDatabaseLayout,
+        showRightPanel: false,
       }
     },
     setCurrentSection(state: AppState, selectedSection: string): AppState {

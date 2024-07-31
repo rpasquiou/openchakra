@@ -213,10 +213,8 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
-      // if (isFilterComponent(childComponent, components)) {
-        propsContent += ` setComponentValue={setComponentValue} `
-      // }
-
+      propsContent += ` setComponentValue={setComponentValue} `
+      
       propsContent += ` getComponentAttribute={getComponentAttribute} `
 
       if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
@@ -873,7 +871,7 @@ export const generateCode = async (
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
   const { settings } = project
-  const {description, metaImage, name, url, favicon32, gaTag} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
+  const {description, metaImage, name, url, favicon32, gaTag, consentId} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
   const loginPage=Object.values(pages).find(page => page.components?.root?.props?.tag=='LOGIN')!
   const loginUrl=loginPage ? '/'+getPageUrl(loginPage.pageId, pages) : ''
@@ -980,6 +978,17 @@ export const generateCode = async (
       axios.post('/myAlfred/api/studio/tags', tagPages)
     }, [])`
   }
+
+  const generateConsentBanner = () => {
+    if (!consentId) {
+      return ''
+    }
+    return `<script type="text/javascript" 
+      charset="UTF-8" src="//cdn.cookie-script.com/s/${consentId}.js">
+      </script>
+    `
+  }
+
   let renderNullCode=''
   if(components.root.props.allowNotConnected=="false"){
     renderNullCode+= `if(!user){
@@ -1089,6 +1098,7 @@ const ${componentName} = () => {
       metaFavicon32={'${favicon32 && addBackslashes(favicon32)}'}
       metaGaTag={'${gaTag}'}
     />
+    ${generateConsentBanner()}
     ${code}
     </>
 )};

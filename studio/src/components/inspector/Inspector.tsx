@@ -188,7 +188,7 @@ const Inspector = () => {
           py={2}
           px={2}
           boxShadow="sm"
-          bg="#5bbdc5"
+          bg="#00bf91"
           display="flex"
           justifyContent="space-between"
           flexDir="column"

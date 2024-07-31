@@ -208,6 +208,8 @@ const Purchase = require('../../models/Purchase')
 const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
+const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
+const { historicize } = require('./history')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -314,18 +316,18 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
   if (model == 'adminDashboard') {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
-      return Promise.resolve({ model, fields, id, data: [] })
+      return Promise.resolve({ model, fields, id, params, data: [] })
     }
-    id= params['filter.company']
-    if (user.role == ROLE_RH) {
-      id = user.company._id
-    }
-    const company = params['filter.company'] ? params['filter.company'] : undefined
+    let company = params['filter.company'] ? params['filter.company'] : undefined
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
+    id= params['filter.company']
+    if (user.role == ROLE_RH) {
+      company = user.company._id
+    }
     return computeStatistics({ fields, company, start_date, end_date, diet})
-      .then(stats => ({ model, fields, id, data: [stats] }))
+      .then(stats => ({ model, fields, id, params, data: [stats] }))
   }
 
   if (model=='billing') {
@@ -530,6 +532,11 @@ const preCreate = async ({ model, params, user }) => {
       params.diet_private = user._id
     }
   }
+  if (model=='nutritionAdvice') {
+    if (!(user.role==ROLE_EXTERNAL_DIET)) {
+      throw new Error(`Seule une diet peut créer un conseil nut`)
+    }
+  }
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
     const isAppointment = model == 'appointment'
@@ -540,6 +547,7 @@ const preCreate = async ({ model, params, user }) => {
     if (user.role != ROLE_CUSTOMER) {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
       customer_id = params.parent
+      diet=user
     }
     else { //CUSTOMER
       customer_id = user._id
@@ -579,12 +587,14 @@ const preCreate = async ({ model, params, user }) => {
         }
         // Check appointment to come
         const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
-        console.log('next appt', nextAppt)
         if (nextAppt) {
           throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
         }
-        diet=latest_coaching.diet
 
+        if (user.role==ROLE_CUSTOMER) {
+          diet=latest_coaching.diet
+        }
+        
         if (isAppointment) {
           const start=moment(params.start_date)
           return getAvailabilities({
@@ -602,7 +612,7 @@ const preCreate = async ({ model, params, user }) => {
             })
         }
         else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, coaching: latest_coaching._id, ...params } }
+          return { model, params: { patient_email: usr.email, diet, ...params } }
         }
       })
   }
@@ -644,6 +654,9 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
       appt.validated=true
       await appt.save().catch(console.error)
     }
+  }
+  if (model=='lead') {
+    await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
   }
   return Promise.resolve(params)
 }
@@ -1393,6 +1406,14 @@ declareVirtualField({
 })
 declareVirtualField({model: 'coaching', field: '_last_appointment', instance: 'appointment'})
 declareVirtualField({model: 'coaching', field: 'in_progress', instance: 'Boolean', requires: 'status'})
+declareComputedField({model: 'coaching', field: 'assessment_certificate', type: 'String', 
+  requires: 'user.firstname,user.lastname,user.company.name,_assessment_certificate',
+  getterFn: getAssessmentCertificate,
+})
+declareComputedField({model: 'coaching', field: 'final_certificate', type: 'String', 
+  requires: 'user.firstname,user.lastname,user.company.name,_final_certificate',
+  getterFn: getFinalCertificate,
+})
 
 
 declareEnumField({ model: 'userCoachingQuestion', field: 'status', enumValues: COACHING_QUESTION_STATUS })
@@ -1512,6 +1533,25 @@ declareVirtualField({
 })
 declareEnumField({ model: 'coaching', field: 'source', enumValues: SOURCE })
 declareEnumField({ model: 'nutritionAdvice', field: 'source', enumValues: SOURCE })
+declareComputedField({ 
+  model: 'nutritionAdvice', field: 'certificate', type: 'String', 
+  requires: 'start_date,_user.firstname,_user.lastname,_certificate,_user.company.nutadvice_certificate_template,_user.company.name',
+  getterFn: getNutAdviceCertificate,
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_lead', instance: 'lead', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'lead' }
+  },
+})
+declareVirtualField({
+  model: 'nutritionAdvice', field: '_user', instance: 'user', multiple: false,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'user' }
+  },
+})
 declareVirtualField({ model: 'adminDashboard', field: 'ratio_appointments_coaching', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_coaching_enabled', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'diet_site_enabled', instance: 'Number' })
@@ -1544,10 +1584,6 @@ declareVirtualField({
 
 const APP_MODELS=['appointment','currentFutureAppointment','pastAppointment']
 APP_MODELS.forEach(model => {
-  declareVirtualField({
-    model: model, field: 'order', instance: 'Number',
-    requires: 'coaching.appointments',
-  })
   declareVirtualField({
     model: model, field: 'status', instance: 'String',
     requires: 'start_date,end_date,validated', enumValues: APPOINTMENT_STATUS,
@@ -1687,6 +1723,10 @@ declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORIT
 /** Purchase START */
 declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 /** Purchase END  */
+
+/** History START */
+// declareEnumField({model: 'history', field: 'docModel', enumValues: {lead: 'Lead'}})
+/** History END  */
 
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
@@ -2032,8 +2072,18 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
   const fetchAndCache = async (field, func, params) => {
     if (cache[field]) return;
     cache[field] = true;
-    const functionResult = await func(params);
-    result[field] = functionResult;
+    try {
+      if (typeof func !== 'function') {
+        console.error(`Error: ${func} is not a function`);
+        result[field] = undefined;
+        return;
+      }
+      const functionResult = await func(params);
+      result[field] = functionResult;
+    } catch (error) {
+      console.error(`Error while executing ${func}:`, error);
+      result[field] = undefined;
+    }
   };
 
   const handleRatios = async (field) => {
@@ -2058,10 +2108,15 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
       if (!cache['coachings_ongoing']) {
         await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet });
       }
-      const appts = await kpi.validated_appts({company, start_date, end_date, diet})
-      result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
-        ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
-        : 0;
+      try {
+        const appts = await kpi.validated_appts({company, start_date, end_date, diet});
+        result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
+          ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
+          : 0;
+      } catch (error) {
+        console.error('Error calculating ratio_appointments_coaching:', error);
+        result['ratio_appointments_coaching'] = undefined;
+      }
     }
   };
 
@@ -2095,6 +2150,7 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
 };
 
 exports.computeStatistics = computeStatistics;
+
 
 
 /** Upsert PARTICULARS company */
@@ -2240,10 +2296,11 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 0 * * * *', () => {
+cron.schedule('0 */10 * * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: { $in: [ROLE_EXTERNAL_DIET, ROLE_CUSTOMER] }, smartagenda_id: null })
+  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({creation_date:1}).limit(50)
     .then(users => {
+      console.log(`Sync users % smartagenda`, users.map(u => [u.role, u.email, u.creation_date]))
       return Promise.allSettled(users.map(user => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
@@ -2264,13 +2321,17 @@ cron.schedule('0 0 * * * *', () => {
                 })
                 .catch(console.error)
             }
+            else if (user.role == ROLE_EXTERNAL_DIET) {
+              user.smartagenda_id=null
+              return user.save()
+            }
           })
           .catch(err => console.log(`User ${user.email}/${user.role} error ${err}`))
       }))
     })
 })
 
-const agendaHookFn = received => {
+const agendaHookFn = async received => {
   // Check validity
   console.log(`Received hook ${JSON.stringify(received)}`)
   const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet } } } = received
@@ -2294,20 +2355,21 @@ const agendaHookFn = received => {
       User.findOne({ smartagenda_id: client_id, role: ROLE_CUSTOMER }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(([diet, user, appointment_type]) => {
+      .then(async ([diet, user, appointment_type]) => {
         if (!(diet && user && appointment_type)) {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
-          .then(coaching => {
+          .then(async coaching => {
             if (!coaching) {
               throw new Error(`No coaching defined`)
             }
+            const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
             return Appointment.findOneAndUpdate(
               { smartagenda_id: objId },
               {
                 coaching: coaching, appointment_type, smartagenda_id: objId,
-                start_date: start_date_gmt, end_date: end_date_gmt,
+                start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
                 user, diet,
               },
               { upsert: true, runValidators: true }
@@ -2323,13 +2385,14 @@ const agendaHookFn = received => {
       Appointment.findOne({ smartagenda_id: objId }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(([appointment, appointment_type]) => {
+      .then(async ([appointment, appointment_type]) => {
         if (!(appointment && appointment_type)) {
           throw new Error(`Update appointment missing info:${!!appointment} ${!!appointment_type}`)
         }
+        const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
         return Appointment.updateOne(
           { smartagenda_id: objId },
-          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt }
+          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }
         )
       })
       .then(console.log)
