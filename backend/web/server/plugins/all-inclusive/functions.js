@@ -306,14 +306,7 @@ _missions.comments.mission.job.user.full_name,_missions.comments.mission.user.co
   declareVirtualField({model: m, field: 'missing_attributes_step_3', instance: 'String', requires: 'firstname,lastname,email,phone,birthday,nationality,picture,identity_proof_1,iban,company_name,company_status,siret,status_report,insurance_type,insurance_report,company_picture,jobs'})
   declareVirtualField({model: m, field: 'missing_attributes_step_4', instance: 'String', requires: 'firstname,lastname,email,phone,birthday,nationality,picture,identity_proof_1,iban,company_name,company_status,siret,status_report,insurance_type,insurance_report,company_picture,jobs'})
   declareEnumField({model: m, field: 'zip_code', enumValues: DEPARTEMENTS})
-  declareVirtualField({model: m, field: '_all_jobs', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'jobUser'}}
-  })
   declareVirtualField({model: m, field: 'pinned_jobs', instance: 'Array', multiple: true,
-    // TODO: _all_jobs_pins should be enough to display jibusers if required
-    requires:'_all_jobs.user',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'jobUser'}}

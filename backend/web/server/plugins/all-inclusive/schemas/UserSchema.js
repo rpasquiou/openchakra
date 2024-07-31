@@ -477,16 +477,12 @@ UserSchema.virtual("profile_shares_count", DUMMY_REF).get(function() {
   return 0
 })
 
-// All jobs
-UserSchema.virtual("_all_jobs", {
-  ref: "jobUser", // The Model to use
-  localField: "dummy", // Find in Model, where localField
-  foreignField: "dummy" // is equal to foreignField
-});
-
-UserSchema.virtual('pinned_jobs', DUMMY_REF).get(function () {
-  return this?._all_jobs?.filter(j => j.pins?.some(p => idEqual(p._id, this._id)))
+UserSchema.virtual('pinned_jobs', {
+  ref: 'jobUser',
+  localField: '_id',
+  foreignField: 'pins',
 })
+
 
 UserSchema.virtual("search_text", DUMMY_REF).get(function() {
   const attributes='firstname,lastname,qualified_str,visible_str,company_name'.split(',')
