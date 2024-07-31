@@ -3,6 +3,7 @@ const csv_string = require('csv-string')
 const stripBom = require('strip-bom')
 const moment=require('moment')
 const lodash=require('lodash')
+const levenshtein = require('fast-levenshtein')
 
 const ARTICLES = 'le la les un une de des d l à'.split(/ /g)
 const SIREN_LENGTH=9
@@ -77,7 +78,10 @@ const normalizePhone = p => {
 }
 
 const bufferToString = buff => {
-  const encoding=ced(buff)
+  let encoding=ced(buff)
+  if (encoding=='ASCII-7-bit') {
+    encoding='UTF-8'
+  }
   let text = buff.toString(encoding)
   // For MAC files
   text = stripBom(text)
@@ -175,7 +179,7 @@ const capitalize = text => {
 }
 
 const guessDelimiter = text => {
-  const delimiter=csv_string.detect(text)
+  const delimiter=csv_string.detect(text.toString())
   return delimiter
 }
 
@@ -200,7 +204,29 @@ const splitRemaining = (pattern, delimiter) => {
 }
 
 const formatDateTime = datetime => {
-  return moment(datetime).format(`[le] DD/MM/YY [à] HH:mm`)
+  return `le ${formatDate(datetime)} à ${formatHour(datetime)}`
+}
+
+const formatDate = datetime => {
+  return moment(datetime).format(`DD/MM/YY`)
+}
+
+const formatHour = datetime => {
+  return moment(datetime).format(`HH:mm`)
+}
+
+const getWordsDistance = (word1, word2) => {
+  return levenshtein.get(word1, word2)
+}
+
+const getNearestWord = (word, words, limit=undefined) => {
+  const nearest=lodash(words).minBy(w => getWordsDistance(word, w))
+  const distance=getWordsDistance(word, nearest)
+  if (distance>limit) {
+    console.error(`****** Too far\n${word}\n**** from\n${nearest}\n*** distance ${distance}`)
+    return null
+  }
+  return nearest
 }
 
 /**
@@ -220,9 +246,9 @@ const sortObject = (object, firstKey) => {
     }
     entries=[firstEntry, ...entries.filter(([k, v]) => k!=firstEntry)]
   }
-  const result=Object.fromEntries(entries)
+  const result=Object.fromEntries(entries) 
   return result
-}
+} 
 
 module.exports = {
   normalize,
@@ -247,6 +273,7 @@ module.exports = {
   formatPercent,
   formatDeadline,
   splitRemaining,
-  formatDateTime,
+  formatDateTime, formatDate, formatHour,
+  getWordsDistance, getNearestWord,
   sortObject,
 }

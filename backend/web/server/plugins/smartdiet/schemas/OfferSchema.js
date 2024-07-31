@@ -37,7 +37,8 @@ const OfferSchema = new Schema({
   },
   webinars_credit: {
     type: Number,
-    required: [function() {return !this.webinars_unlimited}, 'Le crédit de webinars est obligatoire'],
+    default: 0,
+    required: [function() {return !this?.webinars_unlimited}, 'Le crédit de webinars est obligatoire'],
   },
   webinars_unlimited: {
     type: Boolean,
@@ -46,7 +47,8 @@ const OfferSchema = new Schema({
   },
   infographies_credit: {
     type: Number,
-    required: [function() {return !this.infographies_unlimited}, "Le crédit d'infographies est obligatoire"],
+    default: 0,
+    required: [function() {return !this?.infographies_unlimited}, "Le crédit d'infographies est obligatoire"],
   },
   infographies_unlimited: {
     type: Boolean,
@@ -55,7 +57,8 @@ const OfferSchema = new Schema({
   },
   articles_credit: {
     type: Number,
-    required: [function() {return !this.articles_unlimited}, 'Le crédit d\'articles est obligatoire'],
+    default: 0,
+    required: [function() {return !this?.articles_unlimited}, 'Le crédit d\'articles est obligatoire'],
   },
   articles_unlimited: {
     type: Boolean,
@@ -64,7 +67,8 @@ const OfferSchema = new Schema({
   },
   podcasts_credit: {
     type: Number,
-    required: [function() {return !this.podcasts_unlimited}, 'Le crédit de podcasts est obligatoire'],
+    default: 0,
+    required: [function() {return !this?.podcasts_unlimited}, 'Le crédit de podcasts est obligatoire'],
   },
   podcasts_unlimited: {
     type: Boolean,
@@ -73,7 +77,8 @@ const OfferSchema = new Schema({
   },
   video_credit: {
     type: Number,
-    required: [function() {return !this.video_unlimited}, 'Le crédit de vidéos est obligatoire'],
+    default: 0,
+    required: [function() {return !this?.video_unlimited}, 'Le crédit de vidéos est obligatoire'],
   },
   video_unlimited: {
     type: Boolean,
@@ -81,24 +86,35 @@ const OfferSchema = new Schema({
     required: true,
   },
   collective_challenge_available: {
+    default: false,
     type: Boolean,
   },
   individual_challenge_available: {
+    default: false,
     type: Boolean,
   },
   online_coaching_available: {
+    default: false,
     type: Boolean,
   },
   coaching_credit: {
     type: Number,
+    default: 0,
     required: [true, 'Le crédit de coachings est obligatoire'],
   },
+  nutrition_credit: {
+    type: Number,
+    default: 0,
+    required: [true, 'Le crédit de conseils nutritionels est obligatoire'],
+  },
   hotdiet_available: {
+    default: false,
     type: Boolean,
   },
   groups_credit: {
     type: Number,
-    required: [function() {return !this.groups_unlimited}, 'Le crédit de groupes est obligatoire'],
+    default: 0,
+    required: [function() {return !this?.groups_unlimited}, 'Le crédit de groupes est obligatoire'],
   },
   groups_unlimited: {
     type: Boolean,
@@ -110,10 +126,38 @@ const OfferSchema = new Schema({
     default : 0,
     required: true,
   },
+  impact: {
+    type: Boolean,
+    default: false,
+    required: [true, `La possibilité d'étude d'impact doit être renseignée`]
+  },
   company: {
     type: Schema.Types.ObjectId,
     ref: 'company',
     required: false,
+  },
+  validity_start: {
+    type: Date,
+    required: [function(){return !!this?.company},  `La date de début de validité est obligatoire`],
+  },
+  // validity_end: {
+  //   type: Date,
+  //   required: [function(){return !!this?.company},  `La date de fin de validité est obligatoire`],
+  // },
+  assessment_quizz: {
+    type: Schema.Types.ObjectId,
+    ref: 'quizz',
+    required: [function(){return !!this?.company && !this?.migration_id},  `Le modèle de quizz bilan est obligatoire`],
+  },
+  impact_quizz: {
+    type: Schema.Types.ObjectId,
+    ref: 'quizz',
+    required: [function(){return !!this?.company && !!this?.impact},  `Le modèle de quizz d'impact est obligatoire`],
+  },
+  // Migration id : company smart id * 1000 + smart program type
+  migration_id: {
+    type: Number,
+    index: true,
   },
 }, schemaOptions)
 
@@ -126,7 +170,6 @@ OfferSchema.methods.getContentLimit=function(type){
   }
   const att=TYPE_2_ATTRIBUTE[type]
   const limit=this[`${att}_unlimited`]? Number.MAX_VALUE : this[`${att}_credit`]
-  console.log(`Limit for ${type} is ${limit}`)
   return limit
 }
 

@@ -3,6 +3,8 @@ const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
 const isEmpty = require('../server/validation/is-empty')
+const pm2=require('pm2')
+const lodash=require('lodash')
 
 const SITE_MODES = {
   MARKETPLACE: 'marketplace',
@@ -46,6 +48,13 @@ const getSmartAgendaConfig = () => {
     SMARTAGENDA_API_ID: process.env.SMARTAGENDA_API_ID,
     SMARTAGENDA_API_KEY: process.env.SMARTAGENDA_API_KEY,
     SMARTAGENDA_URL_PART: process.env.SMARTAGENDA_URL_PART,
+  }
+}
+
+const getSmartdietAPIConfig = () => {
+  return {
+    login: process.env.SMARTDIET_API_LOGIN,
+    password: process.env.SMARTDIET_API_PASSWORD,
   }
 }
 
@@ -100,6 +109,10 @@ const getHostName = () => {
     throw new Error(`HOSTDOMAIN config missing`)
   }
   return process.env.HOSTDOMAIN
+}
+
+const computeUrl = _path => {
+  return `https://${getHostName()}${_path}`
 }
 
 const getPort = () => {
@@ -261,10 +274,6 @@ const checkConfig = () => {
     if (isEmpty(process.env.FRONTEND_APP_PORT)) {
       reject(`env var FRONTEND_APP_PORT non renseigné`)
     }
-    // TODO check database name correctness
-    if (isEmpty(process.env.SIB_APIKEY)) {
-      reject(`SIB_APIKEY non renseigné`)
-    }
     if (isEmpty(process.env.DATA_MODEL)) {
       reject(`DATA_MODEL non renseigné`)
     }
@@ -286,7 +295,7 @@ const checkConfig = () => {
     if (isEmpty(process.env.S3_STUDIO_ROOTPATH)) {
       reject(`S3_STUDIO_ROOTPATH non renseigné`)
     }
-    if (!!getMailProvider() && !['mailjet', 'sendInBlue'].includes(getMailProvider())) {
+    if (!!getMailProvider() && !getMailProvider().split(',').every(mp => ['mailjet', 'sendInBlue', 'brevo'].includes(mp))) {
       reject(`Mail provider ${getMailProvider()} incorrect`)
     }
 
@@ -347,6 +356,54 @@ const bookingUrl = (serviceUserId, extraParams = {}) => {
   return url
 }
 
+let _isMaster=undefined
+
+const isMaster = () => {
+  return isDevelopment() ? true : _isMaster
+}
+
+const setMasterStatus = async () => {
+
+  if (!lodash.isNil(_isMaster)) {
+    console.log(`Master already set, leaving`)
+    return
+  }
+  return new Promise((resolve, reject) => {
+  // Connect to the local PM2 instance
+  pm2.connect(function (err) {
+    if (err) {
+      console.log(`No PM2: I'm the master`);
+      _isMaster=true
+      return resolve()
+    }
+
+    // Get the list of processes
+    pm2.list(function (err, list) {
+      if (err) {
+        console.log(`No PM2 list: I'm the master`);
+        _isMaster=true
+        pm2.disconnect()
+        return resolve()
+      }
+
+      const processName=`BACKEND-${process.env.DATA_MODEL}-${process.env.BACKEND_PORT}`.toUpperCase()
+      const all_pids=lodash(list).filter(p => p.name==processName).map(p => p.pid)
+      const lowest_group_pid=all_pids.min()
+      console.log('master, my pid', process.pid, 'all pids', JSON.stringify(all_pids.value()), 'min pid', lowest_group_pid)
+      if (!lowest_group_pid) {
+        console.log(`No PM2 process ${processName}:I'm the master`)
+        _isMaster=true
+        return resolve()
+      }
+      _isMaster=process.pid==lowest_group_pid
+      console.log(`PM2 processes found: I'm ${_isMaster ? '': 'not ' }the master ()`)
+      pm2.disconnect()
+      return resolve()
+    })
+  })
+  })
+}
+
 // Public API
 module.exports = {
   databaseName: databaseName,
@@ -393,4 +450,8 @@ module.exports = {
   getSmartAgendaConfig,
   getMailProvider,
   getMailjetConfig,
+  isMaster,
+  setMasterStatus,
+  getSmartdietAPIConfig,
+  computeUrl,
 }

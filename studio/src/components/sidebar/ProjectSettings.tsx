@@ -24,7 +24,8 @@ const ProjectSettings = () => {
       description, 
       favicon32,
       metaImage,
-      gaTag
+      gaTag,
+      consentId,
     }
   } = useSelector(getFullComponents)
   
@@ -35,6 +36,7 @@ const ProjectSettings = () => {
     favicon32,
     metaImage,
     gaTag,
+    consentId,
   })
 
 
@@ -81,6 +83,13 @@ const ProjectSettings = () => {
       component: Input,
       tip: '(identifiant Google Analytics)',
       value: projectSettings.gaTag
+    },
+    // consent script id
+    consentId: {
+      label: 'Consent id',
+      component: Input,
+      tip: '(identifiant script consentement)',
+      value: projectSettings.consentId
     },
   }
 

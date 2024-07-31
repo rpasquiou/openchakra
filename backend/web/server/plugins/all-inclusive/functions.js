@@ -1,3 +1,4 @@
+const cron = require('../../utils/cron')
 const { datetime_str } = require('../../../utils/dateutils')
 const {
   sendAskContact,
@@ -13,6 +14,7 @@ const {
   sendUsersExtract
 } = require('./mailing')
 const {isDevelopment} = require('../../../config/config')
+
 const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const {
   AVAILABILITY,
@@ -67,13 +69,12 @@ const {
 const Contact = require('../../models/Contact')
 const AdminDashboard = require('../../models/AdminDashboard')
 const mongoose = require('mongoose')
-const cron=require('node-cron')
 const { paymentPlugin } = require('../../../config/config')
 const { BadRequestError } = require('../../utils/errors')
 const moment = require('moment')
 const Mission = require('../../models/Mission')
 const User = require('../../models/User')
-const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
 const lodash=require('lodash')
 const Message = require('../../models/Message')
 const JobUser = require('../../models/JobUser')
@@ -389,7 +390,6 @@ declareVirtualField({model: 'jobUser', field: 'comments', instance: 'Array', req
     instance: 'ObjectID',
     options: {ref: 'comment'}}
 })
-declareVirtualField({model: 'jobUser', field: 'pinned', instance: 'Boolean', requires:'pins'})
 declareVirtualField({model: 'jobUser', field: 'recommandations_count', instance: 'Number', requires:'recommandations'})
 declareVirtualField({model: 'jobUser', field: 'rate_str', instance: 'String', requires:'on_quotation,rate'})
 
@@ -458,26 +458,6 @@ declareVirtualField({model: 'quotationDetail', field: 'ht_total', instance: 'Num
 declareEnumField({model: 'contact', field: 'status', enumValues: CONTACT_STATUS})
 declareEnumField({model: 'contact', field: 'region', enumValues: DEPARTEMENTS})
 
-declareVirtualField({model: 'adminDashboard', field: 'contact_sent', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'refused_bills', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'accepted_bills', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'visible_ti', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'hidden_ti', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'qualified_ti', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'visible_tipi', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'hidden_tipi', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'qualified_tipi', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'missions_requests', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'refused_missions', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'sent_quotations', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'quotation_ca_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'commission_ca_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'tipi_commission_ca_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'tini_commission_ca_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'customer_commission_ca_total', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'ti_registered_today', instance: 'Number'})
-declareVirtualField({model: 'adminDashboard', field: 'customers_registered_today', instance: 'Number'})
-
 /** LEAD */
 declareEnumField({model: 'lead', field: 'company_size', enumValues: COMPANY_SIZE})
 declareEnumField({model: 'lead', field: 'company_zip_code', enumValues: DEPARTEMENTS})
@@ -510,6 +490,8 @@ declareEnumField({model: 'opportunity', field: 'source', enumValues: LEAD_SOURCE
 declareEnumField({model: 'opportunity', field: 'status', enumValues: OPP_STATUS})
 /** End OPPORTUNITY */
 
+declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
 const filterDataUser = ({model, data, user}) => {
   // ALL-E admins have whole visibility
   if (user?.role==ROLE_ALLE_ADMIN) {
@@ -533,8 +515,8 @@ const filterDataUser = ({model, data, user}) => {
 setFilterDataUser(filterDataUser)
 
 
-const getDataPinned = (user, params, data) => {
-  const pinned=data?.pins?.some(l => idEqual(l._id, user?._id))
+const getDataPinned = (userId, params, data) => {
+  const pinned=data?.pins?.some(l => idEqual(l._id, userId))
   return Promise.resolve(pinned)
 }
 
@@ -553,48 +535,48 @@ const setDataPinned = ({id, attribute, value, user}) => {
     })
 }
 
-declareComputedField('jobUser', 'pinned', getDataPinned, setDataPinned)
+declareComputedField({model: 'jobUser', field: 'pinned', requires:'pins', getterFn: getDataPinned, setterFn: setDataPinned})
 
 
-declareComputedField('adminDashboard', 'contact_sent', () => Contact.countDocuments())
-declareComputedField('adminDashboard', 'refused_bills', () =>
+declareComputedField({model: 'adminDashboard', field: 'contact_sent', getterFn: () => Contact.countDocuments()})
+declareComputedField({model: 'adminDashboard', field: 'refused_bills', getterFn: () =>
   Mission.countDocuments({customer_refuse_bill_date: {$ne: null}})
-)
-declareComputedField('adminDashboard', 'accepted_bills', () =>
+})
+declareComputedField({model: 'adminDashboard', field: 'accepted_bills', getterFn: () =>
   Mission.countDocuments({customer_accept_bill_date: {$ne: null}})
-)
-declareComputedField('adminDashboard', 'visible_ti',
-  () => User.countDocuments({role: ROLE_TI, hidden:false})
-)
-declareComputedField('adminDashboard', 'hidden_ti',
-  () => User.countDocuments({role: ROLE_TI, hidden:true})
-)
-declareComputedField('adminDashboard', 'qualified_ti',
-  () => User.countDocuments({role: ROLE_TI, qualified:true})
-)
-declareComputedField('adminDashboard', 'visible_tipi',
-  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:false})
-)
-declareComputedField('adminDashboard', 'hidden_tipi',
-  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:true})
-)
-declareComputedField('adminDashboard', 'qualified_tipi',
-  () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, qualified:true})
-)
-declareComputedField('adminDashboard', 'missions_requests', () =>
+})
+declareComputedField({model: 'adminDashboard', field: 'visible_ti',
+  getterFn: () => User.countDocuments({role: ROLE_TI, hidden:false})
+})
+declareComputedField({model: 'adminDashboard', field: 'hidden_ti',
+getterFn: () => User.countDocuments({role: ROLE_TI, hidden:true})
+})
+declareComputedField({model: 'adminDashboard', field: 'qualified_ti',
+getterFn: () => User.countDocuments({role: ROLE_TI, qualified:true})
+})
+declareComputedField({model: 'adminDashboard', field: 'visible_tipi',
+getterFn: () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:false})
+})
+declareComputedField({model: 'adminDashboard', field: 'hidden_tipi',
+getterFn: () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, hidden:true})
+})
+declareComputedField({model: 'adminDashboard', field: 'qualified_tipi',
+getterFn: () => User.countDocuments({role: ROLE_TI, coaching: COACH_ALLE, qualified:true})
+})
+declareComputedField({model: 'adminDashboard', field: 'missions_requests', getterFn: () =>
   loadFromDb({model: 'mission', fields:['status']})
     .then(missions => missions.filter(m => m.status==MISSION_STATUS_ASKING).length)
-)
-declareComputedField('adminDashboard', 'refused_missions', () =>
+})
+declareComputedField({model: 'adminDashboard', field: 'refused_missions', getterFn: () =>
 loadFromDb({model: 'mission', fields:['status']})
   .then(missions => missions.filter(m => m.status==MISSION_STATUS_TI_REFUSED).length)
-)
-declareComputedField('adminDashboard', 'sent_quotations', () =>
+})
+declareComputedField({model: 'adminDashboard', field: 'sent_quotations', getterFn: () =>
   Mission.countDocuments({quotation_sent_date: {$ne: null}})
-)
+})
 
-declareComputedField('adminDashboard', 'quotation_ca_total',
-  () => {
+declareComputedField({model: 'adminDashboard', field: 'quotation_ca_total',
+  getterFn: () => {
     return loadFromDb({model: 'mission', fields:['status','quotations.customer_total']})
       .then(missions => {
         return lodash(missions)
@@ -602,26 +584,26 @@ declareComputedField('adminDashboard', 'quotation_ca_total',
           .sumBy(m => m.quotations[0].gross_total)
       })
   }
-)
+})
 
 //*****************************************************************
 // TODO: Compute actual AA & MER commissions
 //*****************************************************************
 
 // TODO: WTF is that value ??
-declareComputedField('adminDashboard', 'commission_ca_total',
-() => {
+declareComputedField({model: 'adminDashboard', field: 'commission_ca_total',
+getterFn: () => {
   return loadFromDb({model: 'mission', fields:['status','quotations.aa']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
         .sumBy(m => m.quotations[0].aa)
     })
-}
-)
+  }
+})
 
-declareComputedField('adminDashboard', 'tipi_commission_ca_total',
-() => {
+declareComputedField({model: 'adminDashboard', field: 'tipi_commission_ca_total',
+getterFn: () => {
   return loadFromDb({model: 'mission', fields:['name','status','quotations.aa','job.user.coaching','job.user.coaching']})
     .then(missions => {
       return lodash(missions)
@@ -629,11 +611,11 @@ declareComputedField('adminDashboard', 'tipi_commission_ca_total',
         .filter(m => m.job?.user?.coaching==COACH_ALLE)
         .sumBy(m => m.quotations[0].aa)
     })
-}
-)
+  }
+})
 
-declareComputedField('adminDashboard', 'tini_commission_ca_total',
-() => {
+declareComputedField({model: 'adminDashboard', field: 'tini_commission_ca_total',
+getterFn: () => {
   return loadFromDb({model: 'mission', fields:['status','quotations.aa','job.user.coaching']})
     .then(missions => {
       return lodash(missions)
@@ -641,27 +623,29 @@ declareComputedField('adminDashboard', 'tini_commission_ca_total',
         .filter(m => m.job?.user?.coaching!=COACH_ALLE)
         .sumBy(m => m.quotations[0].aa)
     })
-}
-)
+  }
+})
 
-declareComputedField('adminDashboard', 'customer_commission_ca_total',
-() => {
+declareComputedField({model: 'adminDashboard', field: 'customer_commission_ca_total',
+getterFn: () => {
   return loadFromDb({model: 'mission', fields:['status','quotations.mer']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
         .sumBy(m => m.quotations[0].mer)
     })
-}
-)
+  }
+})
 
-declareComputedField('adminDashboard', 'ti_registered_today', () =>
+declareComputedField({model: 'adminDashboard', field: 'ti_registered_today', getterFn: () =>
   User.find({role:ROLE_TI}, {[CREATED_AT_ATTRIBUTE]:1})
-    .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length))
-declareComputedField('adminDashboard', 'customers_registered_today', () =>
-  User.find({role:ROLE_COMPANY_BUYER}, {[CREATED_AT_ATTRIBUTE]:1})
-  .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length))
+    .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length)
+})
 
+declareComputedField({model: 'adminDashboard', field: 'customers_registered_today', getterFn: () =>
+  User.find({role:ROLE_COMPANY_BUYER}, {[CREATED_AT_ATTRIBUTE]:1})
+  .then(users => users.filter(u => moment(u[CREATED_AT_ATTRIBUTE]).isSame(moment(), 'day')).length)
+})
 
 /** Upsert ONLY adminDashboard */
 AdminDashboard.exists({})

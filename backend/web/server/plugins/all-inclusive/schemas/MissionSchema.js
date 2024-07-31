@@ -25,6 +25,7 @@ const { capitalize } = require('../../../../utils/text')
 const mongoose = require("mongoose")
 const lodash=require('lodash')
 const { schemaOptions } = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema;
 
@@ -151,7 +152,7 @@ const MissionSchema = new Schema({
 }, schemaOptions
 );
 
-MissionSchema.virtual('status').get(function() {
+MissionSchema.virtual('status', DUMMY_REF).get(function() {
   if (this.customer_accept_bill_date) {
     return MISSION_STATUS_FINISHED
   }
@@ -189,11 +190,11 @@ MissionSchema.virtual('status').get(function() {
 })
 
 /* eslint-disable prefer-arrow-callback */
-MissionSchema.virtual("ti_tip").get(function() {
+MissionSchema.virtual("ti_tip", DUMMY_REF).get(function() {
   return TI_TIPS[this.status] || ''
 })
 
-MissionSchema.virtual("customer_tip").get(function() {
+MissionSchema.virtual("customer_tip", DUMMY_REF).get(function() {
   return CUSTOMER_TIPS[this.status] || ''
 })
 
@@ -210,7 +211,7 @@ MissionSchema.virtual("comments", {
 });
 
 
-MissionSchema.virtual("location_str").get(function() {
+MissionSchema.virtual("location_str", DUMMY_REF).get(function() {
   const locations=[]
   if (this.customer_location) { locations.push("chez le client")}
   if (this.foreign_location) { locations.push("à distance")}
@@ -289,20 +290,20 @@ MissionSchema.methods.canLeaveComment = function(user) {
 
 // Billing
 // Got from quotation
-MissionSchema.virtual('aa_ht').get(function() { return this.quotations?.[0]?.aa_ht || 0 })
-MissionSchema.virtual('aa_total').get(function() { return this.quotations?.[0]?.aa_total || 0 })
-MissionSchema.virtual('aa_vat').get(function() { return this.quotations?.[0]?.aa_vat || 0 })
-MissionSchema.virtual('customer_total').get(function() { return this.quotations?.[0]?.customer_total || 0 })
-MissionSchema.virtual('customer_vat').get(function() { return this.quotations?.[0]?.customer_vat || 0 })
-MissionSchema.virtual('customer_ht').get(function() { return this.quotations?.[0]?.customer_ht || 0 })
-MissionSchema.virtual('gross_ht').get(function() { return this.quotations?.[0]?.gross_ht || 0 })
-MissionSchema.virtual('gross_total').get(function() { return this.quotations?.[0]?.gross_total || 0 })
-MissionSchema.virtual('gross_vat').get(function() { return this.quotations?.[0]?.gross_vat || 0 })
-MissionSchema.virtual('mer_ht').get(function() { return this.quotations?.[0]?.mer_ht || 0 })
-MissionSchema.virtual('mer_total').get(function() { return this.quotations?.[0]?.mer_total || 0 })
-MissionSchema.virtual('mer_vat').get(function() { return this.quotations?.[0]?.mer_vat || 0 })
-MissionSchema.virtual('ti_total').get(function() { return this.quotations?.[0]?.ti_total || 0 })
-MissionSchema.virtual('ti_vat').get(function() { return this.quotations?.[0]?.ti_vat || 0 })
+MissionSchema.virtual('aa_ht', DUMMY_REF).get(function() { return this.quotations?.[0]?.aa_ht || 0 })
+MissionSchema.virtual('aa_total', DUMMY_REF).get(function() { return this.quotations?.[0]?.aa_total || 0 })
+MissionSchema.virtual('aa_vat', DUMMY_REF).get(function() { return this.quotations?.[0]?.aa_vat || 0 })
+MissionSchema.virtual('customer_total', DUMMY_REF).get(function() { return this.quotations?.[0]?.customer_total || 0 })
+MissionSchema.virtual('customer_vat', DUMMY_REF).get(function() { return this.quotations?.[0]?.customer_vat || 0 })
+MissionSchema.virtual('customer_ht', DUMMY_REF).get(function() { return this.quotations?.[0]?.customer_ht || 0 })
+MissionSchema.virtual('gross_ht', DUMMY_REF).get(function() { return this.quotations?.[0]?.gross_ht || 0 })
+MissionSchema.virtual('gross_total', DUMMY_REF).get(function() { return this.quotations?.[0]?.gross_total || 0 })
+MissionSchema.virtual('gross_vat', DUMMY_REF).get(function() { return this.quotations?.[0]?.gross_vat || 0 })
+MissionSchema.virtual('mer_ht', DUMMY_REF).get(function() { return this.quotations?.[0]?.mer_ht || 0 })
+MissionSchema.virtual('mer_total', DUMMY_REF).get(function() { return this.quotations?.[0]?.mer_total || 0 })
+MissionSchema.virtual('mer_vat', DUMMY_REF).get(function() { return this.quotations?.[0]?.mer_vat || 0 })
+MissionSchema.virtual('ti_total', DUMMY_REF).get(function() { return this.quotations?.[0]?.ti_total || 0 })
+MissionSchema.virtual('ti_vat', DUMMY_REF).get(function() { return this.quotations?.[0]?.ti_vat || 0 })
 /* eslint-enable prefer-arrow-callback */
 
 

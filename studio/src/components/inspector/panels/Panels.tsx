@@ -62,6 +62,7 @@ import FilterPanel from './FilterPanel';
 import FormControl from '../controls/FormControl'
 import RedirectPanel from '../../../custom-components/Navigation/RedirectPanel'
 import VisibilityPanel from './VisibilityPanel'
+import TagAttributePanel from './TagAttributePanel'
 import useDispatch from '../../../hooks/useDispatch'
 import usePropsSelector from '../../../hooks/usePropsSelector'
 
@@ -76,6 +77,7 @@ const Panels: React.FC<{ component: IComponent; isRoot: boolean }> = ({
   if (isRoot) {
     return (
       <>
+        <TagAttributePanel />
         <DataProviderPanel />
         <RedirectPanel />
       </>
@@ -89,12 +91,14 @@ const Panels: React.FC<{ component: IComponent; isRoot: boolean }> = ({
         {React.createElement(compPanel)}
         <VisibilityPanel name='visibility'/>
         <DataSourcePanel />
+        {allowsActions(component) && <ActionsPanel />}
       </>
     )
   }
 
   return (
     <>
+      <TagAttributePanel />
       <VisibilityPanel name='visibility'/>
       {type === 'Button' && <ButtonPanel />}
       {type === 'Checkbox' && <CheckboxPanel />}

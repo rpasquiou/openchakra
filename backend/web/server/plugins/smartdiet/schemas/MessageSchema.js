@@ -1,8 +1,14 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
 const Schema = mongoose.Schema
 
 const MessageSchema = new Schema({
+  conversation: {
+    type: Schema.Types.ObjectId,
+    ref: 'conversation',
+    required: [true, `La conversation est obligatoire`],
+  },
   content: {
     type: String,
     required: [true, 'Le message est obligatoire'],
@@ -15,12 +21,12 @@ const MessageSchema = new Schema({
   receiver: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required:[function(){!this.receiver && !this.group}, 'Un destinataire ou groupe est obligatoire'],
+    required:[function(){!this?.receiver && !this?.group}, 'Un destinataire ou groupe est obligatoire'],
   },
   group: {
     type: Schema.Types.ObjectId,
     ref: 'group',
-    required:[function(){!this.receiver && !this.group}, 'Un destinataire ou groupe est obligatoire'],
+    required:[function(){!this?.receiver && !this?.group}, 'Un destinataire ou groupe est obligatoire'],
   },
   attachment: {
     type: String,
@@ -34,14 +40,17 @@ const MessageSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
   }],
+  liked: {
+    type: Boolean
+  },
+  pinned: {
+    type: Boolean
+  },
+  migration_id: {
+    type: Number,
+    index: true,
+    required: false,
+  },
 }, schemaOptions)
-
-MessageSchema.virtual('liked').get(function() {
-  return false
-})
-
-MessageSchema.virtual('pinned').get(function() {
-  return false
-})
 
 module.exports = MessageSchema

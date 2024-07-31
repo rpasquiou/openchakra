@@ -7,6 +7,7 @@ const SIB_API_KEY_V3 = getSibApiKey()
 class SIB_V3 {
 
   constructor() {
+    console.log('SIB instance key', SIB_API_KEY_V3)
     let defaultClient = SibApiV3Sdk.ApiClient.instance
     let apiKey = defaultClient.authentications['api-key']
     apiKey.apiKey = SIB_API_KEY_V3
@@ -47,12 +48,12 @@ class SIB_V3 {
       })
   }
 
-  sendSms(number, data) {
+  sendSms(number, data, contact) {
 
-    console.log(`Sending SMS to ${number}, data:${JSON.stringify(data)}`)
+    console.log(`SendInBlue/Brevo sending SMS to ${number}, data:${JSON.stringify(data)}`)
 
     const smsData = new SibApiV3Sdk.SendTransacSms()
-    smsData.sender = 'Contact'
+    smsData.sender = contact || 'Contact'
     smsData.recipient = number
     smsData.content = data
     smsData.type = 'transactional'

@@ -32,15 +32,24 @@ const withDynamicButton = Component => {
     const nextActionProps = props.nextActionProps
       ? JSON.parse(props.nextActionProps)
       : {}
-    const backend = props.backend
-    let onClick = props.onClick
+    // Remove default value for Calendar
+    // let onClick = props.onClick ? lodash.debounce(props.onClick, 2000) : null
+    let onClick=() => {}
 
     const [actionAllowed, setActionAllowed]=useState(true)
 
-    useEffect(()=> {
+    function checkAllowed() {
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => setActionAllowed(res.data))
         .catch(err => console.error(err))
+    }
+
+    useEffect(()=> {
+      if (['openPage'].includes(action)) {
+        return setActionAllowed(true)
+      }
+      checkAllowed()
+
     }, [action, value])
 
     if (action) {
@@ -53,14 +62,14 @@ const withDynamicButton = Component => {
           ...props,
           value: value,
           props: actionProps,
-          backend,
           context,
           dataModel,
           query,
           model: props.dataModel,
+          fireClear: props.fireClear,
         })
           .then(res => {
-            if (MESSAGES[action]) {
+            if (props.confirmationmessage && MESSAGES[action]) {
               setInfoMessage(MESSAGES[action])
             }
             if (!nextAction) {
@@ -70,18 +79,24 @@ const withDynamicButton = Component => {
               ...props,
               value: res,
               props: nextActionProps,
-              backend,
               context,
               dataModel,
               query,
               model: props.dataModel,
+              fireClear: props.fireClear,
               ...res,
             }
             // UGLY!! Shoud block ain thread until dialog closed
             return setTimeout(() => ACTIONS[nextAction](params), 1000)
           })
           .then(() => {
-            props.reload()
+            if (action!='openPage') {
+              console.log(`Action ${action} fires reload`)
+              props.reload()
+            }
+            else {
+              console.log(`Action ${action} does not fire reload`)
+            }
           })
           .catch(err => {
             console.error(err)
@@ -92,25 +107,25 @@ const withDynamicButton = Component => {
           .finally(() => {
             setInsideAction(false)
           })
+        }
       }
-    }
-    const conditionalProperties = getConditionalProperties(
-      props,
-      props.dataSource,
-    )
-
-    // Hide if action unavailable and hideIfForbidden is set
-    if (props.hideIfForbidden && !actionAllowed) {
-      return null
-    }
-    return (
-      <>
+      const conditionalProperties = getConditionalProperties(
+        props,
+        props.dataSource,
+      )
+      
+      // Hide if action unavailable and hideIfForbidden is set
+      if (props.hideIfForbidden && !actionAllowed) {
+        return null
+      }
+      return (
+        <>
       <Component disabled={!actionAllowed}
         {...props}
-        onClick={onClick}
+        onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
         {...conditionalProperties}
         isLoading={insideAction}
-      />
+        />
       {errorMessage && <Error message={errorMessage} onClose={()=>setErrorMessage(null)}/>}
       {infoMessage && <Information message={infoMessage} onClose={()=>setInfoMessage(null)}/>}
       </>
