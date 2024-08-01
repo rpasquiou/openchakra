@@ -676,6 +676,7 @@ const preCreate = async ({model, params, user, skip_validation}) => {
   }
   if (model == 'recommandation') {
     skip_validation=true
+    params.freelance=user
   }
   if (model == 'question' ) {
     skip_validation = true

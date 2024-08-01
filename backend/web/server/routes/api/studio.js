@@ -29,7 +29,7 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED, VERB_GET, VERB_PUT} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -98,6 +98,7 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
+const { checkPermission } = require('../../plugins/sosynpl/permissions')
 
 const router = express.Router()
 
@@ -333,7 +334,6 @@ router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res
     console.error(`Unkown action:${action}`)
     return res.status(404).json(`Unkown action:${action}`)
   }
-  console.log('Starting action', action)
 
   return actionFn(req.body, req.user, req.get('Referrer'))
     .then(result => res.json(result))
@@ -539,7 +539,8 @@ const putFromRequest = (req, res) => {
     })
 }
 
-router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.put('/:model/:id', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_PUT, model: req.params.model, id: req.params.id, user: req.user})
   return putFromRequest(req, res)
 })
 
@@ -580,7 +581,9 @@ router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {sessi
 })
 
 // Update last_activity
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
+  console.log('Getting model', req.params.model, req.user)
+  await checkPermission?.({verb: VERB_GET, model: req.params.model, id: req.params.id, user: req.user})
   return User.findByIdAndUpdate(req.user?._id, {last_activity: moment()})
     .then(()=>loadFromRequest(req, res))
 })
