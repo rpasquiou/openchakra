@@ -8,7 +8,10 @@ const User = require('../../models/User')
 const computeUserHardSkillsCategories = async (userId, params, data) => {
   const categories=await HardSkillCategory.find({parent: null})
     .populate(['skills', {path: 'children', populate: ['children', 'skills']}])
-  const skills=[]
+  // Get user main job's skills
+  const user=await User.findById(userId).populate({path: 'main_job', populate: {path: 'job_file', populate: 'hard_skills'}})
+  const skills=user.main_job.job_file.hard_skills
+  console.log('user skills are', skills)
   // Keep only categories containing hard skills linked to the main job's jobfile
   const keep_category= (category) => {
     // Has skill: keep only if contains user skills
@@ -21,7 +24,7 @@ const computeUserHardSkillsCategories = async (userId, params, data) => {
     return new HardSkillCategory({
       ...category.toObject(),
       children: category.children.filter(child => keep_category(child)).map(child => map_category(child)),
-      skills: category.skills.filter(s => skills.some(us => idEqual(us, s._id)))
+      skills: category.skills.filter(s => skills.some(us => idEqual(us._id, s._id)))
     })
   }
   const filtered_categories=categories
