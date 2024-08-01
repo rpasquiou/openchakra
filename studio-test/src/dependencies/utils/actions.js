@@ -11,6 +11,8 @@ import {
 import { clearToken } from './token';
 import { generatePDF } from './tools'
 
+const moment = require('moment')
+
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
   login: ({ props, level, getComponentValue }) => {
@@ -1188,32 +1190,15 @@ return Promise.allSettled(imagePromises)
     //TODO err if _id undefined ?
     const id = value._id
     const filters = {}
-
-    // id, level, getComponent[Value/Attribute] récupérés
-
-    // console.log(`param: ${JSON.stringify(params)}`)
-    // console.log(`value: ${JSON.stringify(value)}`)
     
-    // let current  = document.getElementById(params.id)
-    // while (!current.getAttribute('dataSourceId')) {
-    //   current = current.parentNode
-    // }
-    // const model=current.getAttribute('dataModel')
+    let current  = document.getElementById(params.id)
+    while (!current.getAttribute(`dataSourceId`)) {
+      current = current.parentNode
+    }
+    const model=current.getAttribute('dataModel')
+    const attribute = getComponentAttribute(props.target, level)
 
-    //console.log(attribute)
-    // console.log(params.dataSource.partner._id)
-    // console.log(params.dataSource._id)
-    // console.log(id)
-    // console.log(`gca: ${getComponentAttribute}`)
-    // console.log(`gca: ${getComponentAttribute(params.dataSource._id, level)}`)
-    // console.log(`gca: ${getComponentAttribute(params.id, level)}`)
-    // console.log(`gca: ${getComponentAttribute("comp-LZ893PC78UR9U", level)}`)
-    // console.log(`gca: ${getComponentAttribute(id,level)}`)
-    // console.log(`gca: ${getComponentAttribute("LZ893PC78UR9U", level)}`)
-    // console.log(`gca: ${getComponentAttribute("LZ893PC78UR9U_0", level)}`)
-    // console.log(`params.datasource.messages: ${JSON.stringify({...params.dataSource.messages})}`)
-    
-    
+    //TODO take filters into account
     // if (params.filterAttribute && params.filterValue) {
     //   const filt=getComponentValue(params.filterValue, level)
     //   // TODO Check why value "null" comes as string
@@ -1228,30 +1213,18 @@ return Promise.allSettled(imagePromises)
     //     }
     //   }
     // }
-    //console.log({id: id, model: model, filters: filters})
-    let current  = document.getElementById(params.id).parentNode
-    const data = getComponentValue(props.target, level)
-    console.log(current.getAttribute('id'))
-    console.log(`data : ${JSON.stringify(data)}`)
-
-    // const blob = new Blob([data], { type: 'text/csv' });
-    //     const link = document.createElement('a');
-    //     link.href = URL.createObjectURL(blob);
-    //     link.download = 'name.csv';
-    //     link.click();
-    return Promise.resolve()
 
     let url = `${API_ROOT}/action`
     const body = {
       action: `export_csv`,
-      value: {id: id, model: model, filters: filters},
+      value: {id: id, model: model, attribute: attribute, filters: filters},
     }
     return axios.post(url, body)
       .then(({data}) => {
-        const blob = new Blob([getComponentValue(props.target)], { type: `text/csv` });
+        const blob = new Blob([data], { type: `text/csv` });
         const link = document.createElement(`a`);
         link.href = URL.createObjectURL(blob);
-        link.download = `name.csv`;
+        link.download = `${model}_${attribute}_${moment().format("YYYY-MM-DD-HH-mm-ss")}.csv`;
         link.click();
       })
   }
