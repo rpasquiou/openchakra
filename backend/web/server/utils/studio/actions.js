@@ -142,11 +142,10 @@ let ACTIONS = {
       })
   },
 
-  export_csv: (props) => {
-    //TODO specify with props
-    return loadFromDb({model: 'user', fields: ['role', 'creation_date', 'email', 'firstname','lastname']})
-      .then((model) => {
-        const csv=stringify(model, {header:true, delimiter: ';'})
+  export_csv: (id, model, filters) => {
+    return loadFromDb({model: model, id: id, params: {filters: filters}, fields: []})
+      .then((res) => {// TODO test
+        const csv=stringify(res, {header:true, delimiter: ';'})
         return Promise.resolve(csv)
       })
   },

@@ -1184,18 +1184,74 @@ return Promise.allSettled(imagePromises)
     return null
   },
 
-  export_csv: (...props) => {
+  export_csv: ({value, level, getComponentValue, getComponentAttribute, props, ...params}) => {
+    //TODO err if _id undefined ?
+    const id = value._id
+    const filters = {}
+
+    // id, level, getComponent[Value/Attribute] récupérés
+
+    // console.log(`param: ${JSON.stringify(params)}`)
+    // console.log(`value: ${JSON.stringify(value)}`)
+    
+    // let current  = document.getElementById(params.id)
+    // while (!current.getAttribute('dataSourceId')) {
+    //   current = current.parentNode
+    // }
+    // const model=current.getAttribute('dataModel')
+
+    //console.log(attribute)
+    // console.log(params.dataSource.partner._id)
+    // console.log(params.dataSource._id)
+    // console.log(id)
+    // console.log(`gca: ${getComponentAttribute}`)
+    // console.log(`gca: ${getComponentAttribute(params.dataSource._id, level)}`)
+    // console.log(`gca: ${getComponentAttribute(params.id, level)}`)
+    // console.log(`gca: ${getComponentAttribute("comp-LZ893PC78UR9U", level)}`)
+    // console.log(`gca: ${getComponentAttribute(id,level)}`)
+    // console.log(`gca: ${getComponentAttribute("LZ893PC78UR9U", level)}`)
+    // console.log(`gca: ${getComponentAttribute("LZ893PC78UR9U_0", level)}`)
+    // console.log(`params.datasource.messages: ${JSON.stringify({...params.dataSource.messages})}`)
+    
+    
+    // if (params.filterAttribute && params.filterValue) {
+    //   const filt=getComponentValue(params.filterValue, level)
+    //   // TODO Check why value "null" comes as string
+    //   if (!(lodash.isNil(filt) || filt=="null")) {
+    //     filters [params.filterAttribute] = filt
+    //   }
+    //   if (params.filterAttribute2 && params.filterValue2) {
+    //     const filt2=getComponentValue(params.filterValue2, level)
+    //     // TODO Check why value "null" comes as string
+    //     if (!(lodash.isNil(filt2) || filt2=="null")) {
+    //       filters [params.filterAttribute2] = filt2
+    //     }
+    //   }
+    // }
+    //console.log({id: id, model: model, filters: filters})
+    let current  = document.getElementById(params.id).parentNode
+    const data = getComponentValue(props.target, level)
+    console.log(current.getAttribute('id'))
+    console.log(`data : ${JSON.stringify(data)}`)
+
+    // const blob = new Blob([data], { type: 'text/csv' });
+    //     const link = document.createElement('a');
+    //     link.href = URL.createObjectURL(blob);
+    //     link.download = 'name.csv';
+    //     link.click();
+    return Promise.resolve()
+
     let url = `${API_ROOT}/action`
     const body = {
-      action: 'export_csv',
-      value: props,
+      action: `export_csv`,
+      value: {id: id, model: model, filters: filters},
     }
     return axios.post(url, body)
       .then(({data}) => {
-        const blob = new Blob([data], { type: 'text/csv' });
-        const link = document.createElement('a');
+        const blob = new Blob([getComponentValue(props.target)], { type: `text/csv` });
+        const link = document.createElement(`a`);
         link.href = URL.createObjectURL(blob);
-        link.download = 'name.csv';
+        link.download = `name.csv`;
         link.click();
       })
   }

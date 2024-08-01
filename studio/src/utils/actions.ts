@@ -782,7 +782,9 @@ export const ACTIONS: IActions = {
   },
   export_csv: {
     label: `Export CSV`,
-    options: {},
+    options: {
+      target: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
     next: [],
   },
 }
