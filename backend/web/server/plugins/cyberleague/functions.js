@@ -1,10 +1,8 @@
 const axios = require('axios')
 const {
-  declareComputedField,
   declareEnumField,
   declareVirtualField,
 } = require('../../utils/database')
-const { formatDateTime } = require('../../../utils/text')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 
@@ -12,6 +10,8 @@ const { PURCHASE_STATUS } = require('../../../utils/consts')
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
 USER_MODELS.forEach(m => {
   declareVirtualField({ model: m, field: 'password2', instance: 'String' })
+  declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
+  declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'followers_count', instance: 'Number' })
   declareVirtualField({
     model: m, field: 'users_following', instance: 'Array', multiple: true,
@@ -76,11 +76,5 @@ declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
 
 //Post declarations
-declareVirtualField({
-  model: 'post', field: 'comments_count', instance: 'number', multiple: false,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'comment' }
-  },
-})
+declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
 declareVirtualField({ model: 'post', field: 'reactions_count', ROLE: 'number' })

@@ -36,16 +36,6 @@ const UserSchema = new Schema({
     required: [true, `Le mot de passe est obligatoire`],
     set: pass => pass ? bcrypt.hashSync(pass, 10) : null,
   },
-  fullname: {
-    type: String,
-    get: function() {return `${this.firstname} ${this.lastname}`},
-    set: () => {}
-  },
-  shortname: {
-    type: String,
-    get: function() {return `${this.firstname} ${this.lastname[0]}.`},
-    set: () => {}
-  },
   picture: {
     type: String,
     required: false,
@@ -87,7 +77,16 @@ const UserSchema = new Schema({
   }]
   }, {...schemaOptions})
 
+/* eslint-disable prefer-arrow-callback */
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
+
+UserSchema.virtual('fullname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname}`
+})
+
+UserSchema.virtual('shortname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname[0]}.`
+})
 
 UserSchema.virtual('followers_count', DUMMY_REF).get(function() {
   return this.followers?.length || 0
@@ -118,5 +117,7 @@ UserSchema.virtual('companies_following_count', {
   foreignField:'followed_by',
   count:true,
 })
+
+/* eslint-disable prefer-arrow-callback */
 
 module.exports = UserSchema
