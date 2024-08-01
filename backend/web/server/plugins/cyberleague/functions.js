@@ -5,14 +5,14 @@ const {
   declareVirtualField,
 } = require('../../utils/database')
 const { formatDateTime } = require('../../../utils/text')
-const { ROLE, SECTOR, CATEGORY, CONTENT_TYPE } = require('./consts')
+const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
 USER_MODELS.forEach(m => {
-  declareVirtualField({ model: m, field: 'password2', ROLE: 'String' })
-  declareVirtualField({ model: m, field: 'followers_count', ROLE: 'Number' })
+  declareVirtualField({ model: m, field: 'password2', instance: 'String' })
+  declareVirtualField({ model: m, field: 'followers_count', instance: 'Number' })
   declareVirtualField({
     model: m, field: 'users_following', instance: 'Array', multiple: true,
     caster: {
@@ -41,7 +41,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'company' }
     },
   })
-  declareEnumField({ model: m, field: 'role', enumValues: ROLE })
+  declareEnumField({ model: m, field: 'role', enumValues: ROLES })
 })
 
 //Company declarations
