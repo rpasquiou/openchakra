@@ -586,46 +586,46 @@ declareComputedField({model: 'adminDashboard', field: 'quotation_ca_total',
 // TODO: WTF is that value ??
 declareComputedField({model: 'adminDashboard', field: 'commission_ca_total',
 getterFn: () => {
-  return loadFromDb({model: 'mission', fields:['status','quotations.aa']})
+  return loadFromDb({model: 'mission', fields:['status','quotations.aa_total']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
-        .sumBy(m => m.quotations[0].aa)
+        .sumBy(m => m.quotations[0].aa_total)
     })
   }
 })
 
 declareComputedField({model: 'adminDashboard', field: 'tipi_commission_ca_total',
 getterFn: () => {
-  return loadFromDb({model: 'mission', fields:['name','status','quotations.aa','job.user.coaching','job.user.coaching']})
+  return loadFromDb({model: 'mission', fields:['name','status','quotations.aa_total','job.user.coaching','job.user.coaching']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
         .filter(m => m.job?.user?.coaching==COACH_ALLE)
-        .sumBy(m => m.quotations[0].aa)
+        .sumBy(m => m.quotations[0].aa_total)
     })
   }
 })
 
 declareComputedField({model: 'adminDashboard', field: 'tini_commission_ca_total',
 getterFn: () => {
-  return loadFromDb({model: 'mission', fields:['status','quotations.aa','job.user.coaching']})
+  return loadFromDb({model: 'mission', fields:['status','quotations.aa_total','job.user.coaching']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
         .filter(m => m.job?.user?.coaching!=COACH_ALLE)
-        .sumBy(m => m.quotations[0].aa)
+        .sumBy(m => m.quotations[0].aa_total)
     })
   }
 })
 
 declareComputedField({model: 'adminDashboard', field: 'customer_commission_ca_total',
 getterFn: () => {
-  return loadFromDb({model: 'mission', fields:['status','quotations.mer']})
+  return loadFromDb({model: 'mission', fields:['status','quotations.mer_total']})
     .then(missions => {
       return lodash(missions)
         .filter(m => m.status==MISSION_STATUS_FINISHED)
-        .sumBy(m => m.quotations[0].mer)
+        .sumBy(m => m.quotations[0].mer_total)
     })
   }
 })
