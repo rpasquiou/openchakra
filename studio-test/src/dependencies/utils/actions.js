@@ -1187,28 +1187,27 @@ return Promise.allSettled(imagePromises)
   },
 
   export_csv: ({value, level, getComponentValue, getComponentAttribute, props, ...params}) => {
-    //TODO err if _id undefined ?
     const id = value._id
-    const filters = {}
+    const attribute = getComponentAttribute(props.target, level)
     
     let current  = document.getElementById(params.id)
     while (!current.getAttribute(`dataSourceId`)) {
       current = current.parentNode
     }
-    const model=current.getAttribute('dataModel')
-    const attribute = getComponentAttribute(props.target, level)
+    const model=current.getAttribute(`dataModel`)
 
+    const filters = {}
     //TODO take filters into account
     // if (params.filterAttribute && params.filterValue) {
     //   const filt=getComponentValue(params.filterValue, level)
-    //   // TODO Check why value "null" comes as string
-    //   if (!(lodash.isNil(filt) || filt=="null")) {
+    //   // TODO Check why value `null` comes as string
+    //   if (!(lodash.isNil(filt) || filt==`null`)) {
     //     filters [params.filterAttribute] = filt
     //   }
     //   if (params.filterAttribute2 && params.filterValue2) {
     //     const filt2=getComponentValue(params.filterValue2, level)
-    //     // TODO Check why value "null" comes as string
-    //     if (!(lodash.isNil(filt2) || filt2=="null")) {
+    //     // TODO Check why value `null` comes as string
+    //     if (!(lodash.isNil(filt2) || filt2==`null`)) {
     //       filters [params.filterAttribute2] = filt2
     //     }
     //   }
@@ -1224,7 +1223,7 @@ return Promise.allSettled(imagePromises)
         const blob = new Blob([data], { type: `text/csv` });
         const link = document.createElement(`a`);
         link.href = URL.createObjectURL(blob);
-        link.download = `${model}_${attribute}_${moment().format("YYYY-MM-DD-HH-mm-ss")}.csv`;
+        link.download = `${model}_${attribute}_${moment().format(`YYYY-MM-DD-HH-mm-ss`)}.csv`;
         link.click();
       })
   }
