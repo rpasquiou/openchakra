@@ -502,6 +502,12 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   declareVirtualField({
     model, field: 'customer_published_announces_count', instance: 'Number',
   })
+  declareVirtualField({
+    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces,announces.received_applications'
+  })
+  declareVirtualField({
+    model, field: 'customer_sent_reports_count', instance: 'Number', requires: 'customer_missions'
+  })
 })
 
 //Evaluation
@@ -536,12 +542,6 @@ declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', m
   caster :{
     instance: 'ObjectID',
     options: { ref: 'question' }
-  }
-})
-declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number',
-  caster :{
-    instance: 'ObjectID',
-    options: { ref: 'application' }
   }
 })
 
@@ -649,15 +649,13 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       id = s._id
     // }
   }
-  if (model == 'question') params.creator=user
-  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
-  if (model == 'question' && !id) params['filter.announce'] = null
   return { model, fields, id, user, params }
 }
 
 setPreprocessGet(preProcessGet)
 
 const preCreate = async ({model, params, user, skip_validation}) => {
+  params.creator=user
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
@@ -705,6 +703,10 @@ const preCreate = async ({model, params, user, skip_validation}) => {
   if (model == 'question' ) {
     skip_validation = true
     params.announce = params.parent
+  }
+  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
+  if (model == 'question' && !id) {
+    params['filter.announce'] = null
   }
   return Promise.resolve({model, params, user, skip_validation})
 }

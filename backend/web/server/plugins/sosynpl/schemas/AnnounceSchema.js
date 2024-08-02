@@ -374,12 +374,4 @@ AnnounceSchema.virtual('questions', {
   localField: '_id',
   foreignField: 'announce',
 })
-
-AnnounceSchema.virtual('applications_count', {
-  ref: 'application',
-  localField: '_id',
-  foreignField: 'announce',
-  count: true
-})
-
 module.exports = AnnounceSchema

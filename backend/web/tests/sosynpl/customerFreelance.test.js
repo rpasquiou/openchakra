@@ -25,21 +25,28 @@ describe('Customer', () => {
   })
 
   it('must return customer_applications', async () => {
-
-    const users = await loadFromDb({model:'customerFreelance', fields:['customer_current_missions_count',
-                                                                       'freelance_current_missions_count',
-                                                                       'customer_coming_missions_count',
-                                                                       'freelance_coming_missions_count',
-                                                                       'customer_active_announces_count',
-                                                                       'customer_published_announces_count',
-                                                                       'fullname']})
-    users.map(u=>console.table({user:u.fullname, 
-                                customer_current_missions: u.customer_current_missions_count, 
-                                freelance_current_missions: u.freelance_current_missions_count,
-                                customer_coming_missions: u.customer_coming_missions_count, 
-                                freelance_coming_missions: u.freelance_coming_missions_count,
-                                customer_active_announces: u.customer_active_announces_count,
-                                customer_published_announces_count: u.customer_published_announces_count,
-                              }))
+    const id ='6661adbaeb49ff38fc686de5'
+    const [user] = await loadFromDb({
+      model: 'customerFreelance', id, fields: [
+        'fullname',
+        'customer_sent_reports_count',
+        'customer_current_missions_count',
+        'freelance_current_missions_count',
+        'customer_coming_missions_count',
+        'freelance_coming_missions_count',
+        'customer_active_announces_count',
+        'customer_published_announces_count',
+        'customer_received_applications_count',
+      ]
+    })
+    console.log(user.customer_sent_reports_count)
+    expect(user.customer_sent_reports_count).toBeGreaterThanOrEqual(0)
+    expect(user.customer_current_missions_count).toBeGreaterThanOrEqual(0) 
+    expect(user.freelance_current_missions_count).toBeGreaterThanOrEqual(0)
+    expect(user.customer_coming_missions_count).toBeGreaterThanOrEqual(0) 
+    expect(user.freelance_coming_missions_count).toBeGreaterThanOrEqual(0)
+    expect(user.customer_active_announces_count).toBeGreaterThanOrEqual(0)
+    expect(user.customer_published_announces_count).toBeGreaterThanOrEqual(0)
+    expect(user.customer_received_applications_count).toBeGreaterThanOrEqual(0)
   })
 })

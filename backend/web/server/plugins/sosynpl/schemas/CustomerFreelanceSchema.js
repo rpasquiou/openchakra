@@ -10,7 +10,8 @@ const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KE
   CF_MAX_SILVER_SOFT_SKILLS,
   CF_MAX_BRONZE_SOFT_SKILLS,
   ANNOUNCE_STATUS_ACTIVE,
-  ANNOUNCE_STATUS_DRAFT} = require('../consts')
+  ANNOUNCE_STATUS_DRAFT,
+  REPORT_STATUS_SENT} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
@@ -608,6 +609,20 @@ CustomerFreelanceSchema.virtual('customer_published_announces_count', {
   },
   count: true,
 })
+
+CustomerFreelanceSchema.virtual('customer_received_applications_count', DUMMY_REF).get(function() {
+  return this.announces ? this.announces.reduce((total, announce) => total + announce.received_applications.length, 0) : 0
+})
+
+CustomerFreelanceSchema.virtual('customer_sent_reports_count', DUMMY_REF).get(function() {
+  return this.customer_missions 
+    ? Object.keys(this.customer_missions)
+        .map(key => this.customer_missions[key].reports)
+        .flat()
+        .filter(report => report && report.status === REPORT_STATUS_SENT).length
+    : 0
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
