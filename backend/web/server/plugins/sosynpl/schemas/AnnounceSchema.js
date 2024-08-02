@@ -374,4 +374,5 @@ AnnounceSchema.virtual('questions', {
   localField: '_id',
   foreignField: 'announce',
 })
+
 module.exports = AnnounceSchema
