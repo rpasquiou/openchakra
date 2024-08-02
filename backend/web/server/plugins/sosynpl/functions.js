@@ -484,6 +484,34 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
       instance: 'String',
     },
   })
+  declareVirtualField({
+    model, field: 'customer_current_missions_count', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref:'mission'}
+    },
+  })
+  declareVirtualField({
+    model, field: 'freelance_current_missions_count', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref:'mission'}
+    },
+  })
+  declareVirtualField({
+    model, field: 'customer_coming_missions_count', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref:'mission'}
+    },
+  })
+  declareVirtualField({
+    model, field: 'freelance_coming_missions_count', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref:'mission'}
+    },
+  })
 })
 
 //Evaluation
@@ -513,11 +541,17 @@ declareVirtualField({model: 'mission', field: 'evaluation', instance: 'Array', m
     options: { ref: 'evaluation' }
   },
 })
-//Announce Questions
+//Announce
 declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', multiple: true,
   caster :{
     instance: 'ObjectID',
     options: { ref: 'question' }
+  }
+})
+declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number',
+  caster :{
+    instance: 'ObjectID',
+    options: { ref: 'application' }
   }
 })
 
