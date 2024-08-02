@@ -8,7 +8,8 @@ const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KE
   MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR,
   CF_MAX_GOLD_SOFT_SKILLS,
   CF_MAX_SILVER_SOFT_SKILLS,
-  CF_MAX_BRONZE_SOFT_SKILLS} = require('../consts')
+  CF_MAX_BRONZE_SOFT_SKILLS,
+  ANNOUNCE_STATUS_ACTIVE} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
@@ -583,6 +584,26 @@ CustomerFreelanceSchema.virtual('customer_coming_missions_count', {
   foreignField: 'customer',
   match: {
     start_date: {$gt: new Date()},
+  },
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('customer_active_announces_count', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'user',
+  match: {
+    status: ANNOUNCE_STATUS_ACTIVE,
+  },
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('customer_published_announces_count', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'user',
+  match: {
+    status: {$ne:ANNOUNCE_STATUS_ACTIVE},
   },
   count: true,
 })
