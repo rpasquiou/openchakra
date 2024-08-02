@@ -31,13 +31,15 @@ describe('Customer', () => {
                                                                        'customer_coming_missions_count',
                                                                        'freelance_coming_missions_count',
                                                                        'customer_active_announces_count',
+                                                                       'customer_published_announces_count',
                                                                        'fullname']})
     users.map(u=>console.table({user:u.fullname, 
                                 customer_current_missions: u.customer_current_missions_count, 
                                 freelance_current_missions: u.freelance_current_missions_count,
                                 customer_coming_missions: u.customer_coming_missions_count, 
                                 freelance_coming_missions: u.freelance_coming_missions_count,
-                                customer_active_announces: u.customer_active_announces_count
+                                customer_active_announces: u.customer_active_announces_count,
+                                customer_published_announces_count: u.customer_published_announces_count,
                               }))
   })
 })

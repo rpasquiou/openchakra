@@ -519,6 +519,13 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
       options: {ref:'announce'}
     },
   })
+  declareVirtualField({
+    model, field: 'customer_published_announces_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref:'announce'}
+    },
+  })
 })
 
 //Evaluation

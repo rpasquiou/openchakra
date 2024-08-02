@@ -597,6 +597,16 @@ CustomerFreelanceSchema.virtual('customer_active_announces_count', {
   },
   count: true,
 })
+
+CustomerFreelanceSchema.virtual('customer_published_announces_count', {
+  ref: 'announce',
+  localField: '_id',
+  foreignField: 'user',
+  match: {
+    status: {$ne:ANNOUNCE_STATUS_ACTIVE},
+  },
+  count: true,
+})
 /* eslint-enable prefer-arrow-callback */
 
 
