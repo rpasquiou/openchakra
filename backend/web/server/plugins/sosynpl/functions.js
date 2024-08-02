@@ -646,15 +646,13 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       id = s._id
     // }
   }
-  if (model == 'question') params.creator=user
-  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
-  if (model == 'question' && !id) params['filter.announce'] = null
   return { model, fields, id, user, params }
 }
 
 setPreprocessGet(preProcessGet)
 
 const preCreate = async ({model, params, user, skip_validation}) => {
+  params.creator=user
   if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
     params.user=user
   }
@@ -702,6 +700,10 @@ const preCreate = async ({model, params, user, skip_validation}) => {
   if (model == 'question' ) {
     skip_validation = true
     params.announce = params.parent
+  }
+  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
+  if (model == 'question' && !id) {
+    params['filter.announce'] = null
   }
   return Promise.resolve({model, params, user, skip_validation})
 }
