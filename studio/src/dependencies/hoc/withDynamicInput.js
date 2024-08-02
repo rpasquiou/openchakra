@@ -6,7 +6,7 @@ import { ACTIONS } from '../utils/actions'
 
 const withDynamicInput = Component => {
 
-  const Internal = ({ dataSource, dataSourceId, noautosave, readOnly, context, suggestions, setComponentValue, displayEye, clearComponents, ...props }) => {
+  const Internal = ({ isfilter, dataSource, dataSourceId, noautosave, readOnly, context, suggestions, setComponentValue, displayEye, clearComponents, ...props }) => {
 
     let keptValue = (dataSourceId && lodash.get(dataSource, props.attribute)) || props.value
 
@@ -40,9 +40,6 @@ const withDynamicInput = Component => {
 
     const onChange = ev => {
       const val = ev.target ? ev.target.value : ev
-      if (setComponentValue) {
-        setComponentValue(props.id, val)
-      }
       setInternalDataValue(val)
       if (!readOnly && !noautosave && dataSourceId) {
           ACTIONS.putValue({
@@ -60,6 +57,11 @@ const withDynamicInput = Component => {
     }
 
     props={...props, readOnly, value:lodash.isNil(internalDataValue) ? '' : internalDataValue}
+
+    if (isfilter) {
+      props.onBlur=props.reload
+    }
+
     if (suggestions) {
       props={...props, list: 'suggestions'}
     }
@@ -105,7 +107,7 @@ const withDynamicInput = Component => {
     return displayEye ?
       withDisplayEye(Component)
       :
-      <Component {...props} dataSource={dataSource} onChange={onChange} onBlur={props.reload} />
+      <Component {...props} dataSource={dataSource} onChange={onChange} />
   }
 
   return Internal
