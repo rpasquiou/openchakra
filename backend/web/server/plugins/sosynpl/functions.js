@@ -541,11 +541,17 @@ declareVirtualField({model: 'mission', field: 'evaluation', instance: 'Array', m
     options: { ref: 'evaluation' }
   },
 })
-//Announce Questions
+//Announce
 declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', multiple: true,
   caster :{
     instance: 'ObjectID',
     options: { ref: 'question' }
+  }
+})
+declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number',
+  caster :{
+    instance: 'ObjectID',
+    options: { ref: 'application' }
   }
 })
 
