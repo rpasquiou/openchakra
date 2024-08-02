@@ -1,4 +1,4 @@
-import { isClient } from "./dependencies/utils/misc";
+import { isClient } from "./misc"
 
 export class LMSAPI {
     constructor() {

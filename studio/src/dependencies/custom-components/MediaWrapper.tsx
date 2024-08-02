@@ -2,7 +2,7 @@ import React from 'react'
 import {IconButton} from '@chakra-ui/react'
 import { DownloadIcon } from '@chakra-ui/icons'
 import { imageSrcSetPaths } from '../utils/misc'
-import '../../scorm'
+import '../utils/scorm'
 
 /** TODO NGINX rewrite
 https://my-alfred-data-test.s3.eu-west-3.amazonaws.com/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
