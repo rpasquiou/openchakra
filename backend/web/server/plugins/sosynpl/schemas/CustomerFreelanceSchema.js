@@ -9,7 +9,8 @@ const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KE
   CF_MAX_GOLD_SOFT_SKILLS,
   CF_MAX_SILVER_SOFT_SKILLS,
   CF_MAX_BRONZE_SOFT_SKILLS,
-  ANNOUNCE_STATUS_ACTIVE} = require('../consts')
+  ANNOUNCE_STATUS_ACTIVE,
+  ANNOUNCE_STATUS_DRAFT} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
@@ -603,7 +604,7 @@ CustomerFreelanceSchema.virtual('customer_published_announces_count', {
   localField: '_id',
   foreignField: 'user',
   match: {
-    status: {$ne:ANNOUNCE_STATUS_ACTIVE},
+    status: {$ne:ANNOUNCE_STATUS_DRAFT},
   },
   count: true,
 })
