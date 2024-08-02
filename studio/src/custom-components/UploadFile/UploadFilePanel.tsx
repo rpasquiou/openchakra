@@ -6,11 +6,21 @@ import TextControl from '~components/inspector/controls/TextControl'
 const UploadFilePanel = () => {
   
   const noticemsg = usePropsSelector('notifmsg')
+  const previewmsg = usePropsSelector('previewmsg')
+  const preview = usePropsSelector('preview')
 
   return (
     <>
       <SwitchControl label="Confirmation Message" name="notifmsg" />
       {noticemsg && <TextControl name="okmsg" label="OK message" />}
+
+      <SwitchControl label="File Name" name="previewmsg" />
+
+      <SwitchControl label="Preview" name="preview" />
+
+      {preview && (
+        <SwitchControl label="Miniature/Modal" name="previewtype" />
+      )}
     </>
   )
 }
