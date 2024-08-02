@@ -451,7 +451,7 @@ return Promise.allSettled(imagePromises)
   },
   generatePDF: ({props, level, getComponentValue})=> {
     const prefix=getComponentValue(props.prefix, level)
-    return generatePDF(props.targetId, prefix)
+    return generatePDF(props.targetId+level, prefix)
   },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
@@ -1064,6 +1064,26 @@ return Promise.allSettled(imagePromises)
     }
     return axios.post(url, body)
       .then(res => ({value: res.data}))
-},
+  },
+
+  refuse: ({value, props, level, getComponentValue}) => {
+    const reason = getComponentValue(props.reason, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'refuse',
+      value: value?._id,
+      reason,
+    }
+    return axios.post(url, body)
+  },
+
+  accept: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'accept',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+  },
 
 }

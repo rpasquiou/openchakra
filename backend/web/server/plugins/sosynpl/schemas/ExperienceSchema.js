@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const ExperienceSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'freelance',
+    ref: 'customerFreelance',
     required: [true, `Le freelance est obligatoire`]
   },
   position: {

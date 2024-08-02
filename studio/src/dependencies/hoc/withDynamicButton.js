@@ -38,18 +38,13 @@ const withDynamicButton = Component => {
 
     const [actionAllowed, setActionAllowed]=useState(true)
 
-    function checkAllowed() {
-      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
-        .then(res => setActionAllowed(res.data))
-        .catch(err => console.error(err))
-    }
-
     useEffect(()=> {
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
-      checkAllowed()
-
+      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
+        .then(res => setActionAllowed(res.data.allowed))
+        .catch(err => console.error(err))
     }, [action, value])
 
     if (action) {

@@ -99,9 +99,9 @@ const withDynamicSelect = Component => {
 
     if (isSearchable || isMulti) {
       const selValue=isMulti ?
-        options?.filter(opt => value.some(v => v==opt.key))
+        options?.filter(opt => internalValue.some(v => v==opt.key))
         :
-        options?.find(opt => opt.key==value)
+        options?.find(opt => opt.key==internalValue)
       return (
         <Select {...props} onChange={onChange}
           value={selValue}
