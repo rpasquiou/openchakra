@@ -177,7 +177,7 @@ const UploadFile = ({
         
         {isLoading && <Loading />}
         
-        {preview && previewtype &&(
+        {preview && previewtype && s3File &&(
           <Button {...props} ml={2} onClick={togglePreview}>Preview</Button>
         )}
 

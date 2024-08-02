@@ -14,11 +14,13 @@ const UploadFilePanel = () => {
       <SwitchControl label="Confirmation Message" name="notifmsg" />
       {noticemsg && <TextControl name="okmsg" label="OK message" />}
 
-      <SwitchControl label="Preview Message" name="previewmsg" />
+      <SwitchControl label="File Name" name="previewmsg" />
 
       <SwitchControl label="Preview" name="preview" />
 
-      <SwitchControl label="PreviewType" name="previewtype" />
+      {preview && (
+        <SwitchControl label="Miniature/Modal" name="previewtype" />
+      )}
     </>
   )
 }
