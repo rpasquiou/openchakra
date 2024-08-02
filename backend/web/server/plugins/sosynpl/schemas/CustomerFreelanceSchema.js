@@ -545,7 +545,47 @@ CustomerFreelanceSchema.virtual('freelance_reports', DUMMY_REF).get(function() {
     : []
 })
 
+CustomerFreelanceSchema.virtual('freelance_current_missions_count', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'freelance',
+  match: {
+    start_date: {$lt: new Date()},
+    end_date: {$gt: new Date()},
+  },
+  count: true,
+})
 
+CustomerFreelanceSchema.virtual('customer_current_missions_count', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'customer',
+  match: {
+    start_date: {$lt: new Date()},
+    end_date: {$gt: new Date()},
+  },
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('freelance_coming_missions_count', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'freelance',
+  match: {
+    start_date: {$gt: new Date()},
+  },
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('customer_coming_missions_count', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'customer',
+  match: {
+    start_date: {$gt: new Date()},
+  },
+  count: true,
+})
 /* eslint-enable prefer-arrow-callback */
 
 
