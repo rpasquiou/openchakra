@@ -502,6 +502,9 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   declareVirtualField({
     model, field: 'customer_published_announces_count', instance: 'Number',
   })
+  declareVirtualField({
+    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces,announces.received_applications'
+  })
 })
 
 //Evaluation
@@ -536,12 +539,6 @@ declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', m
   caster :{
     instance: 'ObjectID',
     options: { ref: 'question' }
-  }
-})
-declareVirtualField({model: 'announce', field: 'applications_count', instance: 'Number',
-  caster :{
-    instance: 'ObjectID',
-    options: { ref: 'application' }
   }
 })
 

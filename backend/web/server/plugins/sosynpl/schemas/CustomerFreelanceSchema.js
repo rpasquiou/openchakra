@@ -608,6 +608,10 @@ CustomerFreelanceSchema.virtual('customer_published_announces_count', {
   },
   count: true,
 })
+
+CustomerFreelanceSchema.virtual('customer_received_applications_count', DUMMY_REF).get(function() {
+  return this.announces.reduce((total, announce) => total + announce.received_applications.length, 0)
+})
 /* eslint-enable prefer-arrow-callback */
 
 
