@@ -57,7 +57,7 @@ const UploadFile = ({
   clearComponents: [string]
 }) => {
 
-  const [uploadInfo, setUploadInfo] = useState('')
+  const [uploadInfo, setUploadInfo] = useState(dataSource?.[attribute] ? okmsg : '')
   const [isLoading, setIsLoading] = useState(false)
   const [s3File, setS3File] = useState<string|null>()
   const [fileName, setFileName] = useState<string>('')
