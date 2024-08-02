@@ -40,9 +40,6 @@ const withDynamicInput = Component => {
 
     const onChange = ev => {
       const val = ev.target ? ev.target.value : ev
-      if (setComponentValue) {
-        setComponentValue(props.id, val)
-      }
       setInternalDataValue(val)
       if (!readOnly && !noautosave && dataSourceId) {
           ACTIONS.putValue({
@@ -105,7 +102,7 @@ const withDynamicInput = Component => {
     return displayEye ?
       withDisplayEye(Component)
       :
-      <Component {...props} dataSource={dataSource} onChange={onChange} onBlur={props.reload} />
+      <Component {...props} dataSource={dataSource} onChange={onChange}/>
   }
 
   return Internal
