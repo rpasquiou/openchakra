@@ -424,7 +424,7 @@ CustomerFreelanceSchema.virtual('search_visible').get(function() {
 CustomerFreelanceSchema.virtual('mobility_str', DUMMY_REF).get(function() {
   switch(this.mobility) {
     case MOBILITY_FRANCE: return MOBILITY[MOBILITY_FRANCE]
-    case MOBILITY_REGIONS: return this.mobility_regions.map(i => REGIONS[i]).join(',')
+    case MOBILITY_REGIONS: return this.mobility_regions?.map(i => REGIONS[i]).join(',')
     case MOBILITY_CITY: return `${this.mobility_city.city} dans un rayon de ${this.mobility_city_distance} km`
   }
 })
