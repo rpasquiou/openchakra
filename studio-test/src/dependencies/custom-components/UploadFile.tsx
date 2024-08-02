@@ -30,6 +30,7 @@ const UploadFile = ({
   prvmsg = '',
   previewmsg,
   preview,
+  previewtype = false,
   dataSource,
   attribute,
   value,
@@ -46,6 +47,7 @@ const UploadFile = ({
   prvmsg: string
   previewmsg: boolean
   preview: boolean
+  previewtype: boolean
   dataSource: { _id: null } | null
   attribute: string
   value: string
@@ -150,46 +152,57 @@ const UploadFile = ({
   }
 
   return (
-    <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'} alignItems={'center'}>
-      <form id="uploadressource">
-        <UploadZone>
-          <input type="file" onChange={onFileNameChange} />
-          {/* Whatever in children, it brings focus on InputFile */}
-          {children}
-        </UploadZone>
-      </form>
-  
-      {uploadInfo && (
-        // @ts-ignore
-        <Text alignSelf={'center'} ml={2}>{uploadInfo}</Text> 
-      )}
-  
-      {fileName && uploadInfo && (
-        <Text alignItems={'center'} ml={1}>:</Text>
-      )}
-  
-      {fileName && (
-        <Text ml={1}>{fileName}</Text>
-      )}
-      
-      {isLoading && <Loading />}
-      
-      {preview && (
-        <Button ml={2} onClick={togglePreview}>Preview</Button>
-      )}
+    <Box>
+      <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'} alignItems={'center'}>
+        <form id="uploadressource">
+          <UploadZone>
+            <input type="file" onChange={onFileNameChange} />
+            {/* Whatever in children, it brings focus on InputFile */}
+            {children}
+          </UploadZone>
+        </form>
+    
+        {uploadInfo && (
+          // @ts-ignore
+          <Text alignSelf={'center'} ml={2}>{uploadInfo}</Text> 
+        )}
+    
+        {fileName && uploadInfo && (
+          <Text alignItems={'center'} ml={1}>:</Text>
+        )}
+    
+        {fileName && (
+          <Text ml={1}>{fileName}</Text>
+        )}
+        
+        {isLoading && <Loading />}
+        
+        {preview && previewtype &&(
+          <Button {...props} ml={2} onClick={togglePreview}>Preview</Button>
+        )}
 
-      {/* Modal for previewing the media */}
-      {preview && (
-        <Modal isOpen={isPreviewOpen} onClose={togglePreview}>
-          <ModalOverlay />
-          <ModalContent maxWidth="80%" width="200%">
-            <ModalHeader>Media Preview</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <Media src={s3File} />
-            </ModalBody>
-          </ModalContent>
-        </Modal>
+        {/* Modal for previewing the media */}
+        {preview && previewtype && (
+          <Modal isOpen={isPreviewOpen} onClose={togglePreview}>
+            <ModalOverlay />
+            <ModalContent height="80%" maxWidth="80%">
+              <ModalHeader>Media Preview</ModalHeader>
+              <ModalCloseButton />
+              <ModalBody>
+                <Media src={s3File} />
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        )}
+      </Box>
+      {preview && !previewtype && (
+        <Box
+        width='10%'
+        height='10%'>
+        <Media 
+          src={s3File}
+          ></Media>
+        </Box>
       )}
     </Box>
   )
