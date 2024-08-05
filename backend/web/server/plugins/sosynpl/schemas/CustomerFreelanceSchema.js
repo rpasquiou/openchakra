@@ -611,8 +611,12 @@ CustomerFreelanceSchema.virtual('customer_published_announces_count', {
 })
 
 CustomerFreelanceSchema.virtual('customer_received_applications_count', DUMMY_REF).get(function() {
-  return this.announces ? this.announces.reduce((total, announce) => total + announce.received_applications.length, 0) : 0
+  if(!this.announces) {
+    return
+  }
+  return lodash.sumBy(this.announces,'received_applications_count')
 })
+
 
 CustomerFreelanceSchema.virtual('customer_sent_reports_count', DUMMY_REF).get(function() {
   return this.customer_missions 

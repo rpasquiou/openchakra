@@ -503,7 +503,7 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     model, field: 'customer_published_announces_count', instance: 'Number',
   })
   declareVirtualField({
-    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces,announces.received_applications'
+    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces.received_applications_count'
   })
   declareVirtualField({
     model, field: 'customer_sent_reports_count', instance: 'Number', requires: 'customer_missions'
