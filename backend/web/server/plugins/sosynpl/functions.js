@@ -194,7 +194,7 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'training' }
     },
   })
-  declareComputedField({model, field: 'hard_skills_categories', requires: 'main_job.job_file', getterFn: computeUserHardSkillsCategories})
+  declareComputedField({model, field: 'hard_skills_categories', requires: 'main_job.job_file.hard_skills', getterFn: computeUserHardSkillsCategories})
   declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
   declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
   declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
