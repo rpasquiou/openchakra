@@ -27,6 +27,7 @@ import {
   getParentOfType,
   hasParentType,
   isSingleDataPage,
+  traverseChildren,
 } from './dataSources';
 import {
   DEFAULT_REDIRECT_PAGE,
@@ -130,6 +131,13 @@ export const formatCode = async (code: string) => {
   return formattedCode
 }
 
+const ensureObject = (val: any) => {
+  if (lodash.isString(val)) {
+    return JSON.parse(val)
+  }
+  return val
+}
+
 type BuildBlockParams = {
   component: IComponent
   components: IComponents
@@ -140,7 +148,7 @@ type BuildBlockParams = {
   noAutoSaveComponents: string[]
 }
 
-// Wether component is linked to a save action, thus must not save during onChange
+// Whether component is linked to a save action, thus must not save during onChange
 const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
   let c=Object.values(components)
     .filter(c => ['save', 'create', 'smartdiet_set_company_code'].includes(c.props?.action) && c.props?.actionProps)
@@ -151,6 +159,43 @@ const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
   c=lodash.uniq(c)
   return c
 }
+
+const getDisplayedAttributes = (component: IComponent, components: IComponents) => {
+  if (component.props?.action === `export_csv`){
+    const dataSource = components[ensureObject(component.props.actionProps).target].props.dataSource
+    const attributes: string[] = []
+    
+    //observer function
+    const observer = (ancestors: string[] ,comp: IComponent) => {
+      
+      if (comp.props?.dataSource){
+        if (comp.props?.dataSource !== dataSource){
+          return true //stop traversing because of distinct dataSource
+        }
+        
+        if (comp.props.attribute){
+          //path building
+          let path: string = ``
+          ancestors.forEach(id => {
+            if(components[id]?.props.attribute){
+              path = path === `` ? components[id].props.attribute : path.concat(`.`, components[id].props.attribute)
+            }
+          })
+          path !== `` ? attributes.push(`${path}.${comp.props.attribute}`) : attributes.push(comp.props.attribute)
+        }
+      }
+      return false //false means continue traversing
+    }
+    
+    //enumerate children
+    traverseChildren(components[ensureObject(component.props.actionProps).target], components, observer)
+    
+    //attribute must be string type
+    component.props[`displayed-attributes`] = attributes
+
+  }
+}
+
 
 const buildBlock = ({
   component,
@@ -165,6 +210,11 @@ const buildBlock = ({
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let child = components[key]
+    
+    if (child?.props?.action === `export_csv` ) {
+      getDisplayedAttributes(child, components)
+    }
+
     if (child.type === 'DataProvider') {
       return
     }

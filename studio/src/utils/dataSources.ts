@@ -1,3 +1,4 @@
+import { bool } from 'aws-sdk/clients/signer'
 import lodash from 'lodash'
 import { DEFAULT_LIMIT } from '~dependencies/utils/consts'
 
@@ -342,3 +343,23 @@ export const getChildrenOfType = (components:IComponents, comp: IComponent, type
   return lodash.flatten(children)
 }
 
+export type Observer = (ancestors: string[], c:IComponent) => bool
+
+/*
+Explore recursively all descendant of a component and apply parameter function observer to each node.
+If observer returns true, traverseChildren doesn't explore descendant of the considered node.
+*/
+export const traverseChildren = (component: IComponent, components: IComponents, observer: Observer, ancestors: string[]=[]) => {
+  //if observer returns true -> exploration stop
+  try {if (observer(ancestors, component)) {
+      return 
+    } 
+  } catch (error) {
+    throw new Error(`error while traversing component ${component.id} `+ error);
+  }
+  //consider children
+  component.children.forEach(element => {
+    traverseChildren(components[element], components, observer,[...ancestors, component.id])}
+  )
+  return 
+}

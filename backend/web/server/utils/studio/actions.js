@@ -142,10 +142,10 @@ let ACTIONS = {
       })
   },
 
-  export_csv: ({value}, user) => {
-    return loadFromDb({model: value.model, id: value.id, params: {filters: value.filters}, fields: value.attribute ? [value.attribute] : [], user})
+  export_csv: ({value, model, attributes, filters}, user) => {
+    return loadFromDb({model, id: value.id, params: {filters}, fields: attributes, user})
       .then((res) => {
-        const csv=stringify(res[0][value.attribute].map(r => r.toObject()), {header:true, delimiter: ';'})
+        const csv=stringify(res.map(r => r.toObject()), {header:true, delimiter: ';'})
         return Promise.resolve(csv)
       })
   },

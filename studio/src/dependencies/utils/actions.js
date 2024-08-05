@@ -1188,15 +1188,15 @@ return Promise.allSettled(imagePromises)
 
   export_csv: ({value, level, getComponentValue, getComponentAttribute, props, ...params}) => {
     const id = value._id
-    const attribute = getComponentAttribute(props.target, level)
-    
+    const attribute = lodash.values(params[`displayed-attributes`])
+
     let current  = document.getElementById(params.id)
     while (!current.getAttribute(`dataSourceId`)) {
       current = current.parentNode
     }
     const model=current.getAttribute(`dataModel`)
 
-    const filters = {}
+    const filters = {} 
     //TODO take filters into account
     // if (params.filterAttribute && params.filterValue) {
     //   const filt=getComponentValue(params.filterValue, level)
@@ -1216,7 +1216,10 @@ return Promise.allSettled(imagePromises)
     let url = `${API_ROOT}/action`
     const body = {
       action: `export_csv`,
-      value: {id: id, model: model, attribute: attribute, filters: filters},
+      value: {id: id},
+      model: model, 
+      attributes: attribute, 
+      filters: filters,
     }
     return axios.post(url, body)
       .then(({data}) => {
