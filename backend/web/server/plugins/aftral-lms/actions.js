@@ -143,3 +143,8 @@ const isActionAllowed = async ({ action, dataId, user }) => {
 }
 
 setAllowActionFn(isActionAllowed)
+
+module.exports={
+  // Exported for programs import
+  addChildAction,
+}

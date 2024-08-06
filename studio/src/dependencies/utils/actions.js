@@ -357,8 +357,8 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  back: () => {
-    window.history.back()
+  back: async () => {
+    return window.history.back()
   },
 
   register: ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {

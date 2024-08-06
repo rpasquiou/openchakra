@@ -2,6 +2,18 @@ import React from 'react'
 import {IconButton} from '@chakra-ui/react'
 import { DownloadIcon } from '@chakra-ui/icons'
 import { imageSrcSetPaths } from '../utils/misc'
+import '../utils/scorm'
+
+/** TODO NGINX rewrite
+https://my-alfred-data-test.s3.eu-west-3.amazonaws.com/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
+
+==> 
+
+/SCORM/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
+
+*/
+
+const PATTERN = new RegExp(`${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}`);
 
 export const getExtension = (filename: string) =>
   filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename
@@ -92,14 +104,21 @@ export const mediaWrapper = ({
       const videoId=parsedUrl.pathname.replace(/\//g, '')
       src=`https://player.vimeo.com/video/${videoId}`
     }
-    // Preview for scorms TODO really useful ?
-    else {
-      // Replace the last part of the path with 'story.html'
-      const pathParts = parsedUrl.pathname.split('/')
-      pathParts[pathParts.length - 1] = 'story.html'
-      parsedUrl.pathname = pathParts.join('/')
-      src=parsedUrl.toString()
+    else {//Certainly a SCORM
+      if (PATTERN.test(parsedUrl.hostname)) {
+        const scormId=parsedUrl.pathname
+        src=`/SCORM/${scormId}`
+      }
     }
+
+    // Preview for scorms for builders TODO really useful ?
+    // else {
+    //   // Replace the last part of the path with 'story.html'
+    //   const pathParts = parsedUrl.pathname.split('/')
+    //   pathParts[pathParts.length - 1] = 'story.html'
+    //   parsedUrl.pathname = pathParts.join('/')
+    //   src=parsedUrl.toString()
+    // }
   }
 
   switch (ext) {
