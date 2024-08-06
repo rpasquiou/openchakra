@@ -1,32 +1,23 @@
 const Session = require("../../models/Session")
 const { runPromisesWithDelay } = require("../../utils/concurrency")
-const { loadFromDb } = require("../../utils/database")
+const { loadFromDb, getModel } = require("../../utils/database")
 const lodash=require('lodash')
 const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
-
-const replaceChildren = data => {
-  if (!data.actual_children) {
-    return 
-  }
-  data.children=data.actual_children
-  delete data.actual_children
-  data.children.forEach(child => {
-    replaceChildren(child)
-  })
-}
+const Program = require("../../models/Program")
 
 const fillSession = async session => {
-  const programId = session.actual_children[0]
+  console.log('Filling session', session._id)
+  const programId = (await Program.findOne({parent: session._id}))._id
   let fields=lodash.range(4).map(childCount => 
     ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str']
-      .map(att => [...Array(childCount).fill('actual_children'), att].join('.'))
+      .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
   fields=lodash.flatten(fields)
   return Promise.all(session.trainees.map(trainee => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
-        replaceChildren(prog[0])
+        console.log('Load program for user', trainee._id)
         trainee.statistics=prog[0]
         return trainee
       })
@@ -34,12 +25,13 @@ const fillSession = async session => {
   .then(() => session)
 }
 
-const computeStatistics = async ({model, fields, id, user, params}) => {
-  console.log(params)
-  const res=await Session.find({_id: id, _locked: true, $or: [{trainees: user}, {trainers: user}]})
-    .populate({path: 'trainees'}).lean()
+const computeStatistics = async ({fields, id, user, params}) => {
+  const sessionPrefix=/^sessions\./
+  const subFields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
+  console.log('loading subfields', subFields)
+  return loadFromDb({model: 'session', id, user, fields: subFields})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
-    .then(sessions => ([{sessions}]))
+    // .then(sessions => ([{sessions}]))
   return res
 }
   
