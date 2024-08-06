@@ -19,6 +19,7 @@ const Block = require('../../server/models/Block')
 const { ACTIONS } = require('../../server/utils/studio/actions')
 const { SseKmsEncryptedObjectsStatus } = require('@aws-sdk/client-s3')
 const { getDatabaseUri } = require('../../config/config')
+const { ChainCache, ATTRIBUTES_CACHE } = require('../../server/plugins/aftral-lms/block')
 
 
 jest.setTimeout(60000)
@@ -41,6 +42,8 @@ describe('Test performances', () => {
     console.time('Loading')
     const programs=await loadFromDb({model: 'program', fields: FIELDS, params: LIMITS, user: builder})
     console.timeEnd('Loading')
+    console.log(ChainCache.getStats())
+    console.log(ATTRIBUTES_CACHE.getStats())
   })
 
 

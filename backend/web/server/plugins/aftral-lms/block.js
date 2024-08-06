@@ -116,7 +116,7 @@ const loadChain = async blockId => {
   ]);
   
   if (result.length === 0) {
-    return [];
+    return []
   }
 
   // Combine the root block with its entire chain
@@ -153,24 +153,23 @@ const getChain = async blockId => {
   return chain
 }
 
-const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 20})
+const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 30})
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
-  const chain=await getChain(data._id)
   const key=`${data._id}/${attName}`
-  if (ATTRIBUTES_CACHE.has(key)) {
-    return ATTRIBUTES_CACHE.get(key)
+  let res=ATTRIBUTES_CACHE.get(key)
+  if (!res) {
+    const chain=await getChain(data._id)
+    const block=chain.find((block, idx) => {
+      if (idx==chain.length-1) {
+        return true
+      }
+      return !lodash.isNil(block[attName])
+    })
+    res=block[attName]
+    ATTRIBUTES_CACHE.set(key, res)
   }
-
-  const block=chain.find((block, idx) => {
-    if (idx==chain.length-1) {
-      return true
-    }
-    return !lodash.isNil(block[attName])
-  })
-  const res=block[attName]
-  ATTRIBUTES_CACHE.set(key, res)
   return res
 }
 
@@ -269,6 +268,7 @@ module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
+  ChainCache, ATTRIBUTES_CACHE,
 }
 
 

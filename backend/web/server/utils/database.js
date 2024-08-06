@@ -10,6 +10,7 @@ const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
+const {runPromisesWithDelay}=require('./concurrency')
 
 const LEAN_DATA=false
 
@@ -673,7 +674,7 @@ const getFieldsToCompute = ({model, fields}) => {
   return result
 }
 
-const addComputedFields = (
+const addComputedFields = async (
   fields,
   userId,
   queryParams,
@@ -690,12 +691,12 @@ const addComputedFields = (
       // Compute direct attributes
       // Handle references => sub
       const refAttributes = getRefAttributes(model)
-      return Promise.all(refAttributes.map(([attName, attParams]) => {
+      return runPromisesWithDelay(refAttributes.map(([attName, attParams]) => () => {
         const requiredSubFields=getRequiredSubFields(fields, attName)
 
         const children = lodash.flatten([data[attName]]).filter(v => !!v)
         return Promise.all(
-          children.map(child =>
+          children.map(child => 
             addComputedFields(
               requiredSubFields,
               newUserId,
@@ -711,8 +712,8 @@ const addComputedFields = (
         const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
-        return Promise.all(
-          Object.keys(requiredCompFields).map(f =>
+        return runPromisesWithDelay(
+          Object.keys(requiredCompFields).map(f => () =>
             requiredCompFields[f](newUserId, queryParams, data)
               .then(res => {
                 data[f] = res
