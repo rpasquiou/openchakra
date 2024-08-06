@@ -217,7 +217,6 @@ BlockSchema.pre('validate', async function(next) {
   // must select between min/max notes and scale
   if (this.type=='resource') {
     const resourceType=await getAttribute('resource_type')(null, null, {_id: this._id})
-    console.log(this._id, 'achievemnt', this.achievement_rule, 'type', resourceType)
     const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
     // TODO allowedAchievementRules may be null if the block is not still inserted in DB
     if (this.achievement_rule && allowedAchievementRules &&  !allowedAchievementRules.includes(this.achievement_rule)) {
