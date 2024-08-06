@@ -110,6 +110,12 @@ export const sortComponents = (components: IComponents): IComponents => {
   return res
 }
 
+export const ensureObject = (val: any) => {
+  if (lodash.isString(val)) {
+    return JSON.parse(val)
+  }
+  return val
+}
 
 export const REDIRECT_COUNT=4
 export const REDIRECT_ROLE=`autoRedirectRole_`

@@ -10,7 +10,7 @@ import {
 } from './values';
 import { clearToken } from './token';
 import { generatePDF } from './tools'
-
+import { ensureObject } from './misc';
 const moment = require('moment')
 
 const API_ROOT = '/myAlfred/api/studio'
@@ -1188,7 +1188,8 @@ return Promise.allSettled(imagePromises)
 
   export_csv: ({value, level, getComponentValue, getComponentAttribute, props, ...params}) => {
     const id = value._id
-    const attribute = lodash.values(params[`displayed-attributes`])
+    const actionProps = ensureObject(params.actionProps)
+    const attribute = lodash.values(actionProps[`displayed-attributes`])
 
     let current  = document.getElementById(params.id)
     while (!current.getAttribute(`dataSourceId`)) {

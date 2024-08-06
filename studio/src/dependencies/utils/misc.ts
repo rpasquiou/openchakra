@@ -116,3 +116,9 @@ export const redirectExists = () =>{
 export const isClient = () => {
   return typeof window !== 'undefined' && typeof window.document !== 'undefined';
 }
+export const ensureObject = (val: any) => {
+  if (lodash.isString(val)) {
+    return JSON.parse(val)
+  }
+  return val
+}

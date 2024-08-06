@@ -40,6 +40,7 @@ import {
   getPageUrl,
   normalizePageName,
   whatTheHexaColor,
+  ensureObject,
 } from './misc';
 import { ProjectState, PageState } from '../core/models/project'
 import { isJsonString } from '../dependencies/utils/misc'
@@ -131,13 +132,6 @@ export const formatCode = async (code: string) => {
   return formattedCode
 }
 
-const ensureObject = (val: any) => {
-  if (lodash.isString(val)) {
-    return JSON.parse(val)
-  }
-  return val
-}
-
 type BuildBlockParams = {
   component: IComponent
   components: IComponents
@@ -161,7 +155,6 @@ const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
 }
 
 const getDisplayedAttributes = (component: IComponent, components: IComponents) => {
-  if (component.props?.action === `export_csv`){
     const dataSource = components[ensureObject(component.props.actionProps).target].props.dataSource
     const attributes: string[] = []
     
@@ -172,7 +165,7 @@ const getDisplayedAttributes = (component: IComponent, components: IComponents) 
         if (comp.props?.dataSource !== dataSource){
           return true //stop traversing because of distinct dataSource
         }
-        
+
         if (comp.props.attribute){
           //path building
           let path: string = ``
@@ -190,9 +183,7 @@ const getDisplayedAttributes = (component: IComponent, components: IComponents) 
     //enumerate children
     traverseChildren(components[ensureObject(component.props.actionProps).target], components, observer)
     
-    component.props[`displayed-attributes`] = attributes
-
-  }
+    return attributes
 }
 
 
@@ -399,6 +390,10 @@ const buildBlock = ({
               paymentFailure: propsValue.paymentFailure
                 ? getPageUrl(propsValue.paymentFailure, pages)
                 : undefined,
+            }
+            const linkedAction= propName === 'actionProps' ? 'action' : 'nextAction'
+            if (childComponent.props[linkedAction] == `export_csv`){
+              valuesCopy['displayed-attributes']=getDisplayedAttributes(childComponent, components)
             }
             propsContent += ` ${propName}='${JSON.stringify(valuesCopy)}'`
             return
