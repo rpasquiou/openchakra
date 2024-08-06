@@ -1187,11 +1187,12 @@ return Promise.allSettled(imagePromises)
   },
 
   export_csv: ({value, level, getComponentValue, getComponentAttribute, props, ...params}) => {
-    const id = value._id
+
+    const id = value?._id ? value.id : undefined
     const actionProps = ensureObject(params.actionProps)
     const attribute = lodash.values(actionProps[`displayed-attributes`])
 
-    let current  = document.getElementById(params.id)
+    let current  = id ? document.getElementById(params.id) : document.getElementById(props.target)
     while (!current.getAttribute(`dataSourceId`)) {
       current = current.parentNode
     }

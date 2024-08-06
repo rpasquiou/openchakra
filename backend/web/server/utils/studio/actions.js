@@ -1,3 +1,4 @@
+const lodash = require('lodash')
 const { callPostCreateData } = require('../database')
 
 const {
@@ -145,7 +146,7 @@ let ACTIONS = {
   export_csv: ({value, model, attributes, filters}, user) => {
     return loadFromDb({model, id: value.id, params: {filters}, fields: attributes, user})
       .then((res) => {
-        const csv=stringify(res, {header:true, delimiter: ';'})
+        const csv=stringify(res.map((o)=> lodash.omitBy(o,(v,k)=>/^_/.test(k))), {header:true, delimiter: ';'})
         return Promise.resolve(csv)
       })
   },
