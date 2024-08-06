@@ -9,6 +9,18 @@ const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 const { loadFromDb } = require('../../utils/database')
 
+const FREELANCE_SUGGESTION_REQUIRES = [
+  'job',
+  'sectors',
+  'expertises',
+  'softwares',
+  'languages',
+  'experience',
+  'homework_days',
+  'duration',
+  'mobility'
+]
+
 const computeSuggestedFreelances = async (userId, params, data) => {
   const getRegionFromZipcode = (zipcode) => {
     const departmentCode = String(zipcode).substring(0, 2)
@@ -52,8 +64,6 @@ const computeSuggestedFreelances = async (userId, params, data) => {
   let freelances = await CustomerFreelance.find({ role: ROLE_FREELANCE })
     .populate('experiences')
     .populate('trainings')
-
-  freelances = freelances.filter(freelance => freelance.freelance_profile_completion === 1)
 
   freelances.forEach((freelance) => {
     let score = 0
@@ -267,4 +277,5 @@ const countAnnounce = async (userId, params, data, fields)  => {
 
 module.exports={
   computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce,
+  FREELANCE_SUGGESTION_REQUIRES
 }

@@ -14,7 +14,7 @@ const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
-const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce } = require("./search");
+const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce, FREELANCE_SUGGESTION_REQUIRES } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 const moment = require('moment');
@@ -294,7 +294,7 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 
 /** Announce start */
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
-declareComputedField({model: 'announce', field: 'suggested_freelances', getterFn: computeSuggestedFreelances})
+declareComputedField({model: 'announce', field: 'suggested_freelances', requires: [...FREELANCE_SUGGESTION_REQUIRES].join(','), getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
