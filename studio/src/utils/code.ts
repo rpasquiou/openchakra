@@ -190,7 +190,6 @@ const getDisplayedAttributes = (component: IComponent, components: IComponents) 
     //enumerate children
     traverseChildren(components[ensureObject(component.props.actionProps).target], components, observer)
     
-    //attribute must be string type
     component.props[`displayed-attributes`] = attributes
 
   }
