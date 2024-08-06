@@ -118,7 +118,7 @@ if (!isProduction()) {
       {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
       {upsert: true, new: true}
     )
-    await onBlockFinished(user, value._id)
+    await onBlockFinished(user, await Block.findById(value._id))
   }
 
   addAction('alle_finish_mission', forceFinishResource)
