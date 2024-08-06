@@ -1227,7 +1227,7 @@ return Promise.allSettled(imagePromises)
         const blob = new Blob([data], { type: `text/csv` });
         const link = document.createElement(`a`);
         link.href = URL.createObjectURL(blob);
-        link.download = `${model}_${attribute}_${moment().format(`YYYY-MM-DD-HH-mm-ss`)}.csv`;
+        link.download = `${model}_${lodash.last(attribute)}_${moment().format(`YYYY-MM-DD-HH-mm-ss`)}.csv`;
         link.click();
       })
   }
