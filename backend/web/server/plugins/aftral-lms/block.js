@@ -98,35 +98,80 @@ const cloneTree = async (blockId, parentId) => {
   return newBlock.save()
 }
 
+// Loads the chain from blockId to its root origin
+const loadChain = async blockId => {
+  const result = await mongoose.models.block.aggregate([
+    {
+      $match: { _id: mongoose.Types.ObjectId(blockId) }
+    },
+    {
+      $graphLookup: {
+        from: 'blocks',
+        startWith: '$_id',
+        connectFromField: 'origin',
+        connectToField: '_id',
+        as: 'blockChain'
+      }
+    }
+  ]);
+  
+  if (result.length === 0) {
+    return [];
+  }
+
+  // Combine the root block with its entire chain
+  const rootBlock = result[0];
+  const blockChain = [rootBlock, ...rootBlock.blockChain];
+
+  // Sort the blocks to maintain the order based on their origin
+  const blockMap = {};
+  blockChain.forEach(block => {
+    blockMap[block._id.toString()] = block;
+  });
+
+  const sortedBlocks = [];
+  let currentBlock = rootBlock;
+
+  while (currentBlock) {
+    sortedBlocks.push(currentBlock);
+    currentBlock = currentBlock.origin ? blockMap[currentBlock.origin.toString()] : null;
+  }
+
+  return sortedBlocks;
+
+}
+
+const ChainCache = new NodeCache({stdTTL: 30})
+
+const getChain = async blockId => {
+  const key=blockId.toString()
+  let chain=ChainCache.get(key)
+  if (!chain) {
+    chain=await loadChain(blockId)
+    ChainCache.set(key, chain)
+  }
+  return chain
+}
+
 const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 20})
 
 // Gets attribute from this data, else from its origin
 const getAttribute = attName => async (userId, params, data) => {
-  ensureMongooseModel(data);
+  const chain=await getChain(data._id)
   const key=`${data._id}/${attName}`
   if (ATTRIBUTES_CACHE.has(key)) {
     return ATTRIBUTES_CACHE.get(key)
   }
-  if (!data) {
-    ATTRIBUTES_CACHE.set(key, null)
-    return null
-  }
-  if (!lodash.isNil(data[attName])) {
-    ATTRIBUTES_CACHE.set(key, data[attName])
-    return data[attName]
-  }
 
-  if (data.origin?.constructor.name != 'model') {
-    await data.populate('origin').execPopulate()
-  }
-
-  if (data.origin) {
-    const res=await getAttribute(attName)(userId, params, data.origin)
-    ATTRIBUTES_CACHE.set(key, res)
-    return res
-  }
-  ATTRIBUTES_CACHE.set(key, null)
-  return null
+  const block=chain.find((block, idx) => {
+    if (idx==chain.length-1) {
+      return true
+    }
+    return !lodash.isNil(block[attName])
+  })
+  const res=block[attName]
+  ATTRIBUTES_CACHE.set(key, res)
+  return res
 }
 
 const isFinished = async (user, block) => {
