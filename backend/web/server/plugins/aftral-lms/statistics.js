@@ -30,7 +30,7 @@ const computeStatistics = async ({fields, id, user, params}) => {
   console.log('loading subfields', subFields)
   return loadFromDb({model: 'session', id, user, fields: subFields})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
-    // .then(sessions => ([{sessions}]))
+    .then(sessions => ([{sessions}]))
   return res
 }
   
