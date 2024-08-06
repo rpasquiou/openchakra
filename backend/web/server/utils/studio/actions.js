@@ -145,7 +145,7 @@ let ACTIONS = {
   export_csv: ({value, model, attributes, filters}, user) => {
     return loadFromDb({model, id: value.id, params: {filters}, fields: attributes, user})
       .then((res) => {
-        const csv=stringify(res.map(r => r.toObject()), {header:true, delimiter: ';'})
+        const csv=stringify(res, {header:true, delimiter: ';'})
         return Promise.resolve(csv)
       })
   },
