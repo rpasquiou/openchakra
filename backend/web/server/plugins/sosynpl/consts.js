@@ -416,7 +416,7 @@ const CF_MAX_BRONZE_SOFT_SKILLS=3
 //Freelance profile completion
 const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'company_size', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
   firstname : `Prénom`,
@@ -428,7 +428,6 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   main_experience : `Expérience principale`,
   soft_skills : `Soft Skills`,
   picture : `Photo de profil`,
-  company_size : `Taille de l'entreprise`,
   work_mode : `Mode de travail`,
   mobility : `Mobilité`,
   work_sector : `Secteur d'activité`,

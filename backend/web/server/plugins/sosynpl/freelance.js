@@ -7,7 +7,8 @@ const freelanceProfileCompletion = (user) => {
   const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
   if (requiredMissing === 0) result += 40
   else result += 5 * (FREELANCE_REQUIRED_ATTRIBUTES.length - requiredMissing)
-  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr])).length
+  let mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr])).length
+  mandatoryMissing += missing.includes('Soft Skills') ? 1 : 0
   const mandatoryPenalty = Math.floor((60 / FREELANCE_MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
   
   result += 60 - mandatoryPenalty

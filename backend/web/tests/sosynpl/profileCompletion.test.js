@@ -26,7 +26,7 @@ describe('Profile Completion', ()=> {
     const jobFile=await JobFile.create({...JOB_FILE_DATA})
     const job=await Job.create({...JOB_DATA, job_file: jobFile})
     sector=await Sector.create({...SECTOR_DATA})
-    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector],/*picture:"hi",*/ mobility: MOBILITY_CITY, work_mode: WORK_MODE_REMOTE, rate: 5, description: 'hi', company_size: COMPANY_SIZE_LESS_10}))
+    freelance=(await CustomerFreelance.create({...FREELANCE_DATA, main_job: job, work_sector: [sector],picture:"hi", mobility: MOBILITY_CITY, work_mode: WORK_MODE_REMOTE, rate: 5, description: 'hi', company_size: COMPANY_SIZE_LESS_10}))
     customer=await CustomerFreelance.create({...CUSTOMER_DATA})
   })
 
@@ -49,13 +49,13 @@ describe('Profile Completion', ()=> {
     console.log(user.freelance_profile_completion)
   })
 
-  it.only('checks for customer missing attributes', async() => {
+  it('checks for customer missing attributes', async() => {
     const fields = ['customer_missing_attributes']
     const [user] = await loadFromDb({model:'customer', id: customer._id, fields})
     expect(user.customer_missing_attributes.length).toBeGreaterThanOrEqual(0)
   })
 
-  it.only('checks for customer profile completion', async() => {
+  it('checks for customer profile completion', async() => {
     const fields = ['customer_profile_completion']
     const [user] = await loadFromDb({model:'customerFreelance', id: customer._id, fields})
     expect(user.customer_profile_completion).toBeGreaterThanOrEqual(0)
