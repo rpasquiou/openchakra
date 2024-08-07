@@ -31,7 +31,7 @@ const freelanceMissingAttributes = (user) => {
   ) {
     missingAttr = [...missingAttr, `${FREELANCE_OUTPUT_ATTRIBUTES['soft_skills']}`]
   } else {
-    missingAttr[missingAttr.length - 1] = missingAttr[missingAttr.length - 1].trim()
+    missingAttr[missingAttr.length - 1] = String(missingAttr[missingAttr.length - 1]).trim()
   }
   return missingAttr
 }
