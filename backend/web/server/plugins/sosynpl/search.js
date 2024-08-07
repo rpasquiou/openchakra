@@ -184,6 +184,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
+  candidates = candidates.filter(c => c.freelance_profile_completion == 1)
   candidates=Object.keys(candidates).map(c => new CustomerFreelance(candidates[c]))
   return candidates
 }
