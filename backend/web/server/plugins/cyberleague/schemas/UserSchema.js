@@ -74,7 +74,11 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'gift',
     required: false
-  }]
+  }],
+  function: {
+    type: String,
+    required: false
+  }
   }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
