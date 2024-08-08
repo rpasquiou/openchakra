@@ -89,6 +89,7 @@ const cloneTree = async (blockId, parentId) => {
     ...lodash.omit(block.toObject(), [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
     id: undefined, _id: undefined, origin: blockId, parent: parentId,
     ...NULLED_ATTRIBUTES,
+    resource_type: this.resource_type
   }
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
