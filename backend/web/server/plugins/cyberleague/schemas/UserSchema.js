@@ -3,7 +3,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES } = require('../consts')
+const { ROLES , JOBS } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -77,6 +77,11 @@ const UserSchema = new Schema({
   }],
   function: {
     type: String,
+    required: false
+  },
+  job: {
+    type: String,
+    enum: Object.keys(JOBS),
     required: false
   }
   }, {...schemaOptions})
