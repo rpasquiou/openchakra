@@ -89,7 +89,7 @@ const cloneTree = async (blockId, parentId) => {
     ...lodash.omit(block.toObject(), [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
     id: undefined, _id: undefined, origin: blockId, parent: parentId,
     ...NULLED_ATTRIBUTES,
-    resource_type: this.resource_type
+    resource_type: block.resource_type
   }
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
@@ -167,6 +167,7 @@ const getAttribute = attName => async (userId, params, data) => {
       }
       return !lodash.isNil(block[attName])
     })
+    console.log(block)
     res=block[attName]
     ATTRIBUTES_CACHE.set(key, res)
   }
