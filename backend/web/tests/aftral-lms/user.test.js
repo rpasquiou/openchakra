@@ -7,7 +7,7 @@ const Sequence = require('../../server/models/Sequence')
 const Module = require('../../server/models/Module')
 const Program = require('../../server/models/Program')
 const Session = require('../../server/models/Session')
-const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR } = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE } = require('../../server/plugins/aftral-lms/consts')
 const ProductCode = require('../../server/models/ProductCode')
 const { addChildAction } = require('../../server/plugins/aftral-lms/actions')
 const { getBlockResources } = require('../../server/plugins/aftral-lms/resources')
@@ -50,7 +50,7 @@ describe('User', () => {
       creator: trainer._id,
       start_date: new Date(),
       end_date: new Date('2025-07-07'),
-      trainees:[trainee._id]
+      trainees:[trainee._id],
     })
 
     productCode = await ProductCode.create({code: 'Product Code Test'})    
@@ -98,7 +98,8 @@ describe('User', () => {
       resource_type: RESOURCE_TYPE_VIDEO,
       creator: trainer._id,
       url: `hi.pdf`,
-      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_UNAVAILABLE
     })
 
     resource2 = await Block.create({
@@ -107,7 +108,8 @@ describe('User', () => {
       resource_type: RESOURCE_TYPE_VIDEO,
       creator: trainer._id,
       url: `hi.pdf`,
-      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_CURRENT
     })
 
     resource3 = await Block.create({
@@ -116,7 +118,8 @@ describe('User', () => {
       resource_type: RESOURCE_TYPE_VIDEO,
       creator: trainer._id,
       url: `hi.pdf`,
-      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_CURRENT
     })
 
     resource4 = await Block.create({
@@ -125,7 +128,8 @@ describe('User', () => {
       resource_type: RESOURCE_TYPE_VIDEO,
       creator: trainer._id,
       url: `hi.pdf`,
-      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_FINISHED
     })
 
     await addChildAction({parent: session._id, child: program._id}, conceptor)
@@ -156,6 +160,6 @@ describe('User', () => {
 
   it(`it must user's resources`, async () => {
     const [u] = await loadFromDb({model:'user', fields:['resources'], id:trainee._id})
-    expect(u.resources.length).toEqual(4)
+    expect(u.resources.length).toEqual(2)
   })
 })
