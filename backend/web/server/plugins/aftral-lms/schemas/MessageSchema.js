@@ -24,6 +24,11 @@ const MessageSchema = new Schema({
     ref: 'user',
     required: true,
   },
+  mine: {
+    type: Boolean,
+    required: false,
+    default: false,
+  }
 }, schemaOptions)
 
 MessageSchema.methods.getPartner = function(user) {
