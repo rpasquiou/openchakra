@@ -40,7 +40,7 @@ const getTraineeResources = async (userId, params, data) => {
   const sequences = await getRelatedDocuments(Sequence, sequenceIds)
   
   const resourceIds = getIdsFromChildren(sequences)
-  const resources = await Resource.find({ _id: { $in: resourceIds }, achievement_status: BLOCK_STATUS_CURRENT })
+  const resources = await Resource.find({ _id: { $in: resourceIds } })
   return resources
 }
 
