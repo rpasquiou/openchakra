@@ -7,6 +7,7 @@ const Program = require('../../models/Program')
 const Chapter = require('../../models/Chapter')
 const Module = require('../../models/Module')
 const Sequence = require('../../models/Sequence')
+const { BLOCK_STATUS_CURRENT } = require('./consts')
 
 const getRelatedDocuments = async (Model, ids) => {
   return await Model.find({ _id: { $in: ids } }).populate('children')
@@ -39,8 +40,7 @@ const getTraineeResources = async (userId, params, data) => {
   const sequences = await getRelatedDocuments(Sequence, sequenceIds)
   
   const resourceIds = getIdsFromChildren(sequences)
-  const resources = await Resource.find({ _id: { $in: resourceIds } })
-  
+  const resources = await Resource.find({ _id: { $in: resourceIds }, achievement_status: BLOCK_STATUS_CURRENT })
   return resources
 }
 
