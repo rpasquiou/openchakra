@@ -31,6 +31,7 @@ const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError } = require('../../utils/errors')
 const { getTraineeResources } = require('./user')
+const { isMine } = require('./message')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -99,6 +100,10 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 // Progress start
 declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
 // Progress end
+
+// Message start
+declareComputedField({model: 'message', field: 'mine', getterFn:isMine})
+// Message end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
