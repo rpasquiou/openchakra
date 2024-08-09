@@ -7,8 +7,10 @@ const Program = require("../../models/Program")
 
 const fillSession = async session => {
   console.log('Filling session', session._id)
-  const programId = (await Program.findOne({parent: session._id}))._id
-  let fields=lodash.range(4).map(childCount => 
+  const program = await Program.findOne({parent: session._id}).populate('children') 
+  const programId = program._id
+  const range = program.children[0].type == 'chapter' ? 5 : 4
+  let fields=lodash.range(range).map(childCount => 
     ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str']
       .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
