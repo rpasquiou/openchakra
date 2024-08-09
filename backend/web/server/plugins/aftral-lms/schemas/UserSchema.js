@@ -42,11 +42,14 @@ const UserSchema = new Schema({
     ref: 'program',
     required: false,
   },
-  resources: [{
-    type: Schema.Types.ObjectId,
-    ref: 'resource',
-    required: false
-  }],
+  resources: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'resource',
+    }],
+    required: true,
+    default: [],
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
