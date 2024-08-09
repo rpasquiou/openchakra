@@ -217,7 +217,6 @@ BlockSchema.pre('validate', async function(next) {
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
   if (!this._locked && this.type=='resource') {
-    console.log(this)
     const resourceType= this.resource_type || await getAttribute('resource_type')(null, null, this)
     const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
     // TODO allowedAchievementRules may be null if the block is not still inserted in DB

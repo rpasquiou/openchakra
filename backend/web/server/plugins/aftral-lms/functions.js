@@ -14,6 +14,7 @@ const Post = require('../../models/Post')
 require('../../models/Module')
 require('../../models/Sequence')
 require('../../models/Search')
+require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
@@ -29,6 +30,7 @@ const Resource = require('../../models/Resource')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError } = require('../../utils/errors')
+const { getTraineeResources } = require('./user')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -75,7 +77,6 @@ declareComputedField({model: 'program', field: 'available_codes', requires: 'cod
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
-
 declareEnumField({model: 'feed', field: 'type', enumValues: FEED_TYPE})
 
 declareEnumField({model: 'post', field: '_feed_type', enumValues: FEED_TYPE})
@@ -85,6 +86,7 @@ declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATU
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
+  declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
 })
 
 // search start
