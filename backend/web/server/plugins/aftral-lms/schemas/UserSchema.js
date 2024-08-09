@@ -41,7 +41,12 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'program',
     required: false,
-  }
+  },
+  resources: [{
+    type: Schema.Types.ObjectId,
+    ref: 'resource',
+    required: false
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
