@@ -10,7 +10,7 @@ const Session = require('../../server/models/Session')
 const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE } = require('../../server/plugins/aftral-lms/consts')
 const ProductCode = require('../../server/models/ProductCode')
 const { addChildAction } = require('../../server/plugins/aftral-lms/actions')
-const { getBlockResources } = require('../../server/plugins/aftral-lms/resources')
+const { getBlockResources, getRessourceSession } = require('../../server/plugins/aftral-lms/resources')
 const Block = require('../../server/models/Block')
 
 jest.setTimeout(60000)

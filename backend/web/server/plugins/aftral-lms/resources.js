@@ -6,6 +6,7 @@ const { idEqual } = require("../../utils/database")
 const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
+const Block = require('../../models/Block')
 
 const getBlockResources= async blockId => {
   const block=await mongoose.models.block.findById(blockId).populate('children')
@@ -95,8 +96,31 @@ const canReplay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
+getSession = async (userId, params, data) => {
+  switch(data.type) {
+    case 'resource' :
+      return data.parent.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent.parent]
+      : [data.parent.parent.parent.parent]
+    case 'sequence' :
+      return data.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent]
+      : [data.parent.parent.parent]
+    case 'module' :
+      return data.parent.type == 'chapter'
+      ? [data.parent.parent.parent]
+      : [data.parent.parent]
+    case 'chapter' :
+      return data.parent.parent
+    case 'program' :
+      return data.parent
+    case 'session' :
+      return []
+  }
+}
+
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources,
+  getBlockResources, getSession
 }

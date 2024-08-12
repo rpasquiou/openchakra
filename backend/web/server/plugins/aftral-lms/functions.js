@@ -17,7 +17,7 @@ require('../../models/Search')
 require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getSession } = require('./resources')
 const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
@@ -69,6 +69,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
+  declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent.parent.parent.parent.parent'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
