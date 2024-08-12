@@ -268,22 +268,20 @@ getSession = async (userId, params, data) => {
   switch(data.type) {
     case 'resource' :
       return data.parent.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent.parent._id]
+      ? data.parent.parent.parent.parent.parent._id
+      : data.parent.parent.parent.parent._id
     case 'sequence' :
       return data.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent._id]
+      ? data.parent.parent.parent.parent._id
+      : data.parent.parent.parent._id
     case 'module' :
       return data.parent.type == 'chapter'
-      ? [data.parent.parent.parent._id]
-      : [data.parent.parent._id]
+      ? data.parent.parent.parent._id
+      : data.parent.parent._id
     case 'chapter' :
       return data.parent.parent._id
     case 'program' :
       return data.parent._id
-    case 'session' :
-      return []
   }
 }
 
