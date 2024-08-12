@@ -264,11 +264,34 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
+getSession = async (userId, params, data) => {
+  switch(data.type) {
+    case 'resource' :
+      return data.parent.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent.parent._id]
+      : [data.parent.parent.parent.parent._id]
+    case 'sequence' :
+      return data.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent._id]
+      : [data.parent.parent.parent._id]
+    case 'module' :
+      return data.parent.type == 'chapter'
+      ? [data.parent.parent.parent._id]
+      : [data.parent.parent._id]
+    case 'chapter' :
+      return data.parent.parent._id
+    case 'program' :
+      return data.parent._id
+    case 'session' :
+      return []
+  }
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,
+  ChainCache, ATTRIBUTES_CACHE,getSession
 }
 
 
