@@ -1,15 +1,40 @@
-const Session = require('../../models/Session')
-const { getSessionBlocks } = require('./block')
 const { loadFromDb } = require('../../utils/database')
 
 const getTraineeResources = async (userId, params, data) => {
-  const sessions = await Session.find({ trainees: data._id }).populate('children')
-  const blocks = await Promise.all(
-    sessions.map(s =>   getSessionBlocks(s))
+  let sessions = await loadFromDb({model: 'session', fields:[
+    'trainees',
+    'children.children.children.children.spent_time_str',
+    'children.children.children.children.name',
+    'children.children.children.children.resource_type',
+    'children.children.children.children.achievement_status',
+    'children.children.children.children.children.spent_time_str',
+    'children.children.children.children.children.name',
+    'children.children.children.children.children.resource_type',
+    'children.children.children.children.children.achievement_status',
+  ], user:data})
+
+  sessions = sessions.filter(s => s.trainees.some(t => t._id.toString() === data._id.toString()))
+
+  const resources = sessions.flatMap(session =>
+    session.children.flatMap(program =>
+      program.children.flatMap(child => {
+        if (child.type === 'chapter') {
+          return child.children.flatMap(modulee =>
+            modulee.children.flatMap(sequence =>
+              sequence.children
+            )
+          )
+        } else {
+          return child.children.flatMap(sequence =>
+            sequence.children
+          )
+        }
+      })
+    )
   )
-  const resources = blocks.flat().filter(b => b.type == 'resource')
-  const res = await Promise.all(resources.map(b => loadFromDb({id:b._id, fields:['spent_time_str','name','resource_type','achievement_rule'], model:'resource',  user:data})))
-  return res
+
+  console.log(resources)
+  return resources
 }
 
 

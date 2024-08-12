@@ -167,7 +167,6 @@ const getAttribute = attName => async (userId, params, data) => {
       }
       return !lodash.isNil(block[attName])
     })
-    console.log(block)
     res=block[attName]
     ATTRIBUTES_CACHE.set(key, res)
   }
