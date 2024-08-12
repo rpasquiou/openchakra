@@ -3,7 +3,7 @@ const {
   declareEnumField,
   declareVirtualField,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE } = require('./consts')
+const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 
 //User declarations
@@ -78,3 +78,6 @@ declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
 declareVirtualField({ model: 'post', field: 'reactions_count', ROLE: 'number' })
+
+//User
+declareEnumField({ model: 'user', field: 'job', enumValues: JOBS })
