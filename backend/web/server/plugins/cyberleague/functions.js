@@ -9,6 +9,7 @@ const { PURCHASE_STATUS } = require('../../../utils/consts')
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
 USER_MODELS.forEach(m => {
+  declareEnumField({ model: m, field: 'job', enumValues: JOBS })
   declareVirtualField({ model: m, field: 'password2', instance: 'String' })
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
@@ -80,4 +81,3 @@ declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'}
 declareVirtualField({ model: 'post', field: 'reactions_count', ROLE: 'number' })
 
 //User
-declareEnumField({ model: 'user', field: 'job', enumValues: JOBS })
