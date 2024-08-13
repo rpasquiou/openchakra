@@ -2,9 +2,9 @@ const lodash = require("lodash");
 const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR } = require("./consts");
 const { getBlockResources } = require("./resources");
-const { idEqual } = require("../../utils/database");
+const { idEqual, loadFromDb } = require("../../utils/database");
 const Block = require("../../models/Block");
 
 const NAMES_CACHE=new NodeCache()
@@ -83,13 +83,33 @@ const cloneTree = async (blockId, parentId) => {
   }
   const parent=await mongoose.models.block.findById(parentId).populate('children_count')
   const newOrder=parent.children_count+1
-  const block=await mongoose.models.block.findById(blockId).populate('children')
+  const [block]=await loadFromDb({model:'block', user:{role:ROLE_CONCEPTEUR}, id:blockId, fields:[
+    'name',
+    'closed',
+    'masked',
+    'description',
+    'picture',
+    'optional',
+    'code',
+    'access_condition',
+    'resource_type',
+    'homework_mode',
+    'url',
+    'evaluation',
+    'achievement_rule',
+    'children.resource_type',
+    'creator',
+    'type',
+    'children.type'
+  ]})
   let blockData={
     order: newOrder,
-    ...lodash.omit(block.toObject(), [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
+    ...lodash.omit(block, [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
     id: undefined, _id: undefined, origin: blockId, parent: parentId,
     ...NULLED_ATTRIBUTES,
-    resource_type: block.resource_type
+  }
+  if (block.resource_type) {
+    blockData.resource_type = block.resource_type;
   }
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
@@ -264,11 +284,32 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
+getSession = async (userId, params, data) => {
+  switch(data.type) {
+    case 'resource' :
+      return data.parent.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent.parent._id]
+      : [data.parent.parent.parent.parent._id]
+    case 'sequence' :
+      return data.parent.parent.type == 'chapter'
+      ? [data.parent.parent.parent.parent._id]
+      : [data.parent.parent.parent._id]
+    case 'module' :
+      return data.parent.type == 'chapter'
+      ? [data.parent.parent.parent._id]
+      : [data.parent.parent._id]
+    case 'chapter' :
+      return [data.parent.parent._id]
+    case 'program' :
+      return [data.parent._id]
+  }
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,
+  ChainCache, ATTRIBUTES_CACHE,getSession
 }
 
 
