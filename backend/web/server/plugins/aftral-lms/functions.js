@@ -144,10 +144,18 @@ setPreCreateData(preCreate)
 
 const prePut = async ({model, id, params, user, skip_validation}) => {
   if (model=='resource') {
-    const block=await Resource.findById(id, {resource_type:1, origin:1})
+    const block=await Resource.findById(id, {resource_type:1, origin:1, url:1, plain_url:1})
     if (!block.origin) {
       if (!params.url && !params.plain_url) {
-        throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
+        if(!block.url && !block.plain_url){
+          throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
+        }
+        if(block.resource_type == RESOURCE_TYPE_LINK) {
+          params.plain_url = block.url
+        }
+        else{
+          params.url = block.url
+        }
       }
       if (params.plain_url) {
         params.resource_type=RESOURCE_TYPE_LINK
@@ -161,8 +169,8 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
         throw new Error(`Le type de ressource ne peut changer`)
       }
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
+      params.achievement_status = block.achievement_status
     }
-
   }
   return {model, id, params, user, skip_validation}
 }
