@@ -137,6 +137,10 @@ const preCreate = async ({model, params, user}) => {
         return Promise.resolve({model, params})
       })
   }
+  if(model=='message'){
+    params.sender=params.creator
+    params.receiver=params.parent
+  }
   return Promise.resolve({model, params})
 }
 
