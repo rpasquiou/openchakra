@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { FEED_TYPE } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 const Schema = mongoose.Schema
 
 const PostSchema = new Schema({
@@ -30,6 +31,32 @@ const PostSchema = new Schema({
     required: true,
     enum: Object.keys(FEED_TYPE),
   },
+  likes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
+  liked: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 }, schemaOptions)
+
+PostSchema.virtual('likes_count', DUMMY_REF).get(function(){
+  return this.liked.length || 0
+})
+
+PostSchema.virtual('comments', {
+  ref: 'comment',
+  localField: '_id',
+  foreignField: 'post'
+})
+
+PostSchema.virtual('comments_count', {
+  ref: 'comment',
+  localField: '_id',
+  foreignField: 'post',
+  count: true
+})
 
 module.exports = PostSchema

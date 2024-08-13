@@ -33,6 +33,7 @@ const { BadRequestError } = require('../../utils/errors')
 const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
+const { isLiked } = require('./post')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -109,6 +110,21 @@ declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BL
 // Message start
 declareComputedField({model: 'message', field: 'mine', getterFn:isMine})
 // Message end
+
+// Post start
+declareVirtualField({model:'post', field: 'comments', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'comment'}},
+})
+
+declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'comment'}},
+})
+declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
+declareComputedField({model: 'post', field: 'liked', getterFn: isLiked})
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
