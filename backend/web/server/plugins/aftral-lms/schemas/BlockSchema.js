@@ -108,9 +108,12 @@ const BlockSchema = new Schema({
     required: [true, `Le status verrouillagee est obligatoire`]
   },
   session: {
-    type: Schema.Types.ObjectId,
-    ref: 'block',
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'session'
+    }],
     required:false,
+    default: []
   },
   // Annotation set by trainee
   annotation: {
