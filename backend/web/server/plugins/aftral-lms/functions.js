@@ -110,6 +110,7 @@ const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
   if ('homework'==model) {
+    params.resource=params.parent
     params.trainee=user
   }
   if (model=='resource') {
