@@ -1,5 +1,6 @@
 const isLiked = (userId, params, data) => {
-  return data.likes && data.likes.length>0
+  const likes = data.likes.map(l=> l._id)
+  return likes.includes(userId)
 }
 
 module.exports={

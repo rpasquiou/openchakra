@@ -37,7 +37,7 @@ const PostSchema = new Schema({
   }],
   liked: {
     type: Boolean,
-    required: false,
+    required: true,
     default: false,
   },
 }, schemaOptions)
