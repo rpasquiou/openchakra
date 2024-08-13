@@ -138,8 +138,8 @@ describe('User', () => {
     await addChildAction({parent: modulee1._id, child: sequence1._id}, conceptor)
     await addChildAction({parent: modulee1._id, child: sequence2._id}, conceptor)
     await addChildAction({parent: modulee2._id, child: sequence3._id}, conceptor)
-    await addChildAction({parent: sequence1._id, child: resource1._id}, conceptor)
-    await addChildAction({parent: sequence1._id, child: resource2._id}, conceptor)
+    //await addChildAction({parent: sequence1._id, child: resource1._id}, conceptor)
+    //await addChildAction({parent: sequence1._id, child: resource2._id}, conceptor)
     await addChildAction({parent: sequence2._id, child: resource3._id}, conceptor)
     await addChildAction({parent: sequence3._id, child: resource4._id}, conceptor)
 

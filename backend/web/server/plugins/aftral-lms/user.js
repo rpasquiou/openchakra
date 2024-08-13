@@ -1,46 +1,39 @@
-const mongoose = require('mongoose')
-const Session = require('../../models/Session')
-const { getBlockResources } = require('./resources')
-const Block = require('../../models/Block')
-const Resource = require('../../models/Resource')
-const Program = require('../../models/Program')
-const Chapter = require('../../models/Chapter')
-const Module = require('../../models/Module')
-const Sequence = require('../../models/Sequence')
-const { BLOCK_STATUS_CURRENT } = require('./consts')
-
-const getRelatedDocuments = async (Model, ids) => {
-  return await Model.find({ _id: { $in: ids } }).populate('children')
-}
-
-const getIdsFromChildren = (documents) => {
-  return documents.flatMap(doc => doc.children.map(child => child._id))
-}
+const { loadFromDb } = require('../../utils/database')
 
 const getTraineeResources = async (userId, params, data) => {
-  const sessions = await Session.find({ trainees: data._id }).populate('children')
-  
-  const programIds = getIdsFromChildren(sessions)
-  const programs = await getRelatedDocuments(Program, programIds)
-  
-  let modules
-  
-  if (programs[0]?.children[0]?.type === 'chapter') {
-    const chapterIds = getIdsFromChildren(programs)
-    const chapters = await getRelatedDocuments(Chapter, chapterIds)
-    
-    const moduleIds = getIdsFromChildren(chapters)
-    modules = await getRelatedDocuments(Module, moduleIds)
-  } else {
-    const moduleIds = getIdsFromChildren(programs)
-    modules = await getRelatedDocuments(Module, moduleIds)
-  }
-  
-  const sequenceIds = getIdsFromChildren(modules)
-  const sequences = await getRelatedDocuments(Sequence, sequenceIds)
-  
-  const resourceIds = getIdsFromChildren(sequences)
-  const resources = await Resource.find({ _id: { $in: resourceIds } })
+  let sessions = await loadFromDb({model: 'session', fields:[
+    'trainees',
+    'children.children.children.children.spent_time_str',
+    'children.children.children.children.name',
+    'children.children.children.children.resource_type',
+    'children.children.children.children.achievement_status',
+    'children.children.children.children.children.spent_time_str',
+    'children.children.children.children.children.name',
+    'children.children.children.children.children.resource_type',
+    'children.children.children.children.children.achievement_status',
+  ], user:data})
+
+  sessions = sessions.filter(s => s.trainees.some(t => t._id.toString() === data._id.toString()))
+
+  const resources = sessions.flatMap(session =>
+    session.children.flatMap(program =>
+      program.children.flatMap(child => {
+        if (child.type === 'chapter') {
+          return child.children.flatMap(modulee =>
+            modulee.children.flatMap(sequence =>
+              sequence.children
+            )
+          )
+        } else {
+          return child.children.flatMap(sequence =>
+            sequence.children
+          )
+        }
+      })
+    )
+  )
+
+  console.log(resources)
   return resources
 }
 
