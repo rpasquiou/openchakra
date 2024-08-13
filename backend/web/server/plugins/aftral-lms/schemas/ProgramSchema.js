@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT}=require('../consts')
+const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT, DURATION_UNIT}=require('../consts')
 
 const ProgramSchema = new Schema({
   status: {
@@ -19,6 +19,15 @@ const ProgramSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'productCode'
   }],
+  duration: {
+    type: Number,
+    required: false,
+  },
+  duration_unit: {
+    type: String,
+    enum: Object.keys(DURATION_UNIT),
+    required: function() {return this.duration!=null ? [true, `L'unité de temps est obligatoire`] : false}
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 /* eslint-disable prefer-arrow-callback */

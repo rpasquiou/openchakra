@@ -32,6 +32,7 @@ const Progress = require('../../models/Progress')
 const { BadRequestError } = require('../../utils/errors')
 const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
+const { DURATION_UNIT } = require('./consts')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -74,8 +75,11 @@ BLOCK_MODELS.forEach(model => {
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
+//Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
+declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
+//Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
 
