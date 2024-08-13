@@ -303,7 +303,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
         const convs=lodash(partnerMessages)
           .values()
           .map(msgs => { 
-            const partner=getPartner(msgs[0], user);
+            const partner=getPartner(msgs[0], user)
+            msgs = msgs.map(m => ({...m.toObject(), mine : idEqual(m.sender._id, user._id)}))
             return ({_id: partner._id, partner, messages: msgs, newest_message: lodash.maxBy(messages, 'creation_date')}) 
           })
           .sortBy(CREATED_AT_ATTRIBUTE, 'asc')

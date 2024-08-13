@@ -2,7 +2,7 @@ const moment=require('moment')
 const mongoose = require('mongoose')
 const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
 const User=require('../../server/models/User')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, RESOURCE_TYPE} = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, RESOURCE_TYPE, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_DOWNLOAD, RESOURCE_TYPE_VIDEO} = require('../../server/plugins/aftral-lms/consts')
 const Resource=require('../../server/models/Resource')
 const {forceDataModelAftral}=require('../utils')
 forceDataModelAftral()
@@ -30,11 +30,27 @@ describe('Test models computations', () => {
   })
 
   it('must return last_message', async() => {
-    const designer_resource=await Resource.create({name: 'Ressource designer', duration:10, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: designer, url: 'url'})
-    const trainer_resource=await Resource.create({name: 'Ressource formateur', duration:10, resource_type: Object.keys(RESOURCE_TYPE)[0], creator: trainer, url: 'url'})
+    const designer_resource=await Resource.create({
+      name: 'Ressource designer', 
+      duration:10, 
+      creator: designer, 
+      url: 'url', 
+      resource_type: RESOURCE_TYPE_VIDEO, 
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_UNAVAILABLE})
+    const trainer_resource=await Resource.create({
+      name: 'Ressource formateur', 
+      duration:10,  
+      creator: trainer, 
+      url: 'url', 
+      resource_type: RESOURCE_TYPE_VIDEO, 
+      achievement_rule: ACHIEVEMENT_RULE_DOWNLOAD,
+      achievement_status: BLOCK_STATUS_UNAVAILABLE, 
+  })
     const messages=lodash.range(10)
     await Promise.all(messages.map(idx => Message.create({creation_date: moment().add(idx, 'seconds'), sender: designer, receiver: trainer, content: `Message ${idx}`})))
     const conversations=await loadFromDb({model: 'conversation', user: designer, fields: ['messages', 'newest_message']})
+    console.log(conversations[0].messages)
     expect(conversations).toHaveLength(1)
     expect(conversations[0].newest_message.content).toBe('Message 9')
   })
