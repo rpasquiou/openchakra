@@ -134,6 +134,13 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
 
+//Resources 
+declareVirtualField({model: 'resources', field: 'likes_count', instance: 'Number', requires:'likes'})
+declareVirtualField({model: 'resources', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+
+declareComputedField({model: 'resources', field: 'liked', getterFn: isBlockLiked, requires:'likes'})
+declareComputedField({model: 'resources', field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
+//Resources end
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -208,6 +215,20 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
       params.achievement_status = block.achievement_status
     }
+  }
+  if (model=='post'){
+    if('liked' in params){
+
+      await Post.updateOne(
+        {_id:id},
+        {
+          ...params.liked ? {$addToSet: {likes: user._id}}
+          : {$pull: {likes: user._id}}
+        }
+      )}
+  }
+
+  if (['block', 'resource'].includes(model)){
     if(params.liked == true) {
       await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
       params.disliked = false
@@ -222,17 +243,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
     if(params.disliked == false){
       await Resource.updateOne({_id: id}, {$pull: {dislikes: user._id}})
     }
-  }
-  if (model=='post'){
-    if('liked' in params){
-
-      await Post.updateOne(
-        {_id:id},
-        {
-          ...params.liked ? {$addToSet: {likes: user._id}}
-          : {$pull: {likes: user._id}}
-        }
-      )}
   }
   return {model, id, params, user, skip_validation}
 }
