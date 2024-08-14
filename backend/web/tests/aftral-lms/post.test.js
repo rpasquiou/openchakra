@@ -42,7 +42,7 @@ describe('Post', () => {
     await mongoose.connection.close()
   })
   it('must return comments on post', async() => {
-    const posts = await loadFromDb({model:'post', user, fields:['comments']})
+    const posts = await loadFromDb({model:'post', user, fields:['comments', 'likes', 'liked']})
     console.log(posts)
   })
 })
