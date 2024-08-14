@@ -305,11 +305,21 @@ getSession = async (userId, params, data) => {
   }
 }
 
+const isBlockLiked = async (userId, params, data) => {
+  const likes = data.likes.map(l=> l._id)
+  return likes.includes(userId)
+}
+
+const isBlockDisliked = async (userId, params, data) => {
+  const dislikes = data.dislikes.map(l=> l._id)
+  return dislikes.includes(userId)
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,getSession
+  ChainCache, ATTRIBUTES_CACHE,getSession, isBlockDisliked, isBlockLiked
 }
 
 
