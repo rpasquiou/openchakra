@@ -173,6 +173,11 @@ const preCreate = async ({model, params, user}) => {
     params.sender=params.creator
     params.receiver=params.parent
   }
+  if (model == 'comment'){
+    console.log(params)
+    params.user = user._id
+    params.post = params.parent
+  }
   return Promise.resolve({model, params})
 }
 
@@ -225,10 +230,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
           : {$pull: {likes: user._id}}
         }
       )}
-  }
-  if (model == 'comment'){
-    params.author = user._id
-    params.post = params.parent
   }
   return {model, id, params, user, skip_validation}
 }
