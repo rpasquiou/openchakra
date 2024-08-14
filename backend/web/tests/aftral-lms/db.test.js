@@ -31,4 +31,12 @@ describe('User', () => {
     console.log(resources[0].likes[0]._id, resources)
     console.log(user._id)
   })
+  it.only('must return comments on post', async() => {
+    const id='66b0f1cc3356935c1fdaa148'
+    const user = await User.find({role: ROLE_APPRENANT})
+    const feed = await loadFromDb({model:'feed', id, user, fields:['posts.comments', 'posts.likes', 'posts.liked']})
+    const post = await loadFromDb({model:'post', id:'66bc866949ffa43e7b746755', user, fields:['comments']})
+    console.log(JSON.stringify(feed, null, 2))
+    console.log(JSON.stringify(post, null, 2))
+  })
 })
