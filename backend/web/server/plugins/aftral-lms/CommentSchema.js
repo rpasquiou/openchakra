@@ -9,7 +9,7 @@ const CommentSchema = new Schema({
     ref: 'user',
     required: [true, "L'utilisateur est obligatoire"],
   },
-  text: {
+  content: {
     type: String,
     required: [true, 'Le commentaire est obligatoire'],
   },
