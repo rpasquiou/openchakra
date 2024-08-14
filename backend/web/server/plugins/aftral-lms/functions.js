@@ -132,8 +132,8 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked})
 declareVirtualField({model:'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareVirtualField({model:'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
 
-declareComputedField({model: 'resource', field: 'liked', getterFn: isResourceLiked})
-declareComputedField({model: 'resource', field: 'disliked', getterFn: isResourceDisliked})
+declareComputedField({model: 'resource', field: 'liked', getterFn: isResourceLiked, requires:'likes'})
+declareComputedField({model: 'resource', field: 'disliked', getterFn: isResourceDisliked, requires:'dislikes'})
 // Resource end
 
 const preCreate = async ({model, params, user}) => {
@@ -178,6 +178,7 @@ const preCreate = async ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const prePut = async ({model, id, params, user, skip_validation}) => {
+  console.log('put',model,'****************')
   if (model=='resource') {
     const block=await Resource.findById(id, {resource_type:1, origin:1, url:1, plain_url:1})
     if (!block.origin) {
@@ -205,15 +206,23 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       }
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
       params.achievement_status = block.achievement_status
-
-      if(params.liked == true) {
-        await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
-      }
-      if(params.disliked == true) {
-        await Resource.updateOne({_id:id},{$pull: {likes: user._id}, $addToSet: {dislikes: user._id}})
-      }
+    }
+    if(params.liked == true) {
+      await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
+      params.disliked = false
+    }
+    if(params.liked == false){
+      await Resource.updateOne({_id: id}, {$pull: {likes: user._id}})
+    }
+    if(params.disliked == true) {
+      await Resource.updateOne({_id:id},{$pull: {likes: user._id}, $addToSet: {dislikes: user._id}})
+      params.liked = false
+    }
+    if(params.disliked == false){
+      await Resource.updateOne({_id: id}, {$pull: {dislikes: user._id}})
     }
   }
+  console.log(params, id, user._id)
   return {model, id, params, user, skip_validation}
 }
 
@@ -268,6 +277,7 @@ const getFeeds = async (user, id) => {
 }
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+  console.log('process',model,'*****************************************',params, fields)
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
