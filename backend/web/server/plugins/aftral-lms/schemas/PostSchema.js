@@ -43,7 +43,7 @@ const PostSchema = new Schema({
 }, schemaOptions)
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function(){
-  return this.liked.length || 0
+  return this.likes.length || 0
 })
 
 PostSchema.virtual('comments', {
