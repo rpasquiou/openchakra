@@ -135,11 +135,11 @@ declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', req
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
 
 //Resources 
-declareVirtualField({model: 'resources', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareVirtualField({model: 'resources', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+declareVirtualField({model: 'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
+declareVirtualField({model: 'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
 
-declareComputedField({model: 'resources', field: 'liked', getterFn: isBlockLiked, requires:'likes'})
-declareComputedField({model: 'resources', field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
+declareComputedField({model: 'resource', field: 'liked', getterFn: isBlockLiked, requires:'likes'})
+declareComputedField({model: 'resource', field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
 //Resources end
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
