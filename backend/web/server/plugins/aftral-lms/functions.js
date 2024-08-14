@@ -18,7 +18,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, isBlockLiked, isBlockDisliked} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -35,8 +35,6 @@ const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
-const { isResourceLiked } = require('./resources')
-const { isResourceDisliked } = require('./resources')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -75,6 +73,12 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
   declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent.parent.parent.parent.parent'})
+
+  declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
+  declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+
+  declareComputedField({model, field: 'liked', getterFn: isBlockLiked, requires:'likes'})
+  declareComputedField({model, field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -129,14 +133,6 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked})
 
-// Resource start
-declareVirtualField({model:'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareVirtualField({model:'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
-
-declareComputedField({model: 'resource', field: 'liked', getterFn: isResourceLiked, requires:'likes'})
-declareComputedField({model: 'resource', field: 'disliked', getterFn: isResourceDisliked, requires:'dislikes'})
-// Resource end
-
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -174,7 +170,6 @@ const preCreate = async ({model, params, user}) => {
     params.receiver=params.parent
   }
   if (model == 'comment'){
-    console.log(params)
     params.user = user._id
     params.post = params.parent
   }
@@ -184,7 +179,6 @@ const preCreate = async ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const prePut = async ({model, id, params, user, skip_validation}) => {
-  console.log('put',model,'****************')
   if (model=='resource') {
     const block=await Resource.findById(id, {resource_type:1, origin:1, url:1, plain_url:1})
     if (!block.origin) {
@@ -293,7 +287,6 @@ const getFeeds = async (user, id) => {
 }
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  console.log('process',model,'*****************************************',params, fields)
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
