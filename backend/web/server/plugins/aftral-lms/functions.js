@@ -34,6 +34,8 @@ const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
+const { isResourceLiked } = require('./resources')
+const { isResourceDisliked } = require('./resources')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -126,6 +128,14 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked})
 
+// Resource start
+declareVirtualField({model:'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
+declareVirtualField({model:'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+
+declareComputedField({model: 'resource', field: 'liked', getterFn: isResourceLiked})
+declareComputedField({model: 'resource', field: 'disliked', getterFn: isResourceDisliked})
+// Resource end
+
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -195,6 +205,13 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       }
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
       params.achievement_status = block.achievement_status
+
+      if(params.liked == true) {
+        await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
+      }
+      if(params.disliked == true) {
+        await Resource.updateOne({_id:id},{$pull: {likes: user._id}, $addToSet: {dislikes: user._id}})
+      }
     }
   }
   return {model, id, params, user, skip_validation}

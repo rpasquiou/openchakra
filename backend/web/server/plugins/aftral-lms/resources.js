@@ -96,8 +96,18 @@ const canReplay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
+const isResourceLiked = async (userId, params, data) => {
+  const likes = data.likes.map(l=> l._id)
+  return likes.includes(userId)
+}
+
+const isResourceDisliked = async (userId, params, data) => {
+  const dislikes = data.dislikes.map(l=> l._id)
+  return dislikes.includes(userId)
+}
+
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources
+  getBlockResources, isResourceLiked, isResourceDisliked
 }

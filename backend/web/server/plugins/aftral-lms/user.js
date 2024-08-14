@@ -33,7 +33,6 @@ const getTraineeResources = async (userId, params, data) => {
     )
   )
 
-  console.log(resources)
   return resources
 }
 
