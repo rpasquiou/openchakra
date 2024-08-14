@@ -226,6 +226,10 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
         }
       )}
   }
+  if (model == 'comment'){
+    params.author = user._id
+    params.post = params.parent
+  }
   return {model, id, params, user, skip_validation}
 }
 
