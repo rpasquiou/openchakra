@@ -215,6 +215,17 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       }
     }
   }
+  if (model=='post'){
+    if('liked' in params){
+
+      await Post.updateOne(
+        {_id:id},
+        {
+          ...params.liked ? {$addToSet: {likes: user._id}}
+          : {$pull: {likes: user._id}}
+        }
+      )}
+  }
   return {model, id, params, user, skip_validation}
 }
 
