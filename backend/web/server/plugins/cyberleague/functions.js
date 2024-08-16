@@ -3,6 +3,7 @@ const {
   declareEnumField,
   declareVirtualField,
   setPreprocessGet,
+  setPreCreateData,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
@@ -93,3 +94,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 }
 
 setPreprocessGet(preprocessGet)
+
+const preCreate = async ({model, params, user}) => {
+  if(model == 'post') {
+    params.creator = params.creator || user._id
+  }
+  return Promise.resolve({model, params})
+}
+
+setPreCreateData(preCreate)
