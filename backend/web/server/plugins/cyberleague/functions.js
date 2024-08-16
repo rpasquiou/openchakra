@@ -4,7 +4,7 @@ const {
   declareVirtualField,
   setPreprocessGet,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS } = require('./consts')
+const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 
 //User declarations
@@ -70,6 +70,7 @@ declareVirtualField({
 })
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
+declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 
 //Expertise declarations
 declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
