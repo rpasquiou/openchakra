@@ -2,6 +2,7 @@ const axios = require('axios')
 const {
   declareEnumField,
   declareVirtualField,
+  setPreprocessGet,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
@@ -81,3 +82,13 @@ declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'}
 declareVirtualField({ model: 'post', field: 'reactions_count', ROLE: 'number' })
 
 //User
+
+const preprocessGet = async ({model, fields, id, user, params}) => {
+  if (model=='loggedUser') {
+    model='user'
+    id = user?._id || 'INVALIDID'
+  }
+  return Promise.resolve({model, fields, id, user, params})
+}
+
+setPreprocessGet(preprocessGet)
