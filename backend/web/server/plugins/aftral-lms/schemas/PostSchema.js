@@ -40,23 +40,19 @@ const PostSchema = new Schema({
     required: true,
     default: false,
   },
+  comments:  [{
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'comment'
+  }],
 }, schemaOptions)
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function(){
   return this.likes.length || 0
 })
 
-PostSchema.virtual('comments', {
-  ref: 'comment',
-  localField: '_id',
-  foreignField: 'post'
-})
-
-PostSchema.virtual('comments_count', {
-  ref: 'comment',
-  localField: '_id',
-  foreignField: 'post',
-  count: true
+PostSchema.virtual('comments_count', DUMMY_REF).get(function(){
+  return this.comments.length || 0
 })
 
 module.exports = PostSchema
