@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const lodash = require('lodash')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR } = require('../consts')
+const { SECTOR, COMPANY_SIZE } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 
 const Schema = mongoose.Schema
@@ -18,14 +18,14 @@ const CompanySchema = new Schema(
     },
     size: {
       type: Number,
-      default: 0,
-      required: [true, `La taille est obligatoire`],
+      enum: Object.keys(COMPANY_SIZE),
+      required: false,
     },
     admin: {
       type: Schema.Types.ObjectId,
       ref: 'partner',
       index: true,
-      required: [true, `L'admin est obligatoire`],
+      required: false,
     },
     sector: {
       type: String,
@@ -36,7 +36,7 @@ const CompanySchema = new Schema(
       type: String,
       required: [true, `L'email est obligatoire`],
       set: v => v ? v.toLowerCase().trim() : v,
-      index: true,
+      index: false,
       validate: [isEmailOk, v => `L'email '${v.value}' est invalide`],
     },
     phone: {
