@@ -244,6 +244,12 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       await Resource.updateOne({_id: id}, {$pull: {dislikes: user._id}})
     }
   }
+
+  if(model == `program`) {
+    const program = await Program.findById(id)
+    params.codes = program.codes
+    params.duration_unit = program.duration_unit
+  }
   return {model, id, params, user, skip_validation}
 }
 
