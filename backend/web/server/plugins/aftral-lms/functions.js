@@ -23,7 +23,7 @@ const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getAvailableCodes } = require('./program')
+const { getAvailableCodes, getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -87,6 +87,12 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
+declareComputedField({
+  model: 'program', 
+  field: 'certificate',
+  requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
+  getterFn: getCertificate, 
+})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})

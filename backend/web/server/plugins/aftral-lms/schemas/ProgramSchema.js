@@ -27,7 +27,15 @@ const ProgramSchema = new Schema({
     type: String,
     enum: Object.keys(DURATION_UNIT),
     required: function() {return this.duration!=null ? [true, `L'unité de temps est obligatoire`] : false}
-  }
+  },
+  certificate: {
+    type: String,
+    required: false,
+  },
+  _certificate: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 /* eslint-disable prefer-arrow-callback */
