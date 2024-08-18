@@ -302,13 +302,19 @@ const getModelAttributes = (modelName, level=MODEL_ATTRIBUTES_DEPTH) => {
   return attrsWithCounts
 }
 
+let MODELS=null
+
 const getModels = () => {
-  const modelNames = lodash.sortBy(mongoose.modelNames())
-  const result = {}
-  modelNames.forEach(name => {
-    const attrs = getModelAttributes(name)
-    result[name]={name, attributes: Object.fromEntries(attrs)}
-  })
+  let result=MODELS
+  if (!result) {
+    const modelNames = lodash.sortBy(mongoose.modelNames())
+    result = {}
+    modelNames.forEach(name => {
+      const attrs = getModelAttributes(name)
+      result[name]={name, attributes: Object.fromEntries(attrs)}
+    })
+    MODELS=result
+  }
   return result
 }
 
