@@ -88,6 +88,10 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'school',
     required: false,
+  },
+  city: {
+    type: String,
+    required: false
   }
   }, {...schemaOptions})
 
