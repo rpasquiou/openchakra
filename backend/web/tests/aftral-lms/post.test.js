@@ -12,37 +12,38 @@ const Post = require('../../server/models/Post')
 const { FEED_TYPE_GENERAL, ROLE_APPRENANT } = require('../../server/plugins/aftral-lms/consts')
 
 describe('Post', () => {
-  let post, user, comment
+  let post, user, comment, feed
   beforeAll(async() => {
-    await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
+    await mongoose.connect(`mongodb://localhost/aftral-lms`, MONGOOSE_OPTIONS)
     
-    user = await User.create({
-      role: ROLE_APPRENANT,
-      email: `a@a.com`,
-      password: `Je déteste Python`,
-      firstname: `John`,
-      lastname: `Doe`,
-    })
+    // user = await User.create({
+    //   role: ROLE_APPRENANT,
+    //   email: `a@a.com`,
+    //   password: `Je déteste Python`,
+    //   firstname: `John`,
+    //   lastname: `Doe`,
+    // })
 
-    post = await Post.create({
-      contents: 'test',
-      author: user._id,
-      _feed_type: FEED_TYPE_GENERAL,
-      _feed: 'general',
-    })
+    // post = await Post.create({
+    //   contents: 'test',
+    //   author: user._id,
+    //   _feed_type: FEED_TYPE_GENERAL,
+    //   _feed: 'general',
+    // })
 
-    comment = await Comment.create({
-      content: 'Test comment',
-      user: user._id,
-      post: post._id
-    })
+    // comment = await Comment.create({
+    //   content: 'Test comment',
+    //   user: user._id,
+    //   post: post._id
+    // })
   })
   afterAll(async() => {
-    await mongoose.connection.dropDatabase()
+    // await mongoose.connection.dropDatabase()
     await mongoose.connection.close()
   })
   it('must return comments on post', async() => {
-    const posts = await loadFromDb({model:'post', user, fields:['comments', 'likes', 'liked']})
+    user = await User.findOne({role:ROLE_APPRENANT})
+    const posts = await loadFromDb({model:'post', user, fields:['comments', 'likes', 'liked','_feed']})
     console.log(posts)
   })
 })
