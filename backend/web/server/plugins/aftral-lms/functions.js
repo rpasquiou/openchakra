@@ -105,6 +105,7 @@ const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
   declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
+  declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
 })
 
 // search start
