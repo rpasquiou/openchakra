@@ -1,4 +1,4 @@
-import { Box, Button, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Text } from '@chakra-ui/react'
+import { Box, Button, Flex, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Text } from '@chakra-ui/react'
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'
 import styled from '@emotion/styled'
@@ -25,12 +25,18 @@ const uploadFileToS3 = (file: File) => {
 const UploadFile = ({
   model,
   notifmsg,
-  okmsg = 'Ressource ajoutée',
+  okmsg = '',
   komsg = 'Échec ajout ressource',
   prvmsg = '',
   previewmsg,
   preview,
   previewtype = false,
+  buttonbg,
+  buttonhoverbg,
+  buttoncolor,
+  buttonhovercolor,
+  border,
+  borderRadius,
   dataSource,
   attribute,
   value,
@@ -48,6 +54,12 @@ const UploadFile = ({
   previewmsg: boolean
   preview: boolean
   previewtype: boolean
+  buttonbg : string
+  buttonhoverbg : string
+  buttoncolor : string
+  buttonhovercolor : string
+  border : string
+  borderRadius : string
   dataSource: { _id: null } | null
   attribute: string
   value: string
@@ -57,9 +69,9 @@ const UploadFile = ({
   clearComponents: [string]
 }) => {
 
-  const [uploadInfo, setUploadInfo] = useState('')
+  const [uploadInfo, setUploadInfo] = useState(dataSource?.[attribute] ? okmsg : '')
   const [isLoading, setIsLoading] = useState(false)
-  const [s3File, setS3File] = useState<string|null>()
+  const [s3File, setS3File] = useState<string|null>(dataSource?.[attribute] || null)
   const [fileName, setFileName] = useState<string>('')
 
   useEffect(() => {
@@ -151,9 +163,11 @@ const UploadFile = ({
     setPreviewOpen(!isPreviewOpen)
   }
 
+  console.log(border, borderRadius, '**********')
+
   return (
-    <Box>
-      <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'} alignItems={'center'}>
+    <>
+      <Flex {...pr} data-value={s3File}>
         <form id="uploadressource">
           <UploadZone>
             <input type="file" onChange={onFileNameChange} />
@@ -178,7 +192,18 @@ const UploadFile = ({
         {isLoading && <Loading />}
         
         {preview && previewtype && s3File &&(
-          <Button {...props} ml={2} onClick={togglePreview}>Preview</Button>
+          <Button 
+            {...props} ml={2} 
+            color={buttoncolor}
+            backgroundColor={buttonbg} 
+            _hover={
+              { backgroundColor: buttonhoverbg,
+                color: buttonhovercolor,
+               }
+            }
+            border={border}
+            borderRadius={borderRadius}
+            onClick={togglePreview}>Visualiser</Button>
         )}
 
         {/* Modal for previewing the media */}
@@ -194,17 +219,17 @@ const UploadFile = ({
             </ModalContent>
           </Modal>
         )}
-      </Box>
+      </Flex>
       {preview && !previewtype && (
-        <Box
+        <Flex
         width='10%'
         height='10%'>
         <Media 
           src={s3File}
           ></Media>
-        </Box>
+        </Flex>
       )}
-    </Box>
+    </>
   )
 }
 

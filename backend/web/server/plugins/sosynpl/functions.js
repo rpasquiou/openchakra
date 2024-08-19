@@ -14,7 +14,7 @@ const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
-const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce } = require("./search");
+const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce, FREELANCE_SUGGESTION_REQUIRES } = require("./search");
 const AnnounceSugggestion=require('../../models/AnnounceSuggestion')
 const cron = require('../../utils/cron')
 const moment = require('moment');
@@ -194,7 +194,7 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'training' }
     },
   })
-  declareComputedField({model, field: 'hard_skills_categories', requires: 'main_job.job_file', getterFn: computeUserHardSkillsCategories})
+  declareComputedField({model, field: 'hard_skills_categories', requires: 'main_job.job_file.hard_skills', getterFn: computeUserHardSkillsCategories})
   declareEnumField( {model, field: 'mobility', enumValues: MOBILITY})
   declareEnumField( {model, field: 'mobility_regions', enumValues: REGIONS})
   declareVirtualField({model, field: 'mobility_str', instance: 'String', requires: 'mobility,mobility_regions,mobility_city,mobility_city_distance'})
@@ -294,7 +294,7 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 
 /** Announce start */
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
-declareComputedField({model: 'announce', field: 'suggested_freelances', getterFn: computeSuggestedFreelances})
+declareComputedField({model: 'announce', field: 'suggested_freelances', requires: [...FREELANCE_SUGGESTION_REQUIRES].join(','), getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareEnumField({model: 'announce', field: 'mobility', enumValues: ANNOUNCE_MOBILITY})
 declareEnumField({model: 'announce', field: 'soft_skills', enumValues: SS_PILAR})
@@ -503,7 +503,10 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     model, field: 'customer_published_announces_count', instance: 'Number',
   })
   declareVirtualField({
-    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces,announces.received_applications'
+    model, field: 'customer_received_applications_count', instance: 'Number', requires: 'announces.received_applications_count'
+  })
+  declareVirtualField({
+    model, field: 'customer_sent_reports_count', instance: 'Number', requires: 'customer_missions'
   })
 })
 

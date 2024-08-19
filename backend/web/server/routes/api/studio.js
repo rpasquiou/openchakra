@@ -582,7 +582,6 @@ router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {sessi
 
 // Update last_activity
 router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
-  console.log('Getting model', req.params.model, req.user)
   await checkPermission?.({verb: VERB_GET, model: req.params.model, id: req.params.id, user: req.user})
   return User.findByIdAndUpdate(req.user?._id, {last_activity: moment()})
     .then(()=>loadFromRequest(req, res))
