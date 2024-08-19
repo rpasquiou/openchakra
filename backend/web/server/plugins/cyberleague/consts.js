@@ -100,11 +100,11 @@ const JOB_OTHER = `OTHER`
 
 const JOBS = {
   [JOB_GENERAL_MANAGER]: `Direction Générale`,
-  [JOB_DIGITAL_MANAGER]: `Direction du digital`,
-  [JOB_IT]: `Direction informatique`,
-  [JOB_FINANCIAL_MANAGER]: `Direction financière`,
+  [JOB_DIGITAL_MANAGER]: `Direction du Digital`,
+  [JOB_IT]: `Direction Informatique`,
+  [JOB_FINANCIAL_MANAGER]: `Direction Financière`,
   [JOB_GENERAL_COUNSEL]: `Direction Juridique`,
-  [JOB_COMMERCIIAL_MANAGER]: `Direction commerciale`,
+  [JOB_COMMERCIIAL_MANAGER]: `Direction Commerciale`,
   [JOB_MARKETING_MANAGER]: `Direction Marketing`,
   [JOB_STUDENT]: `Etudiant`,
   [JOB_OTHER]: `Autres`
