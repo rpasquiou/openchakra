@@ -34,7 +34,7 @@ const CompanySchema = new Schema(
     },
     email: {
       type: String,
-      required: [true, `L'email est obligatoire`],
+      required: false,
       set: v => v ? v.toLowerCase().trim() : v,
       index: false,
       validate: [isEmailOk, v => `L'email '${v.value}' est invalide`],
