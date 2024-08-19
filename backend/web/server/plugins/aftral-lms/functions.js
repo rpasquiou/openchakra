@@ -81,8 +81,8 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
   declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
 
-  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes'})
-  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes,origin'})
+  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes,origin'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
