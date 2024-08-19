@@ -60,7 +60,7 @@ const UserSchema = new Schema({
   }],
   events: [{
     type: Schema.Types.ObjectId,
-    ref: 'events',
+    ref: 'event',
     index: true,
     required: false,
   }],
