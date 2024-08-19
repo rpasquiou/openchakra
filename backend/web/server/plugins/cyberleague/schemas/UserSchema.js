@@ -83,6 +83,11 @@ const UserSchema = new Schema({
     type: String,
     enum: Object.keys(JOBS),
     required: false
+  },
+  school: {
+    type: Schema.Types.ObjectId,
+    ref: 'school',
+    required: false,
   }
   }, {...schemaOptions})
 
