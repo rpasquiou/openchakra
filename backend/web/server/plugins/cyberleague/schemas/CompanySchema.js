@@ -17,7 +17,7 @@ const CompanySchema = new Schema(
       type: String,
     },
     size: {
-      type: Number,
+      type: String,
       enum: Object.keys(COMPANY_SIZE),
       required: false,
     },
