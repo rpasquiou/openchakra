@@ -5,6 +5,7 @@
   "dependencies": {
     "@chakra-ui/icons": "^2.0.11",
     "@chakra-ui/react": "^2.3.5",
+    "@emotion/cache": "^11.13.1",
     "@emotion/react": "^11.10.4",
     "@emotion/styled": "^11.10.4",
     "@lexical/react": "^0.9.0",
@@ -43,6 +44,7 @@
     "next": "^12.3.1",
     "next-routes": "^1.4.2",
     "pdf-lib": "^1.17.1",
+    "process": "^0.11.10",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
