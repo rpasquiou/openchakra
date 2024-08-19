@@ -43,7 +43,7 @@ describe('Post', () => {
   })
   it('must return comments on post', async() => {
     user = await User.findOne({role:ROLE_APPRENANT})
-    const posts = await loadFromDb({model:'post', user, fields:['comments', 'likes', 'liked','_feed']})
-    console.log(posts)
+    const [feed] = await loadFromDb({model:'feed', id: '66b0f1cc3356935c1fdaa148', user, fields:['posts']})
+    console.log(feed.posts[0].comments)
   })
 })

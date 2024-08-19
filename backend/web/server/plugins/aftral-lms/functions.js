@@ -247,28 +247,47 @@ const getContacts = user => {
     .then(res => res.filter(u => !idEqual(u._id, user._id)))
 }
 
-const getFeed = async id => {
+const getFeed = async (id) => {
   let type, name
-  if (id==GENERAL_FEED_ID) {
-    type=FEED_TYPE_GENERAL
-    name= 'Forum Aftral LMS'
+
+  if (id === GENERAL_FEED_ID) {
+    type = FEED_TYPE_GENERAL
+    name = 'Forum Aftral LMS'
+  } else {
+    const model = await getModel(id, ['session', 'group'])
+    type = model === 'session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
+    const feed = await mongoose.connection.models[model].findById(id)
+    name = feed.name
   }
-  else {
-    const model=await getModel(id, ['session', 'group'])
-    type=model=='session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
-    const feed=await mongoose.connection.models[model].findById(id)
-    name=feed.name
+
+  let posts = await Post.find({ _feed: id })
+    .populate('author')
+    .populate('comments')
+    .populate('comments_count')
+
+  posts = await Promise.all(posts.map(async (post) => {
+    const comments = await Promise.all(post.comments.map(async (comment) => {
+      const user = await User.findById(comment.user)
+      return {
+        ...comment.toObject(),
+        user,
+      }
+    }))
+
+    return {
+      ...post.toObject(),
+      comments,
+    }
+  }))
+
+  return {
+    _id: id,
+    type,
+    name,
+    posts,
   }
-  return Post.find({_feed: id}).populate('author').populate('comments').populate('comments_count')
-    .then(posts => {
-      return ({
-        _id: id,
-        type,
-        name,
-        posts
-      })
-    })
-}
+};
+
 
 const getFeeds = async (user, id) => {
   let ids=[]
