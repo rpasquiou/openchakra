@@ -18,7 +18,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, isBlockLiked, isBlockDisliked} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -35,6 +35,10 @@ const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
+const { getBlockLiked } = require('./block')
+const { getBlockDisliked } = require('./block')
+const { setBlockLiked } = require('./block')
+const { setBlockDisliked } = require('./block')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -77,8 +81,8 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
   declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
 
-  declareComputedField({model, field: 'liked', getterFn: isBlockLiked, requires:'likes'})
-  declareComputedField({model, field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes'})
+  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -123,13 +127,6 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number', 
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
 
-//Resources 
-declareVirtualField({model: 'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareVirtualField({model: 'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
-
-declareComputedField({model: 'resource', field: 'liked', getterFn: isBlockLiked, requires:'likes'})
-declareComputedField({model: 'resource', field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
-//Resources end
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -202,7 +199,7 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
         throw new Error(`Le type de ressource ne peut changer`)
       }
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
-      params.achievement_status = block.achievement_status
+      // params.achievement_status = block.achievement_status
     }
   }
   if (model=='post'){
@@ -215,23 +212,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
           : {$pull: {likes: user._id}}
         }
       )}
-  }
-
-  if (['block', 'resource'].includes(model)){
-    if(params.liked == true) {
-      await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
-      params.disliked = false
-    }
-    if(params.liked == false){
-      await Resource.updateOne({_id: id}, {$pull: {likes: user._id}})
-    }
-    if(params.disliked == true) {
-      await Resource.updateOne({_id:id},{$pull: {likes: user._id}, $addToSet: {dislikes: user._id}})
-      params.liked = false
-    }
-    if(params.disliked == false){
-      await Resource.updateOne({_id: id}, {$pull: {dislikes: user._id}})
-    }
   }
 
   if(model == `program`) {

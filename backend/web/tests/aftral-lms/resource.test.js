@@ -15,7 +15,6 @@ const { updateAllDurations, updateDuration, lockSession } = require('../../serve
 require('../../server/plugins/aftral-lms/actions')
 const Block = require('../../server/models/Block')
 const { ACTIONS } = require('../../server/utils/studio/actions')
-const Duration = require('../../server/models/Duration')
 const { SseKmsEncryptedObjectsStatus } = require('@aws-sdk/client-s3')
 
 
@@ -49,4 +48,9 @@ describe('Test models computations', () => {
     expect(trainer_load.find(r => /desig/i.test(r.name)).mine).toBe(false)
   })
 
+  it.only('must tell if i liked resource or not', async () => {
+    const user = await User.findOne({role:ROLE_APPRENANT})
+    const [resource] = await loadFromDb({model:'resource',id:'66b60f473f1ec37a3a4cd961', user, fields:['liked','disliked','_locked']})
+    console.log(resource)
+  })
 })
