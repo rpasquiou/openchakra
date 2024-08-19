@@ -59,10 +59,6 @@ const CompanySchema = new Schema(
       index: true,
       required: false
     },
-    bullshit_text: {
-      type: String,
-      required: false,
-    },
     certifications: [{
       type: Schema.Types.ObjectId,
       ref: 'certification',
