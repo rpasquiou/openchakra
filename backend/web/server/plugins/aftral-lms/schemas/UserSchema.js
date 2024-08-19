@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs')
 const { isEmailOk } = require("../../../../utils/sms")
 const { ROLES } = require("../consts")
 const { schemaOptions } = require("../../../utils/schemas")
+const { DUMMY_REF } = require("../../../utils/database")
 
 const Schema = mongoose.Schema
 
@@ -51,6 +52,11 @@ const UserSchema = new Schema({
     default: [],
   },
 }, schemaOptions)
+
+UserSchema.virtual('fullname', DUMMY_REF).get(function() {
+  return `${this.firstname || ''} ${this.lastname || ''}`
+})
+
 
 /* eslint-disable prefer-arrow-callback */
 

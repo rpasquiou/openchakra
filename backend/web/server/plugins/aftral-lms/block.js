@@ -4,8 +4,9 @@ const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR } = require("./consts");
 const { getBlockResources } = require("./resources");
-const { idEqual, loadFromDb } = require("../../utils/database");
+const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const Block = require("../../models/Block");
+const User = require("../../models/User");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -305,21 +306,80 @@ getSession = async (userId, params, data) => {
   }
 }
 
-const isBlockLiked = async (userId, params, data) => {
-  const likes = data.likes.map(l=> l._id)
-  return likes.includes(userId)
+const getBlockLiked = async (userId, params, data) => {
+  const user = await User.findById(userId, {role:1})
+  const template = await getTemplate(data._id)
+  if(user.role == ROLE_CONCEPTEUR) {
+    return template.likes.length > 0
+  }
+  return template.likes.some(like => idEqual(like, userId))
 }
 
-const isBlockDisliked = async (userId, params, data) => {
-  const dislikes = data.dislikes.map(l=> l._id)
-  return dislikes.includes(userId)
+const getBlockDisliked = async (userId, params, data) => {
+  const user = await User.findById(userId, {role:1})
+  const template = await getTemplate(data._id)
+  console.log(template)
+  if(user.role == ROLE_CONCEPTEUR) {
+    return template.dislikes.length > 0
+  }
+  return template.dislikes.some(dislike => idEqual(dislike, userId))
+}
+
+const setBlockLiked = async ({ id, attribute, value, user }) => {
+  const template = await getTemplate(id)
+  if(value) {
+    return mongoose.models['block'].findByIdAndUpdate(template._id,
+      {
+        $pull: {
+          dislikes: user._id
+        }, 
+        $addToSet: {
+          likes: user._id
+        }
+      }
+    )
+  }
+  else{
+    return mongoose.models['block'].findByIdAndUpdate(template._id,
+      {$pull: {likes: user._id}})
+  }
+}
+
+const setBlockDisliked = async ({ id, attribute, value, user }) => {
+  const template = await getTemplate(id)
+  if(value) {
+    return mongoose.models['block'].findByIdAndUpdate(template._id,
+      {
+        $pull: {
+          likes: user._id
+        }, 
+        $addToSet: {
+          dislikes: user._id
+        }
+      }
+    )
+  }
+  else{
+    return mongoose.models['block'].findByIdAndUpdate(template._id,
+      {$pull: {dislikes: user._id}})
+  }
+}
+
+const getTemplate = async(id) => {
+  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, likes:1, dislikes:1})
+  let currentOrigin = currentBlock.origin
+  while(currentOrigin) {
+    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, likes:1, dislikes:1})
+    currentOrigin = currentBlock.origin
+  }
+  return currentBlock
 }
 
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,getSession, isBlockDisliked, isBlockLiked
+  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked
 }
 
 

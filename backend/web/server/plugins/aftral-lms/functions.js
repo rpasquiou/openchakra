@@ -18,7 +18,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, isBlockLiked, isBlockDisliked} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -35,6 +35,10 @@ const { getTraineeResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
+const { getBlockLiked } = require('./block')
+const { getBlockDisliked } = require('./block')
+const { setBlockLiked } = require('./block')
+const { setBlockDisliked } = require('./block')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -77,8 +81,8 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
   declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
 
-  declareComputedField({model, field: 'liked', getterFn: isBlockLiked, requires:'likes'})
-  declareComputedField({model, field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes,origin'})
+  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes,origin'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -107,6 +111,7 @@ const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
   declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
+  declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
 })
 
 // search start
@@ -125,17 +130,20 @@ declareComputedField({model: 'message', field: 'mine', getterFn:isMine})
 // Message end
 
 // Post start
-declareVirtualField({model:'post', field: 'comments_count', instance: 'Number', requires:'comments'})
+declareVirtualField({model:'post', field: 'comments', instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'comment'}},
+})
+declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'block'}},
+})
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
 
-//Resources 
-declareVirtualField({model: 'resource', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareVirtualField({model: 'resource', field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
-
-declareComputedField({model: 'resource', field: 'liked', getterFn: isBlockLiked, requires:'likes'})
-declareComputedField({model: 'resource', field: 'disliked', getterFn: isBlockDisliked, requires:'dislikes'})
-//Resources end
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -208,7 +216,7 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
         throw new Error(`Le type de ressource ne peut changer`)
       }
       params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
-      params.achievement_status = block.achievement_status
+      // params.achievement_status = block.achievement_status
     }
   }
   if (model=='post'){
@@ -221,23 +229,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
           : {$pull: {likes: user._id}}
         }
       )}
-  }
-
-  if (['block', 'resource'].includes(model)){
-    if(params.liked == true) {
-      await Resource.updateOne({_id:id},{$pull: {dislikes: user._id}, $addToSet: {likes: user._id}})
-      params.disliked = false
-    }
-    if(params.liked == false){
-      await Resource.updateOne({_id: id}, {$pull: {likes: user._id}})
-    }
-    if(params.disliked == true) {
-      await Resource.updateOne({_id:id},{$pull: {likes: user._id}, $addToSet: {dislikes: user._id}})
-      params.liked = false
-    }
-    if(params.disliked == false){
-      await Resource.updateOne({_id: id}, {$pull: {dislikes: user._id}})
-    }
   }
 
   if(model == `program`) {
@@ -263,28 +254,47 @@ const getContacts = user => {
     .then(res => res.filter(u => !idEqual(u._id, user._id)))
 }
 
-const getFeed = async id => {
+const getFeed = async (id) => {
   let type, name
-  if (id==GENERAL_FEED_ID) {
-    type=FEED_TYPE_GENERAL
-    name= 'Forum Aftral LMS'
+
+  if (id === GENERAL_FEED_ID) {
+    type = FEED_TYPE_GENERAL
+    name = 'Forum Aftral LMS'
+  } else {
+    const model = await getModel(id, ['session', 'group'])
+    type = model === 'session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
+    const feed = await mongoose.connection.models[model].findById(id)
+    name = feed.name
   }
-  else {
-    const model=await getModel(id, ['session', 'group'])
-    type=model=='session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
-    const feed=await mongoose.connection.models[model].findById(id)
-    name=feed.name
+
+  let posts = await Post.find({ _feed: id })
+    .populate('author')
+    .populate('comments')
+    .populate('comments_count')
+
+  posts = await Promise.all(posts.map(async (post) => {
+    const comments = await Promise.all(post.comments.map(async (comment) => {
+      const user = await User.findById(comment.user)
+      return {
+        ...comment.toObject(),
+        user,
+      }
+    }))
+
+    return {
+      ...post.toObject(),
+      comments,
+    }
+  }))
+
+  return {
+    _id: id,
+    type,
+    name,
+    posts,
   }
-  return Post.find({_feed: id}).populate('author')
-    .then(posts => {
-      return ({
-        _id: id,
-        type,
-        name,
-        posts
-      })
-    })
-}
+};
+
 
 const getFeeds = async (user, id) => {
   let ids=[]
