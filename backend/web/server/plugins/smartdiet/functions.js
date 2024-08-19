@@ -17,6 +17,7 @@ const {
   setPreprocessGet,
   simpleCloneModel,
   getDateFilter,
+  setPrePutData,
 } = require('../../utils/database')
 const {
   sendDietPreRegister2Admin,
@@ -210,6 +211,7 @@ const Job = require('../../models/Job')
 const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
 const { historicize } = require('./history')
+const { validatePassword } = require('../../../utils/passwords')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -2023,6 +2025,16 @@ const postDelete = ({ model, data }) => {
 
 setPostDeleteData(postDelete)
 
+const prePut = async data => {
+  const {model, params}=data
+  if (model=='user' && !!params.password) {
+    await validatePassword(params)
+  }
+  return data
+}
+
+setPrePutData(prePut)
+
 const ensureChallengePipsConsistency = () => {
   // Does every challenge have all pips ?
   return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
@@ -2542,11 +2554,12 @@ cron.schedule('0 0 10 * * *', async () => {
 })
 
 
-exports.ensureChallengePipsConsistency = ensureChallengePipsConsistency
-exports.logbooksConsistency = logbooksConsistency
-exports.getRegisterCompany = getRegisterCompany
-exports.agendaHookFn = agendaHookFn 
-exports.mailjetHookFn = mailjetHookFn
-exports.computeStatistics = computeStatistics
-exports.canPatientStartCoaching = canPatientStartCoaching
-exports.preProcessGetFORBIDDEN = preProcessGet
+module.exports = {
+  ensureChallengePipsConsistency,
+  logbooksConsistency,
+  getRegisterCompany,
+  agendaHookFn, mailjetHookFn,
+  computeStatistics,
+  canPatientStartCoaching,
+  preProcessGetFORBIDDEN: preProcessGet,
+}
