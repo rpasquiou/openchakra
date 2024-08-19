@@ -29,7 +29,7 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED, VERB_GET, VERB_PUT} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -98,6 +98,7 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
+const { checkPermission } = require('../../plugins/sosynpl/permissions')
 
 const router = express.Router()
 
@@ -333,7 +334,6 @@ router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res
     console.error(`Unkown action:${action}`)
     return res.status(404).json(`Unkown action:${action}`)
   }
-  console.log('Starting action', action)
 
   return actionFn(req.body, req.user, req.get('Referrer'))
     .then(result => res.json(result))
@@ -442,29 +442,6 @@ router.post('/payment-hook', (req, res) => {
   return res.json()
 })
 
-// Not protected to allow external recommandations
-router.post('/recommandation', (req, res) => {
-  let params=req.body
-  const context= req.query.context
-  const user=req.user
-  const model = 'recommandation'
-  params.model=model
-
-  if (!model) {
-    return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
-  }
-
-  return callPreCreateData({model, params, user})
-    .then(({model, params}) => {
-      return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
-        .then(([data]) => {
-          return callPostCreateData({model, params, data, user})
-        })
-        .then(data => res.json(data))
-    })
-})
-
 router.get('/statTest', (req, res) => {
   const data=lodash.range(360)
     .map(v => {
@@ -562,7 +539,8 @@ const putFromRequest = (req, res) => {
     })
 }
 
-router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.put('/:model/:id', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_PUT, model: req.params.model, id: req.params.id, user: req.user})
   return putFromRequest(req, res)
 })
 
@@ -603,7 +581,8 @@ router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {sessi
 })
 
 // Update last_activity
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/:model/:id?', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_GET, model: req.params.model, id: req.params.id, user: req.user})
   return User.findByIdAndUpdate(req.user?._id, {last_activity: moment()})
     .then(()=>loadFromRequest(req, res))
 })

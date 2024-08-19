@@ -43,7 +43,7 @@ const withDynamicButton = Component => {
         .then(res => setActionAllowed(res.data))
         .catch(err => console.error(err))
     }
-
+    
     useEffect(()=> {
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)

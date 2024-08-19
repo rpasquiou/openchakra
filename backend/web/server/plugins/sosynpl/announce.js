@@ -53,5 +53,5 @@ const cancelAnnounce = async ({dataId}) => {
 }
 
 module.exports={
-  clone, canCancel, cancelAnnounce,
+  clone, canCancel, cancelAnnounce
 }

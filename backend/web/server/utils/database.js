@@ -659,13 +659,13 @@ const getFieldsToCompute = ({model, fields}) => {
 }
 
 const addComputedFields = (
-  fields,
+  originalFields,
   userId,
   queryParams,
   data,
   model,
 ) => {
-  fields=getFieldsToCompute({model, fields})
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
@@ -693,16 +693,18 @@ const addComputedFields = (
       }))
       .then(() => {
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-        const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+        const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
         return Promise.all(
-          Object.keys(requiredCompFields).map(f =>
-            requiredCompFields[f](newUserId, queryParams, data)
+          Object.keys(requiredCompFields).map(f => {
+            const displayFields=getRequiredSubFields(originalFields, f)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
               .then(res => {
                 data[f] = res
                 return data
               })
+            }
           ),
       )})
       .then(() => data)
@@ -985,6 +987,13 @@ const ensureUniqueDataFound = (id, data) => {
   return data
 }
 
+
+/*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
+ * example: 
+ * let c = await loadfromdb({...})
+ * c = new Announce(c)
+ * doesn't keep the virtuals and the deep objects, like c.user.company_name
+*/
 const loadFromDb = ({model, fields, id, user, params={}}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
@@ -1001,7 +1010,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        //.then(data =>  retainRequiredFields({data, fields}))
     })
 
 }

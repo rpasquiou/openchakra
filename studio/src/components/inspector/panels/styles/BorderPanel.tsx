@@ -3,13 +3,23 @@ import { Box, Input } from '@chakra-ui/react'
 import FormControl from '~components/inspector/controls/FormControl'
 import useBreakpoints from '~hooks/useBreakpoints'
 
-const BorderPanel = () => {
+const BorderPanel = ({ border, borderRadius, setBorder, setBorderRadius }) => {
   const {
     responsiveValues,
     settledBreakpoints,
     handleBreakpoints,
     AddABreakpoint,
   } = useBreakpoints(['border', 'borderRadius'])
+
+  const handleBorderChange = (breakpoint, value) => {
+    handleBreakpoints('border', breakpoint, value)
+    setBorder(value)
+  }
+
+  const handleBorderRadiusChange = (breakpoint, value) => {
+    handleBreakpoints('borderRadius', breakpoint, value)
+    setBorderRadius(value)
+  }
 
   return (
     <>

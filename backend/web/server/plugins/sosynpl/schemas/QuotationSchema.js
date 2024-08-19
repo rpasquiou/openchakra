@@ -153,12 +153,14 @@ QuotationSchema.pre('validate', function(next) {
     return next(new Error(`Le devis doit être lié à une candidature ou une compte-rendu d'activité`))
   }
   // A report can have one quotation only
-  return mongoose.models['quotation'].exists({_id: {$ne: this._id}, report: this.report})
-    .then(exists => {
-      if (exists) {
-        return next(new Error(`Il existe déjà un devis pour ce rapport d'activité`))
-      }
-    })
+  if (!!this.report) {
+    return mongoose.models['quotation'].exists({_id: {$ne: this._id}, report: this.report})
+      .then(exists => {
+        if (exists) {
+          return next(new Error(`Il existe déjà un devis pour ce rapport d'activité`))
+        }
+      })
+  }
   next()
 })
 

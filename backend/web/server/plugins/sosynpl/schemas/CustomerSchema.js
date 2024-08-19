@@ -7,7 +7,6 @@ const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { NATIONALITIES } = require('../../../../utils/consts')
-
 const Schema = mongoose.Schema
 
 const CustomerSchema = new Schema({
