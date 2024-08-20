@@ -351,7 +351,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       fields=[...fields, 'creator']
     }
     // Full list: only return template blocks not included in sessions
-    if (!id && model!='session') {
+    if (!id && model!='session' && user.role==ROLE_CONCEPTEUR) {
       params['filter._locked']=false // No session data
       params['filter.origin']=null // Templates only
       }
