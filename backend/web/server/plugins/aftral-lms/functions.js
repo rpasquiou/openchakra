@@ -3,7 +3,7 @@ const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -78,11 +78,22 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
   declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent.parent.parent.parent.parent'})
 
-  declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
-  declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+  declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'_likes'})
+  declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'_dislikes'})
 
-  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes,origin'})
-  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes,origin'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'_likes,origin'})
+  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'_dislikes,origin'})
+
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -112,6 +123,16 @@ USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
   declareComputedField({model, field: 'current_resources', getterFn: getTraineeCurrentResources})
   declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 // search start
@@ -143,6 +164,12 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
 })
 declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
 declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
+ // Post end
+
+ // Ticket start
+declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
+declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+// Ticket End
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -183,6 +210,11 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'comment'){
     params.user = user._id
     params.post = params.parent
+  }
+
+  if (model == 'ticket'){
+    params.user = user._id
+    params.block = params.parent
   }
   return Promise.resolve({model, params})
 }
