@@ -37,7 +37,11 @@ const TicketSchema = new Schema({
     type: String,
     enum: Object.keys(TICKET_TAG),
     required: false,
-  }
+  },
+  notes: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
