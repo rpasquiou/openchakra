@@ -286,24 +286,12 @@ const getPreviousResource= async (blockId, user) => {
 }
 
 getSession = async (userId, params, data) => {
-  switch(data.type) {
-    case 'resource' :
-      return data.parent.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent.parent._id]
-    case 'sequence' :
-      return data.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent._id]
-    case 'module' :
-      return data.parent.type == 'chapter'
-      ? [data.parent.parent.parent._id]
-      : [data.parent.parent._id]
-    case 'chapter' :
-      return [data.parent.parent._id]
-    case 'program' :
-      return [data.parent._id]
+  let currentBlock = data.parent
+  while(currentBlock.parent) {
+    currentBlock = await mongoose.models.block.find({_id:currentBlock.parent},{parent:1})
   }
+  const [result] = await loadFromDb({model: 'block', id:currentBlock._id, fields:['name','spent_time_str','achievement_rule','achievement_status']})
+  return result
 }
 
 const getBlockLiked = async (userId, params, data) => {
