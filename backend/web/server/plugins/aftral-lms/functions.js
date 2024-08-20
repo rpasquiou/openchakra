@@ -76,7 +76,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
-  declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent.parent.parent.parent.parent'})
+  declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent'})
 
   declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'_likes'})
   declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'_dislikes'})
