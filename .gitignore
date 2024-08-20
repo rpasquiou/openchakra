@@ -218,4 +218,3 @@ env.json
 # Firebase configuration files
 **/*firebase-adminsdk.json
 **/*google-services.json
-package.json
