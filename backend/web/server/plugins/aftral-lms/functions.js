@@ -83,6 +83,17 @@ BLOCK_MODELS.forEach(model => {
 
   declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes,origin'})
   declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes,origin'})
+
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -112,6 +123,16 @@ USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
   declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
   declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 // search start
@@ -183,6 +204,11 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'comment'){
     params.user = user._id
     params.post = params.parent
+  }
+
+  if (model == 'ticket'){
+    params.user = user._id
+    params.block = params.parent
   }
   return Promise.resolve({model, params})
 }
