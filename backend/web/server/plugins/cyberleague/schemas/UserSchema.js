@@ -64,12 +64,17 @@ const UserSchema = new Schema({
     index: true,
     required: false,
   }],
-  followers: [{
+  pinned_by: [{
     type: Schema.Types.ObjectId,
     ref: 'user',
     index: true,
-    required: false,
+    required: true,
   }],
+  pinned: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
   trophies: [{
     type: Schema.Types.ObjectId,
     ref: 'gift',
@@ -106,33 +111,26 @@ UserSchema.virtual('shortname', DUMMY_REF).get(function() {
   return `${this.firstname} ${this.lastname?.[0]}.`
 })
 
-UserSchema.virtual('followers_count', DUMMY_REF).get(function() {
-  return this.followers?.length || 0
+UserSchema.virtual('pinned_by_count', DUMMY_REF).get(function() {
+  return this.pinned_by.length || 0
 })
 
-UserSchema.virtual('users_following', {
+UserSchema.virtual('pinned_users', {
   ref:'user',
   localField:'_id',
-  foreignField:'followed_by',
+  foreignField:'pinned_by',
 })
 
-UserSchema.virtual('users_following_count', {
-  ref:'user',
-  localField:'_id',
-  foreignField:'followed_by',
-  count: true,
-})
-
-UserSchema.virtual('companies_following', {
+UserSchema.virtual('pinned_companies', {
   ref:'company',
   localField:'_id',
-  foreignField:'followed_by',
+  foreignField:'pinned_by',
 })
 
-UserSchema.virtual('companies_following_count', {
+UserSchema.virtual('pinned_companies_count', {
   ref:'company',
   localField:'_id',
-  foreignField:'followed_by',
+  foreignField:'pinned_by',
   count:true,
 })
 

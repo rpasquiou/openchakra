@@ -13,6 +13,7 @@ const { PURCHASE_STATUS } = require('../../../utils/consts')
 const { getLiked } = require('./post')
 const Post = require('../../models/Post')
 const { BadRequestError } = require('../../utils/errors')
+const { getPinned } = require('./schemas/user')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -21,30 +22,30 @@ USER_MODELS.forEach(m => {
   declareVirtualField({ model: m, field: 'password2', instance: 'String' })
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
-  declareVirtualField({ model: m, field: 'followers_count', instance: 'Number' })
+  declareVirtualField({ model: m, field: 'pinned_by_count', instance: 'Number' })
   declareVirtualField({
-    model: m, field: 'users_following', instance: 'Array', multiple: true,
+    model: m, field: 'pinned_users', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'user' }
     },
   })
   declareVirtualField({
-    model: m, field: 'companies_following', instance: 'Array', multiple: true,
+    model: m, field: 'pinned_companies', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'company' }
     },
   })
   declareVirtualField({
-    model: m, field: 'users_following_count', instance: 'number', multiple: false,
+    model: m, field: 'pinned_users_count', instance: 'number', multiple: false,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'user' }
     },
   })
   declareVirtualField({
-    model: m, field: 'companies_following_count', instance: 'number', multiple: false,
+    model: m, field: 'pinned_companies_count', instance: 'number', multiple: false,
     caster: {
       instance: 'ObjectID',
       options: { ref: 'company' }
@@ -62,14 +63,14 @@ declareVirtualField({
   },
 })
 declareVirtualField({
-  model: 'company', field: 'followers', instance: 'Array', multiple: true,
+  model: 'company', field: 'pinned_by', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'user' }
   },
 })
 declareVirtualField({
-  model: 'company', field: 'followers_count', instance: 'number', multiple: false,
+  model: 'company', field: 'pinned_by_count', instance: 'number', multiple: false,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'user' }
@@ -78,6 +79,7 @@ declareVirtualField({
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
+declareComputedField({model: 'company', field: 'pinned', getterFn: getPinned, requires:'pinned_by'})
 
 //Expertise declarations
 declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
@@ -102,6 +104,7 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
 declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_liked_by'})
 
 //User
+declareComputedField({model: 'user', field: 'pinned', getterFn: getPinned, requires:'pinned_by'})
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
@@ -133,14 +136,25 @@ const preCreate = async ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const prePutData = async ({model, id, params, user}) => {
-  if (model=='post'){
-    if('liked' in params){
+  if (model==`post`){
+    if(`liked` in params){
 
       await Post.updateOne(
         {_id:id},
         {
           ...params.liked ? {$addToSet: {_liked_by: user._id}}
           : {$pull: {_liked_by: user._id}}
+        }
+      )}
+  }
+  if (model==`company` || model == `user`){
+    if(`pinned` in params){
+
+      await Post.updateOne(
+        {_id:id},
+        {
+          ...params.pinned ? {$addToSet: {pinned_by: user._id}}
+          : {$pull: {pinned_by: user._id}}
         }
       )}
   }

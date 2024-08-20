@@ -64,11 +64,16 @@ const CompanySchema = new Schema(
       ref: 'certification',
       required: false,
     }],
-    followed_by: [{
+    pinned_by: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
-      required: false,
-    }]
+      required: true,
+    }],
+    pinned: {
+      type: Boolean,
+      required: true,
+      default: false,
+    }
   },
   schemaOptions,
 )
@@ -79,17 +84,7 @@ CompanySchema.virtual('users', {
   foreignField: "company", // is equal to foreignField
 });
 
-CompanySchema.virtual('followers', {
-  ref: 'user',
-  localField: '_id',
-  foreignField: 'companies_following'
+CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
+  return this.pinned_by.length || 0
 })
-
-CompanySchema.virtual('followers_count', {
-  ref: 'user',
-  localField: '_id',
-  foreignField: 'companies_following',
-  count: true,
-})
-
 module.exports = CompanySchema
