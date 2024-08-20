@@ -24,11 +24,16 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
-  reactions: [{
+  likes: [{
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: false
+    required: true,
   }],
+  liked: {
+    type: Boolean,
+    required: true,
+    default: false,
+  }
 }, schemaOptions)
 
 PostSchema.virtual('comments_count', {
@@ -38,8 +43,8 @@ PostSchema.virtual('comments_count', {
   count: true,
 })
 
-PostSchema.virtual('reactions_count', DUMMY_REF).get(function () {
-  return this.reactions?.length || 0
+PostSchema.virtual('likes_count', DUMMY_REF).get(function () {
+  return this.likes?.length || 0
 })
 
 module.exports = PostSchema

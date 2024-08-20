@@ -4,9 +4,13 @@ const {
   declareVirtualField,
   setPreprocessGet,
   setPreCreateData,
+  declareComputedField,
+  setPrePutData,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
+const { getLiked } = require('./post')
+const Post = require('../../models/Post')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -81,7 +85,8 @@ declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
-declareVirtualField({ model: 'post', field: 'reactions_count', ROLE: 'number' })
+declareVirtualField({ model: 'post', field: 'likes_count', ROLE: 'number' })
+declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'likes'})
 
 //User
 
@@ -103,3 +108,20 @@ const preCreate = async ({model, params, user}) => {
 }
 
 setPreCreateData(preCreate)
+
+const prePutData = async ({model, id, params, user}) => {
+  if (model=='post'){
+    if('liked' in params){
+
+      await Post.updateOne(
+        {_id:id},
+        {
+          ...params.liked ? {$addToSet: {likes: user._id}}
+          : {$pull: {likes: user._id}}
+        }
+      )}
+  }
+  return {model, id, params, user}
+}
+
+setPrePutData(prePutData)
