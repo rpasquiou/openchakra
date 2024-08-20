@@ -86,7 +86,7 @@ declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
 declareVirtualField({ model: 'post', field: 'likes_count', ROLE: 'number' })
-declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'likes'})
+declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_likes'})
 
 //User
 
