@@ -43,4 +43,11 @@ const ContentSchema = new Schema({
   }
 }, schemaOptions)
 
+PostSchema.virtual('comments_count', {
+  ref: 'comment',
+  localField: '_id',
+  foreignField: 'content',
+  count: true,
+})
+
 module.exports = ContentSchema
