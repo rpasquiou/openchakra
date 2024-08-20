@@ -98,7 +98,7 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
-declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_likes'})
+declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_liked_by'})
 
 //User
 
@@ -138,8 +138,8 @@ const prePutData = async ({model, id, params, user}) => {
       await Post.updateOne(
         {_id:id},
         {
-          ...params.liked ? {$addToSet: {_likes: user._id}}
-          : {$pull: {_likes: user._id}}
+          ...params.liked ? {$addToSet: {_liked_by: user._id}}
+          : {$pull: {_liked_by: user._id}}
         }
       )}
   }
