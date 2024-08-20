@@ -1,42 +1,19 @@
+const Progress = require('../../models/Progress')
+const Resource = require('../../models/Resource')
 const { loadFromDb } = require('../../utils/database')
+const { BLOCK_STATUS_CURRENT } = require('./consts')
 
-const getTraineeResources = async (userId, params, data) => {
-  let sessions = await loadFromDb({model: 'session', fields:[
-    'trainees',
-    'children.children.children.children.spent_time_str',
-    'children.children.children.children.name',
-    'children.children.children.children.resource_type',
-    'children.children.children.children.achievement_status',
-    'children.children.children.children.children.spent_time_str',
-    'children.children.children.children.children.name',
-    'children.children.children.children.children.resource_type',
-    'children.children.children.children.children.achievement_status',
-  ], user:data})
-
-  sessions = sessions.filter(s => s.trainees.some(t => t._id.toString() === data._id.toString()))
-
-  const resources = sessions.flatMap(session =>
-    session.children.flatMap(program =>
-      program.children.flatMap(child => {
-        if (child.type === 'chapter') {
-          return child.children.flatMap(modulee =>
-            modulee.children.flatMap(sequence =>
-              sequence.children
-            )
-          )
-        } else {
-          return child.children.flatMap(sequence =>
-            sequence.children
-          )
-        }
-      })
-    )
-  )
-
-  return resources
+const getTraineeCurrentResources = async (userId, params, data, fields) => {
+  // Find curent blocks for this user
+  let userCurrentBlockIds=await Progress.find({user: userId, achievement_status: BLOCK_STATUS_CURRENT})
+  userCurrentBlockIds=userCurrentBlockIds.map(p => p.block._id)
+  let resources = await loadFromDb({
+    model: 'resource', fields, params: {'filter._id': {$in: userCurrentBlockIds}}
+  })
+  return resources.map(r => new Resource(r))
 }
 
 
 module.exports = {
-  getTraineeResources
+  getTraineeCurrentResources,getTraineeCurrentResources
 }

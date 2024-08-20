@@ -31,7 +31,7 @@ const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError } = require('../../utils/errors')
-const { getTraineeResources } = require('./user')
+const { getTraineeCurrentResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
@@ -110,7 +110,7 @@ declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATU
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
-  declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
+  declareComputedField({model, field: 'current_resources', getterFn: getTraineeCurrentResources})
   declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
 })
 
