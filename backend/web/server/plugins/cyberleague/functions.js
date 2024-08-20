@@ -89,6 +89,7 @@ declareVirtualField({model: 'content', field: 'comments', instance: 'Array', mul
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
+declareVirtualField({model: 'content', field: 'comments_count', instance: 'number'})
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})

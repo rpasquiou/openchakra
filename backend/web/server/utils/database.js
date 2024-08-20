@@ -1012,7 +1012,6 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => callFilterDataUser({model, data, id, user, params}))
         //.then(data =>  retainRequiredFields({data, fields}))
     })
-
 }
 
 const DATA_IMPORT_FN={}
