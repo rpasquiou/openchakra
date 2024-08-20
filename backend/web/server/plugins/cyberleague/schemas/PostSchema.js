@@ -24,7 +24,7 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
-  likes: [{
+  _likes: [{
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: true,
@@ -44,7 +44,7 @@ PostSchema.virtual('comments_count', {
 })
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function () {
-  return this.likes?.length || 0
+  return this._likes?.length || 0
 })
 
 module.exports = PostSchema
