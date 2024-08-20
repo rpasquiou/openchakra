@@ -28,6 +28,11 @@ const ProgramSchema = new Schema({
     enum: Object.keys(DURATION_UNIT),
     required: function() {return this.duration!=null ? [true, `L'unité de temps est obligatoire`] : false}
   },
+  template: {
+    type: Schema.Types.ObjectId,
+    ref: 'certification',
+    required: false,
+  },
   certificate: {
     type: String,
     required: false,
