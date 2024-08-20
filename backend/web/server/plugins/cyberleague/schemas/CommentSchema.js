@@ -5,7 +5,7 @@ const Schema = mongoose.Schema
 
 const CommentSchema = new Schema(
   {
-    user: {
+    creator: {
       type: Schema.Types.ObjectId,
       ref: 'user',
       required: [true, `Le rédacteur est obligatoire`],
