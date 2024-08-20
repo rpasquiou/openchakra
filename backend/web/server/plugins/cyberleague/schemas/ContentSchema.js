@@ -51,4 +51,10 @@ PostSchema.virtual('comments_count', {
   count: true,
 })
 
+PostSchema.virtual('comments', {
+  ref: "comment", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "content", // is equal to foreignField
+});
+
 module.exports = ContentSchema

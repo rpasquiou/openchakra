@@ -84,6 +84,11 @@ declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
+declareVirtualField({model: 'content', field: 'comments', instance: 'Array', multiple: true, 
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'comment' }
+  },})
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
