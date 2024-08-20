@@ -19,12 +19,6 @@ const CommentSchema = new Schema(
       ref: 'post',
       required: false,
     },
-    // Parent comment (i.e a comment of a comment)
-    parent: {
-      type: Schema.Types.ObjectId,
-      ref: 'comment',
-      required: false,
-    },
   },
   schemaOptions,
 )
