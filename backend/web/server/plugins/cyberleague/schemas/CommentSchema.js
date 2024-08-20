@@ -17,8 +17,13 @@ const CommentSchema = new Schema(
     post: {
       type: Schema.Types.ObjectId,
       ref: 'post',
-      required: false,
+      required: [function () {return !this.content}, "Un poste ou un contenu est obligatoire"],
     },
+    content: {
+      type: Schema.Types.ObjectId,
+      ref: 'content',
+      required: [function () {return !this.post}, "Un poste ou un contenu est obligatoire"],
+    }
   },
   schemaOptions,
 )
