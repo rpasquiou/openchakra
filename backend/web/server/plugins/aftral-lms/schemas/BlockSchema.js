@@ -188,7 +188,7 @@ const BlockSchema = new Schema({
     default: false,
     required: true,
   },
-  _likes:{ 
+  _liked_by:{ 
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
@@ -196,7 +196,7 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
-  _dislikes:{ 
+  _disliked_by:{ 
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
@@ -229,11 +229,11 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
 })
 
 BlockSchema.virtual('likes_count', DUMMY_REF).get(function(){
-  return this._likes.length || 0
+  return this._liked_by.length || 0
 })
 
 BlockSchema.virtual('dislikes_count', DUMMY_REF).get(function(){
-  return this._dislikes.length || 0
+  return this._disliked_by.length || 0
 })
 
 BlockSchema.virtual('tickets', {
