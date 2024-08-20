@@ -6,11 +6,13 @@ const {
   setPreCreateData,
   declareComputedField,
   setPrePutData,
+  getModel,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const { getLiked } = require('./post')
 const Post = require('../../models/Post')
+const { BadRequestError } = require('../../utils/errors')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -101,8 +103,19 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = async ({model, params, user}) => {
-  if(model == 'post') {
-    params.creator = params.creator || user._id
+  params.creator = params.creator || user._id
+  if(model == `comment`) {
+    if (!params.parent) {
+      throw new BadRequestError(`Le parent est obligatoire`)
+    }
+    const model = await getModel(params.parent, [`post`,`content`])
+    if (model == `post`) {
+      params.post = params.parent
+    }
+    else {
+      params.content = params.parent
+    }
+
   }
   return Promise.resolve({model, params})
 }
