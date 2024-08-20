@@ -310,9 +310,9 @@ const getBlockLiked = async (userId, params, data) => {
   const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
   if(user.role == ROLE_CONCEPTEUR) {
-    return template.likes.length > 0
+    return template._likes.length > 0
   }
-  return template.likes.some(like => idEqual(like, userId))
+  return template._likes.some(like => idEqual(like, userId))
 }
 
 const getBlockDisliked = async (userId, params, data) => {
@@ -320,9 +320,9 @@ const getBlockDisliked = async (userId, params, data) => {
   const template = await getTemplate(data._id)
   console.log(template)
   if(user.role == ROLE_CONCEPTEUR) {
-    return template.dislikes.length > 0
+    return template._dislikes.length > 0
   }
-  return template.dislikes.some(dislike => idEqual(dislike, userId))
+  return template._dislikes.some(dislike => idEqual(dislike, userId))
 }
 
 const setBlockLiked = async ({ id, attribute, value, user }) => {
@@ -331,17 +331,17 @@ const setBlockLiked = async ({ id, attribute, value, user }) => {
     return mongoose.models['block'].findByIdAndUpdate(template._id,
       {
         $pull: {
-          dislikes: user._id
+          _dislikes: user._id
         }, 
         $addToSet: {
-          likes: user._id
+          _likes: user._id
         }
       }
     )
   }
   else{
     return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {likes: user._id}})
+      {$pull: {_likes: user._id}})
   }
 }
 
@@ -351,25 +351,25 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
     return mongoose.models['block'].findByIdAndUpdate(template._id,
       {
         $pull: {
-          likes: user._id
+          _likes: user._id
         }, 
         $addToSet: {
-          dislikes: user._id
+          _dislikes: user._id
         }
       }
     )
   }
   else{
     return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {dislikes: user._id}})
+      {$pull: {_dislikes: user._id}})
   }
 }
 
 const getTemplate = async(id) => {
-  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, likes:1, dislikes:1})
+  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, _likes:1, _dislikes:1})
   let currentOrigin = currentBlock.origin
   while(currentOrigin) {
-    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, likes:1, dislikes:1})
+    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, _likes:1, _dislikes:1})
     currentOrigin = currentBlock.origin
   }
   return currentBlock
