@@ -36,7 +36,7 @@ const TicketSchema = new Schema({
   tag: {
     type: String,
     enum: Object.keys(TICKET_TAG),
-    required: [true, `Le tag est obligatoire`]
+    required: false,
   }
 }, {...schemaOptions})
 
