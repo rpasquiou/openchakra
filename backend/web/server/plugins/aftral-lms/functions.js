@@ -3,7 +3,7 @@ const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -39,6 +39,7 @@ const { getBlockLiked } = require('./block')
 const { getBlockDisliked } = require('./block')
 const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
+const Permission = require('../../models/Permission')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -170,6 +171,10 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
 // Ticket End
+
+ // Permission start
+declareEnumField({model:'permission', field: 'value', instance: 'String', enumValues: PERMISSIONS})
+ // Permission end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -559,6 +564,19 @@ const lockSession = async blockId => {
     toManage.push(...children)
   }
 }
+
+//Make sure permissions are upserted
+Promise.all(
+  Object.entries(PERMISSIONS).map(([key, value]) =>
+    Permission.findOneAndUpdate(
+      { value },
+      { value, key },
+      { upsert: true }
+    )
+  )
+)
+  .then(() => console.log('Permission upserts completed successfully.'))
+  .catch((error) => console.error('An error occurred during permission upserts:', error))
 
 module.exports={
   lockSession, setSessionInitialStatus
