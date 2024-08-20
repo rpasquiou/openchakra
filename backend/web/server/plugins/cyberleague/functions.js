@@ -87,7 +87,12 @@ declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
-declareVirtualField({ model: 'post', field: 'likes_count', ROLE: 'number' })
+declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'number' })
+declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multiple: true, 
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'comment' }
+  },})
 declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_likes'})
 
 //User
@@ -115,7 +120,6 @@ const preCreate = async ({model, params, user}) => {
     else {
       params.content = params.parent
     }
-
   }
   return Promise.resolve({model, params})
 }

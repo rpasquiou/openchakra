@@ -43,6 +43,12 @@ PostSchema.virtual('comments_count', {
   count: true,
 })
 
+PostSchema.virtual('comments', {
+  ref: "comment", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "post", // is equal to foreignField
+});
+
 PostSchema.virtual('likes_count', DUMMY_REF).get(function () {
   return this._likes?.length || 0
 })
