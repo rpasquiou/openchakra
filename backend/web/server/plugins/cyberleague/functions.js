@@ -116,8 +116,8 @@ const prePutData = async ({model, id, params, user}) => {
       await Post.updateOne(
         {_id:id},
         {
-          ...params.liked ? {$addToSet: {likes: user._id}}
-          : {$pull: {likes: user._id}}
+          ...params.liked ? {$addToSet: {_likes: user._id}}
+          : {$pull: {_likes: user._id}}
         }
       )}
   }
