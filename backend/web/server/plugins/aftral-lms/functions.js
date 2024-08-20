@@ -134,8 +134,8 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
     instance: 'ObjectID',
     options: {ref: 'block'}},
 })
-declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
+declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'_likes'})
+declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'_likes'})
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
