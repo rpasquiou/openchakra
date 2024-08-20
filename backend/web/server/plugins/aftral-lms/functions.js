@@ -18,12 +18,12 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getAvailableCodes, getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
+const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -94,6 +94,7 @@ BLOCK_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'ticket'}},
   })
+  declareComputedField({model, field: 'available_codes', requires: 'codes,type', getterFn: getAvailableCodes})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -101,7 +102,6 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
-declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
 declareComputedField({
   model: 'program', 
   field: 'certificate',

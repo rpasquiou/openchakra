@@ -204,6 +204,14 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
+  codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode',
+  }],
+  available_codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode'
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {

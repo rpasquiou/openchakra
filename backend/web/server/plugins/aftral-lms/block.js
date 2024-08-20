@@ -362,11 +362,22 @@ const getTemplate = async(id) => {
   return currentBlock
 }
 
+const getAvailableCodes =  async (userId, params, data) => {
+  if(data.type != 'program') {
+    return []
+  }
+  let otherPrograms=await Program.find({_id: {$ne: data._id}}).populate('codes')
+  const usedCodes=lodash(otherPrograms).map(p => p.codes).flatten().map(c => c.code).value()
+  let availableCodes=await ProductCode.find({code: {$nin: usedCodes}})
+  return availableCodes
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked
+  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
+  getAvailableCodes
 }
 
 

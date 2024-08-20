@@ -8,13 +8,6 @@ const path = require('path')
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template1'
 
-const getAvailableCodes =  async (userId, params, data) => {
-  let otherPrograms=await Program.find({_id: {$ne: data._id}}).populate('codes')
-  const usedCodes=lodash(otherPrograms).map(p => p.codes).flatten().map(c => c.code).value()
-  let availableCodes=await ProductCode.find({code: {$nin: usedCodes}})
-  return availableCodes
-}
-
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
   `_certificate`,
@@ -66,5 +59,5 @@ const getCertificate = async (userId, params, data) => {
 
 
 module.exports={
-  getAvailableCodes, getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES
+  getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES
 }
