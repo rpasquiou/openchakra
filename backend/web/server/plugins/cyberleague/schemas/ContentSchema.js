@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const { CONTENT_TYPE } = require('../consts')
+const PostSchema = require('./PostSchema')
 
 const Schema = mongoose.Schema
 
