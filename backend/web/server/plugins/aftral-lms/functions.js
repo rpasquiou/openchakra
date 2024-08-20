@@ -162,8 +162,8 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
     instance: 'ObjectID',
     options: {ref: 'block'}},
 })
-declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
+declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'_liked_by'})
+declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'_liked_by'})
  // Post end
 
  // Ticket start
@@ -257,8 +257,8 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       await Post.updateOne(
         {_id:id},
         {
-          ...params.liked ? {$addToSet: {likes: user._id}}
-          : {$pull: {likes: user._id}}
+          ...params.liked ? {$addToSet: {_liked_by: user._id}}
+          : {$pull: {_liked_by: user._id}}
         }
       )}
   }

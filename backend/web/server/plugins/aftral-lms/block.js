@@ -306,7 +306,6 @@ const getBlockLiked = async (userId, params, data) => {
 const getBlockDisliked = async (userId, params, data) => {
   const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
-  console.log(template)
   if(user.role == ROLE_CONCEPTEUR) {
     return template._disliked_by.length > 0
   }

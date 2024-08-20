@@ -1,6 +1,7 @@
+const { idEqual } = require("../../utils/database")
+
 const isLiked = async(userId, params, data) => {
-  const likes = data._likes.map(l=> l._id)
-  return likes.includes(userId)
+  return data._liked_by.some(like=> idEqual(l._id,userId))
 }
 
 module.exports={
