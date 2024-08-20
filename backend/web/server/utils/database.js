@@ -754,14 +754,14 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
 }
 
 const declareVirtualField=({model, field, ...rest}) => {
-  const mongoModel=mongoose.models[model]
-  if (!mongoModel) {
-    console.error(`Can't find model for`, model)
-    process.exit(0)
-  }
-  if (!Object.keys(mongoModel.schema.virtuals).includes(field)) {
-    throw new Error(`${model}.${field} is not a virtual field`)
-  }
+  // const mongoModel=mongoose.models[model]
+  // if (!mongoModel) {
+  //   console.error(`Can't find model for`, model)
+  //   process.exit(0)
+  // }
+  // if (!Object.keys(mongoModel.schema.virtuals).includes(field)) {
+  //   throw new Error(`${model}.${field} is not a virtual field`)
+  // }
   if (!LEAN_DATA && lodash.get(COMPUTED_FIELDS_GETTERS, `${model}.${field}`)) {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }

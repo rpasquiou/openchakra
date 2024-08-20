@@ -23,7 +23,7 @@ const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getAvailableCodes } = require('./program')
+const { getAvailableCodes, getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -83,6 +83,17 @@ BLOCK_MODELS.forEach(model => {
 
   declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'_likes,origin'})
   declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'_dislikes,origin'})
+
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -91,6 +102,12 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
 declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
+declareComputedField({
+  model: 'program', 
+  field: 'certificate',
+  requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
+  getterFn: getCertificate, 
+})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
@@ -105,6 +122,17 @@ const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
   declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
+  declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 // search start
@@ -123,9 +151,19 @@ declareComputedField({model: 'message', field: 'mine', getterFn:isMine})
 // Message end
 
 // Post start
-declareVirtualField({model:'post', field: 'comments_count', instance: 'Number', requires:'comments'})
-declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
+declareVirtualField({model:'post', field: 'comments', instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'comment'}},
+})
+declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'block'}},
+})
+declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'_likes'})
+declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'_likes'})
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -166,6 +204,11 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'comment'){
     params.user = user._id
     params.post = params.parent
+  }
+
+  if (model == 'ticket'){
+    params.user = user._id
+    params.block = params.parent
   }
   return Promise.resolve({model, params})
 }
@@ -237,28 +280,47 @@ const getContacts = user => {
     .then(res => res.filter(u => !idEqual(u._id, user._id)))
 }
 
-const getFeed = async id => {
+const getFeed = async (id) => {
   let type, name
-  if (id==GENERAL_FEED_ID) {
-    type=FEED_TYPE_GENERAL
-    name= 'Forum Aftral LMS'
+
+  if (id === GENERAL_FEED_ID) {
+    type = FEED_TYPE_GENERAL
+    name = 'Forum Aftral LMS'
+  } else {
+    const model = await getModel(id, ['session', 'group'])
+    type = model === 'session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
+    const feed = await mongoose.connection.models[model].findById(id)
+    name = feed.name
   }
-  else {
-    const model=await getModel(id, ['session', 'group'])
-    type=model=='session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
-    const feed=await mongoose.connection.models[model].findById(id)
-    name=feed.name
+
+  let posts = await Post.find({ _feed: id })
+    .populate('author')
+    .populate('comments')
+    .populate('comments_count')
+
+  posts = await Promise.all(posts.map(async (post) => {
+    const comments = await Promise.all(post.comments.map(async (comment) => {
+      const user = await User.findById(comment.user)
+      return {
+        ...comment.toObject(),
+        user,
+      }
+    }))
+
+    return {
+      ...post.toObject(),
+      comments,
+    }
+  }))
+
+  return {
+    _id: id,
+    type,
+    name,
+    posts,
   }
-  return Post.find({_feed: id}).populate('author')
-    .then(posts => {
-      return ({
-        _id: id,
-        type,
-        name,
-        posts
-      })
-    })
-}
+};
+
 
 const getFeeds = async (user, id) => {
   let ids=[]

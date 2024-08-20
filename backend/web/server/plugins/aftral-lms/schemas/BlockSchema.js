@@ -239,6 +239,19 @@ BlockSchema.virtual('dislikes_count', DUMMY_REF).get(function(){
   return this._dislikes.length || 0
 })
 
+BlockSchema.virtual('tickets', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'block',
+})
+
+BlockSchema.virtual('tickets_count', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'block',
+  count: true,
+})
+
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
   // #36 Can't create two templates with same type and same name

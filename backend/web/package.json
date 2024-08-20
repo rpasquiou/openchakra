@@ -76,6 +76,7 @@
     "passport-anonymous": "^1.0.1",
     "passport-cookie": "^1.0.9",
     "passport-http": "^0.3.0",
+    "pdf-lib": "^1.17.1",
     "pm2": "^5.3.0",
     "promise-serial": "^0.1.5",
     "react": "^16.14.0",
