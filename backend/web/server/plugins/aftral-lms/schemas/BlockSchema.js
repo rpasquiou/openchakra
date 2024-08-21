@@ -108,12 +108,9 @@ const BlockSchema = new Schema({
     required: [true, `Le status verrouillagee est obligatoire`]
   },
   session: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'session'
-    }],
+    type: Schema.Types.ObjectId,
+    ref: 'session',
     required:false,
-    default: []
   },
   // Annotation set by trainee
   annotation: {
@@ -191,7 +188,7 @@ const BlockSchema = new Schema({
     default: false,
     required: true,
   },
-  likes:{ 
+  _liked_by:{ 
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
@@ -199,7 +196,7 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
-  dislikes:{ 
+  _disliked_by:{ 
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
@@ -207,6 +204,14 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
+  codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode',
+  }],
+  available_codes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'productCode'
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
@@ -232,11 +237,24 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
 })
 
 BlockSchema.virtual('likes_count', DUMMY_REF).get(function(){
-  return this.likes.length || 0
+  return this._liked_by?.length || 0
 })
 
 BlockSchema.virtual('dislikes_count', DUMMY_REF).get(function(){
-  return this.dislikes.length || 0
+  return this._disliked_by?.length || 0
+})
+
+BlockSchema.virtual('tickets', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'block',
+})
+
+BlockSchema.virtual('tickets_count', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'block',
+  count: true,
 })
 
 // Validate Succes achievemnt

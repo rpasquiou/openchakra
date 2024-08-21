@@ -3,7 +3,7 @@ const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -18,12 +18,12 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getAvailableCodes, getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
+const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -31,7 +31,7 @@ const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError } = require('../../utils/errors')
-const { getTraineeResources } = require('./user')
+const { getTraineeCurrentResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
@@ -39,6 +39,7 @@ const { getBlockLiked } = require('./block')
 const { getBlockDisliked } = require('./block')
 const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
+const Permission = require('../../models/Permission')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -76,13 +77,25 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
-  declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent.parent.parent.parent.parent'})
+  declareComputedField({model, field: 'session', getterFn: getSession, requires:'parent'})
 
-  declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'likes'})
-  declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'dislikes'})
+  declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'_liked_by'})
+  declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'_disliked_by'})
 
-  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'likes,origin'})
-  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'dislikes,origin'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'_liked_by,origin'})
+  declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'_disliked_by,origin'})
+
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareComputedField({model, field: 'available_codes', requires: 'codes,type', getterFn: getAvailableCodes})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -90,7 +103,6 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
-declareComputedField({model: 'program', field: 'available_codes', requires: 'codes', getterFn: getAvailableCodes})
 declareComputedField({
   model: 'program', 
   field: 'certificate',
@@ -110,8 +122,18 @@ declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATU
 const USER_MODELS=['user', 'loggedUser', 'contact']
 USER_MODELS.forEach(model => {
   declareEnumField({model, field: 'role', instance: 'String', enumValues: ROLES})
-  declareComputedField({model, field: 'resources', getterFn: getTraineeResources})
+  declareComputedField({model, field: 'current_resources', getterFn: getTraineeCurrentResources})
   declareVirtualField({model, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
+  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
+  declareVirtualField({model, field: 'tickets', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'ticket'}},
+  })
 })
 
 // search start
@@ -141,8 +163,18 @@ declareVirtualField({model:'post', field: 'comments_count', instance: 'Number',
     instance: 'ObjectID',
     options: {ref: 'block'}},
 })
-declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'likes'})
-declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'likes'})
+declareVirtualField({model:'post', field: 'likes_count', instance: 'Number', requires:'_liked_by'})
+declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires:'_liked_by'})
+ // Post end
+
+ // Ticket start
+declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
+declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+// Ticket End
+
+ // Permission start
+declareEnumField({model:'permission', field: 'value', instance: 'String', enumValues: PERMISSIONS})
+ // Permission end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -183,6 +215,11 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'comment'){
     params.user = user._id
     params.post = params.parent
+  }
+
+  if (model == 'ticket'){
+    params.user = user._id
+    params.block = params.parent
   }
   return Promise.resolve({model, params})
 }
@@ -225,8 +262,8 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       await Post.updateOne(
         {_id:id},
         {
-          ...params.liked ? {$addToSet: {likes: user._id}}
-          : {$pull: {likes: user._id}}
+          ...params.liked ? {$addToSet: {_liked_by: user._id}}
+          : {$pull: {_liked_by: user._id}}
         }
       )}
   }
@@ -319,7 +356,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       fields=[...fields, 'creator']
     }
     // Full list: only return template blocks not included in sessions
-    if (!id && model!='session') {
+    if (!id && model!='session' && user.role==ROLE_CONCEPTEUR) {
       params['filter._locked']=false // No session data
       params['filter.origin']=null // Templates only
       }
@@ -527,6 +564,19 @@ const lockSession = async blockId => {
     toManage.push(...children)
   }
 }
+
+//Make sure permissions are upserted
+Promise.all(
+  Object.entries(PERMISSIONS).map(([key, value]) =>
+    Permission.findOneAndUpdate(
+      { value },
+      { value, key },
+      { upsert: true }
+    )
+  )
+)
+  .then(() => console.log('Permission upserts completed successfully.'))
+  .catch((error) => console.error('An error occurred during permission upserts:', error))
 
 module.exports={
   lockSession, setSessionInitialStatus

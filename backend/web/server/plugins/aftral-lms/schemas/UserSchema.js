@@ -43,20 +43,37 @@ const UserSchema = new Schema({
     ref: 'program',
     required: false,
   },
-  resources: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'resource',
-    }],
-    required: true,
-    default: [],
-  },
+  // Trainee current resources (i.e. achievment status==BLOCK_STATUS_CURRENT)
+  current_resources: [{
+    type: Schema.Types.ObjectId,
+    ref: 'resource',
+  }],
+  permissions: [{
+    type: Schema.Types.ObjectId,
+    ref: 'permission'
+  }],
+  permission_group: {
+    type: Schema.Types.ObjectId,
+    ref: 'permissionGroup'
+  }
 }, schemaOptions)
 
 UserSchema.virtual('fullname', DUMMY_REF).get(function() {
   return `${this.firstname || ''} ${this.lastname || ''}`
 })
 
+UserSchema.virtual('tickets', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'user',
+})
+
+UserSchema.virtual('tickets_count', {
+  ref: 'ticket',
+  localField: '_id',
+  foreignField: 'user',
+  count: true,
+})
 
 /* eslint-disable prefer-arrow-callback */
 

@@ -31,7 +31,7 @@ const PostSchema = new Schema({
     required: true,
     enum: Object.keys(FEED_TYPE),
   },
-  likes: [{
+  _liked_by: [{
     type: Schema.Types.ObjectId,
     ref: 'user',
   }],
@@ -43,7 +43,7 @@ const PostSchema = new Schema({
 }, schemaOptions)
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function(){
-  return this.likes.length || 0
+  return this._liked_by.length || 0
 })
 
 PostSchema.virtual('comments', {

@@ -11,14 +11,6 @@ const ProgramSchema = new Schema({
     default: PROGRAM_STATUS_DRAFT,
     required: [true, `Le status est obligatoire`],
   },
-  codes: [{
-    type: Schema.Types.ObjectId,
-    ref: 'productCode',
-  }],
-  available_codes: [{
-    type: Schema.Types.ObjectId,
-    ref: 'productCode'
-  }],
   duration: {
     type: Number,
     required: false,

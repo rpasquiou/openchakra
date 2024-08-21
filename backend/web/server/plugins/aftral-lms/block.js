@@ -5,7 +5,6 @@ const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
-const Block = require("../../models/Block");
 const User = require("../../models/User");
 
 const NAMES_CACHE=new NodeCache()
@@ -285,44 +284,31 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
-getSession = async (userId, params, data) => {
-  switch(data.type) {
-    case 'resource' :
-      return data.parent.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent.parent._id]
-    case 'sequence' :
-      return data.parent.parent.type == 'chapter'
-      ? [data.parent.parent.parent.parent._id]
-      : [data.parent.parent.parent._id]
-    case 'module' :
-      return data.parent.type == 'chapter'
-      ? [data.parent.parent.parent._id]
-      : [data.parent.parent._id]
-    case 'chapter' :
-      return [data.parent.parent._id]
-    case 'program' :
-      return [data.parent._id]
+getSession = async (userId, params, data, fields) => {
+  let currentBlock = await mongoose.models.block.findById(data._id,{parent:1, type:1})
+  while (!!currentBlock.parent) {
+    currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
   }
+  const [result] = await loadFromDb({model: 'block', id:currentBlock._id, fields, user:userId})
+  return result
 }
 
 const getBlockLiked = async (userId, params, data) => {
   const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
   if(user.role == ROLE_CONCEPTEUR) {
-    return template.likes.length > 0
+    return template._liked_by.length > 0
   }
-  return template.likes.some(like => idEqual(like, userId))
+  return template._liked_by.some(like => idEqual(like, userId))
 }
 
 const getBlockDisliked = async (userId, params, data) => {
   const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
-  console.log(template)
   if(user.role == ROLE_CONCEPTEUR) {
-    return template.dislikes.length > 0
+    return template._disliked_by.length > 0
   }
-  return template.dislikes.some(dislike => idEqual(dislike, userId))
+  return template._disliked_by.some(dislike => idEqual(dislike, userId))
 }
 
 const setBlockLiked = async ({ id, attribute, value, user }) => {
@@ -331,17 +317,17 @@ const setBlockLiked = async ({ id, attribute, value, user }) => {
     return mongoose.models['block'].findByIdAndUpdate(template._id,
       {
         $pull: {
-          dislikes: user._id
+          _disliked_by: user._id
         }, 
         $addToSet: {
-          likes: user._id
+          _liked_by: user._id
         }
       }
     )
   }
   else{
     return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {likes: user._id}})
+      {$pull: {_liked_by: user._id}})
   }
 }
 
@@ -351,35 +337,46 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
     return mongoose.models['block'].findByIdAndUpdate(template._id,
       {
         $pull: {
-          likes: user._id
+          _liked_by: user._id
         }, 
         $addToSet: {
-          dislikes: user._id
+          _disliked_by: user._id
         }
       }
     )
   }
   else{
     return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {dislikes: user._id}})
+      {$pull: {_disliked_by: user._id}})
   }
 }
 
 const getTemplate = async(id) => {
-  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, likes:1, dislikes:1})
+  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, _liked_by:1, _disliked_by:1})
   let currentOrigin = currentBlock.origin
   while(currentOrigin) {
-    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, likes:1, dislikes:1})
+    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, _liked_by:1, _disliked_by:1})
     currentOrigin = currentBlock.origin
   }
   return currentBlock
+}
+
+const getAvailableCodes =  async (userId, params, data) => {
+  if(data.type != 'program') {
+    return []
+  }
+  let otherPrograms=await mongoose.models.block.find({_id: {$ne: data._id}, type:'program'}).populate('codes')
+  const usedCodes=lodash(otherPrograms).map(p => p.codes).flatten().map(c => c.code).value()
+  let availableCodes=await mongoose.models.productCode.find({code: {$nin: usedCodes}})
+  return availableCodes
 }
 
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked
+  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
+  getAvailableCodes
 }
 
 

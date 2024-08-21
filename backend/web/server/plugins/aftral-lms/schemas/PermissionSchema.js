@@ -1,20 +1,22 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { PERMISSIONS } = require('../consts')
 
 const Schema = mongoose.Schema
 
-const CertificationSchema = new Schema({
-  name: {
+const PermissionSchema = new Schema({
+  value: {
     type: String,
-    required: [true, `Le nom est obligatoire`],
+    enum: Object.keys(PERMISSIONS),
+    required: true,
   },
-  url: {
+  label: {
     type: String,
-    required: [true, `Le lien est obligatoire`],
-  },
-}, {...schemaOptions})
+    required: true,
+  }
+}, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = CertificationSchema
+module.exports = PermissionSchema

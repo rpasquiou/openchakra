@@ -681,13 +681,13 @@ const getFieldsToCompute = ({model, fields}) => {
 }
 
 const addComputedFields = async (
-  fields,
+  originalFields,
   userId,
   queryParams,
   data,
   model,
 ) => {
-  fields=getFieldsToCompute({model, fields})
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
@@ -719,13 +719,14 @@ const addComputedFields = async (
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
         return runPromisesWithDelay(
-          Object.keys(requiredCompFields).map(f => () =>
-            requiredCompFields[f](newUserId, queryParams, data)
+          Object.keys(requiredCompFields).map(f => () => {
+            const displayFields=getRequiredSubFields(originalFields, f)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
               .then(res => {
                 data[f] = res
                 return data
               })
-          ),
+            }),
       )})
       .then(() => data)
   })

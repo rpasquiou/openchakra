@@ -100,9 +100,9 @@ export const mediaWrapper = ({
       src=`https://www.youtube.com/embed/${videoId}`
     }
     // Embed video
-    else if (/vimeo.com/.test(parsedUrl.hostname)) {
-      const videoId=parsedUrl.pathname.replace(/\//g, '')
-      src=`https://player.vimeo.com/video/${videoId}`
+    else if (/vimeo\.com/.test(parsedUrl.hostname) && !/player\.vimeo\.com/.test(parsedUrl.hostname)) {
+      const parts=parsedUrl.pathname.match(/[^/]+/g)
+      src=`https://player.vimeo.com/video/${parts[0]}?h=${parts[1]}`
     }
     else {//Certainly a SCORM
       if (PATTERN.test(parsedUrl.hostname)) {
