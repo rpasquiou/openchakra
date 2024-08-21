@@ -5,7 +5,6 @@ const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
-const Block = require("../../models/Block");
 const User = require("../../models/User");
 
 const NAMES_CACHE=new NodeCache()
@@ -366,9 +365,9 @@ const getAvailableCodes =  async (userId, params, data) => {
   if(data.type != 'program') {
     return []
   }
-  let otherPrograms=await Program.find({_id: {$ne: data._id}}).populate('codes')
+  let otherPrograms=await mongoose.models.block.find({_id: {$ne: data._id}, type:'program'}).populate('codes')
   const usedCodes=lodash(otherPrograms).map(p => p.codes).flatten().map(c => c.code).value()
-  let availableCodes=await ProductCode.find({code: {$nin: usedCodes}})
+  let availableCodes=await mongoose.models.productCode.find({code: {$nin: usedCodes}})
   return availableCodes
 }
 
