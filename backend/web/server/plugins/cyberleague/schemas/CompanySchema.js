@@ -81,6 +81,10 @@ const CompanySchema = new Schema(
     partner: {
       type: Boolean,
       required: false
+    },
+    perimeter: {
+      type: Number,
+      required: false
     }
   },
   schemaOptions,
