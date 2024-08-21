@@ -116,7 +116,7 @@ const postCreate = ({model, params, data}) => {
 
 setPostCreateData(postCreate)
 
-const preprocessGet = ({model, fields, id, user}) => {
+const preprocessGet = ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
@@ -143,7 +143,7 @@ const preprocessGet = ({model, fields, id, user}) => {
             return User.findById(id).populate('company')
               .then(partner => {
                 const data=[{_id: partner._id, partner, messages: []}]
-                return {model, fields, id, data}
+                return {model, fields, id, data, params}
               })
           }
         }
@@ -152,11 +152,11 @@ const preprocessGet = ({model, fields, id, user}) => {
           .values()
           .map(msgs => { const partner=getPartner(msgs[0], user); return ({_id: partner._id, partner, messages: msgs}) })
           .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
-        return {model, fields, id, data: convs}
+        return {model, fields, id, data: convs, params}
       })
   }
 
-  return Promise.resolve({model, fields, id})
+  return Promise.resolve({model, fields, id, params})
 
 }
 

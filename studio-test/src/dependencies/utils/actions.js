@@ -1086,4 +1086,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  refresh: async ({reload}) => {
+    reload()
+  },
 }
