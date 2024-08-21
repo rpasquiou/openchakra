@@ -89,6 +89,10 @@ const CompanySchema = new Schema(
     baseline: {
       type: String,
       required: false
+    },
+    creation_date: {
+      type: Date,
+      required: false
     }
   },
   schemaOptions,
