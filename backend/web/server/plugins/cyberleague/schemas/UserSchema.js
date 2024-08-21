@@ -3,7 +3,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES , JOBS } = require('../consts')
+const { ROLES , JOBS, ROLE_ADMIN } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -132,6 +132,10 @@ UserSchema.virtual('pinned_companies_count', {
   localField:'_id',
   foreignField:'pinned_by',
   count:true,
+})
+
+UserSchema.virtual('is_admin', DUMMY_REF).get(function() {
+  return this.role = ROLE_ADMIN
 })
 
 /* eslint-disable prefer-arrow-callback */
