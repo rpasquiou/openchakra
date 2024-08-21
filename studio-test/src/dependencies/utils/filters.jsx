@@ -127,8 +127,8 @@ export const buildFilter = (dataSourceId, filterAttributes, getComponentValue) =
   // componentsValues stores comp-XXX_0_1_2 while componentName is the studio's one (i.e. comp-XXX)
   const filters=filterAttributes[dataSourceId]
   const constants=filters?.constants?.map(([att, value]) => `filter.${att}=${value}`) || []
-  const variables=filters.variables?
-      .filter(([att, comp]) => !lodash.isNil(getComponentValue(comp)))
+  const chunks=lodash.chunk(filters?.variables?.[0]||[], 2)
+  const variables=chunks.filter(([att, comp]) => !lodash.isNil(getComponentValue(comp)))
       .map(([att, comp]) => `filter.${att}=${getComponentValue(comp)}`)  
     || []
   const allFilters=[...constants, ...variables]
