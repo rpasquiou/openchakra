@@ -8,6 +8,8 @@ const Module = require('../../server/models/Module')
 const Program = require('../../server/models/Program')
 const Session = require('../../server/models/Session')
 require('../../server/models/Certification')
+require('../../server/models/Permission')
+require('../../server/models/PermissionGroup')
 const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE } = require('../../server/plugins/aftral-lms/consts')
 
 jest.setTimeout(60000)
@@ -23,6 +25,6 @@ describe('User', () => {
 
   it.only('must return resource session', async()=> {
     const [resource] = await loadFromDb({model: 'block', id: '66b60f473f1ec37a3a4cd961', fields:['session.name']})
-    expect(resource.session._id).toEqual(mongoose.Types.ObjectId('66716f3722f9dd645ff9ff53'))
+    expect(resource.session._id).toEqual(mongoose.Types.ObjectId('66b60f3a3f1ec37a3a4cd95a'))
   })
 })
