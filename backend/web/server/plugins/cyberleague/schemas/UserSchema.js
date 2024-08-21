@@ -112,7 +112,7 @@ UserSchema.virtual('shortname', DUMMY_REF).get(function() {
 })
 
 UserSchema.virtual('pinned_by_count', DUMMY_REF).get(function() {
-  return this.pinned_by.length || 0
+  return this.pinned_by?.length || 0
 })
 
 UserSchema.virtual('pinned_users', {
