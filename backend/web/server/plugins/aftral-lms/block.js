@@ -285,11 +285,11 @@ const getPreviousResource= async (blockId, user) => {
 }
 
 getSession = async (userId, params, data, fields) => {
-  let currentBlock = data.parent
-  while(currentBlock.parent) {
-    currentBlock = await mongoose.models.block.find({_id:currentBlock.parent},{parent:1})
+  let currentBlock = await mongoose.models.block.findById(data._id,{parent:1, type:1})
+  while (!!currentBlock.parent) {
+    currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
   }
-  const [result] = await loadFromDb({model: 'block', id:currentBlock._id, fields})
+  const [result] = await loadFromDb({model: 'block', id:currentBlock._id, fields, user:userId})
   return result
 }
 

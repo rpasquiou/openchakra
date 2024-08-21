@@ -73,8 +73,8 @@ let ACTIONS = {
     return removeData(id)
   },
 
-  session: ({id}) => {
-    return getSession(id)
+  session: ({id}, user) => {
+    return getSession(user, null, {_id: id}, [])
   },
 
   sendMessage: (params, sender) => {

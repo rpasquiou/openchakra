@@ -237,11 +237,11 @@ BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'
 })
 
 BlockSchema.virtual('likes_count', DUMMY_REF).get(function(){
-  return this._liked_by.length || 0
+  return this._liked_by?.length || 0
 })
 
 BlockSchema.virtual('dislikes_count', DUMMY_REF).get(function(){
-  return this._disliked_by.length || 0
+  return this._disliked_by?.length || 0
 })
 
 BlockSchema.virtual('tickets', {
