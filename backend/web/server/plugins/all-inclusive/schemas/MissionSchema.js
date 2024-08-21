@@ -86,6 +86,13 @@ const MissionSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "user",
     required: [true, `Le client est obligatoire`],
+    index: true,
+  },
+  ti: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+    required: [true, `Le TI est obligatoire`],
+    index: true,
   },
   job: {
     type: Schema.Types.ObjectId,

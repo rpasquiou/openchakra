@@ -330,28 +330,18 @@ UserSchema.virtual("jobs", {
 });
 
 // All missions
-UserSchema.virtual("_missions", {
+UserSchema.virtual("missions", {
   ref: "mission", // The Model to use
-  localField: "dummy", // Find in Model, where localField
-  foreignField: "dummy" // is equal to foreignField
+  localField: "_id", // Find in Model, where localField
+  foreignField: function() { return this.role==ROLE_TI ? 'ti' : 'user'}
 });
-
-UserSchema.virtual("missions", DUMMY_REF).get(function() {
-  if (this.role==ROLE_COMPANY_BUYER) {
-    return this._missions?.filter(m => idEqual(m.user?._id, this._id))
-  }
-  if (this.role==ROLE_TI) {
-    return this._missions?.filter(m => idEqual(m.job?.user?._id, this._id)) || []
-  }
-  return []
-})
 
 UserSchema.virtual("missions_with_bill", DUMMY_REF).get(function() {
   if (this.role==ROLE_COMPANY_BUYER) {
-    return this._missions?.filter(m => m.bill && idEqual(m.user?._id, this._id))
+    return this.missions?.filter(m => m.bill && idEqual(m.user?._id, this._id))
   }
   if (this.role==ROLE_TI) {
-    return this._missions?.filter(m => m.bill && idEqual(m.job?.user?._id, this._id)) || []
+    return this.issions?.filter(m => m.bill && idEqual(m.job?.user?._id, this._id)) || []
   }
   return []
 })

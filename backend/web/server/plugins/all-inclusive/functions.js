@@ -165,6 +165,10 @@ setPreprocessGet(preprocessGet)
 const preCreate = async ({model, params, user}) => {
   if (['jobUser', 'request', 'mission', 'comment'].includes(model)) {
     params.user=params.user || user
+    if (model=='mission') {
+      const job=await JobUser.findById(params.job)
+      params.ti=job.user
+    }
   }
   if (['lead', 'opportunity', 'note'].includes(model) && !params.creator) {
     params.creator=user._id
@@ -254,21 +258,15 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'qualified_str', instance: 'String'})
   declareVirtualField({model: m, field: 'visible_str', instance: 'String'})
-  declareVirtualField({model: m, field: 'finished_missions_count', instance: 'Number', requires: '_missions'})
-  declareVirtualField({model: m, field: '_missions', instance: 'Array', requires: '', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'mission'}}
-  })
+  declareVirtualField({model: m, field: 'finished_missions_count', instance: 'Number', requires: 'missions'})
   declareVirtualField({model: m, field: 'missions', instance: 'Array', multiple: true,
-    requires: '_missions,_missions.user.full_name,_missions.user.company_name,_missions.job.user.full_name,_missions.quotations,_missions.quotations.details,_missions.comments,missions,missions.user,missions.job,missions.job.user,missions.quotations,missions.comments,\
-_missions.comments.mission.job.user.full_name,_missions.comments.mission.user.company_name,_missions.comments.user.picture,_missions.comments.mission.job.user.picture',
+    requires: 'role',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'mission'}}
   })
   declareVirtualField({model: m, field: 'missions_with_bill', instance: 'Array', multiple: true,
-    requires: '_missions,_missions.user,_missions.job,_missions.job.user,_missions.quotations',
+    requires: 'missions.bill',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'mission'}}
@@ -285,18 +283,18 @@ _missions.comments.mission.job.user.full_name,_missions.comments.mission.user.co
   declareVirtualField({model: m, field: 'comments_note', instance: 'Number', requires: 'jobs'})
 
   declareVirtualField({model: m, field: 'revenue', instance: 'Number',
-    requires: 'role,_missions.quotations.ti_total,_missions.status,missions.quotations.ti_total,missions.status'})
+    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
   declareVirtualField({model: m, field: 'revenue_to_come', instance: 'Number',
-    requires: 'role,_missions.quotations.ti_total,_missions.status,missions.quotations.ti_total,missions.status'})
-  declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,_missions.status,missions.status'})
-  declareVirtualField({model: m, field: 'pending_quotations_count', instance: 'Number', requires: 'role,_missions.status,missions.status'})
-  declareVirtualField({model: m, field: 'pending_bills_count', instance: 'Number', requires: 'role,_missions.status,missions.status'})
+    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
+  declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
+  declareVirtualField({model: m, field: 'pending_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
+  declareVirtualField({model: m, field: 'pending_bills_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
   declareVirtualField({model: m, field: 'spent', instance: 'Number',
-    requires: 'role,_missions.quotations.customer_total,_missions.status,missions.quotations.customer_total,missions.status'})
+    requires: 'role,missions.quotations.customer_total,missions.status,missions.quotations.customer_total,missions.status'})
   declareVirtualField({model: m, field: 'spent_to_come', instance: 'Number',
-    requires: 'role,_missions.quotations.customer_total,_missions.status,missions.quotations.customer_total,missions.status'})
+    requires: 'role,missions.quotations.customer_total,missions.status,missions.quotations.customer_total,missions.status'})
   declareVirtualField({model: m, field: 'pending_bills', instance: 'Number',
-    requires: 'role,_missions.status,_missions.quotations.customer_total,missions.status,missions.quotations.customer_total'})
+    requires: 'role,missions.status,missions.quotations.customer_total,missions.status,missions.quotations.customer_total'})
 
   declareVirtualField({model: m, field: 'profile_shares_count', instance: 'Number', requires: ''})
   declareEnumField({model: m, field: 'unactive_reason', enumValues: UNACTIVE_REASON})
@@ -643,7 +641,6 @@ declareComputedField({model: 'adminDashboard', field: 'customers_registered_toda
 /** Upsert ONLY adminDashboard */
 AdminDashboard.exists({})
   .then(exists => !exists && AdminDashboard.create({}))
-  .then(()=> console.log(`Only adminDashboard`))
   .catch(err=> console.error(`Only adminDashboard:${err}`))
 
 const getUsersList = () => {
