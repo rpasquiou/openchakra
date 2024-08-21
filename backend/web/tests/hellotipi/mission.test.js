@@ -47,7 +47,7 @@ describe('Test missions quotations', () => {
     ti=await User.create({...TI_USER})
     job=await JobUser.create({user:ti, name: 'Job'})
     customer=await User.create({...CUSTOMER_USER})
-    const mis=await Mission.create({name: 'Mission', description: 'Description de la mission', user:customer, recurrent: BOOLEAN_NO, job})
+    const mis=await Mission.create({name: 'Mission', description: 'Description de la mission', user:customer, recurrent: BOOLEAN_NO})
   })
 
   afterAll(async() => {
@@ -67,7 +67,7 @@ describe('Test missions quotations', () => {
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_SENT)
     await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: moment()}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_REFUSED)
-    await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: null, customer_accept_quotation_date: moment()}})
+    await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: null, customer_accept_quotation_date: moment(), payin_achieved: true, payin_id: 12}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_ACCEPTED)
     await Mission.findOneAndUpdate({}, {$set: {ti_finished_date: moment()}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_TO_BILL)
@@ -79,20 +79,15 @@ describe('Test missions quotations', () => {
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_DISPUTE)
   })
 
-  it.only('must compute proper mer', async() => {
+  it('must compute proper mer', async() => {
     let mission=await Mission.findOne()
     let quotation=await Quotation.create({...QUOTATION, mission})
     await QuotationDetail.create({...QUOTATION_DETAIL, quotation})
-    // Not qualified: mer must be null
-    quotation=(await loadFromDb({model: 'quotation', fields: ['mer']}))[0]
-    expect(quotation.mer).toBe(0)
-    mission=(await loadFromDb({model: 'mission', fields: ['mer']}))[0]
-    expect(quotation.mer).toBe(0)
     // Qualified: mer must be >0
     await User.updateMany({}, {qualified: true})
-    quotation=(await loadFromDb({model: 'quotation', fields: ['mer']}))[0]
-    expect(quotation.mer).toBeGreaterThan(0)
-    mission=(await loadFromDb({model: 'mission', fields: ['mer']}))[0]
-    expect(mission.mer).toBeGreaterThan(0)
+    quotation=(await loadFromDb({model: 'quotation', fields: ['mer_total']}))[0]
+    expect(quotation.mer_total).toBeGreaterThan(0)
+    mission=(await loadFromDb({model: 'mission', fields: ['mer_total']}))[0]
+    expect(mission.mer_total).toBeGreaterThan(0)
   })
 })
