@@ -85,6 +85,10 @@ const CompanySchema = new Schema(
     perimeter: {
       type: Number,
       required: false
+    },
+    baseline: {
+      type: String,
+      required: false
     }
   },
   schemaOptions,
