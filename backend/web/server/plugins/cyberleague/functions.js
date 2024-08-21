@@ -10,7 +10,6 @@ const {
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
-const { getLiked } = require('./post')
 const Post = require('../../models/Post')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn } = require('../../utils/pinned')
@@ -79,7 +78,7 @@ declareVirtualField({
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
-declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company'), requires:'pinned_by'})
+declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 
 //Expertise declarations
 declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
@@ -101,10 +100,10 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
-declareComputedField({model: 'post', field: 'liked', getterFn: getLiked, requires:'_liked_by'})
+declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
 
 //User
-declareComputedField({model: 'user', field: 'pinned', getterFn: getterPinnedFn('company'), requires:'pinned_by'})
+declareComputedField({model: 'user', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
