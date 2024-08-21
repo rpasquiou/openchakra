@@ -77,6 +77,10 @@ const CompanySchema = new Schema(
     city: {
       type: String,
       required: false
+    },
+    partner: {
+      type: Boolean,
+      required: false
     }
   },
   schemaOptions,
