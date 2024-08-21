@@ -350,7 +350,10 @@ declareVirtualField({model: 'jobUser', field: 'skills', instance: 'Array', requi
     options: {ref: 'skill'}}
 })
 declareVirtualField({model: 'jobUser', field: 'location_str', instance: 'String', requires: 'customer_location,foreign_location'})
-declareVirtualField({model: 'jobUser', field: 'search_field', instance: 'String', requires: 'name,skills.name,activities.name'})
+declareVirtualField({
+  model: 'jobUser', field: 'search_field', instance: 'String', requires: 'name,skills.name,activities.name', 
+  dbFilter: value => ({name: new RegExp(value, 'i')}),
+})
 declareVirtualField({model: 'jobUser', field: 'experiences', instance: 'Array', requires: '', multiple: true,
   caster: {
     instance: 'ObjectID',
