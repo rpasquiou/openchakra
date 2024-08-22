@@ -554,7 +554,7 @@ const preCreate = async ({ model, params, user }) => {
     else { //CUSTOMER
       customer_id = user._id
     }
-    return loadFromDb({
+    const [usr]=await loadFromDb({
       model: 'user', id: customer_id,
       fields: [
         'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
@@ -562,61 +562,60 @@ const preCreate = async ({ model, params, user }) => {
       ],
       user,
     })
-      .then(([usr]) => {
-        // Phone is required for appintment
-        if (lodash.isEmpty(usr.phone)) {
-          throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
-        }
-        // If company has coaching reasons, check if the user coaching intersects at least one
-        const company_reasons=usr.company?.reasons
-        if (company_reasons?.length > 0) {
-          const user_reasons=usr.latest_coachings?.[0]?.reasons
-          if (!setIntersects(user_reasons, company_reasons)) {
-            throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
-          }
-        }
-        // Check remaining credits
-        const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching && isAppointment) {
-          throw new ForbiddenError(`Aucun coaching en cours`)
-        }
+    // Phone is required for appintment
+    if (lodash.isEmpty(usr.phone)) {
+      throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
+    }
+    // If company has coaching reasons, check if the user coaching intersects at least one
+    const company_reasons=usr.company?.reasons
+    if (company_reasons?.length > 0) {
+      const user_reasons=usr.latest_coachings?.[0]?.reasons
+      if (!setIntersects(user_reasons, company_reasons)) {
+        throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
+      }
+    }
+    // Check remaining credits
+    const latest_coaching = usr.latest_coachings[0]
+    if (!latest_coaching && isAppointment) {
+      throw new ForbiddenError(`Aucun coaching en cours`)
+    }
 
-        const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
+    const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
 
-        if ((isAppointment && latest_coaching.remaining_credits <= 0)
-          || (!isAppointment && !(remaining_nut > 0))) {
-          throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
-        }
-        // Check appointment to come
-        const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
-        if (nextAppt) {
-          throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
-        }
+    if ((isAppointment && latest_coaching.remaining_credits <= 0)
+      || (!isAppointment && !(remaining_nut > 0))) {
+      throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
+    }
+    // Check appointment to come
+    const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
+    if (nextAppt) {
+      throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
+    }
 
-        if (user.role==ROLE_CUSTOMER) {
-          diet=latest_coaching.diet
-        }
-        
-        if (isAppointment) {
-          const start=moment(params.start_date)
-          return getAvailabilities({
-            diet_id: diet.smartagenda_id, 
-            appointment_type: latest_coaching.appointment_type?.smartagenda_id,
-            from: moment(start).add(-1, 'day').startOf('day'),
-            to: moment(start).endOf('day'),
-          })
-            .then(availabilities => {
-              const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
-              if (!exists) {
-                throw new Error(`Ce créneau n'est plus disponible`)
-              }
-              return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
-            })
-        }
-        else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, ...params } }
-        }
+    if (user.role==ROLE_CUSTOMER) {
+      diet=latest_coaching.diet
+    }
+    
+    if (isAppointment) {
+      const start=moment(params.start_date)
+      const availabilities=await getAvailabilities({
+        diet_id: diet.smartagenda_id, 
+        appointment_type: latest_coaching.appointment_type?.smartagenda_id,
+        from: moment(start).add(-1, 'day').startOf('day'),
+        to: moment(start).endOf('day'),
       })
+      const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
+      if (!exists) {
+        throw new Error(`Ce créneau n'est plus disponible`)
+      }
+      // Create progress quizz for appointment
+      const progressTemplate=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
+      const progressUser = await progressTemplate.cloneAsUserQuizz()
+      return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+    }
+    else { // Nutrition advice
+      return { model, params: { patient_email: usr.email, diet, ...params } }
+    }
   }
   return Promise.resolve({ model, params })
 }
