@@ -110,6 +110,6 @@ CompanySchema.virtual('users', {
 });
 
 CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
-  return this.pinned_by.length || 0
+  return this.pinned_by?.length || 0
 })
 module.exports = CompanySchema
