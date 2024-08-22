@@ -135,7 +135,7 @@ UserSchema.virtual('pinned_companies_count', {
 })
 
 UserSchema.virtual('is_admin', DUMMY_REF).get(function() {
-  return this.role = ROLE_ADMIN
+  return this.role == ROLE_ADMIN
 })
 
 /* eslint-disable prefer-arrow-callback */
