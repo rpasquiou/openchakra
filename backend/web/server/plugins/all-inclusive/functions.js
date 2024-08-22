@@ -213,22 +213,19 @@ const preCreate = async ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
-const postPutData = ({model, id, attribute, data, user}) => {
+const postPutData = async ({model, id, attribute, data, user}) => {
   if (model=='user') {
-    return User.findById(user._id)
-      .then(account => {
-        if (attribute=='hidden' && value==false) {
-          sendProfileOnline(account)
-        }
-        if (account.role==ROLE_TI) {
-          return !isDevelopment() && paymentPlugin.upsertProvider(account)
-        }
-        if (account.role==ROLE_COMPANY_BUYER) {
-          return !isDevelopment() && paymentPlugin.upsertCustomer(account)
-        }
-      })
+    const account=await User.findById(user._id)
+    if (attribute=='hidden' && value==false) {
+      sendProfileOnline(account)
+    }
+    if ([ROLE_TI, ROLE_COMPANY_BUYER].includes(account.role)) {
+      const fn=account.role==ROLE_TI ? paymentPlugin.upsertProvider : paymentPlugin.upsertCustomer
+      const account_id=await fn(account)
+      await User.findByIdAndUpdate(user._id, {payment_account_id: account_id})
+    }
   }
-  return Promise.resolve(data)
+  return data
 }
 
 setPostPutData(postPutData)
@@ -288,7 +285,7 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'comments_note', instance: 'Number', requires: 'jobs'})
 
   declareVirtualField({model: m, field: 'revenue', instance: 'Number',
-    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
+    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total'})
   declareVirtualField({model: m, field: 'revenue_to_come', instance: 'Number',
     requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
   declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
@@ -396,7 +393,7 @@ declareVirtualField({model: 'jobUser', field: 'rate_str', instance: 'String', re
 declareEnumField({model: 'experience', field: 'contract_type', enumValues: CONTRACT_TYPE})
 
 declareVirtualField({model: 'mission', field: 'status', instance: 'String', enumValues: QUOTATION_STATUS,
-    requires: 'job,customer_accept_bill_date,customer_refuse_bill_date,bill_sent_date,ti_finished_date,customer_refuse_quotation_date,customer_accept_quotation_date,ti_refuse_date,quotation_sent_date,job,customer_refuse_bill_date,customer_refuse_quotation_date,customer_cancel_date'})
+    requires: 'bill_sent_date,customer_accept_bill_date,customer_cancel_date,customer_refuse_bill_date,customer_refuse_quotation_date,job,payin_achieved,payin_id,quotation_sent_date,ti_finished_date,ti_refuse_date'})
 declareVirtualField({model: 'mission', field: 'quotations', instance: 'Array', requires: '', multiple: true,
   caster: {
     instance: 'ObjectID',

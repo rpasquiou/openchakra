@@ -406,7 +406,7 @@ UserSchema.virtual("revenue", DUMMY_REF).get(function() {
   }
   return lodash(this.missions)
       .filter(m => [MISSION_STATUS_FINISHED].includes(m.status))
-      .sumBy(m => m.quotations[0].ti_total)
+      .sumBy(m => m.quotations?.[0].ti_total)
 })
 
 // Achieved revenue : accepted quotation
@@ -416,7 +416,7 @@ UserSchema.virtual("revenue_to_come", DUMMY_REF).get(function() {
   }
   return lodash(this.missions)
       .filter(m => m.status==MISSION_STATUS_QUOT_ACCEPTED)
-      .sumBy(m => m.quotations[0].ti_total)
+      .sumBy(m => m.quotations?.[0].ti_total)
 })
 
 UserSchema.virtual("accepted_quotations_count", DUMMY_REF).get(function() {
