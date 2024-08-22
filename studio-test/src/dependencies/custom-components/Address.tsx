@@ -1,5 +1,5 @@
 import { AsyncSelect } from 'chakra-react-select'
-import React,  {useState} from 'react'
+import React,  {useEffect, useState} from 'react'
 import axios from 'axios'
 import {debounce} from 'lodash'
 import lodash from 'lodash'
@@ -12,6 +12,12 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
   if (props.setComponentAttribute) {
     props.setComponentAttribute(props.id, props.attribute)
   }
+
+  useEffect(() => {
+    if (props.setComponentValue) {
+      props.setComponentValue(props.id, address)
+    }
+  }, [address])
 
   const addressToOption = addr => {
     return addr ?
