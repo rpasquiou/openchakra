@@ -388,7 +388,7 @@ declareVirtualField({model: 'jobUser', field: 'rate_str', instance: 'String', re
 declareEnumField({model: 'experience', field: 'contract_type', enumValues: CONTRACT_TYPE})
 
 declareVirtualField({model: 'mission', field: 'status', instance: 'String', enumValues: QUOTATION_STATUS,
-    requires: 'job,customer_accept_bill_date,customer_refuse_bill_date,bill_sent_date,ti_finished_date,customer_refuse_quotation_date,customer_accept_quotation_date,ti_refuse_date,quotation_sent_date,job,customer_refuse_bill_date,customer_refuse_quotation_date,customer_cancel_date'})
+    requires: 'bill_sent_date,customer_accept_bill_date,customer_cancel_date,customer_refuse_bill_date,customer_refuse_quotation_date,job,payin_achieved,payin_id,quotation_sent_date,ti_finished_date,ti_refuse_date'})
 declareVirtualField({model: 'mission', field: 'quotations', instance: 'Array', requires: '', multiple: true,
   caster: {
     instance: 'ObjectID',
