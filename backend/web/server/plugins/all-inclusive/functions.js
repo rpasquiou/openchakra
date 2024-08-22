@@ -283,7 +283,7 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'comments_note', instance: 'Number', requires: 'jobs'})
 
   declareVirtualField({model: m, field: 'revenue', instance: 'Number',
-    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
+    requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total'})
   declareVirtualField({model: m, field: 'revenue_to_come', instance: 'Number',
     requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
   declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
