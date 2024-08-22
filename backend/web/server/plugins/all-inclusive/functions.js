@@ -78,7 +78,8 @@ const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts
 const lodash=require('lodash')
 const Message = require('../../models/Message')
 const JobUser = require('../../models/JobUser')
-const NATIONALITIES = require('./nationalities.json')
+const NATIONALITIES = require('./nationalities.json');
+const { isMine } = require('./message');
 
 const postCreate = ({model, params, data}) => {
   if (model=='mission') {
@@ -150,7 +151,10 @@ const preprocessGet = ({model, fields, id, user, params}) => {
         const partnerMessages=lodash.groupBy(messages, m => getPartner(m, user)._id)
         const convs=lodash(partnerMessages)
           .values()
-          .map(msgs => { const partner=getPartner(msgs[0], user); return ({_id: partner._id, partner, messages: msgs}) })
+          .map(msgs => { 
+            const partner=getPartner(msgs[0], user)
+            const newest_message = lodash.maxBy(msgs, m => new Date(m.creation_date))
+            return ({_id: partner._id, partner, messages: msgs, newest_message}) })
           .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
         return {model, fields, id, data: convs, params}
       })
@@ -201,6 +205,11 @@ const preCreate = async ({model, params, user}) => {
 
   if (model=='user' && !params.role) {
     params.role=ROLE_TI
+  }
+
+  if (model=='message'){
+    params.receiver=params.parent
+    params.sender=user._id
   }
 
   return Promise.resolve({model, params})
@@ -484,6 +493,10 @@ declareEnumField({model: 'opportunity', field: 'status', enumValues: OPP_STATUS}
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
+/** Start MESSAGE */
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+/** End MESSAGE */
+
 const filterDataUser = ({model, data, user}) => {
   // ALL-E admins have whole visibility
   if (user?.role==ROLE_ALLE_ADMIN) {
@@ -738,7 +751,7 @@ cron.schedule('0 0 8 * * *', async() => {
   // Pending quoations: not accepted after 2 days
   loadFromDb({model: 'mission', fields: ['user.firstname','user.email','status','job.user','job.user.full_name']})
     .then(missions => {
-      const pendingQuotations=missions.filter(m => m.status==MISSION_STATUS_QUOT_SENT && moment().diff(moment(m.quotation_sent_date), 'days')==PENDING_QUOTATION_DELAY)
+      const pendingQuotations=missions.filter(m => m.status==MISSION_STATUS_QUOT_SENT && PENDING_QUOTATION_DELAY.includes(moment().diff(moment(m.quotation_sent_date), 'days')))
       Promise.allSettled(pendingQuotations.map(m => sendPendingQuotation(m)))
       const noQuotationMissions=missions.filter(m => m.status==MISSION_STATUS_ASKING && moment().diff(moment(m[CREATED_AT_ATTRIBUTE]), 'days')==MISSING_QUOTATION_DELAY)
       Promise.allSettled(noQuotationMissions.map(m => sendMissionAskedReminder(m)))
