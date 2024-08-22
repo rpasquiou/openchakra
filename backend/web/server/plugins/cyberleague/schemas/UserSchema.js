@@ -3,7 +3,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES , JOBS, ROLE_ADMIN } = require('../consts')
+const { ROLES , JOBS, ROLE_ADMIN, DISCRIMINATOR_KEY } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -110,7 +110,7 @@ const UserSchema = new Schema({
     type: String,
     required: false
   }
-  }, {...schemaOptions})
+  }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
