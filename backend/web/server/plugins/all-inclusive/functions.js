@@ -208,22 +208,19 @@ const preCreate = async ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
-const postPutData = ({model, id, attribute, data, user}) => {
+const postPutData = async ({model, id, attribute, data, user}) => {
   if (model=='user') {
-    return User.findById(user._id)
-      .then(account => {
-        if (attribute=='hidden' && value==false) {
-          sendProfileOnline(account)
-        }
-        if (account.role==ROLE_TI) {
-          return !isDevelopment() && paymentPlugin.upsertProvider(account)
-        }
-        if (account.role==ROLE_COMPANY_BUYER) {
-          return !isDevelopment() && paymentPlugin.upsertCustomer(account)
-        }
-      })
+    const account=await User.findById(user._id)
+    if (attribute=='hidden' && value==false) {
+      sendProfileOnline(account)
+    }
+    if ([ROLE_TI, ROLE_COMPANY_BUYER].includes(account.role)) {
+      const fn=account.role==ROLE_TI ? paymentPlugin.upsertProvider : paymentPlugin.upsertCustomer
+      const account_id=await fn(account)
+      await User.findByIdAndUpdate(user._id, {payment_account_id: account_id})
+    }
   }
-  return Promise.resolve(data)
+  return data
 }
 
 setPostPutData(postPutData)
