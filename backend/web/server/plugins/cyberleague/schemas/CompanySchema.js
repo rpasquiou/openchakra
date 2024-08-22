@@ -64,11 +64,14 @@ const CompanySchema = new Schema(
       ref: 'certification',
       required: false,
     }],
-    customer_successes: [{
-      type: Schema.Types.ObjectId,
-      ref: 'customerSuccess',
-      required: false,
-    }],
+    customer_successes:  {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'customerSuccess',
+        required: true,
+      }],
+      default: [],
+    },
     pinned_by: [{
       type: Schema.Types.ObjectId,
       ref: 'user',

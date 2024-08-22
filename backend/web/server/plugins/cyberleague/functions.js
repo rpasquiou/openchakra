@@ -12,7 +12,7 @@ const {
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
-const Company = require('../../models/Booking')
+const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn } = require('../../utils/pinned')
 
