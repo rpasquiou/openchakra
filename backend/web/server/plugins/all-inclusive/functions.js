@@ -203,6 +203,11 @@ const preCreate = async ({model, params, user}) => {
     params.role=ROLE_TI
   }
 
+  if (model=='message'){
+    params.receiver=params.parent
+    params.sender=user._id
+  }
+
   return Promise.resolve({model, params})
 }
 
