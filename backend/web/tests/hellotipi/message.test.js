@@ -53,6 +53,6 @@ describe('Conversation and message', () => {
   })
   it.only('must return newest message', async() => {
     const [conversation] = await loadFromDb({model:'conversation', user:sender, id:receiver._id, fields:['messages','newest_message']})
-    expect(idEqual(conversation.newest_message[0]._id,message2._id)).toBeTruthy()
+    expect(idEqual(conversation.newest_message._id,message2._id)).toBeTruthy()
   })
 })
