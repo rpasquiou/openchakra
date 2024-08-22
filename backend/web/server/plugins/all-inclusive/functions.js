@@ -151,7 +151,10 @@ const preprocessGet = ({model, fields, id, user, params}) => {
         const partnerMessages=lodash.groupBy(messages, m => getPartner(m, user)._id)
         const convs=lodash(partnerMessages)
           .values()
-          .map(msgs => { const partner=getPartner(msgs[0], user); return ({_id: partner._id, partner, messages: msgs}) })
+          .map(msgs => { 
+            const partner=getPartner(msgs[0], user)
+            const newest_message = lodash.maxBy(msgs, m => new Date(m.creation_date))
+            return ({_id: partner._id, partner, messages: msgs, newest_message:[newest_message]}) })
           .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
         return {model, fields, id, data: convs, params}
       })
