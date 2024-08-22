@@ -78,7 +78,8 @@ const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts
 const lodash=require('lodash')
 const Message = require('../../models/Message')
 const JobUser = require('../../models/JobUser')
-const NATIONALITIES = require('./nationalities.json')
+const NATIONALITIES = require('./nationalities.json');
+const { isMine } = require('./message');
 
 const postCreate = ({model, params, data}) => {
   if (model=='mission') {
@@ -487,6 +488,10 @@ declareEnumField({model: 'opportunity', field: 'status', enumValues: OPP_STATUS}
 /** End OPPORTUNITY */
 
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
+/** Start MESSAGE */
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+/** End MESSAGE */
 
 const filterDataUser = ({model, data, user}) => {
   // ALL-E admins have whole visibility
