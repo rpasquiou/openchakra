@@ -7,10 +7,12 @@ const {
   declareComputedField,
   setPrePutData,
   getModel,
+  setPostCreateData,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
+const Company = require('../../models/Booking')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn } = require('../../utils/pinned')
 
@@ -133,17 +135,26 @@ const preCreate = async ({model, params, user}) => {
 
 setPreCreateData(preCreate)
 
+const postCreate = async ({ model, params, data, user }) => {
+  if (model == `customerSuccess`) {
+    await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
+  }
+  return data
+}
+
+setPostCreateData(postCreate)
+
 const prePutData = async ({model, id, params, user}) => {
   if (model==`post`){
     if(`liked` in params){
-
       await Post.updateOne(
         {_id:id},
         {
           ...params.liked ? {$addToSet: {_liked_by: user._id}}
           : {$pull: {_liked_by: user._id}}
         }
-      )}
+      )
+    }
   }
   if (model==`company` || model == `user`){
     if(`pinned` in params){
