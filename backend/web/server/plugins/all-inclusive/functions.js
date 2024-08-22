@@ -750,7 +750,7 @@ cron.schedule('0 0 8 * * *', async() => {
   // Pending quoations: not accepted after 2 days
   loadFromDb({model: 'mission', fields: ['user.firstname','user.email','status','job.user','job.user.full_name']})
     .then(missions => {
-      const pendingQuotations=missions.filter(m => m.status==MISSION_STATUS_QUOT_SENT && moment().diff(moment(m.quotation_sent_date), 'days')==PENDING_QUOTATION_DELAY)
+      const pendingQuotations=missions.filter(m => m.status==MISSION_STATUS_QUOT_SENT && PENDING_QUOTATION_DELAY.includes(moment().diff(moment(m.quotation_sent_date), 'days')))
       Promise.allSettled(pendingQuotations.map(m => sendPendingQuotation(m)))
       const noQuotationMissions=missions.filter(m => m.status==MISSION_STATUS_ASKING && moment().diff(moment(m[CREATED_AT_ATTRIBUTE]), 'days')==MISSING_QUOTATION_DELAY)
       Promise.allSettled(noQuotationMissions.map(m => sendMissionAskedReminder(m)))

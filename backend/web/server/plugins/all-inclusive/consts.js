@@ -298,7 +298,7 @@ const DEPARTEMENTS=lodash(depts)
 
 // Days
 const MISSION_REMINDER_DELAY=3
-const PENDING_QUOTATION_DELAY=2
+const PENDING_QUOTATION_DELAY=[2,3]
 const MISSING_QUOTATION_DELAY=2
 
 // Commission on customer
