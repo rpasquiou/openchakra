@@ -11,6 +11,10 @@ const ConversationSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'message',
   }],
+  newest_conversation: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'message'
+  }
 },
 schemaOptions)
 
