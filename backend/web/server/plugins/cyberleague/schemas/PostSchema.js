@@ -24,11 +24,14 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
-  _liked_by: [{
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: true,
-  }],
+  _liked_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    }],
+    default: []
+  },
   liked: {
     type: Boolean,
     required: true,

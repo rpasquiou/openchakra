@@ -4,11 +4,14 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const CLModuleSchema = new Schema({
-  resources: [{
-    type: Schema.Types.ObjectID,
-    ref: 'resource',
-    required: true,
-  }],
+  resources: {
+    type: [{
+      type: Schema.Types.ObjectID,
+      ref: 'resource',
+      required: true,
+    }],
+    default: []
+  },
   name: {
     type: String,
     required: [true, `Le nom est obligatoire`]

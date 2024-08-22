@@ -52,34 +52,46 @@ const UserSchema = new Schema({
     index: true,
     required: false,
   },
-  expertises: [{
-    type: Schema.Types.ObjectId,
-    ref: 'expertise',
-    index: true,
-    required: false,
-  }],
-  events: [{
-    type: Schema.Types.ObjectId,
-    ref: 'event',
-    index: true,
-    required: false,
-  }],
-  pinned_by: [{
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    index: true,
-    required: true,
-  }],
+  expertises: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'expertise',
+      index: true,
+      required: false,
+    }],
+    default: []
+  },
+  events: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'event',
+      index: true,
+      required: false,
+    }],
+    default: []
+  },
+  pinned_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      index: true,
+      required: true,
+    }],
+    default: []
+  },
   pinned: {
     type: Boolean,
     required: true,
     default: false,
   },
-  trophies: [{
-    type: Schema.Types.ObjectId,
-    ref: 'gift',
-    required: false
-  }],
+  trophies: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'gift',
+      required: false
+    }],
+    default: []
+  },
   function: {
     type: String,
     required: false
