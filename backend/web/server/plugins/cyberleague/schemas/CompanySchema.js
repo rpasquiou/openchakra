@@ -59,11 +59,14 @@ const CompanySchema = new Schema(
       index: true,
       required: false
     },
-    certifications: [{
-      type: Schema.Types.ObjectId,
-      ref: 'certification',
-      required: false,
-    }],
+    certifications: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'certification',
+        required: false,
+      }],
+      default: []
+    },
     customer_successes: {
       type: [{
         type: Schema.Types.ObjectId,
