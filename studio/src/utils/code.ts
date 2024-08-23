@@ -1062,10 +1062,10 @@ const ${componentName} = () => {
 
   const getComponentValue = (compId, index) => {
     let value=componentsValues[compId]
-    if (!value) {
+    if (value===undefined) {
       value=componentsValues[\`\$\{compId\}\$\{index\}\`]
     }
-    if (!value) {
+    if (value===undefined) {
       value=getComponentDataValue(compId, index)
     }
     return value
