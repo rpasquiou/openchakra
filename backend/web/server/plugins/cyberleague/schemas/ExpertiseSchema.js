@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
 const {schemaOptions} = require('../../../utils/schemas')
-const { CATEGORY } = require('../consts')
+const { CATEGORIES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -12,7 +12,7 @@ const ExpertiseSchema = new Schema({
   },
   category: {
     type: String,
-    enum: Object.keys(CATEGORY)
+    enum: Object.keys(CATEGORIES)
   },
   picture: {
     type: String,

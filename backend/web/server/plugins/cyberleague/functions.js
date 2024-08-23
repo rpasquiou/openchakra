@@ -9,7 +9,7 @@ const {
   getModel,
   setPostCreateData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORY, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
 const Company = require('../../models/Company')
@@ -86,7 +86,7 @@ declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 
 //Expertise declarations
-declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORY})
+declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES})
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
