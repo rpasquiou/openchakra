@@ -169,7 +169,7 @@ setPreprocessGet(preprocessGet)
 const preCreate = async ({model, params, user}) => {
   if (['jobUser', 'request', 'mission', 'comment'].includes(model)) {
     params.user=params.user || user
-    if (model=='mission') {
+    if (model=='mission' && !!params.job) {
       const job=await JobUser.findById(params.job)
       params.ti=job.user
     }

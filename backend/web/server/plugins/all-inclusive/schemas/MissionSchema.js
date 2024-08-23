@@ -91,7 +91,7 @@ const MissionSchema = new Schema({
   ti: {
     type: Schema.Types.ObjectId,
     ref: "user",
-    required: [true, `Le TI est obligatoire`],
+    required: false,
     index: true,
   },
   job: {
