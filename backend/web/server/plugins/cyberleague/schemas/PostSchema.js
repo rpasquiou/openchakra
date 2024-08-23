@@ -24,6 +24,11 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
+  group: {
+    type: Schema.Types.ObjectId,
+    ref: 'group',
+    required: false,
+  },
   _liked_by: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -37,7 +42,7 @@ const PostSchema = new Schema({
     required: true,
     default: false,
   }
-}, schemaOptions)
+}, {...schemaOptions})
 
 PostSchema.virtual('comments_count', {
   ref: 'comment',

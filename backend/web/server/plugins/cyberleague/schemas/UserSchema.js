@@ -150,6 +150,32 @@ UserSchema.virtual('is_admin', DUMMY_REF).get(function() {
   return this.role == ROLE_ADMIN
 })
 
+UserSchema.virtual('groups', {
+  ref:'group',
+  localField:'_id',
+  foreignField:'users',
+})
+
+UserSchema.virtual('groups_count', {
+  ref:'group',
+  localField:'_id',
+  foreignField:'users',
+  count:true,
+})
+
+UserSchema.virtual('pending_groups', {
+  ref:'group',
+  localField:'_id',
+  foreignField:'pending_users',
+})
+
+UserSchema.virtual('pending_groups_count', {
+  ref:'group',
+  localField:'_id',
+  foreignField:'pendgin_users',
+  count:true,
+})
+
 /* eslint-disable prefer-arrow-callback */
 
 module.exports = UserSchema

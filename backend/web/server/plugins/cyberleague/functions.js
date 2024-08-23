@@ -42,6 +42,22 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'number'})
   declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
   declareEnumField({ model: m, field: 'role', enumValues: ROLES })
+  declareVirtualField({
+    model: m, field: 'groups', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'group' }
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'pending_groups', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'group' }
+    },
+  })
+  declareVirtualField({model: m, field: 'groups_count', instance: 'number'})
+  declareVirtualField({model: m, field: 'pending_groups_count', instance: 'number'})
 })
 
 //Company declarations
@@ -86,6 +102,19 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     options: { ref: 'comment' }
   },})
 declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
+
+//Group declarations
+declareVirtualField({model: 'group', field: 'posts', instance: 'Array', multiple: true, 
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'post' }
+  },})
+declareVirtualField({model: 'group', field: 'posts_count', instance: 'number'})
+declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'number'})
+declareVirtualField({model: 'group', field: 'users_count', instance: 'number'})
+
+
+
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
