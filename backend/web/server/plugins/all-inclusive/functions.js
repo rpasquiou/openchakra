@@ -137,6 +137,9 @@ const preprocessGet = ({model, fields, id, user, params}) => {
       .populate({path: 'receiver', populate: {path: 'company'}})
       .sort({CREATED_AT_ATTRIBUTE: 1})
       .then(messages => {
+        messages.forEach(m => {
+          m.mine = idEqual(m.sender._id, user._id);
+        })
         if (id) {
           messages=messages.filter(m => idEqual(getPartner(m, user)._id, id))
           // If no messages for one parner, forge it
