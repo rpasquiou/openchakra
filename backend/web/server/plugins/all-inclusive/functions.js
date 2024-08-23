@@ -321,7 +321,8 @@ USER_MODELS.forEach(m => {
       options: {ref: 'recommandation'}}
   })
   declareVirtualField({model: m, field: 'search_text', type: 'String',
-    requires:'firstname,lastname,qualified_str,visible_str,company_name,coaching,zip_code,admin_validated'
+    requires:'firstname,lastname,qualified_str,visible_str,company_name,coaching,zip_code,admin_validated',
+    dbFilter: value => ({$or: [{firstname: new RegExp(value, 'i')}, {lastname: new RegExp(value, 'i')}, {company_name: new RegExp(value, 'i')}]}),
   })
   declareEnumField({model: m, field: 'gender', instance: 'String', enumValues: GENDER})
   declareVirtualField({model: m, field: 'notes', instance: 'Array', requires: '', multiple: true,
