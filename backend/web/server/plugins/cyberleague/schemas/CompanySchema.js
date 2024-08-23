@@ -54,16 +54,19 @@ const CompanySchema = new Schema(
       required: false,
     },
     expertises: {
-      type: Schema.Types.ObjectId,
-      ref: 'expertise',
-      index: true,
-      required: false
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'expertise',
+        index: true,
+        required: true
+      }],
+      default: []
     },
     certifications: {
       type: [{
         type: Schema.Types.ObjectId,
         ref: 'certification',
-        required: false,
+        required: true,
       }],
       default: []
     },
