@@ -53,6 +53,10 @@ const ProgressSchema = new Schema({
   download: {
     type: Boolean
   },
+  homeworks: [{
+    type: Schema.Types.ObjectId,
+    ref: 'homework'
+  }]
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ProgressSchema

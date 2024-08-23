@@ -212,6 +212,10 @@ const BlockSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'productCode'
   }],
+  homeworks: [{
+    type: Schema.Types.ObjectId,
+    ref: 'homework'
+  }]
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {

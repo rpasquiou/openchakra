@@ -2,7 +2,7 @@ const lodash = require("lodash");
 const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -371,12 +371,27 @@ const getAvailableCodes =  async (userId, params, data) => {
   return availableCodes
 }
 
+const getBlockHomeworks = async (userId, params, data) => {
+  const model = await getModel(data._id)
+  const user = await mongoose.models.user.findById(userId)
+  const progress = await mongoose.models.progress.findOne({
+    block:data._id,
+    ...user.role == ROLE_APPRENANT ? {user:userId} : {}
+  }).populate({
+      path:'homeworks',
+      populate:({
+        path:model
+      })
+    })
+  return progress.homeworks
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
-  getAvailableCodes
+  getAvailableCodes, getBlockHomeworks
 }
 
 
