@@ -1,4 +1,3 @@
-const axios = require('axios')
 const {
   declareEnumField,
   declareVirtualField,
@@ -13,7 +12,6 @@ const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require(
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
 const Company = require('../../models/Company')
-const Certification = require('../../models/Certification')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn } = require('../../utils/pinned')
 
@@ -141,7 +139,7 @@ const postCreate = async ({ model, params, data, user }) => {
     await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
   }
   if (model == `certification`) {
-    await Certification.findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+    await Company.findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
   return data
 }
