@@ -5,6 +5,8 @@ const User = require('../../server/models/User')
 require('../../server/models/Company')
 require('../../server/models/Partner')
 require('../../server/models/Expertise')
+require('../../server/models/School')
+require('../../server/models/Group')
 const { ROLE_ADMIN } = require('../../server/plugins/cyberleague/consts')
 require('../../server/plugins/cyberleague/functions')
 
