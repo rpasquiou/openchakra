@@ -14,7 +14,9 @@ const path = require('path')
 const { exec } = require('child_process')
 const moment = require('moment')
 const { logFormFields } = require('../../utils/fillForm')
-
+require('../../server/models/Certification')
+require('../../server/models/PermissionGroup')
+require('../../server/models/Permission')
 const ROOT = path.join(__dirname, './../data/pdf')
 const FILEPATH = path.join(ROOT, 't.pdf')
 
@@ -31,7 +33,7 @@ describe('Certificates', () => {
 
   it.only('must retrieve PDF fields', async () => {
     const fields = await logFormFields(FILEPATH)
-    console.log(JSON.stringify(Object.keys(fields), null, 2))
+    // console.log(JSON.stringify(Object.keys(fields), null, 2))
   })
 
   it.only('Must return certificate 1', async () => {
@@ -39,6 +41,6 @@ describe('Certificates', () => {
     const id = '66b0f1d83356935c1fdaa149'
     const program = await loadFromDb({model:'program', user, id, fields:['certificate']})
     const res = await exec(`xdg-open ${program.certificate}`)
-    // console.log(program)
+    console.log(program)
   })
 })

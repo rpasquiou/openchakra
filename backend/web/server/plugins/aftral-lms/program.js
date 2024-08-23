@@ -30,7 +30,7 @@ async function getChapterData(userId, params, data) {
   return Promise.all(data.children.map(async child => ({
     chapter_name: child.name,
     chapter_progress: await getResourcesProgress(userId, params, child),
-    modules_data: await getModulesData(userId, params, child.children),
+    // modules_data: await getModulesData(userId, params, child.children),
   })))
 }
 
@@ -50,7 +50,7 @@ const getCertificate = async (userId, params, data) => {
     chapter_data: await getChapterData(userId, params, data),
   }
 
-  // console.log(JSON.stringify(fillData, null, 2))
+  console.log(JSON.stringify(fillData, null, 2))
 
   const TEMPLATE_PATH = `${path.join(ROOT, TEMPLATE_NAME)}.pdf`
   const result = await generateDocument('certificate', 'certificate', '_certificate', TEMPLATE_PATH, TEMPLATE_NAME, fillData)

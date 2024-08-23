@@ -111,47 +111,58 @@ const setFieldValue = (form, field, value, fallbackFont, fallbackFontSize) => {
   }
 }
 
+async function fillFormRecursively(form, data, prefix = '', pdfFont, fontSize) {
+  for (const [key, value] of Object.entries(data)) {
+    const fieldName = prefix ? `${prefix}_${key}` : key
+
+    if (value instanceof Date) {
+      const dateStr = value.toISOString().split('T')[0]
+      const field = form.getTextField(fieldName)
+      if (field) {
+        setFieldValue(form, field, dateStr, pdfFont, fontSize)
+      } else {
+        console.log(`Field ${fieldName} does not exist in the form.`)
+      }
+    } else if (typeof value === 'object' && !Array.isArray(value)) {
+      await fillFormRecursively(form, value, fieldName, pdfFont, fontSize)
+    } else if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        const itemPrefix = `${fieldName}_copy_${i + 1}`
+        if (typeof value[i] === 'object' && value[i] !== null) {
+          console.log(`Handling object in array at ${itemPrefix}:`, value[i])
+          await fillFormRecursively(form, value[i], itemPrefix, pdfFont, fontSize)
+        } else {
+          const field = form.getTextField(itemPrefix)
+          if (field) {
+            setFieldValue(form, field, value[i].toString(), pdfFont, fontSize)
+          } else {
+            console.log(`Field ${itemPrefix} does not exist in the form.`)
+          }
+        }
+      }
+    } else {
+      const field = form.getTextField(fieldName)
+      if (field) {
+        setFieldValue(form, field, value.toString(), pdfFont, fontSize)
+      } else {
+        console.log(`Field ${fieldName} does not exist in the form.`)
+      }
+    }
+  }
+}
+
 async function fillForm(sourceLink, data, font = StandardFonts.Helvetica, fontSize = 12) {
   const sourcePDFBytes = await getPDFBytes(sourceLink)
   const pdfDoc = await PDFDocument.load(sourcePDFBytes)
   const pdfFont = await pdfDoc.embedFont(font)
   const form = pdfDoc.getForm()
 
-  for (const fieldName in data) {
-    const fieldValue = data[fieldName]
-
-    if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
-      const textFields = Object.keys(fieldValue[0])
-      const numberOfDuplicates = fieldValue.length
-      await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
-      
-      fieldValue.forEach((detail, index) => {
-        console.log(detail, index)
-        const fieldIndex = index + 1
-        for (const key in detail) {
-          const newFieldName = `${key}_copy_${fieldIndex}`
-          const field = form.getTextField(newFieldName)
-          if (field) {
-            setFieldValue(form, field, detail[key].toString(), pdfFont, fontSize)
-          } else {
-            console.warn(`Field ${newFieldName} does not exist in the form.`)
-          }
-        }
-      })
-    } else {
-      const field = form.getTextField(fieldName)
-      if (field) {
-        setFieldValue(form, field, fieldValue, pdfFont, fontSize)
-      } else {
-        console.log(`No data found for field ${fieldName}`)
-      }
-    }
-  }
-
+  await fillFormRecursively(form, data, '', pdfFont, fontSize)
   form.updateFieldAppearances(pdfFont)
   form.flatten()
   return pdfDoc
 }
+
 
 async function savePDFFile(pdf, outputFilePath) {
   const pdfBytes = await pdf.save()
