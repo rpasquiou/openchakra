@@ -38,20 +38,8 @@ USER_MODELS.forEach(m => {
       options: { ref: 'company' }
     },
   })
-  declareVirtualField({
-    model: m, field: 'pinned_users_count', instance: 'number', multiple: false,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'user' }
-    },
-  })
-  declareVirtualField({
-    model: m, field: 'pinned_companies_count', instance: 'number', multiple: false,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'company' }
-    },
-  })
+  declareVirtualField({model: m, field: 'pinned_users_count', instance: 'number'})
+  declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'number'})
   declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
   declareEnumField({ model: m, field: 'role', enumValues: ROLES })
 })
@@ -71,13 +59,7 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({
-  model: 'company', field: 'pinned_by_count', instance: 'number', multiple: false,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'user' }
-  },
-})
+declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'number'})
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
