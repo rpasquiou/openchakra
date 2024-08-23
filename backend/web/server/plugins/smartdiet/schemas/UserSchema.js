@@ -358,7 +358,7 @@ const UserSchema = new Schema({
     required: false,
   },
   box_batch_code: {
-    type: Date,
+    type: String,
     required: false,
   },
 }, {...schemaOptions})
