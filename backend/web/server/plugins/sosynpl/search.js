@@ -156,7 +156,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     }
   }
   
-  fields=[...fields, ...PROFILE_TEXT_SEARCH_FIELDS, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
+  fields=[...fields, ...PROFILE_TEXT_SEARCH_FIELDS, 'freelance_profile_completion', 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
   
   const subParams=lodash(filter)
       .mapKeys((v,k) => `filter.${k}`)
