@@ -98,6 +98,8 @@ BLOCK_MODELS.forEach(model => {
   })
   declareComputedField({model, field: 'available_codes', requires: 'codes,type', getterFn: getAvailableCodes})
   declareComputedField({model, field: 'homeworks', requires: '', getterFn: getBlockHomeworks})
+  declareVirtualField({model, field: 'homework_limit_str', type: 'String', requires: 'homework_limit_date'})
+  declareVirtualField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode'})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})

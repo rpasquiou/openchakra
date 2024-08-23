@@ -212,10 +212,15 @@ const BlockSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'productCode'
   }],
+  //computed
   homeworks: [{
     type: Schema.Types.ObjectId,
     ref: 'homework'
-  }]
+  }],
+  homework_limit_date: {
+    type: Date,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
@@ -259,6 +264,16 @@ BlockSchema.virtual('tickets_count', {
   localField: '_id',
   foreignField: 'block',
   count: true,
+})
+
+BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
+  return this.homework_limit_date
+    ? moment(this.homework_limit_date).format('DD/MM/YYYY à HH:mm')
+    : ``
+})
+
+BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
+  return (this.homework_mode && moment(this.homework_limit_date).isAfter(moment())) || false
 })
 
 // Validate Succes achievemnt
