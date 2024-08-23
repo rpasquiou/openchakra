@@ -74,7 +74,7 @@ UserSchema.virtual('fullname', DUMMY_REF).get(function() {
 })
 
 UserSchema.virtual('shortname', DUMMY_REF).get(function() {
-  return `${this.firstname} ${this.lastname[0]}`
+  return `${this.firstname} ${this.lastname?.[0]}`
 })
 /* eslint-enable prefer-arrow-callback */
 
