@@ -212,6 +212,7 @@ const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
 const { historicize } = require('./history')
 const { validatePassword } = require('../../../utils/passwords')
+const { createAppointmentProgress } = require('./quizz')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -609,8 +610,7 @@ const preCreate = async ({ model, params, user }) => {
         throw new Error(`Ce créneau n'est plus disponible`)
       }
       // Create progress quizz for appointment
-      const progressTemplate=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
-      const progressUser = await progressTemplate.cloneAsUserQuizz()
+      const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
       return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
     }
     else { // Nutrition advice
