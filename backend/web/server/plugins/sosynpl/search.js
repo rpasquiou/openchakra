@@ -9,6 +9,9 @@ const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 const { loadFromDb } = require('../../utils/database')
 
+// Limit results if no pattern or city was provided
+const MAX_RESULTS_NO_CRITERION=12
+
 const FREELANCE_SUGGESTION_REQUIRES = [
   'job',
   'sectors',
@@ -144,7 +147,6 @@ const searchFreelances = async (userId, params, data, fields)  => {
     filter.availability=AVAILABILITY_ON
   }
   if (!!data.min_daily_rate || !!data.max_daily_rate) {
-    console.log('i have rates', data.min_daily_rate, data.max_daily_rate)
     filter.rate={}
     if (!!data.min_daily_rate) {
       filter.rate={...filter.rate, $gte: data.min_daily_rate}
@@ -154,29 +156,12 @@ const searchFreelances = async (userId, params, data, fields)  => {
     }
   }
   
-  fields=[...fields, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
-  let candidates = {}
+  fields=[...fields, ...PROFILE_TEXT_SEARCH_FIELDS, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
   
-  if (data.pattern?.trim()) {
-    const regExp = new RegExp(data.pattern, 'i')
-    const allCandidates = await Promise.all(Object.keys(PROFILE_TEXT_SEARCH_FIELDS).map(async (field) => {
-      const newFilter = { ...filter, [PROFILE_TEXT_SEARCH_FIELDS[field]]: regExp }
-      const newParams = lodash(newFilter)
-        .mapKeys((v, k) => `filter.${k}`)
-        .value()
-      const cand = await loadFromDb({ model: 'customerFreelance', user: userId, filter: newFilter, params: newParams, fields })
-      return cand
-    }))
-
-    candidates = Object.assign({}, ...allCandidates)
-  }
-
-  else {
-    const params=lodash(filter)
-        .mapKeys((v,k) => `filter.${k}`)
-        .value()
-    candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params})
-  }
+  const subParams=lodash(filter)
+      .mapKeys((v,k) => `filter.${k}`)
+      .value()
+  let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params: subParams})
 
   if (!lodash.isEmpty(data.city)) {
     candidates=candidates.filter(c => {
@@ -184,6 +169,20 @@ const searchFreelances = async (userId, params, data, fields)  => {
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
+
+  if (!lodash.isEmpty(data.pattern?.trim())) {
+    const regExp = new RegExp(data.pattern, 'i')
+    const filterPattern = candidate => {
+      return PROFILE_TEXT_SEARCH_FIELDS.some(f => regExp.test(candidate[f]))
+    }
+    candidates=candidates.filter(c => filterPattern(c))
+  }
+
+  // Limt results if no criterion was provided
+  if (!data.pattern?.trim() && !data.city) {
+    candidates=candidates.slice(0, MAX_RESULTS_NO_CRITERION)
+  }
+
   candidates = candidates.filter(c => c.freelance_profile_completion == 1)
   candidates=Object.keys(candidates).map(c => new CustomerFreelance(candidates[c]))
   return candidates
@@ -221,7 +220,7 @@ const searchAnnounces = async (userId, params, data, fields)  => {
       const cand = await processFilters(params, fields, data, newFilter, userId)
       candidates = [...candidates, ...cand]
     })
-    console.log(candidates)
+
     return candidates
   }
 
