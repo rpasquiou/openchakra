@@ -728,7 +728,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
+  alle_ask_contact: ({ value, context, props, level, getComponentValue, getComponentAttribute }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute') || getComponentAttribute(c, level),
