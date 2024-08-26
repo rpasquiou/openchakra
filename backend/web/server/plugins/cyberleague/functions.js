@@ -13,7 +13,7 @@ const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
-const { getterPinnedFn } = require('../../utils/pinned')
+const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 
 //User declarations
@@ -41,7 +41,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'pinned_users_count', instance: 'number'})
   declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'number'})
-  declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
+  declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
   declareEnumField({ model: m, field: 'role', enumValues: ROLES })
   declareVirtualField({
     model: m, field: 'groups', instance: 'Array', multiple: true,
@@ -80,7 +80,7 @@ declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'numb
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
-declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
+declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 
 //Expertise declarations
 declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES})
@@ -102,7 +102,7 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
-declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
+declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), setterFn: setterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
 
 //Group declarations
 declareVirtualField({model: 'group', field: 'posts', instance: 'Array', multiple: true, 
@@ -176,29 +176,6 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 const prePutData = async ({model, id, params, user}) => {
-  if (model==`post`){
-    if(`liked` in params){
-      await Post.updateOne(
-        {_id:id},
-        {
-          ...params.liked ? {$addToSet: {_liked_by: user._id}}
-          : {$pull: {_liked_by: user._id}}
-        }
-      )
-    }
-  }
-  if (model==`company` || model == `user`){
-    if(`pinned` in params){
-
-      await Post.updateOne(
-        {_id:id},
-        {
-          ...params.pinned ? {$addToSet: {pinned_by: user._id}}
-          : {$pull: {pinned_by: user._id}}
-        }
-      )
-    }
-  }
   if (model == `group`) {
     if (`users` in params) {
       await Group.updateOne({_id:id}, {$pull: {pending_users: user._id}})
