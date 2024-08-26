@@ -121,7 +121,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     model='user'
     id = user?._id || 'INVALIDID'
   }
-  //if id it is a get for a group, else it is for homepage posts
+  //if id is defined it is a get for a group, else it is for homepage posts
   if (model==`post`&&!id) {
     params.filter = {group: null}
   }
