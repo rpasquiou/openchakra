@@ -8,7 +8,7 @@ const {
   getModel,
   setPostCreateData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ESTIMATED_DURATION_UNITS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
 const Company = require('../../models/Company')
@@ -104,6 +104,9 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     options: { ref: 'comment' }
   },})
 declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
+
+// Enums Mission Schema
+declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
