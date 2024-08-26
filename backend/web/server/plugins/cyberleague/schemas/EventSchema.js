@@ -42,7 +42,11 @@ const EventSchema = new Schema({
     ref: 'expertise',
     required: false,
     index: true,
-  }]
+  }],
+  url: {
+    type: String,
+    required: false
+  }
 }, schemaOptions)
 
 module.exports = EventSchema
