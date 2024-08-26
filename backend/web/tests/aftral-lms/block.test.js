@@ -10,18 +10,29 @@ const Session = require('../../server/models/Session')
 require('../../server/models/Certification')
 require('../../server/models/Permission')
 require('../../server/models/PermissionGroup')
-const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE } = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE } = require('../../server/plugins/aftral-lms/consts')
 const Block = require('../../server/models/Block')
 const Homework = require('../../server/models/Homework')
 const Progress = require('../../server/models/Progress')
+const ProductCode = require('../../server/models/ProductCode')
+const { addChildAction } = require('../../server/plugins/aftral-lms/actions')
+require('../../server/models/Feed')
+require('../../server/models/Certification')
 
 jest.setTimeout(60000)
 
 describe('User', () => {
-  let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2
+  let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor
   let limit = new Date('06-06-2022')
   beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
+    conceptor = await User.create({
+      firstname: `John`,
+      lastname: `Doe`,
+      role: ROLE_CONCEPTEUR,
+      password: `Test`,
+      email: `t@t.com`,
+    })
     trainer = await User.create({
       firstname: `John`,
       lastname: `Doe`,
@@ -45,9 +56,15 @@ describe('User', () => {
     })
     block = await Block.create({
       name: `Res`,
+      type: `resource`,
+      resource_type:RESOURCE_TYPE_PDF,
+      url: `test`,
+      achievement_rule:ACHIEVEMENT_RULE_CONSULT,
       creator: trainer._id,
       homework_limit_date: limit,
       homework_mode: true,
+      success_note_min:0,
+      success_note_max: 20,
     })
     homework1 = await Homework.create({
       document: `t`,
@@ -69,6 +86,31 @@ describe('User', () => {
       block:block._id,
       homeworks:[homework2._id]
     })
+    session = await Session.create({
+      name: `Test Session`,
+      creator: trainer._id,
+      start_date: new Date(`10-10-2024`),
+      end_date: new Date(`10-10-2025`)
+    })
+    productCode = await ProductCode.create({code:`Test product code`})
+    program = await Program.create({
+      name: `Test program`,
+      codes:[productCode._id],
+      creator: trainer._id
+    })
+    modulee = await Module.create({
+      name: `Test module`,
+      creator: trainer._id
+    }),
+    sequence = await Sequence.create({
+      name: `Test sequence`,
+      creator: trainer._id
+    })
+
+    await addChildAction({parent: session._id, child: program._id}, conceptor)
+    await addChildAction({parent: program._id, child: modulee._id}, conceptor)
+    await addChildAction({parent: modulee._id, child: sequence._id}, conceptor)
+    await addChildAction({parent: sequence._id, child: block._id}, conceptor)
   })
 
   afterAll(async () => {
@@ -76,10 +118,17 @@ describe('User', () => {
     await mongoose.connection.close()
   })
 
-  it.only('must return block homeworks attributes', async()=> {
+  it('must return block homeworks attributes', async()=> {
     const [result] = await loadFromDb({model:`block`,user:trainee1._id, fields:[`can_upload_homework`,`homeworks`]})
     expect(result.can_upload_homework).not.toBeTruthy()
     expect(result.homeworks.length).toEqual(1)
     expect(idEqual(result.homeworks[0]._id,homework1._id)).toBeTruthy()
+  })
+
+  it.only('must return homeworks of a session', async() => {
+    const [data] = await loadFromDb({model:`block`, id:session._id, user:trainer, fields:[
+      `children.children.children.children.success_note_min`
+    ]})
+    expect(data.children[0].children[0].children[0].children[0].success_note_min).toEqual(0)
   })
 })

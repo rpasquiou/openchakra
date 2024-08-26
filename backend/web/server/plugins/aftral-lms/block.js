@@ -22,7 +22,11 @@ const LINKED_ATTRIBUTES_CONVERSION={
   homework_mode: lodash.identity,
   url: lodash.identity,
   evaluation: v => v || false,
-  achievement_rule : lodash.identity
+  achievement_rule : lodash.identity,
+  success_note_min: lodash.identity,
+  success_note_max: lodash.identity,
+  success_scale: v=>v || false,
+  max_attempts: lodash.identity,
 }
 
 const LINKED_ATTRIBUTES=Object.keys(LINKED_ATTRIBUTES_CONVERSION)
