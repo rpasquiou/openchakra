@@ -31,7 +31,7 @@ describe('Certificates', () => {
     await mongoose.connection.close()
   })
 
-  it.only('must retrieve PDF fields', async () => {
+  it('must retrieve PDF fields', async () => {
     const fields = await logFormFields(FILEPATH)
     // console.log(JSON.stringify(Object.keys(fields), null, 2))
   })
@@ -39,8 +39,8 @@ describe('Certificates', () => {
   it.only('Must return certificate 1', async () => {
     const user = await User.findOne({role:ROLE_APPRENANT})
     const id = '66b0f1d83356935c1fdaa149'
-    const program = await loadFromDb({model:'program', user, id, fields:['certificate']})
+    const [program] = await loadFromDb({model:'program', user, id, fields:['certificate']})
     const res = await exec(`xdg-open ${program.certificate}`)
-    console.log(program)
+    expect(program.certificate).toBeTruthy()
   })
 })
