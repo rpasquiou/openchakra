@@ -8,7 +8,7 @@ const {
   getModel,
   setPostCreateData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Post = require('../../models/Post')
 const Company = require('../../models/Company')
@@ -143,6 +143,19 @@ const preCreate = async ({model, params, user}) => {
     else {
       params.content = params.parent
     }
+  }
+  if (model == `group`) {
+    if (user.role != ROLE_PARTNER) {
+      if (user.role != ROLE_ADMIN) {
+        throw new BadRequestError(`Seul un admin ou un partner peut créer une sous-league`)
+      }
+    } else {
+      const company =await Company.findById(user.company);
+      if (user._id != company.admin) {
+        throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-league`)
+      }
+    }
+    params.users = [user._id]
   }
   return Promise.resolve({model, params})
 }
