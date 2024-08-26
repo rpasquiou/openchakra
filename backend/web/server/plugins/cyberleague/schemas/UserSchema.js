@@ -3,7 +3,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES , JOBS, ROLE_ADMIN, DISCRIMINATOR_KEY } = require('../consts')
+const { ROLES , JOBS, ROLE_ADMIN, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -105,6 +105,7 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'school',
     required: false,
+    validate:  [s => !s || this.job == JOB_STUDENT, 'Seul·e un·e étudiant·e peut avoir une école']
   },
   city: {
     type: String,
