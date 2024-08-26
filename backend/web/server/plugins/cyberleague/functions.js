@@ -168,7 +168,8 @@ const postCreate = async ({ model, params, data, user }) => {
     await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
   }
   if (model == `certification`) {
-    await Company.findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+    const model = await getModel(params.parent, [`company`,`user`])
+    await model.findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
   return data
 }

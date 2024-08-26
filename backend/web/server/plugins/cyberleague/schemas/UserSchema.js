@@ -122,6 +122,14 @@ const UserSchema = new Schema({
   looking_for_opportunities: {
     type: Boolean,
     required: false
+  },
+  certifications: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'certification',
+      required: true,
+    }],
+    default: []
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
