@@ -1126,9 +1126,6 @@ const getEventStatus = (userId, params, data) => {
           APPOINTMENT_CURRENT
     })
     .catch(console.error)
-  /**
-  console.log(data._id)
-  */
 }
 
 const EVENT_MODELS = ['event', 'collectiveChallenge', 'individualChallenge', 'menu', 'webinar']
@@ -2285,7 +2282,7 @@ const getRegisterCompany = props => {
 setImportDataFunction({ model: 'lead', fn: importLeads })
 
 // Ensure all spoon gains are defined
-ensureSpoonGains = () => {
+const ensureSpoonGains = () => {
   return Object.keys(SPOON_SOURCE).map(source => {
     return SpoonGain.exists({ source })
       .then(exists => {
@@ -2377,15 +2374,13 @@ const agendaHookFn = async received => {
             }
             const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
             const progressQuizz = await createAppointmentProgress({coaching: coaching._id})
-            return Appointment.findOneAndUpdate(
-              { smartagenda_id: objId },
-              {
-                coaching: coaching, appointment_type, smartagenda_id: objId,
-                start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
-                user, diet, progress: progressQuizz,progres: progressQuizz,
-              },
-              { upsert: true, runValidators: true }
-            )
+            const appt=(await Appointment.findOne({ smartagenda_id: objId })) || new Appointment({})
+            Object.assign(appt, {
+              coaching: coaching, appointment_type, smartagenda_id: objId,
+              start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
+              user, diet, progress: progressQuizz,progres: progressQuizz,
+            })
+            return appt.save()
           })
       })
       .then(console.log)

@@ -68,11 +68,6 @@ const updateCoachingStatus = async coaching_id => {
     }
   }
 
-  if (coaching.status!=COACHING_STATUS_NOT_STARTED && !coaching.progress) {
-    console.error(`pb on coaching ${coaching._id}`)
-    throw new Error(`pb on coaching ${coaching._id}`)
-  }
-
   const res=coaching.save()
   return res
 }
@@ -122,7 +117,7 @@ const getDietAvailabilities = async (userId, params, data) => {
 }
 
 const updateApptsOrder= async coachingId => {
-  console.log('updating appt order for coaching', coachingId)
+  console.log('updating appt order for coaching', coachingId?._id)
   const appointments=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
   const promises=appointments.map((appointment, idx) => {
     const newOrder=idx+1

@@ -21,7 +21,6 @@ const createAppointmentProgress = async ({coaching}) => {
   const progressUser = await progressTemplate.cloneAsUserQuizz()
   // Copy progress answer from previous appointment if any
   const [loadedCoaching]=await loadFromDb({model: 'coaching', id: coaching, fields:['latest_appointments.progress.questions']})
-  console.log('Latest appts are', loadedCoaching.latest_appointments)
   if (!lodash.isEmpty(loadedCoaching.latest_appointments)) {
     await copyProgressAnswers({sourceQuizz: loadedCoaching.latest_appointments[0].progress, destinationQuizz: progressUser})
   }

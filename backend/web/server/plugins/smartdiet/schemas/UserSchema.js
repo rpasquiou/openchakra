@@ -764,7 +764,6 @@ UserSchema.virtual('spent_nutrition_credits', {
   options: {
     match: () => {
       const f=getYearFilter({attribute: 'start_date', year: moment()})
-      console.log(JSON.stringify(f))
       return f;
     },
   },
