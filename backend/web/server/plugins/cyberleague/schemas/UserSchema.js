@@ -4,6 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
 const { ROLES , JOBS, ROLE_ADMIN, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -108,7 +109,7 @@ const UserSchema = new Schema({
     validate:  [s => !s || this.job == JOB_STUDENT, 'Seul·e un·e étudiant·e peut avoir une école']
   },
   city: {
-    type: String,
+    type: AddressSchema,
     required: false
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
