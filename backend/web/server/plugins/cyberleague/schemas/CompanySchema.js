@@ -4,6 +4,7 @@ const lodash = require('lodash')
 const { DUMMY_REF } = require('../../../utils/database')
 const { SECTOR, COMPANY_SIZE } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -92,7 +93,7 @@ const CompanySchema = new Schema(
       default: false,
     },
     city: {
-      type: String,
+      type: AddressSchema,
       required: false
     },
     partner: {
