@@ -1,5 +1,6 @@
 const lodash = require('lodash')
 const mongoose = require('mongoose')
+const moment=require('moment')
 const formatDuration = require('format-duration')
 const {splitRemaining} = require('../../utils/text')
 const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
@@ -7,10 +8,10 @@ const UserSessionData = require('../models/UserSessionData')
 const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
+const NodeCache=require('node-cache')
+const AddressSchema = require('../models/AddressSchema')
 
-// const { ROLES, STATUS } = require("../../utils/aftral_studio/consts");
-// TODO: Omporting Theme makes a cyclic import. Why ?
-// const Theme = require('../models/Theme');
+const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
   useNewUrlParser: true,
@@ -19,6 +20,7 @@ const MONGOOSE_OPTIONS = {
   useFindAndModify: false,
 }
 
+const COLLATION={ locale: 'fr', strength: 2 }
 // Utilities
 mongoose.set('useFindAndModify', false)
 mongoose.set('useCreateIndex', true)
@@ -40,6 +42,110 @@ const hasRefs = (req, field, id) => {
   return model.exists({[attribute]: id})
 }
 
+
+/**
+ * QUERY FILTERS
+ */
+
+/** Extracts filters parameters from query params */
+const extractFilters = params => {
+  const FILTER_PATTERN = /^filter\./
+  let filters = lodash(params)
+    .pickBy((_, key) => FILTER_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(FILTER_PATTERN, ''))
+    .mapValues(v => lodash.isString(v) ? new RegExp(v, 'i') : v)
+  return filters.value()
+}
+
+const getCurrentFilter = (filters, modelName) => {
+  return _mapSortOrFilters(filters, modelName, 'dbFilter')
+}
+
+const getCurrentSort = (filters, modelName) => {
+  return _mapSortOrFilters(filters, modelName, 'dbSort')
+}
+
+/**
+ * Build filters from attributues name and values
+ * Return filter on:
+ *  - 1st level attributes only (next levels will be handled in subsequent buildPopulates)
+ *  - not virtual or computed attributes
+ * Return sundefind if no filter
+ */
+const _mapSortOrFilters = (filters, modelName, attribute) => {
+  filters = lodash(filters)
+    // Use 1st level filters
+    .pickBy((_, key) => !/\./.test(key))
+    // Filter by non virtual && non computed attributes
+    .entries()
+    .map(([key, value]) => {
+      const modelAtt = `${modelName}.${key}`
+      const virtualOrComputed=lodash.get(DECLARED_VIRTUALS, modelAtt) || lodash.get(COMPUTED_FIELDS_GETTERS, modelAtt)
+      if (virtualOrComputed) {
+        const dbFilter=virtualOrComputed[attribute]
+        if (dbFilter) {
+          return dbFilter(value)
+        }
+        console.warn(`No ${attribute} on virtual or computed ${modelAtt}`)
+      }
+      return {[key]: value}
+    })
+  const result=filters.size()==0 ?undefined : filters.size()==1 ? filters.value()[0] : {$and: filters.value()}
+  return result
+}
+
+const getSubFilters = (filters, attributeName) => {
+  const ATTRIBUTE_PATTERN = new RegExp(`^${attributeName}(\.|$)`)
+  filters = lodash(filters)
+    // Use 1st level filters
+    .pickBy((_, key) => ATTRIBUTE_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(ATTRIBUTE_PATTERN, ''))
+  return filters.value()
+}
+
+/** Extracts filters parameters from query params */
+const extractLimits = params => {
+  const LIMIT_PATTERN = /^limit(\.|$)/
+  let filters = lodash(params)
+    .pickBy((_, key) => LIMIT_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(LIMIT_PATTERN, ''))
+    .mapValues(v =>parseInt(v))
+  return filters.value()
+}
+
+/** Extracts filters parameters from query params */
+const extractSorts = params => {
+  const SORT_PATTERN = /^sort(\.|$)/
+  let sorts = lodash(params)
+    .pickBy((_, key) => SORT_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(SORT_PATTERN, ''))
+  return sorts.value()
+}
+
+/** Extracts filters parameters from query params */
+const getCurrentLimit = limits => {
+  return limits['']
+}
+
+/**
+ * Build limits from attributues name and values
+ * Return filter on:
+ *  - 1st level attributes only (next levels will be handled in subsequent buildPopulates)
+ *  - not virtual or computed attributes
+ */
+const getSubLimits = (limits, attributeName) => {
+  const ATTRIBUTE_PATTERN = new RegExp(`^${attributeName}(\.|$)`)
+  limits = lodash(limits)
+    // Use 1st level filters
+    .pickBy((_, key) => ATTRIBUTE_PATTERN.test(key))
+    .mapKeys((_, key) => key.replace(ATTRIBUTE_PATTERN, ''))
+  return limits.value()
+}
+
+/**
+ * END QUERY FILTERS
+ */
+
 /**
 Compares attributes recursively :
 - 1st level attributes are sorted lexicographically
@@ -59,6 +165,9 @@ let DECLARED_ENUMS = {}
 
 let DECLARED_VIRTUALS = {}
 
+// MOdel => field => requires
+let DEPENDENCIES = {}
+
 const getVirtualCharacteristics = (modelName, attName) => {
   if (
     !(modelName in DECLARED_VIRTUALS) ||
@@ -69,17 +178,25 @@ const getVirtualCharacteristics = (modelName, attName) => {
   return DECLARED_VIRTUALS[modelName][attName]
 }
 
+const isSchema = (attribute, schemaType) => {
+  return !!attribute.schema?.obj && JSON.stringify(Object.keys(attribute.schema?.obj))==JSON.stringify(Object.keys(schemaType?.obj))
+}
+
 const getAttributeCaracteristics = (modelName, att) => {
   const multiple = att.instance == 'Array'
   const suggestions = att.options?.suggestions
   const baseData = att.caster || att
   // TODO: fix type ObjectID => Object
   const type =
-    baseData.instance == 'ObjectID' ? baseData.options.ref : baseData.instance
+    baseData.instance == 'ObjectID' ? baseData.options.ref 
+      : isSchema(att, AddressSchema) ? 'Address'
+      : baseData.instance
   const ref = baseData.instance == 'ObjectID'
+
+  // Include caster enum values (i.e. array of enums)
   let enumValues
-  if (!lodash.isEmpty(att.enumValues)) {
-    enumValues=att.enumValues
+  if (!lodash.isEmpty(att.enumValues) || !lodash.isEmpty(att.caster?.enumValues)) {
+    enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
     enumValues=att.options.enum
@@ -107,7 +224,7 @@ const getAttributeCaracteristics = (modelName, att) => {
 const getBaseModelAttributes = modelName => {
   const schema = mongoose.model(modelName).schema
   const schema_atts = Object.values(schema.paths).filter(
-    att => !att.path.startsWith('_'),
+    att => !['__v', '_id'].includes(att.path) //!att.path.startsWith('_'),
   )
   const virtuals_atts = Object.keys(schema.virtuals)
     .filter(c => c != 'id')
@@ -121,7 +238,7 @@ const getSimpleModelAttributes = modelName => {
     att.path,
     getAttributeCaracteristics(modelName, att),
   ])
-  return atts
+  return [...atts, ['_id', {type: 'ObjectId', multiple: false, ref: false}] ]
 }
 
 const getReferencedModelAttributes = (modelName, level) => {
@@ -186,7 +303,7 @@ const getModels = () => {
 }
 
 /**
-Returns only models & attributes visible for studio users
+Returns only models & attributes visible for studio users (i.e. not IdentityCounter && not suffixed with an '_')
 */
 const getExposedModels = () => {
   const isHidddenAttributeName = (modelName, attName) => {
@@ -194,7 +311,7 @@ const getExposedModels = () => {
   }
 
   const models=lodash(getModels())
-    .omitBy((v, k) => k=='IdentityCounter')
+    .omitBy((v, k) => k=='IdentityCounter' || /_$/.test(k))
     .mapValues((v, modelName) => ({
       ...v,
       attributes: lodash(v.attributes).omitBy((v, k) => isHidddenAttributeName(modelName, k)),
@@ -203,51 +320,73 @@ const getExposedModels = () => {
   return models.value()
 }
 
+function handleReliesOn(directAttribute, relies_on, requiredFields) {
+  const search = new RegExp(`^${directAttribute}([\.|$])`)
+  const replace = (match, group1) => `${relies_on}${group1 == '.' ? '.' : ''}`
+  requiredFields = requiredFields.map(f => f.replace(search, replace))
+  return requiredFields
+}
+
 // TODO query.populates accepts an array of populates !!!!
-const buildPopulates = (modelName, fields) => {
+const buildPopulates = ({modelName, fields, filters, limits, sorts, parentField, params}) => {
   // Retain all ref fields
   const model=getModels()[modelName]
   if (!model) {
-    throw new Error(`Unkown model ${modelName}`)
+    // console.warn(`Can not populate model ${modelName}`)
+    return undefined
   }
   const attributes=model.attributes
-  let requiredFields=[...fields]
-  // Add declared required fields for virtuals
-  let added=true
-  while (added) {
-    added=false
-    lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
-      let required=lodash.get(DECLARED_VIRTUALS, `${modelName}.${directAttribute}.requires`) || null
-      if (required) {
-        required=required.split(',')
-        if (lodash.difference(required, requiredFields).length>0) {
-          requiredFields=lodash.uniq([...requiredFields, ...required])
-          added=true
-        }
-      }
-      let relies_on=lodash.get(DECLARED_VIRTUALS, `${modelName}.${directAttribute}.relies_on`) || null
-      if (relies_on) {
-        const search=new RegExp(`^${directAttribute}(\.|$)`)
-        const replace=(match, group1) => `${relies_on}${group1=='.'?'.':''}`
-	      requiredFields=requiredFields.map(f => f.replace(search, replace))
-      }
-    })
-  }
+  let requiredFields = getRequiredFields({model: modelName, fields})
+
+  // TODO passs filters and limits as object parameters in buildPopulates
+  // TODO filter populates
+  // TODO: re-add filters on UI
 
   // Retain ref attributes only
   const groupedAttributes=lodash(requiredFields)
     .groupBy(att => att.split('.')[0])
-    .pickBy((_, attName) => { if (!attributes[attName]) { throw new Error(`Attribute ${modelName}.${attName} unknown`) } return attributes[attName].ref===true })
+    .pickBy((_, attName) => { 
+      if (!attributes[attName]) { 
+        throw new Error(`Attribute ${modelName}.${attName} unknown`)
+      } 
+      const key=`${modelName}.${attName}`
+      return attributes[attName].ref===true || !!lodash.get(DECLARED_VIRTUALS, key)
+    })
     .mapValues(attributes => attributes.map(att => att.split('.').slice(1).join('.')).filter(v => !lodash.isEmpty(v)))
 
   // / Build populate using att and subpopulation
+
+  // const select=Object.fromEntries(requiredFields.map(f => f.split('.')[0]).map(f => [f, 1]))
+  // console.log('Populates select is ', modelName, select)
+
   const pops=groupedAttributes.entries().map(([attributeName, fields]) => {
     const attType=attributes[attributeName].type
-    const subPopulate=buildPopulates(attType, fields)
-    return {path: attributeName, populate: lodash.isEmpty(subPopulate)?undefined:subPopulate}
+    const subLimits=getSubLimits(limits, attributeName)
+    const subFilters=getSubFilters(filters, attributeName)
+    const subSorts=getSubFilters(sorts, attributeName)
+    const limit=getCurrentLimit(subLimits)
+    const match=getCurrentFilter(subFilters, attType) 
+    const sort=getCurrentSort(subSorts, attType)
+    const subPopulate=buildPopulates({
+      modelName: attType, fields, parentField: `${parentField ? parentField+'.' : ''}${attributeName}`,
+      filters:subFilters, sorts:subSorts, limits:subLimits, params,
+    })
+    // TODO Fix page number
+    const pageParamName = `page.${parentField? parentField+'.' : ''}${attributeName}`
+    const page=params?.[pageParamName] ? parseInt(params[pageParamName]) : 0
+    const skip=page*limit
+    return {
+      path: attributeName, 
+      // select,
+      match,
+      options: {limit: limit ? limit+1 :undefined, skip, sort},
+      collation: COLLATION, 
+      populate: lodash.isEmpty(subPopulate)?undefined:subPopulate
+    }
   })
   return pops.value()
 }
+
 
 // Returns mongoose models ordered using child classes first (using discriminators)
 const getMongooseModels = () => {
@@ -283,27 +422,39 @@ const getModel = (id, expectedModel) => {
     })
 }
 
-const buildQuery = (model, id, fields) => {
+const buildSort = params => {
+  return {}
+}
+
+const buildQuery = (model, id, fields, params) => {
   const modelAttributes = Object.fromEntries(getModelAttributes(model))
 
-  const select = lodash(fields)
-    .map(att => att.split('.')[0])
-    .uniq()
-    .filter(att => {
-      if (!modelAttributes[att]) {
-        throw new Error(`Unknown attribute ${model}.${att}`)
-      }
-      return modelAttributes[att].ref == false
-    })
-    .map(att => [att, true])
-    .fromPairs()
-    .value()
+  let criterion = id ? {_id: id} : {}
+  const filters=extractFilters(params)
+  const limits=extractLimits(params)
+  const sorts=extractSorts(params)
 
-  const criterion = id ? {_id: id} : {}
-  let query = mongoose.connection.models[model].find(criterion) //, select)
-  const populates=buildPopulates(model, fields)
-  //console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates, null, 2)}`)
-  query = query.populate(populates)
+  // Add filter fields
+  fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
+
+  const select=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const currentFilter=getCurrentFilter(filters, model)
+  const currentSort=getCurrentSort(sorts, model)
+  criterion={...criterion, ...currentFilter}
+  // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
+  let query = mongoose.connection.models[model].find(criterion, select)
+  query = query.collation(COLLATION)
+  if (currentSort) {
+    query=query.sort(currentSort)
+  }
+  const currentLimit=getCurrentLimit(limits)
+  if (currentLimit) {
+    query=query.skip((params.page || 0)*currentLimit)
+    query=query.limit(currentLimit+1)
+  }
+  const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
+  // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
+  query = query.populate(populates).sort(buildSort(params))
   return query
 }
 
@@ -355,6 +506,84 @@ const cloneArray = ({data, withOrigin, forceData = {}}) => {
   )
 }
 
+const firstLevelFieldsCache=new NodeCache()
+
+const getFirstLevelFields = fields => {
+  const key=fields.join('/')
+  if (firstLevelFieldsCache.has(key)) {
+    return firstLevelFieldsCache.get(key)
+  }
+  const result= [
+    'id',
+    '_id',
+    ...lodash(fields)
+      .map(f => f.split('.')[0])
+      .uniq()
+      .value(),
+  ]
+  firstLevelFieldsCache.set(key, result)
+  return result
+}
+
+const nextLevelFieldsCache=new NodeCache()
+
+const getNextLevelFields = fields => {
+  const key=fields.join('/')
+  if (nextLevelFieldsCache.has(key)) {
+    return nextLevelFieldsCache.get(key)
+  }
+  const result=lodash.uniq(fields
+    .filter(f => f.includes('.'))
+    .map(f => f.split('.')[0])
+  )
+  nextLevelFieldsCache.set(key, result)
+  return result
+}
+
+// TODO this causes bug bugChildrenTrainersTraineesCHioldren. Why ?
+const secondLevelFieldsCache=new NodeCache()
+
+function getRequiredFields({model, fields}) {
+  let requiredFields = [...fields]
+  // Add declared required fields for virtuals
+  let added = true
+  while (added) {
+    added = false
+    lodash(requiredFields).groupBy(f => f.split('.')[0]).keys().forEach(directAttribute => {
+      let virtualRequired = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.requires`) || null
+      let dependenciesRequired= lodash.get(DEPENDENCIES, `${model}.${directAttribute}.requires`) || null
+      let required=[virtualRequired, dependenciesRequired].filter(v => !lodash.isEmpty(v)).join(',')
+      if (required) {
+        required = required.split(',')
+        if (lodash.difference(required, requiredFields).length > 0) {
+          requiredFields = lodash.uniq([...requiredFields, ...required])
+          added = true
+        }
+      }
+      let relies_on = lodash.get(DECLARED_VIRTUALS, `${model}.${directAttribute}.relies_on`) || null
+      if (relies_on) {
+        requiredFields = handleReliesOn(directAttribute, relies_on, requiredFields)
+      }
+    })
+  }
+  return requiredFields
+}
+
+function getSecondLevelFields(fields, f) {
+  const key=[...fields, f].join('/')
+  let result = secondLevelFieldsCache.get(key)
+  if (!result) {
+    const regEx=new RegExp(`^${f}\\.`)
+    result=fields
+      .filter(f2 => regEx.test(f2))
+      .map(f2 => f2.replace(regEx, ''))
+  
+    secondLevelFieldsCache.set(key, result)
+  }
+  return result
+}
+
+
 /**
 mongoose returns virtuals even if they are not present in select clause
 => keep only require fields in data hierarchy
@@ -366,78 +595,116 @@ const retainRequiredFields = ({data, fields}) => {
   if (!lodash.isObject(data)) {
     return data
   }
-  const thisLevelFields = [
-    'id',
-    '_id',
-    ...lodash(fields)
-      .map(f => f.split('.')[0])
-      .uniq()
-      .value(),
-  ]
+
+  const thisLevelFields = getFirstLevelFields(fields)
   const pickedData = lodash.pick(data, thisLevelFields)
-  const nextLevelFields = fields
-    .filter(f => f.includes('.'))
-    .map(f => f.split('.')[0])
+  const nextLevelFields = getNextLevelFields(fields)
   nextLevelFields.forEach(f => {
     pickedData[f] = retainRequiredFields({
-      data: lodash.get(data, f),
-      fields: fields
-        .filter(f2 => new RegExp(`^${f}\.`).test(f2))
-        .map(f2 => f2.replace(new RegExp(`^${f}\.`), '')),
+      data: data[f],
+      fields: getSecondLevelFields(fields, f),
     })
   })
   return pickedData
 }
 
+const refAttributesCache=new NodeCache()
+
+const getRefAttributes = model => {
+  if (refAttributesCache.has(model)) {
+    return refAttributesCache.get(model)
+  }
+  const result=getModelAttributes(model).filter(
+    ([attName, attParams]) => !attName.includes('.') && attParams.ref,
+  )
+  refAttributesCache.set(model, result)
+  return result
+}
+
+const getRequiredSubFields = (fields, attName) => {
+  const result=fields
+    .filter(f => f.startsWith(`${attName}.`))
+    .map(f => splitRemaining(f, '.')[1])
+  return result
+}
+
+const fieldsToComputeCache=new NodeCache()
+
+/**
+ * For a given model name anex fields, returns the array of fields and descendant fields
+ * that noeeds to be computed
+ */
+const getFieldsToCompute = ({model, fields}) => {
+  const key=`${model}/${fields}`
+  let result=fieldsToComputeCache.get(key)
+  if (result) {
+    return result
+  }
+  result=[]
+  const modelDef=getModels()[model]
+  const thisLevelFields=getFirstLevelFields(fields)
+  const nextLevelFields=getNextLevelFields(fields)
+  const thisLevelCompute=thisLevelFields.filter(f => !!lodash.get(COMPUTED_FIELDS_GETTERS, `${model}.${f}`))
+  result.push(...thisLevelCompute)
+  nextLevelFields.forEach(field => {
+    if (!modelDef.attributes[field]) {
+      throw new BadRequestError(`No type for ${key} ${field}`)
+    }
+    const subModel=modelDef.attributes[field].type
+    const nextFields=getSecondLevelFields(fields, field)
+    result.push(...getFieldsToCompute({model: subModel, fields:nextFields}).map(f => `${field}.${f}`))
+  })
+  fieldsToComputeCache.set(key, result)
+  return result
+}
+
 const addComputedFields = (
-  fields,
-  user,
+  originalFields,
+  userId,
   queryParams,
   data,
   model,
-  prefix = '',
 ) => {
-
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
-  const newPrefix = `${prefix}/${model}/${data._id}`
 
-  return (model=='user' ? mongoose.models.user.findById(data._id) : Promise.resolve(user))
-    .then(newUser => {
+  return Promise.resolve(model=='user' ? data._id : userId)
+    .then(newUserId => {
       // Compute direct attributes
       // Handle references => sub
-      const refAttributes = getModelAttributes(model).filter(
-        ([attName, attParams]) => !attName.includes('.') && attParams.ref,
-      )
-      //for (const refAttribute of refAttributes) {
-      return Promise.allSettled(refAttributes.map(([attName, attParams]) => {
-        const requiredSubFields=fields
-          .filter(f => f.startsWith(`${attName}.`))
-          .map(f => splitRemaining(f, '.')[1])
+      const refAttributes = getRefAttributes(model)
+      return Promise.all(refAttributes.map(([attName, attParams]) => {
+        const requiredSubFields=getRequiredSubFields(fields, attName)
 
         const children = lodash.flatten([data[attName]]).filter(v => !!v)
-        return Promise.allSettled(
+        return Promise.all(
           children.map(child =>
             addComputedFields(
               requiredSubFields,
-              newUser,
+              newUserId,
               queryParams,
               child,
               attParams.type,
-              `${newPrefix}/${attName}`,
             ),
           ),
         )
       }))
       .then(() => {
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-        const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+        const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
-        return Promise.allSettled(
-          Object.keys(requiredCompFields).map(f =>
-            requiredCompFields[f](newUser, queryParams, data).then(res => {data[f] = res})
+        return Promise.all(
+          Object.keys(requiredCompFields).map(f => {
+            const displayFields=getRequiredSubFields(originalFields, f)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
+              .then(res => {
+                data[f] = res
+                return data
+              })
+            }
           ),
       )})
       .then(() => data)
@@ -448,16 +715,28 @@ const formatTime = timeMillis => {
   return formatDuration(timeMillis ? timeMillis / 60 : 0, {leading: true})
 }
 
-const declareComputedField = (model, field, getFn, setFn) => {
-  if (getFn) {
-    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getFn)
+const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
+  if (!model || !field || !(getterFn || setterFn)) {
+    throw new Error(`${model}.${field} compute declaration requires model, field and at least getter or setter`)
   }
-  if (setFn) {
-    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setFn)
+  if (!LEAN_DATA && lodash.get(DECLARED_VIRTUALS, `${model}.${field}`)) {
+    throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
+  }
+  if (getterFn) {
+    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn)
+  }
+  if (setterFn) {
+    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
+  }
+  if (rest.requires) {
+    declareFieldDependencies({model, field, requires: rest.requires})
   }
 }
 
 const declareVirtualField=({model, field, ...rest}) => {
+  if (!LEAN_DATA && lodash.get(COMPUTED_FIELDS_GETTERS, `${model}.${field}`)) {
+    throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
+  }
   const enumValues=rest.enumValues ? Object.keys(rest.enumValues) : undefined
   lodash.set(DECLARED_VIRTUALS, `${model}.${field}`, {path: field, ...rest, enumValues})
   if (!lodash.isEmpty(rest.enumValues)) {
@@ -468,6 +747,11 @@ const declareVirtualField=({model, field, ...rest}) => {
 const declareEnumField = ({model, field, enumValues}) => {
   lodash.set(DECLARED_ENUMS, `${model}.${field}`, enumValues)
 }
+
+const declareFieldDependencies = ({model, field, requires}) => {
+  lodash.set(DEPENDENCIES, `${model}.${field}`, {requires})
+}
+
 
 // Default filter
 let filterDataUser = ({model, data, id, user}) => data
@@ -503,6 +787,17 @@ const callPreCreateData = data => {
   return preCreateData(data)
 }
 
+// Pre create data, allows to insert extra fields, etc..
+let prePutData = data => Promise.resolve(data)
+
+const setPrePutData = fn => {
+  prePutData = fn
+}
+
+const callPrePutData = data => {
+  return prePutData(data)
+}
+
 // Post create data, allows to create extra data, etc, etc
 let postCreateData = data => Promise.resolve(data.data)
 
@@ -536,12 +831,12 @@ const callPostDeleteData = data => {
   return postDeleteData(data)
 }
 
-const putAttribute = ({id, attribute, value, user}) => {
-  let model = null
-  return getModel(id)
-    .then(res => {
-      model = res
-      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${attribute}`)
+const putAttribute = async (input_params) => {
+  let res=await getModel(input_params.id)
+      let preParams={[input_params.attribute]: input_params.value}
+      let {model, id, params, user, skip_validation} = await callPrePutData({...input_params, model: res, params: preParams})
+      const [attribute, value]=Object.entries(params)[0]
+      const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${input_params.attribute}`)
       if (setter) {
         callPostPutData({model, id, attribute, value, user})
         return setter({id, attribute, value, user})
@@ -553,14 +848,16 @@ const putAttribute = ({id, attribute, value, user}) => {
         return mongooseModel.findById(id)
           .then(object => {
             object[attribute]=value
-            return object.save()
+            const validation=!!skip_validation ? {validateBeforeSave: false} : {runValidators: true}
+            return object.save({...validation})
               .then(obj => {
-                return callPostPutData({model, id, attribute, value, params:{[attribute]:value}, user, data: obj})
+                const postParams={[attribute]: value}
+                return callPostPutData({model, id, attribute, value, params:postParams, user, data: obj})
                   .then(() => obj)
               })
           })
       }
-      const populates=buildPopulates(model, [attribute])
+      const populates=buildPopulates({modelName: model, fields:[attribute]})
 
       let query=mongooseModel.find({$or: [{_id: id}, {origin: id}]})
       query = populates.reduce((q, key) => q.populate(key), query)
@@ -590,7 +887,6 @@ const putAttribute = ({id, attribute, value, user}) => {
               })
           }))
         })
-    })
 
 }
 
@@ -656,35 +952,64 @@ const shareTargets = (obj1, obj2) => {
   return lodash.intersectionBy(obj1.targets, obj2.targets, t => t._id.toString()).length>0
 }
 
-const putToDb = ({model, id, params, user}) => {
-  return mongoose.connection.models[model]
-    .findById(id)
+const putToDb = async (input_params) => {
+  const {model, id, params, user, skip_validation} = await callPrePutData(input_params)
+  return mongoose.connection.models[model].findById(id)
     .then(data => {
       if (!data) {throw new NotFoundError(`${model}/${id} not found`)}
+
       Object.keys(params).forEach(k => { data[k]=params[k] })
-      return data.save()
+      const validation=!!skip_validation ? {validateBeforeSave: false} : {}
+      return data.save(validation)
     })
     .then(data => callPostPutData({model, id, params, data, user}))
 }
 
-const loadFromDb = ({model, fields, id, user, params}) => {
+const lean = ({model, data}) => {
+  console.time(`Leaning model ${model}`)
+  /** Original mongoose. Only leans 1st level
+   * const res=data.map(d => d.toObject()))
+   * */
+  const res=JSON.parse(JSON.stringify(data))
+  console.timeEnd(`Leaning model ${model}`)
+  return res
+}
+
+const display = data => {
+  console.trace("Data", JSON.stringify(data))
+  return data
+}
+
+const ensureUniqueDataFound = (id, data) => {
+  if (id && lodash.isEmpty(data)) {
+    throw new NotFoundError(`Can't find id ${id}`)
+  }
+  return data
+}
+
+
+/*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
+ * example: 
+ * let c = await loadfromdb({...})
+ * c = new Announce(c)
+ * doesn't keep the virtuals and the deep objects, like c.user.company_name
+*/
+const loadFromDb = ({model, fields, id, user, params={}}) => {
+  // Add filter fields to return them to client
+  const filters=extractFilters(params)
+  fields=lodash.uniq([...fields, ...Object.keys(filters)])
   return callPreprocessGet({model, fields, id, user, params})
-    .then(({model, fields, id, data}) => {
+    .then(({model, fields, id, data, params}) => {
       if (data) {
         return data
       }
-      return buildQuery(model, id, fields)
-        .then(data => {
-          // Lean all objects
-          data=data.map(d => d.toObject({virtuals: true}))
-          // Force to plain object
-          data=JSON.parse(JSON.stringify(data))
-          // Remove extra virtuals
-          //data = retainRequiredFields({data, fields})
-          if (id && data.length == 0) { throw new NotFoundError(`Can't find ${model}:${id}`) }
-          return Promise.all(data.map(d => addComputedFields(fields,user, params, d, model)))
-        })
-        .then(data => callFilterDataUser({model, data, id, user}))
+      // TODO UGLY but user_surveys_progress does not return if not leaned
+      const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
+      return buildQuery(model, id, fields, params)
+        .then(data => ensureUniqueDataFound(id, data))
+        .then(data => localLean ? lean({model, data}) : data)
+        .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
+        .then(data => callFilterDataUser({model, data, id, user, params}))
         //.then(data =>  retainRequiredFields({data, fields}))
     })
 
@@ -708,6 +1033,54 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import funciton already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
+}
+
+const DUMMY_REF={localField: 'tagada', foreignField: 'tagada'}
+
+const checkIntegrity = () => {
+  const errors=[]
+  const models=mongoose.models
+  Object.entries(models).forEach(([modelName, model]) => {
+    const schema=model.schema
+    Object.values(schema.virtuals).filter(v => v.path!='id').forEach(virtual => {
+      if (!virtual.options?.localField || !virtual.options?.foreignField) {
+        errors.push(`Model "${modelName}" virtual attribute "${virtual.path}" requires localField and foreignField`)
+      }
+    })
+  })
+  if (!lodash.isEmpty(errors)) {
+    throw new Error(errors.join('\n'))
+  }
+}
+
+// Creates a date filter to match any hour in a day
+const getDateFilter = ({attribute, day}) => {
+  const start=moment(day).startOf('day')
+  const end=moment(day).endOf('day')
+  return {$and: [
+    {[attribute]: {$gt: start}}, 
+    {[attribute]: {$lt: end}}
+  ]}
+}
+
+// Creates a date filter to match any moment in the month
+const getMonthFilter = ({attribute, month}) => {
+  const start=moment(month).startOf('month')
+  const end=moment(month).endOf('month')
+  return {$and: [
+    {[attribute]: {$gte: start}}, 
+    {[attribute]: {$lte: end}}
+  ]}
+}
+
+// Creates a date filter to match any moment in the year
+const getYearFilter = ({attribute, year}) => {
+  const start=moment(year).startOf('year')
+  const end=moment(year).endOf('month')
+  return {$and: [
+    {[attribute]: {$gte: start}}, 
+    {[attribute]: {$lte: end}}
+  ]}
 }
 
 module.exports = {
@@ -754,4 +1127,10 @@ module.exports = {
   setImportDataFunction,
   importData,
   setPostDeleteData,
+  handleReliesOn,
+  extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
+  getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
+  DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
+  setPrePutData, callPrePutData,
 }
+

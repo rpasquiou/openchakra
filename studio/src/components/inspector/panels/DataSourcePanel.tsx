@@ -21,9 +21,16 @@ import { useForm } from '../../../hooks/useForm'
 import ColorsControl from '../controls/ColorsControl';
 import FormControl from '../controls/FormControl'
 import usePropsSelector from '../../../hooks/usePropsSelector'
+import { sortComponents } from '~utils/misc'
 
 const DataSourcePanel: React.FC = () => {
-  const components: IComponents = useSelector(getComponents)
+  const unsortedComponents=useSelector(getComponents)
+  const [components, setComponents]=useState({})
+
+  useEffect(() => {
+    setComponents(sortComponents(unsortedComponents))
+  }, [unsortedComponents])
+
   const activeComponent: IComponent = useSelector(getSelectedComponent)
   const { setValueFromEvent, setValue, removeValue } = useForm()
   const dataSource = usePropsSelector('dataSource')
@@ -44,6 +51,7 @@ const DataSourcePanel: React.FC = () => {
   const series_attributes = lodash.range(5).map(idx => usePropsSelector(`series_${idx}_attribute`))
   const series_labels = lodash.range(5).map(idx => usePropsSelector(`series_${idx}_label`))
   const hidePagination = usePropsSelector('hidePagination')
+  const scrollToday = usePropsSelector('scrollToday')
   const shuffle = usePropsSelector('shuffle')
   const radioGroup = usePropsSelector('radioGroup')
   const [providers, setProviders] = useState<IComponent[]>([])
@@ -94,20 +102,27 @@ const DataSourcePanel: React.FC = () => {
       }
       catch (err) {
         console.error(err)
-        alert(err)
+        // TODO Should not raise exception
+        // alert(err)
       }
       try {
         const filterAttrs = getFilterAttributes(activeComponent, components, models)
         setFilterAttributes(filterAttrs)
       }
       catch (err) {
-        alert(err)
+        console.error(err)
+        // TODO Should not raise exception
+        // alert(err)
       }
       if (!subDataSource) {
         setSubAttributes({})
         setSubAttributesDisplay({})
       }
       else {
+        // TODO Solene
+        if (!components[subDataSource]) {
+          return
+        }
         const model = models[components[subDataSource].props ?.model]
         if (model) {
           const subAttrs = lodash(model.attributes)
@@ -329,6 +344,16 @@ const DataSourcePanel: React.FC = () => {
           ></Checkbox>
         </FormControl>
         )}
+        {activeComponent ?.type=='Tabs' && (
+        <FormControl htmlFor="scrollToday" label='Scroll today'>
+          <Checkbox
+            id="scrollToday"
+            name="scrollToday"
+            isChecked={scrollToday}
+            onChange={onCheckboxChange}
+          ></Checkbox>
+        </FormControl>
+        )}
         {CONTAINER_TYPE.includes(activeComponent ?.type) && (
         <FormControl htmlFor="shuffle" label='Shuffle'>
           <Checkbox
@@ -540,7 +565,7 @@ const DataSourcePanel: React.FC = () => {
             >
               <option value={undefined}></option>
               {Object.values(components)
-                .filter(c => c.type=='Flex' &&  c.props?.isFilterComponent)
+                .filter(c => !!(c.props.model || c.props.dataSource) && !!c.props.attribute )
                 .map((component, i) => (
                   <option key={`comp${i}`} value={component.id}>
                     {`${component.id} (${component.type})`}

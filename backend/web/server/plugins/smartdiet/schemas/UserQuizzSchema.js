@@ -5,6 +5,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const UserQuizzSchema = new Schema({
+  // Reference quizz
   quizz: {
     type: Schema.Types.ObjectId,
     ref: 'quizz',
@@ -30,6 +31,12 @@ const UserQuizzSchema = new Schema({
     ref: 'userQuizzQuestion',
     required: true,
   }],
+  coaching: {
+    type: Schema.Types.ObjectId,
+    index: true,
+    ref: 'coaching',
+    required: false,
+  }
 }, schemaOptions)
 
 module.exports = UserQuizzSchema

@@ -45,6 +45,8 @@ require('../../server/models/Category')
 require('../../server/models/Item')
 require('../../server/models/Question')
 
+jest.setTimeout(50000)
+
 describe('Worflows', () => {
 
   const LEADONLY='leadonly@wappizy.com'
@@ -60,31 +62,14 @@ describe('Worflows', () => {
   let appointmentType
 
   beforeAll(async() => {
-    await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
-    company=await Company.create({...COMPANY_NO_INSURANCE_DATA, code: 'COMPCODE'})
-    offer=await Offer.create({...OFFER_DATA, company})
-    key=await Key.create({...KEY_DATA})
-    anyUser=await Lead.create({...USER_DATA, email: LEADONLY, company_code: company.code})
-    await Lead.create({...USER_DATA, email: LEADUSER, company_code: company.code})
-    leadUser=await User.create({...USER_DATA, email: LEADUSER, password: 'pass', company})
-    diet=await User.create({...USER_DATA, role: ROLE_EXTERNAL_DIET,  email: DIET, password: 'pass', company})
-    appointmentType=await AppointmentType.create({smartagenda_id: 0, duration: 2, title: 'Rendez-vous'})
+    await mongoose.connect(`mongodb://localhost/smartdiet`, MONGOOSE_OPTIONS)
   })
 
   afterAll(async() => {
-    await mongoose.connection.dropDatabase()
     await mongoose.connection.close()
   })
 
   afterEach(async() => {
-    await CollectiveChallenge.deleteMany({})
-    await Coaching.deleteMany({})
-    await Appointment.deleteMany({})
-    offer.coaching_credit=0
-    offer.groups_unlimited=false
-    await offer.save()
-    company.activity=COMPANY_ACTIVITY_BANQUE
-    company=await company.save()
   })
 
   const emailContained = email => {
@@ -144,7 +129,7 @@ describe('Worflows', () => {
 
   it('must filter CL_SALAR_REGISTERED_FIRST_COA_APPT', async() => {
     const coaching=await Coaching.create({...COACHING_DATA, user: leadUser})
-    await Appointment.create({...APPOINTMENT_DATA, appointment_type: appointmentType,
+    await Appointment.create({...APPOINTMENT_DATA, appointment_type: appointmentType, user: leadUser, diet,
       start_date: moment().add(-3, 'hour'), end_date:moment().add(-2, 'hour'), coaching,
     })
     const result=await computeWorkflowLists()
@@ -164,12 +149,22 @@ describe('Worflows', () => {
     expect(result.CL_ADHER_LEAD_COA_NOGROUP.add).not.toEqual(emailContained(DIET))
   })
 
-  it('Must compute workflows list', async() => {
+  it.only('Must compute workflows list', async() => {
     const res=await computeWorkflowLists()
     const removed=Object.values(res).find(v => v.remove.length>0).remove
     const added=Object.values(res).find(v => v.remove.length>0).remove
     expect(added.every(item => lodash.isObject(item))).toBe(true)
     expect(removed.every(item => lodash.isObject(item))).toBe(true)
+    const accept = c => /ouvreur/.test(c.Email) && !/ouvreurinscrit/i.test(c.Email)
+    Object.values(res)
+      .filter(d => d.add.some(accept))
+      .map(d => ({
+        ...d, 
+        add: d.add.filter(accept).map(c => c.Email), 
+        remove: d.remove.filter(accept).map(c => c.Email)
+      }))
+      .map(({id, name, add, remove}) => console.log(id, name, 'add', add, 'remove', remove))
+      // .map(({id, name, add, remove}) => console.log(id, name, 'add', add.length, 'remove', remove.length))
   })
 
   it('Must update workflows', async() => {
@@ -188,4 +183,19 @@ describe('Worflows', () => {
     const allLists=await MAIL_HANDLER.getContactsLists()
     //console.log(allLists.filter(l => /adh/i.test(l.Name)))
   })
+
+  it('Must display contacts list', async() => {
+    const email='sebastien.auvray@wappizy.com'
+    const result=await MAIL_HANDLER.getContactsLists()
+    console.log(result)
+    const listId=result[0].ID
+    const res=await MAIL_HANDLER.addContactsToList({contacts: [{Email: email}], list: listId})
+    const id=await MAIL_HANDLER.getContactId(email)
+    console.log('ID is', id)
+    console.log(listId)
+    // const campaigns=await MAIL_HANDLER.getWorkflowsForContactsList({list:listId}).catch(console.error)
+    // console.log(campaigns, campaigns.length, 'workflows', campaigns.map(c => c.WorkflowID))
+    await MAIL_HANDLER.removeContactsFromList({contacts: [{Email:email}], list: listId})
+  })
+
 })

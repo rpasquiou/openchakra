@@ -11,6 +11,8 @@ import Editor from '~components/editor/Editor'
 import { InspectorProvider } from '~contexts/inspector-context'
 import Inspector from '~components/inspector/Inspector'
 import Warnings from '~components/warnings/Warnings'
+import '~custom-components/Address/AddressInit'
+import '~custom-components/Calendar/CalendarInit'
 import '~custom-components/Card/CardInit'
 import '~custom-components/Date/DateInit'
 import '~custom-components/UploadFile/UploadFileInit'
@@ -20,12 +22,15 @@ import '~custom-components/Timer/TimerInit'
 import '~custom-components/NumberFormat/NumberFormatInit'
 import '~custom-components/DataProvider/DataProviderInit'
 import '~custom-components/IconCheck/IconCheckInit'
-import '~custom-components/Lexical/LexicalInit'
 import '~custom-components/Chart/ChartInit'
+import '~custom-components/Lexical/LexicalInit'
+import '~custom-components/Slider/SliderInit'
 import Menu from '~components/sidebar/Menu'
 import MediasContainer from '~components/MediasContainer'
 import { getMediasLayout } from '../core/selectors/app'
+import { getEditDatabaseLayout } from '../core/selectors/app'
 import WarningEnv from '~components/warnings/WarningEnv'
+import EditDatabase from '~components/editDatabase/EditDatabase'
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
@@ -33,6 +38,7 @@ const App = () => {
   useShortcuts()
 
   const mediasLayout = useSelector(getMediasLayout)
+  const editDatabaseLayout = useSelector(getEditDatabaseLayout)
 
   return (
     <>
@@ -48,7 +54,7 @@ const App = () => {
           {/* <Sidebar /> */}
           <EditorErrorBoundary>
             <Box bg="white" flex={1} position="relative" overflow={'hidden'}>
-              {mediasLayout ? <MediasContainer /> : <Editor />}
+              {mediasLayout ? <MediasContainer /> : editDatabaseLayout ? <EditDatabase/> : <Editor />}
             </Box>
           </EditorErrorBoundary>
           <WarningEnv />

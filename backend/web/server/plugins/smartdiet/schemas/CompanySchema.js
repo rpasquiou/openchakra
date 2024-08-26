@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const lodash=require('lodash')
 const {COMPANY_ACTIVITY, COMPANY_SIZE}=require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -21,6 +22,7 @@ const CompanySchema = new Schema(
     code: {
       type: String,
       required: false,
+      index: true,
     },
     picture: {
       type: String,
@@ -32,6 +34,7 @@ const CompanySchema = new Schema(
     },
     size: {
       type: Number,
+      default: 0,
       required: [true, `La taille est obligatoire`],
     },
     parent: {
@@ -57,6 +60,49 @@ const CompanySchema = new Schema(
       ref: 'appointmentType',
       required: false,
     },
+    // Outbound call script
+    script: {
+      type: String,
+      required: false,
+    },
+    migration_id: {
+      type: Number,
+      index: true,
+      required: false,
+    },
+    // Coaching reasons this company applies on
+    reasons: [{
+      type: Schema.Types.ObjectId,
+      // TODO: check that target's category's type is TARGET_COACHING
+      ref: 'target',
+      required: false,
+    }],
+    contents_count: {
+      type: Number,
+    },
+    // A survey is required to start a coaching
+    coaching_requires_survey: {
+      type: Boolean,
+    },
+    // Percent discount on packs for employees ( [0.0, 1.0[ )
+    pack_discount: {
+      type: Number,
+      validate: [function(v) { return lodash.inRange(v, 0.0, 1.0)}, `La remise sur pack doit être comprise en 0 et 1.0 (0% à 100%)`],
+      default: 0,
+      required: false,
+    },
+    nutadvice_certificate_template: {
+      type: String,
+      required: false,
+    },
+    assessment_certificate_template: {
+      type: String,
+      required: false,
+    },
+    coaching_certificate_template: {
+      type: String,
+      required: false,
+    },
   },
   schemaOptions,
 )
@@ -71,6 +117,19 @@ CompanySchema.virtual("offers", {
   ref: "offer", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
+});
+
+CompanySchema.virtual("current_offer", {
+  ref: "offer", // The Model to use
+  localField: "_id", // Find in Model, where localField
+  foreignField: "company", // is equal to foreignField
+  options: { 
+    match : () => {
+      return {validity_start: {$lt: Date.now()}}
+    },
+    sort: { validity_start: -1 }, limit:1 
+  },
+  justOne: true,
 });
 
 CompanySchema.virtual("webinars", {
@@ -96,42 +155,37 @@ CompanySchema.virtual('groups_count', {localField: 'tagada', foreignField: 'taga
   return this.groups?.length || 0
 })
 
-CompanySchema.virtual('likes_count').get(function() {
+CompanySchema.virtual('likes_count', DUMMY_REF).get(function() {
   return mongoose.model('content').find()
     .populate('likes')
     .then(contents => {
       var count=0
       contents.forEach(content => {
-        count+=lodash.filter(content.likes||[], l => l.company._id==this._id)?.length || 0
+        count+=lodash.filter(content.likes||[], l => l.company?._id==this._id)?.length || 0
       });
       return count
     })
 })
 
-CompanySchema.virtual('shares_count').get(function() {
+CompanySchema.virtual('shares_count', DUMMY_REF).get(function() {
   return mongoose.model('content').find()
     .populate('shares')
     .then(contents => {
       var count=0
       contents.forEach(content => {
-        count+=lodash.filter(content.shares||[], s => s.company._id==this._id)?.length||0
+        count+=lodash.filter(content.shares||[], s => s.company?._id==this._id)?.length||0
       });
       return count
     })
 })
 
-CompanySchema.virtual('comments_count').get(function() {
+CompanySchema.virtual('comments_count', DUMMY_REF).get(function() {
   return mongoose.model('comment').find({pip: null})
     .populate('user')
     .then(comments => {
-      const count=lodash.filter(comments||[], c => c.user?.company._id==this._id)?.length||0
+      const count=lodash.filter(comments||[], c => c.user?.company?._id==this._id)?.length||0
       return count
     })
-})
-
-CompanySchema.virtual('contents_count').get(function() {
-  // TODO WTF
-  return 0
 })
 
 CompanySchema.virtual("children", {
@@ -144,6 +198,12 @@ CompanySchema.virtual("collective_challenges", {
   ref: "collectiveChallenge", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
+});
+
+CompanySchema.virtual('leads', {
+  ref: 'lead', // The Model to use
+  localField: "code", // Find in Model, where localField
+  foreignField: "company_code", // is equal to foreignField
 });
 
 module.exports = CompanySchema

@@ -25,7 +25,7 @@ const moment = require('moment')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 
 const Validator = require('validator')
-const { idEqual } = require('../../../utils/database')
+const { idEqual, DUMMY_REF } = require('../../../utils/database')
 const siret = require('siret')
 const NATIONALITIES=require('../nationalities')
 const mongoose = require("mongoose")
@@ -253,7 +253,7 @@ const UserSchema = new Schema({
 }, schemaOptions
 );
 
-UserSchema.virtual("full_name").get(function() {
+UserSchema.virtual("full_name", DUMMY_REF).get(function() {
   return `${this.firstname} ${this.lastname}`;
 });
 
@@ -291,7 +291,7 @@ const getFilledAttributes = (self, attributes) => {
   return filled
 }
 
-UserSchema.virtual('profile_progress').get(function() {
+UserSchema.virtual('profile_progress', DUMMY_REF).get(function() {
   const attributes=Object.keys(PROFILE_ATTRIBUTES)
   const filled=getFilledAttributes(this, attributes)
   return (filled.length*1.0/attributes.length)*100
@@ -303,23 +303,23 @@ const compute_missing_attributes = (self, attributes) => {
   return missing.isEmpty()  ? null: `Information(s) manquante(s) : ${missing.map(att => PROFILE_ATTRIBUTES[att]).join(', ').replace(/, ([^,]*)$/, ' et $1')}`
 }
 
-UserSchema.virtual('missing_attributes').get(function() {
+UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   return compute_missing_attributes(this, Object.keys(PROFILE_ATTRIBUTES))
 });
 
-UserSchema.virtual('missing_attributes_step_1').get(function() {
+UserSchema.virtual('missing_attributes_step_1', DUMMY_REF).get(function() {
   return compute_missing_attributes(this, STEP_1)
 })
 
-UserSchema.virtual('missing_attributes_step_2').get(function() {
+UserSchema.virtual('missing_attributes_step_2', DUMMY_REF).get(function() {
   return compute_missing_attributes(this, STEP_2)
 })
 
-UserSchema.virtual('missing_attributes_step_3').get(function() {
+UserSchema.virtual('missing_attributes_step_3', DUMMY_REF).get(function() {
   return compute_missing_attributes(this, STEP_3)
 })
 
-UserSchema.virtual('missing_attributes_step_4').get(function() {
+UserSchema.virtual('missing_attributes_step_4', DUMMY_REF).get(function() {
   return compute_missing_attributes(this, STEP_4)
 })
 
@@ -330,28 +330,18 @@ UserSchema.virtual("jobs", {
 });
 
 // All missions
-UserSchema.virtual("_missions", {
+UserSchema.virtual("missions", {
   ref: "mission", // The Model to use
-  localField: "dummy", // Find in Model, where localField
-  foreignField: "dummy" // is equal to foreignField
+  localField: "_id", // Find in Model, where localField
+  foreignField: function() { return this.role==ROLE_TI ? 'ti' : 'user'}
 });
 
-UserSchema.virtual("missions", {localField: 'dummy', foreignField: 'dummy'}).get(function() {
+UserSchema.virtual("missions_with_bill", DUMMY_REF).get(function() {
   if (this.role==ROLE_COMPANY_BUYER) {
-    return this._missions?.filter(m => idEqual(m.user?._id, this._id))
+    return this.missions?.filter(m => m.bill && idEqual(m.user?._id, this._id))
   }
   if (this.role==ROLE_TI) {
-    return this._missions?.filter(m => idEqual(m.job?.user?._id, this._id)) || []
-  }
-  return []
-})
-
-UserSchema.virtual("missions_with_bill", {localField: 'dummy', foreignField: 'dummy'}).get(function() {
-  if (this.role==ROLE_COMPANY_BUYER) {
-    return this._missions?.filter(m => m.bill && idEqual(m.user?._id, this._id))
-  }
-  if (this.role==ROLE_TI) {
-    return this._missions?.filter(m => m.bill && idEqual(m.job?.user?._id, this._id)) || []
+    return this.issions?.filter(m => m.bill && idEqual(m.job?.user?._id, this._id)) || []
   }
   return []
 })
@@ -363,15 +353,15 @@ UserSchema.virtual("requests", {
   foreignField: "user" // is equal to foreignField
 });
 
-UserSchema.virtual("qualified_str").get(function() {
+UserSchema.virtual("qualified_str", DUMMY_REF).get(function() {
   return this.qualified ? 'qualifié' : 'à qualifier'
 });
 
-UserSchema.virtual("visible_str").get(function() {
+UserSchema.virtual("visible_str", DUMMY_REF).get(function() {
   return this.hidden ? 'masqué' : 'visible'
 });
 
-UserSchema.virtual("finished_missions_count").get(function() {
+UserSchema.virtual("finished_missions_count", DUMMY_REF).get(function() {
   if (lodash.isEmpty(this.missions)) {
     return 0
   }
@@ -385,68 +375,68 @@ UserSchema.virtual("_all_recommandations", {
   foreignField: "dummy" // is equal to foreignField
 });
 
-UserSchema.virtual("recommandations", {localField: 'tagada', foreignField: 'tagada'}).get(function() {
+UserSchema.virtual("recommandations", DUMMY_REF).get(function() {
   const recos=this._all_recommandations?.filter(a => idEqual(a?.job?.user?._id, this._id)) || []
   return recos
 })
 
-UserSchema.virtual("recommandations_count", {localField: 'tagada', foreignField: 'tagada'}).get(function() {
+UserSchema.virtual("recommandations_count", DUMMY_REF).get(function() {
   return this.recommandations?.length || 0
 })
 
-UserSchema.virtual("recommandations_note").get(function() {
+UserSchema.virtual("recommandations_note", DUMMY_REF).get(function() {
   const recos=this.recommandations || []
   return lodash.sumBy(recos, 'note')/recos.length
 })
 
-UserSchema.virtual("comments_count").get(function() {
+UserSchema.virtual("comments_count", DUMMY_REF).get(function() {
   const recos=lodash(this.missions||[]).map(j => j.comments || []).flatten()
   return recos.size()
 })
 
-UserSchema.virtual("comments_note").get(function() {
+UserSchema.virtual("comments_note", DUMMY_REF).get(function() {
   const recos=lodash(this.missions||[]).map(j => j.comments || []).flatten()
   return recos.sumBy('note')/recos.size()
 })
 
 // Achieved revenue : accepeted bills
-UserSchema.virtual("revenue").get(function() {
+UserSchema.virtual("revenue", DUMMY_REF).get(function() {
   if (this.role!=ROLE_TI) {
     return 0
   }
   return lodash(this.missions)
       .filter(m => [MISSION_STATUS_FINISHED].includes(m.status))
-      .sumBy(m => m.quotations[0].ti_total)
+      .sumBy(m => m.quotations?.[0].ti_total)
 })
 
 // Achieved revenue : accepted quotation
-UserSchema.virtual("revenue_to_come").get(function() {
+UserSchema.virtual("revenue_to_come", DUMMY_REF).get(function() {
   if (this.role!=ROLE_TI) {
     return 0
   }
   return lodash(this.missions)
       .filter(m => m.status==MISSION_STATUS_QUOT_ACCEPTED)
-      .sumBy(m => m.quotations[0].ti_total)
+      .sumBy(m => m.quotations?.[0].ti_total)
 })
 
-UserSchema.virtual("accepted_quotations_count").get(function() {
+UserSchema.virtual("accepted_quotations_count", DUMMY_REF).get(function() {
   return this.missions?.filter(m => m.status==MISSION_STATUS_QUOT_ACCEPTED ).length
 })
 
-UserSchema.virtual("pending_quotations_count").get(function() {
+UserSchema.virtual("pending_quotations_count", DUMMY_REF).get(function() {
   return this.missions?.filter(m => m.status==MISSION_STATUS_QUOT_SENT).length
 })
 
-UserSchema.virtual("pending_bills_count").get(function() {
+UserSchema.virtual("pending_bills_count", DUMMY_REF).get(function() {
   return this.missions?.filter(m => m.status==MISSION_STATUS_BILL_SENT).length
 })
 
-UserSchema.virtual("profile_shares_count").get(function() {
+UserSchema.virtual("profile_shares_count", DUMMY_REF).get(function() {
   return 0
 })
 
 // Customer spent
-UserSchema.virtual("spent").get(function() {
+UserSchema.virtual("spent", DUMMY_REF).get(function() {
   if (this.role!=ROLE_COMPANY_BUYER) {
     return 0
   }
@@ -456,7 +446,7 @@ UserSchema.virtual("spent").get(function() {
       .sumBy(m => m.quotations[0]?.customer_total || 0)
 })
 
-UserSchema.virtual("spent_to_come").get(function() {
+UserSchema.virtual("spent_to_come", DUMMY_REF).get(function() {
   if (this.role!=ROLE_COMPANY_BUYER) {
     return 0
   }
@@ -466,29 +456,25 @@ UserSchema.virtual("spent_to_come").get(function() {
     .sumBy(m => m.quotations[0]?.customer_total || 0)
 })
 
-UserSchema.virtual("pending_bills").get(function() {
+UserSchema.virtual("pending_bills", DUMMY_REF).get(function() {
   return lodash(this.missions)
     .filter(m => [MISSION_STATUS_BILL_SENT].includes(m.status))
     // TODO: finished mission should have a quotations
     .sumBy(m => m.quotations[0]?.customer_total || 0)
 })
 
-UserSchema.virtual("profile_shares_count").get(function() {
+UserSchema.virtual("profile_shares_count", DUMMY_REF).get(function() {
   return 0
 })
 
-// All jobs
-UserSchema.virtual("_all_jobs", {
-  ref: "jobUser", // The Model to use
-  localField: "dummy", // Find in Model, where localField
-  foreignField: "dummy" // is equal to foreignField
-});
-
-UserSchema.virtual('pinned_jobs', {localField: 'tagada', foreignField: 'tagada'}).get(function () {
-  return this?._all_jobs?.filter(j => j.pins?.some(p => idEqual(p._id, this._id)))
+UserSchema.virtual('pinned_jobs', {
+  ref: 'jobUser',
+  localField: '_id',
+  foreignField: 'pins',
 })
 
-UserSchema.virtual("search_text").get(function() {
+
+UserSchema.virtual("search_text", DUMMY_REF).get(function() {
   const attributes='firstname,lastname,qualified_str,visible_str,company_name'.split(',')
   let values=attributes.map(att => this[att])
   values.push(COACHING[this.coaching])

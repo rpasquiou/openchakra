@@ -79,7 +79,7 @@ const createFilters = (filterDef, props, componentValueGetter) => {
     const vRef = def.value
     return dataSource => {
       const dataValue = def.isComponent ?
-        componentValueGetter(attribute)
+        componentValueGetter(attribute, props.level)
         :lodash.get(dataSource, attribute)
       return opFn(dataValue, vRef) ? targetValue : null
     }
@@ -121,4 +121,17 @@ export const getConditionPropertyName = conditionId => {
 
 export const getConditionsPropertyName = property => {
   return `conditions${property}`
+}
+
+export const buildFilter = (dataSourceId, filterAttributes, getComponentValue) => {
+  // componentsValues stores comp-XXX_0_1_2 while componentName is the studio's one (i.e. comp-XXX)
+  const filters=filterAttributes[dataSourceId]
+  const constants=filters?.constants?.map(([att, value]) => `filter.${att}=${value}`) || []
+  const chunks=lodash.chunk(filters?.variables?.[0]||[], 2)
+  const variables=chunks.filter(([att, comp]) => !lodash.isNil(getComponentValue(comp)))
+      .map(([att, comp]) => `filter.${att}=${getComponentValue(comp)}`)  
+    || []
+  const allFilters=[...constants, ...variables]
+  const res=allFilters.length>0 ? allFilters.join('&')+'&' : ''
+  return res
 }

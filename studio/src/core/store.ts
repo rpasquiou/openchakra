@@ -13,6 +13,7 @@ import { DataSourcesState } from './models/dataSources'
 import { RolesState } from './models/roles'
 import models from './models'
 import filterUndoableActions from '~utils/undo'
+import { EnumsState } from './enums'
 
 const disableStorage=process.env.NEXT_PUBLIC_DISABLE_STORAGE && JSON.parse(process.env.NEXT_PUBLIC_DISABLE_STORAGE)
 console.log(`Storage disabled:${disableStorage}`)
@@ -25,6 +26,7 @@ export type RootState = {
   project: ProjectStateWithUndo
   dataSources: DataSourcesState
   roles: RolesState
+  enums: EnumsState
 }
 
 const version = parseInt(process.env.NEXT_PUBLIC_VERSION || '1', 10)
@@ -36,7 +38,7 @@ const thresholdCompressor =createTransform(
    (inboundState, key) => {
      const rawLength=JSON.stringify(inboundState).length
      if (rawLength>COMPRESS_THRESHOLD) {
-       console.log(`Storage length is ${rawLength}, compressing`)
+       console.log(`Storage length is ${rawLength}>${COMPRESS_THRESHOLD}, compressing`)
        return compressor.in(inboundState, key)
      }
      console.log(`Storage length is ${rawLength}, not compressing`)

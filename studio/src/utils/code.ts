@@ -1,3 +1,4 @@
+import moment from 'moment'
 import {encode} from 'html-entities'
 import filter from 'lodash/filter'
 import isBoolean from 'lodash/isBoolean'
@@ -18,8 +19,11 @@ import {
   SOURCE_TYPE,
   TEXT_TYPE,
   UPLOAD_TYPE,
+  computeDataFieldName,
+  getChildrenOfType,
   getDataProviderDataType,
   getFieldsForDataProvider,
+  getLimitsForDataProvider,
   getParentOfType,
   hasParentType,
   isSingleDataPage,
@@ -106,6 +110,7 @@ const getDynamicType = (comp: IComponent) => {
   if (GROUP_TYPE.includes(comp.type)) {
     return comp.type
   }
+  return null
   throw new Error(`No dynamic found for ${comp.type}`)
 }
 
@@ -175,6 +180,11 @@ const buildBlock = ({
         props: lodash.cloneDeep(child.type=='Tabs' ? lodash.omit(child.props, ['dataSource']) : child.props),
       }
 
+      // Don't insert TabList if the parent Tabs is a wizard
+      if (childComponent.type=='TabList' && component.props.isWizard?.toString()=='true') {
+        return
+      }
+
       // Force TabList && TabPanel's dataSource if parent Tabs has one
       if (['TabList', 'TabPanels'].includes(childComponent.type)) {
         const tabParent=getParentOfType(components, childComponent, 'Tabs')
@@ -183,6 +193,12 @@ const buildBlock = ({
         }
         if (tabParent?.props.attribute) {
           childComponent.props.attribute=tabParent?.props.attribute
+        }
+        if (tabParent?.props.hidePagination) {
+          childComponent.props.hidePagination=tabParent?.props.hidePagination
+        }
+        if (tabParent?.props.limit) {
+          childComponent.props.limit=tabParent?.props.limit
         }
       }
       const dataProvider = components[childComponent.props.dataSource]
@@ -200,12 +216,27 @@ const buildBlock = ({
       let propsContent = ''
 
       propsContent += ` getComponentValue={getComponentValue} `
+      propsContent += ` setComponentValue={setComponentValue} `
+      
+      propsContent += ` getComponentAttribute={getComponentAttribute} `
 
-      // Forces refresh is this compnent's value is changed
-      if (isFilterComponent(childComponent, components)) {
-        propsContent += ` setComponentValue={setComponentValue} `
+      if (getDynamicType(childComponent)=='Container' && childComponent.props.dataSource) {
+        propsContent += ` fullPath="${computeDataFieldName(childComponent, components, childComponent.props.dataSource) || ''}"`
+        propsContent += ` pagesIndex={pagesIndex} `
+        propsContent += ` setPagesIndex={setPagesIndex} `
       }
-
+      // Handle wizard
+      if (childComponent.type=='Tabs') {
+        const tabPanels=getChildrenOfType(components, childComponent, 'TabPanel')
+        propsContent += ` childPanelCount={${tabPanels.length}}`
+      }
+      // Handle Wizard buttons
+      if (childComponent.type=='Button' && ['PREVIOUS', 'NEXT', 'FINISH'].includes(childComponent.props?.tag)) {
+        const tab=getParentOfType(components, component, 'Tabs')
+        propsContent+= ` parentTab={'${tab.id}'}`
+        const tabPanels=getChildrenOfType(components, tab, 'TabPanel')
+        propsContent += ` parentTabPanelsCount={${tabPanels.length}}`
+      }
       // Set component id
       propsContent += ` id='${childComponent.id}' `
       // Set reload function
@@ -231,7 +262,6 @@ const buildBlock = ({
         propsContent += ` insideGroup `
       }
       if (isDynamicComponent(components, childComponent)) {
-        propsContent += ` backend='/'`
           let tp = null
             try {
               tp =getDataProviderDataType(
@@ -258,10 +288,15 @@ const buildBlock = ({
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
             const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              propsContent += ` enum='${JSON.stringify(att.enumValues)}'`
+              console.log(att.enumValues)
+              propsContent += ` enum='${encode(JSON.stringify(att.enumValues))}'`
             }
             if (att?.suggestions) {
               propsContent += ` suggestions='${JSON.stringify(att.suggestions)}'`
+            }
+            // TODO Solene: have to remove this : att must exist
+            if (!!att?.multiple) {
+              propsContent += ` isMulti `
             }
           }
           if (tp?.type) {
@@ -421,12 +456,12 @@ const buildBlock = ({
           }
         })
 
+      // Access to fire clear and clear notification
+      propsContent += " fireClearComponents={fireClearComponents} "
+      propsContent += " clearComponents={clearComponents} "
       if (isFilterComponent(childComponent, components)) {
         const stateName = childComponent.id.replace(/^comp-/, '')
         propsContent += ` onChange={ev => set${stateName}(ev.target.value)}`
-      }
-      if (childComponent.type === 'Timer') {
-        propsContent += ` backend='/'`
       }
 
       if (childComponent.type === 'Input' && childComponent.props.type=='password') {
@@ -565,7 +600,10 @@ const buildFilterStates = (components: IComponents) => {
   return filterComponents
     .map(c => {
       const stateName: any = c.id.replace(/^comp-/, '')
-      return `const [${stateName}, set${stateName}]=useState(null)`
+      return `const [${stateName}, set${stateName}]=useState(null)\n
+      useEffect(()=> {
+        setPagesIndex({}, () => reload())
+      }, [${stateName}])`
     })
     .join('\n')
 }
@@ -584,11 +622,77 @@ const buildHooks = (components: IComponents) => {
     return fields
   }
 
+  const getLimits = (dataProvider: IComponent) => {
+    const fields = getLimitsForDataProvider(dataProvider.id, components, getDynamicType)
+    return fields.map(([name, limit]) => `limit${name ? '.'+name : ''}=${limit}`)
+    return fields
+  }
+
+  const getFiltersObject = (dataProvider: IComponent) => {
+    const constantFilters = Object.values(components)
+      .filter(c => c.props.filterAttribute && c.props.filterConstant && c.props.dataSource==dataProvider.id)
+      .map(c => {
+        const fieldName=computeDataFieldName(c, components, dataProvider.id)
+        const filterAttribute=c.props.filterAttribute
+        const filterValue=c.props.filterConstant
+        return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+      })
+    const variableFilters = Object.values(components)
+      .filter(c => c.props.filterAttribute2 && c.props.filterValue2 && c.props.dataSource==dataProvider.id)
+      .map(c => {
+        const fieldName=computeDataFieldName(c, components, dataProvider.id)
+        const filterAttribute=c.props.filterAttribute2
+        const filterValue=c.props.filterValue2
+        return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+      })
+    const variableFilters2 = Object.values(components)
+    .filter(c => c.props.filterAttribute && c.props.filterValue && c.props.dataSource==dataProvider.id)
+    .map(c => {
+      const fieldName=computeDataFieldName(c, components, dataProvider.id)
+      const filterAttribute=c.props.filterAttribute
+      const filterValue=c.props.filterValue
+      return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+    })
+    const ultraVariableFilters = Object.values(components)
+      .filter(c => c.props.dataSource==dataProvider.id && lodash.range(5).some(idx => !!c.props[`filterComponent_${idx}`]))
+      .map(c => {
+        return lodash.flatten(lodash.range(5).map(idx => {
+          const filterComponent=c.props[`filterComponent_${idx}`]
+          if (!filterComponent) { return []}
+          const fieldName=computeDataFieldName(c, components, dataProvider.id)
+          const filterAttribute=components[filterComponent].props.attribute
+          const filterValue=filterComponent
+          return [`${fieldName ? fieldName+'.' : ''}${filterAttribute}`, filterValue]
+          }))
+      })
+      // TODO get Filter component 0 => 4
+    const res={constants: constantFilters, variables: [...variableFilters, ...ultraVariableFilters, ...variableFilters2]}
+    return res
+  }
+
+
+  const getSortParams = dataSourceId => {
+    const dsComponents=lodash(components).values()
+      .filter(c => getDynamicType(c)=='Container')
+      .filter(c => c.props?.dataSource?.replace(/^comp-/, '')==dataSourceId)
+      .filter(c => !!c.props?.sortAttribute && !!c.props.sortDirection)
+      .map(c => {
+        let fieldPath=computeDataFieldName(c, components, c.props.dataSource)
+        fieldPath = fieldPath ? `${fieldPath}.${c.props?.sortAttribute}` : c.props.sortAttribute
+        const fieldParam=`sort.${fieldPath}`
+        const order=c.props.sortDirection
+        return `${fieldParam}=${order}`
+      })
+    return dsComponents.join('&')
+  }
+
   const dataProviders=getValidDataProviders(components)
   if (dataProviders.length === 0) {
     return ''
   }
 
+  const objectsFilters=Object.fromEntries(dataProviders.map(dp => [dp.id, getFiltersObject(dp)]))
+  
   const singlePage=isSingleDataPage(components)
 
   const isIdInDependencyArray = dataProviders.reduce((acc, curr, i) => {
@@ -598,7 +702,8 @@ const buildHooks = (components: IComponents) => {
     return acc
   }, false)
 
-  let code = `const get=axios.get`
+  let code=`const FILTER_ATTRIBUTES=${JSON.stringify(objectsFilters, null, 2)}\n`
+  code += `const get=axios.get`
   code +=
     '\n' +
     dataProviders
@@ -609,10 +714,27 @@ const buildHooks = (components: IComponents) => {
       .join(`\n`)
   code += `\n
   const [refresh, setRefresh]=useState(false)
+  const [pagesIndex, setPagesIndex]=useState({})
+    
+  const computePagesIndex = dataSourceId => {
+    let urlPart=Object.entries(pagesIndex)
+        .filter(([att, value]) => att==dataSourceId || att.startsWith(dataSourceId+'.'))
+        .map(([att, value]) => att.replace(dataSourceId, 'page')+'='+value)
+        .join('&')
+    if (urlPart.length>0) {
+      urlPart=urlPart+'&'
+    }
+    return urlPart
+  }
+
 
   const reload = () => {
     setRefresh(!refresh)
   }
+
+  /** Clear components notifications  */
+  const [clearComponents, setClearComponents]=useState([])
+  const fireClearComponents = component_ids => setClearComponents(component_ids)
 
   useEffect(() => {
     if (!process.browser) { return }
@@ -620,11 +742,12 @@ const buildHooks = (components: IComponents) => {
       .map(dp => {
         const dataId = dp.id.replace(/comp-/, '')
         const dpFields = getDataProviderFields(dp).join(',')
+        const limits = getLimits(dp)
         const idPart = dp.id === 'root' ? `\${id ? \`\${id}/\`: \`\`}` : ''
+        const sortParams = getSortParams(dataId)
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'
-        }${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, getComponentValue)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -639,7 +762,7 @@ const buildHooks = (components: IComponents) => {
         return query
       })
       .join('\n')}
-  }, [get, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
+  }, [get, pagesIndex, ${isIdInDependencyArray ? 'id, ' : ''}refresh])\n`
   return code
 }
 
@@ -648,6 +771,7 @@ const isFilterComponent = (component: IComponent, components: IComponents) => {
   let result=Object.values(components).some(
     c => (c.props?.textFilter == component.id || c.props?.filterValue == component.id
       || c.props?.filterValue2 == component.id
+      || lodash.range(5).some(idx => c.props[`filterComponent_${idx}`]==component.id)
     )
   )
 
@@ -716,6 +840,17 @@ const getWappType = type => {
   return `Wapp${type}`
 }
 
+const storeRedirectCode= (loginUrl:string) => `
+useEffect(() => {
+  if (user===false) {
+    return
+  }
+  if (user===null) {
+    storeAndRedirect('${loginUrl}')
+  }
+}, [user])
+`
+
 const reloadOnBackScript = `
 useEffect(() => {
    const handlePopstate = () => {
@@ -739,8 +874,10 @@ export const generateCode = async (
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
   const { settings } = project
-  const {description, metaImage, name, url, favicon32, gaTag} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
+  const {description, metaImage, name, url, favicon32, gaTag, consentId} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
+  const loginPage=Object.values(pages).find(page => page.components?.root?.props?.tag=='LOGIN')!
+  const loginUrl=loginPage ? '/'+getPageUrl(loginPage.pageId, pages) : ''
   const extraImports: string[] = []
   const wappComponentsDeclaration = lodash(components)
     .values()
@@ -789,10 +926,18 @@ export const generateCode = async (
     module[c] ? '@chakra-ui/react' : `./custom-components/${c}/${c}`,
   )
   */
-  const groupedComponents = lodash.groupBy(imports, c =>
-    module[c] ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
-  )
 
+  // Slider exists in chakra-ui but must be imported from custom components
+  const groupedComponents = lodash.groupBy(imports, c =>
+    module[c] && c!='Slider' ? '@chakra-ui/react' : `../dependencies/custom-components/${c}`,
+  )
+  
+  const componentsWithAttribute=lodash(components)
+    .values()
+    .filter(c => !!c.props.attribute)
+    .map(c => [c.id, c.props.attribute])
+    .fromPairs()
+  const componentsAttributes=`const COMPONENTS_ATTRIBUTES=${JSON.stringify(componentsWithAttribute)}`
   const rootIdQuery = components.root?.props?.model
   const rootIgnoreUrlParams =
     components['root']?.props?.ignoreUrlParams == 'true'
@@ -804,6 +949,7 @@ export const generateCode = async (
       if (role && page) {
         usedRoles.push(role)
         return   `useEffect(()=>{
+            if (redirectExists()) {return}
             if (user?.role=='${role}') {window.location='/${getPageUrl(page, pages)  }'}
           }, [user])`
       }
@@ -815,6 +961,7 @@ export const generateCode = async (
   if (defaultRedirectPage) {
     const rolesArray=usedRoles.map(role => `'${role}'`).join(',')
     autoRedirect+=`\nuseEffect(()=>{
+        if (redirectExists()) {return}
         if (user?.role && ![${rolesArray}].includes(user?.role)) {window.location='/${getPageUrl(defaultRedirectPage, pages)  }'}
       }, [user])`
   }
@@ -824,9 +971,39 @@ export const generateCode = async (
   :
   ''
   */
-  code = `import React, {useState, useEffect} from 'react';
+
+  const generateTagSend = () => {
+    const tagPages=Object.values(pages)
+      .filter(page => !!page.components?.root?.props?.tag)
+      .map(p => [p.components.root.props.tag, `/${getPageUrl(p.pageId, pages)}`])
+    return `useEffect(() => {
+      const tagPages=${JSON.stringify(tagPages)}
+      axios.post('/myAlfred/api/studio/tags', tagPages)
+    }, [])`
+  }
+
+  const generateConsentBanner = () => {
+    if (!consentId) {
+      return ''
+    }
+    return `<script type="text/javascript" 
+      charset="UTF-8" src="//cdn.cookie-script.com/s/${consentId}.js">
+      </script>
+    `
+  }
+
+  let renderNullCode=''
+  if(components.root.props.allowNotConnected=="false"){
+    renderNullCode+= `if(!user){
+      return null
+    }`
+  }
+  const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
+  code = `${header}\nimport React, {useState, useEffect} from 'react';
   import Filter from '../dependencies/custom-components/Filter/Filter';
+  import {buildFilter} from '../dependencies/utils/filters'
   import omit from 'lodash/omit';
+  import lodash from 'lodash';
   import Metadata from '../dependencies/Metadata';
   ${hooksCode ? `import axios from 'axios'` : ''}
   ${Object.entries(groupedComponents)
@@ -851,11 +1028,12 @@ import { ${lucideIconImports.join(',')} } from "lucide-react";`
     : ''
 }
 
-import {ensureToken} from '../dependencies/utils/token'
+import {ensureToken, storeAndRedirect} from '../dependencies/utils/token'
 import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
+import { redirectExists } from '../dependencies/utils/misc'
 
 ${extraImports.join('\n')}
 ${wappComponentsDeclaration.join('\n')}
@@ -867,7 +1045,9 @@ ${componentsCodes}
 
 const ${componentName} = () => {
 
-
+  const {user}=useUserContext()
+  ${autoRedirect}
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
   /** Force reload on history.back */
   ${reloadOnBackScript}
   const query = process.browser ? Object.fromEntries(new URL(window.location).searchParams) : {}
@@ -875,7 +1055,11 @@ const ${componentName} = () => {
   const queryRest=omit(query, ['id'])
   const [componentsValues, setComponentsValues]=useState({})
 
+  ${componentsAttributes}
   const setComponentValue = (compId, value) => {
+    if (lodash.isEqual(value, componentsValues[compId])) {
+      return
+    }
     setComponentsValues(s=> ({...s, [compId]: value}))
   }
 
@@ -890,17 +1074,22 @@ const ${componentName} = () => {
     return value
   }
 
+  const getComponentAttribute = (compId, level) => {
+    return COMPONENTS_ATTRIBUTES[compId.split('_')[0]]
+  }
+
   // ensure token set if lost during domain change
   useEffect(() => {
     ensureToken()
   }, [])
 
-  const {user}=useUserContext()
-  ${autoRedirect}
-
+  
   ${hooksCode}
   ${filterStates}
-
+  ${components.root.props.allowNotConnected=="true" ? '' : storeRedirectCode(loginUrl)}
+  ${generateTagSend()}
+  
+  ${renderNullCode}
   return ${autoRedirect ? 'user===null && ': ''} (
     <>
     <Metadata
@@ -912,6 +1101,7 @@ const ${componentName} = () => {
       metaFavicon32={'${favicon32 && addBackslashes(favicon32)}'}
       metaGaTag={'${gaTag}'}
     />
+    ${generateConsentBanner()}
     ${code}
     </>
 )};

@@ -1,6 +1,10 @@
 const crypto = require('crypto')
-
-const API_PATH = '/myAlfred/api'
+const lodash = require('lodash')
+const nationalities=require('i18n-nationality')
+const languages=require ('languages')
+const regionData=require('./regions.json')
+const { sortObject } = require('./text')
+const API_ROOT='/myAlfred/api/studio/'
 
 const NEEDED_VAR = [
   'MODE',
@@ -79,19 +83,6 @@ const SKILLS={
     entrieName: 'reactive',
   },
 }
-
-const LANGUAGES= [
-  {value: 'Français', label: 'Français'},
-  {value: 'LSF', label: 'LSF'},
-  {value: 'Anglais', label: 'Anglais'},
-  {value: 'Allemand', label: 'Allemand'},
-  {value: 'Espagnol', label: 'Espagnol'},
-  {value: 'Chinois', label: 'Chinois'},
-  {value: 'Arabe', label: 'Arabe'},
-  {value: 'Portugais', label: 'Portugais'},
-  {value: 'Russe', label: 'Russe'},
-  {value: 'Japonais', label: 'Japonais'},
-]
 
 const MAX_DESCRIPTION_LENGTH=300
 
@@ -235,18 +226,75 @@ const IMAGES_WIDTHS_FOR_RESIZE = [2000, 1000, 500]
 const IMAGE_SIZE_MARKER = '_srcset:'
 const THUMBNAILS_DIR = 'thumbnails'
 
+// Not created by the payment plugin
+const PURCHASE_STATUS_NEW=`PURCHASE_STATUS_NEW`
+// Waiting for success/failure
+const PURCHASE_STATUS_PENDING=`PURCHASE_STATUS_PENDING`
+// Success
+const PURCHASE_STATUS_COMPLETE=`PURCHASE_STATUS_COMPLETE`
+// Failure
+const PURCHASE_STATUS_FAILED=`PURCHASE_STATUS_FAILED`
+
+const PURCHASE_STATUS={
+  [PURCHASE_STATUS_NEW]:`Nouveau`,
+  [PURCHASE_STATUS_PENDING]:`En cours`,
+  [PURCHASE_STATUS_COMPLETE]:`Validé`,
+  [PURCHASE_STATUS_FAILED]:`Refusé`,
+}
+
+const NATIONALITIES=sortObject(nationalities.getNames('fr'), 'FR')
+//const LANGUAGES={...NATIONALITIES}
+const LANGUAGES=Object.fromEntries(
+  languages.getAllLanguageCode().map(code => ([code, languages.getLanguageInfo(code).nativeName])).sort(v => v[1])
+)
+//sortObject
+
+const LANGUAGE_LEVEL_BEGINNER=`LANGUAGE_LEVEL_BEGINNER`
+const LANGUAGE_LEVEL_INTERMEDIATE=`LANGUAGE_LEVEL_INTERMEDIATE`
+const LANGUAGE_LEVEL_ADVANCED=`LANGUAGE_LEVEL_ADVANCED`
+const LANGUAGE_LEVEL_NATIVE=`LANGUAGE_LEVEL_NATIVE`
+
+const LANGUAGE_LEVEL={
+  [LANGUAGE_LEVEL_BEGINNER]:`Débutant`,
+  [LANGUAGE_LEVEL_INTERMEDIATE]:`Intermédiaire`,
+  [LANGUAGE_LEVEL_ADVANCED]:`Avancé`,
+  [LANGUAGE_LEVEL_NATIVE]:`Bilingue/natif`,
+}
+
+const REGIONS=lodash(regionData)
+  .mapValues(v => v.region)
+  .value()
+Object.freeze(REGIONS)
+
+const REGIONS_FULL = regionData
+Object.freeze(REGIONS_FULL)
+
+const AVG_DAYS_IN_MONTH=30.436875
+
+const VERB_GET=`VERB_GET`
+const VERB_PUT=`VERB_PUT`
+const VERB_POST=`VERB_POST`
+const VERB_DELETE=`VERB_DELETE`
+
+const VERBS={
+  [VERB_GET]:`get`,
+  [VERB_PUT]:`put`,
+  [VERB_POST]:`post`,
+  [VERB_DELETE]:`delete`,
+}
+
 module.exports = {
   ALL_SERVICES, ALF_CONDS, CANCEL_MODE, CUSTOM_PRESTATIONS_FLTR,
   generate_id, GID_LEN, CESU,
   NEEDED_VAR,
-  SKILLS, LANGUAGES, MAX_DESCRIPTION_LENGTH, EXPIRATION_DELAY,
+  SKILLS, LANGUAGES, LANGUAGE_LEVEL_ADVANCED, LANGUAGE_LEVEL_BEGINNER, LANGUAGE_LEVEL_INTERMEDIATE, LANGUAGE_LEVEL_NATIVE, MAX_DESCRIPTION_LENGTH, EXPIRATION_DELAY,
   CLOSE_NOTIFICATION_DELAY, ACCOUNT_MIN_AGE, COMPANY_SIZE, COMPANY_ACTIVITY,
   BUDGET_PERIOD, PRO, PART, CREASHOP_MODE,
   MONTH_PERIOD, YEAR_PERIOD, DASHBOARD_MODE, MICROSERVICE_MODE, CARETAKER_MODE, REGISTER_MODE,
   COMPANY_PRIVATE_FLTR, AVOCOTES_COMPANY_NAME, PENDING_REASONS, YEARS_RANGE,
   IMAGE_EXTENSIONS, TEXT_EXTENSIONS, INSURANCE_TYPES,
   REVIEW_STATUS, COMMISSION_SOURCE, TRANSACTION_CREATED, TRANSACTION_FAILED,
-  TRANSACTION_SUCCEEDED, XL_EXTENSIONS, API_PATH,
+  TRANSACTION_SUCCEEDED, XL_EXTENSIONS, 
   PDF_EXTENSIONS,
   CESU_MANDATORY, CESU_OPTIONAL, CESU_DISABLED,
   BOOK_STATUS,
@@ -257,4 +305,7 @@ module.exports = {
   IMAGES_WIDTHS_FOR_RESIZE,
   IMAGE_SIZE_MARKER,
   THUMBNAILS_DIR,
+  PURCHASE_STATUS, PURCHASE_STATUS_NEW, PURCHASE_STATUS_PENDING, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED,
+  API_ROOT, NATIONALITIES, LANGUAGE_LEVEL, REGIONS, REGIONS_FULL, AVG_DAYS_IN_MONTH,LANGUAGE_LEVEL_ADVANCED,
+  VERBS, VERB_GET, VERB_POST, VERB_PUT, VERB_DELETE,
 }

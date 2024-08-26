@@ -4,6 +4,7 @@ const bcrypt=require('bcryptjs')
 const { schemaOptions } = require('../../../utils/schemas')
 const { AVAILABILITY, COACHING, EXPERIENCE, ROLES } = require('../consts')
 const IBANValidator = require('iban-validator-js')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema;
 
@@ -67,6 +68,9 @@ const JobUserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
   }],
+  pinned: {
+    type: Boolean,
+  },
   dummy: {
     type: Number,
     default: 0,
@@ -76,7 +80,7 @@ const JobUserSchema = new Schema({
 );
 
 /* eslint-disable prefer-arrow-callback */
-JobUserSchema.virtual("search_field").get(function() {
+JobUserSchema.virtual("search_field", DUMMY_REF).get(function() {
   let res=[this.name]
   if (this.skills) {
     res=[...res, this.skills.map(s => s.name)]
@@ -87,7 +91,7 @@ JobUserSchema.virtual("search_field").get(function() {
   return res.join(',')
 })
 
-JobUserSchema.virtual("location_str").get(function() {
+JobUserSchema.virtual("location_str", DUMMY_REF).get(function() {
   const locations=[]
   if (this.customer_location) { locations.push("chez le client")}
   if (this.foreign_location) { locations.push("à distance")}
@@ -136,16 +140,12 @@ JobUserSchema.virtual("missions", {
   foreignField: "job" // is equal to foreignField
 });
 
-JobUserSchema.virtual('pinned').get(function() {
-  return false
-})
-
-JobUserSchema.virtual('recommandations_count').get(function() {
+JobUserSchema.virtual('recommandations_count', DUMMY_REF).get(function() {
   return this.recommandations?.length || 0
 })
 
 
-JobUserSchema.virtual('rate_str').get(function() {
+JobUserSchema.virtual('rate_str', DUMMY_REF).get(function() {
   return this.on_quotation ?  "sur devis"
   :  this.rate ? `${this.rate}€/h`
   : null

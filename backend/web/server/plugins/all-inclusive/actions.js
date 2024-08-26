@@ -99,7 +99,7 @@ const alle_accept_quotation = ({value, paymentSuccess, paymentFailure}, user) =>
   return isActionAllowed({action:'alle_accept_quotation', dataId:value, user})
     .then(ok => {
       if (!ok) {return false}
-      return loadFromDb({model: 'mission', id:value, fields:['job.user','customer_total', 'aa_total', 'mer_total']})
+      return loadFromDb({model: 'mission', id:value, fields:['name', 'job.user','customer_total', 'aa_total', 'mer_total']})
     })
     .then(([mission]) => {
       const [success_url, failure_url]=[paymentSuccess, paymentFailure].map(p => `https://${getHostName()}/${p}`)

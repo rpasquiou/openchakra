@@ -1,14 +1,19 @@
 const {
   COMPANY_ACTIVITY,
-  COMPANY_ACTIVITY_BANQUE
+  COMPANY_ACTIVITY_BANQUE,
+  ROLE_EXTERNAL_DIET
 } = require('../../../server/plugins/smartdiet/consts')
 
 module.exports={
   COMPANY_NO_INSURANCE_DATA:{
     name: 'S', size: 10, activity: COMPANY_ACTIVITY_BANQUE,
   },
-  USER_DATA:{firstname: 'S', lastname: 'S', dataTreatmentAccepted: true,
-    cguAccepted: true, pseudo: 'S', phone: '0675774324',
+  USER_DATA:{
+    firstname: 'Patient', lastname: 'Patient', dataTreatmentAccepted: true,
+    cguAccepted: true, pseudo: 'S', phone: '0675774324'
+  },
+  DIET_DATA:{
+    firstname: 'Diet', lastname: 'Diet', role: ROLE_EXTERNAL_DIET
   },
   COACHING_DATA: {},
   APPOINTMENT_DATA: {
@@ -25,6 +30,7 @@ module.exports={
     price: 0,
     name: 'Offre test',
     duration: 365,
+    nutrition_credit: 5,
   },
   KEY_DATA: {
     name: 'Clé',
@@ -49,4 +55,9 @@ module.exports={
   APPOINTMENT_DATA: {
 
   },
+  WEBINAR_DATA: {
+    name: 'Un webinaire',
+    url: 'https://smartdiet.app',
+    description: 'Description du webinaire',
+  }
 }
