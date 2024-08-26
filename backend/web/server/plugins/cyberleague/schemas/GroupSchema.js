@@ -7,7 +7,7 @@ const Schema = mongoose.Schema
 const GroupSchema = new Schema({
   admin: {
     type: Schema.Types.ObjectId,
-    ref: 'partner',
+    ref: 'user',
     required: [true, `L'administrateur est obligatoire`],
   },
   name: {
