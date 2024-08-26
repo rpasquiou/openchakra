@@ -14,6 +14,7 @@ const Post = require('../../models/Post')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn } = require('../../utils/pinned')
+const Group = require('../../models/Group')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -195,7 +196,13 @@ const prePutData = async ({model, id, params, user}) => {
           ...params.pinned ? {$addToSet: {pinned_by: user._id}}
           : {$pull: {pinned_by: user._id}}
         }
-      )}
+      )
+    }
+  }
+  if (model == `group`) {
+    if (`users` in params) {
+      await Group.updateOne({_id:id}, {$pull: {pending_users: user._id}})
+    }
   }
   return {model, id, params, user}
 }
