@@ -2379,14 +2379,11 @@ const agendaHookFn = async received => {
             const progressQuizz = await createAppointmentProgress({coaching: coaching._id})
             return Appointment.findOneAndUpdate(
               { smartagenda_id: objId },
-              {$set: {
+              {
                 coaching: coaching, appointment_type, smartagenda_id: objId,
                 start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
-                user, diet, progress: progressQuizz,
-              }},
-              {$setOnInsert: {
-                progres: progressQuizz,
-              }},
+                user, diet, progress: progressQuizz,progres: progressQuizz,
+              },
               { upsert: true, runValidators: true }
             )
           })
