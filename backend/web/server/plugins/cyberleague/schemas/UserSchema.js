@@ -110,6 +110,10 @@ const UserSchema = new Schema({
   city: {
     type: AddressSchema,
     required: false
+  },
+  current_cursus: {
+    type: String,
+    required: false
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
