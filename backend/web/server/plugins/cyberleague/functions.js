@@ -41,7 +41,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'pinned_users_count', instance: 'number'})
   declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'number'})
-  declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
+  declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn(m, 'pinned_by'), setterFn: setterPinnedFn(m, 'pinned_by'), requires:'pinned_by'})
   declareEnumField({ model: m, field: 'role', enumValues: ROLES })
   declareVirtualField({
     model: m, field: 'groups', instance: 'Array', multiple: true,
