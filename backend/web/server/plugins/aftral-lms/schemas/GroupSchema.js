@@ -6,7 +6,7 @@ const GroupSchema = new Schema({
     type: String,
     required: [true, `Le nom est obligatoire`]
   },
-  user: {
+  creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, `Le formateur est obligatoire`],
