@@ -284,7 +284,10 @@ const UserSchema = new Schema({
   },
   diet_calls_enabled: {
     type: Boolean,
-    validate: [function(v) {return !v || this.role!=ROLE_EXTERNAL_DIET}, `Appels sortants autorisés aux diets uniquement`],
+    validate: [
+      function(v) {return !v || this.role==ROLE_EXTERNAL_DIET},
+      `Appels sortants autorisés aux diets uniquement`
+    ],
     required: false,
   },
   // END TODO: handle multiple enum declaration
@@ -355,7 +358,7 @@ const UserSchema = new Schema({
     required: false,
   },
   box_batch_code: {
-    type: Date,
+    type: String,
     required: false,
   },
 }, {...schemaOptions})
@@ -761,7 +764,6 @@ UserSchema.virtual('spent_nutrition_credits', {
   options: {
     match: () => {
       const f=getYearFilter({attribute: 'start_date', year: moment()})
-      console.log(JSON.stringify(f))
       return f;
     },
   },

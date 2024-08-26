@@ -17,6 +17,7 @@ const {
   setPreprocessGet,
   simpleCloneModel,
   getDateFilter,
+  setPrePutData,
 } = require('../../utils/database')
 const {
   sendDietPreRegister2Admin,
@@ -210,6 +211,8 @@ const Job = require('../../models/Job')
 const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
 const { historicize } = require('./history')
+const { validatePassword } = require('../../../utils/passwords')
+const { createAppointmentProgress } = require('./quizz')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -552,7 +555,7 @@ const preCreate = async ({ model, params, user }) => {
     else { //CUSTOMER
       customer_id = user._id
     }
-    return loadFromDb({
+    const [usr]=await loadFromDb({
       model: 'user', id: customer_id,
       fields: [
         'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
@@ -560,61 +563,59 @@ const preCreate = async ({ model, params, user }) => {
       ],
       user,
     })
-      .then(([usr]) => {
-        // Phone is required for appintment
-        if (lodash.isEmpty(usr.phone)) {
-          throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
-        }
-        // If company has coaching reasons, check if the user coaching intersects at least one
-        const company_reasons=usr.company?.reasons
-        if (company_reasons?.length > 0) {
-          const user_reasons=usr.latest_coachings?.[0]?.reasons
-          if (!setIntersects(user_reasons, company_reasons)) {
-            throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
-          }
-        }
-        // Check remaining credits
-        const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching && isAppointment) {
-          throw new ForbiddenError(`Aucun coaching en cours`)
-        }
+    // Phone is required for appintment
+    if (lodash.isEmpty(usr.phone)) {
+      throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
+    }
+    // If company has coaching reasons, check if the user coaching intersects at least one
+    const company_reasons=usr.company?.reasons
+    if (company_reasons?.length > 0) {
+      const user_reasons=usr.latest_coachings?.[0]?.reasons
+      if (!setIntersects(user_reasons, company_reasons)) {
+        throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
+      }
+    }
+    // Check remaining credits
+    const latest_coaching = usr.latest_coachings[0]
+    if (!latest_coaching && isAppointment) {
+      throw new ForbiddenError(`Aucun coaching en cours`)
+    }
 
-        const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
+    const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
 
-        if ((isAppointment && latest_coaching.remaining_credits <= 0)
-          || (!isAppointment && !(remaining_nut > 0))) {
-          throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
-        }
-        // Check appointment to come
-        const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
-        if (nextAppt) {
-          throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
-        }
+    if ((isAppointment && latest_coaching.remaining_credits <= 0)
+      || (!isAppointment && !(remaining_nut > 0))) {
+      throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
+    }
+    // Check appointment to come
+    const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
+    if (nextAppt) {
+      throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
+    }
 
-        if (user.role==ROLE_CUSTOMER) {
-          diet=latest_coaching.diet
-        }
-        
-        if (isAppointment) {
-          const start=moment(params.start_date)
-          return getAvailabilities({
-            diet_id: diet.smartagenda_id, 
-            appointment_type: latest_coaching.appointment_type?.smartagenda_id,
-            from: moment(start).add(-1, 'day').startOf('day'),
-            to: moment(start).endOf('day'),
-          })
-            .then(availabilities => {
-              const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
-              if (!exists) {
-                throw new Error(`Ce créneau n'est plus disponible`)
-              }
-              return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
-            })
-        }
-        else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, ...params } }
-        }
+    if (user.role==ROLE_CUSTOMER) {
+      diet=latest_coaching.diet
+    }
+    
+    if (isAppointment) {
+      const start=moment(params.start_date)
+      const availabilities=await getAvailabilities({
+        diet_id: diet.smartagenda_id, 
+        appointment_type: latest_coaching.appointment_type?.smartagenda_id,
+        from: moment(start).add(-1, 'day').startOf('day'),
+        to: moment(start).endOf('day'),
       })
+      const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
+      if (!exists) {
+        throw new Error(`Ce créneau n'est plus disponible`)
+      }
+      // Create progress quizz for appointment
+      const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
+      return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+    }
+    else { // Nutrition advice
+      return { model, params: { patient_email: usr.email, diet, ...params } }
+    }
   }
   return Promise.resolve({ model, params })
 }
@@ -656,7 +657,7 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
     }
   }
   if (model=='lead') {
-    //await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
+    await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
   }
   return Promise.resolve(params)
 }
@@ -1125,9 +1126,6 @@ const getEventStatus = (userId, params, data) => {
           APPOINTMENT_CURRENT
     })
     .catch(console.error)
-  /**
-  console.log(data._id)
-  */
 }
 
 const EVENT_MODELS = ['event', 'collectiveChallenge', 'individualChallenge', 'menu', 'webinar']
@@ -1724,6 +1722,10 @@ declareEnumField({model: 'ticket', field: 'priority', enumValues: TICKET_PRIORIT
 declareEnumField({model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 /** Purchase END  */
 
+/** History START */
+// declareEnumField({model: 'history', field: 'docModel', enumValues: {lead: 'Lead'}})
+/** History END  */
+
 const getConversationPartner = (userId, params, data) => {
   return Conversation.findById(data._id, {users:1})
     .then(conv => {
@@ -2019,6 +2021,16 @@ const postDelete = ({ model, data }) => {
 
 setPostDeleteData(postDelete)
 
+const prePut = async data => {
+  const {model, params}=data
+  if (model=='user' && !!params.password) {
+    await validatePassword(params)
+  }
+  return data
+}
+
+setPrePutData(prePut)
+
 const ensureChallengePipsConsistency = () => {
   // Does every challenge have all pips ?
   return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
@@ -2270,7 +2282,7 @@ const getRegisterCompany = props => {
 setImportDataFunction({ model: 'lead', fn: importLeads })
 
 // Ensure all spoon gains are defined
-ensureSpoonGains = () => {
+const ensureSpoonGains = () => {
   return Object.keys(SPOON_SOURCE).map(source => {
     return SpoonGain.exists({ source })
       .then(exists => {
@@ -2361,15 +2373,14 @@ const agendaHookFn = async received => {
               throw new Error(`No coaching defined`)
             }
             const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
-            return Appointment.findOneAndUpdate(
-              { smartagenda_id: objId },
-              {
-                coaching: coaching, appointment_type, smartagenda_id: objId,
-                start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
-                user, diet,
-              },
-              { upsert: true, runValidators: true }
-            )
+            const progressQuizz = await createAppointmentProgress({coaching: coaching._id})
+            const appt=(await Appointment.findOne({ smartagenda_id: objId })) || new Appointment({})
+            Object.assign(appt, {
+              coaching: coaching, appointment_type, smartagenda_id: objId,
+              start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
+              user, diet, progress: progressQuizz,progres: progressQuizz,
+            })
+            return appt.save()
           })
       })
       .then(console.log)
@@ -2538,11 +2549,12 @@ cron.schedule('0 0 10 * * *', async () => {
 })
 
 
-exports.ensureChallengePipsConsistency = ensureChallengePipsConsistency
-exports.logbooksConsistency = logbooksConsistency
-exports.getRegisterCompany = getRegisterCompany
-exports.agendaHookFn = agendaHookFn 
-exports.mailjetHookFn = mailjetHookFn
-exports.computeStatistics = computeStatistics
-exports.canPatientStartCoaching = canPatientStartCoaching
-exports.preProcessGetFORBIDDEN = preProcessGet
+module.exports = {
+  ensureChallengePipsConsistency,
+  logbooksConsistency,
+  getRegisterCompany,
+  agendaHookFn, mailjetHookFn,
+  computeStatistics,
+  canPatientStartCoaching,
+  preProcessGetFORBIDDEN: preProcessGet,
+}

@@ -46,6 +46,11 @@ const AppointmentSchema = new Schema({
     validate: [function(v) { return !this || moment(v).isAfter(this.start_date)}, 'La fin doit être postérieure au début'],
     required: [true, 'La date de fin est obligatoire'],
   },
+  progress: {
+    type: Schema.Types.ObjectId,
+    ref: 'userQuizz',
+    required: [true,`Le questionnaire progression est obligatoire`],
+  },
   appointment_type: {
     type: Schema.Types.ObjectId,
     index: true,
