@@ -28,6 +28,7 @@ const GroupSchema = new Schema({
   can_post: {
     type: Boolean,
     required: true,
+    default: true,
   },
   trainees: {
     type: [{
