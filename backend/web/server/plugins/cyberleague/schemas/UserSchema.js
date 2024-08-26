@@ -118,6 +118,10 @@ const UserSchema = new Schema({
   searched_job: {
     type: String,
     required: false
+  },
+  looking_for_opportunities: {
+    type: Boolean,
+    required: false
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
