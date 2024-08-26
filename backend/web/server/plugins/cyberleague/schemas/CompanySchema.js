@@ -89,7 +89,6 @@ const CompanySchema = new Schema(
     },
     pinned: {
       type: Boolean,
-      required: true,
       default: false,
     },
     city: {

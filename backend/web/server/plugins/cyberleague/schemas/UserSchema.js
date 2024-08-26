@@ -82,7 +82,6 @@ const UserSchema = new Schema({
   },
   pinned: {
     type: Boolean,
-    required: true,
     default: false,
   },
   trophies: {
