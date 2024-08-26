@@ -1,6 +1,6 @@
 const Mission=require('../../models/Mission')
 
-const setTIOnMIssions = async () => {
+const setTIOnMissions = async () => {
   const orphanMissions=(await Mission.find({ti: null}).populate('job')).filter(m => !!m.job?.user)
   console.log(`Got ${orphanMissions.length} orphaan missions`)
   await Promise.all(orphanMissions.map(mission=> {
@@ -11,7 +11,7 @@ const setTIOnMIssions = async () => {
 
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
-  await setTIOnMIssions()
+  await setTIOnMissions()
 }
 
 module.exports=databaseUpdate
