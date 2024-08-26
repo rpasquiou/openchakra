@@ -2376,13 +2376,17 @@ const agendaHookFn = async received => {
               throw new Error(`No coaching defined`)
             }
             const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
+            const progressQuizz = await createAppointmentProgress({coaching: coaching._id})
             return Appointment.findOneAndUpdate(
               { smartagenda_id: objId },
-              {
+              {$set: {
                 coaching: coaching, appointment_type, smartagenda_id: objId,
                 start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
-                user, diet,
-              },
+                user, diet, progress: progressQuizz,
+              }},
+              {$setOnInsert: {
+                progres: progressQuizz,
+              }},
               { upsert: true, runValidators: true }
             )
           })
