@@ -33,6 +33,10 @@ const EventSchema = new Schema({
     ref: 'company',
     required: [true, 'La compagnie est obligatoire'],
   },
+  is_webinaire: {
+    type: Boolean,
+    required: false
+  },
   expertises: [{
     type: Schema.Types.ObjectId,
     ref: 'expertise',
