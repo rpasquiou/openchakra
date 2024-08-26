@@ -114,6 +114,10 @@ const UserSchema = new Schema({
   current_cursus: {
     type: String,
     required: false
+  },
+  searched_job: {
+    type: String,
+    required: false
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
