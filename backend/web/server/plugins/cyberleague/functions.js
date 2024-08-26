@@ -4,9 +4,9 @@ const {
   setPreprocessGet,
   setPreCreateData,
   declareComputedField,
-  setPrePutData,
   getModel,
   setPostCreateData,
+  setPostPutData,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
@@ -175,13 +175,13 @@ const postCreate = async ({ model, params, data, user }) => {
 
 setPostCreateData(postCreate)
 
-const prePutData = async ({model, id, params, user}) => {
+const postPutData = async ({model, id, params, user}) => {
   if (model == `group`) {
     if (`users` in params) {
-      await Group.updateOne({_id:id}, {$pull: {pending_users: user._id}})
+      await Group.updateOne({_id:id}, {$pull: {pending_users: params.users}})
     }
   }
   return {model, id, params, user}
 }
 
-setPrePutData(prePutData)
+setPostPutData(postPutData)
