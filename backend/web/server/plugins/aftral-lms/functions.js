@@ -41,6 +41,7 @@ const { getBlockDisliked } = require('./block')
 const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
 const Permission = require('../../models/Permission')
+const Group = require('../../models/Group')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -225,6 +226,14 @@ const preCreate = async ({model, params, user}) => {
     params.user = user._id
     params.block = params.parent
   }
+
+  if (model == `group`){
+    const sessions = await Session.find({_id:{$in:params.sessions}},{trainees:1}).populate('trainees')
+    let trainees = sessions.flatMap(session => session.trainees)
+    trainees = lodash.uniqBy(trainees, `_id`)
+    trainees = lodash.sortBy(trainees, `firstname`)
+    params.trainees=trainees.map(trainee=> trainee._id)
+  }
   return Promise.resolve({model, params})
 }
 
@@ -276,6 +285,44 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
     const program = await Program.findById(id)
     params.codes = program.codes
     params.duration_unit = program.duration_unit
+  }
+
+  if (model == `group` && params.sessions){
+    const group = await Group.findById(id, {trainees: 1, sessions: 1})
+
+    const addedSessions = await Session.find({
+      _id: {
+        $in: lodash.difference(
+          params.sessions.map(String),
+          group.sessions.map(String)
+        ),
+      },
+    })
+
+    const untouchedSessions = await Session.find({
+      _id: {
+        $in: lodash.intersection(
+          group.sessions.map(String),
+          params.sessions.map(String)
+        ),
+      },
+    })
+
+    const untouchedSessionTrainees = lodash.flatten(
+      untouchedSessions.map(session => session.trainees.map(String))
+    )
+
+    const addedSessionTrainees = lodash.flatten(
+      addedSessions.map(session => session.trainees.map(String))
+    )
+
+    const addedTrainees = lodash.difference(
+      addedSessionTrainees,
+      untouchedSessionTrainees
+    )
+
+    const trainees = await User.find({_id:{$in:[...untouchedSessionTrainees, ...addedTrainees]}},{firstname:1}).sort('firstname')
+    params.trainees=trainees.map(t=>t._id)
   }
   return {model, id, params, user, skip_validation}
 }
@@ -594,5 +641,5 @@ const postCreate = async ({model, params, data}) => {
 setPostCreateData(postCreate)
 
 module.exports={
-  lockSession, setSessionInitialStatus
+  lockSession, setSessionInitialStatus, preCreate, prePut
 }
