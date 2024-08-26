@@ -107,7 +107,7 @@ const CompanySchema = new Schema(
       type: String,
       required: false
     },
-    creation_date: {
+    company_creation: {
       type: Date,
       required: false
     }
