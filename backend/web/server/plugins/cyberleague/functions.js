@@ -10,7 +10,6 @@ const {
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
-const Post = require('../../models/Post')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
