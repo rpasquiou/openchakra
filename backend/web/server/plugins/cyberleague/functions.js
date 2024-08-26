@@ -14,6 +14,7 @@ const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
+const { getterCountFn } = require('./count')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -58,6 +59,8 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'groups_count', instance: 'number'})
   declareVirtualField({model: m, field: 'pending_groups_count', instance: 'number'})
+  declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('partner')})
+  declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('member')})
 })
 
 //Company declarations

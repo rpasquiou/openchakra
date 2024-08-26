@@ -130,6 +130,12 @@ const UserSchema = new Schema({
       required: true,
     }],
     default: []
+  },
+  member_count: {
+    type: Number
+  },
+  partner_count: {
+    type: Number
   }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
