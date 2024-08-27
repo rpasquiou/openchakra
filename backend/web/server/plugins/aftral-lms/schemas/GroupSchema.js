@@ -56,4 +56,16 @@ GroupSchema.virtual('excluded_trainees', DUMMY_REF).get(function(){
   return differenceIds
 })
 
+GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){
+  return this.trainees? this.trainees.length : 0
+})
+
+GroupSchema.virtual('available_trainees_count', DUMMY_REF).get(function(){
+  return this.available_trainees? this.available_trainees.length : 0
+})
+
+GroupSchema.virtual('excluded_trainees_count', DUMMY_REF).get(function(){
+  return this.available_trainees.length - this.trainees.length
+})
+
 module.exports = GroupSchema
