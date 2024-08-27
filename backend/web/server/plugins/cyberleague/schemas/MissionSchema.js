@@ -59,6 +59,17 @@ const MissionSchema = new Schema(
       type: Boolean,
       required: false,
     },
+    companies: {
+      type: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "company",
+          index: true,
+          required: false,
+        },
+      ],
+      default: [],
+    },
   },
   schemaOptions
 )

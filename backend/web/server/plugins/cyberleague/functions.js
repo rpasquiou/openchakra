@@ -137,7 +137,17 @@ declareVirtualField({model: 'group', field: 'posts_count', instance: 'number'})
 declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'number'})
 declareVirtualField({model: 'group', field: 'users_count', instance: 'number'})
 
-
+// Mission Declarations
+declareVirtualField({
+  model: 'company',
+  field: 'missions',
+  instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'mission' }
+  },
+});
 
 
 // Enums Mission Schema
