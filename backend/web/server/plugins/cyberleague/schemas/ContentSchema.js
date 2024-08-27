@@ -16,6 +16,14 @@ const ContentSchema = new Schema({
     ref: 'user',
     required: [true, 'Le créateur est obligatoire'],
   },
+  short_description: {
+    type: String,
+    required: false,
+  },
+  duration: {
+    type: String,
+    required: false,
+  },
   title: {
     type: String,
     required: [true, 'Le titre est obligatoire'],
