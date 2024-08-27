@@ -190,6 +190,10 @@ declareVirtualField({model:`group`, field: `excluded_trainees`, instance: `Array
     options: {ref: `user`}
   }
 })
+declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: `trainees`})
+declareVirtualField({model: `group`, field: `available_trainees_count`, instance: `Number`, requires: `available_trainees`})
+declareVirtualField({model: `group`, field: `excluded_trainees_count`, instance: `Number`, requires: `trainees,available_trainees`})
+// Group end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id

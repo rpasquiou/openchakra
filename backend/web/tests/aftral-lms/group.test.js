@@ -115,12 +115,23 @@ describe('Groups', () => {
     await mongoose.connection.close()
   })
 
-  it('must return group removed trainees', async() => {
-    const [data] = await loadFromDb({model: `group`, user, fields: [`trainees`, `sessions.trainees`,`available_trainees`,`excluded_trainees`]})
+  it('must return group attributes', async() => {
+    const [data] = await loadFromDb({model: `group`, user, fields: [
+      `trainees`, 
+      `sessions.trainees`,
+      `available_trainees`,
+      `excluded_trainees`,
+      `trainees_count`,
+      `available_trainees_count`,
+      `excluded_trainees_count`,
+    ]})
     // console.log(JSON.stringify(data.sessions, null, 2))
     // await preCreate({model: `group`, user, params})
     // await prePut({model: `group`, user, id:group._id, params:{sessions:[session2._id, session3._id],creator:user._id}})
     expect(data.trainees.length).toEqual(4)
     expect(idEqual(data.excluded_trainees[0], trainee5._id)).toBeTruthy()
+    expect(data.available_trainees_count).toEqual(5)
+    expect(data.trainees_count).toEqual(4)
+    expect(data.excluded_trainees_count).toEqual(1)
   })
 })
