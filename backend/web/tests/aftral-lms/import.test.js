@@ -33,12 +33,12 @@ describe('Test imports', () => {
     return importResources(RESOURCES_ROOT, true)
   })
 
-  it.skip('must import product codes', async () => {
+  it('must import product codes', async () => {
     return importCodes(CODES_PATH, 'Code produit à jour', 1)
   })
 
-  it.only('must import programs', async () => {
-    return importPrograms(PROGRAMS_PATH, 'Final', 1)
+  it('must import programs', async () => {
+    return importPrograms(PROGRAMS_PATH, 'Final', 1, CODES_PATH, 'Code produit à jour', 1)
   })
 
 

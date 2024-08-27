@@ -32,6 +32,11 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  // AFTRAL session id
+  aftral_id: {
+    type: Number,
+    required: false,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema

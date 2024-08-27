@@ -288,7 +288,7 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
-getSession = async (userId, params, data, fields) => {
+const getSession = async (userId, params, data, fields) => {
   let currentBlock = await mongoose.models.block.findById(data._id,{parent:1, type:1})
   while (!!currentBlock.parent) {
     currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
@@ -392,7 +392,7 @@ const getBlockHomeworks = async (userId, params, data) => {
   return progress.homeworks
 }
 
-getBlockHomeworksSubmitted = async (userId, params, data) => {
+const getBlockHomeworksSubmitted = async (userId, params, data) => {
   const progress = await mongoose.models.progress.find({
     block:data._id
   }).populate('homeworks')
@@ -400,7 +400,7 @@ getBlockHomeworksSubmitted = async (userId, params, data) => {
   return homeworks.length
 }
 
-getBlockHomeworksMissing = async (userId, params, data) => {
+const getBlockHomeworksMissing = async (userId, params, data) => {
   const session = await mongoose.models.session.findById(data.session)
   const progress = await mongoose.models.progress.find({
     block:data._id

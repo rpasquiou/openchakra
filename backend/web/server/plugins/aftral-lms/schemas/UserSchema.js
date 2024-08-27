@@ -55,6 +55,11 @@ const UserSchema = new Schema({
   permission_group: {
     type: Schema.Types.ObjectId,
     ref: 'permissionGroup'
+  },
+  // AFTRAL identifer for both trainees & trainers
+  aftral_id: {
+    type: Number,
+    required: false,
   }
 }, schemaOptions)
 

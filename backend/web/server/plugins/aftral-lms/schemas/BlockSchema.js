@@ -6,7 +6,6 @@ const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { getAttribute } = require('../block')
-const { BadRequestError } = require('../../../utils/errors')
 
 const BlockSchema = new Schema({
   creator: {
