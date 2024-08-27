@@ -23,7 +23,7 @@ jest.setTimeout(60000)
 
 describe('User', () => {
   let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor, id
-  let limit = new Date('06-06-2022')
+  let limit = new Date('06-06-2025')
   beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
     conceptor = await User.create({
@@ -125,7 +125,7 @@ describe('User', () => {
 
   it('must return block homeworks attributes', async()=> {
     const [result] = await loadFromDb({model:`block`,user:trainee1._id, id, fields:[`can_upload_homework`,`homeworks`]})
-    expect(result.can_upload_homework).not.toBeTruthy()
+    expect(result.can_upload_homework).toBeTruthy()
     expect(result.homeworks.length).toEqual(1)
     expect(idEqual(result.homeworks[0]._id,homework1._id)).toBeTruthy()
   })

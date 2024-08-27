@@ -282,7 +282,14 @@ BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
 })
 
 BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
-  return (this.homework_mode && moment(this.homework_limit_date).isAfter(moment())) || false
+  if (!this.homework_mode) {
+    return true
+  }
+  if (!this.homework_limit_date) {
+    return true
+  }
+  const limitDate = moment(this.homework_limit_date)
+  return limitDate.isAfter(moment())
 })
 
 // Validate Succes achievemnt
