@@ -13,20 +13,14 @@ const error = (...params) => {
 const normalizeRoles = async () => {
   log(`Normalizing roles`)
 
-  const normalizeRole = async user => {
-    const oldRoles = [`MEMBER`, `PARTNER`, `ADMIN`]
-    if (!(user.role in oldRoles)) {
-        error(`Invalid role`, user.role, `for`, user._id);            
-    }
-
-    user.role = `ROLE_` + user.role
-    log(`Role normalized for`, user._id)
-    return user.save()
+  const MAPPING={
+    MEMBER: ROLE_MEMBER,
+    ADMIN: ROLE_ADMIN,
+    PARTNER: ROLE_PARTNER
   }
-
-  return User.find({role: {$nin: [ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER]}})
-    .then(users => Promise.allSettled(users.map(u => normalizeRole(u))))
-    .then(res => res.some(r => r.status==`rejected`) && log(JSON.stringify(lodash.groupBy(res, `status`).rejected)))
+  return Promise.all(Object.entries(MAPPING).map(([oldRole, newRole]) => 
+    User.updateMany({role:oldRole},{role: newRole})
+  ))
 }
 
 const databaseUpdate = async () => {
