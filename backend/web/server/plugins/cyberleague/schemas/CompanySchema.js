@@ -5,6 +5,7 @@ const { DUMMY_REF } = require('../../../utils/database')
 const { SECTOR, COMPANY_SIZE } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
+const { isUUID } = require('validator')
 
 const Schema = mongoose.Schema
 
@@ -22,11 +23,14 @@ const CompanySchema = new Schema(
       enum: Object.keys(COMPANY_SIZE),
       required: false,
     },
-    admin: {
-      type: Schema.Types.ObjectId,
-      ref: 'partner',
-      index: true,
-      required: false,
+    administrators: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'partner',
+        required: true,
+      }],
+      validate: [v =>  v === undefined || v.length >0, `L'admin de cette compagnie est invalide`],
+      required: false
     },
     sector: {
       type: String,
