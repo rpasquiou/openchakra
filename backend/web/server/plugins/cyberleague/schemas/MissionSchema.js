@@ -19,6 +19,10 @@ const MissionSchema = new Schema(
       type: Date,
       required: [true, "La date de la mission est requise"],
     },
+    description: {
+      type: String,
+      required: [true, 'La description est obligatoire'],
+    },
     required_expertises: {
       type: [
         {
