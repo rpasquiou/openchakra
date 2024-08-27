@@ -213,6 +213,12 @@ UserSchema.virtual('communications', {
   foreignField: 'user',
 })
 
+UserSchema.virtual('experiences', {
+  ref: 'experience',
+  localField: '_id',
+  foreignField: 'user',
+})
+
 UserSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',

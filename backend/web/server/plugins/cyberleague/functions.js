@@ -68,6 +68,12 @@ USER_MODELS.forEach(m => {
       options: { ref: 'communication' }
     },
   })
+  declareVirtualField({model, field: 'experiences', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'experience' }
+    },
+  })
   declareVirtualField({model, field: 'trainings', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
