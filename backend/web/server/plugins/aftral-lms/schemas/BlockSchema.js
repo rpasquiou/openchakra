@@ -221,6 +221,15 @@ const BlockSchema = new Schema({
     type: Date,
     required: false,
   },
+  //computed
+  homeworks_submitted_count: {
+    type: Number,
+    required: false
+  },
+  homeworks_missing_count: {
+    type: Number,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {

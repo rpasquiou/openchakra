@@ -4,7 +4,7 @@ const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("./consts");
 const { getBlockResources } = require("./resources");
-const { idEqual, loadFromDb, getModel } = require("../../utils/database");
+const { idEqual, loadFromDb, getModel, getModelAttributes } = require("../../utils/database");
 const User = require("../../models/User");
 
 const NAMES_CACHE=new NodeCache()
@@ -293,6 +293,10 @@ getSession = async (userId, params, data, fields) => {
   while (!!currentBlock.parent) {
     currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
   }
+  const model = await getModel(currentBlock._id)
+  if(model != `session`) {
+    return {}
+  }
   const [result] = await loadFromDb({model: 'block', id:currentBlock._id, fields, user:userId})
   return result
 }
@@ -390,12 +394,30 @@ const getBlockHomeworks = async (userId, params, data) => {
   return progress.homeworks
 }
 
+getBlockHomeworksSubmitted = async (userId, params, data) => {
+  const progress = await mongoose.models.progress.find({
+    block:data._id
+  }).populate('homeworks')
+  const homeworks = progress.filter(p=> p.homeworks.length>0)
+  return homeworks.length
+}
+
+getBlockHomeworksMissing = async (userId, params, data) => {
+  const session = await mongoose.models.session.findById(data.session)
+  const progress = await mongoose.models.progress.find({
+    block:data._id
+  }).populate('homeworks')
+  const homeworks = progress.filter(p=> p.homeworks.length>0)
+  const result = session.trainees.length - homeworks.length
+  return result
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
-  getAvailableCodes, getBlockHomeworks
+  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing
 }
 
 

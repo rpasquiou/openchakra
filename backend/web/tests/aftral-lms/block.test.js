@@ -22,7 +22,7 @@ require('../../server/models/Certification')
 jest.setTimeout(60000)
 
 describe('User', () => {
-  let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor
+  let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor, id
   let limit = new Date('06-06-2022')
   beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
@@ -76,21 +76,12 @@ describe('User', () => {
       resource: block._id,
       trainee: trainee2._id,
     })
-    progress1 = await Progress.create({
-      user:trainee1._id,
-      block:block._id,
-      homeworks:[homework1._id]
-    })
-    progress2 = await Progress.create({
-      user:trainee2._id,
-      block:block._id,
-      homeworks:[homework2._id]
-    })
     session = await Session.create({
       name: `Test Session`,
       creator: trainer._id,
       start_date: new Date(`10-10-2024`),
-      end_date: new Date(`10-10-2025`)
+      end_date: new Date(`10-10-2025`),
+      trainees:[trainee1._id, trainee2._id]
     })
     productCode = await ProductCode.create({code:`Test product code`})
     program = await Program.create({
@@ -111,6 +102,20 @@ describe('User', () => {
     await addChildAction({parent: program._id, child: modulee._id}, conceptor)
     await addChildAction({parent: modulee._id, child: sequence._id}, conceptor)
     await addChildAction({parent: sequence._id, child: block._id}, conceptor)
+
+    const [ses] = await loadFromDb({model: `session`, user:conceptor, fields:[`children.children.children.children`]})
+    id = ses.children[0].children[0].children[0].children[0]._id
+
+    progress1 = await Progress.create({
+      user:trainee1._id,
+      block:id,
+      homeworks:[homework1._id]
+    })
+    progress2 = await Progress.create({
+      user:trainee2._id,
+      block:id,
+      homeworks:[homework2._id]
+    })
   })
 
   afterAll(async () => {
@@ -119,16 +124,23 @@ describe('User', () => {
   })
 
   it('must return block homeworks attributes', async()=> {
-    const [result] = await loadFromDb({model:`block`,user:trainee1._id, fields:[`can_upload_homework`,`homeworks`]})
+    const [result] = await loadFromDb({model:`block`,user:trainee1._id, id, fields:[`can_upload_homework`,`homeworks`]})
     expect(result.can_upload_homework).not.toBeTruthy()
     expect(result.homeworks.length).toEqual(1)
     expect(idEqual(result.homeworks[0]._id,homework1._id)).toBeTruthy()
   })
 
-  it.only('must return homeworks of a session', async() => {
+  it('must return homeworks of a session', async() => {
     const [data] = await loadFromDb({model:`block`, id:session._id, user:trainer, fields:[
       `children.children.children.children.success_note_min`
     ]})
     expect(data.children[0].children[0].children[0].children[0].success_note_min).toEqual(0)
+  })
+
+  it('must return homeworks submitted count', async() => {
+    
+    const [data] = await loadFromDb({model:`block`, user:conceptor, id, fields:[`session`,`homeworks_missing_count`,`homeworks`,`homeworks_submitted_count`]})
+    expect(data.homeworks_missing_count).toEqual(0)
+    expect(data.homeworks_submitted_count).toEqual(2)
   })
 })
