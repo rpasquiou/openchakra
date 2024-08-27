@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const lodash = require('lodash')
+const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
 const { SECTOR, COMPANY_SIZE } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
@@ -110,7 +110,13 @@ const CompanySchema = new Schema(
     company_creation: {
       type: Date,
       required: false
-    }
+    },
+    siret: {
+      type: String,
+      set: v => v?.replace(/ /g, ''),
+      validate: [v => siret.isSIRET(v)||siret.isSIREN(v), 'Le SIRET ou SIREN est invalide'],
+      required: false,
+    },
   },
   schemaOptions,
 )
