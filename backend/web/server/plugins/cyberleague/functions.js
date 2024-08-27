@@ -79,6 +79,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'training' }
     },
   })
+  declareVirtualField({model: m, field: 'is_company_admin', requires: 'company.administrators', instance: 'Boolean'})
 })
 
 //Company declarations
@@ -145,7 +146,6 @@ declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', mu
 })
 
 //Partner declarations
-declareVirtualField({model: 'partner', field: 'is_company_admin', requires: 'company.administrators', instance: 'Boolean'})
 
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
