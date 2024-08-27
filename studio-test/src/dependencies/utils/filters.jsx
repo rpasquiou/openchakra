@@ -128,8 +128,12 @@ export const buildFilter = (dataSourceId, filterAttributes, getComponentValue) =
   const filters=filterAttributes[dataSourceId]
   const constants=filters?.constants?.map(([att, value]) => `filter.${att}=${value}`) || []
   const chunks=lodash.chunk(filters?.variables?.[0]||[], 2)
-  const variables=chunks.filter(([att, comp]) => !lodash.isNil(getComponentValue(comp)))
-      .map(([att, comp]) => `filter.${att}=${getComponentValue(comp)}`)  
+  // To get value if filter is inside a dynamic container
+  const customGetComponentValue = compId => {
+    return getComponentValue(compId) || getComponentValue(compId+'_0')
+  }
+  const variables=chunks.filter(([att, comp]) => !lodash.isNil(customGetComponentValue(comp)))
+      .map(([att, comp]) => `filter.${att}=${customGetComponentValue(comp)}`)  
     || []
   const allFilters=[...constants, ...variables]
   const res=allFilters.length>0 ? allFilters.join('&')+'&' : ''
