@@ -39,8 +39,8 @@ USER_MODELS.forEach(m => {
       options: { ref: 'company' }
     },
   })
-  declareVirtualField({model: m, field: 'pinned_users_count', instance: 'number'})
-  declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'number'})
+  declareVirtualField({model: m, field: 'pinned_users_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'Number'})
   declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn(m, 'pinned_by'), setterFn: setterPinnedFn(m, 'pinned_by'), requires:'pinned_by'})
   declareEnumField({ model: m, field: 'role', enumValues: ROLES })
   declareVirtualField({
@@ -57,8 +57,8 @@ USER_MODELS.forEach(m => {
       options: { ref: 'group' }
     },
   })
-  declareVirtualField({model: m, field: 'groups_count', instance: 'number'})
-  declareVirtualField({model: m, field: 'pending_groups_count', instance: 'number'})
+  declareVirtualField({model: m, field: 'groups_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'pending_groups_count', instance: 'Number'})
   declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('partner')})
   declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('member')})
   declareVirtualField({model: m, field: 'communications', instance: 'Array', multiple: true,
@@ -97,7 +97,7 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'number'})
+declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'Number'})
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
@@ -113,12 +113,12 @@ declareVirtualField({model: 'content', field: 'comments', instance: 'Array', mul
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
-declareVirtualField({model: 'content', field: 'comments_count', instance: 'number'})
-declareVirtualField({model: 'content', field: 'likes_count', instance: 'number' })
+declareVirtualField({model: 'content', field: 'comments_count', instance: 'Number'})
+declareVirtualField({model: 'content', field: 'likes_count', instance: 'Number' })
 declareComputedField({model: 'content', field: 'liked', getterFn: getterPinnedFn('content', '_liked_by'), setterFn: setterPinnedFn('content', '_liked_by'), requires:'_liked_by'})
 
 //Post declarations
-declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
+declareVirtualField({model: 'post', field: 'comments_count', instance: 'Number'})
 declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'number' })
 declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
@@ -133,9 +133,9 @@ declareVirtualField({model: 'group', field: 'posts', instance: 'Array', multiple
     instance: 'ObjectID',
     options: { ref: 'post' }
   },})
-declareVirtualField({model: 'group', field: 'posts_count', instance: 'number'})
-declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'number'})
-declareVirtualField({model: 'group', field: 'users_count', instance: 'number'})
+declareVirtualField({model: 'group', field: 'posts_count', instance: 'Number'})
+declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'Number'})
+declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 
 // Mission Declarations
 declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', multiple: true,
