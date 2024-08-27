@@ -183,6 +183,14 @@ declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: 
 declareEnumField({model:'permission', field: 'value', instance: 'String', enumValues: PERMISSIONS})
  // Permission end
 
+// Group start
+declareVirtualField({model:`group`, field: `excluded_trainees`, instance: `Array`, requires: `trainees,available_trainees`, multiple: true,
+  caster: {
+    instance: `ObjectID`,
+    options: {ref: `user`}
+  }
+})
+
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -235,6 +243,7 @@ const preCreate = async ({model, params, user}) => {
     trainees = lodash.uniqBy(trainees, `_id`)
     trainees = lodash.sortBy(trainees, `firstname`)
     params.trainees=trainees.map(trainee=> trainee._id)
+    params.available_trainees=params.trainees
   }
   return Promise.resolve({model, params})
 }
@@ -289,42 +298,43 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
     params.duration_unit = program.duration_unit
   }
 
-  if (model == `group` && params.sessions){
-    const group = await Group.findById(id, {trainees: 1, sessions: 1})
+  if (model == `group`){
+    if(params.sessions) {
+      const group = await Group.findById(id, {trainees: 1, sessions: 1, removed_trainees:1})
+      const addedSessions = await Session.find({
+        _id: {
+          $in: lodash.difference(
+            params.sessions.map(String),
+            group.sessions.map(String)
+          ),
+        },
+      })
 
-    const addedSessions = await Session.find({
-      _id: {
-        $in: lodash.difference(
-          params.sessions.map(String),
-          group.sessions.map(String)
-        ),
-      },
-    })
+      const untouchedSessions = await Session.find({
+        _id: {
+          $in: lodash.intersection(
+            group.sessions.map(String),
+            params.sessions.map(String)
+          ),
+        },
+      })
 
-    const untouchedSessions = await Session.find({
-      _id: {
-        $in: lodash.intersection(
-          group.sessions.map(String),
-          params.sessions.map(String)
-        ),
-      },
-    })
+      const untouchedSessionTrainees = lodash.flatten(
+        untouchedSessions.map(session => session.trainees.map(String))
+      )
 
-    const untouchedSessionTrainees = lodash.flatten(
-      untouchedSessions.map(session => session.trainees.map(String))
-    )
+      const addedSessionTrainees = lodash.flatten(
+        addedSessions.map(session => session.trainees.map(String))
+      )
 
-    const addedSessionTrainees = lodash.flatten(
-      addedSessions.map(session => session.trainees.map(String))
-    )
+      const addedTrainees = lodash.difference(
+        addedSessionTrainees,
+        untouchedSessionTrainees
+      )
 
-    const addedTrainees = lodash.difference(
-      addedSessionTrainees,
-      untouchedSessionTrainees
-    )
-
-    const trainees = await User.find({_id:{$in:[...untouchedSessionTrainees, ...addedTrainees]}},{firstname:1}).sort('firstname')
-    params.trainees=trainees.map(t=>t._id)
+      const trainees = await User.find({_id:{$in:[...untouchedSessionTrainees, ...addedTrainees]}},{firstname:1}).sort('firstname')
+      params.trainees=trainees.map(t=>t._id)
+    }
   }
   return {model, id, params, user, skip_validation}
 }

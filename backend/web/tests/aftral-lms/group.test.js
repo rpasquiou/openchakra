@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
+const { MONGOOSE_OPTIONS, loadFromDb, idEqual } = require('../../server/utils/database')
 require('../../server/plugins/aftral-lms/functions')
 const User = require('../../server/models/User')
 const Resource = require('../../server/models/Resource')
@@ -101,11 +101,12 @@ describe('Groups', () => {
       trainees: [trainee5._id, trainee6._id, trainee1._id]
     })
     group = await Group.create({
-      user: user._id,
+      creator: user._id,
       can_post: true,
       name: `Test group`,
       sessions: [session1._id, session2._id],
-      trainees: [trainee1._id,trainee2._id,trainee3._id,trainee4._id]
+      trainees: [trainee1._id,trainee2._id,trainee3._id,trainee4._id],
+      available_trainees: [trainee1._id,trainee2._id,trainee3._id,trainee4._id,trainee5._id]
     })
   })
 
@@ -114,11 +115,12 @@ describe('Groups', () => {
     await mongoose.connection.close()
   })
 
-  it('must return group feed', async() => {
-    const [data] = await loadFromDb({model: `group`, user, fields: [`trainees`, `sessions.trainees`]})
+  it('must return group removed trainees', async() => {
+    const [data] = await loadFromDb({model: `group`, user, fields: [`trainees`, `sessions.trainees`,`available_trainees`,`excluded_trainees`]})
     // console.log(JSON.stringify(data.sessions, null, 2))
     // await preCreate({model: `group`, user, params})
-    await prePut({model: `group`, user, id:group._id, params:{sessions:[session2._id, session3._id],creator:user._id}})
+    // await prePut({model: `group`, user, id:group._id, params:{sessions:[session2._id, session3._id],creator:user._id}})
     expect(data.trainees.length).toEqual(4)
+    expect(idEqual(data.excluded_trainees[0], trainee5._id)).toBeTruthy()
   })
 })
