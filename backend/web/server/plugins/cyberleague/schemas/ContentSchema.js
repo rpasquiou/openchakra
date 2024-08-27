@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
-const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
 const { CONTENT_TYPE } = require('../consts')
 
 const Schema = mongoose.Schema
@@ -40,6 +40,18 @@ const ContentSchema = new Schema({
     type: Boolean,
     required: true,
     default: true,
+  },
+  _liked_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    }],
+    default: []
+  },
+  liked: {
+    type: Boolean,
+    default: false,
   }
 }, schemaOptions)
 
@@ -55,5 +67,9 @@ ContentSchema.virtual('comments', {
   localField: "_id", // Find in Model, where localField
   foreignField: "content", // is equal to foreignField
 });
+
+ContentSchema.virtual('likes_count', DUMMY_REF).get(function () {
+  return this._liked_by?.length || 0
+})
 
 module.exports = ContentSchema

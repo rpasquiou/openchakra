@@ -95,6 +95,8 @@ declareVirtualField({model: 'content', field: 'comments', instance: 'Array', mul
     options: { ref: 'comment' }
   },})
 declareVirtualField({model: 'content', field: 'comments_count', instance: 'number'})
+declareVirtualField({model: 'content', field: 'likes_count', instance: 'number' })
+declareComputedField({model: 'content', field: 'liked', getterFn: getterPinnedFn('content', '_liked_by'), setterFn: setterPinnedFn('content', '_liked_by'), requires:'_liked_by'})
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'number'})
