@@ -42,6 +42,10 @@ const EventSchema = new Schema({
   url: {
     type: String,
     required: false
+  },
+  replay_url: {
+    type: String,
+    required: false
   }
 }, schemaOptions)
 
