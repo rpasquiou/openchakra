@@ -387,9 +387,7 @@ const getBlockHomeworks = async (userId, params, data) => {
     ...user.role == ROLE_APPRENANT ? {user:userId} : {}
   }).populate({
       path:'homeworks',
-      populate:({
-        path:model
-      })
+      populate:(`${model} trainee`)
     })
   return progress.homeworks
 }
