@@ -136,11 +136,14 @@ declareVirtualField({model: 'group', field: 'posts_count', instance: 'number'})
 declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'number'})
 declareVirtualField({model: 'group', field: 'users_count', instance: 'number'})
 
-
-
+//Partner declarations
+declareVirtualField({model: 'partner', field: 'is_company_admin', requires: 'company.administrators', instance: 'Boolean'})
 
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
+
+
+
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
