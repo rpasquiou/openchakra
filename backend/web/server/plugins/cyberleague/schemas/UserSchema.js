@@ -177,10 +177,6 @@ UserSchema.virtual('pinned_companies_count', {
   count:true,
 })
 
-UserSchema.virtual('is_admin', DUMMY_REF).get(function() {
-  return this.role == ROLE_ADMIN
-})
-
 UserSchema.virtual('groups', {
   ref:'group',
   localField:'_id',

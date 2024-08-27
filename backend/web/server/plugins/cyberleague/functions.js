@@ -24,7 +24,6 @@ USER_MODELS.forEach(m => {
   declareVirtualField({ model: m, field: 'password2', instance: 'String' })
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
-  declareVirtualField({ model: m, field: 'is_admin', instance: 'Boolean',requires:'role'})
   declareVirtualField({ model: m, field: 'pinned_by_count', instance: 'Number' })
   declareVirtualField({
     model: m, field: 'pinned_users', instance: 'Array', multiple: true,
