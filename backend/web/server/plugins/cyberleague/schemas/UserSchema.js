@@ -213,6 +213,12 @@ UserSchema.virtual('communications', {
   foreignField: 'user',
 })
 
+UserSchema.virtual('trainings', {
+  ref: 'training',
+  localField: '_id',
+  foreignField: 'user',
+})
+
 /* eslint-disable prefer-arrow-callback */
 
 module.exports = UserSchema
