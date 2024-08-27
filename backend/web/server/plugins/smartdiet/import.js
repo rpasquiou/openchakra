@@ -571,7 +571,7 @@ const COACHING_MIGRATION_KEY='migration_id'
 
 const EXPORT_DATE=moment('2024-06-18')
 
-const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
+const APPOINTMENT_MAPPING= (assessment_id, followup_id, progressTemplate) => ({
   coaching: ({cache, record}) => cache('coaching', record.SDPROGRAMID),
   start_date: 'date',
   end_date: ({record}) => moment(record.date).add(45, 'minutes'),
@@ -586,6 +586,13 @@ const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
     return diet
   },
   user: async ({cache, record}) => (await Coaching.findById(cache('coaching', record.SDPROGRAMID), {user:1}))?.user,
+  progress: async ({cache, record}) => {
+    const known_id=cache('appointment', record.SDCONSULTID)
+    if (!known_id) {
+      console.log('Creating progress quizz for', record.SDCONSULTID)
+      return progressTemplate.cloneAsUserQuizz()
+    }
+  },
   validated: ({record}) => +record.status>1 || EXPORT_DATE.isBefore(record.date),
 })
 
@@ -920,9 +927,10 @@ const importAppointments = async input_file => {
       smartagenda_id: FOLLOWUP_PRESTATION_SMARTAGENDA_ID})
   }
 
+  const progressQuizz=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
   return loadRecords(input_file)
     .then(records => {
-      const mapping=APPOINTMENT_MAPPING(assessemntType._id, followupType._id)
+      const mapping=APPOINTMENT_MAPPING(assessemntType._id, followupType._id, progressQuizz)
       return importData({model: 'appointment', data:records, mapping, 
         identityKey: APPOINTMENT_KEY, migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()})
     })

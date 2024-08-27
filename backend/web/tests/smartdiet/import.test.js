@@ -52,6 +52,7 @@ const PATIENT_EMAIL = 'lonza85@live.fr'
 const DIET_EMAIL = 'raphaelleh.smartdiet@gmail.com'
 const QUIZZ_NAME = 'Saisons'
 const QUIZZ_ID = 17
+
 describe('Test imports', () => {
 
   beforeAll(async () => {
@@ -67,8 +68,8 @@ describe('Test imports', () => {
   })
 
   afterAll(async () => {
-    await updateImportedCoachingStatus()
-    await updateDietCompanies()
+    // await updateImportedCoachingStatus()
+    // await updateDietCompanies()
     await saveCache()
     if (DROP) {
       await mongoose.connection.dropDatabase()
@@ -141,7 +142,7 @@ describe('Test imports', () => {
     expect(coachings[0].progress.type).toEqual(QUIZZ_TYPE_PROGRESS)
   })
 
-  it('must upsert appointments', async () => {
+  it.only('must upsert appointments', async () => {
     await importAppointments(path.join(ROOT, 'wapp_consultation.csv'))
     const user=await User.findOne({email: PATIENT_EMAIL})
     const coachings=await Coaching.find({user})
