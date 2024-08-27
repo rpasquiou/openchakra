@@ -62,6 +62,12 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'pending_groups_count', instance: 'number'})
   declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('partner')})
   declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('member')})
+  declareVirtualField({model, field: 'communications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'communication' }
+    },
+  })
 })
 
 //Company declarations

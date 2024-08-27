@@ -207,6 +207,12 @@ UserSchema.virtual('pending_groups_count', {
   count:true,
 })
 
+UserSchema.virtual('communications', {
+  ref: 'communication',
+  localField: '_id',
+  foreignField: 'user',
+})
+
 /* eslint-disable prefer-arrow-callback */
 
 module.exports = UserSchema
