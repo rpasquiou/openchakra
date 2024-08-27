@@ -8,7 +8,11 @@ const PermissionGroupSchema = new Schema({
   permissions: [{
     type: Schema.Types.ObjectId,
     ref: 'permission',
-  }]
+  }],
+  label: {
+    type: String,
+    required: false,
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

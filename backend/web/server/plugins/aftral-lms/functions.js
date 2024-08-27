@@ -42,6 +42,7 @@ const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
 const Permission = require('../../models/Permission')
 const Group = require('../../models/Group')
+const { getUserPermissions } = require('./user')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -141,6 +142,7 @@ USER_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'ticket'}},
   })
+  declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
 })
 
 // search start

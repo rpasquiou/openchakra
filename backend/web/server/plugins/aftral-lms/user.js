@@ -1,3 +1,4 @@
+const PermissionGroup = require('../../models/PermissionGroup')
 const Progress = require('../../models/Progress')
 const Resource = require('../../models/Resource')
 const { loadFromDb } = require('../../utils/database')
@@ -13,7 +14,10 @@ const getTraineeCurrentResources = async (userId, params, data, fields) => {
   return resources.map(r => new Resource(r))
 }
 
+const getUserPermissions = async (userId, params, data) => {
+  return data.permission_groups.flatMap(group => group.permissions)
+}
 
 module.exports = {
-  getTraineeCurrentResources,getTraineeCurrentResources
+  getTraineeCurrentResources,getTraineeCurrentResources, getUserPermissions
 }
