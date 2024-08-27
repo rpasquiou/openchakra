@@ -37,6 +37,10 @@ const UserSchema = new Schema({
     required: [true, `Le mot de passe est obligatoire`],
     set: pass => pass ? bcrypt.hashSync(pass, 10) : null,
   },
+  description: {
+    type: String,
+    required: false,
+  },
   picture: {
     type: String,
     required: false,
