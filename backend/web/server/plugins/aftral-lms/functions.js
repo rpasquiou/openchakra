@@ -4,7 +4,7 @@ const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
   setPostCreateData,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -42,6 +42,8 @@ const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
 const Permission = require('../../models/Permission')
 const Group = require('../../models/Group')
+const HelpDeskConversation = require('../../models/HelpDeskConversation')
+const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -232,6 +234,27 @@ const preCreate = async ({model, params, user}) => {
   if(model=='message'){
     params.sender=params.creator
     params.receiver=params.parent
+    const model = await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`,`session`])
+    if(model == `session`) {
+      const value = user.role == ROLE_APPRENANT 
+      ? user._id 
+      : user.role == ROLE_FORMATEUR 
+        ? params.receiver
+        : null
+      if(value) {
+        const sessionConv = new SessionConversation({
+          trainee: value,
+          session: params.parent
+        })
+        await sessionConv.validate()
+        new Message({...params, converation:sessionConv._id}).validate()
+        await sessionConv.save()
+        params.conversation = sessionConv._id
+      }
+    }
+    else {
+      params.conversation=params.parent
+    }
   }
   if (model == 'comment'){
     params.user = user._id
@@ -462,40 +485,20 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     return computeStatistics({model, fields, id, user, params})
       .then(data => ({data}))
   }
-  if (model=='conversation') {
-    const getPartner= (m, user) => {
-      return idEqual(m.sender._id, user._id) ? m.receiver : m.sender
+  if (model == `helpDeskConversation` && !id && user.role !== ROLE_HELPDESK) {
+    params['filter.user']=user
+  }
+  
+  if (model == `sessionConversation` && !id) {
+    let filter
+    if(user.role == ROLE_APPRENANT) {
+      filter = {trainees:user._id}
     }
-
-    // Get non-group messages (i.e. no group attribute)
-    return Message.find({$or: [{sender: user._id}, {receiver: user._id}]})
-      .populate({path: 'sender'})
-      .populate({path: 'receiver'})
-      .sort({CREATED_AT_ATTRIBUTE: 1})
-      .then(messages => {
-        if (id) {
-          messages=messages.filter(m => idEqual(getPartner(m, user)._id, id))
-          // If no messages for one parner, forge it
-          if (lodash.isEmpty(messages)) {
-            return User.findById(id)
-              .then(partner => {
-                const data=[{_id: partner._id, partner, messages: []}]
-                return {model, fields, id, data, params}
-              })
-          }
-        }
-        const partnerMessages=lodash.groupBy(messages, m => getPartner(m, user)._id)
-        const convs=lodash(partnerMessages)
-          .values()
-          .map(msgs => { 
-            const partner=getPartner(msgs[0], user)
-            msgs = msgs.map(m => ({...m.toObject(), mine : idEqual(m.sender._id, user._id)}))
-            return ({_id: partner._id, partner, messages: msgs, newest_message: lodash.maxBy(messages, 'creation_date')}) 
-          })
-          .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
-          .value()
-        return {model, fields, id, data: convs, params}
-      })
+    else if(user.role == ROLE_FORMATEUR) {
+      filter = {trainers:user._id}
+    }
+    const sessions = await Session.find({...filter})
+    params[`filter.session`] = {$in: sessions}
   }
 
   if (model=='session') {
@@ -653,6 +656,14 @@ const postCreate = async ({model, params, data}) => {
       {block:data.resource, user:data.trainee._id},
       {$addToSet: {homeworks:data._id}}
     )
+  }
+
+  if(model == `ticket`) {
+    await HelpDeskConversation.create({
+      ticket: data._id,
+      user: data.user,
+      block: data.block,
+    })
   }
 }
 

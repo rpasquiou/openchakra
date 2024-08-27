@@ -17,7 +17,7 @@ const MessageSchema = new Schema({
   receiver: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: true,
+    required: false,
   },
   sender: {
     type: Schema.Types.ObjectId,
@@ -28,6 +28,11 @@ const MessageSchema = new Schema({
     type: Boolean,
     required: false,
     default: false,
+  },
+  conversation: {
+    type: Schema.Types.ObjectId,
+    ref: `conversation`,
+    required: [true, `La conversation est obligatoire`]
   }
 }, schemaOptions)
 
