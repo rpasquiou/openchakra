@@ -194,6 +194,9 @@ const preCreate = async ({model, params, user}) => {
     }
     params.users = [user._id]
   }
+  if (model== `company`) {
+    if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
+  }
   return Promise.resolve({model, params})
 }
 
@@ -206,9 +209,6 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == `certification`) {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
-  }
-  if (model== `company`) {
-    if (params.partner===undefined) { params.partner = user.role==ROLE_ADMIN}
   }
   return data
 }
