@@ -392,7 +392,7 @@ const getBlockHomeworks = async (userId, params, data) => {
   return progress.homeworks
 }
 
-getBlockHomeworksSubmitted = async (userId, params, data) => {
+const getBlockHomeworksSubmitted = async (userId, params, data) => {
   const progress = await mongoose.models.progress.find({
     block:data._id
   }).populate('homeworks')
@@ -400,7 +400,7 @@ getBlockHomeworksSubmitted = async (userId, params, data) => {
   return homeworks.length
 }
 
-getBlockHomeworksMissing = async (userId, params, data) => {
+const getBlockHomeworksMissing = async (userId, params, data) => {
   const session = await mongoose.models.session.findById(data.session)
   const progress = await mongoose.models.progress.find({
     block:data._id
@@ -410,12 +410,17 @@ getBlockHomeworksMissing = async (userId, params, data) => {
   return result
 }
 
+const getBlockTraineesCount = async (userId, params, data) => {
+  const session = await mongoose.models.session.findById(data.session)
+  return session.trainees ? session.trainees.length : 0
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
-  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing
+  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount
 }
 
 
