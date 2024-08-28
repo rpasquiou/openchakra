@@ -150,9 +150,9 @@ const SCALE_ACQUIRING=`SCALE_ACQUIRING`
 const SCALE_ACQUIRED=`SCALE_ACQUIRED`
 
 const SCALE={
-  [SCALE_NOT_ACQUIRED]:`not_acquired`,
-  [SCALE_ACQUIRING]:`acquiring`,
-  [SCALE_ACQUIRED]:`acquired`,
+  [SCALE_NOT_ACQUIRED]:`Non acquis`,
+  [SCALE_ACQUIRING]:`En cours d'acquisition`,
+  [SCALE_ACQUIRED]:`Acquis`,
 }
 
 const DURATION_DAY=`DURATION_DAY`
