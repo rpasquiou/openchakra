@@ -267,7 +267,7 @@ const preCreate = async ({model, params, user}) => {
     params.block = params.parent
   }
 
-  if (model == `group`){
+  if (model == `group` && !!params.sessions && params.sessions.length >0){
     const sessions = await Session.find({_id:{$in:params.sessions}},{trainees:1}).populate('trainees')
     let trainees = sessions.flatMap(session => session.trainees)
     trainees = lodash.uniqBy(trainees, `_id`)
