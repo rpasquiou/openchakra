@@ -415,12 +415,38 @@ const getBlockTraineesCount = async (userId, params, data) => {
   return session.trainees ? session.trainees.length : 0
 }
 
+const getBlockFinishedChildren = async (userId, params, data, fields) => {
+  const proccessedFields = fields.map(f => `block.` + f)
+  proccessedFields.push(`user`)
+  proccessedFields.push(`achievement_status`)
+
+  const loadedProgresses = await loadFromDb({
+    model: `progress`,
+    fields: proccessedFields,
+  })
+
+  if (loadedProgresses.length == 0) {
+    return null
+  }
+
+  const finishedChildren = loadedProgresses.filter(
+    p => p.user && idEqual(p.user._id, userId) && p.achievement_status === BLOCK_STATUS_FINISHED
+  ).map(p => p.block)
+
+  if (finishedChildren.length == 0) {
+    return null
+  }
+
+  return finishedChildren
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
-  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount
+  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
+  getBlockFinishedChildren,
 }
 
 

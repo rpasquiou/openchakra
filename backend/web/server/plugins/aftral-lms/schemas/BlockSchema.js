@@ -233,6 +233,14 @@ const BlockSchema = new Schema({
   trainees_count: {
     type: Number,
     required: false,
+  },
+  finished_children: {
+    type: [{
+      type:Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 

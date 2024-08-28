@@ -19,7 +19,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -108,6 +108,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'homeworks_submitted_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksSubmitted})
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
   declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
+  declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
