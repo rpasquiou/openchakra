@@ -41,6 +41,7 @@ const { getBlockDisliked } = require('./block')
 const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
 const Permission = require('../../models/Permission')
+const Ticket = require('../../models/Ticket')
 const Group = require('../../models/Group')
 const HelpDeskConversation = require('../../models/HelpDeskConversation')
 const SessionConversation = require('../../models/SessionConversation')
@@ -660,11 +661,15 @@ const postCreate = async ({model, params, data}) => {
   }
 
   if(model == `ticket`) {
-    await HelpDeskConversation.create({
+    const conv = await HelpDeskConversation.create({
       ticket: data._id,
       user: data.user,
       block: data.block,
     })
+    await Ticket.findOneAndUpdate(
+      {_id:data._id},
+      {conversation: conv._id}
+    )
   }
 }
 
