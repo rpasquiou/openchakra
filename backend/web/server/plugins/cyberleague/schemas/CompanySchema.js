@@ -29,7 +29,6 @@ const CompanySchema = new Schema(
         ref: 'partner',
         required: true,
       }],
-      validate: [v =>  v === undefined || v.length >0, `L'admin de cette compagnie est invalide`],
       required: false
     },
     sector: {
@@ -101,7 +100,7 @@ const CompanySchema = new Schema(
     },
     partner: {
       type: Boolean,
-      required: false
+      required: true
     },
     perimeter: {
       type: Number,
