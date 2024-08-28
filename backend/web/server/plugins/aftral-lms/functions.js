@@ -368,6 +368,9 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       params.trainees=trainees.map(t=>t._id)
     }
   }
+  if(model == `message`) {
+    params.conversation = params.parent
+  }
   return {model, id, params, user, skip_validation}
 }
 
