@@ -98,7 +98,7 @@ const CompanySchema = new Schema(
       type: AddressSchema,
       required: false
     },
-    partner: {
+    is_partner: {
       type: Boolean,
       required: true
     },
