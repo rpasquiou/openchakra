@@ -3,6 +3,7 @@ const moment = require('moment')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { importResources, importPrograms, importCodes } = require('../../server/plugins/aftral-lms/import')
+const { ROLE_ADMINISTRATEUR } = require('../../server/plugins/aftral-lms/consts')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'aftral-lms' : `test${moment().unix()}`
@@ -13,7 +14,7 @@ const RESOURCES_ROOT='/home/seb/Téléchargements/resources/Current'
 const PROGRAMS_PATH='/home/seb/Téléchargements/Aftral Programmes détails.xlsx'
 const CODES_PATH='/home/seb/Téléchargements/Code produit à jour 20062024.xlsx'
 
-jest.setTimeout(20*60*1000)
+jest.setTimeout(2*60*60*1000)
 
 describe('Test imports', () => {
 

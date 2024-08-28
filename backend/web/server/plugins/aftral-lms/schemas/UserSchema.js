@@ -60,6 +60,7 @@ const UserSchema = new Schema({
   aftral_id: {
     type: Number,
     required: false,
+    index: true,
   }
 }, schemaOptions)
 

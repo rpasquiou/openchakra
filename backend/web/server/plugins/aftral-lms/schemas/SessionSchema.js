@@ -34,7 +34,7 @@ const SessionSchema = new Schema({
   },
   // AFTRAL session id
   aftral_id: {
-    type: Number,
+    type: String,
     required: false,
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
