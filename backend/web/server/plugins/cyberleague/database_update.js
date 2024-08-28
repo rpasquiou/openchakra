@@ -1,5 +1,5 @@
 const User = require('../../models/User')
-const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER } = require('./consts')
+const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER } = require('./consts')
 const Company = require('../../models/Company')
 
 const log = (...params) => {
@@ -34,10 +34,23 @@ const updateCompanyAdmin = async () => {
     .then(companies => Promise.all(companies.map(c => updateAdmin(c))))
 }
 
+const normalizeJobs = async () => {
+  log(`Normalizing jobs`)
+
+  const MAPPING={
+    COMMERCIIAL_MANAGER: JOB_COMMERCIAL_MANAGER,
+    GENERAL_MANAGER: JOB_GENERAL_MANAGER
+  }
+  return Promise.all(Object.entries(MAPPING).map(([oldJob, newJob]) => 
+    User.updateMany({job:oldJob},{job: newJob})
+  ))
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizeRoles()
   await updateCompanyAdmin()
+  await normalizeJobs()
 }
 
 module.exports=databaseUpdate
