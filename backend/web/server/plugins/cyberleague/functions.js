@@ -207,6 +207,9 @@ const postCreate = async ({ model, params, data, user }) => {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
+  if (model== `company`) {
+    if (params.partner===undefined) { params.partner = user.role==ROLE_ADMIN}
+  }
   return data
 }
 
