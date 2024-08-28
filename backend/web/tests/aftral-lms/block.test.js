@@ -139,8 +139,9 @@ describe('User', () => {
 
   it('must return homeworks submitted count', async() => {
     
-    const [data] = await loadFromDb({model:`block`, user:conceptor, id, fields:[`session`,`homeworks_missing_count`,`homeworks`,`homeworks_submitted_count`]})
+    const [data] = await loadFromDb({model:`block`, user:conceptor, id, fields:[`session`,`homeworks_missing_count`,`homeworks`,`homeworks_submitted_count`,`trainees_count`]})
     expect(data.homeworks_missing_count).toEqual(0)
     expect(data.homeworks_submitted_count).toEqual(2)
+    expect(data.trainees_count).toEqual(2)
   })
 })

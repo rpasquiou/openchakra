@@ -230,6 +230,10 @@ const BlockSchema = new Schema({
     type: Number,
     required: false,
   },
+  trainees_count: {
+    type: Number,
+    required: false,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
