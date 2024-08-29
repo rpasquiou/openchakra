@@ -925,7 +925,7 @@ const removeData = dataId => {
 
 // Compares ObjecTID/string with ObjectId/string
 const idEqual = (id1, id2) => {
-  return JSON.stringify(id1)==JSON.stringify(id2)
+  return id1 && id2 && id1.toString()==id2.toString()
 }
 
 // Returns intersection betwenn two sets of _id
