@@ -9,7 +9,7 @@ const {
   setPostCreateData,
   setPostPutData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ESTIMATED_DURATION_UNITS } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -59,8 +59,8 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'groups_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'pending_groups_count', instance: 'Number'})
-  declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('partner')})
-  declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('member')})
+  declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('user', 'role', ROLE_PARTNER)})
+  declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('user', 'role', ROLE_MEMBER)})
   declareVirtualField({model: m, field: 'communications', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
