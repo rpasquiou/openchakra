@@ -329,46 +329,12 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
   }
 }
 
-const getTemplate = async id => {
-  const result = await mongoose.models.block.aggregate([
-    {
-      $match: { _id: mongoose.Types.ObjectId(id) }
-    },
-    {
-      $graphLookup: {
-        from: 'block', 
-        startWith: '$origin',
-        connectFromField: 'origin', 
-        connectToField: '_id', 
-        as: 'originPath', 
-        depthField: 'depth', 
-        restrictSearchWithMatch: { origin: { $exists: true } } 
-      }
-    },
-    {
-      $project: {
-        root: {
-          $arrayElemAt: [
-            {
-              $filter: {
-                input: '$originPath',
-                as: 'block',
-                cond: { $eq: ['$$block.origin', null] } 
-              }
-            },
-            0
-          ]
-        },
-        _liked_by: 1,
-        _disliked_by: 1
-      }
-    },
-    {
-      $replaceRoot: { newRoot: { $ifNull: ['$root', { _id: '$_id', _liked_by: '$_liked_by', _disliked_by: '$_disliked_by' }] } }
-    }
-  ]);
-
-  return result[0];
+const getTemplate = async (id) => {
+  let block=await mongoose.models.block.findById(id, {origin:1, _liked_by:1, _disliked_by:1})
+  if (!block.origin) {
+    return block
+  }
+  return await getTemplate(block.origin)
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
