@@ -215,6 +215,16 @@ CONVERSATION_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'message'}},
   })
+  declareVirtualField({model, field: 'messages_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+  declareVirtualField({model, field: 'newest_message', instance: 'Array', multiple: false,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
 })
 // HelpDeskConversation end
 
@@ -253,6 +263,7 @@ const preCreate = async ({model, params, user}) => {
   if(model=='message'){
     params.sender=params.creator
     params.receiver=params.parent
+    console.log(params)
     const model = await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`,`session`])
     if(model == `session`) {
       const value = user.role == ROLE_APPRENANT 
@@ -688,7 +699,7 @@ const postCreate = async ({model, params, data}) => {
     })
     await Ticket.findOneAndUpdate(
       {_id:data._id},
-      {conversation: conv._id}
+      {conversation: [conv._id]}
     )
   }
 }

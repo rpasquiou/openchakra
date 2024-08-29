@@ -54,7 +54,7 @@ describe(`Ticket`, () => {
       ticket: ticket._id
     })
 
-    ticket.conversation = conversation._id
+    ticket.conversation = [conversation._id]
     await ticket.save()
 
     message = await Message.create({
@@ -74,6 +74,6 @@ describe(`Ticket`, () => {
       model: `ticket`,
       fields: [`conversation.messages`]
     })
-    expect(data.conversation.messages[0].content).toEqual(`Test message`)
+    expect(data.conversation[0].messages[0].content).toEqual(`Test message`)
   })
 })
