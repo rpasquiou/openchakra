@@ -4,7 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const ExperienceSchema = new Schema({
-  user: {
+  creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, `L'utilisateur' est obligatoire`]
