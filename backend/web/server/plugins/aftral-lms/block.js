@@ -216,7 +216,7 @@ const onBlockCurrent = async (user, block) => {
 
 const onBlockAction = async (user, block) => {
   const progress=await Progress.findOne({user, block})
-  const rule=await getAttribute('achievement_rule')(user._id, null, block)
+  const rule=block.achievement_rule
   console.log('rule is', rule)
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT

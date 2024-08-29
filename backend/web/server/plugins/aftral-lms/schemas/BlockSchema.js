@@ -5,7 +5,6 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
-const { getAttribute } = require('../block')
 const { BadRequestError } = require('../../../utils/errors')
 
 const BlockSchema = new Schema({
@@ -325,7 +324,7 @@ BlockSchema.pre('validate', async function(next) {
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
   if (!this._locked && this.type=='resource') {
-    const resourceType= this.resource_type || await getAttribute('resource_type')(null, null, this)
+    const resourceType= this.resource_type
     const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
     // TODO allowedAchievementRules may be null if the block is not still inserted in DB
     if (this.achievement_rule && allowedAchievementRules &&  !allowedAchievementRules.includes(this.achievement_rule)) {
