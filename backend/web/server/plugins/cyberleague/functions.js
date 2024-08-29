@@ -162,8 +162,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     id = user?._id || 'INVALIDID'
   }
   //if id is defined it is a get for a group, else it is for homepage posts
-  if (model==`post`&&!id) {
-    params.filter = {group: null}
+  if (model==`post`) {
+    if (!id) {
+      params.filter = {group: null}
+    } else {
+      params.filter = {group: id}
+    }
   }
   return Promise.resolve({model, fields, id, user, params})
 }
