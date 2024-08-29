@@ -350,16 +350,10 @@ const getAvailableCodes =  async (userId, params, data) => {
 }
 
 const getBlockHomeworks = async (userId, params, data) => {
-  const model = await getModel(data._id)
-  const user = await mongoose.models.user.findById(userId)
-  const progress = await mongoose.models.progress.findOne({
-    block:data._id,
-    ...user.role == ROLE_APPRENANT ? {user:userId} : {}
-  }).populate({
-      path:'homeworks',
-      populate:(`${model} trainee`)
-    })
-  return progress.homeworks
+  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
+  const filter=isTrainee ? {block: data._id} : {block: data._id, user: userId}
+  const progress=await Progress.findOne(filter).populate('homeworks')
+  return progress?.homeworks || []
 }
 
 const getBlockHomeworksSubmitted = async (userId, params, data) => {
