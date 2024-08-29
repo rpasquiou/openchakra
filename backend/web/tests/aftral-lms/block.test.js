@@ -152,4 +152,37 @@ describe('User', () => {
     expect(data.finished_children.length).toEqual(1)
     expect(idEqual(data.finished_children[0]._id, id)).toBeTruthy()
   })
+
+  it('must stop creating two blocks with the same name', async () => {
+    await Block.create({
+      name: `Test block`,
+      creator: conceptor._id,
+      type: `resource`,
+      resource_type: RESOURCE_TYPE_PDF,
+      url: `url`,
+      achievement_rule: ACHIEVEMENT_RULE_CONSULT,
+    })
+    let error = null
+  
+    try {
+      await Block.create({
+        name: `Test block`,
+        creator: conceptor._id,
+        type: `resource`,
+        resource_type: RESOURCE_TYPE_PDF,
+        url: `url`,
+        achievement_rule: ACHIEVEMENT_RULE_CONSULT,
+      })
+    } catch (e) {
+      error = e
+    }
+
+    await Block.create({
+      name: `Test block`,
+      creator: conceptor._id,
+      type: `module`,
+    })
+
+    expect(error).toBeDefined()
+  })
 })
