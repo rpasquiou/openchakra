@@ -5,7 +5,6 @@ const { DUMMY_REF } = require('../../../utils/database')
 const { SECTOR, COMPANY_SIZE } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
-const { isUUID } = require('validator')
 
 const Schema = mongoose.Schema
 
