@@ -60,7 +60,16 @@ const ContentSchema = new Schema({
   liked: {
     type: Boolean,
     default: false,
-  }
+  },
+  expertises: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'expertise',
+      required: false,
+      index: true,
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 ContentSchema.virtual('comments_count', {
