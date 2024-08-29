@@ -216,6 +216,20 @@ const preCreate = async ({model, params, user}) => {
   if (model== `company`) {
     if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
   }
+
+  if(model === 'post') {
+    if (params.parent) {
+      const parentModel = await getModel(params.parent, ['group']);
+      if (parentModel === 'group') {
+        params.group = params.parent;
+      } else {
+        throw new BadRequestError(`Le parent doit être un groupe`);
+      }
+    } else {
+      params.group = null;
+    }
+  } 
+
   return Promise.resolve({model, params})
 }
 
