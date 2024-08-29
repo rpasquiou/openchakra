@@ -100,7 +100,6 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'Number'})
-declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECTOR})
