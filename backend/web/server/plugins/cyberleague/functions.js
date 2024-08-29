@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const {
   declareEnumField,
   declareVirtualField,
@@ -8,6 +9,7 @@ const {
   getModel,
   setPostCreateData,
   setPostPutData,
+  idEqual,
 } = require('../../utils/database')
 const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
@@ -189,7 +191,7 @@ const preCreate = async ({model, params, user}) => {
       }
     } else {
       const company =await Company.findById(user.company);
-      if (user._id != company.admin) {
+      if (lodash.some(company.administrators, (id) => idEqual(id, user._id) )) {
         throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-league`)
       }
     }
