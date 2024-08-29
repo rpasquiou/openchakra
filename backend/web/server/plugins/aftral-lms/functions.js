@@ -19,7 +19,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, propagateAttributes} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -77,9 +77,6 @@ BLOCK_MODELS.forEach(model => {
   })
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
   declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
-  LINKED_ATTRIBUTES.forEach(attName => 
-    declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
-  )
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
@@ -552,9 +549,10 @@ const filterDataUser = async ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-const postPutData = async ({model, id, attribute, data, user}) => {
+const postPutData = async ({model, id, attribute, params, data, user}) => {
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
+    await propagateAttributes(id)
   }
   return data
 }
@@ -622,16 +620,6 @@ const setSessionInitialStatus = async (blockId, trainees) => {
   return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
 }
 
-const forceLinkedAttributes = async block => {
-  const log=/669fadcc3d858662e785fe16/.test(block._id.toString()) ? console.log : () => {}
-  return Promise.all(LINKED_ATTRIBUTES.map(async k => {
-    const v=await getAttribute(k)(null, null, block)
-    log('attribute', k, v)
-    const modifiedV=LINKED_ATTRIBUTES_CONVERSION[k](v, block._id)
-    block[k]=modifiedV
-  }))
-}
-
 const lockSession = async blockId => {
   const toManage=[await Block.findById(blockId)]
   while (toManage.length>0) {
@@ -658,10 +646,6 @@ const lockSession = async blockId => {
       setSessionInitialStatus(block._id, block.trainees)
     }
 
-    // Force attributes
-    if (!['session'].includes(block.type)) {
-      await forceLinkedAttributes(block)
-    }
     block._locked=true
     await block.save().catch(err => {
       err.message=`${block._id}:${err}`

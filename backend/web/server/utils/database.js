@@ -205,7 +205,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum
+    enumValues=att.options.enum.filter(v => v !==null)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
