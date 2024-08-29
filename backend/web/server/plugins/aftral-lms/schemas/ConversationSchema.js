@@ -7,15 +7,16 @@ const ConversationSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user',
   },
-  messages: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'message',
-  }],
   newest_message: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'message',
   },
-},
-schemaOptions)
+},schemaOptions)
+
+ConversationSchema.virtual('messages', {
+  ref: 'message',
+  localField: '_id',
+  foreignField: 'conversation',
+})
 
 module.exports=ConversationSchema
