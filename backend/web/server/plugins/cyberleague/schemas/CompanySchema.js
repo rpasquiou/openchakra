@@ -131,6 +131,8 @@ const CompanySchema = new Schema(
   schemaOptions,
 )
 
+/* eslint-disable prefer-arrow-callback */
+
 CompanySchema.virtual('users', {
   ref: 'user', // The Model to use
   localField: "_id", // Find in Model, where localField
@@ -158,4 +160,7 @@ CompanySchema.virtual('company_events', {
 CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
   return this.pinned_by?.length || 0
 })
+
+/* eslint-enable prefer-arrow-callback */
+
 module.exports = CompanySchema

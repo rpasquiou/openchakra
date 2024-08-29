@@ -43,6 +43,8 @@ const PostSchema = new Schema({
   }
 }, {...schemaOptions})
 
+/* eslint-disable prefer-arrow-callback */
+
 PostSchema.virtual('comments_count', {
   ref: 'comment',
   localField: '_id',
@@ -59,5 +61,7 @@ PostSchema.virtual('comments', {
 PostSchema.virtual('likes_count', DUMMY_REF).get(function () {
   return this._liked_by?.length || 0
 })
+
+/* eslint-enable prefer-arrow-callback */
 
 module.exports = PostSchema

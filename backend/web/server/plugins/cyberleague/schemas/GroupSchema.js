@@ -54,21 +54,20 @@ const GroupSchema = new Schema({
   }
 }, {...schemaOptions})
 
+/* eslint-disable prefer-arrow-callback */
 
 GroupSchema.virtual('posts', {
   ref: "post", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "group" // is equal to foreignField
-});
+})
 
 GroupSchema.virtual('posts_count', {
   ref: "post", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "group", // is equal to foreignField
   count: true,
-});
-
-/* eslint-disable prefer-arrow-callback */
+})
 
 GroupSchema.virtual('users_count', DUMMY_REF).get(function () {
   return this.users?.length||0
