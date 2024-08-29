@@ -106,6 +106,12 @@ declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', mu
     options: { ref: 'mission' }
   },
 })
+declareVirtualField({ model: 'company', field: 'company_events', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'event' }
+  },
+})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECTOR})
