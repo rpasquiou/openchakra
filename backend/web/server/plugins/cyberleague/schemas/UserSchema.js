@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
-const { DUMMY_REF } = require('../../../utils/database')
-const { ROLES , JOBS, ROLE_ADMIN, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
+const { DUMMY_REF, idEqual } = require('../../../utils/database')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
@@ -219,6 +220,10 @@ UserSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',
   foreignField: 'user',
+})
+
+UserSchema.virtual('is_company_admin', DUMMY_REF).get(function() {
+  return this.company?.administrators?.some(admin => idEqual(admin._id,this._id))
 })
 
 /* eslint-disable prefer-arrow-callback */

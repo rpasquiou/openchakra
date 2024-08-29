@@ -25,7 +25,7 @@ const CompanySchema = new Schema(
     administrators: {
       type: [{
         type: Schema.Types.ObjectId,
-        ref: 'partner',
+        ref: 'user',
         required: true,
       }],
       required: false
