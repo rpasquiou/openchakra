@@ -7,15 +7,29 @@ const ConversationSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'user',
   },
-  messages: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'message',
-  }],
-  newest_message: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'message',
+},schemaOptions)
+
+ConversationSchema.virtual('messages', {
+  ref: 'message',
+  localField: '_id',
+  foreignField: 'conversation',
+})
+
+ConversationSchema.virtual('messages_count', {
+  ref: 'message',
+  localField: '_id',
+  foreignField: 'conversation',
+  count:true,
+})
+
+ConversationSchema.virtual('newest_message', {
+  ref: 'message',
+  localField: '_id',
+  foreignField: 'conversation',
+  options: { 
+    sort: { creation_date: -1 }, limit:1
   },
-},
-schemaOptions)
+  justOne: true,
+})
 
 module.exports=ConversationSchema

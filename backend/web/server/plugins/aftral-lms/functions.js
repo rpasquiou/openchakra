@@ -184,6 +184,12 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+// declareVirtualField({model:`ticket`, field: `conversation`, instance: `Array`, multiple: false,
+//   caster: {
+//     instance: `ObjectID`,
+//     options: {ref: `ticket`}
+//   }
+// })
 // Ticket End
 
  // Permission start
@@ -201,6 +207,27 @@ declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`
 declareVirtualField({model: `group`, field: `available_trainees_count`, instance: `Number`, requires: `available_trainees`})
 declareVirtualField({model: `group`, field: `excluded_trainees_count`, instance: `Number`, requires: `trainees,available_trainees`})
 // Group end
+
+// HelpDeskConversation start
+const CONVERSATION_MODELS = [`helpDeskConversation`, `sessionConversation`, `conversation`]
+CONVERSATION_MODELS.forEach(model => {
+  declareVirtualField({model, field: 'messages', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+  declareVirtualField({model, field: 'messages_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+  declareVirtualField({model, field: 'newest_message', instance: 'Array', multiple: false,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+})
+// HelpDeskConversation end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -237,6 +264,7 @@ const preCreate = async ({model, params, user}) => {
   if(model=='message'){
     params.sender=params.creator
     params.receiver=params.parent
+    console.log(params)
     const model = await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`,`session`])
     if(model == `session`) {
       const value = user.role == ROLE_APPRENANT 
@@ -672,7 +700,7 @@ const postCreate = async ({model, params, data}) => {
     })
     await Ticket.findOneAndUpdate(
       {_id:data._id},
-      {conversation: conv._id}
+      {conversation: [conv._id]}
     )
   }
 }

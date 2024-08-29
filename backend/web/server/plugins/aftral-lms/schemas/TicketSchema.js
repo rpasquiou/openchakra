@@ -42,10 +42,10 @@ const TicketSchema = new Schema({
     type: String,
     required: false,
   },
-  conversation: {
+  conversation: [{
     type: Schema.Types.ObjectId,
-    ref: `helpDeskConversation`,
-  }
+    ref: `conversation`,
+  }],
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
