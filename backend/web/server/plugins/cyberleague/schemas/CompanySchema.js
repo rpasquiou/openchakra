@@ -120,6 +120,14 @@ const CompanySchema = new Schema(
       validate: [v => siret.isSIRET(v)||siret.isSIREN(v), 'Le SIRET ou SIREN est invalide'],
       required: false,
     },
+    targeted_markets: {
+      type: [{
+        type: String,
+        enum: Object.keys(SECTOR),
+        required: true,
+      }],
+      default: [],
+    }
   },
   schemaOptions,
 )
