@@ -545,6 +545,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   if (model == `search`) {
     params[`filter.creator`] = user._id
+    id=undefined
   }
   return Promise.resolve({model, fields, id, user, params})
 }
@@ -714,6 +715,8 @@ const postCreate = async ({model, params, data}) => {
       {creator:data.creator, _id:{$ne:data._id}}
     )
   }
+
+  return data
 }
 
 setPostCreateData(postCreate)
