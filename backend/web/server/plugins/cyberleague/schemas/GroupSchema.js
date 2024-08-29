@@ -46,6 +46,11 @@ const GroupSchema = new Schema({
       required: false,
     }],
     default: []
+  },
+  //banner picture
+  banner: {
+    type: String,
+    required: false
   }
 }, {...schemaOptions})
 
