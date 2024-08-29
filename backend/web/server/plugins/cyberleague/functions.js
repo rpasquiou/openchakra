@@ -187,14 +187,15 @@ const preCreate = async ({model, params, user}) => {
   if (model == `group`) {
     if (user.role != ROLE_PARTNER) {
       if (user.role != ROLE_ADMIN) {
-        throw new BadRequestError(`Seul un admin ou un partner peut créer une sous-league`)
+        throw new BadRequestError(`Seul un admin ou un partner peut créer une sous-ligue`)
       }
     } else {
       const company =await Company.findById(user.company);
-      if (lodash.some(company.administrators, (id) => idEqual(id, user._id) )) {
-        throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-league`)
+      if (!lodash.some(company.administrators, (id) => idEqual(id, user._id) )) {
+        throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-ligue`)
       }
     }
+    params.admin = user._id
     params.users = [user._id]
   }
   if (model== `company`) {
