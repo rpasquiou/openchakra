@@ -100,6 +100,12 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'Number'})
+declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'mission' }
+  },
+})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECTOR})
@@ -140,12 +146,6 @@ declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'Nu
 declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 
 // Mission Declarations
-declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'mission' }
-  },
-})
 
 //Partner declarations
 
