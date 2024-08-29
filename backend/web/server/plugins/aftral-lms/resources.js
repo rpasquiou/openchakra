@@ -8,14 +8,25 @@ const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 
-const getBlockResources= async blockId => {
-  const block=await mongoose.models.block.findById(blockId).populate('children')
-  if (block.type=='resource') {
-    return [block._id]
-  }
-  let subIds=await Promise.all(block.children.map(c => getBlockResources(c._id)))
-  return lodash.flattenDeep(subIds)
-}
+const getBlockResources = async (blockId) => {
+  const result = await mongoose.models.block.aggregate([
+    {$match: { _id: mongoose.Types.ObjectId(blockId) }},
+    {
+      $graphLookup: {
+        from: 'block',
+        startWith: '$_id',
+        connectFromField: '_id',
+        connectToField: 'children',
+        as: 'allBlocks',
+        restrictSearchWithMatch: { type: 'resource' }
+      }
+    },
+    {$match: { type: 'resource' }},
+    {$project: {_id: 1}}
+  ])
+
+  return result.map(block => block._id);
+};
 
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
