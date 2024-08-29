@@ -5,7 +5,7 @@ const AddressSchema = require('../../../models/AddressSchema')
 const Schema = mongoose.Schema
 
 const TrainingSchema = new Schema({
-  user: {
+  creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
     require: [true, `L'utilisateur est obligatoire`],
