@@ -71,16 +71,6 @@ const getBlockStatus = async (userId, params, data) => {
   return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
 }
 
-const getBlockName = async (blockId) => {
-  let result = NAMES_CACHE.get(blockId.toString())
-  if (!result) {
-    const block = await mongoose.models.block.findById(blockId, { name: 1, type: 1 })
-    result = `${block.type}-${block.name} ${blockId}`
-    NAMES_CACHE.set(blockId.toString(), result)
-  }
-  return result
-}
-
 const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
@@ -451,7 +441,7 @@ const propagateAttributes=async (blockId, attributes=null) => {
 }
 
 module.exports={
-  getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
+  getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
