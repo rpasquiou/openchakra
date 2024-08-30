@@ -137,6 +137,10 @@ const CompanySchema = new Schema(
       enum: Object.keys(LOOKING_FOR_MISSION),
       required: false,
     },
+    expertise_set: {
+      type: Schema.Types.ObjectId,
+      ref: 'expertiseSet',
+    }
   },
   schemaOptions,
 )
