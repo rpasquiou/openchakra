@@ -70,7 +70,7 @@ const ContentSchema = new Schema({
     }],
     default: []
   },
-  content_visibility: {
+  visibility: {
     type: String,
     enum: Object.keys(CONTENT_VISIBILITY),
     default: CONTENT_PUBLIC,
