@@ -40,7 +40,11 @@ const PostSchema = new Schema({
   liked: {
     type: Boolean,
     default: false,
-  }
+  },
+  url: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -50,7 +51,29 @@ const EventSchema = new Schema({
   expertise_set: {
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
-  }
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(EVENT_VISIBILITY),
+    required: true,
+    default: EVENT_VISIBILITY_PUBLIC,
+  },
+  price: {
+    type: String,
+    required: false
+  },
+  media_one: {
+    type: String,
+    required: false,
+  },
+  media_two: {
+    type: String,
+    required: false,
+  },
+  media_three: {
+    type: String,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

@@ -75,6 +75,23 @@ const ContentSchema = new Schema({
     enum: Object.keys(CONTENT_VISIBILITY),
     default: CONTENT_PUBLIC,
   },
+  media_one: {
+    type: String,
+    required: false,
+  },
+  media_two: {
+    type: String,
+    required: false,
+  },
+  media_three: {
+    type: String,
+    required: false,
+  },
+  related_content: [{
+    type: Schema.Types.ObjectId,
+    ref: 'content',
+    required: false,
+  }],
   expertise_set: {
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
