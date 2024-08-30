@@ -432,13 +432,23 @@ const propagateAttributes=async (blockId, attributes=null) => {
   }
 }
 
+const getBlockTicketsCount = async (userId, params, data) => {
+  const ids = [data._id]
+  if(data.is_template) {
+    const allDependants = await data.getDependants()
+    allDependants.map(dep => ids.push(dep._id))
+  }
+  const count = await mongoose.models.ticket.countDocuments({block:{$in:ids}})
+  return count
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
-  getBlockFinishedChildren, getSessionConversations, propagateAttributes,
+  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount
 }
 
 
