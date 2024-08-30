@@ -18,6 +18,7 @@ const { BadRequestError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
+const { getContents } = require('./company')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -113,16 +114,11 @@ declareVirtualField({ model: 'company', field: 'events', instance: 'Array', mult
     options: { ref: 'event' }
   },
 })
-declareVirtualField({ model: 'company', field: 'contents', require: 'users',instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'content' }
-  },
-})
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECTOR})
 declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
+declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
 
 //Expertise declarations
 declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES})

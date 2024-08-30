@@ -126,7 +126,12 @@ const CompanySchema = new Schema(
         required: true,
       }],
       default: [],
-    }
+    },
+    contents: [{
+      type: Schema.Types.ObjectId,
+      ref: 'content',
+      required: false,
+    }]
   },
   schemaOptions,
 )
@@ -137,12 +142,6 @@ CompanySchema.virtual('users', {
   ref: 'user', // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
-});
-
-CompanySchema.virtual('contents', {
-  ref: 'content', // The Model to use
-  localField: "users", // Find in Model, where localField
-  foreignField: "creator", // is equal to foreignField
 });
 
 CompanySchema.virtual('missions', {
