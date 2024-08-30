@@ -61,8 +61,9 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'groups_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'pending_groups_count', instance: 'Number'})
-  declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('user', 'role', ROLE_PARTNER)})
-  declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('user', 'role', ROLE_MEMBER)})
+  declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('user', {'role': ROLE_PARTNER})})
+  declareComputedField({model: m, field: 'member_count', getterFn: getterCountFn('user', {'role': ROLE_MEMBER})})
+  declareComputedField({model: m, field: 'user_count', getterFn: getterCountFn('user')})
   declareVirtualField({model: m, field: 'communications', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',

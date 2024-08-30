@@ -141,7 +141,10 @@ const UserSchema = new Schema({
   },
   partner_count: {
     type: Number
-  }
+  },
+  user_count: {
+    type: Number
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
