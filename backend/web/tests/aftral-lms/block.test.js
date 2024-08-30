@@ -185,4 +185,27 @@ describe('User', () => {
 
     expect(error).toBeDefined()
   })
+
+  it.only(`must accept achievement rule success for all resource types`, async () => {
+    let error
+    try{
+      for(let type in RESOURCE_TYPE) {
+        await Block.create({
+          name: `test${type}`,
+          creator: conceptor._id,
+          type: `resource`,
+          resource_type: type,
+          url: `url`,
+          achievement_rule: ACHIEVEMENT_RULE_SUCCESS,
+          success_note_max: 20,
+          success_note_min: 10,
+        })
+      }
+    }
+    catch (e) {
+      error = e
+    }
+    expect(error).not.toBeTruthy()
+  })
+  
 })
