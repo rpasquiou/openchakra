@@ -58,6 +58,18 @@ const EventSchema = new Schema({
     type: String,
     required: false
   },
+  media_one: {
+    type: String,
+    required: false,
+  },
+  media_two: {
+    type: String,
+    required: false,
+  },
+  media_three: {
+    type: String,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
