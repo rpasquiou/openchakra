@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -117,6 +117,7 @@ declareVirtualField({ model: 'company', field: 'events', instance: 'Array', mult
 declareEnumField( {model: 'company', field: 'sector', enumValues: SECTOR})
 declareEnumField( {model: 'company', field: 'size', enumValues: COMPANY_SIZE})
 declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECTOR})
+declareEnumField( {model: 'company', field: 'looking_for_mission', enumValues: LOOKING_FOR_MISSION})
 declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
 
@@ -124,6 +125,7 @@ declareComputedField({model: 'company', field: 'contents',  requires:'users', ge
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
+declareEnumField( {model: 'content', field: 'content_visibility', enumValues: CONTENT_VISIBILITY})
 declareVirtualField({model: 'content', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',

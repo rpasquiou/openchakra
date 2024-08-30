@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
-const { CONTENT_TYPE } = require('../consts')
+const { CONTENT_TYPE, CONTENT_VISIBILITY, CONTENT_PUBLIC } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -69,6 +69,11 @@ const ContentSchema = new Schema({
       index: true,
     }],
     default: []
+  },
+  content_visibility: {
+    type: String,
+    enum: Object.keys(CONTENT_VISIBILITY),
+    default: CONTENT_PUBLIC,
   },
 }, schemaOptions)
 
