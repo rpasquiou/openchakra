@@ -183,13 +183,7 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
-// declareVirtualField({model:`ticket`, field: `conversation`, instance: `Array`, multiple: false,
-//   caster: {
-//     instance: `ObjectID`,
-//     options: {ref: `ticket`}
-//   }
-// })
-// Ticket End
+ // Ticket end
 
  // Permission start
 declareEnumField({model:'permission', field: 'value', instance: 'String', enumValues: PERMISSIONS})
@@ -516,7 +510,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     return computeStatistics({model, fields, id, user, params})
       .then(data => ({data}))
   }
-  if (model == `helpDeskConversation` && !id && user.role !== ROLE_HELPDESK) {
+  if (model == `helpDeskConversation` && !id && ![ROLE_HELPDESK, ROLE_CONCEPTEUR].includes(user.role)) {
     params['filter.user']=user
   }
 
@@ -530,6 +524,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model == `search`) {
     params[`filter.creator`] = user._id
     id=undefined
+  }
+
+  if (model == `ticket` && ![ROLE_CONCEPTEUR, ROLE_HELPDESK].includes(user.role)) {
+    params[`filter.user`] = user._id
   }
   return Promise.resolve({model, fields, id, user, params})
 }

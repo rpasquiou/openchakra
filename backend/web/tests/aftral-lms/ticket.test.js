@@ -23,14 +23,22 @@ require('../../server/models/Feed')
 require('../../server/models/Certification')
 
 describe(`Ticket`, () => {
-  let user, ticket, conversation, message, helpDesk
+  let user, ticket, conversation, message, helpDesk, user2, ticket2, conversation2, message2
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
 
     user = await User.create({
       firstname: `John`,
       lastname: `Doe`,
-      role: ROLE_CONCEPTEUR,
+      role: ROLE_APPRENANT,
+      password: `Test`,
+      email: `t@t.com`,
+    })
+
+    user2 = await User.create({
+      firstname: `Jonn`,
+      lastname: `Doe`,
+      role: ROLE_APPRENANT,
       password: `Test`,
       email: `t@t.com`,
     })
@@ -49,18 +57,37 @@ describe(`Ticket`, () => {
       title: `Test ticket`
     })
 
+    ticket2 = await Ticket.create({
+      user: user2._id,
+      content: `content2`,
+      title: `Test ticket2`
+    })
+
     conversation = await HelpDeskConversation.create({
       user: user._id,
       ticket: ticket._id
     })
+    
+    conversation2 = await HelpDeskConversation.create({
+      user: user2._id,
+      ticket: ticket2._id
+    })
 
     ticket.conversation = [conversation._id]
+    ticket2.conversation = [conversation2._id]
     await ticket.save()
+    await ticket2.save()
 
     message = await Message.create({
       conversation: conversation._id,
       sender: user._id,
       content: `Test message`
+    })
+
+    message2 = await Message.create({
+      conversation: conversation2._id,
+      sender: user2._id,
+      content: `Test message 2`
     })
   })
 
@@ -69,11 +96,21 @@ describe(`Ticket`, () => {
     await mongoose.connection.close()
   })
 
-  it(`must return ticket conversation messages`, async() => {
-    const [data] = await loadFromDb({
+  it(`must return all ticket conversation for helpDesk`, async() => {
+    const data = await loadFromDb({
       model: `ticket`,
-      fields: [`conversation.messages`]
+      fields: [`conversation.messages`],
+      user: helpDesk
     })
-    expect(data.conversation[0].messages[0].content).toEqual(`Test message`)
+    expect(data.length).toEqual(2)
+  })
+
+  it(`must return my tickets if not concepteur or helpDesk`, async () => {
+    const data = await loadFromDb({
+      model: `ticket`,
+      fields: [`conversation.messages`],
+      user: user
+    })
+    expect(data.length).toEqual(1)
   })
 })
