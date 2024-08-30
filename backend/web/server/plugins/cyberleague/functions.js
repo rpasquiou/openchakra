@@ -20,6 +20,7 @@ const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
 const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
+const Category = require('../../models/Category')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -178,6 +179,23 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
+
+
+
+// Ensure all categories are defined
+ensureCategies = () => {
+  return Object.entries(CATEGORIES).map(([value,name]) => {
+    return Category.findOneAndUpdate(
+      {value}, 
+      {value,name},
+      {upsert: true}
+    )
+  })
+}
+
+
+
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
