@@ -75,6 +75,10 @@ const ContentSchema = new Schema({
     enum: Object.keys(CONTENT_VISIBILITY),
     default: CONTENT_PUBLIC,
   },
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
