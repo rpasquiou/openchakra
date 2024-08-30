@@ -107,7 +107,7 @@ declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', mu
     options: { ref: 'mission' }
   },
 })
-declareVirtualField({ model: 'company', field: 'company_events', instance: 'Array', multiple: true,
+declareVirtualField({ model: 'company', field: 'events', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'event' }

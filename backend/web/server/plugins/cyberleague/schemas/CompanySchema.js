@@ -151,7 +151,7 @@ CompanySchema.virtual('missions', {
   foreignField: "companies", // is equal to foreignField
 });
 
-CompanySchema.virtual('company_events', {
+CompanySchema.virtual('events', {
   ref: 'event', // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
