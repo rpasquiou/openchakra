@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -46,7 +47,13 @@ const EventSchema = new Schema({
   replay_url: {
     type: String,
     required: false
-  }
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(EVENT_VISIBILITY),
+    required: true,
+    default: EVENT_VISIBILITY_PUBLIC,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
