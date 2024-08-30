@@ -156,6 +156,15 @@ declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 
 //Partner declarations
 
+// Category declarations
+declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'expertise' }
+  }
+})
+declareEnumField( {model: 'category', field: 'name', enumValues: CATEGORIES})
+
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 
