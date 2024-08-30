@@ -15,7 +15,7 @@ const GroupSchema = new Schema({
   sessions: [{
     type: Schema.Types.ObjectId,
     ref: `session`,
-    required: [true, `La/Les sessions sont obligatoires`]
+    required: false,
   }],
   picture: {
     type: String,
@@ -50,10 +50,11 @@ const GroupSchema = new Schema({
 }, schemaOptions)
 
 GroupSchema.virtual('excluded_trainees', DUMMY_REF).get(function(){
-  const trainees = this.trainees.map(obj => obj._id)
-  const availableTrainees = this.available_trainees.map(obj => obj._id)
-  const differenceIds = availableTrainees.filter(id => !trainees.some(traineeId => idEqual(traineeId, id)))
-  return differenceIds
+  return []
+  // const trainees = this.trainees.map(obj => obj._id)
+  // const availableTrainees = this.available_trainees.map(obj => obj._id)
+  // const differenceIds = availableTrainees.filter(id => !trainees.some(traineeId => idEqual(traineeId, id)))
+  // return differenceIds
 })
 
 GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){

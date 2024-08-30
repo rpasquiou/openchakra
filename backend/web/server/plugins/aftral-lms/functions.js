@@ -46,6 +46,7 @@ const Group = require('../../models/Group')
 const HelpDeskConversation = require('../../models/HelpDeskConversation')
 const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
+const Search = require('../../models/Search')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -538,6 +539,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       params['filter.trainees']=user._id
     }
   }
+
+  if (model == `search`) {
+    params[`filter.creator`] = user._id
+    id=undefined
+  }
   return Promise.resolve({model, fields, id, user, params})
 }
 
@@ -687,6 +693,14 @@ const postCreate = async ({model, params, data}) => {
       {conversation: [conv._id]}
     )
   }
+
+  if(model == `search`) {
+    await Search.deleteMany(
+      {creator:data.creator, _id:{$ne:data._id}}
+    )
+  }
+
+  return data
 }
 
 setPostCreateData(postCreate)
