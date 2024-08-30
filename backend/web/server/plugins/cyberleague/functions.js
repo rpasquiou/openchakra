@@ -19,6 +19,7 @@ const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
+const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -251,6 +252,10 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == `certification`) {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+  }
+  if (model in [`user`]) {
+    data.expertise_set = await ExpertiseSet.create({})
+    await data.save()
   }
   return data
 }

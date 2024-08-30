@@ -145,6 +145,10 @@ const UserSchema = new Schema({
   user_count: {
     type: Number
   },
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
+  }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
