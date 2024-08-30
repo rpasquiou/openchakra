@@ -46,6 +46,10 @@ const EventSchema = new Schema({
   replay_url: {
     type: String,
     required: false
+  },
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
   }
 }, schemaOptions)
 
