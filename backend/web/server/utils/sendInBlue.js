@@ -14,6 +14,7 @@ class SIB_V3 {
 
     this.smtpInstance = new SibApiV3Sdk.SMTPApi()
     this.smsInstance = new SibApiV3Sdk.TransactionalSMSApi()
+    this.contactsInstance = new SibApiV3Sdk.ContactsApi()
   }
 
   sendMail({index, email, ccs, data, attachment=null}) {
@@ -68,6 +69,21 @@ class SIB_V3 {
         return false
       })
   }
+
+  async getContacts() {
+    return this.contactsInstance.getContacts()
+  }
+
+  async createContact(userData) {
+    console.log('CRM Creating', userData.email)
+    return this.contactsInstance.createContact(userData)
+  }
+
+  async updateContact(id, userData) {
+    console.log('CRM Updating', userData.email)
+    return this.contactsInstance.updateContact(id, userData)
+  }
+
 }
 
 const PROVIDER = new SIB_V3()

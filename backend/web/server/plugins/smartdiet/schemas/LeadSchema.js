@@ -118,6 +118,9 @@ const LeadSchema = new Schema({
     type: String,
     enum: Object.keys(COACHING_CONVERSION_STATUS)
   },
+  crm_id: {
+    type: Number,
+  },
 }, schemaOptions)
 
 LeadSchema.index(

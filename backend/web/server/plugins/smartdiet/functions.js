@@ -213,6 +213,8 @@ const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate }
 const { historicize } = require('./history')
 const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
+const { registerPreSave } = require('../../utils/schemas')
+const { crmUpsertAccount } = require('../../utils/crm')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -2432,6 +2434,22 @@ const mailjetHookFn = received => {
   return Lead.updateMany({email: {$in: emails}}, {mail_opened: true})
     .then(res => console.log(`Updated ${emails.length} leads open mail`))
 }
+
+const preSave = async (model, id, values) => {
+  if (model=='user') {
+    console.log('user', id, 'was mofified:', values)
+    await crmUpsertAccount(id, values)
+  }
+  if (model=='coaching') {
+    console.log('user', id, 'was mofified:', values)
+    const coaching=await Coaching.findById(id)
+    if (coaching.user) {
+      await crmUpsertAccount(coaching.user, values)    
+    }
+  }
+}
+
+registerPreSave(preSave)
 
 // Update workflows
 cron.schedule('0 0 8 * * *', async () => {
