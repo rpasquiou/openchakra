@@ -31,7 +31,7 @@ const Resource = require('../../models/Resource')
 const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
-const { BadRequestError } = require('../../utils/errors')
+const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getTraineeCurrentResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
@@ -47,6 +47,7 @@ const HelpDeskConversation = require('../../models/HelpDeskConversation')
 const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 const Search = require('../../models/Search')
+const Conversation = require('../../models/Conversation')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -265,28 +266,8 @@ const preCreate = async ({model, params, user}) => {
   }
   if(model=='message'){
     params.sender=params.creator
-    console.log(params)
-    const model = await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`,`session`])
-    if(model == `session`) {
-      const value = user.role == ROLE_APPRENANT 
-      ? user._id 
-      : user.role == ROLE_FORMATEUR 
-        ? params.receiver
-        : null
-      if(value) {
-        const sessionConv = new SessionConversation({
-          trainee: value,
-          session: params.parent
-        })
-        await sessionConv.validate()
-        new Message({...params, converation:sessionConv._id}).validate()
-        await sessionConv.save()
-        params.conversation = sessionConv._id
-      }
-    }
-    else {
-      params.conversation=params.parent
-    }
+    await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`])
+    params.conversation=params.parent
   }
   if (model == 'comment'){
     params.user = user._id
@@ -305,6 +286,21 @@ const preCreate = async ({model, params, user}) => {
     trainees = lodash.sortBy(trainees, `firstname`)
     params.trainees=trainees.map(trainee=> trainee._id)
     params.available_trainees=params.trainees
+  }
+
+  if (model == `sessionConversation`) {
+    if(![ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+      throw new ForbiddenError(`Only Trainers or Trainees can create SessionConversations`)
+    }
+    params.session = params.parent
+    params.trainee = user.role == ROLE_APPRENANT ? params.creator : params.user
+    const conv = await SessionConversation.findOne({
+      session: mongoose.Types.ObjectId(params.parent), 
+      trainee: params.trainee,
+    })
+    if(conv) {
+      return {data: conv}
+    }
   }
   return Promise.resolve({model, params})
 }
