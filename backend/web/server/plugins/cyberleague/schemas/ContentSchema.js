@@ -87,6 +87,11 @@ const ContentSchema = new Schema({
     type: String,
     required: false,
   },
+  related_content: [{
+    type: Schema.Types.ObjectId,
+    ref: 'content',
+    required: false,
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
