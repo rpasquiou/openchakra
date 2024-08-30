@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -126,6 +126,7 @@ declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
+declareEnumField( {model: 'content', field: 'content_visibility', enumValues: CONTENT_VISIBILITY})
 declareVirtualField({model: 'content', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',
