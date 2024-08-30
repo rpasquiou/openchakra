@@ -253,7 +253,7 @@ const postCreate = async ({ model, params, data, user }) => {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
-  if (model in [`user`,`content`,`company`]) {
+  if (model in [`user`,`content`,`company`,`group`]) {
     data.expertise_set = await ExpertiseSet.create({})
     await data.save()
   }

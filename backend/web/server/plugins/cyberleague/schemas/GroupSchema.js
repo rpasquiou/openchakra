@@ -51,6 +51,10 @@ const GroupSchema = new Schema({
   banner: {
     type: String,
     required: false
+  },
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
   }
 }, {...schemaOptions})
 
