@@ -26,10 +26,10 @@ const GroupSchema = new Schema({
     ref: `feed`,
     required: false,
   },
-  can_post: {
+  cant_post: {
     type: Boolean,
     required: true,
-    default: true,
+    default: false,
   },
   trainees: {
     type: [{
