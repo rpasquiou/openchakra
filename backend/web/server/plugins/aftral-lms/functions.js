@@ -19,7 +19,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren} = require('./block')
+const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -230,6 +230,10 @@ CONVERSATION_MODELS.forEach(model => {
 })
 // HelpDeskConversation end
 
+// Session start
+declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
+// Session end
+
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id
@@ -264,7 +268,6 @@ const preCreate = async ({model, params, user}) => {
   }
   if(model=='message'){
     params.sender=params.creator
-    params.receiver=params.parent
     console.log(params)
     const model = await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`,`session`])
     if(model == `session`) {
@@ -522,18 +525,6 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
   if (model == `helpDeskConversation` && !id && user.role !== ROLE_HELPDESK) {
     params['filter.user']=user
-  }
-  
-  if (model == `sessionConversation` && !id) {
-    let filter
-    if(user.role == ROLE_APPRENANT) {
-      filter = {trainees:user._id}
-    }
-    else if(user.role == ROLE_FORMATEUR) {
-      filter = {trainers:user._id}
-    }
-    const sessions = await Session.find({...filter})
-    params[`filter.session`] = {$in: sessions}
   }
 
   if (model=='session') {

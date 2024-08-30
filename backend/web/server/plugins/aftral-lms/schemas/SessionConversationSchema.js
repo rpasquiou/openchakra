@@ -7,7 +7,7 @@ const SessionConversationSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: `user`,
   },
-  group: {
+  session: {
     type: Schema.Types.ObjectId,
     ref: `group`,
   },

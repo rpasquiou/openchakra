@@ -32,6 +32,14 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  conversations: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'sessionConversation',
+    }],
+    required: true,
+    default: [],
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema

@@ -6,6 +6,7 @@ const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel, getModelAttributes } = require("../../utils/database");
 const User = require("../../models/User");
+const SessionConversation = require("../../models/SessionConversation");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -288,7 +289,7 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
-getSession = async (userId, params, data, fields) => {
+const getSession = async (userId, params, data, fields) => {
   let currentBlock = await mongoose.models.block.findById(data._id,{parent:1, type:1})
   while (!!currentBlock.parent) {
     currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
@@ -440,13 +441,33 @@ const getBlockFinishedChildren = async (userId, params, data, fields) => {
   return finishedChildren
 }
 
+const getSessionConversations = async (userId, params, data, fields) => {
+  const user = await User.findById(userId)
+  const convs = await SessionConversation.find({
+    session: data._id,
+    ...user.role == ROLE_APPRENANT ? {trainee:user._id} : {}
+
+  })
+  const newParams = {}
+  const convIds = convs.map(c=>c._id)
+  newParams[`filter._id`] = {$in:convIds}
+  let res = await loadFromDb({
+    model: `sessionConversation`,
+    params:newParams,
+    fields,
+    user
+  })
+  res = res.map(r=> new SessionConversation(r))
+  return res
+}
+
 module.exports={
   getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
   cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
-  getBlockFinishedChildren,
+  getBlockFinishedChildren, getSessionConversations
 }
 
 
