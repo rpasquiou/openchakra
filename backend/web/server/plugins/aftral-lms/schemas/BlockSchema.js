@@ -249,7 +249,11 @@ const BlockSchema = new Schema({
     }],
     required: true,
     default: []
-  }
+  },
+  tickets_count: {
+    type: Number,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
@@ -288,13 +292,6 @@ BlockSchema.virtual('tickets', {
   foreignField: 'block',
 })
 
-BlockSchema.virtual('tickets_count', {
-  ref: 'ticket',
-  localField: '_id',
-  foreignField: 'block',
-  count: true,
-})
-
 BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
   return this.homework_limit_date
     ? moment(this.homework_limit_date).format('DD/MM/YYYY à HH:mm')
@@ -311,6 +308,10 @@ BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
   const limitDate = moment(this.homework_limit_date)
   return limitDate.isAfter(moment())
 })
+
+BlockSchema.methods.getDependants = function () {
+  return mongoose.models.block.find({origin:this._id})
+}
 
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {

@@ -23,7 +23,7 @@ require('../../server/models/Feed')
 require('../../server/models/Certification')
 
 describe(`Ticket`, () => {
-  let user, ticket, conversation, message, helpDesk, user2, ticket2, conversation2, message2
+  let user, ticket, conversation, message, helpDesk, user2, ticket2, conversation2, message2, resource, sequence, conceptor, id
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
 
@@ -43,6 +43,33 @@ describe(`Ticket`, () => {
       email: `t@t.com`,
     })
 
+    conceptor = await User.create({
+      firstname: `John`,
+      lastname: `Doe`,
+      role: ROLE_CONCEPTEUR,
+      password: `Test`,
+      email: `t@t.com`,
+    })
+
+    resource = await Block.create({
+      name: `Res`,
+      type: `resource`,
+      resource_type:RESOURCE_TYPE_PDF,
+      url: `test`,
+      achievement_rule:ACHIEVEMENT_RULE_CONSULT,
+      creator: user._id,
+      homework_mode: true,
+      success_note_min:0,
+      success_note_max: 20,
+    })
+
+    sequence = await Sequence.create({
+      name: `Test sequence`,
+      creator: user._id
+    })
+
+    await addChildAction({parent: sequence._id, child: resource._id}, conceptor)
+
     helpDesk = await User.create({
       firstname: `Jeanette`,
       lastname: `Doe`,
@@ -51,16 +78,22 @@ describe(`Ticket`, () => {
       email: `t@t.com`,
     })
 
+
+    const [seq] = await loadFromDb({model: `block`, id:sequence._id, fields: [`children`]})
+    id = seq.children[0]._id
+
     ticket = await Ticket.create({
       user: user._id,
       content: `content`,
-      title: `Test ticket`
+      title: `Test ticket`,
+      block: id
     })
 
     ticket2 = await Ticket.create({
       user: user2._id,
       content: `content2`,
-      title: `Test ticket2`
+      title: `Test ticket2`,
+      block: resource._id
     })
 
     conversation = await HelpDeskConversation.create({
@@ -112,5 +145,24 @@ describe(`Ticket`, () => {
       user: user
     })
     expect(data.length).toEqual(1)
+  })
+
+  it(`must return ticket count on cloned block`, async () => {
+    const [data] = await loadFromDb({
+      model: `block`,
+      fields: [`tickets`, `tickets_count`],
+      user: helpDesk,
+      id
+    })
+    expect(data.tickets_count).toEqual(1)
+  })
+  it(`must return ticket count on origin block`, async () => {
+    const [data] = await loadFromDb({
+      model: `block`,
+      fields: [`tickets`, `tickets_count`],
+      user: helpDesk,
+      id:resource._id
+    })
+    expect(data.tickets_count).toEqual(2)
   })
 })
