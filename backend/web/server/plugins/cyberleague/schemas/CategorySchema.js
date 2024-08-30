@@ -5,9 +5,13 @@ const { CATEGORIES } = require('../consts')
 const Schema = mongoose.Schema
 
 const CategorySchema = new Schema({
-  name: {
+  value: {
     type: String,
     enum: Object.keys(CATEGORIES),
+    required: [true, 'La clé est obligatoire'],
+  },
+  name: {
+    type: String,
     required: [true, 'Le nom est obligatoire'],
   },
   picture: {
