@@ -1,7 +1,5 @@
 const mongoose = require('mongoose')
-const bcrypt=require('bcryptjs')
 const {schemaOptions} = require('../../../utils/schemas')
-const { CATEGORIES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -11,8 +9,9 @@ const ExpertiseSchema = new Schema({
     required: [true, 'Le nom est obligatoire'],
   },
   category: {
-    type: String,
-    enum: Object.keys(CATEGORIES)
+    type: Schema.Types.ObjectId,
+    ref: 'category',
+    required: [true, 'Une expertise doit avoir une catégorie']
   },
   picture: {
     type: String,

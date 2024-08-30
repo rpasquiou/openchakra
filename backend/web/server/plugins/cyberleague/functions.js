@@ -121,7 +121,6 @@ declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedF
 declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
 
 //Expertise declarations
-declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES})
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
