@@ -18,7 +18,7 @@ const ProgressSchema = new Schema({
         type: Boolean,
         required: [true, 'La progression est obligatoire']
     }
-}, {schemaOptions})
+}, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
