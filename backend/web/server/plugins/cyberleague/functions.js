@@ -167,6 +167,9 @@ declareEnumField( {model: 'category', field: 'name', enumValues: CATEGORIES})
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 
+// ExpertiseSet declarations
+declareVirtualField({model: 'expertiseSet', field: 'display_expertises', requires: 'expertises,categories', instance: 'Array', multiple: true})
+
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
