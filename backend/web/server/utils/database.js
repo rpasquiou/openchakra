@@ -205,7 +205,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum
+    enumValues=att.options.enum.filter(v => v !==null)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
@@ -1044,7 +1044,9 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       return buildQuery(model, id, fields, params)
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
+        .then(data => {console.time(`${model} compute`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
+        .then(data => {console.timeEnd(`${model} compute`); return data})
         .then(data => callFilterDataUser({model, data, id, user, params}))
         .then(data =>  retainRequiredFields({data, fields}))
     })
