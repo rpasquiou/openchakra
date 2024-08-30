@@ -9,12 +9,15 @@ const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 
 const getBlockResources= async blockId => {
-  const block=await mongoose.models.block.findById(blockId).populate('children')
-  if (block.type=='resource') {
-    return [block._id]
+  // TODO Myabe aggregation could speedup
+  const children=await Block.find({parent: blockId}, {type:1})
+  if (children.find(c => c.type=='resource')) {
+    return children.map(c => c._id)
   }
-  let subIds=await Promise.all(block.children.map(c => getBlockResources(c._id)))
-  return lodash.flattenDeep(subIds)
+  else {
+    let subIds=await Promise.all(children.map(c => getBlockResources(c._id)))
+    return lodash.flattenDeep(subIds)
+  }
 }
 
 const getProgress = async ({user, block}) => {
