@@ -139,10 +139,10 @@ CompanySchema.virtual('users', {
   foreignField: "company", // is equal to foreignField
 });
 
-CompanySchema.virtual('company_contents', {
+CompanySchema.virtual('contents', {
   ref: 'content', // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "companies", // is equal to foreignField
+  localField: "users", // Find in Model, where localField
+  foreignField: "creator", // is equal to foreignField
 });
 
 CompanySchema.virtual('missions', {
