@@ -1,6 +1,5 @@
-const mongoose = require('mongoose')
-const moment = require('moment')
-const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
+const { connectToDatabase, disconnectFromDatabase } = require('./testSetup.js')
+const { loadFromDb } = require('../../server/utils/database')
 const Admin = require('../../server/models/Admin')
 const Partner = require('../../server/models/Partner')
 const Member = require('../../server/models/Member')
@@ -13,12 +12,11 @@ const { ROLE_ADMIN, ROLE_PARTNER, ROLE_MEMBER } = require('../../server/plugins/
 require('../../server/plugins/cyberleague/functions')
 
 beforeAll(async () => {
-  await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
+  await connectToDatabase()
 })
 
 afterAll(async () => {
-  await mongoose.connection.dropDatabase()
-  await mongoose.connection.close()
+  await disconnectFromDatabase()
 })
 
 describe('discriminator key', ()=>{
