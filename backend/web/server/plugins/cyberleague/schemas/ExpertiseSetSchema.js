@@ -25,8 +25,11 @@ const ExpertiseSet = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 
-ExpertiseSet.virtual('display_expertises', DUMMY_REF).get(function() {
-  return this.categories.map(function (cat) {cat.find(function (ce) {this.expertises.some(e => idEqual(ce,e))})})
+ExpertiseSet.virtual('display_categories', DUMMY_REF).get(function() {
+  return this.categories.map(cat => ({
+    ...cat,
+    expertises: cat.expertises?.filter(ce => this.expertises.some(e => idEqual(e._id, ce._id)))
+  }))
 })
 
 /* eslint-enable prefer-arrow-callback */
