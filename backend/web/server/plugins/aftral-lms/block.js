@@ -78,34 +78,13 @@ const cloneTree = async (blockId, parentId) => {
   }
   const parent=await mongoose.models.block.findById(parentId).populate('children_count')
   const newOrder=parent.children_count+1
-  const [block]=await loadFromDb({model:'block', user:{role:ROLE_CONCEPTEUR}, id:blockId, fields:[
-    'name',
-    'closed',
-    'masked',
-    'description',
-    'picture',
-    'optional',
-    'code',
-    'access_condition',
-    'resource_type',
-    'homework_mode',
-    'url',
-    'evaluation',
-    'achievement_rule',
-    'children.resource_type',
-    'creator',
-    'type',
-    'children.type'
-  ]})
+  const block=await mongoose.models.block.findById(blockId).populate('children')
   let blockData={
     order: newOrder,
-    ...lodash.omit(block, [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
+    ...lodash.omit(block.toObject(), ['id', '_id', 'origin', 'parent']),
     id: undefined, _id: undefined, origin: blockId, parent: parentId,
-    ...NULLED_ATTRIBUTES,
   }
-  if (block.resource_type) {
-    blockData.resource_type = block.resource_type;
-  }
+
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
   let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
