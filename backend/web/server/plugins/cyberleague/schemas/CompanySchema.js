@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR, COMPANY_SIZE } = require('../consts')
+const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -131,7 +131,12 @@ const CompanySchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'content',
       required: false,
-    }]
+    }],
+    looking_for_mission: {
+      type: String,
+      enum: Object.keys(LOOKING_FOR_MISSION),
+      required: false,
+    },
   },
   schemaOptions,
 )
