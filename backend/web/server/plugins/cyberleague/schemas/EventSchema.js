@@ -54,6 +54,10 @@ const EventSchema = new Schema({
     required: true,
     default: EVENT_VISIBILITY_PUBLIC,
   },
+  price: {
+    type: String,
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
