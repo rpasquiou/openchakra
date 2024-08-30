@@ -126,7 +126,7 @@ declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
-declareEnumField( {model: 'content', field: 'content_visibility', enumValues: CONTENT_VISIBILITY})
+declareEnumField( {model: 'content', field: 'visibility', enumValues: CONTENT_VISIBILITY})
 declareVirtualField({model: 'content', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',
