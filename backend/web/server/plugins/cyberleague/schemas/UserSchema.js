@@ -210,19 +210,19 @@ UserSchema.virtual('pending_groups_count', {
 UserSchema.virtual('communications', {
   ref: 'communication',
   localField: '_id',
-  foreignField: 'user',
+  foreignField: 'creator',
 })
 
 UserSchema.virtual('experiences', {
   ref: 'experience',
   localField: '_id',
-  foreignField: 'user',
+  foreignField: 'creator',
 })
 
 UserSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',
-  foreignField: 'user',
+  foreignField: 'creator',
 })
 
 UserSchema.virtual('is_company_admin', DUMMY_REF).get(function() {

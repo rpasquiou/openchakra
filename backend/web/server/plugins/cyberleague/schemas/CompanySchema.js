@@ -126,7 +126,12 @@ const CompanySchema = new Schema(
         required: true,
       }],
       default: [],
-    }
+    },
+    contents: [{
+      type: Schema.Types.ObjectId,
+      ref: 'content',
+      required: false,
+    }]
   },
   schemaOptions,
 )
@@ -139,22 +144,16 @@ CompanySchema.virtual('users', {
   foreignField: "company", // is equal to foreignField
 });
 
-CompanySchema.virtual('company_contents', {
-  ref: 'content', // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "companies", // is equal to foreignField
-});
-
 CompanySchema.virtual('missions', {
   ref: 'mission', // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "companies", // is equal to foreignField
 });
 
-CompanySchema.virtual('company_events', {
+CompanySchema.virtual('events', {
   ref: 'event', // The Model to use
   localField: "_id", // Find in Model, where localField
-  foreignField: "companies", // is equal to foreignField
+  foreignField: "company", // is equal to foreignField
 });
 
 CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
