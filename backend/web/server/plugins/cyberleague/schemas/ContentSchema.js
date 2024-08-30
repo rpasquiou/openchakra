@@ -75,6 +75,18 @@ const ContentSchema = new Schema({
     enum: Object.keys(CONTENT_VISIBILITY),
     default: CONTENT_PUBLIC,
   },
+  media_one: {
+    type: String,
+    required: false,
+  },
+  media_two: {
+    type: String,
+    required: false,
+  },
+  media_three: {
+    type: String,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
