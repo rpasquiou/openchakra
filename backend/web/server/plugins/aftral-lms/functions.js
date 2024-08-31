@@ -4,7 +4,7 @@ const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
   setPostCreateData,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -19,7 +19,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
-const { getBlockStatus, setParentSession, getAttribute, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -31,7 +31,7 @@ const Resource = require('../../models/Resource')
 const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
-const { BadRequestError } = require('../../utils/errors')
+const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getTraineeCurrentResources } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
@@ -41,7 +41,13 @@ const { getBlockDisliked } = require('./block')
 const { setBlockLiked } = require('./block')
 const { setBlockDisliked } = require('./block')
 const Permission = require('../../models/Permission')
+const Ticket = require('../../models/Ticket')
 const Group = require('../../models/Group')
+const HelpDeskConversation = require('../../models/HelpDeskConversation')
+const SessionConversation = require('../../models/SessionConversation')
+const { getUserPermissions } = require('./user')
+const Search = require('../../models/Search')
+const Conversation = require('../../models/Conversation')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -73,9 +79,6 @@ BLOCK_MODELS.forEach(model => {
   })
   declareComputedField({model, field: 'homeworks', getterFn: getUserHomeworks})
   declareEnumField({model, field: 'achievement_rule', enumValues: ACHIEVEMENT_RULE})
-  LINKED_ATTRIBUTES.forEach(attName => 
-    declareComputedField({model, field: attName, getterFn: getAttribute(attName)})
-  )
   declareComputedField({model, field: 'used_in', getterFn: getPathsForBlock})
   declareVirtualField({model, field: 'plain_url', type: 'String'})
   declareComputedField({model, field: 'resources_count', getterFn: getResourcesCount})
@@ -86,12 +89,6 @@ BLOCK_MODELS.forEach(model => {
 
   declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'_liked_by,origin'})
   declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'_disliked_by,origin'})
-
-  declareVirtualField({model, field: 'tickets_count', instance: 'Number',
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'ticket'}},
-  })
   declareVirtualField({model, field: 'tickets', instance: 'Array',
     caster: {
       instance: 'ObjectID',
@@ -103,6 +100,9 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode'})
   declareComputedField({model, field: 'homeworks_submitted_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksSubmitted})
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
+  declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
+  declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
+  declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
 })
 
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
@@ -141,6 +141,7 @@ USER_MODELS.forEach(model => {
       instance: 'ObjectID',
       options: {ref: 'ticket'}},
   })
+  declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
 })
 
 // search start
@@ -177,11 +178,48 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
-// Ticket End
+ // Ticket end
 
  // Permission start
 declareEnumField({model:'permission', field: 'value', instance: 'String', enumValues: PERMISSIONS})
  // Permission end
+
+// Group start
+declareVirtualField({model:`group`, field: `excluded_trainees`, instance: `Array`, requires: `trainees,available_trainees`, multiple: true,
+  caster: {
+    instance: `ObjectID`,
+    options: {ref: `user`}
+  }
+})
+declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: `trainees`})
+declareVirtualField({model: `group`, field: `available_trainees_count`, instance: `Number`, requires: `available_trainees`})
+declareVirtualField({model: `group`, field: `excluded_trainees_count`, instance: `Number`, requires: `trainees,available_trainees`})
+// Group end
+
+// HelpDeskConversation start
+const CONVERSATION_MODELS = [`helpDeskConversation`, `sessionConversation`, `conversation`]
+CONVERSATION_MODELS.forEach(model => {
+  declareVirtualField({model, field: 'messages', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+  declareVirtualField({model, field: 'messages_count', instance: 'Number',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+  declareVirtualField({model, field: 'newest_message', instance: 'Array', multiple: false,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'message'}},
+  })
+})
+// HelpDeskConversation end
+
+// Session start
+declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
+// Session end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -217,7 +255,8 @@ const preCreate = async ({model, params, user}) => {
   }
   if(model=='message'){
     params.sender=params.creator
-    params.receiver=params.parent
+    await getModel(params.parent, [`helpDeskConversation`,`sessionConversation`])
+    params.conversation=params.parent
   }
   if (model == 'comment'){
     params.user = user._id
@@ -229,12 +268,28 @@ const preCreate = async ({model, params, user}) => {
     params.block = params.parent
   }
 
-  if (model == `group`){
+  if (model == `group` && !!params.sessions && params.sessions.length >0){
     const sessions = await Session.find({_id:{$in:params.sessions}},{trainees:1}).populate('trainees')
     let trainees = sessions.flatMap(session => session.trainees)
     trainees = lodash.uniqBy(trainees, `_id`)
     trainees = lodash.sortBy(trainees, `firstname`)
     params.trainees=trainees.map(trainee=> trainee._id)
+    params.available_trainees=params.trainees
+  }
+
+  if (model == `sessionConversation`) {
+    if(![ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+      throw new ForbiddenError(`Only Trainers or Trainees can create SessionConversations`)
+    }
+    params.session = params.parent
+    params.trainee = user.role == ROLE_APPRENANT ? params.creator : params.user
+    const conv = await SessionConversation.findOne({
+      session: mongoose.Types.ObjectId(params.parent), 
+      trainee: params.trainee,
+    })
+    if(conv) {
+      return {data: conv}
+    }
   }
   return Promise.resolve({model, params})
 }
@@ -289,42 +344,46 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
     params.duration_unit = program.duration_unit
   }
 
-  if (model == `group` && params.sessions){
-    const group = await Group.findById(id, {trainees: 1, sessions: 1})
+  if (model == `group`){
+    if(params.sessions) {
+      const group = await Group.findById(id, {trainees: 1, sessions: 1, removed_trainees:1})
+      const addedSessions = await Session.find({
+        _id: {
+          $in: lodash.difference(
+            params.sessions.map(String),
+            group.sessions.map(String)
+          ),
+        },
+      })
 
-    const addedSessions = await Session.find({
-      _id: {
-        $in: lodash.difference(
-          params.sessions.map(String),
-          group.sessions.map(String)
-        ),
-      },
-    })
+      const untouchedSessions = await Session.find({
+        _id: {
+          $in: lodash.intersection(
+            group.sessions.map(String),
+            params.sessions.map(String)
+          ),
+        },
+      })
 
-    const untouchedSessions = await Session.find({
-      _id: {
-        $in: lodash.intersection(
-          group.sessions.map(String),
-          params.sessions.map(String)
-        ),
-      },
-    })
+      const untouchedSessionTrainees = lodash.flatten(
+        untouchedSessions.map(session => session.trainees.map(String))
+      )
 
-    const untouchedSessionTrainees = lodash.flatten(
-      untouchedSessions.map(session => session.trainees.map(String))
-    )
+      const addedSessionTrainees = lodash.flatten(
+        addedSessions.map(session => session.trainees.map(String))
+      )
 
-    const addedSessionTrainees = lodash.flatten(
-      addedSessions.map(session => session.trainees.map(String))
-    )
+      const addedTrainees = lodash.difference(
+        addedSessionTrainees,
+        untouchedSessionTrainees
+      )
 
-    const addedTrainees = lodash.difference(
-      addedSessionTrainees,
-      untouchedSessionTrainees
-    )
-
-    const trainees = await User.find({_id:{$in:[...untouchedSessionTrainees, ...addedTrainees]}},{firstname:1}).sort('firstname')
-    params.trainees=trainees.map(t=>t._id)
+      const trainees = await User.find({_id:{$in:[...untouchedSessionTrainees, ...addedTrainees]}},{firstname:1}).sort('firstname')
+      params.trainees=trainees.map(t=>t._id)
+    }
+  }
+  if(model == `message`) {
+    params.conversation = params.parent
   }
   return {model, id, params, user, skip_validation}
 }
@@ -446,40 +505,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     return computeStatistics({model, fields, id, user, params})
       .then(data => ({data}))
   }
-  if (model=='conversation') {
-    const getPartner= (m, user) => {
-      return idEqual(m.sender._id, user._id) ? m.receiver : m.sender
-    }
-
-    // Get non-group messages (i.e. no group attribute)
-    return Message.find({$or: [{sender: user._id}, {receiver: user._id}]})
-      .populate({path: 'sender'})
-      .populate({path: 'receiver'})
-      .sort({CREATED_AT_ATTRIBUTE: 1})
-      .then(messages => {
-        if (id) {
-          messages=messages.filter(m => idEqual(getPartner(m, user)._id, id))
-          // If no messages for one parner, forge it
-          if (lodash.isEmpty(messages)) {
-            return User.findById(id)
-              .then(partner => {
-                const data=[{_id: partner._id, partner, messages: []}]
-                return {model, fields, id, data, params}
-              })
-          }
-        }
-        const partnerMessages=lodash.groupBy(messages, m => getPartner(m, user)._id)
-        const convs=lodash(partnerMessages)
-          .values()
-          .map(msgs => { 
-            const partner=getPartner(msgs[0], user)
-            msgs = msgs.map(m => ({...m.toObject(), mine : idEqual(m.sender._id, user._id)}))
-            return ({_id: partner._id, partner, messages: msgs, newest_message: lodash.maxBy(messages, 'creation_date')}) 
-          })
-          .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
-          .value()
-        return {model, fields, id, data: convs, params}
-      })
+  if (model == `helpDeskConversation` && !id && ![ROLE_HELPDESK, ROLE_CONCEPTEUR].includes(user.role)) {
+    params['filter.user']=user
   }
 
   if (model=='session') {
@@ -487,6 +514,15 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       params['filter._locked']=true
       params['filter.trainees']=user._id
     }
+  }
+
+  if (model == `search`) {
+    params[`filter.creator`] = user._id
+    id=undefined
+  }
+
+  if (model == `ticket` && ![ROLE_CONCEPTEUR, ROLE_HELPDESK].includes(user.role)) {
+    params[`filter.user`] = user._id
   }
   return Promise.resolve({model, fields, id, user, params})
 }
@@ -499,9 +535,10 @@ const filterDataUser = async ({model, data, id, user}) => {
 
 setFilterDataUser(filterDataUser)
 
-const postPutData = async ({model, id, attribute, data, user}) => {
+const postPutData = async ({model, id, attribute, params, data, user}) => {
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
+    await propagateAttributes(id)
   }
   return data
 }
@@ -569,16 +606,6 @@ const setSessionInitialStatus = async (blockId, trainees) => {
   return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
 }
 
-const forceLinkedAttributes = async block => {
-  const log=/669fadcc3d858662e785fe16/.test(block._id.toString()) ? console.log : () => {}
-  return Promise.all(LINKED_ATTRIBUTES.map(async k => {
-    const v=await getAttribute(k)(null, null, block)
-    log('attribute', k, v)
-    const modifiedV=LINKED_ATTRIBUTES_CONVERSION[k](v, block._id)
-    block[k]=modifiedV
-  }))
-}
-
 const lockSession = async blockId => {
   const toManage=[await Block.findById(blockId)]
   while (toManage.length>0) {
@@ -605,10 +632,6 @@ const lockSession = async blockId => {
       setSessionInitialStatus(block._id, block.trainees)
     }
 
-    // Force attributes
-    if (!['session'].includes(block.type)) {
-      await forceLinkedAttributes(block)
-    }
     block._locked=true
     await block.save().catch(err => {
       err.message=`${block._id}:${err}`
@@ -638,6 +661,26 @@ const postCreate = async ({model, params, data}) => {
       {$addToSet: {homeworks:data._id}}
     )
   }
+
+  if(model == `ticket`) {
+    const conv = await HelpDeskConversation.create({
+      ticket: data._id,
+      user: data.user,
+      block: data.block,
+    })
+    await Ticket.findOneAndUpdate(
+      {_id:data._id},
+      {conversation: [conv._id]}
+    )
+  }
+
+  if(model == `search`) {
+    await Search.deleteMany(
+      {creator:data.creator, _id:{$ne:data._id}}
+    )
+  }
+
+  return data
 }
 
 setPostCreateData(postCreate)

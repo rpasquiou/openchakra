@@ -73,10 +73,6 @@ let ACTIONS = {
     return removeData(id)
   },
 
-  session: ({id}, user) => {
-    return getSession(user, null, {_id: id}, [])
-  },
-
   sendMessage: (params, sender) => {
     const {destinee, content, attachment}=params
     return Message.create({...params, sender: sender._id, receiver: destinee, content, attachment})

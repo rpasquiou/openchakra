@@ -140,6 +140,13 @@ const AVAILABLE_ACHIEVEMENT_RULES={
   [RESOURCE_TYPE_LINK]: [ACHIEVEMENT_RULE_CONSULT],
   }
 
+// ACHIEVEMENT RULE SUCCESS for all resource types
+Object.keys(AVAILABLE_ACHIEVEMENT_RULES).forEach(type => {
+  if (!AVAILABLE_ACHIEVEMENT_RULES[type].includes(ACHIEVEMENT_RULE_SUCCESS)) {
+    AVAILABLE_ACHIEVEMENT_RULES[type].push(ACHIEVEMENT_RULE_SUCCESS)
+  }
+})
+  
 // Default achievement rule by resource type
 const DEFAULT_ACHIEVEMENT_RULE=lodash(AVAILABLE_ACHIEVEMENT_RULES)
   .mapValues(v => v[0])
@@ -150,9 +157,9 @@ const SCALE_ACQUIRING=`SCALE_ACQUIRING`
 const SCALE_ACQUIRED=`SCALE_ACQUIRED`
 
 const SCALE={
-  [SCALE_NOT_ACQUIRED]:`not_acquired`,
-  [SCALE_ACQUIRING]:`acquiring`,
-  [SCALE_ACQUIRED]:`acquired`,
+  [SCALE_NOT_ACQUIRED]:`Non acquis`,
+  [SCALE_ACQUIRING]:`En cours d'acquisition`,
+  [SCALE_ACQUIRED]:`Acquis`,
 }
 
 const DURATION_DAY=`DURATION_DAY`

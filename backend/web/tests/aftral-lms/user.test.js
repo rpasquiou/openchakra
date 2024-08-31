@@ -12,6 +12,10 @@ const ProductCode = require('../../server/models/ProductCode')
 const { addChildAction } = require('../../server/plugins/aftral-lms/actions')
 const { getBlockResources, getRessourceSession } = require('../../server/plugins/aftral-lms/resources')
 const Block = require('../../server/models/Block')
+const Permission = require('../../server/models/Permission')
+const PermissionGroup = require('../../server/models/PermissionGroup')
+require('../../server/models/Certification')
+require('../../server/models/Feed')
 
 jest.setTimeout(60000)
 
@@ -28,12 +32,18 @@ describe('User', () => {
       lastname: `Doe`,
     })
 
+    const permission = await Permission.findOne({})
+    const permissionGroup = await PermissionGroup.create({
+      permissions: [permission._id]
+    })
+
     trainer = await User.create({
       role: ROLE_FORMATEUR,
       email: `b@b.com`,
       password: `J'enseigne le Python`,
       firstname: `Jeanette`,
       lastname: `Doe`,
+      permission_groups: [permissionGroup._id]
     })
 
     conceptor = await User.create({
@@ -161,5 +171,10 @@ describe('User', () => {
   it(`it must user's resources`, async () => {
     const [u] = await loadFromDb({model:'user', fields:['resources'], id:trainee._id})
     expect(u.resources.length).toEqual(2)
+  })
+
+  it.only('must return user permissions', async () => {
+    const [data] = await loadFromDb({model:`user`, id:trainer._id, fields:[`permissions`,`fullname`,`permission_groups`]})
+    expect(data.permissions.length).toEqual(1)
   })
 })

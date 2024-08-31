@@ -1,5 +1,6 @@
-const mongoose = require('mongoose')
-const { schemaOptions } = require('../../../utils/schemas')
+const mongoose = require(`mongoose`)
+const { schemaOptions } = require(`../../../utils/schemas`)
+const { DUMMY_REF, idEqual } = require("../../../utils/database")
 const Schema = mongoose.Schema
 const GroupSchema = new Schema({
   name: {
@@ -8,13 +9,13 @@ const GroupSchema = new Schema({
   },
   creator: {
     type: Schema.Types.ObjectId,
-    ref: 'user',
+    ref: `user`,
     required: [true, `Le formateur est obligatoire`],
   },
   sessions: [{
     type: Schema.Types.ObjectId,
-    ref: 'session',
-    required: [true, `La/Les sessions sont obligatoires`]
+    ref: `session`,
+    required: false,
   }],
   picture: {
     type: String,
@@ -22,23 +23,50 @@ const GroupSchema = new Schema({
   },
   feed: {
     type: Schema.Types.ObjectId,
-    ref: 'feed',
+    ref: `feed`,
     required: false,
   },
-  can_post: {
+  cant_post: {
     type: Boolean,
     required: true,
-    default: true,
+    default: false,
   },
   trainees: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'user',
+      ref: `user`,
     }],
     required: true,
     default: []
-  }
-},
-  schemaOptions)
+  },
+  available_trainees: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: `user`
+    }],
+    required: true,
+    default: [],
+  },
+}, schemaOptions)
+
+GroupSchema.virtual('excluded_trainees', DUMMY_REF).get(function(){
+  return []
+  // const trainees = this.trainees.map(obj => obj._id)
+  // const availableTrainees = this.available_trainees.map(obj => obj._id)
+  // const differenceIds = availableTrainees.filter(id => !trainees.some(traineeId => idEqual(traineeId, id)))
+  // return differenceIds
+})
+
+GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){
+  return this.trainees? this.trainees.length : 0
+})
+
+GroupSchema.virtual('available_trainees_count', DUMMY_REF).get(function(){
+  return this.available_trainees? this.available_trainees.length : 0
+})
+
+GroupSchema.virtual('excluded_trainees_count', DUMMY_REF).get(function(){
+  return this.available_trainees.length - this.trainees.length
+})
 
 module.exports = GroupSchema

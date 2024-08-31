@@ -1,9 +1,9 @@
 const mongoose=require('mongoose')
 const Block = require('../../models/Block')
-const { ForbiddenError, NotFoundError } = require('../../utils/errors')
+const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR } = require('./consts')
-const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -55,8 +55,6 @@ const addChildAction = async ({parent, child}, user) => {
   if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
   const createdChild = await cloneTree(child._id, parent._id)
   await Block.findByIdAndUpdate(parent, {last_updater: user})
-  const parentsOrigin=await Block.find({origin: parent._id})
-  await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
 }
 addAction('addChild', addChildAction)
 
@@ -110,6 +108,18 @@ addAction('replay', resourceAction('replay'))
 addAction('next', async ({id}, user) => getNextResource(id, user))
 
 addAction('previous', async ({id}, user) => getPreviousResource(id, user))
+
+
+// const getSession = ({id}, user) => {
+//   return getSession(user, null, {_id: id}, [])
+// }
+
+const getSessionAction = async ({id}, user) => {
+  console.log('getSession receives', id, user)
+  return getSession(user._id, null, {_id: id}, [])
+}
+  
+addAction('session', getSessionAction)
 
 // TODO dev only
 if (!isProduction()) {
