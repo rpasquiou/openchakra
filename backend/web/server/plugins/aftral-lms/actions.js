@@ -54,8 +54,6 @@ const addChildAction = async ({parent, child}, user) => {
   if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
   const createdChild = await cloneTree(child._id, parent._id)
   await Block.findByIdAndUpdate(parent, {last_updater: user})
-  const parentsOrigin=await Block.find({origin: parent._id})
-  await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
 }
 addAction('addChild', addChildAction)
 
