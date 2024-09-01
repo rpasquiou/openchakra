@@ -182,8 +182,8 @@ const importPrograms= async (filename, tabName, fromLine, codesFilePath, codesTa
   const PROGRAM_NAME_HEADER='Nom du programme avec lien pour le modifier'
   const CODE_HEADER='Code produit'
   // First remove all programs/chapters/modules/sequences
-  await Block.remove({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
-  await Block.remove({origin: {$ne: null}})
+  await Block.deleteMany({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
+  await Block.deleteMany({origin: {$ne: null}})
   const creator=await User.findOne({role: ROLE_CONCEPTEUR})
   const data=await loadRecords(filename, tabName, fromLine)
   console.log(`Loading ${data.length} lines fror program import`)
