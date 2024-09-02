@@ -92,6 +92,10 @@ const ContentSchema = new Schema({
     ref: 'content',
     required: false,
   }],
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

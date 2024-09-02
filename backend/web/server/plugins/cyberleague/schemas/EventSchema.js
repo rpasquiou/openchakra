@@ -48,6 +48,10 @@ const EventSchema = new Schema({
     type: String,
     required: false
   },
+  expertise_set: {
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseSet',
+  },
   visibility: {
     type: String,
     enum: Object.keys(EVENT_VISIBILITY),

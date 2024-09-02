@@ -19,6 +19,8 @@ const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
+const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
+const Category = require('../../models/Category')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -129,7 +131,6 @@ declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedF
 declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
 
 //Expertise declarations
-declareEnumField( {model: 'expertise', field: 'category', enumValues: CATEGORIES})
 
 //Content declarations
 declareEnumField( {model: 'content', field: 'type', enumValues: CONTENT_TYPE})
@@ -165,14 +166,43 @@ declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 
 //Partner declarations
 
+// Category declarations
+declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'expertise' }
+  }
+})
+declareEnumField( {model: 'category', field: 'value', enumValues: CATEGORIES})
+
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
 
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 
+// ExpertiseSet declarations
+declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
+
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
+
+
+
+
+// Ensure all categories are defined
+ensureCategories = () => {
+  return Object.entries(CATEGORIES).map(([value,name]) => {
+    return Category.findOneAndUpdate(
+      {value}, 
+      {value,name},
+      {upsert: true}
+    )
+  })
+}
+
+
+
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
@@ -250,6 +280,10 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == `certification`) {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+  }
+  if (model in [`user`,`content`,`company`,`group`,`event`]) {
+    data.expertise_set = await ExpertiseSet.create({})
+    await data.save()
   }
   return data
 }

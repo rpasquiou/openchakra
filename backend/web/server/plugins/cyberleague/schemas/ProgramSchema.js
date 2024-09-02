@@ -27,7 +27,7 @@ const ProgramSchema = new Schema({
         ref: 'user',
         required: [true, 'Le créateur du programme est obligatoire']
     }
-}, {schemaOptions})
+}, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
