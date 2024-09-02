@@ -22,7 +22,10 @@ describe('CRM tests', () => {
   })
 
   it('Must create user in CRM', async() => {
-    await crmDeleteContact(email)
+    try {
+      await crmDeleteContact(email)
+    }
+    catch(err) { /* Silent error */ }
     const company=await Company.create({...COMPANY_NO_INSURANCE_DATA})
     let user=await User.create({...USER_DATA, password: 'Tagada123Tagada123', email, company})
     let crmUser=await crmGetContact(email)
