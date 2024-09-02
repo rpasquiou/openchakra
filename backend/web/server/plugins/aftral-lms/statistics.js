@@ -27,13 +27,15 @@ const fillSession = async session => {
 }
 
 const computeStatistics = async ({fields, id, user, params}) => {
-  const sessionPrefix=/^sessions\./
-  const subFields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
-  console.log('loading subfields', subFields)
-  return loadFromDb({model: 'session', id, user, fields})
+  const model = await getModel(id, [`session`,`block`,`user`])
+  const sessionId = model != `user` ? id : undefined
+  let newParams = {}
+  if(model == `user`) {
+    newParams[`filter.trainees`] = id
+  }
+  return loadFromDb({model: 'session', id: sessionId, user, fields, params:newParams})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
     .then(sessions => ([{sessions}]))
-  return res
 }
   
 const getRandomInt = max => {
