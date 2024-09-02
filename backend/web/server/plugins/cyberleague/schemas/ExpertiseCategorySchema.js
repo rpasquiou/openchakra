@@ -1,13 +1,13 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { CATEGORIES } = require('../consts')
+const { EXPERTISE_CATEGORIES } = require('../consts')
 
 const Schema = mongoose.Schema
 
-const CategorySchema = new Schema({
+const ExpertiseCategorySchema = new Schema({
   value: {
     type: String,
-    enum: Object.keys(CATEGORIES),
+    enum: Object.keys(EXPERTISE_CATEGORIES),
     required: [true, 'La clé est obligatoire'],
   },
   name: {
@@ -22,7 +22,7 @@ const CategorySchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 
-CategorySchema.virtual('expertises', {
+ExpertiseCategorySchema.virtual('expertises', {
   ref: "expertise", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "category" // is equal to foreignField
@@ -30,4 +30,4 @@ CategorySchema.virtual('expertises', {
 
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = CategorySchema
+module.exports = ExpertiseCategorySchema

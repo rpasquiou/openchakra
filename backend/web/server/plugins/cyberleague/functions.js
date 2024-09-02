@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -23,6 +23,7 @@ const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
 const Category = require('../../models/Category')
 const { isMine } = require('./message')
 const { getConversationPartner } = require('./conversation')
+const ExpertiseCategory = require('../../models/ExpertiseCategory')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -89,6 +90,19 @@ USER_MODELS.forEach(m => {
     },
   })
   declareVirtualField({model: m, field: 'is_company_admin', requires: 'company.administrators', instance: 'Boolean'})
+  declareVirtualField({
+    model: m, field: 'scores', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'score' }
+    },
+  })
+  declareVirtualField({model: m, field: 'latest_score',instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'score' }
+    },
+  })
 })
 
 //Company declarations
@@ -192,13 +206,13 @@ declareComputedField({model: 'message', field: 'mine', requires: 'sender', gette
 declareVirtualField({model: 'message', field: 'display_date', instance: 'String', requires: 'creation_date'})
 
 // Category declarations
-declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', multiple: true,
+declareVirtualField({model: 'expertiseCategory', field: 'expertises', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'expertise' }
   }
 })
-declareEnumField( {model: 'category', field: 'value', enumValues: CATEGORIES})
+declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPERTISE_CATEGORIES})
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
@@ -209,6 +223,18 @@ declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValue
 // ExpertiseSet declarations
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
 
+//Score declarations
+declareVirtualField({model: 'score', field: 'deviation', requires: 'questions.answer', instance: 'Number'})
+declareEnumField( {model: 'score', field: 'questions.answer', enumValues: ANSWERS})
+
+//questionCategory declarations
+declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'question' }
+  }
+})
+
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
@@ -217,8 +243,8 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 // Ensure all categories are defined
 ensureCategories = () => {
-  return Object.entries(CATEGORIES).map(([value,name]) => {
-    return Category.findOneAndUpdate(
+  return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
+    return ExpertiseCategory.findOneAndUpdate(
       {value}, 
       {value,name},
       {upsert: true}
@@ -282,12 +308,10 @@ const preCreate = async ({model, params, user}) => {
 
   if(model === 'post') {
     if (params.parent) {
-      const parentModel = await getModel(params.parent, ['group']);
+      const parentModel = await getModel(params.parent, ['group','user']);
       if (parentModel === 'group') {
         params.group = params.parent;
-      } else {
-        throw new BadRequestError(`Le parent doit être un groupe`);
-      }
+      } //if parent's model is user then it is a general feed post
     } else {
       params.group = null;
     }
