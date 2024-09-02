@@ -14,7 +14,7 @@ const {
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 const mongoose = require('mongoose')
-const { schemaOptions } = require('../../../utils/schemas')
+const { schemaOptions, callPreSave } = require('../../../utils/schemas')
 const lodash=require('lodash')
 const {intersection, idEqual, DUMMY_REF}=require('../../../utils/database')
 
@@ -279,6 +279,10 @@ CoachingSchema.virtual('appointment_type', DUMMY_REF).get(function() {
 // Returns wether this coaching is in progress or not
 CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
   return ![COACHING_STATUS_DROPPED, COACHING_STATUS_FINISHED, COACHING_STATUS_STOPPED].includes(this.status)
+})
+
+CoachingSchema.post('save', async function() {
+  return callPreSave('coaching', this)
 })
 
 /* eslint-enable prefer-arrow-callback */

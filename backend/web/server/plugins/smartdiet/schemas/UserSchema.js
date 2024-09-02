@@ -827,9 +827,8 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
   return true
 })
 
-UserSchema.pre('save', async function(data) {
-  const modified=Object.fromEntries(this.modifiedPaths().map(p => [p, this[p]]))
-  callPreSave('user', this._id, modified)
+UserSchema.post('save', async function() {
+  return callPreSave('user', this)
 })
 
 /* eslint-enable prefer-arrow-callback */
