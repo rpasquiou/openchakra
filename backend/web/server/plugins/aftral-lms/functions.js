@@ -680,11 +680,21 @@ const postCreate = async ({model, params, data}) => {
     )
   }
 
+  if([`resource`, `block`].includes(model) && data.type == `resource` && !data.code)  {
+    let prefix
+    if (data.resource_type === RESOURCE_TYPE_LINK) {
+      prefix = 'URL'
+    } else {
+      prefix = 'DIV'
+    }
+    const count = await mongoose.models.block.countDocuments({ code: new RegExp(`^${prefix}_`) })
+    await mongoose.models.block.updateOne({_id:data._id}, {$set: {code: `${prefix}_${String(count + 1).padStart(5, '0')}`}})
+  }
   return data
 }
 
 setPostCreateData(postCreate)
 
 module.exports={
-  lockSession, setSessionInitialStatus, preCreate, prePut
+  lockSession, setSessionInitialStatus, preCreate, prePut, postCreate
 }
