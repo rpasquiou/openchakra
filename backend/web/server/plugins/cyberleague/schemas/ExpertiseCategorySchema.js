@@ -1,13 +1,13 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { CATEGORIES } = require('../consts')
+const { EXPERTISE_CATEGORIES } = require('../consts')
 
 const Schema = mongoose.Schema
 
 const ExpertiseCategorySchema = new Schema({
   value: {
     type: String,
-    enum: Object.keys(CATEGORIES),
+    enum: Object.keys(EXPERTISE_CATEGORIES),
     required: [true, 'La clé est obligatoire'],
   },
   name: {

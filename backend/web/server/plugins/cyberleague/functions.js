@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -180,7 +180,7 @@ declareVirtualField({model: 'expertiseCategory', field: 'expertises', instance: 
     options: { ref: 'expertise' }
   }
 })
-declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: CATEGORIES})
+declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPERTISE_CATEGORIES})
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
@@ -211,7 +211,7 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 // Ensure all categories are defined
 ensureCategories = () => {
-  return Object.entries(CATEGORIES).map(([value,name]) => {
+  return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
     return ExpertiseCategory.findOneAndUpdate(
       {value}, 
       {value,name},
