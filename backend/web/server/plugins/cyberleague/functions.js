@@ -166,7 +166,7 @@ declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', 
     options: { ref: 'expertise' }
   }
 })
-declareEnumField( {model: 'category', field: 'name', enumValues: CATEGORIES})
+declareEnumField( {model: 'category', field: 'value', enumValues: CATEGORIES})
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
