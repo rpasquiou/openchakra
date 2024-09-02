@@ -16,20 +16,22 @@ const PRESAVE_CALLBACKS=[]
 const registerPreSave = fn => {
   PRESAVE_CALLBACKS.push(fn)
 }
-const callPreSave = (model, id, values) => {
+const callPreSave = (model, data) => {
+  const modified=Object.fromEntries(data.modifiedPaths().map(p => [p, this[p]]))
   return runPromisesWithDelay(PRESAVE_CALLBACKS.map(fn => async () => {
-    return fn(model, id, values)
+    return fn(model, data._id, modified)
   }))
   .then(res => {
     const grouped=lodash.groupBy(res, 'status')
-    if (grouped.fulfilled?.length>0) {
-      console.log(grouped.fulfilled.map(r => r.value))  
-    }
-    if (grouped.rejected?.length>0) {
-      console.error(grouped.rejected.map(r => r.reason))  
-    }
+    const streams=[['fulfilled', console.log], ['rejected', console.error]]
+    streams.forEach(([attribute, displayFn]) => {
+      const results=grouped[attribute]?.map(r => r.value).filter(v => !!v)
+      if (results?.length>0) {
+        displayFn(results.join('\n')  )
+      }
+    })
   })
-  .catch()
+  .catch(console.error)
 }
 
 module.exports={
