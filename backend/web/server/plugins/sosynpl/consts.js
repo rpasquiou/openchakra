@@ -77,7 +77,7 @@ const SOURCE_OTHER=`SOURCE_OTHER`
 
 const SOURCE={
   [SOURCE_RECOMMANDATION]:`Recommandation`,
-  [SOURCE_SOSYNPL_CONTACT]:`Contacté par SoSynpL`,
+  [SOURCE_SOSYNPL_CONTACT]:`Contacté par Yelowi`,
   [SOURCE_EVENT]:`Evénement`,
   [SOURCE_SOCIAL_NETWORK]:`Réseaux sociaux`,
   [SOURCE_NEWS_BLOG]:`Blogs/news`,
