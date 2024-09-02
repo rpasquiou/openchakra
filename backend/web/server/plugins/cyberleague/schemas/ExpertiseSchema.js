@@ -10,7 +10,7 @@ const ExpertiseSchema = new Schema({
   },
   category: {
     type: Schema.Types.ObjectId,
-    ref: 'category',
+    ref: 'expertiseCategory',
     required: [true, 'Une expertise doit avoir une catégorie']
   },
   picture: {

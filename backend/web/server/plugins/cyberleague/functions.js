@@ -20,7 +20,7 @@ const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
 const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
-const Category = require('../../models/Category')
+const ExpertiseCategory = require('../../models/ExpertiseCategory')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -160,13 +160,13 @@ declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 //Partner declarations
 
 // Category declarations
-declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', multiple: true,
+declareVirtualField({model: 'expertiseCategory', field: 'expertises', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'expertise' }
   }
 })
-declareEnumField( {model: 'category', field: 'value', enumValues: CATEGORIES})
+declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: CATEGORIES})
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
@@ -186,7 +186,7 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 // Ensure all categories are defined
 ensureCategories = () => {
   return Object.entries(CATEGORIES).map(([value,name]) => {
-    return Category.findOneAndUpdate(
+    return ExpertiseCategory.findOneAndUpdate(
       {value}, 
       {value,name},
       {upsert: true}

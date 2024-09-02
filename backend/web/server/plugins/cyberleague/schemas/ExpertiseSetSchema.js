@@ -8,7 +8,7 @@ const ExpertiseSet = new Schema({
   categories: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'category',
+      ref: 'expertiseCategory',
       required: true,
     }],
     default: []
