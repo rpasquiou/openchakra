@@ -30,12 +30,7 @@ USER_MODELS.forEach(m => {
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'pinned_by_count', instance: 'Number' })
-  declareVirtualField({
-    model: m,
-    field: 'companies',
-    instance: 'Array',
-    multiple: true,
-  })
+  declareVirtualField({model: m,field: 'companies',instance: 'Array',multiple: true,requires: 'company',})
   declareVirtualField({
     model: m, field: 'pinned_users', instance: 'Array', multiple: true,
     caster: {
