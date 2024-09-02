@@ -70,17 +70,36 @@ class SIB_V3 {
       })
   }
 
+  // Block others than smartdiet & wappizy addresses
+  acceptEmail = email => {
+    return /@wappizy/.test(email) || /@smartdiet/.test(email)
+  }
+
   async getContacts() {
     return this.contactsInstance.getContacts()
   }
 
   async createContact(userData) {
+    if (!this.acceptEmail(userData.email)) {
+      console.warn(`DISABLED Create contact for ${userData.email}`)
+      return 
+    }
     console.log('CRM Creating', userData.email)
     return this.contactsInstance.createContact(userData)
   }
 
+  async getContact(email) {
+    return this.contactsInstance.getContactInfo(email)
+  }
+
+  async deleteContact(email) {
+    return this.contactsInstance.deleteContact(email)
+  }
   async updateContact(id, userData) {
-    console.log('CRM Updating', userData.email)
+    if (!this.acceptEmail(userData.email)) {
+      console.warn(`DISABLED Update contact for ${userData.email}`)
+      return 
+    }
     return this.contactsInstance.updateContact(id, userData)
   }
 

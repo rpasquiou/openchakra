@@ -2435,16 +2435,25 @@ const mailjetHookFn = received => {
     .then(res => console.log(`Updated ${emails.length} leads open mail`))
 }
 
-const preSave = async (model, id, values) => {
+const preSave = async (model, id, values, isNew) => {
   if (model=='user') {
-    console.log('user', id, 'was mofified:', values)
-    await crmUpsertAccount(id, values)
+    // Create only customers in CRM
+    const role=(await User.findById(id, {role:1}))?.role
+    if (role==ROLE_CUSTOMER) {
+      console.log('user', id, 'was modified:', values)
+      return crmUpsertAccount(id, values)
+    }
   }
   if (model=='coaching') {
-    console.log('user', id, 'was mofified:', values)
     const coaching=await Coaching.findById(id)
     if (coaching.user) {
-      await crmUpsertAccount(coaching.user, values)    
+      return crmUpsertAccount(coaching.user, values)    
+    }
+  }
+  if (model=='appointment') {
+    const appt=await Appointment.findById(id)
+    if (coaching.user) {
+      return crmUpsertAccount(appt.user, values)    
     }
   }
 }

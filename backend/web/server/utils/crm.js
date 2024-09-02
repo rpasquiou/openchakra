@@ -10,9 +10,9 @@ const crmUpsertAccount = async (userId, values) => {
       .populate('company')
       .populate({path: 'latest_coachings', populate: ['reasons', 'appointments', {path: 'diet', populate: ''}]})
   const latest_coaching=user.latest_coachings?.[0]
-  const reasons=latest_coaching?.reasons?.map(r => r.name).join(',') || null
-  const start_date=latest_coaching?.[CREATED_AT_ATTRIBUTE] || null
-  const assessment_date=latest_coaching?.appointments?.[0]?.start_date || null
+  const reasons=latest_coaching?.reasons?.map(r => r.name).join(',') || ''
+  const start_date=latest_coaching?.[CREATED_AT_ATTRIBUTE] || ''
+  const assessment_date=latest_coaching?.appointments?.[0]?.start_date || ''
 
   const accountData={
     email: user.email,
@@ -27,24 +27,35 @@ const crmUpsertAccount = async (userId, values) => {
       HAS_COACHING: !!latest_coaching,
       REASONS: reasons,
       COACHING_START_DATE: start_date,
-      COCHING_DIET: latest_coaching?.diet?.fullname,
+      COACHING_DIET: latest_coaching?.diet?.fullname || '',
       ASSESSMENT_DATE_COACHING: assessment_date
     }
   }
 
   if (!user.crm_id) {
     const acc=await MAIL_PROVIDER.createContact(accountData)
+    // Warning: using findByIdAnUpdate insteaf of user.save to avoid inifinite recursion in pre-save
     await mongoose.models[model].findByIdAndUpdate(userId, {crm_id: acc.id})
+    return `CRM Created account ${acc.id} for ${user.email}`
   }
   else {
     await MAIL_PROVIDER.updateContact(user.crm_id, accountData).catch(console.error)
+    return `CRM Updated account ${user.crm_id} for ${user.email}`
   }
+}
+
+const crmDeleteContact = async email => {
+  return MAIL_PROVIDER.deleteContact(email)
 }
 
 const crmGetAllContacts = async () => {
   return MAIL_PROVIDER.getContacts()
 }
 
+const crmGetContact = async email => {
+  return MAIL_PROVIDER.getContact(email)
+}
+
 module.exports={
-  crmUpsertAccount, crmGetAllContacts,
+  crmUpsertAccount, crmGetAllContacts, crmDeleteContact, crmGetContact,
 }
