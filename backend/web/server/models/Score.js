@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = ScoreSchema ? mongoose.model('album', ScoreSchema) : null
+module.exports = ScoreSchema ? mongoose.model('score', ScoreSchema) : null
