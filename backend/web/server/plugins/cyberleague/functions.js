@@ -276,12 +276,10 @@ const preCreate = async ({model, params, user}) => {
 
   if(model === 'post') {
     if (params.parent) {
-      const parentModel = await getModel(params.parent, ['group']);
+      const parentModel = await getModel(params.parent, ['group','user']);
       if (parentModel === 'group') {
         params.group = params.parent;
-      } else {
-        throw new BadRequestError(`Le parent doit être un groupe`);
-      }
+      } //if parent's model is user then it is a general feed post
     } else {
       params.group = null;
     }
