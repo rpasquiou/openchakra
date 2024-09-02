@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANSWER_NO } = require('../consts')
+const { ANSWER_NO, ANSWERS } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -19,14 +19,16 @@ const ScoreSchema = new Schema({
         required: true
       },
       answer: {
-        type: Number,
+        type: String,
+        enum: Object.keys(ANSWERS),
         required: true
       }
     }]
-  }
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
+
 ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
   return this?.questions.filter(q => q.answer==ANSWER_NO).length || 0
 })

@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY } = require('./consts')
+const { ROLES, SECTOR, CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -193,6 +193,7 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'questions.answer', instance: 'Number'})
+declareEnumField( {model: 'score', field: 'questions.answer', enumValues: ANSWERS})
 
 //questionCategory declarations
 declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'Array', multiple: true,
