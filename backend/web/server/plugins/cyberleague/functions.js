@@ -184,7 +184,7 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 
 // Ensure all categories are defined
-ensureCategies = () => {
+ensureCategories = () => {
   return Object.entries(CATEGORIES).map(([value,name]) => {
     return Category.findOneAndUpdate(
       {value}, 
