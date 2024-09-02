@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = ExpertiseCategorySchema ? mongoose.model('album', ExpertiseCategorySchema) : null
+module.exports = ExpertiseCategorySchema ? mongoose.model('expertiseCategory', ExpertiseCategorySchema) : null
