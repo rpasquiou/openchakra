@@ -12,6 +12,7 @@ require('../../server/models/Event')
 require('../../server/models/Certification')
 require('../../server/models/CustomerSuccess')
 require('../../server/models/ExpertiseSet')
+require('../../server/models/Score')
 require('../../server/plugins/cyberleague/functions')
 
 let user, company
