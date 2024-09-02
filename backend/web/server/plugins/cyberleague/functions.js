@@ -178,6 +178,9 @@ declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValue
 // ExpertiseSet declarations
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
 
+//Score declarations
+declareVirtualField({model: 'score', field: 'deviation', requires: 'questions.answer', instance: 'Number'})
+
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
