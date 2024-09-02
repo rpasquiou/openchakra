@@ -11,6 +11,11 @@ const QuestionCategorySchema = new Schema({
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
+QuestionCategorySchema.virtual('questions', {
+  ref:'question',
+  localField:'_id',
+  foreignField:'question_category',
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = QuestionCategorySchema

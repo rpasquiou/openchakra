@@ -194,6 +194,14 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'questions.answer', instance: 'Number'})
 
+//questionCategory declarations
+declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'question' }
+  }
+})
+
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
 
