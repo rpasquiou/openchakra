@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
 const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
+const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
 const Schema = mongoose.Schema
 
@@ -241,6 +242,16 @@ UserSchema.virtual('scores', {
   ref:'score',
   localField:'_id',
   foreignField:'creator',
+})
+
+UserSchema.virtual('latest_score', {
+  ref: 'score',
+  localField: '_id',
+  foreignField: 'creator',
+  options: { 
+    sort: { [CREATED_AT_ATTRIBUTE]: -1 }, 
+    limit: 1,
+  },
 })
 
 /* eslint-enable prefer-arrow-callback */
