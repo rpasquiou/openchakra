@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = QuestionCategorySchema ? mongoose.model('album', QuestionCategorySchema) : null
+module.exports = QuestionCategorySchema ? mongoose.model('questionCategory', QuestionCategorySchema) : null
