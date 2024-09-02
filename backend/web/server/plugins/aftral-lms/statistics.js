@@ -19,7 +19,7 @@ const fillSession = async session => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
         console.log('Load program for user', trainee._id)
-        trainee.statistics=prog[0]
+        trainee.statistics=new Program(prog[0])
         return trainee
       })
   }))
@@ -30,7 +30,7 @@ const computeStatistics = async ({fields, id, user, params}) => {
   const sessionPrefix=/^sessions\./
   const subFields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
   console.log('loading subfields', subFields)
-  return loadFromDb({model: 'session', id, user, fields: subFields})
+  return loadFromDb({model: 'session', id, user, fields})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
     .then(sessions => ([{sessions}]))
   return res
