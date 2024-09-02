@@ -87,6 +87,13 @@ USER_MODELS.forEach(m => {
     },
   })
   declareVirtualField({model: m, field: 'is_company_admin', requires: 'company.administrators', instance: 'Boolean'})
+  declareVirtualField({
+    model: m, field: 'scores', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'score' }
+    },
+  })
 })
 
 //Company declarations

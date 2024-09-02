@@ -237,6 +237,12 @@ UserSchema.virtual('companies', DUMMY_REF).get(function() {
   return this.company ? [this.company] : []
 })
 
+UserSchema.virtual('scores', {
+  ref:'score',
+  localField:'_id',
+  foreignField:'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
