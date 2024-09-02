@@ -2,7 +2,7 @@ const mongoose=require('mongoose')
 const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
+const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR } = require('./consts')
 const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
@@ -45,7 +45,8 @@ const moveChildInParent= async (childId, up) => {
 }
 
 const addChildAction = async ({parent, child}, user) => {
-  if (user.role!=ROLE_CONCEPTEUR) {
+  // Allow ADMIN to add child for session import
+  if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
   [parent, child] = await Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
@@ -54,8 +55,6 @@ const addChildAction = async ({parent, child}, user) => {
   if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
   const createdChild = await cloneTree(child._id, parent._id)
   await Block.findByIdAndUpdate(parent, {last_updater: user})
-  const parentsOrigin=await Block.find({origin: parent._id})
-  await Promise.all(parentsOrigin.map(parentOrigin => addChildAction({parent: parentOrigin._id, child: createdChild._id}, user)))
 }
 addAction('addChild', addChildAction)
 

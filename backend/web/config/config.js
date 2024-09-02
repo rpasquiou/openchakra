@@ -316,6 +316,10 @@ const hideStoreDialog = () => {
   return !!process.env.HIDE_STORE_DIALOG
 }
 
+const getExchangeDirectory = () => {
+  return process.env.EXCHANGE_DIRECTORY
+}
+
 /**
 ONLY DEV & VALIDATION MODES
 Consider failed payment succeeded
@@ -448,4 +452,5 @@ module.exports = {
   setMasterStatus,
   getSmartdietAPIConfig,
   computeUrl,
+  getExchangeDirectory,
 }

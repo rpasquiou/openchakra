@@ -1,10 +1,11 @@
 const fs=require('fs')
+const moment=require('moment')
 const lodash=require('lodash')
 const path=require('path')
 const file=require('file')
-const { splitRemaining } = require('../../../utils/text')
+const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT } = require('./consts')
 const { sendFileToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -13,14 +14,23 @@ const Module = require('../../models/Module')
 const Sequence = require('../../models/Sequence')
 const Resource = require('../../models/Resource')
 const ProductCode = require('../../models/ProductCode')
+require('../../models/Certification')
+require('../../models/PermissionGroup')
+require('../../models/Permission')
+require('../../models/Feed')
 const NodeCache = require('node-cache')
 const { TEXT_TYPE } = require('../../../utils/consts')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
+const Session = require('../../models/Session')
+const { cloneTree } = require('./block')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
+const TRAINER_AFTRAL_ID='FORMATEUR_ID'
+const TRAINEE_AFTRAL_ID='REF_STAGIAIRE' // === Default password
+const SESSION_AFTRAL_ID='CODE_SESSION'
 
 const getFileParams = async path => {
   let params=filesCache.get(path)
@@ -110,30 +120,18 @@ const getBlock = async (level, name) => {
     return BlocksCache.get(key)
   }
   const filter=getName(level)=='resource' ? {code: name.split(' ')[0]} : 
-  getName(level)=='program' ? {name: splitRemaining(name, ' ')[1]}: {name}
+  {name}
   return BLOCK_MODELS[level].findOne(filter)
 }
 
-const splitCodes = async fullname => {
-  let [codesStr, name]=splitRemaining(fullname, ' ')
-  let splitted=codesStr.split(/[/\-]/)
-  if (splitted.length>1) {
-    const root=splitted[0].replace(/\d*$/, '')
-    splitted=splitted.map((s,idx) => {
-      return idx==0 ? s : `${root}${s}`
-    })
-  }
-  let codes=await ProductCode.find({code: {$in: splitted}}).catch(console.err)
-  // console.log('codes for', splitted, codes)
-  return [name, codes]
-}
-
 const inspected=[]
-const importBlock = async ({record, level, creator}) => {
+const importBlock = async ({record, level, creator, programCodes}) => {
   const model=BLOCK_MODELS[level]
   let name=Object.values(record)[level]
+  console.log(model.modelName, name)
+  let codes=null
   if (level==0 && !inspected.includes(name)) {
-    console.log('Program',name)
+    // console.log('Program',name)
     inspected.push(name)
   }
   let block=await getBlock(level, name)
@@ -141,11 +139,12 @@ const importBlock = async ({record, level, creator}) => {
     if (model.modelName=='resource') {
       throw new Error(`Resource ${name} not found`)
     }
-    let codes
     if (model.modelName=='program') {
-      [name, codes]=await splitCodes(name)
+      const codesStr=programCodes[name]
+      codes=await ProductCode.find({code: {$in: codesStr}})
+      console.log(`Getting codes for ${name}:${codes.map(c => c._id)}`)
     }
-    block=await model.create({name, codes, creator})
+    block=await model.create({name, creator, codes})
     if (level==0) {
       console.log(getName(level), name, 'created', block._id)
     }
@@ -179,16 +178,19 @@ const importBlock = async ({record, level, creator}) => {
   return block
 }
 
-const importPrograms= async (filename, tabName, fromLine=0) => {
+const importPrograms= async (filename, tabName, fromLine, codesFilePath, codesTabName, codesFromLine) => {
+  const PROGRAM_NAME_HEADER='Nom du programme avec lien pour le modifier'
+  const CODE_HEADER='Code produit'
   // First remove all programs/chapters/modules/sequences
-  // await Block.remove({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
-  // await Block.remove({origin: {$ne: null}})
+  await Block.deleteMany({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
+  await Block.deleteMany({origin: {$ne: null}})
   const creator=await User.findOne({role: ROLE_CONCEPTEUR})
   const data=await loadRecords(filename, tabName, fromLine)
-  const START=0
-  const LENGTH=50000
-  const res=await runPromisesWithDelay(data.slice(START, START+LENGTH).map(record => () => {
-    return importBlock({record, level:0, creator})
+  console.log(`Loading ${data.length} lines fror program import`)
+  const codes=await loadRecords(codesFilePath, codesTabName, codesFromLine)
+  const groupedCodes=lodash(codes).groupBy(PROGRAM_NAME_HEADER).mapValues(v => v.map(c => c[CODE_HEADER])).value()
+  const res=await runPromisesWithDelay(data.map(record => () => {
+    return importBlock({record, level:0, creator, programCodes: groupedCodes})
   }))
   res.forEach((r, idx) => {
     if (r.status=='rejected') {
@@ -217,7 +219,97 @@ const importCodes= async (filename, tabName, fromLine=0) => {
   })
 }
 
+const TRAINER_MAPPING = {
+  email: 'EMAIL_FORMATEUR',
+  firstname: 'PRENOM_FORMATEUR',
+  lastname: 'NOM_FORMATEUR',
+  role: () => ROLE_FORMATEUR,
+  aftral_id: TRAINER_AFTRAL_ID,
+  password: () => 'Password1;'
+}
+
+const TRAINER_KEY='aftral_id'
+
+const importTrainers = async (filename) => {
+  const records=await loadRecords(filename)
+  const uniqueTrainers=lodash.uniqBy(records, TRAINER_AFTRAL_ID)
+  console.log(records.length, uniqueTrainers.length)
+  const progressCb=(index, total) => console.log(index, '/', total)
+  return importData({model: 'user', data: uniqueTrainers, 
+    mapping: TRAINER_MAPPING, 
+    identityKey: TRAINER_KEY, 
+    migrationKey: TRAINER_KEY,
+    progressCb
+  })
+}
+
+const TRAINEE_MAPPING = {
+  role: () => ROLE_APPRENANT,
+  firstname: 'PRENOM_STAGIAIRE',
+  lastname: 'NOM_STAGIAIRE',
+  email: 'EMAIL_STAGIAIRE',
+  aftral_id: TRAINEE_AFTRAL_ID,
+  password: () => 'Password1;'
+}
+
+const TRAINEE_KEY='aftral_id'
+
+const importTrainees = async (filename) => {
+  const records=await loadRecords(filename)
+  const uniqueTrainees=lodash.uniqBy(records, TRAINEE_AFTRAL_ID)
+  console.log(records.length, uniqueTrainees.length)
+  const progressCb=(index, total) => console.log(index, '/', total)
+  return importData({model: 'user', data: uniqueTrainees, 
+    mapping: TRAINEE_MAPPING, 
+    identityKey: TRAINEE_KEY, 
+    migrationKey: TRAINEE_KEY,
+    progressCb
+  })
+}
+
+const SESSION_MAPPING = admin => ({
+  creator: () => admin,
+  start_date: ({record}) => moment(record.DATE_DEBUT_SESSION, 'DD-MM-YYYY').startOf('day'),
+  end_date: ({record}) => moment(record.DATE_FIN_SESSION, 'DD-MM-YYYY').endOf('day'),
+  name: async ({record}) =>  {
+    const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
+    const program=code ? await Program.findOne({codes: code}) : null
+    return program?.name
+  },
+  code: 'CODE_SESSION',
+  aftral_id: SESSION_AFTRAL_ID,
+})
+
+const SESSION_KEY='aftral_id'
+
+const importSessions = async (trainersFilename, traineesFilename) => {
+  const trainees=await loadRecords(traineesFilename)
+  const uniqueSessions=lodash
+    .uniqBy(trainees, SESSION_AFTRAL_ID)
+    .slice(0,1)
+  const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
+  const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
+  await importData({model: 'session', data: uniqueSessions, 
+    mapping: SESSION_MAPPING(oneAdmin), 
+    identityKey: SESSION_KEY, 
+    migrationKey: SESSION_KEY,
+    progressCb
+  })
+  // Set programs
+  await runPromisesWithDelay(uniqueSessions.map(record => async () => {
+    const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
+    const program=await Program.findOne({codes: code, origin: null, _locked: false})
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]})
+    console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
+    console.log('Clone program')
+    console.time('Clone program')
+    const clonedProgram=await cloneTree(program._id, session._id)
+    console.timeEnd('Clone program')
+    await Session.findByIdAndUpdate(session._id, {children:[clonedProgram._id]})
+  }))
+}
+
 module.exports={
-  importResources, importPrograms, importCodes,
+  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions,
 }  
 

@@ -32,6 +32,11 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  // AFTRAL session id
+  aftral_id: {
+    type: String,
+    required: false,
+  },
   conversations: {
     type: [{
       type: Schema.Types.ObjectId,

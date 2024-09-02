@@ -91,7 +91,7 @@ const extractXls=(bufferData, options) => {
       const columnsRange=lodash.range(1, sheet.actualColumnCount+1)
       const rowsRange=lodash.range(first_line+1, sheet.actualRowCount+1)
       const headers=columnsRange.map(colIdx => sheet.getRow(first_line).getCell(colIdx).text)
-      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx).getCell(colIdx).text))
+      const records=rowsRange.map(rowIdx => columnsRange.map(colIdx => sheet.getRow(rowIdx)?.getCell(colIdx)?.text))
       if (!options.columns) {
         return {headers: headers, records: records}
       }
@@ -177,8 +177,11 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
         }
         return model.create({...record})
       }
-      return model.findByIdAndUpdate(result._id, record, {runValidators:true, new: true})
+      Object.assign(result, record)
+      return result.save()
         .then(() => ({_id: result._id}))
+      // return model.findByIdAndUpdate(result._id, record, {runValidators:true, new: true})
+      //   .then(() => ({_id: result._id}))
     })
     .then(result => {
       setCache(model.modelName, record[migrationKey], result._id.toString())
