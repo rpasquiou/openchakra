@@ -21,6 +21,8 @@ const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
 const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
 const Category = require('../../models/Category')
+const { isMine } = require('./message')
+const { getConversationPartner } = require('./conversation')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -159,6 +161,35 @@ declareVirtualField({model: 'group', field: 'pending_users_count', instance: 'Nu
 declareVirtualField({model: 'group', field: 'users_count', instance: 'Number'})
 
 //Partner declarations
+// Conversation
+declareVirtualField({
+  model: 'conversation', field: 'messages', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'message' }
+  },
+})
+declareVirtualField({
+  model: 'conversation',
+  field: 'messages_count',
+  instance: 'Number',
+})
+declareVirtualField({
+  model: 'conversation',
+  field: 'latest_message',
+  instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'message' },
+  },
+})
+
+declareComputedField({model: 'conversation', field: 'partner', requires: 'users', getterFn: getConversationPartner})
+
+//Message
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+declareVirtualField({model: 'message', field: 'display_date', instance: 'String', requires: 'creation_date'})
 
 // Category declarations
 declareVirtualField({model: 'category', field: 'expertises', instance: 'Array', multiple: true,
