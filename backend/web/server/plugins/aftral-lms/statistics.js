@@ -27,13 +27,23 @@ const fillSession = async session => {
 }
 
 const computeStatistics = async ({fields, id, user, params}) => {
-  const model = await getModel(id, [`session`,`block`,`user`])
-  const sessionId = model != `user` ? id : undefined
   let newParams = {}
-  if(model == `user`) {
-    newParams[`filter.trainees`] = id
+  let sessionId = {}
+  const sessionPrefix=/^sessions\./
+  fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
+  if(!!id) {
+    const model = await getModel(id)
+    if(model == `session`) {
+      sessionId.id = id
+    }
+    else {
+      newParams[`filter.trainees`] = id 
+    }
   }
-  return loadFromDb({model: 'session', id: sessionId, user, fields, params:newParams})
+  else {
+    newParams[`filter.trainees`] = user._id
+  }
+  return loadFromDb({model: 'session', ...sessionId, user, fields, params:newParams})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
     .then(sessions => ([{sessions}]))
 }
