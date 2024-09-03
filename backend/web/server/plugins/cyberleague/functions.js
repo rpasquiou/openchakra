@@ -241,7 +241,7 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 
 
-// Ensure all categories are defined
+// Ensure all expertise categories are defined
 ensureExpertiseCategories = () => {
   return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
     return ExpertiseCategory.findOneAndUpdate(
