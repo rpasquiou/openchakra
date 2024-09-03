@@ -234,6 +234,7 @@ declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'A
     options: { ref: 'question' }
   }
 })
+declareEnumField( {model: 'questionCategory', field: 'value', enumValues: QUESTION_CATEGORIES})
 
 //Pack && purchase status declarations
 declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STATUS})
@@ -243,26 +244,26 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 // Ensure all expertise categories are defined
 const ensureExpertiseCategories = () => {
-  return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
+  return Promise.all(Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
     return ExpertiseCategory.findOneAndUpdate(
       {value}, 
       {value,name},
       {upsert: true}
     )
-  })
+  }))
 }
 
 ensureExpertiseCategories()
 
 // Ensure all question categories are defined
 const ensureQuestionCategories = () => {
-  return Object.entries(QUESTION_CATEGORIES).map(([value,name]) => {
+  return Promise.all(Object.entries(QUESTION_CATEGORIES).map(([value,name]) => {
     return QuestionCategory.findOneAndUpdate(
       {value}, 
       {value,name},
       {upsert: true}
     )
-  })
+  }))
 }
 
 ensureQuestionCategories()
@@ -362,3 +363,8 @@ const postPutData = async ({model, id, params, user}) => {
 }
 
 setPostPutData(postPutData)
+
+module.exports = {
+  ensureExpertiseCategories,
+  ensureQuestionCategories
+}
