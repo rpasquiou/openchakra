@@ -25,6 +25,7 @@ const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { cloneTree } = require('./block')
+const { lockSession } = require('./functions')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
@@ -249,7 +250,7 @@ const TRAINEE_MAPPING = {
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
   aftral_id: TRAINEE_AFTRAL_ID,
-  password: () => 'Password1;'
+  password: TRAINEE_AFTRAL_ID,
 }
 
 const TRAINEE_KEY='aftral_id'
@@ -278,35 +279,51 @@ const SESSION_MAPPING = admin => ({
   },
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
+  trainers: async ({record}) => {
+    const trainers=await User.find({aftral_id: {$in: record.TRAINERS}})
+    return trainers.filter(t => !!t)
+  },
+  trainees: async ({record}) => {
+    const trainees=await User.find({aftral_id: {$in: record.TRAINEES}})
+    return trainees.filter(t => !!t)
+  },
 })
 
 const SESSION_KEY='aftral_id'
 
 const importSessions = async (trainersFilename, traineesFilename) => {
   const trainees=await loadRecords(traineesFilename)
-  const uniqueSessions=lodash
+  const trainers=await loadRecords(trainersFilename)
+  let uniqueSessions=lodash
     .uniqBy(trainees, SESSION_AFTRAL_ID)
-    .slice(0,1)
+  // Set trainees
+  uniqueSessions=uniqueSessions.map(s => ({
+    ...s, 
+    TRAINEES: trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINEE_AFTRAL_ID]),
+    TRAINERS: trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINER_AFTRAL_ID]),
+  }))
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
+  console.log(uniqueSessions.map(s => s.TRAINERS))
   await importData({model: 'session', data: uniqueSessions, 
     mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
     progressCb
   })
+  .then(console.log)
   // Set programs
   await runPromisesWithDelay(uniqueSessions.map(record => async () => {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=await Program.findOne({codes: code, origin: null, _locked: false})
     const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]})
     console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
-    console.log('Clone program')
-    console.time('Clone program')
-    const clonedProgram=await cloneTree(program._id, session._id)
-    console.timeEnd('Clone program')
-    await Session.findByIdAndUpdate(session._id, {children:[clonedProgram._id]})
+    const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
+    console.log('Cloned program', clonedProgram._id)
+    await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
+    await lockSession(session._id)
   }))
+  .then(console.log)
 }
 
 module.exports={

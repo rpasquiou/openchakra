@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const fs = require('fs')
+const path = require('path')
 const moment = require('moment')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { pollNewFiles } = require('../../server/plugins/aftral-lms/ftp')
@@ -9,11 +10,14 @@ const { importTrainers, importSessions, importTrainees } = require('../../server
 const Session = require('../../server/models/Session')
 const ProductCode = require('../../server/models/ProductCode')
 const Program = require('../../server/models/Program')
+const Block = require('../../server/models/Block')
 
 jest.setTimeout(600000)
 
-const TRAINERS_FILE='/home/seb/Téléchargements/Session_Formateur.csv'
-const TRAINEES_FILE='/home/seb/Téléchargements/Apprenant.csv'
+const ROOT = path.join(__dirname, './data')
+
+const TRAINERS_FILE=path.join(ROOT, 'Session_Formateur.csv')
+const TRAINEES_FILE=path.join(ROOT, 'Apprenant.csv')
 
 describe('Test session/trainees polling', () => {
 
@@ -37,7 +41,7 @@ describe('Test session/trainees polling', () => {
   })
 
   it('Must import trainers', async () => {
-    await importTrainers(TRAINERS_FILE)
+    await importTrainers(TRAINERS_FILE).then(console.log)
     let trainers=await User.countDocuments({role: ROLE_FORMATEUR})
     expect(trainers).toEqual(113)
   })
@@ -50,7 +54,7 @@ describe('Test session/trainees polling', () => {
 
   it.only('Must import sessions', async () => {
     await importSessions(TRAINERS_FILE, TRAINEES_FILE)
-    let sessions=await Session.countDocuments()
+    let sessions=await Block.countDocuments({type: 'session'}) //Session.countDocuments()
     expect(sessions).toBeGreaterThan(0)
   })
 
