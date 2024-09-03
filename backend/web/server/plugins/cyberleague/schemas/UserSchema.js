@@ -59,15 +59,6 @@ const UserSchema = new Schema({
     index: true,
     required: false,
   },
-  expertises: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'expertise',
-      index: true,
-      required: false,
-    }],
-    default: []
-  },
   events: {
     type: [{
       type: Schema.Types.ObjectId,

@@ -38,15 +38,6 @@ const GroupSchema = new Schema({
     }],
     default: []
   },
-  expertises: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'expertise',
-      index: true,
-      required: false,
-    }],
-    default: []
-  },
   //banner picture
   banner: {
     type: String,

@@ -34,12 +34,6 @@ const EventSchema = new Schema({
     type: Boolean,
     required: false
   },
-  expertises: [{
-    type: Schema.Types.ObjectId,
-    ref: 'expertise',
-    required: false,
-    index: true,
-  }],
   url: {
     type: String,
     required: false

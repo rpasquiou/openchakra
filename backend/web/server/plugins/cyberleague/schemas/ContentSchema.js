@@ -61,15 +61,6 @@ const ContentSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  expertises: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'expertise',
-      required: false,
-      index: true,
-    }],
-    default: []
-  },
   visibility: {
     type: String,
     enum: Object.keys(CONTENT_VISIBILITY),
