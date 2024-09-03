@@ -1,4 +1,5 @@
 const fs=require('fs')
+const mongoose=require('mongoose')
 const moment=require('moment')
 const lodash=require('lodash')
 const path=require('path')
@@ -109,89 +110,88 @@ const importResources = async (root_path, recursive) => {
   return importData({model: 'resource', data: records, mapping: RESOURCE_MAPPING(userId), identityKey: RESOURCE_KEY, migrationKey: RESOURCE_KEY})
 }
 
-const BLOCK_MODELS=[Program, Chapter, Module, Sequence, Resource]
+const MODELS=['program', 'chapter', 'module', 'sequence', 'resource']
 
-const getName = level => BLOCK_MODELS[level].modelName
+const importBlock = async ({blockRecord, level, creator, programCodes}) => {
+  const modelName=MODELS[level]
+  const model=mongoose.models[modelName]
+  const name=blockRecord[modelName]
 
-const BlocksCache = new NodeCache()
+  modelName=='program' && console.log('*'.repeat(level*2), 'Import', level, modelName, name)
 
-const getBlock = async (level, name) => {
-  const key=`${level}-${name}`
-  if (BlocksCache.has(key)) {
-    return BlocksCache.get(key)
+  const emptyChapter=modelName=='chapter' && name.trim().length==0
+
+  let loaded=await model.findOne({name, origin: null})
+  if (!loaded && !emptyChapter) {
+    if (modelName=='resource') {
+      throw new Error(`Ressource ${name}  ${level} ${model.modelName} introuvable dans ${JSON.stringify({...blockRecord, children: undefined})}`)
+    }
+    const attributes={name, creator, origin: null}
+    if (modelName=='program') {
+      const codes=await ProductCode.find({code: {$in: programCodes[name]}})
+      attributes.codes=codes
+    }
+    loaded=await model.create(attributes).catch(() => console.error('Creating', modelName, attributes))
   }
-  const filter=getName(level)=='resource' ? {code: name.split(' ')[0]} : 
-  {name}
-  return BLOCK_MODELS[level].findOne(filter)
+  if (level<MODELS.length-1) {
+    const res=await runPromisesWithDelay(blockRecord.children.map(c => () => {
+      return importBlock({blockRecord:c, level:level+1, creator, programCodes})
+    }))
+    const errors=res.filter(r => r.status=='rejected').map(r => r.reason)
+    if (errors.length>0) {
+      throw new Error(modelName+errors.join('\n'))
+    }
+    const dbChildren=res.map(r => r.value)
+    if (emptyChapter) {
+      return dbChildren
+    }
+    else {
+      await Promise.all(dbChildren.map(c => addChildAction({parent: loaded._id, child: c._id})))
+    }
+
+  }
+  return loaded
 }
 
-const inspected=[]
-const importBlock = async ({record, level, creator, programCodes}) => {
-  const model=BLOCK_MODELS[level]
-  let name=Object.values(record)[level]
-  console.log(model.modelName, name)
-  let codes=null
-  if (level==0 && !inspected.includes(name)) {
-    // console.log('Program',name)
-    inspected.push(name)
+const generateTree = (data, hierarchy) => {
+  if (!hierarchy.length) {
+    return data;
   }
-  let block=await getBlock(level, name)
-  if (!block) {
-    if (model.modelName=='resource') {
-      throw new Error(`Resource ${name} not found`)
-    }
-    if (model.modelName=='program') {
-      const codesStr=programCodes[name]
-      codes=await ProductCode.find({code: {$in: codesStr}})
-      console.log(`Getting codes for ${name}:${codes.map(c => c._id)}`)
-    }
-    block=await model.create({name, creator, codes})
-    if (level==0) {
-      console.log(getName(level), name, 'created', block._id)
-    }
-  }
-  if (model.modelName!='resource') {
-    console.group()
-    let child
-    try {
-      // Maybe chapter is empty
-      if (level==0 && lodash.isEmpty(Object.values(record)[level+1])) {
-        console.log(`Record ${JSON.stringify(record)} maybe no chapter ; seeking for module`)
-        child=await importBlock({record, level: level+2, creator})
-      }
-      else {
-        child=await importBlock({record, level: level+1, creator})
-      }
-    }
-    finally {
-      console.groupEnd()
-    }
-    if (child) {
-      const linkexists=await BLOCK_MODELS[level+1].exists({origin: child._id, parent: block._id})
-      if (!linkexists) {
-        await addChildAction({parent: block._id, child: child._id}, creator)
-      }
-      else {
-        // console.log(`Child`, child.name, 'of', name, 'already exists')
-      }
-    }
-  }
-  return block
+
+  const [currentLevel, ...restHierarchy] = hierarchy;
+
+  const grouped = lodash.groupBy(data, currentLevel);
+
+  return lodash.map(grouped, (groupItems, key) => ({
+    [currentLevel]: key,
+    children: generateTree(groupItems, restHierarchy)
+  }))
+}
+
+const removeResourceCode = title => {
+  const PATTERN=/^ *\w+_\w+_\w+ /
+  return title.replace(PATTERN, '')
 }
 
 const importPrograms= async (filename, tabName, fromLine, codesFilePath, codesTabName, codesFromLine) => {
   const PROGRAM_NAME_HEADER='Nom du programme avec lien pour le modifier'
   const CODE_HEADER='Code produit'
-  // First remove all programs/chapters/modules/sequences
-  await Block.deleteMany({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
-  await Block.deleteMany({origin: {$ne: null}})
-  const creator=await User.findOne({role: ROLE_CONCEPTEUR})
-  const data=await loadRecords(filename, tabName, fromLine)
-  console.log(`Loading ${data.length} lines fror program import`)
+  // Load codes
   const codes=await loadRecords(codesFilePath, codesTabName, codesFromLine)
   const groupedCodes=lodash(codes).groupBy(PROGRAM_NAME_HEADER).mapValues(v => v.map(c => c[CODE_HEADER])).value()
-  const res=await runPromisesWithDelay(data.map(record => () => {
-    return importBlock({record, level:0, creator, programCodes: groupedCodes})
+
+  // First remove all programs/chapters/modules/sequences
+  await Block.deleteMany({type: {$ne: 'resource'}})
+  await Block.deleteMany({origin: {$ne: null}})
+  const creator=await User.findOne({role: ROLE_CONCEPTEUR})
+  let data=await loadRecords(filename, tabName, fromLine)
+  const types=Object.keys(data[0]).slice(0, 5)
+  const keyMapping=Object.fromEntries(lodash.zip(types, MODELS))
+  data=data.map(d => lodash(d).mapKeys((v, k) => keyMapping[k]).pick(MODELS).value())
+  data=data.map(d => ({...d, resource: removeResourceCode(d.resource)}))
+  const tree=generateTree(data, MODELS)
+  const res=await runPromisesWithDelay(tree.map(program => () => {
+    return importBlock({blockRecord:program, level:0, creator, programCodes: groupedCodes})
   }))
   res.forEach((r, idx) => {
     if (r.status=='rejected') {
@@ -327,6 +327,6 @@ const importSessions = async (trainersFilename, traineesFilename) => {
 }
 
 module.exports={
-  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions,
+  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, removeResourceCode, loadRecords,
 }  
 
