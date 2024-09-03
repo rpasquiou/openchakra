@@ -20,7 +20,7 @@ const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
 const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
-const Category = require('../../models/Category')
+const QuestionCategory = require('../../models/QuestionCategory')
 const { isMine } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
@@ -242,7 +242,7 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 
 
 // Ensure all expertise categories are defined
-ensureExpertiseCategories = () => {
+const ensureExpertiseCategories = () => {
   return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
     return ExpertiseCategory.findOneAndUpdate(
       {value}, 
@@ -252,10 +252,12 @@ ensureExpertiseCategories = () => {
   })
 }
 
+ensureExpertiseCategories()
+
 // Ensure all question categories are defined
-ensureQuestionCategories = () => {
+const ensureQuestionCategories = () => {
   return Object.entries(QUESTION_CATEGORIES).map(([value,name]) => {
-    return ExpertiseCategory.findOneAndUpdate(
+    return QuestionCategory.findOneAndUpdate(
       {value}, 
       {value,name},
       {upsert: true}
@@ -263,7 +265,7 @@ ensureQuestionCategories = () => {
   })
 }
 
-
+ensureQuestionCategories()
 
 
 
