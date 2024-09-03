@@ -138,13 +138,16 @@ const UserSchema = new Schema({
     default: []
   },
   member_count: {
-    type: Number
+    type: Number,
+    default: 0
   },
   partner_count: {
-    type: Number
+    type: Number,
+    default: 0
   },
   user_count: {
-    type: Number
+    type: Number,
+    default: 0
   },
   expertise_set: {
     type: Schema.Types.ObjectId,
