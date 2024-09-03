@@ -459,6 +459,9 @@ const PATIENT_MAPPING={
   email: 'emailCanonical',
   firstname: ({record}) => record.firstname || 'inconnu',
   lastname: ({record}) => record.lastname || 'inconnu',
+  address: 'address',
+  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
+  city: 'city',
   dataTreatmentAccepted: () => true,
   cguAccepted: () => true,
   password: () => DEFAULT_PASSWORD,
@@ -512,12 +515,11 @@ const DIET_MAPPING={
   lastname: 'lastname',
   email: 'email',
   smartagenda_id: 'smartagendaid',
-  migration_id: 'SDID',
-  zip_code: ({record}) => record.cp?.length==4 ? record.cp+'0' : record.cp,
   address: 'address',
+  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
+  city: 'city',
   phone: ({record}) => normalizePhone(record.phone),
   adeli: 'adelinumber',
-  city: 'city',
   siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
   birthday: 'birthdate',
   [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record['created_at']),
@@ -530,6 +532,7 @@ const DIET_MAPPING={
   picture: async ({record, picturesDirectory}) => {return await getS3FileForDiet(picturesDirectory, record.firstname, record.lastname, 'profil')},
   rib: async ({record, ribDirectory}) => {return await getS3FileForDiet(ribDirectory, record.firstname, record.lastname, 'rib')},
   source: () => 'import',
+  migration_id: 'SDID',
 }
 
 const companyOffersCache=new NodeCache()
