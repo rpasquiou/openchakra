@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -244,6 +244,17 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 // Ensure all expertise categories are defined
 ensureExpertiseCategories = () => {
   return Object.entries(EXPERTISE_CATEGORIES).map(([value,name]) => {
+    return ExpertiseCategory.findOneAndUpdate(
+      {value}, 
+      {value,name},
+      {upsert: true}
+    )
+  })
+}
+
+// Ensure all question categories are defined
+ensureQuestionCategories = () => {
+  return Object.entries(QUESTION_CATEGORIES).map(([value,name]) => {
     return ExpertiseCategory.findOneAndUpdate(
       {value}, 
       {value,name},
