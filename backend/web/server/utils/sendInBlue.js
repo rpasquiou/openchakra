@@ -14,6 +14,7 @@ class SIB_V3 {
 
     this.smtpInstance = new SibApiV3Sdk.SMTPApi()
     this.smsInstance = new SibApiV3Sdk.TransactionalSMSApi()
+    this.contactsInstance = new SibApiV3Sdk.ContactsApi()
   }
 
   sendMail({index, email, ccs, data, attachment=null}) {
@@ -68,6 +69,40 @@ class SIB_V3 {
         return false
       })
   }
+
+  // Block others than smartdiet & wappizy addresses
+  acceptEmail = email => {
+    return /@wappizy/.test(email) || /@smartdiet/.test(email)
+  }
+
+  async getContacts() {
+    return this.contactsInstance.getContacts()
+  }
+
+  async createContact(userData) {
+    if (!this.acceptEmail(userData.email)) {
+      console.warn(`DISABLED Create contact for ${userData.email}`)
+      return 
+    }
+    console.log('CRM Creating', userData.email)
+    return this.contactsInstance.createContact(userData)
+  }
+
+  async getContact(email) {
+    return this.contactsInstance.getContactInfo(email)
+  }
+
+  async deleteContact(email) {
+    return this.contactsInstance.deleteContact(email)
+  }
+  async updateContact(id, userData) {
+    if (!this.acceptEmail(userData.email)) {
+      console.warn(`DISABLED Update contact for ${userData.email}`)
+      return 
+    }
+    return this.contactsInstance.updateContact(id, userData)
+  }
+
 }
 
 const PROVIDER = new SIB_V3()

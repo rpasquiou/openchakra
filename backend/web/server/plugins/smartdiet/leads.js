@@ -1,5 +1,4 @@
 const { updateWorkflows } = require('./workflows')
-const { sendLeadOnboarding } = require('./mailing')
 const { bufferToString, guessDelimiter } = require('../../../utils/text')
 const { BadRequestError, NotFoundError } = require('../../utils/errors')
 const Company = require('../../models/Company')
@@ -116,7 +115,6 @@ const importLeads= buffer => {
         .lean()
         .then(leadsAfter => {
           const newLeads=leadsAfter.filter(l => !leadsBefore.map(l => l.email).includes(l.email))
-          //return Promise.allSettled(newLeads.map(lead => sendLeadOnboarding({lead})))
           updateWorkflows()
         })
         .then(res => {

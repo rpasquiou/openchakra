@@ -32,7 +32,7 @@ const {
 const mongoose = require('mongoose')
 const moment=require('moment')
 const { ForbiddenError } = require('../../../utils/errors')
-const {schemaOptions} = require('../../../utils/schemas')
+const {schemaOptions, callPreSave} = require('../../../utils/schemas')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
 const IBANValidator = require('iban-validator-js')
@@ -361,6 +361,9 @@ const UserSchema = new Schema({
     type: String,
     required: false,
   },
+  crm_id: {
+    type: Number,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -602,7 +605,7 @@ UserSchema.virtual("pinned_contents", {
 });
 
 UserSchema.virtual("targets", DUMMY_REF).get(function() {
-  return computeTargets(this)
+  return [] //computeTargets(this)
 })
 
 UserSchema.virtual('offer', DUMMY_REF).get(function() {
@@ -824,7 +827,9 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
   return true
 })
 
-
+UserSchema.post('save', async function() {
+  return callPreSave('user', this)
+})
 
 /* eslint-enable prefer-arrow-callback */
 

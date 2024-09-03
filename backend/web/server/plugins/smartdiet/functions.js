@@ -213,6 +213,8 @@ const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate }
 const { historicize } = require('./history')
 const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
+const { registerPreSave } = require('../../utils/schemas')
+const { crmUpsertAccount } = require('../../utils/crm')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -2432,6 +2434,31 @@ const mailjetHookFn = received => {
   return Lead.updateMany({email: {$in: emails}}, {mail_opened: true})
     .then(res => console.log(`Updated ${emails.length} leads open mail`))
 }
+
+const preSave = async (model, id, values, isNew) => {
+  if (model=='user') {
+    // Create only customers in CRM
+    const role=(await User.findById(id, {role:1}))?.role
+    if (role==ROLE_CUSTOMER) {
+      console.log('user', id, 'was modified:', values)
+      return crmUpsertAccount(id, values)
+    }
+  }
+  if (model=='coaching') {
+    const coaching=await Coaching.findById(id)
+    if (coaching.user) {
+      return crmUpsertAccount(coaching.user, values)    
+    }
+  }
+  if (model=='appointment') {
+    const appt=await Appointment.findById(id)
+    if (coaching.user) {
+      return crmUpsertAccount(appt.user, values)    
+    }
+  }
+}
+
+registerPreSave(preSave)
 
 // Update workflows
 cron.schedule('0 0 8 * * *', async () => {

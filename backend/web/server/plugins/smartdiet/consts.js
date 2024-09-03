@@ -303,12 +303,14 @@ const convertQuantity=(quantity, unit) => {
 const PARTICULAR_COMPANY_NAME='Adhérent particulier'
 
 const SURVEY_ANSWER_NEVER='0'
-const SURVEY_ANSWER_SOMETIMES='1'
-const SURVEY_ANSWER_OFTEN='2'
-const SURVEY_ANSWER_ALWAYS='3'
+const SURVEY_ANSWER_RARELY='1'
+const SURVEY_ANSWER_SOMETIMES='2'
+const SURVEY_ANSWER_OFTEN='3'
+const SURVEY_ANSWER_ALWAYS='4'
 
 const SURVEY_ANSWER={
   [SURVEY_ANSWER_NEVER]:'jamais',
+  [SURVEY_ANSWER_RARELY]:'rarement',
   [SURVEY_ANSWER_SOMETIMES]:'parfois',
   [SURVEY_ANSWER_OFTEN]:'souvent',
   [SURVEY_ANSWER_ALWAYS]:'toujours',
