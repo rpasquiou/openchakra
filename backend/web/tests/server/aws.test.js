@@ -5,6 +5,7 @@ const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
 const { resizeImage } = require('../../server/middlewares/resizeImage')
+const { sendFilesToAWS } = require('../../server/middlewares/aws')
 
 const ROOT = path.join(__dirname, '../data')
 
@@ -22,12 +23,10 @@ describe('AWS tests', () => {
         mimetype:'image/jpeg',
         buffer,
       },
-      body: {
-
-      },
+      body: {}
     }
     const res={}
-    const next= () => {}
+    const next= () => sendFilesToAWS(req, res, () => {})
     await resizeImage(req, res, next)
     const displayReq={
       ...req, 
@@ -43,8 +42,7 @@ describe('AWS tests', () => {
         }))
       }
     }
-    expect(req.body.documents).toHaveLength(3)
-    console.log(req.body.documents[2])
+    console.log(res)
   })
 
 

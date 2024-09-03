@@ -1,5 +1,5 @@
 const fs=require('fs')
-const { isScorm } = require('../../server/utils/filesystem')
+const { isScorm } = require('../../server/utils/scorm')
 
 describe('Test scorm', () => {
 
