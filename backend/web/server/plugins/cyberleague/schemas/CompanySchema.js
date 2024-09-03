@@ -127,11 +127,14 @@ const CompanySchema = new Schema(
       }],
       default: [],
     },
-    contents: [{
-      type: Schema.Types.ObjectId,
-      ref: 'content',
-      required: false,
-    }],
+    contents: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'content',
+        required: true,
+      }],
+      default: [],
+    },
     looking_for_mission: {
       type: String,
       enum: Object.keys(LOOKING_FOR_MISSION),
