@@ -8,7 +8,7 @@ const QuestionSchema = new Schema({
     type: String,
     required: [true, `Le texte de la question est obligatoire`],
   },
-  poids: {
+  weight: {
     type: Number,
     validate: [function(s) {s => [1,2,3].includes(s)}, 'Le poids doit être 1, 2 ou 3'],
     required: [true, `Le poids de la question est obligatoire`],
