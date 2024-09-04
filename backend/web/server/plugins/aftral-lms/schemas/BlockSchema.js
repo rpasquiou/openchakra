@@ -254,11 +254,13 @@ const BlockSchema = new Schema({
     type: Number,
     required: false,
   },
-  // Note or scale is set by the trainer
+  // Computed
   note: {
     type: Number,
     required: false,
+    default: null,
   },
+  //  Scale is set by the trainer
   scale: {
     type: String,
     enum: Object.keys(SCALE),

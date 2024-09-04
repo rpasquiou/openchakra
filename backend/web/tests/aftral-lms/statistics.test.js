@@ -98,10 +98,9 @@ describe('Test models computations', () => {
       name: `Test sequence`,
       creator: trainer._id
     })
-
-    await addChildAction({parent: program._id, child: modulee._id}, conceptor)
-    await addChildAction({parent: modulee._id, child: sequence._id}, conceptor)
     await addChildAction({parent: sequence._id, child: resource._id}, conceptor)
+    await addChildAction({parent: modulee._id, child: sequence._id}, conceptor)
+    await addChildAction({parent: program._id, child: modulee._id}, conceptor)
     await addChildAction({parent: session._id, child: program._id}, conceptor)
 
     fields =  [
@@ -111,6 +110,7 @@ describe('Test models computations', () => {
       `sessions`,
       `sessions.trainees.statistics.children.children`,
       `sessions.trainees.statistics.children.children.name`,
+      `sessions.trainees.statistics.evaluation_resources`,
       `sessions.trainees`,
     ]
   })
@@ -131,12 +131,21 @@ describe('Test models computations', () => {
     expect(idEqual(data[0].sessions[0].trainees[0]._id, trainee1._id)).toBeTruthy()
   })
 
-  it.only(`must return all trainees statistics`, async () => {
+  it(`must return all trainees statistics`, async () => {
     const data = await loadFromDb({
       model: `statistics`,
       user: trainer,
       fields,
     })
     expect(data[0].sessions[0].trainees.length).toEqual(2)
+  })
+
+  it('`must return all trainees statistics including evaluation_resources', async () => {
+    const data = await loadFromDb({
+      model: `statistics`,
+      user: trainer,
+      fields,
+    })
+    expect(data[0].sessions[0].trainees[0].statistics.evaluation_resources.length).toEqual(1)
   })
 })

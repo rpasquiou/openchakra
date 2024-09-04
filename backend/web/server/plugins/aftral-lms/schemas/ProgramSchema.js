@@ -33,6 +33,15 @@ const ProgramSchema = new Schema({
     type: String,
     required: false,
   },
+  // Computed
+  evaluation_resources: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 /* eslint-disable prefer-arrow-callback */

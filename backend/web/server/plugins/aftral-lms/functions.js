@@ -18,13 +18,13 @@ require('../../models/Search')
 require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockNote } = require('./resources')
 const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
+const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -48,7 +48,6 @@ const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 const Search = require('../../models/Search')
 const Conversation = require('../../models/Conversation')
-const { getEvalResources } = require('./session')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -105,6 +104,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
+  declareComputedField({model, field: 'note', getterFn: getBlockNote})
 })
 
 //Program start
@@ -116,6 +116,7 @@ declareComputedField({
   requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
   getterFn: getCertificate, 
 })
+declareComputedField({model: 'program', field: 'evaluation_resources', getterFn: getEvalResources})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
@@ -219,7 +220,6 @@ CONVERSATION_MODELS.forEach(model => {
 
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
-declareComputedField({model: 'session', field: 'evaluation_resources', getterFn: getEvalResources})
 // Session end
 
 const preCreate = async ({model, params, user}) => {

@@ -2,9 +2,11 @@ const ProductCode=require('../../models/ProductCode')
 const Program=require('../../models/Program')
 const lodash=require('lodash')
 const User = require('../../models/User')
-const { getResourcesProgress } = require('./resources')
+const { getResourcesProgress, getBlockResources } = require('./resources')
 const { generateDocument } = require('../../../utils/fillForm')
 const path = require('path')
+const { loadFromDb } = require('../../utils/database')
+const Resource = require('../../models/Resource')
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template1'
 
@@ -57,7 +59,28 @@ const getCertificate = async (userId, params, data) => {
   return result
 }
 
+const getEvalResources = async (userId, params, data, fields) => {
+  const resourceIds = await getBlockResources(data._id)
+  
+  const newParams = {
+    [`filter._id`]: {$in: resourceIds},
+  }
+  const user = await User.findById(userId)
+
+  let resources = await loadFromDb({
+    model: `resource`,
+    user,
+    fields: [...fields, `note`, `scale`, `homework_mode`],
+    params: newParams
+  })  
+
+  resources = resources.filter(r => 
+    r.homework_mode == true || (r.note !== undefined && r.note !== null) || (r.scale !== undefined && r.scale !== null)
+  )
+
+  return resources.map(r => new Resource(r))
+}
 
 module.exports={
-  getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES
+  getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources
 }

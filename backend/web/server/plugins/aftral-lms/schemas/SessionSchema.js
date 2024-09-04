@@ -45,15 +45,6 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
-  // Computed
-  evaluation_resources: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: `block`,
-    }],
-    required: true,
-    default: []
-  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema

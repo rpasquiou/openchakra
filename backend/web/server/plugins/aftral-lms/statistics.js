@@ -13,10 +13,11 @@ const fillSession = async (session, trainee) => {
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
   let fields=lodash.range(range).map(childCount => 
-    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str']
+    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', ]
       .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
   fields=lodash.flatten(fields)
+  fields= [...fields, 'evaluation_resources']
   return Promise.all(session.trainees.map(trainee => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {

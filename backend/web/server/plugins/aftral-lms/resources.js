@@ -99,8 +99,12 @@ const canReplay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
+const getBlockNote = async (userId, params, data) => {
+  return (await getProgress({user: userId, block: data._id}))?.note || null
+}
+
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources
+  getBlockResources, getBlockNote
 }

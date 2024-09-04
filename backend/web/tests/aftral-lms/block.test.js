@@ -108,7 +108,6 @@ describe('User', () => {
       homework_mode: false,
       success_note_min:0,
       success_note_max: 20,
-      note: 20
     })
 
     block5 = await Block.create({
@@ -175,6 +174,7 @@ describe('User', () => {
       block:id,
       homeworks:[homework1._id],
       achievement_status: BLOCK_STATUS_FINISHED,
+      note: 10,
     })
     progress2 = await Progress.create({
       user:trainee2._id,
@@ -271,11 +271,11 @@ describe('User', () => {
   })
   
   it.only(`must return resources on session`, async () => {
-    const [session] = await loadFromDb({
-      model: `session`,
-      user: trainer,
+    const [program] = await loadFromDb({
+      model: `program`,
+      user: trainee1,
       fields: [`evaluation_resources.name`]
     })
-    expect(session.evaluation_resources.length).toEqual(3)
+    expect(program.evaluation_resources.length).toEqual(2)
   })
 })
