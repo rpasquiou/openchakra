@@ -4,10 +4,12 @@ const lodash=require('lodash')
 const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
+const User = require("../../models/User")
 
-const fillSession = async session => {
+const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
-  const program = await Program.findOne({parent: session._id}).populate('children') 
+  session.trainees = trainee ? [trainee] : session.trainees
+  const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
   let fields=lodash.range(range).map(childCount => 
@@ -27,8 +29,8 @@ const fillSession = async session => {
 }
 
 const computeStatistics = async ({fields, id, user, params}) => {
-  let newParams = {}
   let sessionId = {}
+  let trainee
   const sessionPrefix=/^sessions\./
   fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
   if(!!id) {
@@ -37,14 +39,11 @@ const computeStatistics = async ({fields, id, user, params}) => {
       sessionId.id = id
     }
     else {
-      newParams[`filter.trainees`] = id 
+      trainee = await User.findById(id)
     }
   }
-  else {
-    newParams[`filter.trainees`] = user._id
-  }
-  return loadFromDb({model: 'session', ...sessionId, user, fields, params:newParams})
-    .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
+  return loadFromDb({model: 'session', user, fields, ...sessionId})
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{sessions}]))
 }
   
