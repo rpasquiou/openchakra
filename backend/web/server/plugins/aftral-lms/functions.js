@@ -104,9 +104,8 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'homeworks_submitted_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksSubmitted})
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
   declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
+  declareEnumField({model, field: 'scale', enumValues: SCALE})
 })
-
-declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})

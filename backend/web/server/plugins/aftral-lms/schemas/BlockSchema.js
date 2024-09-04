@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES, SCALE}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { getAttribute } = require('../block')
 const { BadRequestError } = require('../../../utils/errors')
@@ -233,7 +233,22 @@ const BlockSchema = new Schema({
   trainees_count: {
     type: Number,
     required: false,
-  }
+  },
+  // Note or scale is set by the trainer
+  note: {
+    type: Number,
+    required: false,
+  },
+  scale: {
+    type: String,
+    enum: Object.keys(SCALE),
+    required: false,
+  },
+    // Correction par le formateur
+  correction: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
