@@ -24,6 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMine } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
+const { computeScores } = require('./score')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -290,6 +291,7 @@ setPreprocessGet(preprocessGet)
 
 const preCreate = async ({model, params, user}) => {
   params.creator = params.creator || user._id
+
   if(model == `comment`) {
     if (!params.parent) {
       throw new BadRequestError(`Le parent est obligatoire`)
@@ -302,6 +304,7 @@ const preCreate = async ({model, params, user}) => {
       params.content = params.parent
     }
   }
+
   if (model == `group`) {
     if (user.role != ROLE_PARTNER) {
       if (user.role != ROLE_ADMIN) {
@@ -316,6 +319,7 @@ const preCreate = async ({model, params, user}) => {
     params.admin = user._id
     params.users = [user._id]
   }
+
   if (model== `company`) {
     if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
   }
@@ -330,6 +334,12 @@ const preCreate = async ({model, params, user}) => {
       params.group = null;
     }
   } 
+
+  if (model == 'score') {
+    //todo : vérifier le format sous lequel arrive les questions dans params et adapter si besoin
+    const computedScores = computeScores(params.questions)
+    params = {...params, ...computedScores}
+  }
 
   return Promise.resolve({model, params})
 }
