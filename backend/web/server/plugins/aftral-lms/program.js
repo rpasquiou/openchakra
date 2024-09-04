@@ -70,9 +70,9 @@ const getEvalResources = async (userId, params, data, fields) => {
   let resources = await loadFromDb({
     model: `resource`,
     user,
-    fields: [...fields, `note`, `scale`, `homework_mode`],
+    fields: [...fields, `note`, `scale`, `homework_mode`, `resource_type`, `name`, `success_note_max`, `max_attempts`, `homeworks`],
     params: newParams
-  })  
+  })
 
   resources = resources.filter(r => 
     r.homework_mode == true || (r.note !== undefined && r.note !== null) || (r.scale !== undefined && r.scale !== null)
