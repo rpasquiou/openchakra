@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas.js')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts.js')
+const { idEqual } = require('../../../utils/database')
 const Schema = mongoose.Schema
 
 const ConversationSchema = new Schema(
@@ -61,6 +62,11 @@ ConversationSchema.statics.getFromUsers = async function ({ user1, user2 }) {
     conversation = await this.create({ users: [user1, user2] })
   }
   return conversation
+}
+
+ConversationSchema.methods.getPartner = async function(me) {
+  const partner=idEqual(this.users[0], me) ? this.users[1] : this.users[0]
+  return partner
 }
 
 module.exports = ConversationSchema
