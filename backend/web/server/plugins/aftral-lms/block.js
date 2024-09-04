@@ -6,6 +6,7 @@ const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel, getModelAttributes } = require("../../utils/database");
 const User = require("../../models/User");
+const SessionConversation = require("../../models/SessionConversation");
 
 const NAMES_CACHE=new NodeCache()
 
@@ -18,11 +19,11 @@ const LINKED_ATTRIBUTES_CONVERSION={
   optional : v => v || false, 
   code: lodash.identity, 
   access_condition: v => v || false, 
-  resource_type: lodash.identity,
+  resource_type: v => v || undefined,
   homework_mode: lodash.identity,
   url: lodash.identity,
   evaluation: v => v || false,
-  achievement_rule : lodash.identity,
+  achievement_rule : v => v || undefined,
   success_note_min: lodash.identity,
   success_note_max: lodash.identity,
   success_scale: v=>v || false,
@@ -74,50 +75,19 @@ const getBlockStatus = async (userId, params, data) => {
   return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
 }
 
-const getBlockName = async (blockId) => {
-  let result = NAMES_CACHE.get(blockId.toString())
-  if (!result) {
-    const block = await mongoose.models.block.findById(blockId, { name: 1, type: 1 })
-    result = `${block.type}-${block.name} ${blockId}`
-    NAMES_CACHE.set(blockId.toString(), result)
-  }
-  return result
-}
-
 const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
   }
   const parent=await mongoose.models.block.findById(parentId).populate('children_count')
   const newOrder=parent.children_count+1
-  const [block]=await loadFromDb({model:'block', user:{role:ROLE_CONCEPTEUR}, id:blockId, fields:[
-    'name',
-    'closed',
-    'masked',
-    'description',
-    'picture',
-    'optional',
-    'code',
-    'access_condition',
-    'resource_type',
-    'homework_mode',
-    'url',
-    'evaluation',
-    'achievement_rule',
-    'children.resource_type',
-    'creator',
-    'type',
-    'children.type'
-  ]})
+  const block=await mongoose.models.block.findById(blockId).populate('children')
   let blockData={
     order: newOrder,
-    ...lodash.omit(block, [...LINKED_ATTRIBUTES, 'id', '_id', 'origin', 'parent']),
+    ...lodash.omit(block.toObject(), ['id', '_id', 'origin', 'parent']),
     id: undefined, _id: undefined, origin: blockId, parent: parentId,
-    ...NULLED_ATTRIBUTES,
   }
-  if (block.resource_type) {
-    blockData.resource_type = block.resource_type;
-  }
+
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
   let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
@@ -180,26 +150,6 @@ const getChain = async blockId => {
   return chain
 }
 
-const ATTRIBUTES_CACHE=new NodeCache({stdTTL: 30})
-
-// Gets attribute from this data, else from its origin
-const getAttribute = attName => async (userId, params, data) => {
-  const key=`${data._id}/${attName}`
-  let res=ATTRIBUTES_CACHE.get(key)
-  if (!res) {
-    const chain=await getChain(data._id)
-    const block=chain.find((block, idx) => {
-      if (idx==chain.length-1) {
-        return true
-      }
-      return !lodash.isNil(block[attName])
-    })
-    res=block[attName]
-    ATTRIBUTES_CACHE.set(key, res)
-  }
-  return res
-}
-
 const isFinished = async (user, block) => {
   return Progress.exists({user, block, achievement_status: BLOCK_STATUS_FINISHED})
 }
@@ -239,7 +189,7 @@ const onBlockCurrent = async (user, block) => {
 
 const onBlockAction = async (user, block) => {
   const progress=await Progress.findOne({user, block})
-  const rule=await getAttribute('achievement_rule')(user._id, null, block)
+  const rule=block.achievement_rule
   console.log('rule is', rule)
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
@@ -291,7 +241,7 @@ const getPreviousResource= async (blockId, user) => {
   return {_id: brothers[0]}
 }
 
-getSession = async (userId, params, data, fields) => {
+const getSession = async (userId, params, data, fields) => {
   let currentBlock = await mongoose.models.block.findById(data._id,{parent:1, type:1})
   while (!!currentBlock.parent) {
     currentBlock = await mongoose.models.block.findById(currentBlock.parent,{parent:1, type:1})
@@ -362,14 +312,12 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
   }
 }
 
-const getTemplate = async(id) => {
-  let [currentBlock] = await mongoose.models.block.find({_id:id},{origin:1, _liked_by:1, _disliked_by:1})
-  let currentOrigin = currentBlock.origin
-  while(currentOrigin) {
-    [currentBlock] = await mongoose.models.block.find({_id:currentOrigin},{origin:1, _liked_by:1, _disliked_by:1})
-    currentOrigin = currentBlock.origin
+const getTemplate = async (id) => {
+  let block=await mongoose.models.block.findById(id, {origin:1, _liked_by:1, _disliked_by:1})
+  if (!block.origin) {
+    return block
   }
-  return currentBlock
+  return await getTemplate(block.origin)
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
@@ -383,16 +331,10 @@ const getAvailableCodes =  async (userId, params, data) => {
 }
 
 const getBlockHomeworks = async (userId, params, data) => {
-  const model = await getModel(data._id)
-  const user = await mongoose.models.user.findById(userId)
-  const progress = await mongoose.models.progress.findOne({
-    block:data._id,
-    ...user.role == ROLE_APPRENANT ? {user:userId} : {}
-  }).populate({
-      path:'homeworks',
-      populate:(`${model} trainee`)
-    })
-  return progress.homeworks
+  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
+  const filter=isTrainee ? {block: data._id} : {block: data._id, user: userId}
+  const progress=await Progress.findOne(filter).populate('homeworks')
+  return progress?.homeworks || []
 }
 
 const getBlockHomeworksSubmitted = async (userId, params, data) => {
@@ -418,12 +360,98 @@ const getBlockTraineesCount = async (userId, params, data) => {
   return session.trainees ? session.trainees.length : 0
 }
 
+const getBlockFinishedChildren = async (userId, params, data, fields) => {
+  const proccessedFields = fields.map(f => `block.` + f)
+  proccessedFields.push(`user`)
+  proccessedFields.push(`achievement_status`)
+
+  const loadedProgresses = await loadFromDb({
+    model: `progress`,
+    fields: proccessedFields,
+  })
+
+  if (loadedProgresses.length == 0) {
+    return null
+  }
+
+  const finishedChildren = loadedProgresses.filter(
+    p => p.user && idEqual(p.user._id, userId) && p.achievement_status === BLOCK_STATUS_FINISHED
+  ).map(p => p.block)
+
+  if (finishedChildren.length == 0) {
+    return null
+  }
+
+  return finishedChildren
+}
+
+const getSessionConversations = async (userId, params, data, fields) => {
+  const user = await User.findById(userId)
+  const convs = await SessionConversation.find({
+    session: data._id,
+    ...user.role == ROLE_APPRENANT ? {trainee:user._id} : {}
+
+  })
+  const newParams = {}
+  const convIds = convs.map(c=>c._id)
+  newParams[`filter._id`] = {$in:convIds}
+  let res = await loadFromDb({
+    model: `sessionConversation`,
+    params:newParams,
+    fields,
+    user
+  })
+  res = res.map(r=> new SessionConversation(r))
+  return res
+}
+
+const propagateAttributes=async (blockId, attributes=null) => {
+  if (attributes && attributes.length==0) {
+    return
+  }
+  const is_template=attributes==null
+  if (is_template) {
+    console.time(`Propagating for ${blockId}`)
+  }
+  const block=await mongoose.models.block.findById(blockId)
+  if (attributes==null) {
+    attributes=lodash(block.toObject()).pick(LINKED_ATTRIBUTES).value()
+    attributes=lodash.mapValues(attributes, (v, k) => LINKED_ATTRIBUTES_CONVERSION[k](v))
+  }
+  else {
+    const forced=block._forced_attributes || []
+    attributes=lodash.omit(attributes, forced)
+    // console.log('Setting', blockId, 'attributes', attributes)
+    Object.assign(block, attributes)
+    await block.save().catch(err => {
+      console.error('Block', blockId, attributes, err)
+      throw err
+    })
+  }
+  const ancestors=await mongoose.models.block.find({origin: blockId}, {_id:1})
+  await Promise.all(ancestors.map( a => propagateAttributes(a._id, attributes)))
+  if (is_template) {
+    console.timeEnd(`Propagating for ${blockId}`)
+  }
+}
+
+const getBlockTicketsCount = async (userId, params, data) => {
+  const ids = [data._id]
+  if(data.is_template) {
+    const allDependants = await data.getDependants()
+    allDependants.map(dep => ids.push(dep._id))
+  }
+  const count = await mongoose.models.ticket.countDocuments({block:{$in:ids}})
+  return count
+}
+
 module.exports={
-  getBlockStatus, getBlockName, getSessionBlocks, setParentSession, 
-  cloneTree, getAttribute, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
+  getBlockStatus, getSessionBlocks, setParentSession, 
+  cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, ATTRIBUTES_CACHE,getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
-  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount
+  ChainCache, getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
+  getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
+  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount
 }
 
 

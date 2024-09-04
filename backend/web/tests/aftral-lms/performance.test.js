@@ -1,26 +1,16 @@
-const moment=require('moment')
 const mongoose = require('mongoose')
+const fs = require('fs')
 const lodash=require('lodash')
-const {forceDataModelAftral}=require('../utils')
-forceDataModelAftral()
+const { ROLE_CONCEPTEUR} = require('../../server/plugins/aftral-lms/consts')
 const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
-const User=require('../../server/models/User')
-require('../../server/models/Chapter')
-const Resource=require('../../server/models/Resource')
-require('../../server/models/Badge')
-const Sequence=require('../../server/models/Sequence')
-const Module=require('../../server/models/Module')
-const Program=require('../../server/models/Program')
-const Session=require('../../server/models/Session')
-const { ROLE_CONCEPTEUR, RESOURCE_TYPE, ROLE_APPRENANT, ROLE_FORMATEUR } = require('../../server/plugins/aftral-lms/consts')
-const { updateAllDurations, updateDuration, lockSession } = require('../../server/plugins/aftral-lms/functions')
-require('../../server/plugins/aftral-lms/actions')
-const Block = require('../../server/models/Block')
-const { ACTIONS } = require('../../server/utils/studio/actions')
-const { SseKmsEncryptedObjectsStatus } = require('@aws-sdk/client-s3')
 const { getDatabaseUri } = require('../../config/config')
-const { ChainCache, ATTRIBUTES_CACHE } = require('../../server/plugins/aftral-lms/block')
 const { runPromisesWithDelay } = require('../../server/utils/concurrency')
+require('../../server/plugins/aftral-lms/functions')
+const User=require('../../server/models/User')
+require('../../server/models/Certification')
+require('../../server/models/PermissionGroup')
+require('../../server/models/Feed')
+require('../../server/models/Badge')
 
 
 jest.setTimeout(60000)
@@ -45,6 +35,26 @@ describe('Test performances', () => {
       const programs=await loadFromDb({model: 'program', fields: FIELDS, params: LIMITS, user: builder})
       console.timeEnd('Loading')
     }))
+  })
+
+  it.only('must load session', async() => {
+    const trainee=await User.findOne({email: 'hello+apprenant@wappizy.com'})
+    expect(trainee).toBeTruthy()
+    const ID='66b0f1cc3356935c1fdaa148'
+    const model='session'
+    const FIELDS='children.children.name,children.children.children.children.parent.parent.parent.name,children.children.children.children.parent.parent.name,children.children.children.children.parent.name,children.children.children.children.resource_type,children.children.children.children.name,children.children.children.children.annotation,children.children.children.children,children.children.children,children.children,children,children.children.children.children.children.parent.parent.parent.name,children.children.children.children.children.parent.parent.name,children.children.children.children.children.parent.name,children.children.children.children.children.resource_type,children.children.children.children.children.name,children.children.children.children.children.annotation,children.children.children.children.children,children.children.obtained_badges.picture,children.children.obtained_badges,children.children.achievement_status,children.children.resources_progress,code,children.name,children.description,start_date,end_date,location,trainers,trainers.fullname,trainers.email,trainers.picture,children.children.homeworks.note,children.children.homeworks.scale,children.children.homeworks,children.children.children.name,children.children.children.children.homeworks.description,children.children.children.children.homeworks,children.children.children.children.evaluation,children.children.type,spent_time_str,children.children.children.description,children.children.children.success_message,children.children.children.children.code,children.children.children.children.optional,children.children.children.children.success_message,children.children.children.children.spent_time_str,children.children.children.children.masked,children.children.children.children.achievement_status,children.children.children.children.homeworks.note,children.children.children.children.success_note_max,children.children.children.children.homeworks.document,children.codes.code,children.children.children.children.disliked,children.children.children.children.liked,children.codes,children.children.children.children.access_condition,children.children.closed,children.children.children.children.homeworks.correction,children.children.children.children.children.success_note_max,children.children.children.children.children.homeworks.description,children.children.children.children.children.homeworks,children.children.children.children.children.homeworks.document,children.children.children.children.children.homeworks.correction,children.closed,children.children.children.picture,children.children.children.type,children.children.children.closed,children.children.children.spent_time_str,children.children.children.achievement_status,children.children.children.children.type,children.children.children.children.obtained_badges.picture,children.children.children.children.obtained_badges,children.children.order,children.children.children.order,children.children.children.children.order,children.children.children.resources_progress,resources_progress,children.children.finished_resources_count,children.children.resources_count,children.children.children.finished_resources_count,children.children.children.resources_count,children.children.children.children.resources_progress,children.children.children.children.closed,children.children.children.children.description,children.children.children.children.finished_resources_count,children.children.children.children.resources_count,children.children.children.children.children.code,children.children.children.children.children.spent_time_str,children.children.children.children.children.masked,children.children.children.children.children.evaluation,children.children.children.children.children.disliked,children.children.children.children.children.liked,children.children.children.children.children.access_condition,children.children.children.children.children.type,children.children.children.children.children.achievement_status,children.children.children.children.children.optional,children.children.spent_time_str'.split(',')
+    let LIMITS=lodash('limit.children.children.children.children.children.homeworks=30&limit.children.children.children.children.children.homeworks=30&limit.children.children.children.children.children.homeworks=30&limit.children.children.children.children.children=30&limit.children.children.children.children.children=30&limit.children.children.children.children.children=30&limit.children.children.children.children.homeworks=30&limit.children.children.children.children.homeworks=30&limit.children.children.children.children.homeworks=30&limit.children.children.children.children.homeworks=30&limit.children.children.children.children.homeworks=30&limit.children.children.children.children.obtained_badges=30&limit.children.children.children.children=30&limit.children.children.children.children=30&limit.children.children.children.children=30&limit.children.children.children.children=30&limit.children.children.children.children=30&limit.children.children.children=30&limit.children.children.children=30&limit.children.children.children=30&limit.children.children.children=30&limit.children.children.children=30&limit.children.children.homeworks=30&limit.children.children.obtained_badges=30&limit.children.children=1000&limit.children.children=30&limit.children.children=30&limit.children.children=30&limit.children.codes=30&limit.children=1000&limit.children=30&limit.children=30&limit.children=30&limit.children=30&limit.children=30&limit.children=30&limit.trainers=30&limit=30&limit=30&limit=30&limit=30&limit=30&limit=30')
+      .split('&').map(v => v.split('=')).fromPairs().value()
+    console.time('Loading full session')
+    const [session]=await loadFromDb({model, id: ID, fields:FIELDS, params: LIMITS, user: trainee})
+    console.timeEnd('Loading full session')
+    const getAllProgress = block => {
+      return [block.resources_progress, block.children?.map(c => getAllProgress(c))]
+    }
+    console.log(lodash(getAllProgress(session)).flattenDeep().uniq().value())
+    const received=JSON.stringify(session, null, 2)
+    const expected=fs.readFileSync('/tmp/all').toString()
+    expect(received).toEqual(expected)
   })
 
 

@@ -140,6 +140,13 @@ const AVAILABLE_ACHIEVEMENT_RULES={
   [RESOURCE_TYPE_LINK]: [ACHIEVEMENT_RULE_CONSULT],
   }
 
+// ACHIEVEMENT RULE SUCCESS for all resource types
+Object.keys(AVAILABLE_ACHIEVEMENT_RULES).forEach(type => {
+  if (!AVAILABLE_ACHIEVEMENT_RULES[type].includes(ACHIEVEMENT_RULE_SUCCESS)) {
+    AVAILABLE_ACHIEVEMENT_RULES[type].push(ACHIEVEMENT_RULE_SUCCESS)
+  }
+})
+  
 // Default achievement rule by resource type
 const DEFAULT_ACHIEVEMENT_RULE=lodash(AVAILABLE_ACHIEVEMENT_RULES)
   .mapValues(v => v[0])

@@ -52,10 +52,16 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'permission'
   }],
-  permission_group: {
+  permission_groups: [{
     type: Schema.Types.ObjectId,
     ref: 'permissionGroup'
-  }
+  }],
+  // AFTRAL identifer for both trainees & trainers
+  aftral_id: {
+    type: Number,
+    required: false,
+    index: true,
+  },
 }, schemaOptions)
 
 UserSchema.virtual('fullname', DUMMY_REF).get(function() {

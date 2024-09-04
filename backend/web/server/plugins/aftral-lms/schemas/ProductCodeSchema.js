@@ -8,6 +8,7 @@ const ProductCodeSchema = new Schema({
     type: String,
     set : v => v ? v.toUpperCase() : v,
     required: [true, `Le code est obligatoire`],
+    index: true,
   }
 }, {...schemaOptions})
 

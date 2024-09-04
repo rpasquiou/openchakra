@@ -42,6 +42,10 @@ const TicketSchema = new Schema({
     type: String,
     required: false,
   },
+  conversation: [{
+    type: Schema.Types.ObjectId,
+    ref: `conversation`,
+  }],
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

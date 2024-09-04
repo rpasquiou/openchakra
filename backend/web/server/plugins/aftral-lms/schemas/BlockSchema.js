@@ -5,7 +5,6 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES, SCALE}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
-const { getAttribute } = require('../block')
 const { BadRequestError } = require('../../../utils/errors')
 
 const BlockSchema = new Schema({
@@ -18,9 +17,18 @@ const BlockSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
   },
+  // Attributes whose values are set on THIS block
+  // Stops propagating attribute value from origin
+  _forced_attributes: {
+    type: [{
+      type: String,
+      required: true
+    }],
+    default: [],
+  },
   name: {
     type: String,
-    required: [function()  {return (!!this._locked || !this.origin)}, `Le nom est obligatoire`],
+    required: [true, `Le nom est obligatoire`],
     index: true,
   },
   parent: {
@@ -36,7 +44,7 @@ const BlockSchema = new Schema({
   code: {
     type: String,
     default: null,
-    required: false,
+    required: [function() { return this.type=='session'}, `Le code de session est obligatoire`]
   },
   description: {
     type: String,
@@ -51,18 +59,18 @@ const BlockSchema = new Schema({
   // Closed: must finish children in order
   closed: {
     type: Boolean,
-    default: null,
-    required: false,
+    default: false,
+    required: [true, `L'état de fermeture est obligatoire`],
   },
   masked: {
     type: Boolean,
-    default: null,
-    required: false,
+    default: false,
+    required: [true, `L'état de masquage est obligatoire`],
   },
   optional: {
     type: Boolean,
-    default: null,
-    required: false,
+    default: false,
+    required: [true, `L'état optionnel est obligatoire`],
   },
   origin: {
     type: Schema.Types.ObjectId,
@@ -73,19 +81,19 @@ const BlockSchema = new Schema({
   // TODO Compute actual status
   achievement_status: {
     type: String,
-    enum: Object.keys(BLOCK_STATUS),
+    enum: [null, ...Object.keys(BLOCK_STATUS)],
     set: v => v || undefined,
     required: false,
   },
   url: {
     type: String,
     default: null,
-    required: [function() {return this.type=='resource' && (!!this._locked || !this.origin)}, `L'url est obligatoire`],
+    required: [function() {return this.type=='resource'}, `L'url est obligatoire`],
   },
   resource_type: {
     type: String,
     enum: Object.keys(RESOURCE_TYPE),
-    required: [function(){ return this.type=='resource' && (!!this._locked || !this.origin)}, `Le type de ressource est obligatoire`],
+    required: [function(){ return this.type=='resource'}, `Le type de ressource est obligatoire`],
   },
   spent_time: {
     type: Number,
@@ -133,9 +141,9 @@ const BlockSchema = new Schema({
   }],
   achievement_rule: {
     type: String,
-    enum: Object.keys(ACHIEVEMENT_RULE),
+    enum: [null, ...Object.keys(ACHIEVEMENT_RULE)],
     set: v => v || undefined,
-    required: [function() {return this.type=='resource' && (!!this._locked || !this.origin)}, `La règle d'achèvement est obligatoire`],
+    required: [function() {return this.type=='resource'}, `La règle d'achèvement est obligatoire`],
   },
   success_note_min: {
     type: Number,
@@ -234,6 +242,19 @@ const BlockSchema = new Schema({
     type: Number,
     required: false,
   },
+  finished_children: {
+    type: [{
+      type:Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
+  },
+  tickets_count: {
+    type: Number,
+    required: false,
+  },
+  },
   // Note or scale is set by the trainer
   note: {
     type: Number,
@@ -287,13 +308,6 @@ BlockSchema.virtual('tickets', {
   foreignField: 'block',
 })
 
-BlockSchema.virtual('tickets_count', {
-  ref: 'ticket',
-  localField: '_id',
-  foreignField: 'block',
-  count: true,
-})
-
 BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
   return this.homework_limit_date
     ? moment(this.homework_limit_date).format('DD/MM/YYYY à HH:mm')
@@ -301,13 +315,24 @@ BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
 })
 
 BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
-  return (this.homework_mode && moment(this.homework_limit_date).isAfter(moment())) || false
+  if (!this.homework_mode) {
+    return true
+  }
+  if (!this.homework_limit_date) {
+    return true
+  }
+  const limitDate = moment(this.homework_limit_date)
+  return limitDate.isAfter(moment())
 })
+
+BlockSchema.methods.getDependants = function () {
+  return mongoose.models.block.find({origin:this._id})
+}
 
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
   // #36 Can't create two templates with same type and same name
-  if (!this.origin && this.type=='resource' && !this.name) {
+  if (!this.origin && !!this.name) {
     const sameOne=await mongoose.models.block.findOne({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null})
     if (sameOne) {
       return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà ${this._id} ${sameOne._id}`))
@@ -316,13 +341,13 @@ BlockSchema.pre('validate', async function(next) {
   // If this is a type resource and achievement rule is success and this is not a scorm,
   // must select between min/max notes and scale
   if (!this._locked && this.type=='resource') {
-    const resourceType= this.resource_type || await getAttribute('resource_type')(null, null, this)
+    const resourceType= this.resource_type
     const allowedAchievementRules=AVAILABLE_ACHIEVEMENT_RULES[resourceType]
     // TODO allowedAchievementRules may be null if the block is not still inserted in DB
     if (this.achievement_rule && allowedAchievementRules &&  !allowedAchievementRules.includes(this.achievement_rule)) {
       const ruleName=ACHIEVEMENT_RULE[this.achievement_rule]
       const resourcetypeName=RESOURCE_TYPE[resourceType]
-      throw new Error(`La règle d'achèvement ${ruleName} est invalide pour un ressource ${resourcetypeName}`)
+      throw new Error(`${this._id} La règle d'achèvement ${ruleName} est invalide pour un ressource ${resourcetypeName}`)
     }
     if (this.achievement_rule==ACHIEVEMENT_RULE_SUCCESS && resourceType!=RESOURCE_TYPE_SCORM) {
       if (!this.success_scale) {

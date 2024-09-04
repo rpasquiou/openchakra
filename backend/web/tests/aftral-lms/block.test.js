@@ -23,7 +23,8 @@ jest.setTimeout(60000)
 
 describe('User', () => {
   let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor, id
-  let limit = new Date('06-06-2022')
+  let limit = new Date('06-06-2025')
+  let sequenceId
   beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/aftral-test`, MONGOOSE_OPTIONS)
     conceptor = await User.create({
@@ -105,11 +106,13 @@ describe('User', () => {
 
     const [ses] = await loadFromDb({model: `session`, user:conceptor, fields:[`children.children.children.children`]})
     id = ses.children[0].children[0].children[0].children[0]._id
+    sequenceId = ses.children[0].children[0].children[0]._id
 
     progress1 = await Progress.create({
       user:trainee1._id,
       block:id,
-      homeworks:[homework1._id]
+      homeworks:[homework1._id],
+      achievement_status: BLOCK_STATUS_FINISHED,
     })
     progress2 = await Progress.create({
       user:trainee2._id,
@@ -125,7 +128,7 @@ describe('User', () => {
 
   it('must return block homeworks attributes', async()=> {
     const [result] = await loadFromDb({model:`block`,user:trainee1._id, id, fields:[`can_upload_homework`,`homeworks`]})
-    expect(result.can_upload_homework).not.toBeTruthy()
+    expect(result.can_upload_homework).toBeTruthy()
     expect(result.homeworks.length).toEqual(1)
     expect(idEqual(result.homeworks[0]._id,homework1._id)).toBeTruthy()
   })
@@ -138,10 +141,71 @@ describe('User', () => {
   })
 
   it('must return homeworks submitted count', async() => {
-    
     const [data] = await loadFromDb({model:`block`, user:conceptor, id, fields:[`session`,`homeworks_missing_count`,`homeworks`,`homeworks_submitted_count`,`trainees_count`]})
     expect(data.homeworks_missing_count).toEqual(0)
     expect(data.homeworks_submitted_count).toEqual(2)
     expect(data.trainees_count).toEqual(2)
   })
+
+  it(`must return block's finished children for user`, async() => {
+    const [data] = await loadFromDb({model: `block`, user:trainee1._id, id:sequenceId, fields:[`finished_children.children.name`,`finished_children.name`,`name`]})
+    expect(data.finished_children.length).toEqual(1)
+    expect(idEqual(data.finished_children[0]._id, id)).toBeTruthy()
+  })
+
+  it('must stop creating two blocks with the same name', async () => {
+    await Block.create({
+      name: `Test block`,
+      creator: conceptor._id,
+      type: `resource`,
+      resource_type: RESOURCE_TYPE_PDF,
+      url: `url`,
+      achievement_rule: ACHIEVEMENT_RULE_CONSULT,
+    })
+    let error = null
+  
+    try {
+      await Block.create({
+        name: `Test block`,
+        creator: conceptor._id,
+        type: `resource`,
+        resource_type: RESOURCE_TYPE_PDF,
+        url: `url`,
+        achievement_rule: ACHIEVEMENT_RULE_CONSULT,
+      })
+    } catch (e) {
+      error = e
+    }
+
+    await Block.create({
+      name: `Test block`,
+      creator: conceptor._id,
+      type: `module`,
+    })
+
+    expect(error).toBeDefined()
+  })
+
+  it.only(`must accept achievement rule success for all resource types`, async () => {
+    let error
+    try{
+      for(let type in RESOURCE_TYPE) {
+        await Block.create({
+          name: `test${type}`,
+          creator: conceptor._id,
+          type: `resource`,
+          resource_type: type,
+          url: `url`,
+          achievement_rule: ACHIEVEMENT_RULE_SUCCESS,
+          success_note_max: 20,
+          success_note_min: 10,
+        })
+      }
+    }
+    catch (e) {
+      error = e
+    }
+    expect(error).not.toBeTruthy()
+  })
+  
 })

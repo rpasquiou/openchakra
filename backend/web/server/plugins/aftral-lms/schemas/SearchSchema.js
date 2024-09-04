@@ -20,6 +20,10 @@ const SearchSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
   }],
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: `user`
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

@@ -4,10 +4,12 @@ const lodash=require('lodash')
 const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
+const User = require("../../models/User")
 
-const fillSession = async session => {
+const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
-  const program = await Program.findOne({parent: session._id}).populate('children') 
+  session.trainees = trainee ? [trainee] : session.trainees
+  const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
   let fields=lodash.range(range).map(childCount => 
@@ -19,7 +21,7 @@ const fillSession = async session => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
         console.log('Load program for user', trainee._id)
-        trainee.statistics=prog[0]
+        trainee.statistics=new Program(prog[0])
         return trainee
       })
   }))
@@ -27,13 +29,22 @@ const fillSession = async session => {
 }
 
 const computeStatistics = async ({fields, id, user, params}) => {
+  let sessionId = {}
+  let trainee
   const sessionPrefix=/^sessions\./
-  const subFields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
-  console.log('loading subfields', subFields)
-  return loadFromDb({model: 'session', id, user, fields: subFields})
-    .then(sessions => Promise.all(sessions.map(s => fillSession(s))))
+  fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
+  if(!!id) {
+    const model = await getModel(id)
+    if(model == `session`) {
+      sessionId.id = id
+    }
+    else {
+      trainee = await User.findById(id)
+    }
+  }
+  return loadFromDb({model: 'session', user, fields, ...sessionId})
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{sessions}]))
-  return res
 }
   
 const getRandomInt = max => {
