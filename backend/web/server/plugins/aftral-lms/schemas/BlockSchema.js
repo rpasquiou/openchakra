@@ -254,7 +254,6 @@ const BlockSchema = new Schema({
     type: Number,
     required: false,
   },
-  },
   // Note or scale is set by the trainer
   note: {
     type: Number,
