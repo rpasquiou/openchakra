@@ -1,22 +1,19 @@
 const mongoose = require('mongoose')
 const fs = require('fs')
-const moment = require('moment')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-const { importResources, importPrograms, importCodes, loadRecords, removeResourceCode } = require('../../server/plugins/aftral-lms/import')
+const { importResources, importPrograms, importCodes, extractResourceCode } = require('../../server/plugins/aftral-lms/import')
 
-// const ROOT = path.join(__dirname, './data/Ressources')
-
-jest.setTimeout(2*60*60*1000)
 
 const ROOT=path.join(__dirname, 'data')
 
 const RESOURCES_ROOT='/home/seb/Téléchargements/resources/Current'
 const PROGRAMS_PATH=path.join(ROOT, 'Aftral Programmes détails.xlsx')
-// const PROGRAMS_PATH=path.join(ROOT, 'Aftral un seul programme.xlsx')
 const CODES_PATH=path.join(ROOT, 'Code produit à jour 20062024.xlsx')
+const RESOURCES_NAMES_FILES=path.join(ROOT, 'resources_filenames.txt')
+const RESOURCES_CODES_FILE=path.join(ROOT, 'resources_codes.txt')
 
-const RESOURCES_CODES_PATH=path.join(ROOT, 'resourcesCodes.txt')
+jest.setTimeout(2*60*60*1000)
 
 describe('Test imports', () => {
 
@@ -37,18 +34,19 @@ describe('Test imports', () => {
     return importCodes(CODES_PATH, 'Code produit à jour', 1)
   })
 
-  it('must import programs', async () => {
-    return importPrograms(PROGRAMS_PATH, 'Final', 1, CODES_PATH, 'Code produit à jour', 1)
+  it.only('must import programs', async () => {
+    return importPrograms(PROGRAMS_PATH, 'Final', 1)
   })
 
-  it('Must remove resource code', async () => {
-    const res=removeResourceCode('S_15637_16 E ADR Emballages des matières dangereuses')
-    expect(res).toEqual('E ADR Emballages des matières dangereuses')
-    console.log(RESOURCES_CODES_PATH)
-    const data=fs.readFileSync(RESOURCES_CODES_PATH).toString().split('\n')
-    console.log(data.map(removeResourceCode))
+  it('must extract codes from resources', async () => {
+    const filenames=fs.readFileSync(RESOURCES_NAMES_FILES).toString().split('\n').filter(v => !!v)
+    const codes=fs.readFileSync(RESOURCES_CODES_FILE).toString().split('\n').filter(v => !!v)
+    // const filenames=["AD_16819_11CA_Annexe_complémentaire_Liaison_CFA_Entreprise.docx","AD_16819_11CA_Annexe_compl","AD_16923_20A0_Guide_Modalités_VCVAT.pdf", 'CD_17217_10A4 Organiser laction de formation.pdf']
+    // const codes=["AD_16819_11CA","AD_16819_11CA","AD_16923_20A0", 'CD_17217_10A4']
+ 
+    const extracted=filenames.map(extractResourceCode)
+    expect(extracted).toEqual(codes)
   })
-
 
 })
 

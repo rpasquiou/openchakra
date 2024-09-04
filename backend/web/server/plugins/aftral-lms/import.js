@@ -112,7 +112,7 @@ const importResources = async (root_path, recursive) => {
 
 const MODELS=['program', 'chapter', 'module', 'sequence', 'resource']
 
-const importBlock = async ({blockRecord, level, creator, programCodes}) => {
+const importBlock = async ({blockRecord, level, creator}) => {
   const modelName=MODELS[level]
   const model=mongoose.models[modelName]
   const name=blockRecord[modelName]
@@ -121,32 +121,42 @@ const importBlock = async ({blockRecord, level, creator, programCodes}) => {
 
   const emptyChapter=modelName=='chapter' && name.trim().length==0
 
-  let loaded=await model.findOne({name, origin: null})
+  const filter={origin: null}
+  if (modelName=='resource') {
+    const code=extractResourceCode(name)
+    filter.code=code
+    console.log('Searching', code, 'for resource', name)
+  }
+  else {
+    filter.name=name
+  }
+  let loaded=await model.findOne(filter)
   if (!loaded && !emptyChapter) {
     if (modelName=='resource') {
-      throw new Error(`Ressource ${name}  ${level} ${model.modelName} introuvable dans ${JSON.stringify({...blockRecord, children: undefined})}`)
+      console.error(`Ressource ${name}  ${level} ${model.modelName} introuvable dans ${JSON.stringify({...blockRecord, children: undefined})}`)
+      return null
     }
     const attributes={name, creator, origin: null}
-    if (modelName=='program') {
-      const codes=await ProductCode.find({code: {$in: programCodes[name]}})
-      attributes.codes=codes
-    }
-    loaded=await model.create(attributes).catch(() => console.error('Creating', modelName, attributes))
+    loaded=await model.create(attributes)
   }
   if (level<MODELS.length-1) {
     const res=await runPromisesWithDelay(blockRecord.children.map(c => () => {
-      return importBlock({blockRecord:c, level:level+1, creator, programCodes})
+      return importBlock({blockRecord:c, level:level+1, creator})
     }))
     const errors=res.filter(r => r.status=='rejected').map(r => r.reason)
     if (errors.length>0) {
       throw new Error(modelName+errors.join('\n'))
     }
-    const dbChildren=res.map(r => r.value)
+    let dbChildren=res.map(r => r.value).filter(v => !!v)
+    dbChildren=lodash.flatten(dbChildren)
     if (emptyChapter) {
       return dbChildren
     }
     else {
-      await Promise.all(dbChildren.map(c => addChildAction({parent: loaded._id, child: c._id})))
+      await runPromisesWithDelay(dbChildren.map(c => async () => {
+        const childExists=await mongoose.models.block.exists({parent: loaded._id, origin: c._id})
+        return !childExists && addChildAction({parent: loaded._id, child: c._id}, creator)
+    }))
     }
 
   }
@@ -173,25 +183,25 @@ const removeResourceCode = title => {
   return title.replace(PATTERN, '')
 }
 
-const importPrograms= async (filename, tabName, fromLine, codesFilePath, codesTabName, codesFromLine) => {
-  const PROGRAM_NAME_HEADER='Nom du programme avec lien pour le modifier'
-  const CODE_HEADER='Code produit'
-  // Load codes
-  const codes=await loadRecords(codesFilePath, codesTabName, codesFromLine)
-  const groupedCodes=lodash(codes).groupBy(PROGRAM_NAME_HEADER).mapValues(v => v.map(c => c[CODE_HEADER])).value()
+const extractResourceCode = filename => {
+  const PATTERN=/^ *[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
+  return filename.match(PATTERN)?.[0]
+}
 
+const importPrograms= async (filename, tabName, fromLine) => {
   // First remove all programs/chapters/modules/sequences
   await Block.deleteMany({type: {$ne: 'resource'}})
   await Block.deleteMany({origin: {$ne: null}})
   const creator=await User.findOne({role: ROLE_CONCEPTEUR})
+  console.log(creator)
   let data=await loadRecords(filename, tabName, fromLine)
   const types=Object.keys(data[0]).slice(0, 5)
   const keyMapping=Object.fromEntries(lodash.zip(types, MODELS))
   data=data.map(d => lodash(d).mapKeys((v, k) => keyMapping[k]).pick(MODELS).value())
-  data=data.map(d => ({...d, resource: removeResourceCode(d.resource)}))
+  // data=data.map(d => ({...d, resource: removeResourceCode(d.resource)}))
   const tree=generateTree(data, MODELS)
   const res=await runPromisesWithDelay(tree.map(program => () => {
-    return importBlock({blockRecord:program, level:0, creator, programCodes: groupedCodes})
+    return importBlock({blockRecord:program, level:0, creator})
   }))
   res.forEach((r, idx) => {
     if (r.status=='rejected') {
@@ -327,6 +337,6 @@ const importSessions = async (trainersFilename, traineesFilename) => {
 }
 
 module.exports={
-  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, removeResourceCode, loadRecords,
+  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, removeResourceCode, loadRecords, extractResourceCode,
 }  
 
