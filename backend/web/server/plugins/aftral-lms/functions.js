@@ -48,6 +48,7 @@ const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 const Search = require('../../models/Search')
 const Conversation = require('../../models/Conversation')
+const { getEvalResources } = require('./session')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -218,6 +219,7 @@ CONVERSATION_MODELS.forEach(model => {
 
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
+declareComputedField({model: 'session', field: 'evaluation_resources', getterFn: getEvalResources})
 // Session end
 
 const preCreate = async ({model, params, user}) => {

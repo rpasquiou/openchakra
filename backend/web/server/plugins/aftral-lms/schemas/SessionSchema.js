@@ -46,7 +46,7 @@ const SessionSchema = new Schema({
     default: [],
   },
   // Computed
-  resources: {
+  evaluation_resources: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: `block`,
