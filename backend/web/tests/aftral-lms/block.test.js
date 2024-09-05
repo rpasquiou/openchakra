@@ -327,4 +327,41 @@ describe('User', () => {
     prog = await Progress.findOne({user:trainee2._id})
     expect(prog.achievement_status == BLOCK_STATUS_FINISHED).toBeTruthy()
   })
+
+  it.only('must return can_upload_homework', async()=> {
+    let res = await Block.create({
+      name: `Res458`,
+      type: `resource`,
+      resource_type:RESOURCE_TYPE_PDF,
+      url: `test`,
+      achievement_rule:ACHIEVEMENT_RULE_CONSULT,
+      creator: trainer._id,
+      homework_mode: false,
+      success_note_min:0,
+      success_note_max: 20,
+    })
+
+    let progress = await Progress.create({
+      user:trainee1._id,
+      block:res._id,
+      homeworks:[homework1._id],
+      achievement_status: BLOCK_STATUS_FINISHED,
+      note: 10,
+      attempts_count: 10,
+    })
+    let result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
+    expect(result[0].can_upload_homework).not.toBeTruthy()
+
+    await Block.findByIdAndUpdate(res._id, {homework_mode: true})
+    result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
+    expect(result[0].can_upload_homework).toBeTruthy()
+
+    await Block.findByIdAndUpdate(res._id, {max_attempts: 10})
+    result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
+    expect(result[0].can_upload_homework).not.toBeTruthy()
+
+    await Block.findByIdAndUpdate(res._id, {max_attempts: 20, homework_limit_date: new Date(`02-02-2022`)})
+    result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
+    expect(result[0].can_upload_homework).not.toBeTruthy()
+  })
 })

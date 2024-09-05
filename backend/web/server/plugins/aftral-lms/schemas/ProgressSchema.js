@@ -60,6 +60,11 @@ const ProgressSchema = new Schema({
   note: {
     type: Number,
   },
+  attempts_count: {
+    type: Number,
+    required: true,
+    default: 0,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ProgressSchema

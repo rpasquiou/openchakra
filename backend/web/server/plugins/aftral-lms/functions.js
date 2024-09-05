@@ -32,7 +32,7 @@ const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
-const { getTraineeCurrentResources } = require('./user')
+const { getTraineeCurrentResources, getUserCanUploadHomework } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
@@ -97,7 +97,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'available_codes', requires: 'codes,type', getterFn: getAvailableCodes})
   declareComputedField({model, field: 'homeworks', requires: '', getterFn: getBlockHomeworks})
   declareVirtualField({model, field: 'homework_limit_str', type: 'String', requires: 'homework_limit_date'})
-  declareVirtualField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode'})
+  declareComputedField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode,max_attempts', getterFn: getUserCanUploadHomework})
   declareComputedField({model, field: 'homeworks_submitted_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksSubmitted})
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
   declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
@@ -292,6 +292,13 @@ const preCreate = async ({model, params, user}) => {
       return {data: conv}
     }
   }
+
+  if (model == `homework` ){
+    const [block] = await loadFromDb({model: `resource`, id: params.parent, user, fields:[`can_upload_homework`]})
+    if(!block.can_upload_homework) {
+      throw new ForbiddenError(`Vous avez atteint la limite de tentatives`)
+    }
+  }
   return Promise.resolve({model, params})
 }
 
@@ -482,7 +489,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block, user},
-        {block, user, consult: true, consult_partial: true, join_partial: true, download: true},
+        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, $inc: { attempts_count: 1 }},
         {upsert: true},
       )
       await onBlockAction(user, block)

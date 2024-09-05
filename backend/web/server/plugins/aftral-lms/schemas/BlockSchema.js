@@ -279,6 +279,11 @@ const BlockSchema = new Schema({
     }],
     required: true,
     default: []
+  },
+  can_upload_homework: {
+    type: Boolean,
+    required: true,
+    default: false,
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
@@ -323,21 +328,6 @@ BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
     ? moment(this.homework_limit_date).format('DD/MM/YYYY à HH:mm')
     : ``
 })
-
-BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
-  if (!this.homework_mode) {
-    return true
-  }
-  if (!this.homework_limit_date) {
-    return true
-  }
-  const limitDate = moment(this.homework_limit_date)
-  return limitDate.isAfter(moment())
-})
-
-BlockSchema.methods.getDependants = function () {
-  return mongoose.models.block.find({origin:this._id})
-}
 
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {
