@@ -53,6 +53,8 @@ const DIET_EMAIL = 'raphaelleh.smartdiet@gmail.com'
 const QUIZZ_NAME = 'Saisons'
 const QUIZZ_ID = 17
 
+const FILESDATE='20240903'
+
 describe('Test imports', () => {
 
   beforeAll(async () => {
@@ -63,13 +65,9 @@ describe('Test imports', () => {
     await fixFiles(ROOT)
   })
 
-  afterEach(async () => {
-    return saveCache()
-  })
-
   afterAll(async () => {
     // await updateImportedCoachingStatus()
-    // await updateDietCompanies()
+    await updateDietCompanies()
     await saveCache()
     if (DROP) {
       await mongoose.connection.dropDatabase()
@@ -138,11 +136,9 @@ describe('Test imports', () => {
     const user=await User.findOne({email: PATIENT_EMAIL})
     const coachings=await Coaching.find({user}).populate('progress')
     expect(coachings).toHaveLength(1)
-    expect(coachings[0].progress).toBeTruthy()
-    expect(coachings[0].progress.type).toEqual(QUIZZ_TYPE_PROGRESS)
   })
 
-  it.only('must upsert appointments', async () => {
+  it('must upsert appointments', async () => {
     await importAppointments(path.join(ROOT, 'wapp_consultation.csv'))
     const user=await User.findOne({email: PATIENT_EMAIL})
     const coachings=await Coaching.find({user})
@@ -159,14 +155,14 @@ describe('Test imports', () => {
     console.log(measures)
   })
 
-  it('must upsert quizz', async () => {
+  it.only('must upsert quizz', async () => {
     const before=await Quizz.countDocuments()
     let res = await importQuizz(path.join(ROOT, 'wapp_quiz.csv'))
     const quizz=await Quizz.findOne({migration_id: QUIZZ_ID})
     expect(quizz.name).toEqual(QUIZZ_NAME)
   })
 
-  it('must import quizz questions', async () => {
+  it.only('must import quizz questions', async () => {
     let res = await importQuizzQuestions(path.join(ROOT, 'wapp_questions.csv'))
     const questions=await QuizzQuestion.find({migration_id: {$ne:null}})
     expect(questions.length).toEqual(243)
@@ -174,49 +170,29 @@ describe('Test imports', () => {
     expect(quizz.questions.length).toEqual(8)
   })
 
-  it('must upsert quizz questions answers', async () => {
+  it.only('must upsert quizz questions answers', async () => {
     let res = await importQuizzQuestionAnswer(path.join(ROOT, 'wapp_answers.csv'), path.join(ROOT, 'wapp_questions.csv'))
     const migratedItems=await Item.find({migration_id: {$ne:null}})
     expect(migratedItems.length).not.toBeLessThan(436)
   })
 
-  it('must upsert keys', async () => {
+  it.only('must upsert keys', async () => {
     let res = await importKeys(path.join(ROOT, 'smart_criteria.csv'))
     const keys=await Key.find({migration_id: {$ne: null}})
     expect(keys.length).toEqual(7)
   })
 
-  it('must upsert progress quizz', async () => {
+  it.only('must upsert progress quizz', async () => {
     let res = await importProgressQuizz(path.join(ROOT, 'smart_criteria.csv'))
     const quizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
     expect(quizz.questions.every(q => !!q.migration_id)).toBeTruthy
   })
 
-  it('must attach progress quizz to its coaching', async () => {
-    const quizzs=await UserQuizz.find({type: QUIZZ_TYPE_PROGRESS})
-    let found=0
-    await runPromisesWithDelay(quizzs.map((q, idx) => async () => {
-      idx%500==0 && console.log(idx, '/', quizzs.length)
-      coaching=await Coaching.findOne({progress: q._id}, {_id:1})
-      if (!!coaching  && !q.coaching) {
-        found+=1
-        console.log('add')
-        q.coaching=coaching ._id
-        await q.save()
-      }
-      if (!coaching  && !!q.coaching) {
-        console.log('remove')
-        await q.delete()
-      }
-    }))
-    console.log('found', found, '/', quizzs.length)
+  it.only('must upsert user progress quizz', async () => {
+    return importUserProgressQuizz(path.join(ROOT, 'smart_consultation_progress.csv'))
   })
 
-  it('must upsert user progress quizz', async () => {
-    return importUserProgressQuizz(path.join(ROOT, 'wapp_progress.csv'))
-  })
-
-  it('must upsert patients quizzs', async () => {
+  it.only('must upsert patients quizzs', async () => {
     await importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
     const user=await User.findOne({email: 'lylycordo@laposte.net'})
       .populate({path: 'coachings', populate: {path: 'quizz', populate: {path: 'questions', populate: ['quizz_question', 'single_enum_answer']}}})

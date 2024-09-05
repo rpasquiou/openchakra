@@ -541,19 +541,25 @@ const APPOINTMENT_MAPPING= (assessment_id, followup_id, progressTemplate) => ({
   appointment_type: ({record}) => +record.assessment ? assessment_id : followup_id,
   migration_id: 'SDCONSULTID',
   diet: async ({cache, record}) => {
-    let diet=cache('user', record.SDDIETID)
+    let diet=null
+    if (!!record.SDDIETID) {
+      diet=cache('user', record.SDDIETID)
+    }
     if (!diet) {
       diet=(await Coaching.findById(cache('coaching', record.SDPROGRAMID), {diet:1}))?.diet
     }
+    if (!diet) { console.error('No diet found for', record.SDPROGRAMID)}
     return diet
   },
   user: async ({cache, record}) => (await Coaching.findById(cache('coaching', record.SDPROGRAMID), {user:1}))?.user,
   progress: async ({cache, record}) => {
-    const known_id=cache('appointment', record.SDCONSULTID)
-    if (!known_id) {
-      console.log('Creating progress quizz for', record.SDCONSULTID)
-      return progressTemplate.cloneAsUserQuizz()
+    let progress=await UserQuizz.findOne({migration_id: record.SDCONSULTID}, {_id:1})
+    if (!progress) {
+      progress=await progressTemplate.cloneAsUserQuizz().catch(console.error)
+      progress.migration_id=record.SDCONSULTID
+      await progress.save()
     }
+    return progress._id
   },
   validated: ({record}) => +record.status>1 || EXPORT_DATE.isBefore(record.date),
 })
@@ -767,7 +773,7 @@ const updateImportedCoachingStatus = async () => {
       console.log(idx, '/', coachings.length, '(', Math.ceil(idx/coachings.length*100),'%)')
     }
     return updateCoachingStatus(coaching._id)
-      .catch(err => console.error(`Coaching ${coaching._id}:${err}`))
+      //.catch(err => console.error(`Coaching ${coaching._id}:${err}`))
   }))
   console.timeEnd('Update coaching status')
   console.log('******************** Updated coaching status')
@@ -834,7 +840,7 @@ const importDiets = async (input_file, pictures_directory, rib_directory) => {
   return loadRecords(input_file)
     .then(records =>  importData({
       model: 'user', data:records, mapping:DIET_MAPPING, identityKey: DIET_KEY, migrationKey: DIET_MIGRATION_KEY, 
-      picturesDirectory: pictures_directory, ribDirectory: rib_directory,
+      picturesDirectory: pictures_directory, ribDirectory: rib_directory, progressCb: progressCb()
     }))
 }
 
@@ -1099,34 +1105,27 @@ const getCriterionAnswer = async (criterion_id, status) => {
 }
 
 const importUserProgressQuizz = async (input_file) => {
-
-  const progressCache=new NodeCache()
-
-  const getProgress = async (coachingId) => {
-    let result=progressCache.get(coachingId)
-    if (!result) {
-      result=await UserQuizz.findOne({coaching: coachingId})
-        .populate('questions')
-      progressCache.set(coachingId, result.progress)
+  let records=(await loadRecords(input_file))
+  records=lodash.groupBy(records, 'CONSULTID')
+  console.log(Object.keys(records).length)
+  const res=await runPromisesWithDelay(Object.entries(records).map(([consultid, consultRecords], idx) => async () => {
+    if (idx%500==0) {
+      console.log(idx,'/', Object.keys(records).length)
     }
-    return result
-  }
-
-  return loadRecords(input_file)
-    .then(records => runPromisesWithDelay(records.map((record, idx) => async () => {
-      if (idx%500==0)  {
-        console.log(idx,'/', records.length)
-      }
-      const coachingId=cache('coaching', record.SDPROGRAMID)
-      const progress=await getProgress(coachingId)
+    const progress=await UserQuizz.findOne({migration_id: consultid}).populate({path: 'questions', select: 'migration_id' })
+    if (!progress) {
+      return console.error(`No progress found for consultation ${consultid}`)
+    }
+    return Promise.all(consultRecords.map(async record => {
       const question=progress.questions.find(q => q.migration_id==record.SDCRITERIAID)
-      const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
-      if (!question || !answer_id) {
-        throw new Error(`Question ${question}: answer ${answer_id}`)
+      if (!question) {
+        return console.error(`No question found for consultation ${consultid} criterion ${record.SDCRITERIAID}`)
       }
-      question.single_enum_answer=answer_id
-      return question.save().then(() => null)
-    })))
+      const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
+      return UserQuizzQuestion.findByIdAndUpdate(question_id, {single_enum_answer: answer_id})
+    }))
+  }))
+  console.log(res.filter(r => r.status=='rejected').map(r => r.reason))
 }
 
 const importUserObjectives = async input_file => {

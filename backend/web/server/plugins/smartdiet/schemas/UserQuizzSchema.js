@@ -36,6 +36,11 @@ const UserQuizzSchema = new Schema({
     index: true,
     ref: 'coaching',
     required: false,
+  },
+  // For progress quizz, migration_id is the same as the appointment migration_id
+  migration_id: {
+    type: Number,
+    index: true,
   }
 }, schemaOptions)
 
