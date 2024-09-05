@@ -10,12 +10,13 @@ const Session = require('../../server/models/Session')
 require('../../server/models/Certification')
 require('../../server/models/Permission')
 require('../../server/models/PermissionGroup')
-const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE, RESOURCE_TYPE, SCALE, SCALE_NOT_ACQUIRED } = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_APPRENANT, ROLE_FORMATEUR, RESOURCE_TYPE_PDF, ACHIEVEMENT_RULE_CHECK, ACHIEVEMENT_RULE_SUCCESS, ACHIEVEMENT_RULE_CONSULT, RESOURCE_TYPE_VIDEO, ACHIEVEMENT_RULE_DOWNLOAD, ROLE_CONCEPTEUR, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE, RESOURCE_TYPE, SCALE, SCALE_NOT_ACQUIRED, ROLE_HELPDESK } = require('../../server/plugins/aftral-lms/consts')
 const Block = require('../../server/models/Block')
 const Homework = require('../../server/models/Homework')
 const Progress = require('../../server/models/Progress')
 const ProductCode = require('../../server/models/ProductCode')
 const { addChildAction } = require('../../server/plugins/aftral-lms/actions')
+const { onBlockFinished } = require('../../server/plugins/aftral-lms/block')
 require('../../server/models/Feed')
 require('../../server/models/Certification')
 
@@ -23,7 +24,7 @@ jest.setTimeout(60000)
 
 describe('User', () => {
   let trainer, trainee1, trainee2, homework1, homework2, block, progress1, progress2, sequence, modulee, program, session, productCode, conceptor, id
-  let block2, block3, block4, block5
+  let block2, block3, block4, block5, resource, helpdesk
   let limit = new Date('06-06-2025')
   let sequenceId
   beforeAll(async () => {
@@ -32,6 +33,13 @@ describe('User', () => {
       firstname: `John`,
       lastname: `Doe`,
       role: ROLE_CONCEPTEUR,
+      password: `Test`,
+      email: `t@t.com`,
+    })
+    helpdesk = await User.create({
+      firstname: `Billy`,
+      lastname: `Jean`,
+      role: ROLE_HELPDESK,
       password: `Test`,
       email: `t@t.com`,
     })
@@ -166,6 +174,7 @@ describe('User', () => {
     await addChildAction({parent: session._id, child: program._id}, conceptor)
 
     const [ses] = await loadFromDb({model: `session`, user:conceptor, fields:[`children.children.children.children`]})
+    resource=ses.children[0].children[0].children[0].children[0]
     id = ses.children[0].children[0].children[0].children[0]._id
     sequenceId = ses.children[0].children[0].children[0]._id
 
@@ -179,7 +188,8 @@ describe('User', () => {
     progress2 = await Progress.create({
       user:trainee2._id,
       block:id,
-      homeworks:[homework2._id]
+      homeworks:[homework2._id],
+      achievement_status: BLOCK_STATUS_CURRENT,
     })
   })
 
@@ -270,12 +280,42 @@ describe('User', () => {
     expect(error).not.toBeTruthy()
   })
   
-  it.only(`must return resources on session`, async () => {
+  it(`must return resources on session`, async () => {
     const [program] = await loadFromDb({
       model: `program`,
       user: trainee1,
       fields: [`evaluation_resources.name`]
     })
     expect(program.evaluation_resources.length).toEqual(2)
+  })
+
+  it(`finish a trainee's mission`, async () => {
+
+    //Had to copy paste from aftral-lms/actions.js
+
+    const forceFinishResource = async ({value, dataId}, user) => {
+      if(user.role == ROLE_HELPDESK && dataId) {
+        user = await User.findById(dataId)
+      }
+      await Progress.findOneAndUpdate(
+        {user, block: value._id},
+        {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
+        {upsert: true, new: true}
+      )
+      await onBlockFinished(user, await Block.findById(value._id))
+    }
+
+    await forceFinishResource({value:resource}, trainee2)
+    let prog = await Progress.findOne({user:trainee2._id})
+    expect(prog.achievement_status == BLOCK_STATUS_FINISHED).toBeTruthy()
+
+    await Progress.findOneAndUpdate(
+      {user: trainee2, block: resource._id},
+      {user: trainee2, block: resource._id, achievement_status: BLOCK_STATUS_CURRENT},
+    )
+
+    await forceFinishResource({value:resource, dataId:trainee2._id}, helpdesk)
+    prog = await Progress.findOne({user:trainee2._id})
+    expect(prog.achievement_status == BLOCK_STATUS_FINISHED).toBeTruthy()
   })
 })
