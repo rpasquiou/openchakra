@@ -4,7 +4,7 @@ const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
   setPostCreateData,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -230,6 +230,9 @@ const preCreate = async ({model, params, user}) => {
     params.trainee=user
   }
   if (model=='resource') {
+    if (params.max_attempts && params.resource_type != RESOURCE_TYPE_SCORM) {
+      throw new Error(`Vous ne pouvez pas mettre de nombre de tentatives maximum sur une ressource autre qu'un SCORM`)
+    }
     if (!params.url && !params.plain_url) {
       throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
     }
@@ -296,7 +299,7 @@ const preCreate = async ({model, params, user}) => {
   if (model == `homework` ){
     const [block] = await loadFromDb({model: `resource`, id: params.parent, user, fields:[`can_upload_homework`]})
     if(!block.can_upload_homework) {
-      throw new ForbiddenError(`Vous avez atteint la limite de tentatives`)
+      throw new ForbiddenError(`Vous ne pouvez plus importer de devoir`)
     }
   }
   return Promise.resolve({model, params})
@@ -489,7 +492,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block, user},
-        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, $inc: { attempts_count: 1 }},
+        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, 
+          //if scorm, increment attempts count
+          ...block.resource_type == RESOURCE_TYPE_SCORM ? {$inc: { attempts_count: 1 }} : {}
+        },
         {upsert: true},
       )
       await onBlockAction(user, block)

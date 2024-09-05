@@ -347,7 +347,6 @@ describe('User', () => {
       homeworks:[homework1._id],
       achievement_status: BLOCK_STATUS_FINISHED,
       note: 10,
-      attempts_count: 10,
     })
     let result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
     expect(result[0].can_upload_homework).not.toBeTruthy()
@@ -356,11 +355,7 @@ describe('User', () => {
     result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
     expect(result[0].can_upload_homework).toBeTruthy()
 
-    await Block.findByIdAndUpdate(res._id, {max_attempts: 10})
-    result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
-    expect(result[0].can_upload_homework).not.toBeTruthy()
-
-    await Block.findByIdAndUpdate(res._id, {max_attempts: 20, homework_limit_date: new Date(`02-02-2022`)})
+    await Block.findByIdAndUpdate(res._id, {homework_limit_date: new Date(`02-02-2022`)})
     result = await loadFromDb({model:`block`,user:trainee1._id, id:res._id, fields:[`can_upload_homework`]})
     expect(result[0].can_upload_homework).not.toBeTruthy()
   })
