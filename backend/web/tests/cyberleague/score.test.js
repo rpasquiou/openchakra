@@ -12,7 +12,7 @@ require('../../server/models/Certification')
 require('../../server/models/CustomerSuccess')
 require('../../server/models/ExpertiseCategory')
 const Question = require('../../server/models/Question')
-const { loadFromDb, MONGOOSE_OPTIONS } = require('../../server/utils/database')
+const { loadFromDb, MONGOOSE_OPTIONS, idEqual } = require('../../server/utils/database')
 const { ensureQuestionCategories } = require('../../server/plugins/cyberleague/functions')
 const { computeScores } = require('../../server/plugins/cyberleague/score')
 require('../../server/plugins/cyberleague/functions')
@@ -86,7 +86,7 @@ describe(`score computing test`, () => {
 
     expect(computedScores.global_rate).toEqual(0.60)
 
-    if (computedScores.category_rates[0].question_category == categories[1]._id) {
+    if (idEqual( computedScores.category_rates[0].question_category , categories[1]._id)) {
       expect(computedScores.category_rates[1].question_category.toString()).toEqual(categories[2]._id.toString())
       
       expect(computedScores.category_rates[0].category_rate).toEqual(0)
