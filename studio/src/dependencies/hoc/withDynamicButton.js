@@ -37,13 +37,17 @@ const withDynamicButton = Component => {
     let onClick=() => {}
 
     const [actionAllowed, setActionAllowed]=useState(true)
+    const [actionMessage, setActionMessage]=useState('')
 
     useEffect(()=> {
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
-        .then(res => setActionAllowed(res.data.allowed))
+        .then(res => {
+           setActionAllowed(res.data.allowed)
+           setActionMessage(res.data.message || 'Action autorisée')
+	})
         .catch(err => console.error(err))
     }, [action, value])
 
@@ -113,6 +117,7 @@ const withDynamicButton = Component => {
       if (props.hideIfForbidden && !actionAllowed) {
         return null
       }
+      props.title=actionMessage
       return (
         <>
       <Component disabled={!actionAllowed}
