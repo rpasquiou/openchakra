@@ -254,6 +254,12 @@ UserSchema.virtual('posts', {
   foreignField: 'creator',
 })
 
+UserSchema.virtual('comments', {
+  ref: 'comment',
+  localField: '_id',
+  foreignField: 'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
