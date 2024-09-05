@@ -21,12 +21,13 @@ const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const QuestionCategory = require('../../models/QuestionCategory')
-const { isMine } = require('./message')
+const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
 const { computeScores } = require('./score')
 const Conversation = require('../../models/Conversation')
 const User = require('../../models/User')
+const { isMineForPost } = require('./post')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -176,6 +177,8 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     options: { ref: 'comment' }
   },})
 declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), setterFn: setterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
+declareComputedField({ model: 'post', field: 'mine', requires: 'creator', getterFn: isMineForPost })
+
 
 //Group declarations
 declareVirtualField({model: 'group', field: 'posts', instance: 'Array', multiple: true, 
@@ -215,7 +218,7 @@ declareVirtualField({
 declareComputedField({model: 'conversation', field: 'partner', requires: 'users', getterFn: getConversationPartner})
 
 //Message
-declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
+declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMineForMessage})
 declareVirtualField({model: 'message', field: 'display_date', instance: 'String', requires: 'creation_date'})
 
 // Category declarations
