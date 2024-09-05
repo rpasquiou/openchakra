@@ -263,46 +263,6 @@ const generateMessages = async directory =>{
   saveRecords(MESSAGES_OUTPUT, messagesKeys, messages)
 }
 
-const generateProgress = async directory => {
-  const consulPath=path.join(directory, 'smart_consultation.csv')
-  const consultProgressPath = path.join(directory, 'smart_consultation_progress.csv')
-  const outputPath = path.join(directory, 'wapp_progress.csv')
-
-  if (isNewerThan(outputPath, consulPath) && isNewerThan(outputPath, consultProgressPath)) {
-    console.log('No need to generate', outputPath)
-    return
-  }
-  console.log('Generating', outputPath)
-
-  let consultations=await loadRecords(consulPath)
-  let progress=await loadRecords(consultProgressPath)
-
-  progress=lodash(progress)
-    .groupBy('CONSULTID')
-    .mapValues(criteria => Object.fromEntries(criteria.map(c => [c.SDCRITERIAID, c.status])))
-    .value()
-
-
-  consultations=lodash(consultations)
-    .groupBy('SDPROGRAMID')
-    .mapValues(consults => lodash.orderBy(consults, c => moment(c.date)))
-    .mapValues(consults => consults.map(c => progress[c.SDCONSULTID]).filter(v => !!v))
-    .pickBy(consults => consults.length>0)
-    .mapValues(criterions => lodash.assign({}, ...criterions))
-
-  // console.log(consultations.value())
-  let res=['SDPROGRAMID;SDCRITERIAID;status']
-  consultations.entries().value()
-    .forEach(([program, obj]) => {
-      Object.entries(obj).forEach(([crit, status])=> {
-        res.push(`${program};${crit};${status}`)
-      })
-    })
-  fs.writeFileSync(outputPath, res.join('\n'))
-  console.timeEnd('Progress')
-}
-
-
 const fixFoodDocuments = async directory => {
   const mappingRecords=await loadRecords(path.join(directory, 'mapping_fiche.csv'))
   // Check existence of mapped names in DB
@@ -384,7 +344,6 @@ const fixFiles = async directory => {
   await fixQuizz(directory)
   await generateMessages(directory)
   await fixSpecs(directory)
-  await generateProgress(directory)
   console.warn('*'.repeat(40), 'HERE HAVE TO GENERATE QUIZZ JUST BEFORE IMPORT', '*'.repeat(40),)
   // await generateQuizz(directory)
   await generateFoodPrograms(directory)
@@ -480,8 +439,8 @@ const PATIENT_KEY='email'
 const PATIENT_MIGRATION_KEY='migration_id'
 
 const HEIGHT_MAPPING={
-  migration_id: 'patient_id',
-  _id: ({cache, record}) => cache('user', record.patient_id),
+  migration_id: 'SDPATIENTID',
+  _id: ({cache, record}) => cache('user', record.SDPATIENTID),
   height: 'height',
 }
 
@@ -490,9 +449,9 @@ const HEIGHT_MIGRATION_KEY='migration_id'
 
 const WEIGHT_MAPPING={
   // Weight from summary
-  migration_id: ({record}) => -record.patient_id,
+  migration_id: ({record}) => -record.SDPATIENTID,
   weight: 'weight',
-  user: ({cache, record}) => cache('user', record.patient_id),
+  user: ({cache, record}) => cache('user', record.SDPATIENTID),
   date: 'updated',
 }
 
