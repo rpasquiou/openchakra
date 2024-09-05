@@ -19,11 +19,12 @@ const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
 const { getContents } = require('./company')
-const ExpertiseSet = require('./schemas/ExpertiseSetSchema')
+const ExpertiseSet = require('../../models/ExpertiseSet')
 const QuestionCategory = require('../../models/QuestionCategory')
 const { isMine } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
+const { computeScores } = require('./score')
 const Conversation = require('../../models/Conversation')
 const User = require('../../models/User')
 
@@ -318,6 +319,7 @@ setPreprocessGet(preprocessGet)
 
 const preCreate = async ({model, params, user}) => {
   params.creator = params.creator || user._id
+
   if(model == `comment`) {
     if (!params.parent) {
       throw new BadRequestError(`Le parent est obligatoire`)
@@ -330,6 +332,7 @@ const preCreate = async ({model, params, user}) => {
       params.content = params.parent
     }
   }
+
   if (model == `group`) {
     if (user.role != ROLE_PARTNER) {
       if (user.role != ROLE_ADMIN) {
@@ -344,6 +347,7 @@ const preCreate = async ({model, params, user}) => {
     params.admin = user._id
     params.users = [user._id]
   }
+
 
   if (model== `company`) {
     if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
@@ -368,6 +372,12 @@ const preCreate = async ({model, params, user}) => {
     }
   } 
 
+  if (model == 'score') {
+    //todo : vérifier le format sous lequel arrive les questions dans params et adapter si besoin
+    const computedScores = computeScores(params.questions)
+    params = {...params, ...computedScores}
+  }
+
   return Promise.resolve({model, params})
 }
 
@@ -381,7 +391,8 @@ const postCreate = async ({ model, params, data, user }) => {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
-  if (model in [`user`,`content`,`company`,`group`,`event`]) {
+
+  if ([`user`,`content`,`company`,`group`,`event`].includes(model)) {
     data.expertise_set = await ExpertiseSet.create({})
     await data.save()
   }

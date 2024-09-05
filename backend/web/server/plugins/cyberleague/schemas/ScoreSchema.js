@@ -25,6 +25,38 @@ const ScoreSchema = new Schema({
       }
     }]
   },
+  global_rate: {
+    type: Number,
+    default: false
+  },
+  category_rates: {
+    type: [{
+      question_category: {
+        type: Schema.Types.ObjectId,
+        ref: 'questionCategory',
+        required: true
+      },
+      category_rate: {
+        type: Number,
+        required: true
+      }
+    }],
+    default: []
+  },
+  bellwether_rates: {
+    type: [{
+      question_category: {
+        type: Schema.Types.ObjectId,
+        ref: 'questionCategory',
+        required: true
+      },
+      category_rate: {
+        type: Number,
+        required: true
+      }
+    }],
+    default: []
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
