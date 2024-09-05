@@ -25,6 +25,8 @@ const { isMine } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
 const { computeScores } = require('./score')
+const Conversation = require('../../models/Conversation')
+const User = require('../../models/User')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -284,6 +286,22 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       params.filter = {group: id}
     }
   }
+
+  if (model == 'conversation') {
+    if (id) {
+      if(idEqual(id, user._id)) {
+        console.log(user._id, id)
+        id=undefined
+      }
+      else{
+        let conv = await Conversation.findOne({ users: {$all: [user._id, id]}})
+        if (!conv) {
+          conv = await Conversation.create({ users : [user._id, id]})
+        }
+        id=conv._id
+      }
+    }
+  }
   return Promise.resolve({model, fields, id, user, params})
 }
 
@@ -320,8 +338,17 @@ const preCreate = async ({model, params, user}) => {
     params.users = [user._id]
   }
 
+
   if (model== `company`) {
     if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
+  }
+
+  if (['message'].includes(model)) {
+    params.sender = user._id
+    const conversation = await Conversation.findById(params.parent)
+    // A VOIR BATISTE
+    params.conversation = params.parent
+    params.receiver = await conversation.getPartner(user._id)
   }
 
   if(model === 'post') {
