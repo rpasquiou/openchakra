@@ -45,6 +45,11 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
+  mine: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
