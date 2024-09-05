@@ -294,7 +294,7 @@ describe('User', () => {
     //Had to copy paste from aftral-lms/actions.js
 
     const forceFinishResource = async ({value, dataId}, user) => {
-      if(user.role == ROLE_HELPDESK && dataId) {
+      if([ROLE_HELPDESK, ROLE_FORMATEUR].includes(user.role) && dataId) {
         user = await User.findById(dataId)
       }
       await Progress.findOneAndUpdate(
@@ -315,6 +315,15 @@ describe('User', () => {
     )
 
     await forceFinishResource({value:resource, dataId:trainee2._id}, helpdesk)
+    prog = await Progress.findOne({user:trainee2._id})
+    expect(prog.achievement_status == BLOCK_STATUS_FINISHED).toBeTruthy()
+
+    await Progress.findOneAndUpdate(
+      {user: trainee2, block: resource._id},
+      {user: trainee2, block: resource._id, achievement_status: BLOCK_STATUS_CURRENT},
+    )
+
+    await forceFinishResource({value:resource, dataId:trainee2._id}, trainer)
     prog = await Progress.findOne({user:trainee2._id})
     expect(prog.achievement_status == BLOCK_STATUS_FINISHED).toBeTruthy()
   })

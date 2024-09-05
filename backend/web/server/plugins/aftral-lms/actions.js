@@ -124,6 +124,9 @@ addAction('session', getSessionAction)
 // TODO dev only
 if (!isProduction()) {
   const forceFinishResource = async ({value, dataId}, user) => {
+    if([ROLE_HELPDESK, ROLE_FORMATEUR].includes(user.role) && dataId) {
+      user = await User.findById(dataId)
+    }
     await Progress.findOneAndUpdate(
       {user, block: value._id},
       {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
