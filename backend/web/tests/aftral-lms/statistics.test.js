@@ -112,6 +112,7 @@ describe('Test models computations', () => {
       `sessions.trainees.statistics.children.children.name`,
       `sessions.trainees.statistics.evaluation_resources`,
       `sessions.trainees`,
+      `sessions.children.evaluation_resources`
     ]
   })
 
@@ -138,14 +139,7 @@ describe('Test models computations', () => {
       fields,
     })
     expect(data[0].sessions[0].trainees.length).toEqual(2)
-  })
-
-  it('`must return all trainees statistics including evaluation_resources', async () => {
-    const data = await loadFromDb({
-      model: `statistics`,
-      user: trainer,
-      fields,
-    })
     expect(data[0].sessions[0].trainees[0].statistics.evaluation_resources.length).toEqual(1)
+    expect(data[0].sessions[0].children[0].evaluation_resources.length).toEqual(1)
   })
 })

@@ -105,6 +105,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
   declareComputedField({model, field: 'note', getterFn: getBlockNote})
+  declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
 })
 
 //Program start
@@ -116,7 +117,6 @@ declareComputedField({
   requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
   getterFn: getCertificate, 
 })
-declareComputedField({model: 'program', field: 'evaluation_resources', getterFn: getEvalResources})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})

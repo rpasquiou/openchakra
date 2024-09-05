@@ -271,6 +271,15 @@ const BlockSchema = new Schema({
     type: String,
     required: false,
   },
+  // Computed
+  evaluation_resources: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
