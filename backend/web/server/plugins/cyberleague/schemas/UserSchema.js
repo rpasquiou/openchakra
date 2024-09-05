@@ -248,6 +248,12 @@ UserSchema.virtual('latest_score', {
   },
 })
 
+UserSchema.virtual('posts', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
