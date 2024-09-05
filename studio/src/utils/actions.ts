@@ -459,7 +459,10 @@ export const ACTIONS: IActions = {
   },
   alle_finish_mission: {
     label: 'AE Finish mission',
-    options: {},
+    options: {
+      trainee: ({ components }) =>
+        components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
     next: ['openPage'],
   },
   alle_store_bill: {

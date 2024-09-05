@@ -123,7 +123,7 @@ addAction('session', getSessionAction)
 
 // TODO dev only
 if (!isProduction()) {
-  const forceFinishResource = async ({value}, user) => {
+  const forceFinishResource = async ({value, dataId}, user) => {
     await Progress.findOneAndUpdate(
       {user, block: value._id},
       {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
@@ -157,5 +157,5 @@ setAllowActionFn(isActionAllowed)
 
 module.exports={
   // Exported for programs import
-  addChildAction,
+  addChildAction
 }
