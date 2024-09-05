@@ -11,19 +11,13 @@ const ScoreSchema = new Schema({
     ref: 'user',
     required: [true, `Le créateur du score est obligatoire`],
   },
-  questions: {
+  answers: {
     type: [{
-      question: {
-        type: Schema.Types.ObjectId,
-        ref: 'question',
-        required: true
-      },
-      answer: {
-        type: String,
-        enum: Object.keys(ANSWERS),
-        required: true
-      }
-    }]
+      type: Schema.Types.ObjectId,
+      ref: 'answer',
+      required: true,
+    }],
+    default: []
   },
   global_rate: {
     type: Number,
