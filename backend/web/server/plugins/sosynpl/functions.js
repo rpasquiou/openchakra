@@ -574,9 +574,9 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       return Conversation.findById(id)
         .then(async(conv) => {
           if(!conv){
-            const model = await getModel(id, ['mission','application','customerFreelance','user'])
+            const model = await getModel(id, ['mission','application','customerFreelance','user', 'admin'])
             let customerId, freelanceId, applicationId, partnerId
-            if(model == 'customerFreelance' || model == 'user') {
+            if(['admin','customerFreelance','user'].includes(model)) {
               partnerId = id
             }
             else if(model == 'mission') {
