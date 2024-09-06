@@ -64,6 +64,10 @@ ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
   return this?.answers?.filter(a => a.answer==ANSWER_NO).length || 0
 })
 
+ScoreSchema.virtual('is_drafted', DUMMY_REF).get(function() {
+  return this?.answers?.filter(a => !a.answer).length == 0
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = ScoreSchema
