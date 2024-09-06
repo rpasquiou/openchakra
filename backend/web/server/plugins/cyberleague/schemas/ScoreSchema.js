@@ -56,7 +56,7 @@ const ScoreSchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 
 ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
-  return this?.questions.filter(q => q.answer==ANSWER_NO).length || 0
+  return this?.answers?.filter(a => a.answer==ANSWER_NO).length || 0
 })
 
 /* eslint-enable prefer-arrow-callback */
