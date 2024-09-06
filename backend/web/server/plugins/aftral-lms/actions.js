@@ -8,6 +8,7 @@ const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const { isProduction } = require('../../../config/config')
+const User = require('../../models/User')
 
 
 const ACCEPTS={
