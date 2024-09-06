@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -27,6 +27,8 @@ const ExpertiseCategory = require('../../models/ExpertiseCategory')
 const { computeScores } = require('./score')
 const Conversation = require('../../models/Conversation')
 const User = require('../../models/User')
+const Question = require('../../models/Question')
+const Answer = require('../../models/Answer')
 const { isMineForPost } = require('./post')
 
 //User declarations
@@ -240,8 +242,11 @@ declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValue
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
 
 //Score declarations
-declareVirtualField({model: 'score', field: 'deviation', requires: 'questions.answer', instance: 'Number'})
-declareEnumField( {model: 'score', field: 'questions.answer', enumValues: ANSWERS})
+declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
+declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
+
+//Answer declaration
+declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})
 
 //questionCategory declarations
 declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'Array', multiple: true,

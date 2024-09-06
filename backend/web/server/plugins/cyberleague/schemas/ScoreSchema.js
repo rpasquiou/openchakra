@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANSWER_NO, ANSWERS } = require('../consts')
+const { ANSWER_NO, SCORE_LEVELS } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -50,6 +50,11 @@ const ScoreSchema = new Schema({
       }
     }],
     default: []
+  },
+  level: {
+    type: String,
+    enum: Object.keys(SCORE_LEVELS),
+    required: [true, `Le niveau du score est obligatoire`]
   }
 }, {...schemaOptions})
 
