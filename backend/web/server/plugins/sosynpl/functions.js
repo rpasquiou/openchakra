@@ -702,11 +702,12 @@ const preCreate = async ({model, params, user, skip_validation}) => {
   }
   if (model == 'question' ) {
     skip_validation = true
-    params.announce = params.parent
-  }
-  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
-  if (model == 'question' && !id) {
-    params['filter.announce'] = null
+    if( params.parent ) {
+      params.announce = params.parent
+    }
+    else {
+      params['filter.announce'] = null
+    }
   }
   return Promise.resolve({model, params, user, skip_validation})
 }
