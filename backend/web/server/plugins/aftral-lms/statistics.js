@@ -6,7 +6,7 @@ const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
 
-const fillSession = async ({session, evaluationFields, trainee}) => {
+const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
   session.trainees = trainee ? [trainee] : session.trainees
   const program = await Program.findOne({parent: session._id}).populate('children')
@@ -17,7 +17,7 @@ const fillSession = async ({session, evaluationFields, trainee}) => {
       .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
   fields=lodash.flatten(fields)
-  fields= [...fields, ...evaluationFields]
+  fields= [...fields, 'evaluation_resources']
   return Promise.all(session.trainees.map(trainee => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
@@ -32,8 +32,6 @@ const fillSession = async ({session, evaluationFields, trainee}) => {
 const computeStatistics = async ({fields, id, user, params}) => {
   let sessionId = {}
   let trainee
-  const evaluationPrefix = /^sessions\.trainees\.statistics\.evaluation_resources/
-  const evaluationFields = fields.filter(f => evaluationPrefix.test(f)).map(f => f.replace(evaluationPrefix,'evaluation_resources').replace(/^\./, ''))
   const sessionPrefix=/^sessions\./
   fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
   if(!!id) {
@@ -46,7 +44,7 @@ const computeStatistics = async ({fields, id, user, params}) => {
     }
   }
   return loadFromDb({model: 'session', user, fields, ...sessionId})
-    .then(sessions => Promise.all(sessions.map(s => fillSession({session:s, trainee, evaluationFields}))))
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{sessions}]))
 }
   
