@@ -381,12 +381,6 @@ const preCreate = async ({model, params, user}) => {
     }
   } 
 
-  if (model == 'score') {
-    //todo : vérifier le format sous lequel arrive les questions dans params et adapter si besoin
-    const computedScores = computeScores(params.questions)
-    params = {...params, ...computedScores}
-  }
-
   return Promise.resolve({model, params})
 }
 
@@ -396,6 +390,7 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == `customerSuccess`) {
     await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
   }
+
   if (model == `certification`) {
     const model = await getModel(params.parent, [`company`,`user`])
     await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
@@ -415,6 +410,11 @@ const postPutData = async ({model, id, params, user}) => {
     if (`users` in params) {
       await Group.updateOne({_id:id}, {$pull: {pending_users: params.users}})
     }
+  }
+
+  if (model == 'score' && params.is_drafted) {
+    const computedScores = computeScores(params.answers)
+    params = {...params, ...computedScores}
   }
   return {model, id, params, user}
 }
