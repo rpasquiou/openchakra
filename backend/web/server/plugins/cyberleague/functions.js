@@ -403,10 +403,10 @@ const postCreate = async ({ model, params, data, user }) => {
 
   if (model == 'score') {
     const questions = await Question.find()
-    lodash.forEach(questions,async q => {
-      const answer = await Answer.create({score: data._id, question: q._id})
-      await mongoose.models[model].findByIdAndUpdate(data._id, {$push: {answers: answer._id}})
-    })
+    const answers=await Promise.all(questions.map(async q => {
+      return Answer.create({score: data._id, question: q._id})
+    }))
+    await mongoose.models[model].findByIdAndUpdate(data._id, {answers})
   }
 
   return data
