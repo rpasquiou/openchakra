@@ -1007,7 +1007,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
             as: 'range',
             in: {
               name: '$$range.name',
-              total: {
+              value: {
                 $let: {
                   vars: {
                     matchedRange: {
