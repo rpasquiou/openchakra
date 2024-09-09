@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { computeScores } = require('./score')
+const { computeScores, booleanLevelFieldName } = require('./score')
 const Conversation = require('../../models/Conversation')
 const User = require('../../models/User')
 const Question = require('../../models/Question')
@@ -402,7 +402,8 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'score') {
-    const questions = await Question.find()
+    const booleanField = booleanLevelFieldName(data.level)
+    const questions = await Question.find({[booleanField]: true})
     const answers=await Promise.all(questions.map(async q => {
       return Answer.create({score: data._id, question: q._id})
     }))
