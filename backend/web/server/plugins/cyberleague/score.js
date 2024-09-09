@@ -1,6 +1,6 @@
 const { loadFromDb } = require("../../utils/database")
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES } = require("./consts")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require("./consts")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answerArray) => {
@@ -77,7 +77,23 @@ const computeScores = async (answerArray) => {
   return {global_rate, category_rates, bellwether_rates}
 }
 
+const booleanLevelFieldName = (scoreLevel) => {
+  switch (scoreLevel) {
+    case SCORE_LEVEL_1:
+      return `is_level_1`
+
+    case SCORE_LEVEL_2:
+      return `is_level_2`
+
+    case SCORE_LEVEL_3:
+      return `is_level_3`
+  
+    default:
+      throw new Error(`Unknown score level`);
+  }
+}
 
 module.exports = {
-  computeScores
+  computeScores,
+  booleanLevelFieldName
 }
