@@ -104,7 +104,6 @@ const LeadSchema = new Schema({
     enum: Object.keys(CALL_DIRECTION),
     required: false,
     set: v => v || undefined,
-    default: CALL_DIRECTION_OUT_CALL
   },
   consent: {
     type: Boolean,
