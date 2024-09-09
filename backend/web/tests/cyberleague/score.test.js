@@ -33,7 +33,6 @@ beforeAll(async () => {
   console.log("dataScore",dataScore)
   await dataScore.save()
   const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
-  console.log("loadedS",loadedS);
   
 })
 
@@ -46,6 +45,9 @@ describe(`score tests`, () => {
   it(`must be initialized correctly`, async () => {
     
     const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
+    console.log("loadedS",JSON.stringify(loadedS,null,2));
+
+
     const loadedA = await loadFromDb({model: 'answer', fields:['question','score','answer']})
     const loadedU = await loadFromDb({model: 'user', fields: ['firstname']})
 
@@ -56,8 +58,6 @@ describe(`score tests`, () => {
 
     const score = loadedS[0]
     const user = loadedU[0]
-
-    console.log("score",loadedS);
     
     // expect(score.answers.length).toEqual(3)
 
