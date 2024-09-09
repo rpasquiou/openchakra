@@ -215,6 +215,12 @@ const preCreate = async ({model, params, user}) => {
     params.sender=user._id
   }
 
+  // Set ti on mission
+  if (model=='mission' && !!params.job){
+    const jobUser=await JobUser.findById(params.job).populate('user')
+    params.ti=jobUser.user._id
+  }
+
   return Promise.resolve({model, params})
 }
 
@@ -230,6 +236,12 @@ const postPutData = async ({model, id, attribute, data, user}) => {
       const fn=account.role==ROLE_TI ? paymentPlugin.upsertProvider : paymentPlugin.upsertCustomer
       const account_id=await fn(account)
       await User.findByIdAndUpdate(user._id, {payment_account_id: account_id})
+    }
+  }
+  if (model=='mission') {
+    if (attribute=='job') {
+      const mission=await Mission.findById(id).populate('job')
+      await Mission.findByIdAndUpdate(id, {ti: mission.job.user._id})
     }
   }
   return data
