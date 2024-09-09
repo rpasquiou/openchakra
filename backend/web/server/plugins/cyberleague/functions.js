@@ -400,6 +400,16 @@ const postCreate = async ({ model, params, data, user }) => {
     data.expertise_set = await ExpertiseSet.create({})
     await data.save()
   }
+
+  if (model == 'score') {
+    await Promise.resolve(Question.find())
+      .then(async questions => Promise.all(lodash.forEach(questions,async q => {
+        await Answer.create({score: data._id, question: q._id})
+      })).then(async (answers) => {
+        data.answers = answers
+        return await data.save()
+      }))
+  }  
   return data
 }
 
