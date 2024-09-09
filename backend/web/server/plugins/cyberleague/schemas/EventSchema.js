@@ -71,6 +71,20 @@ const EventSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
+
+EventSchema.virtual('registered_users', {
+  ref:'user',
+  localField:'_id',
+  foreignField:'registered_events',
+})
+
+EventSchema.virtual('registered_users_count', {
+  ref:'user',
+  localField:'_id',
+  foreignField:'registered_events',
+  count:true,
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema

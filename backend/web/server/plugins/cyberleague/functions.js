@@ -245,6 +245,14 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
+declareVirtualField({
+  model: 'event', field: 'registered_users', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'user' }
+  },
+})
+declareVirtualField({model: 'event', field: 'registered_users_count', instance: 'Number'})
 
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
