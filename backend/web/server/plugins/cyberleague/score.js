@@ -3,13 +3,13 @@ const lodash = require('lodash')
 const { ANSWER_NOT_APPLICABLE, ANSWER_YES } = require("./consts")
 
 // questionArray: [{question, answer}]
-const computeScores = async (questionArray) => {
+const computeScores = async (answerArray) => {
 
-  let questions= await Promise.all(questionArray.map((q) => 
-    loadFromDb({model: 'question', fields: ['weight', 'question_category', 'is_bellwether'], id: q.question._id})))
+  let answers= await Promise.all(answerArray.map((a) => 
+    loadFromDb({model: 'question', fields: ['weight', 'question_category', 'is_bellwether'], id: a.question._id})))
   
-  questions=questions.map((elem, idx) => {
-    return {question: elem[0], answer: questionArray[idx].answer}
+  answers=answers.map((elem, idx) => {
+    return {question: elem[0], answer: answerArray[idx].answer}
   })
 
   let total_weight =0
@@ -45,7 +45,7 @@ const computeScores = async (questionArray) => {
   let category_weightsAndRates={}
   let bellwether_weightsAndRates = {}
 
-  lodash.forEach(questions, ({question, answer}) => {
+  lodash.forEach(answers, ({question, answer}) => {
     
     // If not applicable => question is not considered
     if (answer != ANSWER_NOT_APPLICABLE) {
