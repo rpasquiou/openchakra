@@ -148,7 +148,7 @@ const UserSchema = new Schema({
   },
   iban: {
     type: String,
-    validate: [v => IBANValidator.isValid(v), "L'IBAN est invalide"],
+    validate: [v => lodash.isEmpty(v) || IBANValidator.isValid(v), "L'IBAN est invalide"],
   },
   availability: {
     type: String,
