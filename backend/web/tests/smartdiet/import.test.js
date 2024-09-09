@@ -39,7 +39,7 @@ const DROP=!ORIGINAL_DB
 const ROOT = path.join(__dirname, './data/migration')
 // const ROOT = path.join(__dirname, './data/migration-aye-26358')
 
-jest.setTimeout(60000000)
+jest.setTimeout(2*3600*1000)
 
 const forcePasswords = () => {
   if (isDevelopment()) {
@@ -66,7 +66,7 @@ describe('Test imports', () => {
   })
 
   afterAll(async () => {
-    // await updateImportedCoachingStatus()
+    await updateImportedCoachingStatus()
     await updateDietCompanies()
     await saveCache()
     if (DROP) {
@@ -155,14 +155,14 @@ describe('Test imports', () => {
     console.log(measures)
   })
 
-  it.only('must upsert quizz', async () => {
+  it('must upsert quizz', async () => {
     const before=await Quizz.countDocuments()
     let res = await importQuizz(path.join(ROOT, 'wapp_quiz.csv'))
     const quizz=await Quizz.findOne({migration_id: QUIZZ_ID})
     expect(quizz.name).toEqual(QUIZZ_NAME)
   })
 
-  it.only('must import quizz questions', async () => {
+  it('must import quizz questions', async () => {
     let res = await importQuizzQuestions(path.join(ROOT, 'wapp_questions.csv'))
     const questions=await QuizzQuestion.find({migration_id: {$ne:null}})
     expect(questions.length).toEqual(243)
@@ -170,29 +170,29 @@ describe('Test imports', () => {
     expect(quizz.questions.length).toEqual(8)
   })
 
-  it.only('must upsert quizz questions answers', async () => {
+  it('must upsert quizz questions answers', async () => {
     let res = await importQuizzQuestionAnswer(path.join(ROOT, 'wapp_answers.csv'), path.join(ROOT, 'wapp_questions.csv'))
     const migratedItems=await Item.find({migration_id: {$ne:null}})
     expect(migratedItems.length).not.toBeLessThan(436)
   })
 
-  it.only('must upsert keys', async () => {
+  it('must upsert keys', async () => {
     let res = await importKeys(path.join(ROOT, 'smart_criteria.csv'))
     const keys=await Key.find({migration_id: {$ne: null}})
     expect(keys.length).toEqual(7)
   })
 
-  it.only('must upsert progress quizz', async () => {
+  it('must upsert progress quizz', async () => {
     let res = await importProgressQuizz(path.join(ROOT, 'smart_criteria.csv'))
     const quizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
     expect(quizz.questions.every(q => !!q.migration_id)).toBeTruthy
   })
 
-  it.only('must upsert user progress quizz', async () => {
+  it('must upsert user progress quizz', async () => {
     return importUserProgressQuizz(path.join(ROOT, 'smart_consultation_progress.csv'))
   })
 
-  it.only('must upsert patients quizzs', async () => {
+  it('must upsert patients quizzs', async () => {
     await importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
     const user=await User.findOne({email: 'lylycordo@laposte.net'})
       .populate({path: 'coachings', populate: {path: 'quizz', populate: {path: 'questions', populate: ['quizz_question', 'single_enum_answer']}}})

@@ -546,7 +546,8 @@ const APPOINTMENT_MAPPING= (assessment_id, followup_id, progressTemplate) => ({
       diet=cache('user', record.SDDIETID)
     }
     if (!diet) {
-      diet=(await Coaching.findById(cache('coaching', record.SDPROGRAMID), {diet:1}))?.diet
+      const coaching = await Coaching.findById(cache('coaching', record.SDPROGRAMID))
+      diet=coaching?.diet
     }
     if (!diet) { console.error('No diet found for', record.SDPROGRAMID)}
     return diet
