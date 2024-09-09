@@ -107,6 +107,16 @@ USER_MODELS.forEach(m => {
     },
   })
   declareVirtualField({
+    model: m,
+    field: 'comments',
+    instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'comment' },
+    },
+  })
+  declareVirtualField({
     model: m, field: 'scores', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
