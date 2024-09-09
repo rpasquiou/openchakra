@@ -143,7 +143,16 @@ const UserSchema = new Schema({
   expertise_set: {
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
-  }
+  },
+  registered_events: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'event',
+      index: true,
+      required: false,
+    }],
+    default: []
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
