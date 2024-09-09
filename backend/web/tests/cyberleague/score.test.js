@@ -30,6 +30,7 @@ beforeAll(async () => {
   dataUser=await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
   dataScore=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_1})
   dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})
+  //Don't why but test fail if one or many of these three lines is deleted
   console.log("dataScore",dataScore)
   await dataScore.save()
   const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
@@ -59,11 +60,11 @@ describe(`score tests`, () => {
     const score = loadedS[0]
     const user = loadedU[0]
     
-    // expect(score.answers.length).toEqual(3)
+    expect(score.answers.length).toEqual(3)
 
-    // const scoreA1 = score.answers[0]
-    // const scoreA2 = score.answers[1]
-    // const scoreA3 = score.answers[2]
+    const scoreA1 = score.answers[0]
+    const scoreA2 = score.answers[1]
+    const scoreA3 = score.answers[2]
     const a1 = loadedA[0]
     const a2 = loadedA[1]
     const a3 = loadedA[2]
@@ -74,9 +75,9 @@ describe(`score tests`, () => {
 
     expect(score.creator._id).toEqual(dataUser._id)
 
-    // expect(scoreA1.question._id).toEqual(dataQ1._id)
-    // expect(scoreA2.question._id).toEqual(dataQ2._id)
-    // expect(scoreA3.question._id).toEqual(dataQ3._id)
+    expect(scoreA1.question._id).toEqual(dataQ1._id)
+    expect(scoreA2.question._id).toEqual(dataQ2._id)
+    expect(scoreA3.question._id).toEqual(dataQ3._id)
 
     expect(a1.score._id).toEqual(score._id)
     expect(a2.score._id).toEqual(score._id)
@@ -91,23 +92,20 @@ describe(`score tests`, () => {
 
 
   it(`must compute correct rates`, async () => {
-    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation']})
+    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation','is_drafted']})
 
     let score = loadedS[0]
 
-//TODO : ADAPTER
-    const answers = [ {score: score._id, question: dataQ1, answer: ANSWER_NOT_APPLICABLE} , 
-                      {score: score._id, question: dataQ2, answer: ANSWER_NO} , 
-                      {score: score._id, question: dataQ3, answer: ANSWER_YES} 
-                    ]
-
-    
+    score.answers[0].answer = ANSWER_NOT_APPLICABLE
+    score.answers[1].answer = ANSWER_NO 
+    score.answers[2].answer = ANSWER_YES
 
     //virtual verif
-    //expect(score.deviation).toEqual(1)
+    expect(score.deviation).toEqual(1)
+    expect(score.is_drafted).toEqual(true)
 
     //computedScores verif
-    const computedScores = await computeScores(answers)
+    const computedScores = await computeScores(score.answers)
 
     expect(computedScores.category_rates.length).toEqual(2)
     expect(computedScores.bellwether_rates.length).toEqual(1)
