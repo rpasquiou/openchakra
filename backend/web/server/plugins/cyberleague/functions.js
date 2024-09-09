@@ -433,5 +433,6 @@ setPostPutData(postPutData)
 
 module.exports = {
   ensureExpertiseCategories,
-  ensureQuestionCategories
+  ensureQuestionCategories,
+  testOnlyPostCreate: postCreate //for score.test.js
 }

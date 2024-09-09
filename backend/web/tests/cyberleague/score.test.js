@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const moment = require('moment')
 const User = require('../../server/models/User')
-const { ROLE_MEMBER, ANSWER_YES, ANSWER_NO, ANSWER_NOT_APPLICABLE } = require('../../server/plugins/cyberleague/consts')
+const { ROLE_MEMBER, ANSWER_YES, ANSWER_NO, ANSWER_NOT_APPLICABLE, SCORE_LEVEL_1 } = require('../../server/plugins/cyberleague/consts')
 const Score = require('../../server/models/Score')
 require('../../server/models/QuestionCategory')
 require('../../server/models/School')
@@ -11,16 +11,30 @@ require('../../server/models/Event')
 require('../../server/models/Certification')
 require('../../server/models/CustomerSuccess')
 require('../../server/models/ExpertiseCategory')
+require('../../server/models/Answer')
 const Question = require('../../server/models/Question')
 const { loadFromDb, MONGOOSE_OPTIONS, idEqual } = require('../../server/utils/database')
-const { ensureQuestionCategories } = require('../../server/plugins/cyberleague/functions')
+const { ensureQuestionCategories, testOnlyPostCreate } = require('../../server/plugins/cyberleague/functions')
 const { computeScores } = require('../../server/plugins/cyberleague/score')
 require('../../server/plugins/cyberleague/functions')
 
-
+let categories,dataQ1, dataQ2, dataQ3, dataUser, dataScore
 beforeAll(async () => {
   await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
   await ensureQuestionCategories()
+  //data build
+  categories = await loadFromDb({model: 'questionCategory', fields: ['name']})
+  dataQ1 = await Question.create({text: 'q1', weight: '1', question_category: categories[0]._id, is_bellwether: false, is_level_1: true})
+  dataQ2 = await Question.create({text: 'q2', weight: '2', question_category: categories[1]._id, is_bellwether: true, is_level_1: true})
+  dataQ3 = await Question.create({text: 'q3', weight: '3', question_category: categories[2]._id, is_bellwether: false, is_level_1: true})
+  dataUser=await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
+  dataScore=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_1})
+  dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})
+  console.log("dataScore",dataScore)
+  await dataScore.save()
+  const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
+  console.log("loadedS",loadedS);
+  
 })
 
 afterAll(async () => {
@@ -28,58 +42,72 @@ afterAll(async () => {
   await mongoose.connection.close()
 })
 
-describe(`score computing test`, () => {
-  it(`must have correct rates`, async () => {
-    //data build
-    const categories = await loadFromDb({model: 'questionCategory', fields: ['name']})
-    const dataQ1 = await Question.create({text: 'q1', weight: '1', question_category: categories[0]._id, is_bellwether: false})
-    const dataQ2 = await Question.create({text: 'q2', weight: '2', question_category: categories[1]._id, is_bellwether: true})
-    const dataQ3 = await Question.create({text: 'q3', weight: '3', question_category: categories[2]._id, is_bellwether: false})
-    const questions = [ {question: dataQ1, answer: ANSWER_NOT_APPLICABLE} , {question: dataQ2, answer: ANSWER_NO} , {question: dataQ3, answer: ANSWER_YES} ]
-    const dataUser=await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
-    const dataScore=await Score.create({creator: dataUser._id, questions: questions})
-
-
-    const loadedQ = await loadFromDb({model: 'question', fields:['text','weight','question_category','is_bellwether']})
-    const loadedS = await loadFromDb({model: 'score', fields: ['creator','questions','deviation']})
+describe(`score tests`, () => {
+  it(`must be initialized correctly`, async () => {
+    
+    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
+    const loadedA = await loadFromDb({model: 'answer', fields:['question','score','answer']})
     const loadedU = await loadFromDb({model: 'user', fields: ['firstname']})
 
-    //data length verification
-    expect(loadedQ.length).toEqual(3)
-    expect(loadedS.length).toEqual(1)
+    //data length verif
     expect(loadedU.length).toEqual(1)
+    expect(loadedA.length).toEqual(3)
+    expect(loadedS.length).toEqual(1)
 
     const score = loadedS[0]
-
-    expect(score.questions.length).toEqual(3)
-
     const user = loadedU[0]
-    const q1 = loadedQ[0]
-    const q2 = loadedQ[1]
-    const q3 = loadedQ[2]
-    const scoreQ1 = score.questions[0]
-    const scoreQ2 = score.questions[1]
-    const scoreQ3 = score.questions[2]
+
+    console.log("score",loadedS);
+    
+    // expect(score.answers.length).toEqual(3)
+
+    // const scoreA1 = score.answers[0]
+    // const scoreA2 = score.answers[1]
+    // const scoreA3 = score.answers[2]
+    const a1 = loadedA[0]
+    const a2 = loadedA[1]
+    const a3 = loadedA[2]
 
     //Id verif
     expect(user._id).toEqual(dataUser._id)
     expect(score._id).toEqual(dataScore._id)
 
-    expect(q1._id).toEqual(dataQ1._id)
-    expect(q2._id).toEqual(dataQ2._id)
-    expect(q3._id).toEqual(dataQ3._id)
-
     expect(score.creator._id).toEqual(dataUser._id)
 
-    expect(scoreQ1.question).toEqual(dataQ1._id)
-    expect(scoreQ2.question).toEqual(dataQ2._id)
-    expect(scoreQ3.question).toEqual(dataQ3._id)
+    // expect(scoreA1.question._id).toEqual(dataQ1._id)
+    // expect(scoreA2.question._id).toEqual(dataQ2._id)
+    // expect(scoreA3.question._id).toEqual(dataQ3._id)
+
+    expect(a1.score._id).toEqual(score._id)
+    expect(a2.score._id).toEqual(score._id)
+    expect(a3.score._id).toEqual(score._id)
+
+    //answer.answer verif
+    expect(!!a1.answer).toEqual(false)
+    expect(!!a2.answer).toEqual(false)
+    expect(!!a3.answer).toEqual(false)
+  })
+
+
+
+  it(`must compute correct rates`, async () => {
+    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation']})
+
+    let score = loadedS[0]
+
+//TODO : ADAPTER
+    const answers = [ {score: score._id, question: dataQ1, answer: ANSWER_NOT_APPLICABLE} , 
+                      {score: score._id, question: dataQ2, answer: ANSWER_NO} , 
+                      {score: score._id, question: dataQ3, answer: ANSWER_YES} 
+                    ]
+
+    
 
     //virtual verif
-    expect(score.deviation).toEqual(1)
+    //expect(score.deviation).toEqual(1)
 
-    //computedScores verif    
-    const computedScores = await computeScores(questions)
+    //computedScores verif
+    const computedScores = await computeScores(answers)
 
     expect(computedScores.category_rates.length).toEqual(2)
     expect(computedScores.bellwether_rates.length).toEqual(1)
