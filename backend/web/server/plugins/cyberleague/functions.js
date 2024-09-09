@@ -402,14 +402,13 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'score') {
-    await Promise.resolve(Question.find())
-      .then(async questions => Promise.all(lodash.forEach(questions,async q => {
-        await Answer.create({score: data._id, question: q._id})
-      })).then(async (answers) => {
-        data.answers = answers
-        return await data.save()
-      }))
-  }  
+    const questions = await Question.find()
+    lodash.forEach(questions,async q => {
+      const answer = await Answer.create({score: data._id, question: q._id})
+      await mongoose.models[model].findByIdAndUpdate(data._id, {$push: {answers: answer._id}})
+    })
+  }
+
   return data
 }
 
