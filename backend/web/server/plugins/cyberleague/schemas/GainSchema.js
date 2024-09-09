@@ -10,6 +10,10 @@ const GainSchema = new Schema({
     enum: Object.keys(COIN_SOURCES),
     required: [true, "La source de jetons est obligatoire"],
   },
+  name: {
+    type: String,
+    required: [true, 'Le nom est obligatoire'],
+  },
   gain: {
     type: Number,
     default: 0

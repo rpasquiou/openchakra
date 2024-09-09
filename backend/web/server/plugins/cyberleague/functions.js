@@ -29,6 +29,7 @@ const Conversation = require('../../models/Conversation')
 const User = require('../../models/User')
 const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
+const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 
 //User declarations
@@ -303,6 +304,18 @@ const ensureQuestionCategories = () => {
 
 ensureQuestionCategories()
 
+// Ensure all coin gains are defined
+const ensureGains = () => {
+  return Promise.all(Object.entries(COIN_SOURCES).map(([source,name]) => {
+    return Gain.findOneAndUpdate(
+      {source}, 
+      {source,name},
+      {upsert: true}
+    )
+  }))
+}
+
+ensureGains()
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
