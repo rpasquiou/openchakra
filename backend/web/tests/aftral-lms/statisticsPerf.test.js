@@ -24,6 +24,16 @@ require('../../server/models/Badge')
 
 jest.setTimeout(60000)
 
+const removeAttributes = (obj, attributes) => {
+  attributes.forEach(attr => {
+    delete obj[attr]
+  })
+
+  if (Array.isArray(obj.children)) {
+    obj.children.forEach(child => removeAttributes(child, attributes))
+  }
+}
+
 describe('Test models computations', () => {
   beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/aftral-lms`, MONGOOSE_OPTIONS)
@@ -35,46 +45,44 @@ describe('Test models computations', () => {
     const id = '66d9c7b7877bf1483d941dbc'
     const user = await mongoose.models.user.findOne({role:ROLE_FORMATEUR})
     const fields = [
+      `code`,
+      `name`,
+      `resource_type`,
+      `sessions`,
       // `sessions.children.children.children.likes_count`,
       // `sessions.children.children.children.dislikes_count`,
       // `sessions.children.children.children.tickets_count`,
-      `sessions.children.obtained_badges.picture`,
-      `sessions.children.obtained_badges`,
-      `sessions.children.achievement_status`,
-      `sessions.children.resources_progress`,
       `sessions.children`,
-      `sessions.children.type`,
-      `sessions.children.name`,
-      // `sessions.children.children.description`,
-      // `sessions.children.children.success_message`,
-      // `sessions.children.children.children.evaluation`,
-      // `sessions.children.children.children.code`,
-      // `sessions.children.children.children.name`,
-      // `sessions.children.children.children.optional`,
-      // `sessions.children.children.children.success_message`,
-      // `sessions.children.children`,
-      // `sessions.children.children.children`,
-      // `sessions`,
+      `sessions.children.achievement_status`,
+      `sessions.children.closed`,
+      `sessions.children.children.description`,
+      `sessions.children.children.success_message`,
+      `sessions.children.children.children.evaluation`,
+      `sessions.children.children.children.code`,
+      `sessions.children.children.children.name`,
+      `sessions.children.children.children.optional`,
+      `sessions.children.children.children.success_message`,
+      `sessions.children.children`,
+      `sessions.children.children.children`,
       // `sessions.children.children.children.children`,
-      // `sessions.children.children.children.spent_time_str`,
-      // `sessions.children.children.children.masked`,
-      // `sessions.children.children.children.achievement_status`,
-      // `sessions.children.children.children.access_condition`,
-      // `sessions.children.closed`,
-      // `sessions.children.children.picture`,
-      // `sessions.children.children.type`,
-      // `sessions.children.children.name`,
-      // `sessions.children.children.closed`,
-      // `sessions.children.children.spent_time_str`,
-      // `sessions.children.children.achievement_status`,
-      // `sessions.children.children.children.type`,
-      // `sessions.children.children.children.obtained_badges.picture`,
-      // `sessions.children.children.children.obtained_badges`,
-      // `sessions.children.order`,
-      // `sessions.children.children.order`,
-      // `sessions.children.children.children.order`,
-      // `sessions.children.children.resources_progress`,
-      // `sessions.children.finished_resources_count`,
+      `sessions.children.children.children.spent_time_str`,
+      `sessions.children.children.children.masked`,
+      `sessions.children.children.children.achievement_status`,
+      `sessions.children.children.children.access_condition`,
+      `sessions.children.children.picture`,
+      `sessions.children.children.type`,
+      `sessions.children.children.name`,
+      `sessions.children.children.closed`,
+      `sessions.children.children.spent_time_str`,
+      `sessions.children.children.achievement_status`,
+      `sessions.children.children.children.type`,
+      `sessions.children.children.children.obtained_badges.picture`,
+      `sessions.children.children.children.obtained_badges`,
+      `sessions.children.order`,
+      `sessions.children.children.order`,
+      `sessions.children.children.children.order`,
+      `sessions.children.children.resources_progress`,
+      `sessions.children.finished_resources_count`,
       // `sessions.children.resources_count`,
       // `sessions.children.children.resources_count`,
       // `sessions.children.children.finished_resources_count`,
@@ -87,12 +95,16 @@ describe('Test models computations', () => {
       // `sessions.children.children.children.children.masked`,
       // `sessions.children.children.children.children.evaluation`,
       // `sessions.children.children.children.children.optional`,
-      // `sessions.children.spent_time_str`,
-      // `sessions.children.children.children.resources_count`,
-      // `sessions.children.children.children.closed`,
-      // `sessions.children.children.children.description`,
-      // `sessions.children.children.children.finished_resources_count`,
-      // `resource_type`,
+      `sessions.children.name`,
+      `sessions.children.obtained_badges`,
+      `sessions.children.obtained_badges.picture`,
+      `sessions.children.resources_progress`,
+      `sessions.children.spent_time_str`,
+      `sessions.children.type`,
+      `sessions.children.children.children.resources_count`,
+      `sessions.children.children.children.closed`,
+      `sessions.children.children.children.description`,
+      `sessions.children.children.children.finished_resources_count`,
       // `sessions.evaluation_resources.tickets_count`,
       // `sessions.evaluation_resources.likes_count`,
       // `sessions.evaluation_resources.dislikes_count`,
@@ -103,16 +115,6 @@ describe('Test models computations', () => {
       // `sessions.evaluation_resources.max_attempts`,
       // `sessions.evaluation_resources.success_note_max`,
       // `sessions.evaluation_resources.resource_type`,
-      `sessions.trainers.fullname`,
-      `sessions.trainers.email`,
-      `sessions.trainers`,
-      `sessions.trainers.picture`,
-      `sessions.trainees`,
-      `sessions.trainees.picture`,
-      `sessions.trainees.fullname`,
-      `sessions.trainees.email`,
-      `code`,
-      `name`,
       // `sessions.evaluation_resources.correction`,
       // `sessions.evaluation_resources.success_note_min`,
       // `sessions.evaluation_resources.success_scale`,
@@ -133,16 +135,30 @@ describe('Test models computations', () => {
       // `sessions.children.children.children.children.dislikes_count`,
       // `sessions.children.children.children.children.tickets_count`,
       // `sessions.children.children.children.children.access_condition`,
-      // `sessions.evaluation_resources.evaluation_resources.homeworks`
+      // `sessions.evaluation_resources.evaluation_resources.homeworks`,
+      `sessions.trainees`,
+      `sessions.trainees.email`,
+      `sessions.trainees.fullname`,
+      `sessions.trainees.picture`,
+      `sessions.trainers`,
+      `sessions.trainers.email`,
+      `sessions.trainers.fullname`,
+      `sessions.trainers.picture`
     ]
+    
     console.time(`stat`)
-    const [stat] = await loadFromDb({model: `statistics`, user, fields, id})
+    const [stat] = await loadFromDb({ model: 'statistics', user, fields, id })
     console.timeEnd(`stat`)
+
     const res = stat.sessions[0]
-    delete res.id
-    delete res._id
-    delete res.trainees
-    delete res.trainers
+    removeAttributes(res, ['id', '_id', 'trainees', 'trainers'])
+
+    res.children.forEach(child => {
+      removeAttributes(child, ['_id', 'id', 'name', 'obtainer_badges', 'type'])
+      child.children.forEach(grandchild => {
+        removeAttributes(grandchild, ['_id', 'id'])
+      })
+    })
     console.log(JSON.stringify(res, null, 2))
   })
 })
