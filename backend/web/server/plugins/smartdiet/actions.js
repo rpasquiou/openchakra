@@ -1,6 +1,6 @@
 const axios = require('axios')
 const crypto=require('crypto')
-const { sendForgotPassword, sendNewMessage } = require('./mailing')
+const { sendForgotPassword, sendNewMessage, sendAccountCreated } = require('./mailing')
 const {
   DAYS_BEFORE_IND_CHALL_ANSWER,
   PARTICULAR_COMPANY_NAME,
@@ -95,11 +95,16 @@ addAction('smartdiet_shift_challenge', smartdietShiftChallenge)
 
 const defaultRegister = ACTIONS.register
 
-const register = props => {
+const register = async (props, user) => {
   // No compay => set the particular one
   if (!props.role) {
     props.role = ROLE_CUSTOMER
     console.log(`Setting role ${JSON.stringify(props.role)}`)
+  }
+  if (user?.role==ROLE_EXTERNAL_DIET && !props.password) {
+    const password=generatePassword()
+    props.password=password
+    props.password2=password
   }
   // Check company code
   if (!props.role || props.role == ROLE_CUSTOMER) {
@@ -112,6 +117,11 @@ const register = props => {
         return integrityProps
       })
       .then(extraProps => defaultRegister({ ...props, ...extraProps }))
+      .then(data => {
+        User.findById(data._id).populate('company')
+          .then(usr => sendAccountCreated({user: usr, password: props.password}))
+        return data
+      })
   }
   return defaultRegister({ ...props })
 }

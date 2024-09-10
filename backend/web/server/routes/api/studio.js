@@ -380,11 +380,11 @@ router.get('/current-user', passport.authenticate('cookie', {session: false}), (
   return res.json(req.user)
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
   const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
-  return ACTIONS.register(body)
+  return ACTIONS.register(body, req.user)
     .then(result => res.json(result))
 })
 
