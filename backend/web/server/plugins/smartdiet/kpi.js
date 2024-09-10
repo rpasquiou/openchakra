@@ -1007,7 +1007,7 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
             as: 'range',
             in: {
               name: '$$range.name',
-              total: {
+              value: {
                 $let: {
                   vars: {
                     matchedRange: {
@@ -1095,7 +1095,17 @@ const coachings_stats = async ({ company, start_date, end_date, diet }) => {
                       ],
                     },
                   },
-                  in: { $ifNull: ['$$matchedAppointment.ranges', AGE_RANGES.map(({ name }) => ({ name, total: 0, percent: '0' }))] },
+                  in: {
+                      $map: {
+                          input: { $ifNull: ['$$matchedAppointment.ranges', AGE_RANGES.map(({ name }) => ({ name, value: 0, percent: 0 }))] },
+                          as: 'range',
+                          in: {
+                              name: '$$range.name',
+                              value: { $ifNull: ['$$range.total', 0] },
+                              percent: { $ifNull: ['$$range.percent', 0] },
+                          }
+                      }
+                  }
                 },
               },
             },

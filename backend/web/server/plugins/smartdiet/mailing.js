@@ -31,6 +31,7 @@ const SIB_IDS={
   // SMS
   APPOINTMENT_REMIND_TOMORROW: 200,
   // CUSTOMERS
+  ACCOUNT_CREATED: 30, // OK
   FORGOT_PASSWORD: 88, // OK
   /**
   SATISFY_SURVEY: 4996126,
@@ -90,6 +91,18 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 setSmsContact('SmartDiet')
 
 addValidationAllowedDomain('smartdiet.fr')
+
+const sendAccountCreated = ({user, password}) => {
+  return sendNotification({
+    notification: SIB_IDS.ACCOUNT_CREATED,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      company: user.company?.name,
+      password: password,
+    },
+  })
+}
 
 const sendForgotPassword = ({user, password}) => {
   return sendNotification({
@@ -268,6 +281,7 @@ const sendAppointmentNotValidated = async ({destinee, appointment}) => {
 }
 
 module.exports = {
+  sendAccountCreated,
   sendForgotPassword,
   sendDietPreRegister2Diet,
   sendDietPreRegister2Admin,

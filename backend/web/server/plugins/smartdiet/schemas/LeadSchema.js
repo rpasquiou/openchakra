@@ -3,7 +3,7 @@ const { isEmailOk } = require('../../../../utils/sms')
 const { isPhoneOk } = require('../../../../utils/sms')
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS, CALL_STATUS_TO_CALL } = require('../consts')
+const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS, CALL_STATUS_TO_CALL, CALL_DIRECTION_OUT_CALL } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
