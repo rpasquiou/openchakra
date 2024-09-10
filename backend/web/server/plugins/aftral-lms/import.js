@@ -96,6 +96,7 @@ const importResources = async (root_path, recursive) => {
     let resource_type=extensionMapping[ext]
     // Maybe scorm or folder    
     if (ext=='zip') {
+      console.log('Checking SCORM for', filepath, parseInt(fs.statSync(filepath).size/1024/1024), 'Mb')
       const scorm=await isScorm({buffer: fs.readFileSync(filepath)})
       resource_type=scorm ? RESOURCE_TYPE_SCORM : RESOURCE_TYPE_FOLDER
     }
@@ -114,6 +115,13 @@ const importResources = async (root_path, recursive) => {
     filepaths.push(...paths.map(p => path.join(directory, p)))
   }
   file.walkSync(root_path, cb)
+  /**
+  const STEP=9
+  const LENGTH=50
+  const START=1400
+  filepaths=filepaths.slice(START, START+LENGTH)
+  */
+  console.log('sending from', START, 'to', START+LENGTH, filepaths)
   filepaths=await Promise.all(filepaths.map(async p => {
     const resType=await getResourceType(p)
     const achievement_rule=AVAILABLE_ACHIEVEMENT_RULES[resType]?.[0]

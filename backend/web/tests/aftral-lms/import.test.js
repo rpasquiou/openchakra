@@ -7,7 +7,10 @@ const { importResources, importPrograms, importCodes, extractResourceCode } = re
 
 const ROOT=path.join(__dirname, 'data')
 
-const RESOURCES_ROOT='/home/seb/Téléchargements/resources/Current'
+/**
+SCORMs partagés
+*/
+const RESOURCES_ROOT='/home/aftral/sessions/Ressources/SCORMs partagés'
 const PROGRAMS_PATH=path.join(ROOT, 'Aftral Programmes détails.xlsx')
 const CODES_PATH=path.join(ROOT, 'Code produit à jour 20062024.xlsx')
 const RESOURCES_NAMES_FILES=path.join(ROOT, 'resources_filenames.txt')
@@ -26,7 +29,7 @@ describe('Test imports', () => {
     await mongoose.connection.close()
   })
 
-  it.skip('must import resources', async () => {
+  it.only('must import resources', async () => {
     return importResources(RESOURCES_ROOT, true)
   })
 
@@ -34,7 +37,7 @@ describe('Test imports', () => {
     return importCodes(CODES_PATH, 'Code produit à jour', 1)
   })
 
-  it.only('must import programs', async () => {
+  it('must import programs', async () => {
     return importPrograms(PROGRAMS_PATH, 'Final', 1)
   })
 
