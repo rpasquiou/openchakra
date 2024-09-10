@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER } = require('./consts')
 const { sendFileToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -27,6 +27,7 @@ const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
+const { isScorm } = require('../../utils/filesystem')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
@@ -73,7 +74,7 @@ const RESOURCE_MAPPING= userId => ({
 const RESOURCE_KEY='code'
 
 const importResources = async (root_path, recursive) => {
-  const getResourceType = filepath => {
+  const getResourceType =  async filepath => {
     const extensionMapping={
       xls: RESOURCE_TYPE_EXCEL,
       xlsx: RESOURCE_TYPE_EXCEL,
@@ -86,7 +87,13 @@ const importResources = async (root_path, recursive) => {
       docx: RESOURCE_TYPE_WORD,
     }
     const ext=path.extname(filepath).split('.')[1]
-    const resource_type=extensionMapping[ext]
+    
+    let resource_type=extensionMapping[ext]
+    // Maybe scorm or folder    
+    if (ext=='zip') {
+      const scorm=await isScorm({buffer: fs.readFileSync(filepath)})
+      resource_type=scorm ? RESOURCE_TYPE_SCORM : RESOURCE_TYPE_FOLDER
+    }
     if (!resource_type && !!filepath) {
       console.error(`${Object.keys(extensionMapping)} No type for ${ext} ${filepath}:${resource_type}`)
       return null
