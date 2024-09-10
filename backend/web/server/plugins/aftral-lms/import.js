@@ -106,13 +106,14 @@ const importResources = async (root_path, recursive) => {
   }
   let filepaths=[]
   const cb = async (directory,subdirectories, paths) => {
-    filepaths.push(...paths.map(p => {
-      const resType=getResourceType(p)
-      const achievement_rule=AVAILABLE_ACHIEVEMENT_RULES[resType]?.[0]
-      return [path.join(directory, p), ...splitCodeName(p), resType, achievement_rule]
-    }))
+    filepaths.push(...paths.map(p => path.join(directory, p)))
   }
-  const files=await file.walkSync(root_path, cb)
+  file.walkSync(root_path, cb)
+  filepaths=await Promise.all(filepaths.map(async p => {
+    const resType=await getResourceType(p)
+    const achievement_rule=AVAILABLE_ACHIEVEMENT_RULES[resType]?.[0]
+    return [p, ...splitCodeName(p), resType, achievement_rule]
+  }))
   const records=filepaths.filter(t => !!t[2] && !!t[3]).map(t => ({
     filepath: t[0],
     code: t[1],
