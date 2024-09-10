@@ -617,6 +617,7 @@ const SOURCE={
 }
 
 const PASSWORD_PATTERN=/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{15,})/
+const PASSWORD_LENGTH=15
 const PASSWORD_PATTERN_STR='15 caractères minimum dont une majuscule, une minuscule, un chiffre et un caractère spécial'
 
 module.exports={
@@ -714,4 +715,5 @@ module.exports={
   DIET_REGISTRATION_STATUS_VALID, TICKET_PRIORITY,
   SOURCE, SOURCE_APPLICATION, SOURCE_CALL,
   PASSWORD_PATTERN, PASSWORD_PATTERN_STR, CALL_STATUS_CONVERTI_COA, CALL_STATUS_CONVERTI_COA_CN, CALL_STATUS_CONVERTI_CN,
+  PASSWORD_LENGTH,
 }
