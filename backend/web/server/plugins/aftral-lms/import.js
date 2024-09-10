@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES } = require('./consts')
 const { sendFileToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -66,6 +66,7 @@ const RESOURCE_MAPPING= userId => ({
   url:  async ({record}) => (await sendFileToAWS(record.filepath, 'resource'))?.Location,
   filepath: 'filepath',
   resource_type: 'resource_type',
+  achievement_rule: 'achievement_rule',
   creator: () => userId,
 })
 
@@ -87,7 +88,8 @@ const importResources = async (root_path, recursive) => {
     const ext=path.extname(filepath).split('.')[1]
     const resource_type=extensionMapping[ext]
     if (!resource_type && !!filepath) {
-      throw new Error(`${Object.keys(extensionMapping)} No type for ${ext} ${filepath}:${resource_type}`)
+      console.error(`${Object.keys(extensionMapping)} No type for ${ext} ${filepath}:${resource_type}`)
+      return null
     }
     return resource_type
   }
@@ -97,17 +99,26 @@ const importResources = async (root_path, recursive) => {
   }
   let filepaths=[]
   const cb = async (directory,subdirectories, paths) => {
-    filepaths.push(...paths.map(p => [path.join(directory, p), ...splitCodeName(p), getResourceType(p)]))
+    filepaths.push(...paths.map(p => {
+      const resType=getResourceType(p)
+      const achievement_rule=AVAILABLE_ACHIEVEMENT_RULES[resType]?.[0]
+      return [path.join(directory, p), ...splitCodeName(p), resType, achievement_rule]
+    }))
   }
   const files=await file.walkSync(root_path, cb)
-  const records=filepaths.filter(t => !!t[2]).map(t => ({
+  const records=filepaths.filter(t => !!t[2] && !!t[3]).map(t => ({
     filepath: t[0],
     code: t[1],
     name: t[2],
-    resource_type: t[3]
+    resource_type: t[3],
+    achievement_rule: t[4],
   }))
   const userId=(await User.findOne({role: ROLE_CONCEPTEUR}))?._id
-  return importData({model: 'resource', data: records, mapping: RESOURCE_MAPPING(userId), identityKey: RESOURCE_KEY, migrationKey: RESOURCE_KEY})
+  return importData({model: 'resource', data: records, 
+    mapping: RESOURCE_MAPPING(userId), 
+    identityKey: RESOURCE_KEY, 
+    migrationKey: RESOURCE_KEY
+  })
 }
 
 const MODELS=['program', 'chapter', 'module', 'sequence', 'resource']
