@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANSWER_NO, SCORE_LEVELS } = require('../consts')
+const { ANSWER_NO, SCORE_LEVELS, QUESTION_CATEGORIES } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -66,6 +67,10 @@ ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
 
 ScoreSchema.virtual('is_drafted', DUMMY_REF).get(function() {
   return this?.answers?.filter(a => !a.answer).length == 0
+})
+
+ScoreSchema.virtual('display_by_category', DUMMY_REF).get(function () {
+  return lodash.groupBy(this.answers, (a) => a.question.question_category)
 })
 
 /* eslint-enable prefer-arrow-callback */
