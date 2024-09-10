@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK } = require('./consts')
 const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -147,6 +147,27 @@ const importResources = async (root_path, recursive) => {
     mapping: RESOURCE_MAPPING(userId), 
     identityKey: RESOURCE_KEY, 
     migrationKey: RESOURCE_KEY
+  })
+}
+
+const URL_RESOURCE_MAPPING = creator => ({
+  name: ({record}) => splitRemaining(record.CodeNom, ' ')[1],
+  code: ({record}) => record.CodeNom.split(' ')[0],
+  creator: () => creator,
+  resource_type: () => RESOURCE_TYPE_LINK,
+  url : 'URL',
+  achievement_rule: () => AVAILABLE_ACHIEVEMENT_RULES[RESOURCE_TYPE_LINK][0],
+})
+
+const URL_RESOURCE_KEY='code'
+
+const importURLResources = async filepath => {
+  const records=await loadRecords(filepath, 'Feuil1')
+  console.log(records.length)
+  const creator=await User.findOne({role: ROLE_CONCEPTEUR})
+  return importData({
+    model: 'resource', data: records, mapping: URL_RESOURCE_MAPPING(creator),
+    identityKey: URL_RESOURCE_KEY, migrationKey: URL_RESOURCE_KEY,
   })
 }
 
@@ -377,6 +398,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
 }
 
 module.exports={
-  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, removeResourceCode, loadRecords, extractResourceCode,
+  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, 
+  removeResourceCode, loadRecords, extractResourceCode, importURLResources,
 }  
 

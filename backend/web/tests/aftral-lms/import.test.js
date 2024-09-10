@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const fs = require('fs')
 const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
-const { importResources, importPrograms, importCodes, extractResourceCode } = require('../../server/plugins/aftral-lms/import')
+const { importResources, importPrograms, importCodes, extractResourceCode, importURLResources } = require('../../server/plugins/aftral-lms/import')
 
 
 const ROOT=path.join(__dirname, 'data')
@@ -11,6 +11,7 @@ const ROOT=path.join(__dirname, 'data')
 SCORMs partagés
 */
 const RESOURCES_ROOT='/home/aftral/sessions/Ressources/SCORMs partagés'
+const URL_RESOURCES_PATH=path.join(ROOT, 'Ressources URL Virginie.xlsx')
 const PROGRAMS_PATH=path.join(ROOT, 'Aftral Programmes détails.xlsx')
 const CODES_PATH=path.join(ROOT, 'Code produit à jour 20062024.xlsx')
 const RESOURCES_NAMES_FILES=path.join(ROOT, 'resources_filenames.txt')
@@ -29,8 +30,12 @@ describe('Test imports', () => {
     await mongoose.connection.close()
   })
 
-  it.only('must import resources', async () => {
+  it('must import resources', async () => {
     return importResources(RESOURCES_ROOT, true)
+  })
+
+  it('must import URL resources', async () => {
+    return importURLResources(URL_RESOURCES_PATH)
   })
 
   it('must import product codes', async () => {
