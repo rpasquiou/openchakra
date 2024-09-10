@@ -64,7 +64,12 @@ const loadRecords = async (path, tab_name, from_line) =>  {
 const RESOURCE_MAPPING= userId => ({
   name: `name`,
   code: `code`,
-  url:  async ({record}) => (await sendFileToAWS(record.filepath, 'resource'))?.Location,
+  url:  async ({record}) => {
+    console.log('Sending', record.filepath, record.resource_type)
+    const location=(await sendFileToAWS(record.filepath, 'resource'))?.Location
+    console.log('Sent', record.filepath, record.resource_type)
+    return location
+  },
   filepath: 'filepath',
   resource_type: 'resource_type',
   achievement_rule: 'achievement_rule',
