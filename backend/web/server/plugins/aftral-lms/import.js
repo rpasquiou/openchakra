@@ -126,7 +126,7 @@ const importResources = async (root_path, recursive) => {
   }
   file.walkSync(root_path, cb)
   const STEP=0
-  const LENGTH=100
+  const LENGTH=25
   const START=STEP*LENGTH
   filepaths=filepaths.slice(START, START+LENGTH)
   console.log('sending from', START, 'to', START+LENGTH, filepaths)
