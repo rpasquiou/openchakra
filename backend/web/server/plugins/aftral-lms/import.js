@@ -7,7 +7,7 @@ const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
 const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER } = require('./consts')
-const { sendFileToAWS } = require('../../middlewares/aws')
+const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
 const Chapter = require('../../models/Chapter')
@@ -28,6 +28,7 @@ const Session = require('../../models/Session')
 const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
 const { isScorm } = require('../../utils/filesystem')
+const { getDataModel } = require('../../../config/config')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
@@ -66,8 +67,17 @@ const RESOURCE_MAPPING= userId => ({
   code: `code`,
   url:  async ({record}) => {
     console.log('Sending', record.filepath, record.resource_type)
-    const location=(await sendFileToAWS(record.filepath, 'resource'))?.Location
-    console.log('Sent', record.filepath, record.resource_type)
+    const req={
+      body: {
+        documents:[{
+          buffer: fs.readFileSync(record.filepath),
+          filename: path.join(getDataModel(), 'prod', 'resource', path.basename(record.filepath)),
+        }]
+      }
+    }
+    await sendFilesToAWS(req, null, lodash.identity)
+    const location=req.body.result[0].Location
+    console.log('Sent', record.filepath, record.resource_type, 'to', location)
     return location
   },
   filepath: 'filepath',
@@ -115,12 +125,10 @@ const importResources = async (root_path, recursive) => {
     filepaths.push(...paths.map(p => path.join(directory, p)))
   }
   file.walkSync(root_path, cb)
-  /**
-  const STEP=9
-  const LENGTH=50
-  const START=1400
+  const STEP=0
+  const LENGTH=100
+  const START=STEP*LENGTH
   filepaths=filepaths.slice(START, START+LENGTH)
-  */
   console.log('sending from', START, 'to', START+LENGTH, filepaths)
   filepaths=await Promise.all(filepaths.map(async p => {
     const resType=await getResourceType(p)
