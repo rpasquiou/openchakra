@@ -134,6 +134,12 @@ const CompanySchema = new Schema(
     expertise_set: {
       type: Schema.Types.ObjectId,
       ref: 'expertiseSet',
+    },
+    related_companies: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'company'
+      }]
     }
   },
   schemaOptions,

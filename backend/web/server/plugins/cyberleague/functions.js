@@ -31,6 +31,7 @@ const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
+const { getRelated } = require('./related')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -166,6 +167,7 @@ declareEnumField( {model: 'company', field: 'targeted_markets', enumValues: SECT
 declareEnumField( {model: 'company', field: 'looking_for_mission', enumValues: LOOKING_FOR_MISSION})
 declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
+declareComputedField({model: 'company', field: 'related_companies',  requires:'expertise_set.expertises', getterFn: getRelated('company')})
 
 //Expertise declarations
 
