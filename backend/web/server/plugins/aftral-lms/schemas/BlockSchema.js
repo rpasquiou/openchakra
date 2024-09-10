@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES, SCALE}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { BadRequestError } = require('../../../utils/errors')
 
@@ -255,6 +255,37 @@ const BlockSchema = new Schema({
     type: Number,
     required: false,
   },
+  // Computed
+  note: {
+    type: Number,
+    required: false,
+    default: null,
+  },
+  //  Scale is set by the trainer
+  scale: {
+    type: String,
+    enum: Object.keys(SCALE),
+    required: false,
+  },
+    // Correction par le formateur
+  correction: {
+    type: String,
+    required: false,
+  },
+  // Computed
+  evaluation_resources: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
+  },
+  can_upload_homework: {
+    type: Boolean,
+    required: true,
+    default: false,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 BlockSchema.virtual('is_template', DUMMY_REF).get(function() {
@@ -298,21 +329,6 @@ BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
     ? moment(this.homework_limit_date).format('DD/MM/YYYY à HH:mm')
     : ``
 })
-
-BlockSchema.virtual('can_upload_homework', DUMMY_REF).get(function() {
-  if (!this.homework_mode) {
-    return true
-  }
-  if (!this.homework_limit_date) {
-    return true
-  }
-  const limitDate = moment(this.homework_limit_date)
-  return limitDate.isAfter(moment())
-})
-
-BlockSchema.methods.getDependants = function () {
-  return mongoose.models.block.find({origin:this._id})
-}
 
 // Validate Succes achievemnt
 BlockSchema.pre('validate', async function(next) {

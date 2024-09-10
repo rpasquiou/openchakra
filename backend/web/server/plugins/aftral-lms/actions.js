@@ -2,12 +2,13 @@ const mongoose=require('mongoose')
 const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR } = require('./consts')
+const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
 const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const { isProduction } = require('../../../config/config')
+const User = require('../../models/User')
 
 
 const ACCEPTS={
@@ -123,7 +124,10 @@ addAction('session', getSessionAction)
 
 // TODO dev only
 if (!isProduction()) {
-  const forceFinishResource = async ({value}, user) => {
+  const forceFinishResource = async ({value, dataId}, user) => {
+    if([ROLE_HELPDESK, ROLE_FORMATEUR].includes(user.role) && dataId) {
+      user = await User.findById(dataId)
+    }
     await Progress.findOneAndUpdate(
       {user, block: value._id},
       {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
@@ -142,6 +146,13 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   }
   const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
   if (actionFn) {
+    // const block = await Block.findById(dataId, {resource_type: 1, max_attempts: 1})
+    //if(block.max_attempts && block.resource_type == RESOURCE_TYPE_SCORM) {
+    //   const progress = await Progress.findOne({block: dataId, user}, {attempts_count: 1})
+    //   if (progress.attempts_count >= block.max_attempts) {
+    //     throw new ForbiddenError(`Vous avez atteint le nombre limite de tentatives`)
+    //   }
+    //}
     return actionFn({action, dataId, user})
   }
   if (action=='next') {
@@ -157,5 +168,5 @@ setAllowActionFn(isActionAllowed)
 
 module.exports={
   // Exported for programs import
-  addChildAction,
+  addChildAction
 }

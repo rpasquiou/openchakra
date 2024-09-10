@@ -111,7 +111,7 @@ export const sortComponents = (components: IComponents): IComponents => {
 }
 
 
-export const REDIRECT_COUNT=4
+export const REDIRECT_COUNT=10
 export const REDIRECT_ROLE=`autoRedirectRole_`
 export const REDIRECT_PAGE=`autoRedirectPage_`
 export const DEFAULT_REDIRECT_PAGE=`defaultRedirectPage`

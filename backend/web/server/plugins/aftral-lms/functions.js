@@ -4,7 +4,7 @@ const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
   setPostCreateData,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -18,13 +18,13 @@ require('../../models/Search')
 require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockNote } = require('./resources')
 const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES } = require('./program')
+const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -32,7 +32,7 @@ const Comment = require('../../models/Comment')
 const { parseAsync } = require('@babel/core')
 const Progress = require('../../models/Progress')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
-const { getTraineeCurrentResources } = require('./user')
+const { getTraineeCurrentResources, getUserCanUploadHomework } = require('./user')
 const { isMine } = require('./message')
 const { DURATION_UNIT } = require('./consts')
 const { isLiked } = require('./post')
@@ -97,15 +97,16 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'available_codes', requires: 'codes,type', getterFn: getAvailableCodes})
   declareComputedField({model, field: 'homeworks', requires: '', getterFn: getBlockHomeworks})
   declareVirtualField({model, field: 'homework_limit_str', type: 'String', requires: 'homework_limit_date'})
-  declareVirtualField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode'})
+  declareComputedField({model, field: 'can_upload_homework', type: 'Boolean', requires: 'homework_limit_date,homework_mode,max_attempts', getterFn: getUserCanUploadHomework})
   declareComputedField({model, field: 'homeworks_submitted_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksSubmitted})
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
   declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
   declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
+  declareEnumField({model, field: 'scale', enumValues: SCALE})
+  declareComputedField({model, field: 'note', getterFn: getBlockNote})
+  declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
 })
-
-declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
@@ -229,6 +230,9 @@ const preCreate = async ({model, params, user}) => {
     params.trainee=user
   }
   if (model=='resource') {
+    if (params.max_attempts && params.resource_type != RESOURCE_TYPE_SCORM) {
+      throw new Error(`Vous ne pouvez pas mettre de nombre de tentatives maximum sur une ressource autre qu'un SCORM`)
+    }
     if (!params.url && !params.plain_url) {
       throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
     }
@@ -289,6 +293,13 @@ const preCreate = async ({model, params, user}) => {
     })
     if(conv) {
       return {data: conv}
+    }
+  }
+
+  if (model == `homework` ){
+    const [block] = await loadFromDb({model: `resource`, id: params.parent, user, fields:[`can_upload_homework`]})
+    if(!block.can_upload_homework) {
+      throw new ForbiddenError(`Vous ne pouvez plus importer de devoir`)
     }
   }
   return Promise.resolve({model, params})
@@ -481,7 +492,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block, user},
-        {block, user, consult: true, consult_partial: true, join_partial: true, download: true},
+        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, 
+          //if scorm, increment attempts count
+          ...block.resource_type == RESOURCE_TYPE_SCORM ? {$inc: { attempts_count: 1 }} : {}
+        },
         {upsert: true},
       )
       await onBlockAction(user, block)

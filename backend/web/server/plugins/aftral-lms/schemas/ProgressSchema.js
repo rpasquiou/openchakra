@@ -56,7 +56,15 @@ const ProgressSchema = new Schema({
   homeworks: [{
     type: Schema.Types.ObjectId,
     ref: 'homework'
-  }]
+  }],
+  note: {
+    type: Number,
+  },
+  attempts_count: {
+    type: Number,
+    required: true,
+    default: 0,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = ProgressSchema
