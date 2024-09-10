@@ -46,7 +46,7 @@ describe(`score tests`, () => {
   it(`must be initialized correctly`, async () => {
     
     const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
-    console.log("loadedS",JSON.stringify(loadedS,null,2));
+    
 
 
     const loadedA = await loadFromDb({model: 'answer', fields:['question','score','answer']})
