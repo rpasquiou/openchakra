@@ -71,7 +71,6 @@ const withDynamicContainer = Component => {
 
   const internal = ({hiddenRoles, user, shuffle, limit, hidePagination, ...props}) => {
 
-    const [key, setKey]=useState(null)
     const [originalData, setOriginalData]=useState([])
     const [data, setData]=useState([])
 
@@ -143,10 +142,6 @@ const withDynamicContainer = Component => {
       setData(computedData)
     }, [originalData, shuffle, limit, props.filterAttribute, props.filterConstant, props.contextFilter, props.textFilter, props.sortAttribute, props.sortDirection])
 
-    useEffect(() => {
-      setKey((data || []).map(v => v?._id?.toString()))
-    }, [data])
-
     const prev= () => {
       if (!hasPrev()) {return}
       const allIndexes={...props.pagesIndex}
@@ -196,6 +191,9 @@ const withDynamicContainer = Component => {
         </Component>
       )
     }
+
+    const key=(data || []).map(v => v?._id?.toString()).join(',')
+
 
     return (
       <Component {...lodash.omit(props, ['children'])} key={key}>
