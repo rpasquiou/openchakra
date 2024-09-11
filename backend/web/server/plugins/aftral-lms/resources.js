@@ -49,19 +49,66 @@ const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
 }
 
+const getFinishedResourcesData = async (userId, blockId) => {
+  const pipeline = [
+    { $match: { parent: blockId } },
+    {
+      $graphLookup: {
+        from: 'blocks',
+        startWith: '$_id',
+        connectFromField: '_id',
+        connectToField: 'parent',
+        as: 'descendants'
+      }
+    },
+    { $unwind: '$descendants' },
+    { $match: { 'descendants.type': 'resource' } },
+    {
+      $lookup: {
+        from: 'progresses',
+        let: { blockId: '$descendants._id' },
+        pipeline: [
+          { 
+            $match: { 
+              $expr: {
+                $and: [
+                  { $eq: ['$block', '$$blockId'] },
+                  { $eq: ['$user', mongoose.Types.ObjectId(userId)] },
+                  { $eq: ['$achievement_status', BLOCK_STATUS_FINISHED] }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'statusInfo'
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalResources: { $sum: 1 },
+        finishedResources: { $sum: { $cond: [{ $gt: [{ $size: '$statusInfo' }, 0] }, 1, 0] } }
+      }
+    }
+  ]
+
+  const result = await Block.aggregate(pipeline)
+  
+  if (result.length > 0) {
+    return { finishedResources: result[0].finishedResources, totalResources: result[0].totalResources }
+  }
+  
+  return { finishedResources: 0, totalResources: 0 }
+}
+
 const getFinishedResourcesCount = async (userId, params, data) => {
-  const resourceIds=await getBlockResources(data._id)
-  const finished=await Promise.all(resourceIds.map(id => blockHasStatus({user: userId, block: id, status: BLOCK_STATUS_FINISHED})))
-  const res=finished.filter(v => !!v).length
-  return res
+  const { finishedResources } = await getFinishedResourcesData(userId, data._id)
+  return finishedResources
 }
 
 const getResourcesProgress = async (userId, params, data) => {
-  const resourceIds=await getBlockResources(data._id)
-  const total = resourceIds.length
-  const finished=await Promise.all(resourceIds.map(id => blockHasStatus({user: userId, block: id, status: BLOCK_STATUS_FINISHED})))
-  const res=finished.filter(v => !!v).length
-  return res/total
+  const { finishedResources, totalResources } = await getFinishedResourcesData(userId, data._id)
+  return totalResources > 0 ? finishedResources / totalResources : 0
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
