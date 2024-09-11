@@ -48,9 +48,11 @@ const getFinishedResourcesCount = async (userId, params, data) => {
 }
 
 const getResourcesProgress = async (userId, params, data) => {
-  const finished=await getFinishedResourcesCount(userId, params, data)
-  const total=await getResourcesCount(userId, params, data)
-  return finished/total
+  const resourceIds=await getBlockResources(data._id)
+  const total = resourceIds.length
+  const finished=await Promise.all(resourceIds.map(id => blockHasStatus({user: userId, block: id, status: BLOCK_STATUS_FINISHED})))
+  const res=finished.filter(v => !!v).length
+  return res/total
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
