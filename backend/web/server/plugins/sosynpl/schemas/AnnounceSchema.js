@@ -347,6 +347,13 @@ AnnounceSchema.virtual('pinned_expertises_count', {
     count: true,
 })
 
+AnnounceSchema.virtual('gold_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'gold_soft_skills',
+    count: true,
+})
+
 AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
   if (!!this.duration && !!this.duration_unit && !!this.budget) {
     return this.budget/(this.duration*DURATION_UNIT_WORK_DAYS[this.duration_unit])
