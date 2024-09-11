@@ -192,6 +192,7 @@ FREELANCE_MODELS.forEach(model => {
     declareVirtualField({model, field: 'pinned_expertises_count', instance: 'Number', requires: 'pinned_expertises'})
   declareVirtualField({model, field: 'gold_soft_skills_count', instance: 'Number', requires: 'gold_soft_skills'})
   declareVirtualField({model, field: 'silver_soft_skills_count', instance: 'Number', requires: 'silver_soft_skills'})
+  declareVirtualField({model, field: 'bronze_soft_skills_count', instance: 'Number', requires: 'bronze_soft_skills'})
   declareVirtualField({model, field: 'trainings', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
