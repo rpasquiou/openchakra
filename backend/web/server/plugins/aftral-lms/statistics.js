@@ -6,29 +6,30 @@ const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
 
-const fillSession = async ({session, trainee, programFields}) => {
+const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
   session.trainees = trainee ? [trainee] : session.trainees
-
-  const program = await Program.findOne({ parent: session._id }).populate('children')
+  const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
-  let fields = programFields
-
-  const traineePromises = session.trainees.map(async trainee => {
-    console.time('prog****************')
-    const prog = await loadFromDb({ model: 'program', id: programId, fields, user: trainee })
-    console.timeEnd('prog****************')
-    // console.log('Load program for user', trainee._id)
-    trainee.statistics = new Program(prog[0])
-    return trainee
-  })
-
-  await Promise.all(traineePromises)
-  return session
+  let fields=lodash.range(range).map(childCount => 
+    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', ]
+      .map(att => [...Array(childCount).fill('children'), att].join('.'))
+  )
+  fields=lodash.flatten(fields)
+  fields= [...fields, 'evaluation_resources']
+  return Promise.all(session.trainees.map(trainee => {
+    return loadFromDb({model: 'program', id: programId, fields, user: trainee})
+      .then(prog => {
+        console.log('Load program for user', trainee._id)
+        trainee.statistics=new Program(prog[0])
+        return trainee
+      })
+  }))
+  .then(() => session)
 }
 
-const computeStatistics = async ({ user, id, fields, params }) => {
+const computeStatistics = async ({fields, id, user, params}) => {
   let sessionId = {}
   let trainee
   const sessionPrefix=/^sessions\./
@@ -47,14 +48,9 @@ const computeStatistics = async ({ user, id, fields, params }) => {
       }
     }))
   }
-
-  const programFields = fields.filter(f => f.startsWith('children.')).map(f => f.replace(/^children\./, ''))
-
-  const sessions = await loadFromDb({ model: 'session', user, fields, ...sessionId })
-
-  const filledSessions = await Promise.all(sessions.map(session => fillSession({session, trainee, programFields})))
-  
-  return [{ sessions: filledSessions }]
+  return loadFromDb({model: 'session', user, fields, ...sessionId})
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
+    .then(sessions => ([{sessions}]))
 }
   
 const getRandomInt = max => {
