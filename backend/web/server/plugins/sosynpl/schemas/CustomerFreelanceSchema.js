@@ -419,6 +419,13 @@ CustomerFreelanceSchema.virtual('expertises_count', {
   count: true,
 })
 
+CustomerFreelanceSchema.virtual('pinned_expertises_count', {
+    ref: 'expertise',
+    foreignField: '_id',
+    localField: 'pinned_expertises',
+    count: true,
+})
+
 CustomerFreelanceSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',
