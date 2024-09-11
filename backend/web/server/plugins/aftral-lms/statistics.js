@@ -35,13 +35,18 @@ const computeStatistics = async ({fields, id, user, params}) => {
   const sessionPrefix=/^sessions\./
   fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
   if(!!id) {
-    const [session_id, trainee_id]=id.split('-')
-    if(session_id) {
-      sessionId.id = session_id
-    }
-    if (trainee_id) {
-      trainee = await User.findById(trainee_id)
-    }
+    const ids=id.split('-').filter(v => !!v)
+    console.log('id is', id, typeof id, 'ids are', JSON.stringify(ids))
+    await Promise.all(ids.map(async localId => {
+      const model=await getModel(localId, ['user', 'session'])
+      if (model=='session') {
+        sessionId.id = localId
+      }
+      // Else must be a user
+      else {
+        trainee = await User.findById(localId)
+      }
+    }))
   }
   return loadFromDb({model: 'session', user, fields, ...sessionId})
     .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
