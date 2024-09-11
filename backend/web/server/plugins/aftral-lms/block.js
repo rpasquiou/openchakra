@@ -1,14 +1,11 @@
 const lodash = require("lodash");
-const NodeCache=require('node-cache')
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("./consts");
 const { getBlockResources } = require("./resources");
-const { idEqual, loadFromDb, getModel, getModelAttributes } = require("../../utils/database");
+const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
-
-const NAMES_CACHE=new NodeCache()
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -79,8 +76,8 @@ const cloneTree = async (blockId, parentId) => {
   if (!blockId || !parentId) {
     throw new Error(`childId and parentId are expected`)
   }
-  const parent=await mongoose.models.block.findById(parentId).populate('children_count')
-  const newOrder=parent.children_count+1
+  const parentChildrenCount=await mongoose.models.block.countDocuments({parent: parentId})
+  const newOrder=parentChildrenCount+1
   const block=await mongoose.models.block.findById(blockId).populate('children')
   let blockData={
     order: newOrder,
@@ -136,18 +133,6 @@ const loadChain = async blockId => {
 
   return sortedBlocks;
 
-}
-
-const ChainCache = new NodeCache({stdTTL: 30})
-
-const getChain = async blockId => {
-  const key=blockId.toString()
-  let chain=ChainCache.get(key)
-  if (!chain) {
-    chain=await loadChain(blockId)
-    ChainCache.set(key, chain)
-  }
-  return chain
 }
 
 const isFinished = async (user, block) => {
@@ -449,7 +434,7 @@ module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
-  ChainCache, getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
+  getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount
 }

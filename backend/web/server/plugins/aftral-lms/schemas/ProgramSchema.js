@@ -44,9 +44,10 @@ ProgramSchema.pre('validate', function(next) {
   if (!!this.origin) {
     return next()
   }
-  if (lodash.isEmpty(this.codes)) {
-    return next(new Error(`Au moins un code produit attendu`))
-  }
+  // Allow no code, builders can set them later
+  // if (lodash.isEmpty(this.codes)) {
+  //   return next(new Error(`Au moins un code produit attendu`))
+  // }
   if (!this._locked && !this.origin) {
     return mongoose.models['program'].findOne(
       {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}

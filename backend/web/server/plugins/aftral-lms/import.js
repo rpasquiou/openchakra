@@ -1,12 +1,13 @@
 const fs=require('fs')
+const mongoose=require('mongoose')
 const moment=require('moment')
 const lodash=require('lodash')
 const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT } = require('./consts')
-const { sendFileToAWS } = require('../../middlewares/aws')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK } = require('./consts')
+const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
 const Chapter = require('../../models/Chapter')
@@ -25,6 +26,9 @@ const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { cloneTree } = require('./block')
+const { lockSession } = require('./functions')
+const { isScorm } = require('../../utils/filesystem')
+const { getDataModel } = require('../../../config/config')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
@@ -61,16 +65,31 @@ const loadRecords = async (path, tab_name, from_line) =>  {
 const RESOURCE_MAPPING= userId => ({
   name: `name`,
   code: `code`,
-  url:  async ({record}) => (await sendFileToAWS(record.filepath, 'resource'))?.Location,
+  url:  async ({record}) => {
+    console.log('Sending', record.filepath, record.resource_type)
+    const req={
+      body: {
+        documents:[{
+          buffer: fs.readFileSync(record.filepath),
+          filename: path.join(getDataModel(), 'prod', 'resource', path.basename(record.filepath)),
+        }]
+      }
+    }
+    await sendFilesToAWS(req, null, lodash.identity)
+    const location=req.body.result[0].Location
+    console.log('Sent', record.filepath, record.resource_type, 'to', location)
+    return location
+  },
   filepath: 'filepath',
   resource_type: 'resource_type',
+  achievement_rule: 'achievement_rule',
   creator: () => userId,
 })
 
 const RESOURCE_KEY='code'
 
 const importResources = async (root_path, recursive) => {
-  const getResourceType = filepath => {
+  const getResourceType =  async filepath => {
     const extensionMapping={
       xls: RESOURCE_TYPE_EXCEL,
       xlsx: RESOURCE_TYPE_EXCEL,
@@ -83,9 +102,17 @@ const importResources = async (root_path, recursive) => {
       docx: RESOURCE_TYPE_WORD,
     }
     const ext=path.extname(filepath).split('.')[1]
-    const resource_type=extensionMapping[ext]
+    
+    let resource_type=extensionMapping[ext]
+    // Maybe scorm or folder    
+    if (ext=='zip') {
+      console.log('Checking SCORM for', filepath, parseInt(fs.statSync(filepath).size/1024/1024), 'Mb')
+      const scorm=await isScorm({buffer: fs.readFileSync(filepath)})
+      resource_type=scorm ? RESOURCE_TYPE_SCORM : RESOURCE_TYPE_FOLDER
+    }
     if (!resource_type && !!filepath) {
-      throw new Error(`${Object.keys(extensionMapping)} No type for ${ext} ${filepath}:${resource_type}`)
+      console.error(`${Object.keys(extensionMapping)} No type for ${ext} ${filepath}:${resource_type}`)
+      return null
     }
     return resource_type
   }
@@ -95,102 +122,147 @@ const importResources = async (root_path, recursive) => {
   }
   let filepaths=[]
   const cb = async (directory,subdirectories, paths) => {
-    filepaths.push(...paths.map(p => [path.join(directory, p), ...splitCodeName(p), getResourceType(p)]))
+    filepaths.push(...paths.map(p => path.join(directory, p)))
   }
-  const files=await file.walkSync(root_path, cb)
-  const records=filepaths.filter(t => !!t[2]).map(t => ({
+  file.walkSync(root_path, cb)
+  const STEP=0
+  const LENGTH=25
+  const START=STEP*LENGTH
+  filepaths=filepaths.slice(START, START+LENGTH)
+  console.log('sending from', START, 'to', START+LENGTH, filepaths)
+  filepaths=await Promise.all(filepaths.map(async p => {
+    const resType=await getResourceType(p)
+    const achievement_rule=AVAILABLE_ACHIEVEMENT_RULES[resType]?.[0]
+    return [p, ...splitCodeName(p), resType, achievement_rule]
+  }))
+  const records=filepaths.filter(t => !!t[2] && !!t[3]).map(t => ({
     filepath: t[0],
     code: t[1],
     name: t[2],
-    resource_type: t[3]
+    resource_type: t[3],
+    achievement_rule: t[4],
   }))
   const userId=(await User.findOne({role: ROLE_CONCEPTEUR}))?._id
-  return importData({model: 'resource', data: records, mapping: RESOURCE_MAPPING(userId), identityKey: RESOURCE_KEY, migrationKey: RESOURCE_KEY})
+  return importData({model: 'resource', data: records, 
+    mapping: RESOURCE_MAPPING(userId), 
+    identityKey: RESOURCE_KEY, 
+    migrationKey: RESOURCE_KEY
+  })
 }
 
-const BLOCK_MODELS=[Program, Chapter, Module, Sequence, Resource]
+const URL_RESOURCE_MAPPING = creator => ({
+  name: ({record}) => splitRemaining(record.CodeNom, ' ')[1],
+  code: ({record}) => record.CodeNom.split(' ')[0],
+  creator: () => creator,
+  resource_type: () => RESOURCE_TYPE_LINK,
+  url : 'URL',
+  achievement_rule: () => AVAILABLE_ACHIEVEMENT_RULES[RESOURCE_TYPE_LINK][0],
+})
 
-const getName = level => BLOCK_MODELS[level].modelName
+const URL_RESOURCE_KEY='code'
 
-const BlocksCache = new NodeCache()
-
-const getBlock = async (level, name) => {
-  const key=`${level}-${name}`
-  if (BlocksCache.has(key)) {
-    return BlocksCache.get(key)
-  }
-  const filter=getName(level)=='resource' ? {code: name.split(' ')[0]} : 
-  {name}
-  return BLOCK_MODELS[level].findOne(filter)
+const importURLResources = async filepath => {
+  const records=await loadRecords(filepath, 'Feuil1')
+  console.log(records.length)
+  const creator=await User.findOne({role: ROLE_CONCEPTEUR})
+  return importData({
+    model: 'resource', data: records, mapping: URL_RESOURCE_MAPPING(creator),
+    identityKey: URL_RESOURCE_KEY, migrationKey: URL_RESOURCE_KEY,
+  })
 }
 
-const inspected=[]
-const importBlock = async ({record, level, creator, programCodes}) => {
-  const model=BLOCK_MODELS[level]
-  let name=Object.values(record)[level]
-  console.log(model.modelName, name)
-  let codes=null
-  if (level==0 && !inspected.includes(name)) {
-    // console.log('Program',name)
-    inspected.push(name)
+const MODELS=['program', 'chapter', 'module', 'sequence', 'resource']
+
+const importBlock = async ({blockRecord, level, creator}) => {
+  const modelName=MODELS[level]
+  const model=mongoose.models[modelName]
+  const name=blockRecord[modelName]
+
+  modelName=='program' && console.log('*'.repeat(level*2), 'Import', level, modelName, name)
+
+  const emptyChapter=modelName=='chapter' && name.trim().length==0
+
+  const filter={origin: null}
+  if (modelName=='resource') {
+    const code=extractResourceCode(name)
+    filter.code=code
+    console.log('Searching', code, 'for resource', name)
   }
-  let block=await getBlock(level, name)
-  if (!block) {
-    if (model.modelName=='resource') {
-      throw new Error(`Resource ${name} not found`)
-    }
-    if (model.modelName=='program') {
-      const codesStr=programCodes[name]
-      codes=await ProductCode.find({code: {$in: codesStr}})
-      console.log(`Getting codes for ${name}:${codes.map(c => c._id)}`)
-    }
-    block=await model.create({name, creator, codes})
-    if (level==0) {
-      console.log(getName(level), name, 'created', block._id)
-    }
+  else {
+    filter.name=name
   }
-  if (model.modelName!='resource') {
-    console.group()
-    let child
-    try {
-      // Maybe chapter is empty
-      if (level==0 && lodash.isEmpty(Object.values(record)[level+1])) {
-        console.log(`Record ${JSON.stringify(record)} maybe no chapter ; seeking for module`)
-        child=await importBlock({record, level: level+2, creator})
-      }
-      else {
-        child=await importBlock({record, level: level+1, creator})
-      }
+  let loaded=await model.findOne(filter)
+  if (!loaded && !emptyChapter) {
+    if (modelName=='resource') {
+      console.error(`Ressource ${name}  ${level} ${model.modelName} introuvable dans ${JSON.stringify({...blockRecord, children: undefined})}`)
+      return null
     }
-    finally {
-      console.groupEnd()
-    }
-    if (child) {
-      const linkexists=await BLOCK_MODELS[level+1].exists({origin: child._id, parent: block._id})
-      if (!linkexists) {
-        await addChildAction({parent: block._id, child: child._id}, creator)
-      }
-      else {
-        // console.log(`Child`, child.name, 'of', name, 'already exists')
-      }
-    }
+    const attributes={name, creator, origin: null}
+    loaded=await model.create(attributes)
   }
-  return block
+  if (level<MODELS.length-1) {
+    const res=await runPromisesWithDelay(blockRecord.children.map(c => () => {
+      return importBlock({blockRecord:c, level:level+1, creator})
+    }))
+    const errors=res.filter(r => r.status=='rejected').map(r => r.reason)
+    if (errors.length>0) {
+      throw new Error(modelName+errors.join('\n'))
+    }
+    let dbChildren=res.map(r => r.value).filter(v => !!v)
+    dbChildren=lodash.flatten(dbChildren)
+    if (emptyChapter) {
+      return dbChildren
+    }
+    else {
+      await runPromisesWithDelay(dbChildren.map(c => async () => {
+        const childExists=await mongoose.models.block.exists({parent: loaded._id, origin: c._id})
+        return !childExists && addChildAction({parent: loaded._id, child: c._id}, creator)
+    }))
+    }
+
+  }
+  return loaded
 }
 
-const importPrograms= async (filename, tabName, fromLine, codesFilePath, codesTabName, codesFromLine) => {
-  const PROGRAM_NAME_HEADER='Nom du programme avec lien pour le modifier'
-  const CODE_HEADER='Code produit'
+const generateTree = (data, hierarchy) => {
+  if (!hierarchy.length) {
+    return data;
+  }
+
+  const [currentLevel, ...restHierarchy] = hierarchy;
+
+  const grouped = lodash.groupBy(data, currentLevel);
+
+  return lodash.map(grouped, (groupItems, key) => ({
+    [currentLevel]: key,
+    children: generateTree(groupItems, restHierarchy)
+  }))
+}
+
+const removeResourceCode = title => {
+  const PATTERN=/^ *\w+_\w+_\w+ /
+  return title.replace(PATTERN, '')
+}
+
+const extractResourceCode = filename => {
+  const PATTERN=/^ *[a-zA-Z0-9]+_[a-zA-Z0-9]+_[a-zA-Z0-9]+/
+  return filename.match(PATTERN)?.[0]
+}
+
+const importPrograms= async (filename, tabName, fromLine) => {
   // First remove all programs/chapters/modules/sequences
-  await Block.deleteMany({type: {$in: ['program', 'chapter', 'sequence', 'module', 'session']}})
+  await Block.deleteMany({type: {$ne: 'resource'}})
   await Block.deleteMany({origin: {$ne: null}})
   const creator=await User.findOne({role: ROLE_CONCEPTEUR})
-  const data=await loadRecords(filename, tabName, fromLine)
-  console.log(`Loading ${data.length} lines fror program import`)
-  const codes=await loadRecords(codesFilePath, codesTabName, codesFromLine)
-  const groupedCodes=lodash(codes).groupBy(PROGRAM_NAME_HEADER).mapValues(v => v.map(c => c[CODE_HEADER])).value()
-  const res=await runPromisesWithDelay(data.map(record => () => {
-    return importBlock({record, level:0, creator, programCodes: groupedCodes})
+  console.log(creator)
+  let data=await loadRecords(filename, tabName, fromLine)
+  const types=Object.keys(data[0]).slice(0, 5)
+  const keyMapping=Object.fromEntries(lodash.zip(types, MODELS))
+  data=data.map(d => lodash(d).mapKeys((v, k) => keyMapping[k]).pick(MODELS).value())
+  // data=data.map(d => ({...d, resource: removeResourceCode(d.resource)}))
+  const tree=generateTree(data, MODELS)
+  const res=await runPromisesWithDelay(tree.map(program => () => {
+    return importBlock({blockRecord:program, level:0, creator})
   }))
   res.forEach((r, idx) => {
     if (r.status=='rejected') {
@@ -249,7 +321,7 @@ const TRAINEE_MAPPING = {
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
   aftral_id: TRAINEE_AFTRAL_ID,
-  password: () => 'Password1;'
+  password: TRAINEE_AFTRAL_ID,
 }
 
 const TRAINEE_KEY='aftral_id'
@@ -278,38 +350,55 @@ const SESSION_MAPPING = admin => ({
   },
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
+  trainers: async ({record}) => {
+    const trainers=await User.find({aftral_id: {$in: record.TRAINERS}})
+    return trainers.filter(t => !!t)
+  },
+  trainees: async ({record}) => {
+    const trainees=await User.find({aftral_id: {$in: record.TRAINEES}})
+    return trainees.filter(t => !!t)
+  },
 })
 
 const SESSION_KEY='aftral_id'
 
 const importSessions = async (trainersFilename, traineesFilename) => {
   const trainees=await loadRecords(traineesFilename)
-  const uniqueSessions=lodash
+  const trainers=await loadRecords(trainersFilename)
+  let uniqueSessions=lodash
     .uniqBy(trainees, SESSION_AFTRAL_ID)
-    .slice(0,1)
+  // Set trainees
+  uniqueSessions=uniqueSessions.map(s => ({
+    ...s, 
+    TRAINEES: trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINEE_AFTRAL_ID]),
+    TRAINERS: trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINER_AFTRAL_ID]),
+  }))
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
+  console.log(uniqueSessions.map(s => s.TRAINERS))
   await importData({model: 'session', data: uniqueSessions, 
     mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
     progressCb
   })
+  .then(console.log)
   // Set programs
   await runPromisesWithDelay(uniqueSessions.map(record => async () => {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=await Program.findOne({codes: code, origin: null, _locked: false})
     const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]})
     console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
-    console.log('Clone program')
-    console.time('Clone program')
-    const clonedProgram=await cloneTree(program._id, session._id)
-    console.timeEnd('Clone program')
-    await Session.findByIdAndUpdate(session._id, {children:[clonedProgram._id]})
+    const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
+    console.log('Cloned program', clonedProgram._id)
+    await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
+    await lockSession(session._id)
   }))
+  .then(console.log)
 }
 
 module.exports={
-  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions,
+  importResources, importPrograms, importCodes, importTrainers, importTrainees, importSessions, 
+  removeResourceCode, loadRecords, extractResourceCode, importURLResources,
 }  
 

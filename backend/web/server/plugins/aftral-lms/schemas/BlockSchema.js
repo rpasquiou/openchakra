@@ -76,6 +76,7 @@ const BlockSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'block',
     index: true,
+    default: null,
     required:false,
   },
   // TODO Compute actual status
