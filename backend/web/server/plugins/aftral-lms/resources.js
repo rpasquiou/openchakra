@@ -29,6 +29,7 @@ const getBlockResources = async blockId => {
   return result.map(doc => doc.descendants._id)
 }
 
+
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
 }

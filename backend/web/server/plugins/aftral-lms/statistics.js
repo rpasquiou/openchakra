@@ -35,12 +35,12 @@ const computeStatistics = async ({fields, id, user, params}) => {
   const sessionPrefix=/^sessions\./
   fields=fields.filter(f => sessionPrefix.test(f)).map(f => f.replace(sessionPrefix, ''))
   if(!!id) {
-    const model = await getModel(id)
-    if(model == `session`) {
-      sessionId.id = id
+    const [session_id, trainee_id]=id.split('-')
+    if(session_id) {
+      sessionId.id = session_id
     }
-    else {
-      trainee = await User.findById(id)
+    if (trainee_id) {
+      trainee = await User.findById(trainee_id)
     }
   }
   return loadFromDb({model: 'session', user, fields, ...sessionId})
