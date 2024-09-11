@@ -340,6 +340,13 @@ AnnounceSchema.virtual('expertises_count', {
     count: true,
 })
 
+AnnounceSchema.virtual('pinned_expertises_count', {
+    ref: 'expertise',
+    foreignField: '_id',
+    localField: 'pinned_expertises',
+    count: true,
+})
+
 AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {
   if (!!this.duration && !!this.duration_unit && !!this.budget) {
     return this.budget/(this.duration*DURATION_UNIT_WORK_DAYS[this.duration_unit])

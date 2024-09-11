@@ -306,6 +306,7 @@ caster: {
   options: { ref: 'application' }
 },})
 declareVirtualField({model: 'announce', field: 'expertises_count', instance: 'Number', requires: 'expertises'})
+declareVirtualField({model: 'announce', field: 'pinned_expertises_count', instance: 'Number', requires: 'pinned_expertises'})
 declareVirtualField({model: 'announce', field: 'received_applications_count', instance: 'Number'})
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
