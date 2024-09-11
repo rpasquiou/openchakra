@@ -426,6 +426,13 @@ CustomerFreelanceSchema.virtual('pinned_expertises_count', {
     count: true,
 })
 
+CustomerFreelanceSchema.virtual('gold_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'gold_soft_skills',
+    count: true,
+})
+
 CustomerFreelanceSchema.virtual('trainings', {
   ref: 'training',
   localField: '_id',
