@@ -1,5 +1,5 @@
-import React, {useState} from 'react'
-import lodash from 'lodash'
+import React, {useEffect, useState} from 'react'
+import lodash, { sortBy } from 'lodash'
 import {ArrowLeftIcon, ArrowRightIcon } from '@chakra-ui/icons'
 import { matcher } from '../utils/misc';
 import {Flex} from '@chakra-ui/react'
@@ -71,104 +71,14 @@ const withDynamicContainer = Component => {
 
   const internal = ({hiddenRoles, user, shuffle, limit, hidePagination, ...props}) => {
 
+    const [key, setKey]=useState(null)
+    const [originalData, setOriginalData]=useState([])
+    const [data, setData]=useState([])
+
     limit = limit || DEFAULT_LIMIT
 
     const getPageIndexKey= () => {
       return `${props.dataSourceId.replace(/^comp-/, '')}${props.fullPath ? '.'+props.fullPath : ''}`
-    }
-
-    /** withMaskability */
-    // TODO: in code.ts, generate withMaskability(withDynamic()) ...
-    if (hiddenRoles) {
-      const rolesToHide = JSON.parse(hiddenRoles)
-      const roleUser = user?.role
-
-      // When roleUser is available, reveal
-      if (roleUser && rolesToHide.includes(roleUser)) {
-        return null
-      }
-    }
-    /** withMaskability*/
-
-    if (!props.dataSource) {
-      return null
-    }
-    let orgData = props.dataSource
-    if (props.attribute) {
-      orgData = lodash.get(orgData, props.attribute)
-    }
-
-    if (!lodash.isArray(orgData)) {
-      console.warn(`Container ${props.id}:expected array, got ${JSON.stringify(orgData)}`)
-      return null
-    }
-
-
-    const _hasNext = orgData.length>limit
-
-    if (shuffle) {
-      orgData=lodash.shuffle(orgData)
-    }
-
-    const original_length=orgData.length
-
-    if (limit) {
-      try {
-        orgData = orgData.slice(0, limit)
-      }
-      catch (err) {
-        console.error(`Container ${props.id} can not slice ${JSON.stringify(orgData)}:${err}`)
-      }
-      }
-  
-    if (props.filterAttribute && props.filterConstant) {
-      const value=props.filterConstant
-      // TODO Check why value "null" comes as string
-      if (!(lodash.isNil(value) || value=="null")) {
-        orgData = matcher(value, orgData, props.filterAttribute)
-      }
-    }
-
-    if (props.contextFilter) {
-      const contextIds = props.contextFilter.map(o => o._id.toString())
-      orgData = orgData.filter(d => contextIds.includes(d._id))
-    }
-    if (props.textFilter) {
-      const filterValue = props.textFilter
-      const regExp = new RegExp(normalize(filterValue).trim(), 'i')
-      orgData = orgData.filter(d =>
-        FILTER_ATTRIBUTES.some(att => regExp.test(normalize(d[att]))),
-      )
-    }
-    // Already filtered by back
-    // if (props.filterAttribute && props.filterValue) {
-    //   const value=props.getComponentValue(props.filterValue, props.level)
-    //   // TODO Check why value "null" comes as string
-    //   if (!(lodash.isNil(value) || value=="null")) {
-    //     orgData = matcher(value, orgData, props.filterAttribute)
-    //   }
-    // }
-    // if (props.filterAttribute2 && props.filterValue2) {
-    //   const value=props.getComponentValue(props.filterValue2, props.level)
-    //   // TODO Check why value "null" comes as string
-    //   if (!(lodash.isNil(value) || value=="null")) {
-    //     orgData = matcher(value, orgData, props.filterAttribute2)
-    //   }
-    // }
-
-    if (props.sortAttribute) {
-      const direction=props.sortDirection || 'asc'
-      orgData = lodash.orderBy(orgData, props.sortAttribute, direction)
-    }
-
-    const [firstChild, secondChild] = React.Children.toArray(props.children).slice(0,2)
-
-    if (lodash.isEmpty(orgData)) {
-      return (
-        <Component {...lodash.omit(props, ['children'])}>
-        {secondChild || null}
-        </Component>
-      )
     }
 
     const getPageIndex = () => {
@@ -176,9 +86,66 @@ const withDynamicContainer = Component => {
       return res
     }
 
+    useEffect(() => {
+      if (!props.dataSource) {
+        setOriginalData(null)
+      }
+      else {
+        let orgData = props.dataSource
+        if (props.attribute) {
+          orgData = lodash.get(orgData, props.attribute)
+        }
+          setOriginalData(orgData)
+      }
+    }, [props.dataSource, props.attribute])
 
-    const hasPrev = () => getPageIndex()>0
-    const hasNext = () => _hasNext
+    useEffect(() => {
+      let computedData=originalData
+      if (shuffle) {
+        computedData=lodash.shuffle(computedData)
+      }
+
+      if (limit) {
+        try {
+          computedData = computedData.slice(0, limit)
+        }
+        catch (err) {
+          console.error(`Container ${props.id} can not slice ${JSON.stringify(computedData)}:${err}`)
+        }
+        }
+
+      if (props.filterAttribute && props.filterConstant) {
+        const value=props.filterConstant
+        // TODO Check why value "null" comes as string
+        if (!(lodash.isNil(value) || value=="null")) {
+          computedData = matcher(value, computedData, props.filterAttribute)
+        }
+      }
+
+      if (props.contextFilter) {
+        const contextIds = props.contextFilter.map(o => o._id.toString())
+        computedData = computedData.filter(d => contextIds.includes(d._id))
+      }
+      if (props.textFilter) {
+        const filterValue = props.textFilter
+        const regExp = new RegExp(normalize(filterValue).trim(), 'i')
+        computedData = computedData.filter(d =>
+          FILTER_ATTRIBUTES.some(att => regExp.test(normalize(d[att]))),
+        )
+      }
+
+      if (props.sortAttribute) {
+        const direction=props.sortDirection || 'asc'
+        computedData = lodash.orderBy(computedData, props.sortAttribute, direction)
+      }
+
+
+      setData(computedData)
+    }, [originalData, shuffle, limit, props.filterAttribute, props.filterConstant, props.contextFilter, props.textFilter, props.sortAttribute, props.sortDirection])
+
+    useEffect(() => {
+      setKey((data || []).map(v => v?._id?.toString()))
+    }, [data])
 
     const prev= () => {
       if (!hasPrev()) {return}
@@ -196,23 +163,44 @@ const withDynamicContainer = Component => {
       props.setPagesIndex(allIndexes)
     }
 
-    // console.log('(original_length>limit || getPageIndex()>0) && !hidePagination ?', original_length, limit, getPageIndex(), hidePagination)
-    const navigation=(original_length>limit || getPageIndex()>0) && !hidePagination ?
-      <Flex justifyContent={'space-around'} style={{width: '100%'}} flex={'row'}>
-        <ArrowLeftIcon style={{opacity: !hasPrev() && '50%'}} enabled={false} onClick={prev} />
-        <Flex>{getPageIndex()*limit+1}-{getPageIndex()*limit+Math.min(limit, orgData.length)}</Flex>
-        <ArrowRightIcon style={{opacity: !hasNext() && '50%'}} onClick={next} />
-      </Flex>
-      :
-      null
-    const key=(orgData || []).map(v => v?._id?.toString())
-    if (/LFBBCWAJ3VB59/.test(props.id)) {
-      console.log('Refresh', props.id)
+    const hasPrev = () => getPageIndex()>0
+    const hasNext = () => data?.length>limit
+
+
+    const navigation=(data?.length>limit || getPageIndex()>0) && !hidePagination ?
+    <Flex justifyContent={'space-around'} style={{width: '100%'}} flex={'row'}>
+      <ArrowLeftIcon style={{opacity: !hasPrev() && '50%'}} enabled={hasPrev} onClick={prev} />
+      <Flex>{getPageIndex()*limit+1}-{getPageIndex()*limit+Math.min(limit, orgData.length)}</Flex>
+      <ArrowRightIcon style={{opacity: !hasNext() && '50%'}} enabled={hasNext} onClick={next} />
+    </Flex>
+    :
+    null
+
+    // TODO: in code.ts, generate withMaskability(withDynamic()) ...
+    if (hiddenRoles) {
+      const rolesToHide = JSON.parse(hiddenRoles)
+      const roleUser = user?.role
+
+      // When roleUser is available, reveal
+      if (roleUser && rolesToHide.includes(roleUser)) {
+        return null
+      }
     }
+
+    const [firstChild, secondChild] = React.Children.toArray(props.children).slice(0,2)
+
+    if (lodash.isEmpty(data)) {
+      return (
+        <Component {...lodash.omit(props, ['children'])}>
+        {secondChild || null}
+        </Component>
+      )
+    }
+
     return (
       <Component {...lodash.omit(props, ['children'])} key={key}>
         {navigation}
-        {orgData.map((d, index) => {
+        {data.map((d, index) => {
           const newId = firstChild.props?.id
             ? `${firstChild.props?.id}_${index}`
             : undefined
