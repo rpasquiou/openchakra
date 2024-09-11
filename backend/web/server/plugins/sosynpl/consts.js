@@ -145,18 +145,18 @@ const REASON_OTHER=`REASON_OTHER`
 
 const DEACTIVATION_REASON={
   [REASON_NOT_FREELANCE]:`Je ne suis plus indépendant`,
-  [REASON_NO_NEED]:`Je n’ai plus besoin du service de So SynpL`,
-  [REASON_NOT_SATISFIED]:`Je ne suis pas satisfait du service de So SynpL`,
+  [REASON_NO_NEED]:`Je n’ai plus besoin du service de Yelowi`,
+  [REASON_NOT_SATISFIED]:`Je ne suis pas satisfait du service de Yelowi`,
   [REASON_OTHER]:`Autre`,
 }
 
 const SUSPEND_REASON_INACTIVE=`Compte inactif`
-const SUSPEND_REASON_CRITERION=`Ne corespond pas à la charte de So SynpL`
+const SUSPEND_REASON_CRITERION=`Ne corespond pas à la charte de Yelowi`
 const SUSPEND_REASON_OTHER=`SUSPEND_REASON_OTHER`
 
 const SUSPEND_REASON={
   [SUSPEND_REASON_INACTIVE]: `Compte inactif`,
-  [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de So SynpL`,
+  [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de Yelowi`,
   [SUSPEND_REASON_OTHER]: `Autre`,
 }
 
