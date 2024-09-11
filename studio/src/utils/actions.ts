@@ -783,6 +783,15 @@ export const ACTIONS: IActions = {
     options: {},
     next: [],
   },
+  generateComplexId: {
+    label: 'Generate complex id',
+    options: {
+      component1: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      component2: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+      component3: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

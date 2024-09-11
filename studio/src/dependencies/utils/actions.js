@@ -1184,4 +1184,12 @@ return Promise.allSettled(imagePromises)
     return null
   },
 
+  generateComplexId: async ({value, props, level, getComponentValue}) => {
+    const value1=getComponentValue(props.component1, level)
+    const value2=getComponentValue(props.component2, level)
+    const value3=getComponentValue(props.component3, level)
+    const values=[value1, value2, value3].filter(v => !!v).join('-')
+    return {_id: values}
+  },
+
 }
