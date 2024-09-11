@@ -117,12 +117,12 @@ const withDynamicButton = Component => {
       if (props.hideIfForbidden && !actionAllowed) {
         return null
       }
-      props.title=actionMessage
       return (
         <>
       <Component disabled={!actionAllowed}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
+          title={{actionMessage}}
         {...conditionalProperties}
         isLoading={insideAction}
         />
