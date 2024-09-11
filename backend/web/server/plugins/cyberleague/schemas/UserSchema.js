@@ -1,5 +1,4 @@
 const mongoose = require('mongoose')
-const lodash = require('lodash')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
@@ -144,6 +143,10 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
   },
+  users_looking_for_opportunities: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user'
+  }],
   registered_events: {
     type: [{
       type: Schema.Types.ObjectId,

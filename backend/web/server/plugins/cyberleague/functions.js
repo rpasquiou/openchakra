@@ -31,10 +31,13 @@ const Answer = require('../../models/Answer')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
+const { getLooking } = require('./user')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
 USER_MODELS.forEach(m => {
+  declareComputedField({model: m, field: 'users_looking_for_opportunities', getterFn: getLooking()})
+  
   declareEnumField({ model: m, field: 'job', enumValues: JOBS })
   declareVirtualField({ model: m, field: 'password2', instance: 'String' })
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
