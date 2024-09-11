@@ -188,6 +188,7 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'certification' }
     },
   })
+  declareVirtualField({model, field: 'expertises_count', instance: 'Number', requires: 'expertises'})
   declareVirtualField({model, field: 'trainings', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
