@@ -8,16 +8,25 @@ const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 
-const getBlockResources= async blockId => {
-  // TODO Myabe aggregation could speedup
-  const children=await Block.find({parent: blockId}, {type:1})
-  if (children.find(c => c.type=='resource')) {
-    return children.map(c => c._id)
-  }
-  else {
-    let subIds=await Promise.all(children.map(c => getBlockResources(c._id)))
-    return lodash.flattenDeep(subIds)
-  }
+const getBlockResources = async blockId => {
+  const pipeline = [
+    { $match: { parent: blockId } },
+    {
+      $graphLookup: {
+        from: 'blocks',
+        startWith: '$_id',
+        connectFromField: '_id',
+        connectToField: 'parent',
+        as: 'descendants'
+      }
+    },
+    { $unwind: '$descendants' },
+    { $match: { 'descendants.type': 'resource' } },
+    { $project: { 'descendants._id': 1 } }
+  ]
+
+  const result = await Block.aggregate(pipeline)
+  return result.map(doc => doc.descendants._id)
 }
 
 const getProgress = async ({user, block}) => {
