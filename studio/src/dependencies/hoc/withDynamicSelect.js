@@ -28,7 +28,6 @@ const withDynamicSelect = Component => {
         else {
           refValues=subDataSource
         }
-        console.log('dataSource', JSON.stringify(dataSource))
         if (subAttribute) {
           refValues=refValues.map(subData => lodash.get(subData, subAttribute))
         }
