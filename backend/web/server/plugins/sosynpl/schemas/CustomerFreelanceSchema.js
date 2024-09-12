@@ -371,6 +371,9 @@ const CustomerFreelanceSchema = new Schema({
   kbis: {
     type: String,
     required: false,
+  },
+  temporary_picture: {
+    type: String,
   }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
