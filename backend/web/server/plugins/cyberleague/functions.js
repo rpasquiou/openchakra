@@ -133,6 +133,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'score' }
     },
   })
+  declareComputedField({model: m, field: 'related_users',  requires:'function,company.size,company.sector,shortname', getterFn: getRelated('user')})
 })
 
 //Company declarations

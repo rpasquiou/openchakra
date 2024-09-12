@@ -156,6 +156,12 @@ const UserSchema = new Schema({
     }],
     default: []
   },
+  related_users: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user'
+    }]
+  }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
