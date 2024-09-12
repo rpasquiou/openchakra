@@ -695,8 +695,6 @@ const addComputedFields = (
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
         const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
-        console.log("rcf", requiredCompFields);
-        
         return Promise.all(
           Object.keys(requiredCompFields).map(f => {
             const displayFields=getRequiredSubFields(originalFields, f)
