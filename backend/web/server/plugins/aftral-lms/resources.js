@@ -52,25 +52,39 @@ const getUserHomeworks = async (userId, params, data) => {
 
 const getFinishedResourcesData = async (userId, blockId) => {
   const pipeline = [
-    { $match: { parent: blockId } },
+    { $match: { _id: mongoose.Types.ObjectId(blockId) } },
     {
       $graphLookup: {
         from: 'blocks',
         startWith: '$_id',
         connectFromField: '_id',
         connectToField: 'parent',
-        as: 'descendants'
+        as: 'descendants',
       }
     },
-    { $unwind: '$descendants' },
-    { $match: { 'descendants.type': 'resource' } },
+    {
+      $addFields: {
+        allBlocks: { $concatArrays: [['$_id'], '$descendants._id'] }
+      }
+    },
+    { $unwind: '$allBlocks' },
+    {
+      $lookup: {
+        from: 'blocks',
+        localField: 'allBlocks',
+        foreignField: '_id',
+        as: 'blockInfo'
+      }
+    },
+    { $unwind: '$blockInfo' },
+    { $match: { 'blockInfo.type': 'resource' } },
     {
       $lookup: {
         from: 'progresses',
-        let: { blockId: '$descendants._id' },
+        let: { blockId: '$blockInfo._id' },
         pipeline: [
-          { 
-            $match: { 
+          {
+            $match: {
               $expr: {
                 $and: [
                   { $eq: ['$block', '$$blockId'] },
@@ -91,16 +105,11 @@ const getFinishedResourcesData = async (userId, blockId) => {
         finishedResources: { $sum: { $cond: [{ $gt: [{ $size: '$statusInfo' }, 0] }, 1, 0] } }
       }
     }
-  ]
+  ];
 
-  const result = await Block.aggregate(pipeline)
-  
-  if (result.length > 0) {
-    return { finishedResources: result[0].finishedResources, totalResources: result[0].totalResources }
-  }
-  
-  return { finishedResources: 0, totalResources: 0 }
-}
+  const results = await Block.aggregate(pipeline).exec();
+  return results.length > 0 ? results[0] : { totalResources: 0, finishedResources: 0 };
+};
 
 const getFinishedResourcesCount = async (userId, params, data) => {
   const { finishedResources } = await getFinishedResourcesData(userId, data._id)
