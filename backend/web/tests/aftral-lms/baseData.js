@@ -1,4 +1,4 @@
-const { RESOURCE_TYPE_LINK, ACHIEVEMENT_RULE_CONSULT, ROLE_CONCEPTEUR } = require("../../../server/plugins/aftral-lms/consts")
+const { RESOURCE_TYPE_LINK, ACHIEVEMENT_RULE_CONSULT, ROLE_CONCEPTEUR } = require("../../server/plugins/aftral-lms/consts")
 
 const BaseUser={
   firstname: 'Firstname',
