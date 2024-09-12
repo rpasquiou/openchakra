@@ -9,7 +9,7 @@ const compareCompanies = (company, expertises) => {
 const getRelated = (model) => {
   if (model == `company`) {
    return async (userId, params, data) => {
-    const companies = await loadFromDb({model: `company`, fields: [`expertise_set.expertises`]})
+    const companies = await loadFromDb({model: `company`, fields: [`expertise_set.expertises`, `name`, `picture`, `baseline`]})
     return lodash.orderBy(lodash.filter(companies, (c) => !idEqual(data._id,c._id)), (c) => compareCompanies(c, data.expertise_set?.expertises), `desc`).slice(0, 10)
    } 
   }
