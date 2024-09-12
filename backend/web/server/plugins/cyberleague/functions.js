@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { computeScores, booleanLevelFieldName } = require('./score')
+const { computeScores, booleanLevelFieldName, getQuestionsByCategory } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
@@ -268,6 +268,7 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
 declareVirtualField({model: 'score', field: 'is_drafted', requires: 'answers.answer', instance: 'Boolean'})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
+declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
 
 //Answer declaration
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})

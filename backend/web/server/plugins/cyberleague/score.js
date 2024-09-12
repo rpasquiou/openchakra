@@ -93,7 +93,17 @@ const booleanLevelFieldName = (scoreLevel) => {
   }
 }
 
+const getQuestionsByCategory = async (userId, params, data) => {
+  const groupedQuestions = lodash.groupBy(data.answers, (a) => a.question.question_category._id)
+  const res = []
+  lodash.forEach(groupedQuestions, (value,key) => {
+    res.push({category: key, answers: value})
+  })
+  return res
+}
+
 module.exports = {
   computeScores,
-  booleanLevelFieldName
+  booleanLevelFieldName,
+  getQuestionsByCategory
 }

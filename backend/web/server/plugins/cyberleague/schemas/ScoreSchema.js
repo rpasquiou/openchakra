@@ -56,6 +56,20 @@ const ScoreSchema = new Schema({
     type: String,
     enum: Object.keys(SCORE_LEVELS),
     required: [true, `Le niveau du score est obligatoire`]
+  },
+  questions_by_category: {
+    type: [{
+      category: {
+        type: Schema.Types.ObjectId,
+        ref: 'category'
+      },
+      answers: {
+        type: [{
+          type: Schema.Types.ObjectId,
+          ref: 'answer'
+        }]
+      }
+    }]
   }
 }, {...schemaOptions})
 
