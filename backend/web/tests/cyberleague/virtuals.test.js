@@ -19,7 +19,7 @@ let user, content, company
 beforeAll(async () => {
   await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
   company=await Company.create({name: 'companyTest', is_partner: true})
-  user=await User.create({firstname: 'partner', lastname: 'test', email: 'email@test.com', role: ROLE_PARTNER, password: 'test', company: company._id, looking_for_opportunities: true})
+  user=await User.create({firstname: 'partner', lastname: 'test', email: 'email@test.com', role: ROLE_PARTNER, password: 'test', company: company._id})
   content=await Content.create({title: 'titleTest', type: CONTENT_TYPE_ARTICLE, creator: user._id})
 })
 

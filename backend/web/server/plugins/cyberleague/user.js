@@ -1,16 +1,14 @@
 const User = require('../../models/User')
-const mongoose = require('mongoose')
+const lodash = require('lodash')
 const { loadFromDb } = require('../../utils/database')
 
 const getLooking = async function () {
-  const looking = await loadFromDb({model: 'user', fields: ['looking_for_opportunities']})//mongoose.model(model).find()
-  console.log("looking", looking)
- 
+  const looking = await loadFromDb({model: 'user', fields: ['looking_for_opportunities']})
+
   
-  // const ids = looking.map((u) => u._id)
-  // console.log(ids);
-  
-  return looking//ids
+  const ids = lodash.filter(looking, (u) => u.looking_for_opportunities ).map((u) => u._id)
+
+  return ids
 }
 
 module.exports = { getLooking }
