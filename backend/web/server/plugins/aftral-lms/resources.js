@@ -8,9 +8,10 @@ const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 
-const getBlockResources = async blockId => {
+// TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
+const getBlockResources = async (blockId) => {
   const pipeline = [
-    { $match: { parent: blockId } },
+    { $match: { _id: mongoose.Types.ObjectId(blockId) } },
     {
       $graphLookup: {
         from: 'blocks',
@@ -20,15 +21,15 @@ const getBlockResources = async blockId => {
         as: 'descendants'
       }
     },
-    { $unwind: '$descendants' },
+    { $unwind: { path: '$descendants'} },
     { $match: { 'descendants.type': 'resource' } },
-    { $project: { 'descendants._id': 1 } }
+    { $project: { resourceId: '$descendants._id'} }
   ]
 
   const result = await Block.aggregate(pipeline)
-  return result.map(doc => doc.descendants._id)
-}
 
+  return result.map(doc => doc.resourceId);
+};
 
 const getProgress = async ({user, block}) => {
   return Progress.findOne({user, block})
@@ -50,6 +51,7 @@ const getUserHomeworks = async (userId, params, data) => {
   return Homework.find({user: userId, resource: data._id})
 }
 
+// TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
 const getFinishedResourcesData = async (userId, blockId) => {
   const pipeline = [
     { $match: { _id: mongoose.Types.ObjectId(blockId) } },

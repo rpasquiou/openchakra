@@ -37,14 +37,16 @@ describe('Test sequence progress bug', () => {
     await Progress.create({user: creator, block: res1, achievement_status: BLOCK_STATUS_FINISHED})
     const loadedModule=await loadFromDb({
       model: 'block', id: module._id, 
-      user: creator, fields: ['resources_progress']
+      user: creator, fields: ['resources_progress', 'resources_count']
     })
     expect(loadedModule?.[0]?.resources_progress).toEqual(1)
+    expect(loadedModule?.[0]?.resources_count).toEqual(1)
     const loadedSequence=await loadFromDb({
       model: 'block', id: sequence._id, 
-      user: creator, fields: ['resources_progress']
+      user: creator, fields: ['resources_progress', 'resources_count']
     })
     expect(loadedSequence?.[0]?.resources_progress).toEqual(1)
+    expect(loadedSequence?.[0]?.resources_count).toEqual(1)
   })
 
 
