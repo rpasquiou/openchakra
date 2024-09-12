@@ -992,7 +992,7 @@ const importQuizzQuestionAnswer = async (answers_file, questions_file) => {
 )
 }
 
-const ORDERS=['FIRST', 'SECOND', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
+const ORDERS=['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
 const quizzAnswersCache=new NodeCache()
 

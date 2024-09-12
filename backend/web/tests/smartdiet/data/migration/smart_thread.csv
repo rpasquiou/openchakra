@@ -1,4 +1,4 @@
-"SDTHREADID";"SUBJECT";"SDCREATORID"
+SDTHREADID;subject;SDCREATORID
 132;rendez vous aujourd'hui;15539
 133;rdv mercredi 10h;16015
 134;Site sport en ligne;12620
@@ -47,6 +47,7 @@
 221;Semaine 21;17971
 222;Rendez vous à modifier;16905
 223;QuiToque;17648
+231;Passation de la commande;18572
 232;Facturation;18585
 237;Rendez vous aujourd’hui;17564
 238;MESURES;18467
@@ -78,11 +79,12 @@
 276;Erreur date rdv;18793
 277;Mesure taille;19723
 278;Didier CAMPY;16948
+279;Prise de RDV;18388
 283;comment envoyer mon semainier ?;7927
 284;RDV du 26 septembre 11 h 00;19327
 285;rdv du 19 /09 /2022;18710
-286;"1eer rendez-vous nutrition escalier";20017
-287;"1er rendez-vous nutrition escaler";20017
+286;1eer rendez-vous nutrition escalier;20017
+287;1er rendez-vous nutrition escaler;20017
 288;rendez vous;19491
 289;Report RDV du 29;19797
 290;Suite RDV 05/10/22;19327
@@ -416,7 +418,7 @@
 739;Mesures;13466
 740;avis;29312
 741;pris connaissance;10804
-746;"2eme seance";29086
+746;2eme seance;29086
 747;Semainier;29312
 750;PROBLEME TRAVAIL;29098
 752;téléchargement attestation;27905
@@ -502,3 +504,15 @@
 851;Mon bilan;31492
 852;Adresse Postale;31588
 853;Annulation de rendez-vous;28526
+856;rendez-vous;30328
+857;ANNULATION RDV DU 07/09/2024;27824
+858;Modification rdv;31447
+859;RENDEZ VOUS;30328
+860;Plan alimentaire;31657
+861;Rendez vous du 10/09;29964
+862;repas;24015
+863;Rdv;30788
+864;Prochain rdv;30661
+865;rdv suivi septembre mr Noel;22572
+866;Semainier;31704
+867;Rdv aujourd’hui;30266

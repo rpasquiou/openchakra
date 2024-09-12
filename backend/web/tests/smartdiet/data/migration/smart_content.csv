@@ -1,23 +1,23 @@
-"SDCONTENTID";"DATE";"TYPE";"url";"NAME";"source";"SDDIETID"
-1;"2022-03-05 18:28:06";1;https://lutsubo.com/;site de recettes végétariennes;Blog;4534
-2;"2022-03-29 16:49:18";1;https://www.ligue-cancer.net/article/25942_alimentation-et-cancer;conseils nutritionnels en cas de cancer;ligue contre le cancer;14487
-4;"2022-04-11 11:22:04";1;https://www.lavieclaire.com/recettes/;recettes équilibrées;Site internet;5331
-5;"2022-04-14 10:20:02";1;https://bleu-blanc-coeur.org;filière bleu-blanc-coeur;Site internet;14487
-6;"2022-05-17 10:41:15";1;https://www.passionnutrition.com/index%20des%20recettes/index-des-recettes/;recettes à ig bas;Marie Laure André, diététicienne;14487
-7;"2022-06-07 11:44:47";1;https://oncocdn.keeo.com/fichs/27365.pdf;conseils d'enrichissement de l'alimentation;diététicienne ;14487
-16;"2022-07-19 12:32:58";1;https://bowl-and-spoon.com/;blog de recettes saines;Blog personnel;2921
-17;"2022-10-05 10:35:20";2;https://www.youtube.com/watch?v=_5JCw1yuSlU;quand on mange sans faim, on mange sans fin;Youtube;11988
-18;"2022-10-05 10:35:49";2;https://www.youtube.com/watch?v=VzkFbJXwIj8;quand on mange en pleine attention, on mange la bonne portion;Youtube;11988
-19;"2022-11-16 17:30:48";1;https://www.cuisinez-pour-bebe.fr/recette-bebe/?wp_recettes%5BrefinementList%5D%5Btype%5D%5B0%5D=Parents-b%C3%A9b%C3%A9;cuisine parent bébé;"";15937
-20;"2023-01-16 15:54:16";4;https://smartdiet.fr/uploads/documents/Programme diététique.pdf;programme diététique;Sarah;7083
-21;"2023-02-17 16:43:48";4;https://smartdiet.fr/uploads/documents/Echelle de la faim.pdf;echelle de la faim;document personnel;9651
-22;"2023-03-01 17:47:40";1;https://www.msc.org/fr;filière msc;https://www.msc.org/fr;15937
-23;"2023-04-11 10:23:31";1;https://www.chapeaudepaille.fr/trouver-cueillette-chapeau-de-paille-pres-de-chez-vous.html;trouver une cueillettes à proximité;Internet;104
-25;"2023-06-02 09:08:01";4;https://smartdiet.fr/uploads/documents/programme alimentaire.pdf;programme alimentaire;doc;12320
-28;"2023-08-05 14:54:01";4;https://smartdiet.fr/uploads/documents/alimentation pour les calculs rénaux .pdf;alimentation pour les calculs rénaux ;https://cliniquejacques-cartier.ca/clinique-content/uploads/2018/04/Alimentation-et-calcul-rénaux_2018-2.pdf;16298
-30;"2023-11-09 18:33:23";1;https://www.lesfruitsetlegumesfrais.com/en-cuisine/recettes;recettes de saison;Intefel;15937
-34;"2023-11-23 09:13:27";1;https://chefsimon.com/recettes/tag/bowl%20cake;recettes bowl cakes;chefsimon.com;13227
-36;"2024-01-10 18:15:37";1;https://www.anorexie-et-boulimie.fr/articles-343-therapie-comportementale-et-cognitive.htm;modèle de fairburn;Association Autrement;15937
-37;"2024-03-07 19:00:34";1;https://www.vidal.fr/sante/nutrition/corps-aliments/fibres-alimentaires.html;fibres : infos et équivalences;Vidal;13227
-38;"2024-06-05 12:38:35";1;https://www.madietenligne.fr/blog/les-bienfaits-insoupconnes-de-lalimentation-anti-inflammatoire-sur-votre-corps-et-votre-esprit;alimentation anti-inflammatoire;Ma diet en ligne;13227
-44;"2024-09-02 19:00:41";1;https://www.lesfruitsetlegumesfrais.com/menus-de-la-semaine;menus hebdomadaires variés, de saison;Les Fruits et légumes frais, Interfel;15937
+SDCONTENTID;date;type;url;name;source;SDDIETID
+1;2022-03-05 18:28:06;1;https://lutsubo.com/;site de recettes végétariennes;Blog;4534
+2;2022-03-29 16:49:18;1;https://www.ligue-cancer.net/article/25942_alimentation-et-cancer;conseils nutritionnels en cas de cancer;ligue contre le cancer;14487
+4;2022-04-11 11:22:04;1;https://www.lavieclaire.com/recettes/;recettes équilibrées;Site internet;5331
+5;2022-04-14 10:20:02;1;https://bleu-blanc-coeur.org;filière bleu-blanc-coeur;Site internet;14487
+6;2022-05-17 10:41:15;1;https://www.passionnutrition.com/index%20des%20recettes/index-des-recettes/;recettes à ig bas;Marie Laure André, diététicienne;14487
+7;2022-06-07 11:44:47;1;https://oncocdn.keeo.com/fichs/27365.pdf;conseils d'enrichissement de l'alimentation;diététicienne ;14487
+16;2022-07-19 12:32:58;1;https://bowl-and-spoon.com/;blog de recettes saines;Blog personnel;2921
+17;2022-10-05 10:35:20;2;https://www.youtube.com/watch?v=_5JCw1yuSlU;quand on mange sans faim, on mange sans fin;Youtube;11988
+18;2022-10-05 10:35:49;2;https://www.youtube.com/watch?v=VzkFbJXwIj8;quand on mange en pleine attention, on mange la bonne portion;Youtube;11988
+19;2022-11-16 17:30:48;1;https://www.cuisinez-pour-bebe.fr/recette-bebe/?wp_recettes%5BrefinementList%5D%5Btype%5D%5B0%5D=Parents-b%C3%A9b%C3%A9;cuisine parent bébé;;15937
+20;2023-01-16 15:54:16;4;https://smartdiet.fr/uploads/documents/Programme diététique.pdf;programme diététique;Sarah;7083
+21;2023-02-17 16:43:48;4;https://smartdiet.fr/uploads/documents/Echelle de la faim.pdf;echelle de la faim;document personnel;9651
+22;2023-03-01 17:47:40;1;https://www.msc.org/fr;filière msc;https://www.msc.org/fr;15937
+23;2023-04-11 10:23:31;1;https://www.chapeaudepaille.fr/trouver-cueillette-chapeau-de-paille-pres-de-chez-vous.html;trouver une cueillettes à proximité;Internet;104
+25;2023-06-02 09:08:01;4;https://smartdiet.fr/uploads/documents/programme alimentaire.pdf;programme alimentaire;doc;12320
+28;2023-08-05 14:54:01;4;https://smartdiet.fr/uploads/documents/alimentation pour les calculs rénaux .pdf;alimentation pour les calculs rénaux ;https://cliniquejacques-cartier.ca/clinique-content/uploads/2018/04/Alimentation-et-calcul-rénaux_2018-2.pdf;16298
+30;2023-11-09 18:33:23;1;https://www.lesfruitsetlegumesfrais.com/en-cuisine/recettes;recettes de saison;Intefel;15937
+34;2023-11-23 09:13:27;1;https://chefsimon.com/recettes/tag/bowl%20cake;recettes bowl cakes;chefsimon.com;13227
+36;2024-01-10 18:15:37;1;https://www.anorexie-et-boulimie.fr/articles-343-therapie-comportementale-et-cognitive.htm;modèle de fairburn;Association Autrement;15937
+37;2024-03-07 19:00:34;1;https://www.vidal.fr/sante/nutrition/corps-aliments/fibres-alimentaires.html;fibres : infos et équivalences;Vidal;13227
+38;2024-06-05 12:38:35;1;https://www.madietenligne.fr/blog/les-bienfaits-insoupconnes-de-lalimentation-anti-inflammatoire-sur-votre-corps-et-votre-esprit;alimentation anti-inflammatoire;Ma diet en ligne;13227
+44;2024-09-02 19:00:41;1;https://www.lesfruitsetlegumesfrais.com/menus-de-la-semaine;menus hebdomadaires variés, de saison;Les Fruits et légumes frais, Interfel;15937
