@@ -11,33 +11,29 @@ require('../../server/models/QuizzQuestion')
 const Company = require('../../server/models/Company')
 require('../../server/models/Content')
 require('../../server/models/Comment')
+require('../../server/models/Item')
 const Appointment=require('../../server/models/Appointment')
 const { 
   ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, GENDER_MALE, QUIZZ_TYPE_PROGRESS, DIET_REGISTRATION_STATUS_ACTIVE, COACHING_STATUS_NOT_STARTED, 
 } = require('../../server/plugins/smartdiet/consts')
 const bcrypt = require('bcryptjs')
 const Coaching = require('../../server/models/Coaching')
-const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments } = require('../../server/plugins/smartdiet/import')
-const { getCacheKeys, displayCache, loadCache, saveCache } = require('../../utils/import')
+const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads } = require('../../server/plugins/smartdiet/import')
+const { loadCache, saveCache } = require('../../utils/import')
 const Measure = require('../../server/models/Measure')
 const QuizzQuestion = require('../../server/models/QuizzQuestion')
 const Key = require('../../server/models/Key')
 const Offer = require('../../server/models/Offer')
 const { isDevelopment } = require('../../config/config')
 const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts')
-const { updateCoachingStatus } = require('../../server/plugins/smartdiet/coaching')
-const { runPromisesWithDelay } = require('../../server/utils/concurrency')
-const UserQuizz = require('../../server/models/UserQuizz')
 const Item = require('../../server/models/Item')
-require('../../server/models/Item')
+const Lead = require('../../server/models/Lead')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'smartdiet' : `test${moment().unix()}`
 const DROP=!ORIGINAL_DB
 
-// const ROOT = path.join(__dirname, './data/migration-tiny')
 const ROOT = path.join(__dirname, './data/migration')
-// const ROOT = path.join(__dirname, './data/migration-aye-26358')
 
 jest.setTimeout(2*3600*1000)
 
@@ -53,8 +49,6 @@ const DIET_EMAIL = 'raphaelleh.smartdiet@gmail.com'
 const QUIZZ_NAME = 'Saisons'
 const QUIZZ_ID = 17
 
-const FILESDATE='20240903'
-
 describe('Test imports', () => {
 
   beforeAll(async () => {
@@ -63,6 +57,10 @@ describe('Test imports', () => {
     console.log('Opened database', DBNAME)
     await loadCache()
     await fixFiles(ROOT)
+  })
+
+  afterEach(async () => {
+    return saveCache()
   })
 
   afterAll(async () => {
@@ -265,6 +263,25 @@ describe('Test imports', () => {
 
   it('must upsert other diploma', async () => {
     return importOtherDiploma(path.join(ROOT, 'smart_diets.csv'))
+  })
+
+  it('must import leads', async () => {
+    await importLeads(path.join(ROOT, 'smart_prospect.csv'))
+    const importedLeads=await Lead.find({migration_id: {$ne: null}})
+
+    const count= predicate => {
+      return lodash.countBy(importedLeads, predicate).true || 0
+    }
+
+    expect(count(l=>!!l.join_reason)).toBeGreaterThan(2)
+    expect(count(l=>!!l.decline_reason)).toBeGreaterThan(importedLeads.length/2)
+    expect(count(l=>l.interested_in?.length>0)).toBeGreaterThan(5)
+    expect(count(l=>!!l.operator)).toBeGreaterThan(4)
+    expect(count(l=>!!l.job)).toBeGreaterThan(importedLeads.length/2)
+    expect(count(l=>l.comment?.trim()?.length>0)).toBeGreaterThan(importedLeads.length/2)
+    expect(count(l=>!!l.call_status)).toEqual(importedLeads.length)
+    expect(count(l=>!!l.phone?.trim())).toEqual(importedLeads.length)
+    expect(count(l=>!!l.source?.trim())).toEqual(importedLeads.length)
   })
 
 })

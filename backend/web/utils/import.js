@@ -206,8 +206,11 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
   console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
-  console.time('Mapping records')
-  return runPromisesWithDelay(data.map(record => () => mapRecord({record, mapping, ...rest})))
+  const step=parseInt(data.length/20)
+  return runPromisesWithDelay(data.map((record, idx) => () => {
+    idx%step==0 && console.log('Mapping record', idx, '/', data.length)
+    return mapRecord({record, mapping, ...rest})
+  }))
     .then(result => {
       const mappedData=result.map(r => r.value)
       console.timeEnd('Mapping records')
@@ -240,7 +243,7 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
     })
 }
 
-const CACHE_PATH='/tmp/migration-cache'
+const CACHE_PATH='/home/seb/smartdiet-migration-cache'
 
 const loadCache= () => {
   if (!fs.existsSync(CACHE_PATH)) {

@@ -14,7 +14,7 @@ const {
   QUIZZ_QUESTION_TYPE_ENUM_SINGLE, QUIZZ_TYPE_PROGRESS, COACHING_QUESTION_STATUS, COACHING_QUESTION_STATUS_NOT_ADDRESSED, 
   COACHING_QUESTION_STATUS_NOT_ACQUIRED, COACHING_QUESTION_STATUS_IN_PROGRESS, COACHING_QUESTION_STATUS_ACQUIRED, 
   GENDER_MALE, GENDER_FEMALE, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_ASSESSMENT, DIET_REGISTRATION_STATUS_REFUSED, 
-  FOOD_DOCUMENT_TYPE_NUTRITION, GENDER, DIET_REGISTRATION_STATUS_VALID, DIET_REGISTRATION_STATUS_PENDING, COACHING_CONVERSION_CANCELLED 
+  FOOD_DOCUMENT_TYPE_NUTRITION, GENDER, DIET_REGISTRATION_STATUS_VALID, DIET_REGISTRATION_STATUS_PENDING, COACHING_CONVERSION_CANCELLED, CALL_STATUS_TO_CALL, CALL_STATUS_CALL_1, CALL_STATUS_CALL_2, CALL_STATUS_UNREACHABLE, CALL_STATUS_CONVERTI_COA, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_RECALL, CALL_STATUS_CONVERTI_CN, CALL_STATUS_CONVERTI_COA_CN, CALL_STATUS_WRONG_NUMBER 
 } = require('./consts')
 const { CREATED_AT_ATTRIBUTE, TEXT_TYPE } = require('../../../utils/consts')
 require('../../models/Key')
@@ -28,6 +28,8 @@ require('../../models/FoodDocument')
 require('../../models/NutritionAdvice')
 require('../../models/Network')
 require('../../models/Diploma')
+require('../../models/Lead')
+require('../../models/Job')
 const Quizz = require('../../models/Quizz')
 const Coaching = require('../../models/Coaching')
 const { idEqual } = require('../../utils/database')
@@ -45,6 +47,9 @@ const { isNewerThan } = require('../../utils/filesystem')
 const pairing =require('@progstream/cantor-pairing')
 const FoodDocument = require('../../models/FoodDocument')
 const Offer = require('../../models/Offer')
+require('../../models/JoinReason')
+require('../../models/DeclineReason')
+require('../../models/Interest')
 const DEFAULT_PASSWORD='DEFAULT'
 
 const ASS_PRESTATION_DURATION=45
@@ -467,33 +472,6 @@ const DIET_STATUS_MAPPING={
   3: DIET_REGISTRATION_STATUS_REFUSED,
   4: DIET_REGISTRATION_STATUS_VALID,
 }
-const DIET_MAPPING={
-  role: () => ROLE_EXTERNAL_DIET,
-  password: () => DEFAULT_PASSWORD,
-  firstname: 'firstname',
-  lastname: 'lastname',
-  email: 'email',
-  smartagenda_id: 'smartagendaid',
-  address: 'address',
-  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
-  city: 'city',
-  phone: ({record}) => normalizePhone(record.phone),
-  adeli: 'adelinumber',
-  siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
-  birthday: 'birthdate',
-  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record['created_at']),
-  registration_status: ({record}) => DIET_STATUS_MAPPING[+record.status],
-  diet_coaching_enabled: ({record}) => +record.hasteleconsultation==1,
-  diet_visio_enabled: ({record}) => +record.easewithconfs==1,
-  diet_site_enabled: ({record}) => +record.hasatelier==1,
-  diet_admin_comment: 'comments',
-  description: 'annonce',
-  picture: async ({record, picturesDirectory}) => {return await getS3FileForDiet(picturesDirectory, record.firstname, record.lastname, 'profil')},
-  rib: async ({record, ribDirectory}) => {return await getS3FileForDiet(ribDirectory, record.firstname, record.lastname, 'rib')},
-  source: () => 'import',
-  migration_id: 'SDID',
-}
-
 const companyOffersCache=new NodeCache()
 
 const getUserOffer = async (user, date) => {
@@ -510,9 +488,6 @@ const getUserOffer = async (user, date) => {
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
   return offer?._id
 }
-
-const DIET_KEY='email'
-const DIET_MIGRATION_KEY='migration_id'
 
 const COACHING_MAPPING={
   [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record.orderdate),
@@ -832,6 +807,36 @@ const importPatients = async input_file => {
         migrationKey: PATIENT_MIGRATION_KEY, progressCb: progressCb()})
     )
 }
+
+const DIET_MAPPING={
+  role: () => ROLE_EXTERNAL_DIET,
+  password: () => DEFAULT_PASSWORD,
+  firstname: 'firstname',
+  lastname: 'lastname',
+  email: 'email',
+  smartagenda_id: 'smartagendaid',
+  address: 'address',
+  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
+  city: 'city',
+  phone: ({record}) => normalizePhone(record.phone),
+  adeli: 'adelinumber',
+  siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
+  birthday: 'birthdate',
+  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record['created_at']),
+  registration_status: ({record}) => DIET_STATUS_MAPPING[+record.status],
+  diet_coaching_enabled: ({record}) => +record.hasteleconsultation==1,
+  diet_visio_enabled: ({record}) => +record.easewithconfs==1,
+  diet_site_enabled: ({record}) => +record.hasatelier==1,
+  diet_admin_comment: 'comments',
+  description: 'annonce',
+  // picture: async ({record, picturesDirectory}) => {return await getS3FileForDiet(picturesDirectory, record.firstname, record.lastname, 'profil')},
+  // rib: async ({record, ribDirectory}) => {return await getS3FileForDiet(ribDirectory, record.firstname, record.lastname, 'rib')},
+  source: () => 'import',
+  migration_id: 'SDID',
+}
+
+const DIET_KEY='email'
+const DIET_MIGRATION_KEY='migration_id'
 
 const importDiets = async (input_file, pictures_directory, rib_directory) => {
   // Deactivate password encryption
@@ -1377,6 +1382,159 @@ const importFoodPrograms = async (input_file, programs_directory) => {
   )
 }
 
+const VALID_HEALTH=1
+const VALID_DIET=2
+const VALID_POINTS=3
+const VALID_OTHER=4
+
+const VALIDATION_REASON={
+  [VALID_HEALTH] : 'Santé',
+  [VALID_DIET] : 'Diet',
+  [VALID_POINTS] : 'Système de points',
+  [VALID_OTHER] : 'Autre'
+}
+
+const REFUSE_NO_NEED=1
+const REFUSE_ALREADY_PATIENT=2
+const REFUSE_OUT_TARGET=3
+const REFUSE_NOTIME=4
+const REFUSE_OTHER=6
+
+const REFUSE_REASON={
+  [REFUSE_NO_NEED]:`Pas besoin`,
+  [REFUSE_ALREADY_PATIENT]:`Déjà suivi`,
+  [REFUSE_OUT_TARGET]:`Hors cible`,
+  [REFUSE_NOTIME]:`Pas le temps`,
+  [REFUSE_OTHER]:`Autres`,
+}
+
+const CALL_STATUS_MAPPING={
+  0: CALL_STATUS_TO_CALL,
+  1: CALL_STATUS_CALL_1,
+  2: CALL_STATUS_CALL_2,
+  4 : CALL_STATUS_UNREACHABLE,
+  5: CALL_STATUS_RECALL,
+  6: CALL_STATUS_CONVERTI_CN,
+  7: CALL_STATUS_CONVERTI_COA_CN,
+  8: CALL_STATUS_NOT_INTERESTED,
+  9: CALL_STATUS_WRONG_NUMBER,
+}
+
+const INTEREST_SPORT=1
+const INTEREST_STRESS=2
+const INTEREST_TABAC=3
+const INTEREST_SOMMEIL=4
+const INTEREST_MCV=5
+
+const INTEREST={
+  [INTEREST_SPORT]:`Sport`,
+  [INTEREST_STRESS]:`Stress`,
+  [INTEREST_TABAC]:`Tabac`,
+  [INTEREST_SOMMEIL]:`Sommeil`,
+  [INTEREST_MCV]:`MCV`,
+}
+
+const JOB_ADMINISTRATIF=1
+const JOB_CONDUCTEUR_MOYENNE_DISTANCE=2
+const JOB_CONDUCTEUR_LONGUE_DISTANCE=3
+const JOB_MANUT=4
+const JOB_CFA=5
+const JOB_AUTRE=6
+const JOB_LONGUE_MALADIE=7
+const JOB_AGENT_IMMO=8
+const JOB_ADMIN_DE_BIENS=9
+const JOB_SYNDIC=10
+const JOB_SALARIE_TOURISME=11
+const JOB_SALARIE_FONCIER=12
+const JOB_RETRAITE=13
+const JOB_ACTIF=14
+// Hors cible if job is 8 and branch=0
+const JOB_HORS_CIBLE=100
+
+const LEAD_JOB={
+  [JOB_ADMINISTRATIF]:`Administratif`,
+  [JOB_CONDUCTEUR_MOYENNE_DISTANCE]:`Conducteur moyenne distance`,
+  [JOB_CONDUCTEUR_LONGUE_DISTANCE]:`Conducteur longue distance`,
+  [JOB_MANUT]:`Manutention/logistique/déménagement`,
+  [JOB_CFA]:`CFA`,
+  [JOB_AUTRE]:`Autre`,
+  [JOB_LONGUE_MALADIE]:`Longue maladie`,
+  [JOB_AGENT_IMMO]:`Agent immo`,
+  [JOB_ADMIN_DE_BIENS]:`Admin de biens`,
+  [JOB_SYNDIC]:`Syndic de copropriété`,
+  [JOB_SALARIE_TOURISME]:`Salarié en résidence de tourisme`,
+  [JOB_SALARIE_FONCIER]:`Salarié sociétés immo et foncières`,
+  [JOB_RETRAITE]:`Retraité`,
+  [JOB_ACTIF]:`Actif`,
+  [JOB_HORS_CIBLE]:`Hors cible`,
+}
+
+const SOURCE_FICHIER_DE_BASE=0
+const SOURCE_FORMULAIRE_DE_CONTACT=1
+const SOURCE_APPEL_ENTRANT=2
+const SOURCE_STAND=3
+const SOURCE_INTERVENTION=4
+const SOURCE_PARTENAIRE=5
+const SOURCE_FICHIERS_SPECIFIQUES=6
+
+const SOURCE={
+  [SOURCE_FICHIER_DE_BASE]:`Fichier de base (Mensuel)`,
+  [SOURCE_FORMULAIRE_DE_CONTACT]:`Formulaire de Contact`,
+  [SOURCE_APPEL_ENTRANT]:`Appel Entrant (ne provient donc pas d'un fichier)`,
+  [SOURCE_STAND]:`Stand`,
+  [SOURCE_INTERVENTION]:`Intervention`,
+  [SOURCE_PARTENAIRE]:`Partenaire (ex: medialane)`,
+  [SOURCE_FICHIERS_SPECIFIQUES]:`Fichiers Spécifiques`,
+}
+
+const LEAD_MAPPING={
+  firstname: 'firstname',
+  lastname: 'lastname',
+  createdAt: 'created',
+  email: ({record}) => record.email?.trim() || `${record.SDPROSPECTID}@unknown.com`,
+  join_reason: ({record, cache}) => cache('joinReason', record.validationreason),
+  decline_reason: ({record, cache}) => cache('declineReason', record.rejectreason),
+  interested_in: ({record, cache}) => cache('interest', record.medialaneprogramtype),
+  operator: ({record, cache}) => cache('user', record.SDDIETID),
+  job: ({record, cache}) => {
+    let jobId=parseInt(record.carceptjob)==8 && parseInt(record.branch)==0 ? JOB_HORS_CIBLE : jobId
+    return cache('job', jobId)
+  },
+  comment: 'comments',
+  call_status: ({record}) => CALL_STATUS_MAPPING[record.status],
+  phone: 'tel',
+  source: ({record}) => SOURCE[record.listtype],
+  migration_id: 'SDPROSPECTID',
+}
+
+
+const importLeads = async (input_file) => {
+  const NAME_MAPPING={
+    name: 'name',
+    migration_id: 'migration_id',
+  }
+
+  // Ensure accept/decline reasons, interests, jobs
+  const joinData=Object.entries(VALIDATION_REASON).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'joinReason', data: joinData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const refuseData=Object.entries(REFUSE_REASON).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'declineReason', data: refuseData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const interestData=Object.entries(INTEREST).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'interest', data: interestData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const jobData=Object.entries(LEAD_JOB).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'job', data: jobData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const records=await loadRecords(input_file)
+  
+  return await importData({
+    model: 'lead', data: records, mapping: LEAD_MAPPING, identityKey: 'email',
+    migrationKey: 'migration_id', progressCb: progressCb(),
+  })
+}
+
 module.exports={
   loadRecords, saveRecords,
   importCompanies,
@@ -1411,5 +1569,6 @@ module.exports={
   fixFoodDocuments,
   generateQuizz,
   importFoodPrograms,
+  importLeads,
 }
 
