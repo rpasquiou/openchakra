@@ -29,12 +29,7 @@ beforeAll(async () => {
   dataQ3 = await Question.create({text: 'q3', weight: '3', question_category: categories[2]._id, is_bellwether: false, is_level_1: true})
   dataUser=await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
   dataScore=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_1})
-  dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})
-  //Don't why but test fail if one or many of these three lines is deleted
-  console.log("dataScore",dataScore)
-  await dataScore.save()
-  const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
-  
+  dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})  
 })
 
 afterAll(async () => {
@@ -127,5 +122,25 @@ describe(`score tests`, () => {
 
     expect(computedScores.bellwether_rates[0].question_category.toString()).toEqual(categories[1]._id.toString())
     expect(computedScores.bellwether_rates[0].category_rate).toEqual(0)
+  })
+
+  it(`must have correct questions_by_category`, async () => {
+    const loadedS = await loadFromDb({model: 'score', fields: ['questions_by_category']})
+
+    const QbC = loadedS[0].questions_by_category
+
+    expect(QbC.length).toEqual(3)
+
+    expect(QbC[0].category).toEqual(dataQ1.question_category)
+    expect(QbC[1].category).toEqual(dataQ2.question_category)
+    expect(QbC[2].category).toEqual(dataQ3.question_category)
+
+    expect(QbC[0].answers.length).toEqual(1)
+    expect(QbC[1].answers.length).toEqual(1)
+    expect(QbC[2].answers.length).toEqual(1)
+
+    expect(QbC[0].answers[0].question._id).toEqual(dataQ1._id)
+    expect(QbC[1].answers[0].question._id).toEqual(dataQ2._id)
+    expect(QbC[2].answers[0].question._id).toEqual(dataQ3._id)
   })
 })
