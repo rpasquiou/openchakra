@@ -7,6 +7,7 @@ const { generateDocument } = require('../../../utils/fillForm')
 const path = require('path')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
+const Homework = require('../../models/Homework')
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template1'
 
@@ -77,8 +78,13 @@ const getEvalResources = async (userId, params, data, fields) => {
   resources = resources.filter(r => 
     r.homework_mode == true || (r.note !== undefined && r.note !== null) || (r.scale !== undefined && r.scale !== null)
   )
-
-  return resources.map(r => new Resource(r))
+  const res = resources.map(r => {
+    const resource = new Resource(r)
+    resource.homeworks = r.homeworks
+    return resource
+  })
+  // console.log(res)
+  return resources
 }
 
 module.exports={

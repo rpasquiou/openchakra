@@ -5,6 +5,7 @@ const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
+const Resource = require("../../models/Resource")
 
 const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
@@ -13,16 +14,30 @@ const fillSession = async (session, trainee) => {
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
   let fields=lodash.range(range).map(childCount => 
-    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', ]
+    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', `homeworks`]
       .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
   fields=lodash.flatten(fields)
-  fields= [...fields, 'evaluation_resources']
+  const evalFields = [
+    'evaluation_resources.tickets_count',
+    'evaluation_resources.likes_count',
+    'evaluation_resources.dislikes_count',
+    'evaluation_resources.name',
+    'evaluation_resources.success_note_max',
+    'evaluation_resources.type',
+    'evaluation_resources.correction',
+    'evaluation_resources.note',
+    'evaluation_resources.scale',
+    'evaluation_resources.homework_limit_date',
+    'evaluation_resources.homeworks',
+  ]
+  fields= [...fields, ...evalFields]
   return Promise.all(session.trainees.map(trainee => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee})
       .then(prog => {
         console.log('Load program for user', trainee._id)
         trainee.statistics=new Program(prog[0])
+        trainee.statistics.evaluation_resources = prog[0].evaluation_resources.map(r=> new Resource(r))
         return trainee
       })
   }))
@@ -49,6 +64,10 @@ const computeStatistics = async ({fields, id, user, params}) => {
     }))
   }
   return loadFromDb({model: 'session', user, fields, ...sessionId})
+    .then(sessions => {
+      console.log(JSON.stringify(sessions[0].trainees,null,2))
+      return sessions
+    })
     .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{sessions}]))
 }

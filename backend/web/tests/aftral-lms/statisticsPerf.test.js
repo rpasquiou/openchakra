@@ -42,123 +42,22 @@ describe('Test models computations', () => {
     await mongoose.connection.close()
   })
   it(`must compute time it takes for stats to load`, async () => {
-    const id = '66d9c7b7877bf1483d941dbc'
+    const id = '65bd635bb19ef201d3e91aae-66d8afd04be164492f7b28a9'
     const user = await mongoose.models.user.findOne({role:ROLE_FORMATEUR})
     const fields = [
-      `code`,
-      `name`,
-      `resource_type`,
       `sessions`,
-      // `sessions.children.children.children.likes_count`,
-      // `sessions.children.children.children.dislikes_count`,
-      // `sessions.children.children.children.tickets_count`,
-      `sessions.children`,
-      `sessions.children.achievement_status`,
-      `sessions.children.closed`,
-      `sessions.children.children.description`,
-      `sessions.children.children.success_message`,
-      `sessions.children.children.children.evaluation`,
-      `sessions.children.children.children.code`,
-      `sessions.children.children.children.name`,
-      `sessions.children.children.children.optional`,
-      `sessions.children.children.children.success_message`,
-      `sessions.children.children`,
-      `sessions.children.children.children`,
-      // `sessions.children.children.children.children`,
-      `sessions.children.children.children.spent_time_str`,
-      `sessions.children.children.children.masked`,
-      `sessions.children.children.children.achievement_status`,
-      `sessions.children.children.children.access_condition`,
-      `sessions.children.children.picture`,
-      `sessions.children.children.type`,
-      `sessions.children.children.name`,
-      `sessions.children.children.closed`,
-      `sessions.children.children.spent_time_str`,
-      `sessions.children.children.achievement_status`,
-      `sessions.children.children.children.type`,
-      `sessions.children.children.children.obtained_badges.picture`,
-      `sessions.children.children.children.obtained_badges`,
-      `sessions.children.order`,
-      `sessions.children.children.order`,
-      `sessions.children.children.children.order`,
-      `sessions.children.children.resources_progress`,
-      `sessions.children.finished_resources_count`,
-      // `sessions.children.resources_count`,
-      // `sessions.children.children.resources_count`,
-      // `sessions.children.children.finished_resources_count`,
-      // `sessions.children.children.children.resources_progress`,
-      // `sessions.children.children.children.children.name`,
-      // `sessions.children.children.children.children.type`,
-      // `sessions.children.children.children.children.spent_time_str`,
-      // `sessions.children.children.children.children.achievement_status`,
-      // `sessions.children.children.children.children.code`,
-      // `sessions.children.children.children.children.masked`,
-      // `sessions.children.children.children.children.evaluation`,
-      // `sessions.children.children.children.children.optional`,
-      `sessions.children.name`,
-      `sessions.children.obtained_badges`,
-      `sessions.children.obtained_badges.picture`,
-      `sessions.children.resources_progress`,
-      `sessions.children.spent_time_str`,
-      `sessions.children.type`,
-      `sessions.children.children.children.resources_count`,
-      `sessions.children.children.children.closed`,
-      `sessions.children.children.children.description`,
-      `sessions.children.children.children.finished_resources_count`,
-      // `sessions.evaluation_resources.tickets_count`,
-      // `sessions.evaluation_resources.likes_count`,
-      // `sessions.evaluation_resources.dislikes_count`,
-      // `sessions.evaluation_resources.name`,
-      // `sessions.evaluation_resources.homeworks.resource.correction`,
-      // `sessions.evaluation_resources.evaluation_resources.note`,
-      // `sessions.evaluation_resources.homeworks`,
-      // `sessions.evaluation_resources.max_attempts`,
-      // `sessions.evaluation_resources.success_note_max`,
-      // `sessions.evaluation_resources.resource_type`,
-      // `sessions.evaluation_resources.correction`,
-      // `sessions.evaluation_resources.success_note_min`,
-      // `sessions.evaluation_resources.success_scale`,
-      // `sessions.evaluation_resources.homework_limit_date`,
-      // `sessions.evaluation_resources.homeworks_submitted_count`,
-      // `sessions.evaluation_resources.trainees_count`,
-      // `sessions.evaluation_resources`,
-      // `sessions.evaluation_resources.evaluation_resources.creator.fullname`,
-      // `sessions.evaluation_resources.evaluation_resources`,
-      // `sessions.evaluation_resources.evaluation_resources.creator.picture`,
-      // `sessions.evaluation_resources.evaluation_resources.creation_date`,
-      // `sessions.evaluation_resources.evaluation_resources.homeworks.document`,
-      // `sessions.evaluation_resources.evaluation_resources.success_note_max`,
-      // `sessions.evaluation_resources.evaluation_resources.scale`,
-      // `sessions.evaluation_resources.evaluation_resources.description`,
-      // `sessions.evaluation_resources.homeworks_missing_count`,
-      // `sessions.children.children.children.children.likes_count`,
-      // `sessions.children.children.children.children.dislikes_count`,
-      // `sessions.children.children.children.children.tickets_count`,
-      // `sessions.children.children.children.children.access_condition`,
-      // `sessions.evaluation_resources.evaluation_resources.homeworks`,
       `sessions.trainees`,
-      `sessions.trainees.email`,
-      `sessions.trainees.fullname`,
-      `sessions.trainees.picture`,
-      `sessions.trainers`,
-      `sessions.trainers.email`,
-      `sessions.trainers.fullname`,
-      `sessions.trainers.picture`
+      `sessions.trainees.statistics`,
+      `sessions.trainees.statistics`,
+      `sessions.trainees.statistics.evaluation_resources`,
+      `sessions.trainees.statistics.evaluation_resources.homeworks`,
+      `sessions.trainees.statistics.evaluation_resources.homeworks.creation_date`
     ]
     
-    console.time(`stat`)
+    // console.time(`stat`)
     const [stat] = await loadFromDb({ model: 'statistics', user, fields, id })
-    console.timeEnd(`stat`)
-
-    const res = stat.sessions[0]
-    removeAttributes(res, ['id', '_id', 'trainees', 'trainers'])
-
-    res.children.forEach(child => {
-      removeAttributes(child, ['_id', 'id', 'name', 'obtainer_badges', 'type'])
-      child.children.forEach(grandchild => {
-        removeAttributes(grandchild, ['_id', 'id'])
-      })
-    })
-    console.log(JSON.stringify(res, null, 2))
+    // console.timeEnd(`stat`)
+    // stat.sessions[0].trainees[0].evaluation_resources
+    stat.sessions[0].trainees[0].statistics.evaluation_resources.map(r=> console.log(r._id, r.homeworks))
   })
 })
