@@ -45,19 +45,28 @@ describe('Test models computations', () => {
     const id = '65bd635bb19ef201d3e91aae-66d8afd04be164492f7b28a9'
     const user = await mongoose.models.user.findOne({role:ROLE_FORMATEUR})
     const fields = [
-      `sessions`,
-      `sessions.trainees`,
-      `sessions.trainees.statistics`,
-      `sessions.trainees.statistics`,
-      `sessions.trainees.statistics.evaluation_resources`,
+      `sessions.trainees.statistics.evaluation_resources.tickets_count`,
+      `sessions.trainees.statistics.evaluation_resources.likes_count`,
+      `sessions.trainees.statistics.evaluation_resources.dislikes_count`,
+      `sessions.trainees.statistics.evaluation_resources.name`,
+      `sessions.trainees.statistics.evaluation_resources.success_note_max`,
+      `sessions.trainees.statistics.evaluation_resources.type`,
+      `sessions.trainees.statistics.evaluation_resources.correction`,
+      `sessions.trainees.statistics.evaluation_resources.note`,
+      `sessions.trainees.statistics.evaluation_resources.scale`,
+      `sessions.trainees.statistics.evaluation_resources.homework_limit_date`,
       `sessions.trainees.statistics.evaluation_resources.homeworks`,
-      `sessions.trainees.statistics.evaluation_resources.homeworks.creation_date`
+      `sessions.trainees.statistics.evaluation_resources.homeworks.document`,
+      `sessions`,
+      `picture`,
+      `sessions.trainees.fullname`,
+      `sessions.name`,
+      `sessions.trainees`,
+      `sessions.trainees.statistics.evaluation_resources`,
+      `sessions.trainees.statistics`
     ]
     
-    // console.time(`stat`)
     const [stat] = await loadFromDb({ model: 'statistics', user, fields, id })
-    // console.timeEnd(`stat`)
-    // stat.sessions[0].trainees[0].evaluation_resources
     stat.sessions[0].trainees[0].statistics.evaluation_resources.map(r=> console.log(r._id, r.homeworks))
   })
 })

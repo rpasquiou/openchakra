@@ -19,7 +19,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockNote } = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, getBlockLatestHomework} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -104,8 +104,9 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
-  declareComputedField({model, field: 'note', getterFn: getBlockNote})
+  declareComputedField({model, field: 'note', getterFn: getBlockNote, requires:`homeworks`})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
+  declareComputedField({model, field: 'latest_homework', requires: '', getterFn: getBlockLatestHomework})
 })
 
 //Program start
@@ -154,6 +155,7 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 
 // Progress start
 declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
+declareVirtualField({model: `progress`, field: `latest_homework`, requires: `homeworks`})
 // Progress end
 
 // Message start

@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR, BLOCK_STATUS}=require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const ProgressSchema = new Schema({
   block: {
@@ -57,14 +58,15 @@ const ProgressSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'homework'
   }],
-  note: {
-    type: Number,
-  },
   attempts_count: {
     type: Number,
     required: true,
     default: 0,
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+ProgressSchema.virtual(`latest_homework`, DUMMY_REF).get(function () {
+  return this.homeworks[0] || null
+})
 
 module.exports = ProgressSchema

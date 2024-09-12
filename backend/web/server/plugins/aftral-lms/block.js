@@ -322,6 +322,13 @@ const getBlockHomeworks = async (userId, params, data) => {
   return progress?.homeworks || []
 }
 
+const getBlockLatestHomework = async (userId, params, data) => {
+  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
+  const filter=isTrainee ? {block: data._id} : {block: data._id, user: userId}
+  const progress=await Progress.findOne(filter).populate('homeworks')
+  return progress?.homeworks[0] || null
+}
+
 const getBlockHomeworksSubmitted = async (userId, params, data) => {
   const progress = await mongoose.models.progress.find({
     block:data._id
@@ -436,7 +443,7 @@ module.exports={
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
-  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount
+  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, getBlockLatestHomework
 }
 
 

@@ -22,6 +22,9 @@ const HomeworkSchema = new Schema({
     type: String,
     required: false,
   },
+  note: {
+    type: Number,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = HomeworkSchema

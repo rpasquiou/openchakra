@@ -285,6 +285,10 @@ const BlockSchema = new Schema({
     type: Boolean,
     required: true,
     default: false,
+  },
+  latest_homework: {
+    type: Schema.Types.ObjectId ,
+    ref: `homework`
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 

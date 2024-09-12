@@ -159,7 +159,7 @@ const canReplay = async ({dataId, user }) => {
 }
 
 const getBlockNote = async (userId, params, data) => {
-  return (await getProgress({user: userId, block: data._id}))?.note || null
+  return data.homeworks[0]?.note || null
 }
 
 module.exports={
