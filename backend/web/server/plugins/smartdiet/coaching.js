@@ -23,7 +23,7 @@ const updateCoachingStatus = async coaching_id => {
     coaching.status=COACHING_STATUS_NOT_STARTED
   }
   // Started it 1 appointment
-  if (coaching.status==COACHING_STATUS_NOT_STARTED && !!coaching._last_appointment) {
+  if (coaching._last_appointment) {
     coaching.status=COACHING_STATUS_STARTED
     // Set progress quizz
     if (!coaching.progress) {
@@ -117,7 +117,7 @@ const getDietAvailabilities = async (userId, params, data) => {
 }
 
 const updateApptsOrder= async coachingId => {
-  console.log('updating appt order for coaching', coachingId?._id)
+  // console.log('updating appt order for coaching', coachingId?._id)
   const appointments=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
   const promises=appointments.map((appointment, idx) => {
     const newOrder=idx+1

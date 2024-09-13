@@ -76,11 +76,6 @@ const CoachingSchema = new Schema({
     ref: 'userQuizz',
     required: false,
   },
-  progress: {
-    type: Schema.Types.ObjectId,
-    ref: 'userQuizz',
-    required: [function() { this.status!=COACHING_STATUS_NOT_STARTED},`Le questionnaire progression est obligatoire`],
-  },
   // Food program URL
   food_program: {
     type: String,

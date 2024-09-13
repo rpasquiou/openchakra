@@ -187,6 +187,7 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly, ori
     .catch(err => {
       const msg=`Model ${model.modelName}, from ${JSON.stringify(origin)} to record ${JSON.stringify(record)}, error(s):${err.toString()}`
       console.error(msg)
+      throw err
     })
 }
 
@@ -206,10 +207,16 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
   console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
+  const step=parseInt(data.length/20)
   console.time('Mapping records')
-  return Promise.all(data.map(record => mapRecord({record, mapping, ...rest})))
-    .then(mappedData => {
+  return runPromisesWithDelay(data.map((record, idx) => () => mapRecord({record, mapping, ...rest})))
+    .then(result => {
       console.timeEnd('Mapping records')
+      const errors=result.filter(r => r.status=='rejected').map(r => r.reason)
+      if (!lodash.isEmpty(errors)) {
+        console.error('Errors', errors)
+      }
+      const mappedData=result.filter(r => r.status=='fulfilled').map(r => r.value)
       const recordsCount=mappedData.length
       console.time(msg)
       return runPromisesWithDelay(mappedData.map((record, index) => () => {
@@ -233,13 +240,13 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
       })
     })
     .finally(()=> {
+      console.timeEnd(msg)
       delete mongoose.model(model)
       saveCache()
-      console.timeEnd(msg)
     })
 }
 
-const CACHE_PATH='/tmp/migration-cache'
+const CACHE_PATH='/home/seb/smartdiet-migration-cache'
 
 const loadCache= () => {
   if (!fs.existsSync(CACHE_PATH)) {

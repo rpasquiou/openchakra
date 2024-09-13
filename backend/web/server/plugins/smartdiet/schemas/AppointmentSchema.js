@@ -122,7 +122,7 @@ AppointmentSchema.virtual('status', DUMMY_REF).get(function() {
 })
 
 const updateAppointmentsOrder = hook => async(...params) => {
-  console.log(hook, 'appt changed', params.map(p => p._id))
+  // console.log(hook, 'appt changed', params.map(p => p._id))
   const appt=params[0]
   return updateApptsOrder(appt.coaching)
 }

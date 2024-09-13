@@ -285,7 +285,7 @@ const UserSchema = new Schema({
   diet_calls_enabled: {
     type: Boolean,
     validate: [
-      function(v) {return !v || this.role==ROLE_EXTERNAL_DIET},
+      function(v) {return !v || !this || this.role==ROLE_EXTERNAL_DIET},
       `Appels sortants autorisés aux diets uniquement`
     ],
     required: false,

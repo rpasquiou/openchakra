@@ -12,18 +12,19 @@ const LeadSchema = new Schema({
   firstname: {
     type: String,
     set: v => v?.trim(),
-    required: [true, 'Le prénom est obligatoire'],
+    required: false,
   },
   lastname: {
     type: String,
     set: v => v?.trim(),
-    required: [true, 'Le nom de famille est obligatoire'],
+    required: false,
   },
+  // No email validation nor required for import
   email: {
     type: String,
-    validate: [isEmailOk, v => `L'email '${v?.value}' est invalide`],
-    required: [true, `L'email est obligatoire`],
+    required: false,
     set: v => v?.toLowerCase().trim(),
+    index: true,
   },
   // Custom identifier
   identifier: {
@@ -120,6 +121,11 @@ const LeadSchema = new Schema({
   },
   crm_id: {
     type: Number,
+  },
+  migration_id: {
+    type: Number,
+    required: false,
+    index: true,
   },
 }, schemaOptions)
 
