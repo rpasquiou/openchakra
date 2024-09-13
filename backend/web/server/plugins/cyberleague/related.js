@@ -29,14 +29,14 @@ const getRelated = (model) => {
       if (sameFunLength <10) {
         res = sameUserFunction
         users = lodash.xor(users, sameUserFunction)
-        const sameUserSize = lodash.groupBy(users, (u) => u.company.size)[data.company.size]
-        const sameSizeLength = sameUserSize.length
+        const sameUserSize = lodash.groupBy(users, (u) => u.company?.size)[data.company?.size]
+        const sameSizeLength = sameUserSize?.length || 0
 
         //still not enough related users, need to add users with same company sector
         if (sameFunLength + sameSizeLength <10) {
           res = lodash.concat(res, sameUserSize)
           users = lodash.xor(users, sameUserSize)
-          const sameUserSector = lodash.groupBy(users, (u) => u.company.sector)[data.company.sector]
+          const sameUserSector = lodash.groupBy(users, (u) => u.company?.sector)[data.company?.sector]
 
           //we keep up to 10 related users
           res = lodash.concat(res, lodash.slice(sameUserSector, 0, 10-(sameFunLength + sameSizeLength )))
@@ -44,8 +44,8 @@ const getRelated = (model) => {
         //too many related users with same company size, need to filter users to keep those with same company sector
         } else {
           if (sameFunLength + sameSizeLength > 10) {
-            const sameUserSizeSector = lodash.groupBy(sameUserSize, (u) => u.company.sector)[data.company.sector]
-            const sameSizeSectLength = sameUserSizeSector.length
+            const sameUserSizeSector = lodash.groupBy(sameUserSize, (u) => u.company?.sector)[data.company?.sector]
+            const sameSizeSectLength = sameUserSizeSector?.length || 0
 
             //not enough users with same company size
             if (sameFunLength + sameSizeSectLength < 10) {
@@ -68,8 +68,8 @@ const getRelated = (model) => {
       //too many related users  with same function, need to filter users to keep those with same company size
       } else {
         if (sameFunLength > 10) {
-          const sameUserFunSize = lodash.groupBy(sameUserFunction, (u) => u.company.size)[data.company.size]
-          const sameFunSizeLength = sameUserFunSize.length
+          const sameUserFunSize = lodash.groupBy(sameUserFunction, (u) => u.company?.size)[data.company?.size]
+          const sameFunSizeLength = sameUserFunSize?.length || 0
 
           //not enough users with same function and company size
           if (sameFunSizeLength < 10) {
@@ -81,8 +81,8 @@ const getRelated = (model) => {
           //too many users with same function and company size, need to filter users to keep those with same company sector
           } else {
             if (sameFunSizeLength > 10) {
-              const sameUserAll = lodash.groupBy(sameUserFunSize, (u) => u.company.sector)[data.company.sector]
-              const sameAllLength = sameUserAll.length
+              const sameUserAll = lodash.groupBy(sameUserFunSize, (u) => u.company?.sector)[data.company?.sector]
+              const sameAllLength = sameUserAll.length || 0
 
               //not enough users with same function, company size and company sector
               if (sameAllLength < 10) {
