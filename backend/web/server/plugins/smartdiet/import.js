@@ -1467,6 +1467,14 @@ const SOURCE={
   [SOURCE_FICHIERS_SPECIFIQUES]:`Fichiers Spécifiques`,
 }
 
+const COMPANY_ECR=0
+const COMPANY_IMMO=1
+
+const COMPANY={
+  [COMPANY_ECR]: 'ECRNUTRITION',
+  [COMPANY_IMMO]: 'IMMONUTRITION',
+}
+
 const LEAD_MAPPING={
   firstname: 'firstname',
   lastname: 'lastname',
