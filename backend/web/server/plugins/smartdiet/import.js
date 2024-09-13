@@ -850,6 +850,19 @@ const importCoachings = async input_file => {
     .then(coachings => Promise.all(coachings.map(ensureSurvey)))
 }
 
+const removeEoAndMis = async (appts_path, mis_path, eo_path) {
+  let records = await loadRecords(appts_path)
+  console.log('Generating appts')
+  // Remove MIS appointments
+  const mis = (await loadRecords(mis_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !mis.includes(r.SDCONSULTID))
+
+  // Remove EO appointments
+  const eo = (await loadRecords(eo_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !eo.includes(r.SDCONSULTID))
+  return records
+}
+
 const fixAppointments = async (appts_path, eo_path, mis_path) => {
   let records = await removeEoAndMis(appts_path, mis_path, eo_path)
   
@@ -1561,16 +1574,4 @@ module.exports={
   importLeads,
 }
 
-async function removeEoAndMis(appts_path, mis_path, eo_path) {
-  let records = await loadRecords(appts_path)
-  console.log('Generating appts')
-  // Remove MIS appointments
-  const mis = (await loadRecords(mis_path)).map(record => record.SDCONSULTID)
-  records = records.filter(r => !mis.includes(r.SDCONSULTID))
-
-  // Remove EO appointments
-  const eo = (await loadRecords(eo_path)).map(record => record.SDCONSULTID)
-  records = records.filter(r => !eo.includes(r.SDCONSULTID))
-  return records
-}
 
