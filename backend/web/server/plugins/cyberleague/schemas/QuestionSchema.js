@@ -24,15 +24,15 @@ const QuestionSchema = new Schema({
   },
   is_level_1: {
     type: Boolean,
-    required: [function (s) {return (!this.is_level_2 && !this.is_level_3)}, `La question doit être affectée à au moins un niveau de questionnaire`]
+    required: false
   },
   is_level_2: {
     type: Boolean,
-    required: [function (s) {return (!this.is_level_1 && !this.is_level_3)}, `La question doit être affectée à au moins un niveau de questionnaire`]
+    required: false
   },
   is_level_3: {
     type: Boolean,
-    required: [function (s) {return (!this.is_level_2 && !this.is_level_1)}, `La question doit être affectée à au moins un niveau de questionnaire`]
+    required: false
   }
 }, {...schemaOptions})
 
