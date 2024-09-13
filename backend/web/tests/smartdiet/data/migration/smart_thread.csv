@@ -1,4 +1,4 @@
-SDTHREADID;subject;SDCREATORID
+"SDTHREADID";"subject";"SDCREATORID"
 132;rendez vous aujourd'hui;15539
 133;rdv mercredi 10h;16015
 134;Site sport en ligne;12620
@@ -83,8 +83,8 @@ SDTHREADID;subject;SDCREATORID
 283;comment envoyer mon semainier ?;7927
 284;RDV du 26 septembre 11 h 00;19327
 285;rdv du 19 /09 /2022;18710
-286;1eer rendez-vous nutrition escalier;20017
-287;1er rendez-vous nutrition escaler;20017
+286;"1eer rendez-vous nutrition escalier";20017
+287;"1er rendez-vous nutrition escaler";20017
 288;rendez vous;19491
 289;Report RDV du 29;19797
 290;Suite RDV 05/10/22;19327
@@ -418,7 +418,7 @@ SDTHREADID;subject;SDCREATORID
 739;Mesures;13466
 740;avis;29312
 741;pris connaissance;10804
-746;2eme seance;29086
+746;"2eme seance";29086
 747;Semainier;29312
 750;PROBLEME TRAVAIL;29098
 752;téléchargement attestation;27905
@@ -516,3 +516,5 @@ SDTHREADID;subject;SDCREATORID
 865;rdv suivi septembre mr Noel;22572
 866;Semainier;31704
 867;Rdv aujourd’hui;30266
+868;Annuler ma consultation;30311
+869;Annuler ma consultation;30311
