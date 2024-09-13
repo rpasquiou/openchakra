@@ -207,13 +207,15 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
   const step=parseInt(data.length/20)
-  return runPromisesWithDelay(data.map((record, idx) => () => {
-    idx%step==0 && console.log('Mapping record', idx, '/', data.length)
-    return mapRecord({record, mapping, ...rest})
-  }))
+  console.time('Mapping records')
+  return runPromisesWithDelay(data.map((record, idx) => () => mapRecord({record, mapping, ...rest})))
     .then(result => {
-      const mappedData=result.map(r => r.value)
       console.timeEnd('Mapping records')
+      const errors=result.filter(r => r.status=='rejected').map(r => r.reason)
+      if (!lodash.isEmpty(errors)) {
+        console.error('Errors', errors)
+      }
+      const mappedData=result.filter(r => r.status=='fulfilled').map(r => r.value)
       const recordsCount=mappedData.length
       console.time(msg)
       return runPromisesWithDelay(mappedData.map((record, index) => () => {
@@ -237,9 +239,9 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
       })
     })
     .finally(()=> {
+      console.timeEnd(msg)
       delete mongoose.model(model)
       saveCache()
-      console.timeEnd(msg)
     })
 }
 

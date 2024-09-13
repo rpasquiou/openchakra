@@ -19,11 +19,10 @@ const LeadSchema = new Schema({
     set: v => v?.trim(),
     required: false,
   },
-  // No email validation for import
+  // No email validation nor required for import
   email: {
     type: String,
-    // validate: [isEmailOk, v => `L'email '${v?.value}' est invalide`],
-    required: [true, `L'email est obligatoire`],
+    required: false,
     set: v => v?.toLowerCase().trim(),
     index: true,
   },

@@ -122,46 +122,6 @@ const replaceInFile = (path, replaces) => {
   }
 }
 
-const fixAppointments = async directory => {
-  const INPUT=path.join(directory, 'smart_consultation.csv')
-  const MIS_INPUT=path.join(directory, 'smart_mis.csv')
-  const EO_INPUT=path.join(directory, 'smart_eo.csv')
-  const OUTPUT=path.join(directory, 'wapp_consultation.csv')
-
-  let records=await loadRecords(INPUT)
-
-  if (isNewerThan(OUTPUT, INPUT) && isNewerThan(OUTPUT, MIS_INPUT) && isNewerThan(OUTPUT, EO_INPUT)) {
-    console.log('no need to generate appts')
-    return 
-  }
-  console.log('Generating appts')
-  // Remove MIS appointments
-  console.log('records before MIS filter', records.length)
-  const mis=(await loadRecords(MIS_INPUT)).map(record => record.SDCONSULTID)
-  records=records.filter(r => !mis.includes(r.SDCONSULTID))
-  console.log('records after MIS filter', records.length)
-
-  // Remove EO appointments
-  console.log('records before EO filter', records.length)
-  const eo=(await loadRecords(EO_INPUT)).map(record => record.SDCONSULTID)
-  records=records.filter(r => !eo.includes(r.SDCONSULTID))
-  console.log('records after EO filter', records.length)
-  
-  const firstAppointments=lodash(records).groupBy('SDPROGRAMID')
-    .mapValues(consults => lodash.minBy(consults, c => moment(c.date)).SDCONSULTID)
-    .value()
-  const ASS_HEADER='assessment'
-  const keys=[...Object.keys(records[0]), ASS_HEADER]
-  const result=[keys.join(';')]
-  records.forEach(record => {
-    const line=keys.map(k => k==ASS_HEADER ? (firstAppointments[record.SDPROGRAMID]==record.SDCONSULTID ? "1" : "0"): record[k])
-    result.push(line.join(';'))
-  })
-
-  
-  fs.writeFileSync(OUTPUT, result.join('\n'))
-}
-
 const createCantorKey = (value1, value2) => {
   const values=[parseInt(value1), parseInt(value2)].sort()
   return pairing.pair(...values)
@@ -223,7 +183,7 @@ const generateMessages = async directory =>{
       && isNewerThan(MESSAGES_OUTPUT, THREADS)
       && isNewerThan(MESSAGES_OUTPUT, MESSAGES)
   ) {
-    // console.log('No need to generate', OUTPUT)
+    console.log('No need to generate', CONVERSATIONS_OUTPUT, 'or', MESSAGES_OUTPUT)
     return
   }
 
@@ -241,7 +201,8 @@ const generateMessages = async directory =>{
     .map((([SDTHREADID, [USER1, USER2]]) => ({SDTHREADID, USER1, USER2, CONVID: createCantorKey(USER1, USER2)})))
     .groupBy('CONVID')
     .mapValues(threads => ({...threads[0], SDTHREADID: undefined, SDTHREADIDS: threads.map(t => t.SDTHREADID)}))
-    
+  
+  console.log(conversations.value())
   const conversationKeys=['CONVID','USER1','USER2']
   saveRecords(CONVERSATIONS_OUTPUT, conversationKeys, conversations)
 
@@ -345,7 +306,6 @@ const generateFoodPrograms = async directory => {
 
 const fixFiles = async directory => {
   console.log('Fixing files')
-  await fixAppointments(directory)
   await fixQuizz(directory)
   await generateMessages(directory)
   await fixSpecs(directory)
@@ -356,7 +316,7 @@ const fixFiles = async directory => {
 }
 
 const computePseudo = record => {
-  const letters=[record.firstname?.slice(0, 1), record.lastname?.slice(0, 2)].filter(v => !!v)
+  const letters=[record.firstname?.trim()?.slice(0, 1), record.lastname?.trim()?.slice(0, 2)].filter(v => !!v)
   return letters.join('').toUpperCase() || 'FAK'
 }
 
@@ -513,7 +473,7 @@ const APPOINTMENT_MAPPING= (assessment_id, followup_id, progressTemplate) => ({
   start_date: 'date',
   end_date: ({record}) => moment(record.date).add(45, 'minutes'),
   note: 'comments',
-  appointment_type: ({record}) => +record.assessment ? assessment_id : followup_id,
+  appointment_type: ({record}) => !!record.assessment ? assessment_id : followup_id,
   migration_id: 'SDCONSULTID',
   diet: async ({cache, record}) => {
     let diet=null
@@ -553,7 +513,8 @@ const MEASURE_MAPPING={
   thighs: ({record}) => lodash.mean([parseInt(record.leftthigh), parseInt(record.rightthigh)].filter(v => !!v)) || undefined,
   arms: () => undefined,
   weight: 'weight',
-  user: async ({cache, record}) => (await Appointment.findById(cache('appointment', record.SDCONSULTID), {user:1}))?.user,
+  user: async ({cache, record}) => 
+    (await Appointment.findById(cache('appointment', record.SDCONSULTID), {user:1}))?.user,
 }
 
 const MEASURE_MAPPING_KEY='migration_id'
@@ -679,6 +640,7 @@ const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMAL
 
 const NUTADVICE_MAPPING={
   migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.date).unix()}`),
+  [CREATED_AT_ATTRIBUTE]: 'date',
   start_date: 'date',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
@@ -888,10 +850,26 @@ const importCoachings = async input_file => {
     .then(coachings => Promise.all(coachings.map(ensureSurvey)))
 }
 
-const importAppointments = async input_file => {
-  let assessemntType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
-  if (!assessemntType) {
-    assessemntType=await AppointmentType.create({title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, 
+const fixAppointments = async (appts_path, eo_path, mis_path) => {
+  let records = await removeEoAndMis(appts_path, mis_path, eo_path)
+  
+  const firstAppointments=lodash(records).groupBy('SDPROGRAMID')
+    .mapValues(consults => lodash.minBy(consults, c => moment(c.date)).SDCONSULTID)
+    .value()
+  const ASS_HEADER='assessment'
+  records=records.map(r => ({
+    ...r,
+    assessment: firstAppointments[r.SDPROGRAMID]==r.SDCONSULTID ? true : false
+  }))
+  return records
+}
+
+
+const importAppointments = async (input_file, eos_path, mis_path) => {
+
+  let assessmentType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
+  if (!assessmentType) {
+    assessmentType=await AppointmentType.create({title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, 
       smartagenda_id: ASS_PRESTATION_SMARTAGENDA_ID})
   }
 
@@ -901,23 +879,22 @@ const importAppointments = async input_file => {
       smartagenda_id: FOLLOWUP_PRESTATION_SMARTAGENDA_ID})
   }
 
+  const records=await fixAppointments(input_file, eos_path, mis_path)
+
   const progressQuizz=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
-  return loadRecords(input_file)
-    .then(records => {
-      const mapping=APPOINTMENT_MAPPING(assessemntType._id, followupType._id, progressQuizz)
-      return importData({model: 'appointment', data:records, mapping, 
-        identityKey: APPOINTMENT_KEY, migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()})
-    })
+  const mapping=APPOINTMENT_MAPPING(assessmentType._id, followupType._id, progressQuizz)
+  return importData({
+    model: 'appointment', data:records, mapping, identityKey: APPOINTMENT_KEY, 
+    migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
-const importMeasures = async input_file => {
-  return loadRecords(input_file)
-    .then(records => 
-    importData({
-      model: 'measure', data:records, mapping:MEASURE_MAPPING, identityKey: MEASURE_MAPPING_KEY, 
-      migrationKey: MEASURE_MAPPING_MIGRATION__KEY, progressCb: progressCb()
-    })
-  )
+const importMeasures = async (measures_path, mis_path, eo_path) => {
+  const records=await removeEoAndMis(measures_path, mis_path, eo_path)
+  return importData({
+    model: 'measure', data:records, mapping:MEASURE_MAPPING, identityKey: MEASURE_MAPPING_KEY, 
+    migrationKey: MEASURE_MAPPING_MIGRATION__KEY, progressCb: progressCb()
+  })
 }
 
 const importQuizz = async input_file => {
@@ -1128,10 +1105,11 @@ const importUserProgressQuizz = async (input_file) => {
         return console.error(`No question found for consultation ${consultid} criterion ${record.SDCRITERIAID}`)
       }
       const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
-      return UserQuizzQuestion.findByIdAndUpdate(question_id, {single_enum_answer: answer_id})
+      return UserQuizzQuestion.findByIdAndUpdate(question._id, {single_enum_answer: answer_id})
     }))
   }))
   console.log(res.filter(r => r.status=='rejected').map(r => r.reason))
+  return res
 }
 
 const importUserObjectives = async input_file => {
@@ -1161,19 +1139,19 @@ const importUserObjectives = async input_file => {
 }
 
 const importUserAssessmentId = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'coaching', data:records, mapping:ASSESSMENT_MAPPING, 
-    identityKey: ASSESSMENT_KEY, migrationKey: ASSESSMENT_MIGRATION_KEY, progressCb: progressCb()}))
+  const records=await loadRecords(input_file)
+  return importData({
+    model: 'coaching', data:records, mapping:ASSESSMENT_MAPPING, 
+    identityKey: ASSESSMENT_KEY, migrationKey: ASSESSMENT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const importUserImpactId = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'coaching', data:records, mapping:IMPACT_MAPPING, 
-    identityKey: IMPACT_KEY, migrationKey: IMPACT_MIGRATION_KEY, progressCb: progressCb()}))
+  const records=await loadRecords(input_file)
+  return importData({
+    model: 'coaching', data:records, mapping:IMPACT_MAPPING, 
+    identityKey: IMPACT_KEY, migrationKey: IMPACT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const importConversations = async input_file => {
@@ -1223,7 +1201,7 @@ const importDietSpecs = async input_file => {
 const importPatientHeight = async input_file => {
   return loadRecords(input_file)
     .then(records => importData({model: 'user', data:records, mapping:HEIGHT_MAPPING, 
-    identityKey: HEIGHT_KEY, migrationKey: HEIGHT_MIGRATION_KEY, progressCb: progressCb()})
+    identityKey: HEIGHT_KEY, migrationKey: HEIGHT_MIGRATION_KEY, updateOnly: true, progressCb: progressCb()})
   )
 }
 
@@ -1355,19 +1333,21 @@ const importDiploma = async (input_file, diploma_directory) => {
 }
 
 const importOtherDiploma = async (input_file) => {
-  return loadRecords(input_file)
-    .then(records => importData({model: 'diploma', data:records, mapping: OTHER_DIPLOMA_MAPPING, 
-      identityKey: OTHER_DIPLOMA_KEY, migrationKey: OTHER_DIPLOMA_MIGRATION_KEY, progressCb: progressCb()}
-    )
-    .then(console.log)
-  )
+  let records=await loadRecords(input_file)
+  records=records.filter(r => !!r.othergrade)
+  return importData({
+    model: 'diploma', data:records, mapping: OTHER_DIPLOMA_MAPPING, 
+    identityKey: OTHER_DIPLOMA_KEY, migrationKey: OTHER_DIPLOMA_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const FOODPROGRAM_MAPPING={
   migration_id: 'SDPROGRAMID',
   food_program: async ({record, programsDirectory}) => {
     const fullpath=path.join(programsDirectory, record.foodprogram)
+    console.log(`Sending`, fullpath)
     const s3File=await sendFileToAWS(fullpath, 'foodprogram')
+    console.log(`Sent`, fullpath)
     return s3File?.Location
   },
 }
@@ -1497,12 +1477,13 @@ const LEAD_MAPPING={
   interested_in: ({record, cache}) => cache('interest', record.medialaneprogramtype),
   operator: ({record, cache}) => cache('user', record.SDDIETID),
   job: ({record, cache}) => {
-    let jobId=parseInt(record.carceptjob)==8 && parseInt(record.branch)==0 ? JOB_HORS_CIBLE : jobId
+    let jobId=(+record.carceptjob)==8 && (+record.branch)==0 ? JOB_HORS_CIBLE : record.carceptjob
     return cache('job', jobId)
   },
   comment: 'comments',
   call_status: ({record}) => CALL_STATUS_MAPPING[record.status],
   phone: 'tel',
+  company_code: ({record}) => COMPANY[+record.branch],
   source: ({record}) => SOURCE[record.listtype],
   migration_id: 'SDPROSPECTID',
 }
@@ -1529,9 +1510,9 @@ const importLeads = async (input_file) => {
 
   const records=await loadRecords(input_file)
   
-  return await importData({
+  return importData({
     model: 'lead', data: records, mapping: LEAD_MAPPING, identityKey: 'email',
-    migrationKey: 'migration_id', progressCb: progressCb(),
+    migrationKey: 'migration_id', progressCb: progressCb(500),
   })
 }
 
@@ -1570,5 +1551,18 @@ module.exports={
   generateQuizz,
   importFoodPrograms,
   importLeads,
+}
+
+async function removeEoAndMis(appts_path, mis_path, eo_path) {
+  let records = await loadRecords(appts_path)
+  console.log('Generating appts')
+  // Remove MIS appointments
+  const mis = (await loadRecords(mis_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !mis.includes(r.SDCONSULTID))
+
+  // Remove EO appointments
+  const eo = (await loadRecords(eo_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !eo.includes(r.SDCONSULTID))
+  return records
 }
 

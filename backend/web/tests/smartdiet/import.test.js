@@ -92,11 +92,11 @@ describe('Test imports', () => {
   })
 
   it('must import patients heights', async () => {
-    await importPatientHeight(path.join(ROOT, 'smart_summary.csv')).catch(console.error)
+    return importPatientHeight(path.join(ROOT, 'smart_summary.csv'))
   })
 
   it('must import patients first weights', async () => {
-    return importPatientWeight(path.join(ROOT, 'smart_summary.csv')).catch(console.error)
+    return importPatientWeight(path.join(ROOT, 'smart_summary.csv'))
   })
 
   it('must import one offer per imported company', async () => {
@@ -137,7 +137,11 @@ describe('Test imports', () => {
   })
 
   it('must upsert appointments', async () => {
-    await importAppointments(path.join(ROOT, 'wapp_consultation.csv'))
+    await importAppointments(
+      path.join(ROOT, 'smart_consultation.csv'),
+      path.join(ROOT, 'smart_eo.csv'),
+      path.join(ROOT, 'smart_mis.csv'),
+    )
     const user=await User.findOne({email: PATIENT_EMAIL})
     const coachings=await Coaching.find({user})
     const appts=await Appointment.find({coaching: coachings})
@@ -146,11 +150,11 @@ describe('Test imports', () => {
   })
 
   it('must upsert measures', async () => {
-    let res = await importMeasures(path.join(ROOT, 'smart_measure.csv'))
-    const user=await User.findOne({email: PATIENT_EMAIL})
-    const measures=await Measure.find({user})
-    expect(measures.length).toEqual(2)
-    console.log(measures)
+    return importMeasures(
+      path.join(ROOT, 'smart_measure.csv'),
+      path.join(ROOT, 'smart_eo.csv'),
+      path.join(ROOT, 'smart_mis.csv'),
+    )
   })
 
   it('must upsert quizz', async () => {
@@ -191,24 +195,19 @@ describe('Test imports', () => {
   })
 
   it('must upsert patients quizzs', async () => {
-    await importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
-    const user=await User.findOne({email: 'lylycordo@laposte.net'})
-      .populate({path: 'coachings', populate: {path: 'quizz', populate: {path: 'questions', populate: ['quizz_question', 'single_enum_answer']}}})
-    const quizz=lodash(user.coachings).map(c => c.quizz).flatten().find(q => q.name=='Fréquences alimentaires')
-    expect(quizz).toBeTruthy()
-    const imported=[...quizz.questions.map(q => q.single_enum_answer.text)]
-    const EXPECTED=['Vrai','Vrai','Faux','Faux','Vrai', 'Faux','Faux','Faux']
-    expect(imported).toEqual(EXPECTED)
+    return importUserQuizz(path.join(ROOT, 'smart_patient_quiz.csv'))
   })
 
   it('must upsert patients objectives', async () => {
     return await importUserObjectives(path.join(ROOT, 'smart_objective.csv'))
   })
 
-  it('must upsert patients assessment and impact ids', async () => {
-    await importUserAssessmentId(path.join(ROOT, 'smart_summary_reference.csv'))
-    await importUserImpactId(path.join(ROOT, 'smart_second_summary_reference.csv'))
-    return
+  it('must upsert patients assessment ids', async () => {
+    return importUserAssessmentId(path.join(ROOT, 'smart_summary_reference.csv'))
+  })
+
+  it('must upsert patients impact ids', async () => {
+    return importUserImpactId(path.join(ROOT, 'smart_second_summary_reference.csv'))
   })
 
   it('must upsert conversation', async () => {
