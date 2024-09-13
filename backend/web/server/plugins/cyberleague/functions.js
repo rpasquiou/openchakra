@@ -11,7 +11,7 @@ const {
   setPostPutData,
   idEqual,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError } = require('../../utils/errors')
@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { computeScores, booleanLevelFieldName, getQuestionsByCategory } = require('./score')
+const { computeScores, getQuestionsByCategory } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
@@ -443,8 +443,19 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'score') {
-    const booleanField = booleanLevelFieldName(data.level)
-    const questions = await Question.find({[booleanField]: true})
+    let questions = await Question.find()
+
+    switch (data.level) {
+      case SCORE_LEVEL_3:
+        questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2 || q.is_level_3)
+        break;
+      case SCORE_LEVEL_2:
+        questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2)
+        break;
+      case SCORE_LEVEL_1:
+        questions = lodash.filter(questions, (q) => q.is_level_1)
+        break;
+    }
     const answers=await Promise.all(questions.map(async q => {
       return Answer.create({score: data._id, question: q._id})
     }))

@@ -78,22 +78,6 @@ const computeScores = async (answerArray) => {
   return {global_rate, category_rates, bellwether_rates}
 }
 
-const booleanLevelFieldName = (scoreLevel) => {
-  switch (scoreLevel) {
-    case SCORE_LEVEL_1:
-      return `is_level_1`
-
-    case SCORE_LEVEL_2:
-      return `is_level_2`
-
-    case SCORE_LEVEL_3:
-      return `is_level_3`
-  
-    default:
-      throw new Error(`Unknown score level`);
-  }
-}
-
 const getQuestionsByCategory = async (userId, params, data) => {
   const groupedQuestions = lodash.groupBy(data.answers, (a) => a.question.question_category._id)
   const res = []
@@ -105,6 +89,5 @@ const getQuestionsByCategory = async (userId, params, data) => {
 
 module.exports = {
   computeScores,
-  booleanLevelFieldName,
   getQuestionsByCategory
 }
