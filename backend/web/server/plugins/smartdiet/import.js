@@ -801,9 +801,6 @@ const DIET_KEY='email'
 const DIET_MIGRATION_KEY='migration_id'
 
 const importDiets = async (input_file, pictures_directory, rib_directory) => {
-  // Deactivate password encryption
-  const schema=User.schema
-  schema.paths.password.setters=[]
   // End deactivate password encryption
   return loadRecords(input_file)
     .then(records =>  importData({
@@ -850,7 +847,7 @@ const importCoachings = async input_file => {
     .then(coachings => Promise.all(coachings.map(ensureSurvey)))
 }
 
-const removeEoAndMis = async (appts_path, mis_path, eo_path) {
+const removeEoAndMis = async (appts_path, mis_path, eo_path) => {
   let records = await loadRecords(appts_path)
   console.log('Generating appts')
   // Remove MIS appointments
@@ -1375,6 +1372,29 @@ const importFoodPrograms = async (input_file, programs_directory) => {
   )
 }
 
+const TELEOP_MAPPING={
+  role: () => ROLE_EXTERNAL_DIET,
+  password: () => DEFAULT_PASSWORD,
+  firstname: 'username',
+  lastname: 'username',
+  email: 'email',
+  diet_calls_enabled: () => true,
+  registration_status: () => DIET_REGISTRATION_STATUS_ACTIVE,
+  source: () => 'import',
+  migration_id: 'OPERATORID',
+}
+
+const TELEOP_KEY='email'
+const TELEOP_MIGRATION_KEY='migration_id'
+
+const importOperators = async (input_file) => {
+  let records=await loadRecords(input_file)
+  return importData({
+    model: 'user', data:records, mapping:TELEOP_MAPPING, identityKey: TELEOP_KEY, 
+    migrationKey: TELEOP_MIGRATION_KEY, progressCb: progressCb()
+  })
+}
+
 const VALID_HEALTH=1
 const VALID_DIET=2
 const VALID_POINTS=3
@@ -1496,7 +1516,7 @@ const LEAD_MAPPING={
   join_reason: ({record, cache}) => cache('joinReason', record.validationreason),
   decline_reason: ({record, cache}) => cache('declineReason', record.rejectreason),
   interested_in: ({record, cache}) => cache('interest', record.medialaneprogramtype),
-  operator: ({record, cache}) => cache('user', record.SDDIETID),
+  operator: ({record, cache}) => cache('user', record.SDOPERATORID),
   job: ({record, cache}) => {
     let jobId=(+record.carceptjob)==8 && (+record.branch)==0 ? JOB_HORS_CIBLE : record.carceptjob
     return cache('job', jobId)
@@ -1508,7 +1528,6 @@ const LEAD_MAPPING={
   source: ({record}) => SOURCE[record.listtype],
   migration_id: 'SDPROSPECTID',
 }
-
 
 const importLeads = async (input_file) => {
   const NAME_MAPPING={
@@ -1572,6 +1591,7 @@ module.exports={
   generateQuizz,
   importFoodPrograms,
   importLeads,
+  importOperators,
 }
 
 

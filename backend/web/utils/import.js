@@ -187,6 +187,7 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly, ori
     .catch(err => {
       const msg=`Model ${model.modelName}, from ${JSON.stringify(origin)} to record ${JSON.stringify(record)}, error(s):${err.toString()}`
       console.error(msg)
+      throw err
     })
 }
 
