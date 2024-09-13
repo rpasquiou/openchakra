@@ -62,7 +62,7 @@ const computeScores = async (answerArray) => {
     }
   })
     
-  const global_rate = total_rate / total_weight
+  const global_rate = Math.round(total_rate / total_weight *100) /100
 
   const computeRates = (weightsAndRates) => {
     let result = [];     
