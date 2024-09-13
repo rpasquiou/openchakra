@@ -115,6 +115,10 @@ const importLeads= async (buffer, user) => {
   })
 }
 
+const getCompanyLeads = async (userId, params, data) => {
+  return Lead.find({company_code: data.code, operator: userId})
+}
+
 module.exports={
-  importLeads
+  importLeads, getCompanyLeads,
 }

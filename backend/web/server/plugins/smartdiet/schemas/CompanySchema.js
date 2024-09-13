@@ -103,6 +103,11 @@ const CompanySchema = new Schema(
       type: String,
       required: false,
     },
+    leads: [{
+      type: Schema.Types.ObjectId,
+      ref: 'lead',
+      required: false,
+    }],
   },
   schemaOptions,
 )
@@ -198,12 +203,6 @@ CompanySchema.virtual("collective_challenges", {
   ref: "collectiveChallenge", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
-});
-
-CompanySchema.virtual('leads', {
-  ref: 'lead', // The Model to use
-  localField: "code", // Find in Model, where localField
-  foreignField: "company_code", // is equal to foreignField
 });
 
 module.exports = CompanySchema

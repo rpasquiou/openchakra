@@ -153,7 +153,7 @@ const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency'
 const {getSmartAgendaConfig} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
-const { importLeads } = require('./leads')
+const { importLeads, getCompanyLeads } = require('./leads')
 const Quizz = require('../../models/Quizz')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const {
@@ -1087,14 +1087,7 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({
-  model: 'company', field: 'leads', instance: 'Array', multiple: true,
-  requires: 'code',
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'lead' }
-  },
-})
+declareComputedField({model: 'company', field: 'leads', requires: 'code', getterFn: getCompanyLeads})
 declareVirtualField({model: 'company', field: 'current_offer', instance: 'offer'})
 
 
