@@ -278,6 +278,10 @@ UserSchema.virtual('comments', {
   foreignField: 'creator',
 })
 
+UserSchema.virtual('company_size', DUMMY_REF).get(function() {
+    return this.company ? this.company.size : null
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
