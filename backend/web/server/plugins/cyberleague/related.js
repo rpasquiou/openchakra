@@ -82,7 +82,7 @@ const getRelated = (model) => {
           } else {
             if (sameFunSizeLength > 10) {
               const sameUserAll = lodash.groupBy(sameUserFunSize, (u) => u.company?.sector)[data.company?.sector]
-              const sameAllLength = sameUserAll.length || 0
+              const sameAllLength = sameUserAll?.length || 0
 
               //not enough users with same function, company size and company sector
               if (sameAllLength < 10) {
