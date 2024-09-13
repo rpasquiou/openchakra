@@ -1009,11 +1009,11 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
 const DATA_IMPORT_FN={}
 
 // Imports data for model. Delegated to plugins
-const importData=({model, data}) => {
+const importData=({model, data, user}) => {
   if (!DATA_IMPORT_FN[model]) {
     throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
   }
-  return DATA_IMPORT_FN[model](data)
+  return DATA_IMPORT_FN[model](data, user)
 }
 
 const setImportDataFunction = ({model, fn}) => {
