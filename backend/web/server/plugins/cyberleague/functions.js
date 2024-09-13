@@ -28,6 +28,7 @@ const { computeScores, booleanLevelFieldName, getQuestionsByCategory } = require
 const Conversation = require('../../models/Conversation')
 const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
+const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
@@ -462,9 +463,15 @@ const postPutData = async ({model, id, params, user}) => {
     }
   }
 
-  if (model == 'score' && params.is_drafted) {
-    const computedScores = computeScores(params.answers)
-    params = {...params, ...computedScores}
+  if (model == 'answer') {
+    const answer = await Answer.findById(id)
+    const score = await Score.findById(answer.score)
+
+    //if (score.is_drafted) { TODO !!!!
+      const computedScores = await computeScores(score.answers)
+      
+      await Score.findByIdAndUpdate(score._id, {$set: {...computedScores}})
+    //}
   }
   return {model, id, params, user}
 }

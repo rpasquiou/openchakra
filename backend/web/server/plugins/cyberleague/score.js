@@ -6,10 +6,11 @@ const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_L
 const computeScores = async (answerArray) => {
 
   let answers= await Promise.all(answerArray.map((a) => 
-    loadFromDb({model: 'question', fields: ['weight', 'question_category', 'is_bellwether'], id: a.question._id})))
-  
+    loadFromDb({model: 'answer', fields: ['question', 'question.weight', 'question.question_category', 'question.is_bellwether','answer'], id: a})
+  ))
+
   answers=answers.map((elem, idx) => {
-    return {question: elem[0], answer: answerArray[idx].answer}
+    return elem[0]
   })
 
   let total_weight =0
