@@ -1515,7 +1515,10 @@ const LEAD_MAPPING={
   email: ({record}) => record.email?.trim() || `${record.SDPROSPECTID}@unknown.com`,
   join_reason: ({record, cache}) => cache('joinReason', record.validationreason),
   decline_reason: ({record, cache}) => cache('declineReason', record.rejectreason),
-  interested_in: ({record, cache}) => cache('interest', record.medialaneprogramtype),
+  interested_in: ({record, cache}) => {
+    const interest=cache('interest', record.medialaneprogramtype)
+    return interest ? [interest]: []
+  },
   operator: ({record, cache}) => cache('user', record.SDOPERATORID),
   job: ({record, cache}) => {
     let jobId=(+record.carceptjob)==8 && (+record.branch)==0 ? JOB_HORS_CIBLE : record.carceptjob
