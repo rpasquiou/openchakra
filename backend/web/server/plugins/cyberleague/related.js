@@ -23,7 +23,7 @@ const getRelated = (model) => {
       let res = []
 
       const sameUserFunction = lodash.groupBy(users, (u) => u.function)[data.function]
-      const sameFunLength = sameUserFunction.length || 0
+      const sameFunLength = sameUserFunction?.length || 0
 
       //if not enough related with same function, need to add users with same company size
       if (sameFunLength <10) {
