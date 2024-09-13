@@ -153,7 +153,7 @@ const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency'
 const {getSmartAgendaConfig} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
-const { importLeads } = require('./leads')
+const { importLeads, getCompanyLeads } = require('./leads')
 const Quizz = require('../../models/Quizz')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const {
@@ -286,6 +286,12 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     return getTickets(user?.email)
       .then(tickets => tickets.map(t => ({...t, _id: t.jiraid})))
       .then(tickets => ({ model, fields, id, data: tickets}))
+  }
+
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
   }
 
   if (model == 'loggedUser') {
@@ -1081,14 +1087,7 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({
-  model: 'company', field: 'leads', instance: 'Array', multiple: true,
-  requires: 'code',
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'lead' }
-  },
-})
+declareComputedField({model: 'company', field: 'leads', requires: 'code', getterFn: getCompanyLeads})
 declareVirtualField({model: 'company', field: 'current_offer', instance: 'offer'})
 
 
@@ -2030,6 +2029,11 @@ const prePut = async data => {
   const {model, params}=data
   if (model=='user' && !!params.password) {
     await validatePassword(params)
+  }
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
   }
   return data
 }

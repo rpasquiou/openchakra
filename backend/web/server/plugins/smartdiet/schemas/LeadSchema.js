@@ -130,8 +130,8 @@ const LeadSchema = new Schema({
 }, schemaOptions)
 
 LeadSchema.index(
-  { email: 1},
-  { unique: true, message: 'Un prospect existe déjà avec cet email' });
+  { phone: 1},
+  { unique: true, message: 'Un prospect existe déjà avec ce téléphone' });
 
 /* eslint-disable prefer-arrow-callback */
 LeadSchema.virtual('fullname', DUMMY_REF).get(function() {
