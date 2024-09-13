@@ -40,7 +40,7 @@ const getRelated = (model) => {
           const sameUserSector = lodash.groupBy(users, (u) => u.company?.sector)[data.company?.sector]
 
           //we keep up to 10 related users
-          res = sameUserSector.length == 0 ? res : lodash.concat(res, lodash.slice(sameUserSector, 0, 10-(sameFunLength + sameSizeLength )))
+          res = sameUserSector?.length == 0 ? res : lodash.concat(res, lodash.slice(sameUserSector, 0, 10-(sameFunLength + sameSizeLength )))
 
         //too many related users with same company size, need to filter users to keep those with same company sector
         } else {
