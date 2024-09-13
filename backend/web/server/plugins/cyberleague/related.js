@@ -17,7 +17,7 @@ const getRelated = (model) => {
   if (model == `user`) {
     return async (userId,params,data) => {
 
-      const loadedUsers = await loadFromDb({model: `user`, fields: [`function`, `company.size`,`company.sector`,`shortname`]})
+      const loadedUsers = await loadFromDb({model: `user`, fields: [`function`, `company.size`,`company.sector`,`shortname`,`picture`,`job`]})
       let users = lodash.filter(loadedUsers, (u) => !idEqual(data._id,u._id))
 
       let res = []
@@ -27,19 +27,20 @@ const getRelated = (model) => {
 
       //if not enough related with same function, need to add users with same company size
       if (sameFunLength <10) {
-        res = sameUserFunction
+        res = sameFunLength == 0 ? [] : sameUserFunction
+        
         users = lodash.xor(users, sameUserFunction)
         const sameUserSize = lodash.groupBy(users, (u) => u.company?.size)[data.company?.size]
         const sameSizeLength = sameUserSize?.length || 0
 
         //still not enough related users, need to add users with same company sector
         if (sameFunLength + sameSizeLength <10) {
-          res = lodash.concat(res, sameUserSize)
+          res = sameSizeLength == 0 ? res : lodash.concat(res, sameUserSize)
           users = lodash.xor(users, sameUserSize)
           const sameUserSector = lodash.groupBy(users, (u) => u.company?.sector)[data.company?.sector]
 
           //we keep up to 10 related users
-          res = lodash.concat(res, lodash.slice(sameUserSector, 0, 10-(sameFunLength + sameSizeLength )))
+          res = sameUserSector.length == 0 ? res : lodash.concat(res, lodash.slice(sameUserSector, 0, 10-(sameFunLength + sameSizeLength )))
 
         //too many related users with same company size, need to filter users to keep those with same company sector
         } else {
@@ -49,7 +50,7 @@ const getRelated = (model) => {
 
             //not enough users with same company size
             if (sameFunLength + sameSizeSectLength < 10) {
-              res = lodash.concat(res, sameUserSizeSector)
+              res = sameSizeSectLength == 0 ? res : lodash.concat(res, sameUserSizeSector)
 
               //we complete res with users with same size to have 10 related users
               res = lodash.concat(res, lodash.xor(sameUserSize, sameUserSizeSector).slice(0, 10-(sameFunLength + sameSizeSectLength)))
@@ -73,7 +74,7 @@ const getRelated = (model) => {
 
           //not enough users with same function and company size
           if (sameFunSizeLength < 10) {
-            res = sameUserFunSize
+            res = sameFunSizeLength == 0 ? [] : sameUserFunSize
 
             // we complete res with users with same function to have 10 related users
             res = lodash.concat(res, lodash.xor(sameUserFunction, sameUserFunSize).slice(0, 10-sameFunSizeLength))
@@ -86,7 +87,7 @@ const getRelated = (model) => {
 
               //not enough users with same function, company size and company sector
               if (sameAllLength < 10) {
-                res = sameUserAll
+                res = sameAllLength == 0 ? res : sameUserAll
 
                 //we complete res with users with same function and company size to have 10 related users
                 res = lodash.concat(res, lodash.xor(sameUserAll, sameUserFunSize).slice(0, 10-sameAllLength))
