@@ -46,7 +46,7 @@ const CompanySchema = new Schema(
     registration_integrity: {
       type: Boolean,
       default: false,
-      required: true,
+      required: false,
     },
     // Type prestation bilan
     assessment_appointment_type: {

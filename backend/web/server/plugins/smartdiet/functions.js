@@ -288,6 +288,12 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       .then(tickets => ({ model, fields, id, data: tickets}))
   }
 
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
+  }
+
   if (model == 'loggedUser') {
     model = 'user'
     id = user?._id || 'INVALIDID'
@@ -2030,6 +2036,11 @@ const prePut = async data => {
   const {model, params}=data
   if (model=='user' && !!params.password) {
     await validatePassword(params)
+  }
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
   }
   return data
 }
