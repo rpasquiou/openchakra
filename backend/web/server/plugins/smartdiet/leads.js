@@ -88,7 +88,7 @@ const importLead = async (leadData, user) => {
   return Lead.updateOne(
     criterion,
     {
-      $set: {...leadData, operator: user},
+      $set: {...leadData},
       $setOnInsert: {call_status: CALL_STATUS_TO_CALL},
     },
     {upsert: true, runValidators: true}
@@ -116,7 +116,10 @@ const importLeads= async (buffer, user) => {
 }
 
 const getCompanyLeads = async (userId, params, data) => {
-  return Lead.find({company_code: data.code, operator: userId})
+  return Lead.find({
+    company_code: data.code, 
+    $or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}],
+  })
 }
 
 module.exports={
