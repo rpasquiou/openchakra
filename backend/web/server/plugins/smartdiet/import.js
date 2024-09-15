@@ -1512,7 +1512,7 @@ const LEAD_MAPPING={
   firstname: 'firstname',
   lastname: 'lastname',
   createdAt: 'created',
-  email: ({record}) => record.email?.trim() || `${record.SDPROSPECTID}@unknown.com`,
+  email: ({record}) => record.email?.trim(),
   join_reason: ({record, cache}) => cache('joinReason', record.validationreason),
   decline_reason: ({record, cache}) => cache('declineReason', record.rejectreason),
   interested_in: ({record, cache}) => {
