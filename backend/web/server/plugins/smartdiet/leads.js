@@ -1,9 +1,10 @@
 const { bufferToString, guessDelimiter } = require('../../../utils/text')
 const Company = require('../../models/Company')
+const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const { extractData, guessFileType } = require('../../../utils/import')
 const lodash=require('lodash')
-const { CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL } = require('./consts')
+const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL } = require('./consts')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 
 const VALID_CALLS={'Entrant': CALL_DIRECTION_IN_CALL, 'Sortant': CALL_DIRECTION_OUT_CALL}
@@ -116,9 +117,13 @@ const importLeads= async (buffer, user) => {
 }
 
 const getCompanyLeads = async (userId, params, data) => {
+  console.log(`Company code:`, data.code)
+  const logged=await User.findById(userId)
+  const filter=logged?.role==ROLE_ADMIN ? {} : {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
+  console.log('Filter leads for', data.code, logged?.role)
   return Lead.find({
     company_code: data.code, 
-    $or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}],
+    ...filter,
   })
 }
 
