@@ -2472,7 +2472,7 @@ const preSave = async (model, id, values, isNew) => {
   }
   if (model=='appointment') {
     const appt=await Appointment.findById(id)
-    if (coaching.user) {
+    if (appt.user) {
       return crmUpsertAccount(appt.user, values)    
     }
   }
