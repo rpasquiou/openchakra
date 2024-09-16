@@ -46,6 +46,10 @@ const UserSchema = new Schema({
     type: String,
     required: false,
   },
+  company_size: {
+    type: String,
+    required: false,
+  },
   phone: {
     type: String,
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
