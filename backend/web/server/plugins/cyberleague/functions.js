@@ -478,12 +478,12 @@ const postPutData = async ({model, id, params, user}) => {
   if (model == 'answer') {
     const answer = await Answer.findById(id)
     const score = await Score.findById(answer.score)
-
-    //if (score.is_drafted) { TODO !!!!
+    
+    if (score.is_drafted) {
       const computedScores = await computeScores(score.answers)
       
       await Score.findByIdAndUpdate(score._id, {$set: {...computedScores}})
-    //}
+    }
   }
   return {model, id, params, user}
 }
