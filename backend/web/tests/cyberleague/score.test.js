@@ -16,6 +16,7 @@ const Question = require('../../server/models/Question')
 const { loadFromDb, MONGOOSE_OPTIONS, idEqual } = require('../../server/utils/database')
 const { ensureQuestionCategories, testOnlyPostCreate } = require('../../server/plugins/cyberleague/functions')
 const { computeScores } = require('../../server/plugins/cyberleague/score')
+const Answer = require('../../server/models/Answer')
 require('../../server/plugins/cyberleague/functions')
 
 let categories,dataQ1, dataQ2, dataQ3, dataUser, dataScore
@@ -87,14 +88,29 @@ describe(`score tests`, () => {
 
 
   it(`must compute correct rates`, async () => {
+    
+    //update answers
+    await Answer.findOneAndUpdate(
+      {question: dataQ1._id},
+      {$set: {answer: ANSWER_NOT_APPLICABLE}}
+    )
+    await Answer.findOneAndUpdate(
+      {question: dataQ2._id},
+      {$set: {answer: ANSWER_NO}}
+    )
+    await Answer.findOneAndUpdate(
+      {question: dataQ3._id},
+      {$set: {answer: ANSWER_YES}}
+    )
+
     const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation','is_drafted']})
 
     let score = loadedS[0]
 
-    score.answers[0].answer = ANSWER_NOT_APPLICABLE
-    score.answers[1].answer = ANSWER_NO 
-    score.answers[2].answer = ANSWER_YES
-
+    expect(score.answers[0].answer).toEqual(ANSWER_NOT_APPLICABLE)
+    expect(score.answers[1].answer).toEqual(ANSWER_NO)
+    expect(score.answers[2].answer).toEqual(ANSWER_YES)
+  
     //virtual verif
     expect(score.deviation).toEqual(1)
     expect(score.is_drafted).toEqual(true)
