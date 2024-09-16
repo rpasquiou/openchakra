@@ -86,6 +86,14 @@ const ContentSchema = new Schema({
   expertise_set: {
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
+  },
+  suggested_content: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'content',
+      required: true
+    }],
+    default: []
   }
 }, schemaOptions)
 
