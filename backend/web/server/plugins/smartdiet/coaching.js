@@ -11,6 +11,7 @@ const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FI
 const { getAvailabilities } = require('../agenda/smartagenda')
 const Availability = require('../../models/Availability')
 const Range = require('../../models/Range')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -77,7 +78,7 @@ const getAvailableDiets = async (userId, params, data) => {
   let diets=data._all_diets
   diets=diets.filter(d => !!d.smartagenda_id)
   diets=diets.filter(d => d.diet_coaching_enabled)
-  diets=diets.filter(d => d.customer_companies?.map(c => c._id.toString()).includes(data.user?.company._id.toString()))
+  diets=diets.filter(d => d.customer_companies.map(c => c._id.toString()).includes(data.user.company._id.toString()))
   const hasAvailabilities = async diet_smartagenda_id => {
     const availabilities=await getAvailabilities({
       diet_id: diet_smartagenda_id, 
@@ -87,11 +88,11 @@ const getAvailableDiets = async (userId, params, data) => {
     })
     return !lodash.isEmpty(availabilities)
   }
-  diets=await Promise.all(diets.map(async diet => {
+  dietsAvail=await runPromisesWithDelay(diets.map(diet => async () => {
     const hasAvail=await hasAvailabilities(diet.smartagenda_id)
     return hasAvail ? diet : null
   }))
-  diets=diets.filter(d => !!d)
+  diets=dietsAvail.map(d => d.value).filter(d => !!d)
   return diets
 }
 
