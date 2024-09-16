@@ -167,7 +167,7 @@ const countCache = (model) => {
   return dataCache.keys().filter(k => k.startsWith(`${model}/`)).length
 }
 
-function upsertRecord({model, record, identityKey, migrationKey, updateOnly, origin}) {
+const upsertRecord = async ({model, record, identityKey, migrationKey, updateOnly, origin}) => {
   const identityFilter=computeIdentityFilter(identityKey, migrationKey, record)
   return model.findOne(identityFilter, {[migrationKey]:1})
     .then(result => {

@@ -1504,8 +1504,8 @@ const COMPANY_ECR=0
 const COMPANY_IMMO=1
 
 const COMPANY={
-  [COMPANY_ECR]: 'ECRNUTRITION',
-  [COMPANY_IMMO]: 'IMMONUTRITION',
+  [COMPANY_ECR]: 'TVBNUT',
+  [COMPANY_IMMO]: 'IPNUT',
 }
 
 const LEAD_MAPPING={
@@ -1560,6 +1560,85 @@ const importLeads = async (input_file) => {
   })
 }
 
+const C1_PROSPECT_ID_BASE=1000000
+
+const computeProspectC1Id = id => {
+  if (isNaN(parseInt(id))) {
+    throw new Error(`Invalid ID ${id}`)
+  }
+  return C1_PROSPECT_ID_BASE+parseInt(id)
+}
+
+const PROSPECT_C1_MAPPING= {
+  // role: () => ROLE_CUSTOMER,
+  dataTreatmentAccepted: () => true,
+  cguAccepted: () => true,
+  email: ({record}) => record.email?.trim() || `${record.SDPROSPECTID}@prospect.com`,
+  firstname: 'firstname',
+  lastname: 'lastname',
+  pseudo: ({record}) => computePseudo(record),
+  company: ({record}) => record.company?._id,
+  phone: 'tel',
+  password: () => DEFAULT_PASSWORD,
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_C1_COACHING_MAPPING = {
+  user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
+  offer: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    return getUserOffer(user, record.orderdate)
+  },
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
+  coaching: ({record, cache}) => cache('coaching', computeProspectC1Id(record.SDPROSPECTID)),
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
+  appointment_type: ({record, cache}) =>record.company?.assessment_appointment_type?._id,
+  start_date: 'rendezvous',
+  end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
+  progress: async () => {
+    const copy=await progress_quizz.cloneAsUserQuizz()
+    return copy._id
+  },
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+})
+
+const importProspectsC1 = async (input_file) => {
+  const records=await loadRecords(input_file)
+  const companies=await Company.find({}, {code:1}).populate('assessment_appointment_type')
+  const progressQuizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
+
+  const prospectsC1=records
+    .filter(r => !r.SDPATIENTID?.trim())
+    .filter(r => !!r.rendezvous?.trim())
+    .filter(r => parseInt(r.status)==7) // COACHING
+    .filter(r => !!r.SDDIETID?.trim())
+    .map(r => {
+      const company_code=COMPANY[r.branch]
+      const company=companies.find(c => c.code==company_code)
+      return {...r, company}
+    })
+
+  await importData({
+    model: 'user', data: prospectsC1, mapping: PROSPECT_C1_MAPPING, 
+    identityKey: 'email', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'coaching', data: prospectsC1, mapping: PROSPECT_C1_COACHING_MAPPING,
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'appointment', data: prospectsC1, mapping: PROSPECT_C1_APPOINTMENT_MAPPING(progressQuizz),
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+}
+
 module.exports={
   loadRecords, saveRecords,
   importCompanies,
@@ -1596,6 +1675,7 @@ module.exports={
   importFoodPrograms,
   importLeads,
   importOperators,
+  importProspectsC1,
 }
 
 

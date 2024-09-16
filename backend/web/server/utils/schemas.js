@@ -18,6 +18,10 @@ const registerPreSave = fn => {
 }
 const callPreSave = (model, data) => {
   const modified=Object.fromEntries(data.modifiedPaths().map(p => [p, this[p]]))
+  // TODO Can't runPromisesWithDelay with empty array ?
+  if (lodash.isEmpty(PRESAVE_CALLBACKS)) {
+    return
+  }
   return runPromisesWithDelay(PRESAVE_CALLBACKS.map(fn => async () => {
     return fn(model, data._id, modified)
   }))

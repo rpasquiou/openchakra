@@ -18,7 +18,7 @@ const {
 } = require('../../server/plugins/smartdiet/consts')
 const bcrypt = require('bcryptjs')
 const Coaching = require('../../server/models/Coaching')
-const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators } = require('../../server/plugins/smartdiet/import')
+const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators, importProspectsC1 } = require('../../server/plugins/smartdiet/import')
 const { loadCache, saveCache } = require('../../utils/import')
 const Measure = require('../../server/models/Measure')
 const QuizzQuestion = require('../../server/models/QuizzQuestion')
@@ -285,6 +285,10 @@ describe('Test imports', () => {
     expect(count(l=>!!l.call_status)).toEqual(importedLeads.length)
     expect(count(l=>!!l.phone?.trim())).toEqual(importedLeads.length)
     expect(count(l=>!!l.source?.trim())).toEqual(importedLeads.length)
+  })
+
+  it.only('must import prospects with C1', async () => {
+    return importProspectsC1(path.join(ROOT, 'smart_prospect.csv'))
   })
 
 })
