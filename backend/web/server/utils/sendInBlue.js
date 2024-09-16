@@ -1,6 +1,6 @@
 const lodash = require('lodash')
 const SibApiV3Sdk = require('sib-api-v3-sdk')
-const {getSibApiKey}=require('../../config/config')
+const {getSibApiKey, isProduction}=require('../../config/config')
 
 const SIB_API_KEY_V3 = getSibApiKey()
 
@@ -72,6 +72,9 @@ class SIB_V3 {
 
   // Block others than smartdiet & wappizy addresses
   acceptEmail = email => {
+    if (isProduction()) {
+      return true
+    }
     return /@wappizy/.test(email) || /@smartdiet/.test(email)
   }
 
