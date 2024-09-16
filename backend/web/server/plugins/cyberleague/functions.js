@@ -269,6 +269,7 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
 declareVirtualField({model: 'score', field: 'is_drafted', requires: 'answers.answer', instance: 'Boolean'})
+declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
 
