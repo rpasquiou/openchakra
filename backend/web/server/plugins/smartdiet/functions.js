@@ -2343,8 +2343,11 @@ cron.schedule('0 */10 * * * *', () => {
               return user.save()
             }
           })
-          .catch(err => console.log(`User ${user.email}/${user.role} error ${err}`))
+          .catch(err => console.log(`User ${user.email}/${user.role} smartagenda error ${err}`))
       }))
+      .then(res => {
+        console.log('Samrtagenda sync result', JSON.stringify(res, null, 2))
+      })
     })
 })
 

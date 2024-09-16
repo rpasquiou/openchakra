@@ -117,14 +117,20 @@ const importLeads= async (buffer, user) => {
 }
 
 const getCompanyLeads = async (userId, params, data) => {
-  console.log(`Company code:`, data.code)
+  console.log(`Company code:`, data.code, params)
   const logged=await User.findById(userId)
   const filter=logged?.role==ROLE_ADMIN ? {} : {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
   console.log('Filter leads for', data.code, logged?.role)
-  return Lead.find({
+  const limit=parseInt(params['limit.leads'])
+  const page=parseInt(params['page.leads']) || 0
+  let query=Lead.find({
     company_code: data.code, 
     ...filter,
   })
+  if (limit) {
+    query=query.skip(page*limit).limit(limit+1)
+  }
+  return query
 }
 
 module.exports={
