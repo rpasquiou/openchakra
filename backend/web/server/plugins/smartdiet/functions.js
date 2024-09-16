@@ -2351,7 +2351,7 @@ cron.schedule('0 * * * * *', () => {
       .then(res => {
         const results=lodash.groupBy(res, 'status')
         if (!lodash.isEmpty(results.fulfilled)) {
-          console.log('Smartagenda sync result OK', results.fulfilled.map(u => u.value?.email))  
+          console.log('Smartagenda sync result OK for', results.fulfilled.length, 'accounts')
         }
         if (!lodash.isEmpty(results.rejected)) {
           console.error('Smartagenda sync errors', results.rejected.map(u => {
