@@ -4,7 +4,7 @@ const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const { extractData, guessFileType } = require('../../../utils/import')
 const lodash=require('lodash')
-const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL } = require('./consts')
+const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL, ROLE_SUPER_ADMIN } = require('./consts')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 
 const VALID_CALLS={'Entrant': CALL_DIRECTION_IN_CALL, 'Sortant': CALL_DIRECTION_OUT_CALL}
@@ -116,20 +116,31 @@ const importLeads= async (buffer, user) => {
   })
 }
 
-const getCompanyLeads = async (userId, params, data) => {
-  console.log(`Company code:`, data.code, params)
-  const logged=await User.findById(userId)
-  const filter=logged?.role==ROLE_ADMIN ? {} : {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
-  console.log('Filter leads for', data.code, logged?.role)
-  const limit=parseInt(params['limit.leads'])
-  const page=parseInt(params['page.leads']) || 0
-  let query=Lead.find({
-    company_code: data.code, 
-    ...filter,
-  })
-  if (limit) {
-    query=query.skip(page*limit).limit(limit+1)
+const getCompanyLeads = async (userId, params, data, fields) => {
+  const userRole=(await User.findById(userId))?.role
+  params=lodash.mapKeys(params, (v, k) => k.replace('.leads', ''))
+  let filter=lodash(params)
+    .pickBy((v, k) => /filter\./.test(k))
+    .mapKeys((v, k) => k.replace(/filter\./, ''))
+    .value()
+  if (![ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(userRole)) {
+    filter={$and: [
+      filter,
+      {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
+    ]}
   }
+  const sort=lodash(params)
+    .pickBy((v, k) => /sort\./.test(k))
+    .mapKeys((v, k) => k.replace(/sort\./, ''))
+    .value()
+  let query=Lead.find(filter).sort(sort)
+  if (params.page) {
+    query=query.skip(parseInt(params.page)*parseInt(params.limit))
+  }
+  if (params.limit) {
+    query=query.limit(parseInt(params.limit)+1)
+  }
+  query.sort({update_date: 'asc'})
   return query
 }
 

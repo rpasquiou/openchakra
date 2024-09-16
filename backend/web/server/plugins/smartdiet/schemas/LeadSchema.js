@@ -11,12 +11,12 @@ const Schema = mongoose.Schema
 const LeadSchema = new Schema({
   firstname: {
     type: String,
-    set: v => v?.trim(),
+    set: v => lodash.isString(v)  ? v.trim() : v,
     required: false,
   },
   lastname: {
     type: String,
-    set: v => v?.trim(),
+    set: v => lodash.isString(v)  ? v.trim() : v,
     required: false,
   },
   // No email validation nor required for import

@@ -722,7 +722,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({
     model: m, field: '_all_events', instance: 'Array',
-    requires: 'dummy, _all_menus,_all_individual_challenges,collective_challenges,_all_webinars',
+    requires: 'dummy,_all_menus,_all_individual_challenges,collective_challenges,_all_webinars',
     multiple: true,
     caster: {
       instance: 'ObjectID',
