@@ -132,7 +132,7 @@ const UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: Object.keys(GENDER),
+    enum: [null, ...Object.keys(GENDER)],
     set : v => v || undefined,
     required: false,
   },

@@ -2313,12 +2313,21 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 */10 * * * *', () => {
+cron.schedule('0 * * * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({creation_date:1}).limit(50)
+  // Scan accounts with no smùartagenda_id, latest first
+  return User.find(
+    { 
+      role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, 
+      $or: [
+        { smartagenda_id: { $exists: false } }, // Field does not exist
+        { smartagenda_id: null },               // Field is explicitly null
+        { smartagenda_id: '' }                  // Field is an empty string
+      ]
+    }).sort({update_date:1}).limit(50)
     .then(users => {
-      console.log(`Sync users % smartagenda`, users.map(u => [u.role, u.email, u.creation_date]))
-      return Promise.allSettled(users.map(user => {
+      console.log(`Sync ${users.length} users % smartagenda`)
+      return runPromisesWithDelay(users.map(user => () => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
           .then(id => {
@@ -2336,17 +2345,19 @@ cron.schedule('0 */10 * * * *', () => {
                   user.smartagenda_id = id
                   return user.save()
                 })
-                .catch(console.error)
-            }
-            else if (user.role == ROLE_EXTERNAL_DIET) {
-              user.smartagenda_id=null
-              return user.save()
             }
           })
-          .catch(err => console.log(`User ${user.email}/${user.role} smartagenda error ${err}`))
       }))
       .then(res => {
-        console.log('Samrtagenda sync result', JSON.stringify(res, null, 2))
+        const results=lodash.groupBy(res, 'status')
+        if (!lodash.isEmpty(results.fulfilled)) {
+          console.log('Smartagenda sync result OK', results.fulfilled.map(u => u.value?.email))  
+        }
+        if (!lodash.isEmpty(results.rejected)) {
+          console.error('Smartagenda sync errors', results.rejected.map(u => {
+            return u.reason.response?.statusText || u.reason
+          }))  
+        }
       })
     })
 })
@@ -2450,7 +2461,6 @@ const preSave = async (model, id, values, isNew) => {
     // Create only customers in CRM
     const role=(await User.findById(id, {role:1}))?.role
     if (role==ROLE_CUSTOMER) {
-      console.log('user', id, 'was modified:', values)
       return crmUpsertAccount(id, values)
     }
   }
