@@ -98,8 +98,8 @@ const computeSuggestedFreelances = async (userId, params, data) => {
         }
       } else if (data.mobility === MOBILITY_REGIONS) {
         if (
-          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions.includes(data.mobility_regions)) ||
-          (freelance.mobility === MOBILITY_CITY && data.mobility_regions.includes(getRegionFromZipcode(freelance.mobility_city.zip_code)))
+          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions?.includes(data.mobility_regions)) ||
+          (freelance.mobility === MOBILITY_CITY && data.mobility_regions?.includes(getRegionFromZipcode(freelance.mobility_city.zip_code)))
         ) {
           score += POWERS.mobility
         }
