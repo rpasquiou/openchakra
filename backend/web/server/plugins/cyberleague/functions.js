@@ -59,7 +59,6 @@ USER_MODELS.forEach(m => {
       options: { ref: 'company' }
     },
   })
-  declareVirtualField({model: m, field: 'company_size', instance: 'String', requires: 'company'})
   declareVirtualField({model: m, field: 'pinned_users_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'pinned_companies_count', instance: 'Number'})
   declareComputedField({model: m, field: 'pinned', getterFn: getterPinnedFn(m, 'pinned_by'), setterFn: setterPinnedFn(m, 'pinned_by'), requires:'pinned_by'})
