@@ -577,6 +577,7 @@ const preCreate = async ({ model, params, user }) => {
         'nutrition_advices', 
         'company.current_offer.nutrition_credit', 'spent_nutrition_credits',
         'company.reasons', 'phone', 'latest_coachings.diet',
+        'latest_coachings.offer.nutrition_credit',
       ],
       user,
     })
@@ -598,7 +599,7 @@ const preCreate = async ({ model, params, user }) => {
       throw new ForbiddenError(`Aucun coaching en cours`)
     }
 
-    const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
+    const remaining_nut=usr.latest_coachings?.[0]?.offer?.nutrition_credit-usr.spent_nutrition_credits
 
     if ((isAppointment && latest_coaching.remaining_credits <= 0)
       || (!isAppointment && !(remaining_nut > 0))) {
