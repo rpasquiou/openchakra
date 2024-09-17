@@ -125,6 +125,7 @@ const getCompanyLeads = async (userId, params, data, fields) => {
     .value()
   if (![ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(userRole)) {
     filter={$and: [
+      {company_code: data.code},
       filter,
       {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
     ]}
