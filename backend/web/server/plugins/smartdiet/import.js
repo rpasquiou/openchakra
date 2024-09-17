@@ -446,7 +446,6 @@ const getUserOffer = async (user, date) => {
       .populate({path: 'assessment_quizz', populate: 'questions'})
       .populate({path: 'impact_quizz', populate: 'questions'})
       .sort({validity_start: -1})
-      // .lean()
     companyOffersCache.set(key, offers)
   }
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
@@ -1630,33 +1629,41 @@ const PROSPECT_PATIENT_C1_COACHING_MAPPING = {
     const user=await User.findById(getProspectPatientUserId(record))
     if (!user) {
       console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
     }
-    return getUserOffer(user, record.orderdate)?._id
+    return (await getUserOffer(user, record.rendezvous))?._id
   },
   assessment_quizz: async ({record}) => {
-    const user=await User.findById(getProspectPatientUserId(record))
+    const user=await User.findById(getProspectPatientUserId(record), {company:1})
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
+    }
+    if (!offer.assessment_quizz) {
+      console.error('No ass quizz for offer', offer)
+      return null
+    }
+    return (await offer.assessment_quizz.cloneAsUserQuizz())?._id
+  },
+  impact_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record),  {company:1})
     if (!user) {
       console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
     }
     const offer=await getUserOffer(user, record.rendezvous)
     if (!offer) {
       console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
     }
-    if (!offer.assessment_quizz) {
-      console.error('No ass quizz for offer', offer)
-    }
-    return offer.assessment_quizz.cloneAsUserQuizz()
-  },
-  impact_quizz: async ({record}) => {
-    const user=await User.findById(getProspectPatientUserId(record))
-    if (!user) {
-      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
-    }
-    const offer=await getUserOffer(user, record.rendezvous)
-    return offer.assessment_quizz?.cloneAsUserQuizz()
+    return (await offer.impact_quizz?.cloneAsUserQuizz())?._id
   },
   diet: ({record, cache}) => cache('user', record.SDDIETID),
-  migration_id: ({record}) => getProspectPatientUserId(record),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
 }
 
 const PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
@@ -1670,7 +1677,7 @@ const PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
     const copy=await progress_quizz.cloneAsUserQuizz()
     return copy._id
   },
-  migration_id: ({record}) => getProspectPatientUserId(record),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
 })
 
 const importProspectsC1 = async (input_file) => {
