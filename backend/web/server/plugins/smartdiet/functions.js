@@ -18,6 +18,7 @@ const {
   simpleCloneModel,
   getDateFilter,
   setPrePutData,
+  createSearchFilter,
 } = require('../../utils/database')
 const {
   sendDietPreRegister2Admin,
@@ -132,7 +133,9 @@ const {
   AVAILABILITIES_RANGE_DAYS,
   CALL_STATUS_CONVERTI_COA,
   CALL_STATUS_CONVERTI_COA_CN,
-  CALL_STATUS_CONVERTI_CN
+  CALL_STATUS_CONVERTI_CN,
+  LEAD_SEARCH_TEXT_FIELDS,
+  USER_SEARCH_TEXT_FIELDS
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -150,7 +153,7 @@ const {
 
 const Category = require('../../models/Category')
 const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency')
-const {getSmartAgendaConfig} = require('../../../config/config')
+const {getSmartAgendaConfig, isDevelopment} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
 const { importLeads, getCompanyLeads } = require('./leads')
@@ -569,8 +572,12 @@ const preCreate = async ({ model, params, user }) => {
     const [usr]=await loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
-        'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 
+        'latest_coachings.appointment_type', 
+        'nutrition_advices', 
+        'company.current_offer.nutrition_credit', 'spent_nutrition_credits',
+        'company.reasons', 'phone', 'latest_coachings.diet',
+        'latest_coachings.offer.nutrition_credit',
       ],
       user,
     })
@@ -592,7 +599,7 @@ const preCreate = async ({ model, params, user }) => {
       throw new ForbiddenError(`Aucun coaching en cours`)
     }
 
-    const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
+    const remaining_nut=usr.latest_coachings?.[0]?.offer?.nutrition_credit-usr.spent_nutrition_credits
 
     if ((isAppointment && latest_coaching.remaining_credits <= 0)
       || (!isAppointment && !(remaining_nut > 0))) {
@@ -1030,6 +1037,10 @@ declareVirtualField({
       options: { ref: 'pack'}
     },
   })
+  declareVirtualField({ model: m, field: 'search_text', instance: 'String', requires: USER_SEARCH_TEXT_FIELDS,
+    dbFilter: createSearchFilter({attributes: USER_SEARCH_TEXT_FIELDS}),
+  })
+
 })
 // End user/loggedUser
 
@@ -1689,6 +1700,9 @@ declareVirtualField({
     options: { ref: 'nutritionAdvice' }
   },
 })
+declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
+  dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
+})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
@@ -2313,7 +2327,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 * * * * *', () => {
+!isDevelopment() && cron.schedule('0 * * * * *', () => {
   console.log(`Smartagenda accounts sync`)
   // Scan accounts with no smùartagenda_id, latest first
   return User.find(

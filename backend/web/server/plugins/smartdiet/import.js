@@ -449,7 +449,7 @@ const getUserOffer = async (user, date) => {
     companyOffersCache.set(key, offers)
   }
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
-  return offer?._id
+  return offer
 }
 
 const COACHING_MAPPING={
@@ -779,7 +779,6 @@ const DIET_MAPPING={
   firstname: 'firstname',
   lastname: 'lastname',
   email: 'email',
-  smartagenda_id: 'smartagendaid',
   address: 'address',
   zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
   city: 'city',
@@ -1590,7 +1589,17 @@ const PROSPECT_C1_COACHING_MAPPING = {
   user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
   offer: async ({cache, record}) => {
     const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
-    return getUserOffer(user, record.orderdate)
+    return getUserOffer(user, record.orderdate)?._id
+  },
+  assessment_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz.cloneAsUserQuizz()
+  },
+  impact_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz?.cloneAsUserQuizz()
   },
   diet: ({record, cache}) => cache('user', record.SDDIETID),
   migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
@@ -1703,6 +1712,38 @@ const importProspectsC1 = async (input_file) => {
   })
 }
 
+const importPatientsNoCoachingC1 = async (input_file) => {
+  const records=await loadRecords(input_file)
+  const companies=await Company.find({}, {code:1}).populate('assessment_appointment_type')
+  const progressQuizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
+
+  const emailsWithCoachings=(await Coaching.find().populate('user')).map(c => c.user.email)
+
+  const prospectsC1=records
+    .filter(r => !!r.SDPATIENTID?.trim())
+    .filter(r => !!r.rendezvous?.trim())
+    .filter(r => parseInt(r.status)==7) // COACHING
+    .filter(r => !!r.SDDIETID?.trim())
+    .filter(r => !emailsWithCoachings.includes(r.email))
+    .map(r => {
+      const company_code=COMPANY[r.branch]
+      const company=companies.find(c => c.code==company_code)
+      return {...r, company}
+    })
+  
+  console.log('Candidates are', prospectsC1.map(p => [p.SDPATIENTID, p.email]))
+
+  await importData({
+    model: 'coaching', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_COACHING_MAPPING,
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'appointment', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING(progressQuizz),
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+}
+
 module.exports={
   loadRecords, saveRecords,
   importCompanies,
@@ -1740,6 +1781,7 @@ module.exports={
   importLeads,
   importOperators,
   importProspectsC1,
+  importPatientsNoCoachingC1,
 }
 
 

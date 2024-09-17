@@ -18,8 +18,8 @@ const {
 } = require('../../server/plugins/smartdiet/consts')
 const bcrypt = require('bcryptjs')
 const Coaching = require('../../server/models/Coaching')
-const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators, importProspectsC1 } = require('../../server/plugins/smartdiet/import')
-const { loadCache, saveCache } = require('../../utils/import')
+const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators, importProspectsC1, importPatientsNoCoachingC1 } = require('../../server/plugins/smartdiet/import')
+const { loadCache, saveCache, setCache } = require('../../utils/import')
 const Measure = require('../../server/models/Measure')
 const QuizzQuestion = require('../../server/models/QuizzQuestion')
 const Key = require('../../server/models/Key')
@@ -28,6 +28,7 @@ const { isDevelopment } = require('../../config/config')
 const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts')
 const Item = require('../../server/models/Item')
 const Lead = require('../../server/models/Lead')
+const { runPromisesWithDelay } = require('../../server/utils/concurrency')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'smartdiet' : `test${moment().unix()}`
@@ -64,6 +65,7 @@ describe('Test imports', () => {
     console.log('Before opening database', DBNAME)
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
+    await displayCollectionCounts()
     await loadCache()
     await fixFiles(ROOT)
   })
@@ -73,6 +75,7 @@ describe('Test imports', () => {
   })
 
   afterAll(async () => {
+    await displayCollectionCounts()
     await updateImportedCoachingStatus()
     await updateDietCompanies()
     await saveCache()
@@ -343,5 +346,20 @@ describe('Test imports', () => {
     return res
   })
 
+  it.skip('must recreate patients cache', async() => {
+    const records=await loadRecords(path.join(ROOT, 'smart_patient.csv'))
+    const users=await User.find({role: ROLE_CUSTOMER}, {email:1}).lean()
+    records.forEach(async (r, idx) => {
+      idx%100==0 && console.log(idx, '/', records.length)
+      const user=users.find(u => u.email==u.emailCanonical)?._id
+      if (!user) {
+        console.warn('No user for email', r.emailCanonical)
+      }
+      else {
+        console.log('User', r.SDPATIENTID, user)
+        setCache('user', r.SDPATIENTID, user)
+      }
+    })
+  })
 })
 

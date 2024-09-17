@@ -1074,6 +1074,15 @@ const getYearFilter = ({attribute, year}) => {
   ]}
 }
 
+const createSearchFilter = ({attributes}) => {
+  return value => {
+    const re=new RegExp(value, 'i')
+    const filter=({$or:attributes.map(f => ({[f]: re}))})
+    console.log('CReated filter for value', value, filter)
+    return filter
+  }
+}
+
 module.exports = {
   hasRefs,
   MONGOOSE_OPTIONS,
@@ -1122,6 +1131,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, createSearchFilter,
 }
 
