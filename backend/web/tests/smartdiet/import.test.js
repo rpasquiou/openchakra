@@ -52,7 +52,6 @@ const QUIZZ_ID = 17
 
 const displayCollectionCounts= async () => {
   const models=lodash.sortBy(mongoose.models, m => m.modelName)
-  console.log(models)
   await runPromisesWithDelay(models.map(model => async () => {
     const count=await model.countDocuments()
     console.log('Model', model.modelName, count)
@@ -305,7 +304,7 @@ describe('Test imports', () => {
     return res
   })
 
-  it.skip('must import patients with appointments but no coachings', async () => {
+  it('must import patients with appointments but no coachings', async () => {
     return importApptsWithoutCoachings(
       path.join(ROOT, 'smart_patient.csv'),
       path.join(ROOT, 'smart_consultation.csv'),
@@ -313,14 +312,14 @@ describe('Test imports', () => {
     )
   })
 
-  it.only('must create coaching for M. SERREAU', async() => {
+  it('must create coaching for M. SERREAU', async() => {
     const migration_id=31392
     const user=await User.findOne({email: /tof1971/})
       .populate( {path: 'company', populate: 'assessment_appointment_type'})
     console.log(JSON.stringify(user, null, 2))
   })
 
-  it.only('must create missing coaching assessment_quizs', async() => {
+  it('must create missing coaching assessment_quizs', async() => {
     console.time('Loading')
     const coachings=await Coaching.find({assessment_quizz: null})
       .populate({path: 'offer', populate: [
@@ -328,7 +327,9 @@ describe('Test imports', () => {
         {path: 'impact_quizz', populate: 'questions'},
       ]})
     console.timeEnd('Loading')
-    const res=await runPromisesWithDelay(coachings.map(coaching => async () => {
+    console.log('Setting ass quizz for', coachings.length, 'coachings')
+    const res=await runPromisesWithDelay(coachings.map((coaching, idx) => async () => {
+      console.log(idx, '/', coachings.length)
       const userAssQuizz=await coaching.offer.assessment_quizz.cloneAsUserQuizz()
       coaching.assessment_quizz=userAssQuizz
       if (coaching.offer.impact_quizz) {
@@ -340,7 +341,7 @@ describe('Test imports', () => {
     console.log(lodash(res).groupBy('status').mapValues( v => v.length).value())
   })
 
-  it.only('must create coaching/first appointment for prospect having a patientid but no coaching', async() => {
+  it('must create coaching/first appointment for prospect having a patientid but no coaching', async() => {
     const res=await importPatientsNoCoachingC1(path.join(ROOT, 'smart_prospect.csv'))
     return res
   })

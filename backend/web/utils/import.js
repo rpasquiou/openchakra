@@ -185,7 +185,7 @@ const upsertRecord = async ({model, record, identityKey, migrationKey, updateOnl
       return result
     })
     .catch(err => {
-      const msg=`Model ${model.modelName}, from ${JSON.stringify(origin)} to record ${JSON.stringify(record)}, error(s):${err.toString()}`
+      const msg=`Model ${model.modelName}, from \n${JSON.stringify(origin)}\nto record\n${JSON.stringify(record)}\nerror(s):${err.toString()}`
       console.error(msg)
       throw err
     })
