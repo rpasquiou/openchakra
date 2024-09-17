@@ -351,7 +351,7 @@ describe('Test imports', () => {
     const users=await User.find({role: ROLE_CUSTOMER}, {email:1}).lean()
     records.forEach(async (r, idx) => {
       idx%100==0 && console.log(idx, '/', records.length)
-      const user=users.find(u => u.email==u.emailCanonical)?._id
+      const user=users.find(u => u.email==r.emailCanonical)?._id
       if (!user) {
         console.warn('No user for email', r.emailCanonical)
       }
