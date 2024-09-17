@@ -442,11 +442,15 @@ const getUserOffer = async (user, date) => {
   const key=user.company._id.toString()
   let offers=companyOffersCache.get(key)
   if (!offers) {
-    offers=await Offer.find({company: user.company}).sort({validity_start: -1}).lean()
+    offers=await Offer.find({company: user.company})
+      .populate({path: 'assessment_quizz', populate: 'questions'})
+      .populate({path: 'impact_quizz', populate: 'questions'})
+      .sort({validity_start: -1})
+      // .lean()
     companyOffersCache.set(key, offers)
   }
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
-  return offer?._id
+  return offer
 }
 
 const COACHING_MAPPING={
@@ -776,7 +780,6 @@ const DIET_MAPPING={
   firstname: 'firstname',
   lastname: 'lastname',
   email: 'email',
-  smartagenda_id: 'smartagendaid',
   address: 'address',
   zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
   city: 'city',
@@ -1587,7 +1590,17 @@ const PROSPECT_C1_COACHING_MAPPING = {
   user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
   offer: async ({cache, record}) => {
     const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
-    return getUserOffer(user, record.orderdate)
+    return getUserOffer(user, record.orderdate)?._id
+  },
+  assessment_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz.cloneAsUserQuizz()
+  },
+  impact_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz?.cloneAsUserQuizz()
   },
   diet: ({record, cache}) => cache('user', record.SDDIETID),
   migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
@@ -1605,6 +1618,59 @@ const PROSPECT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
     return copy._id
   },
   migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+})
+
+const getProspectPatientUserId = record => {
+  return cache('user', record.SDPATIENTID)
+}
+
+const PROSPECT_PATIENT_C1_COACHING_MAPPING = {
+  user: async ({record}) => getProspectPatientUserId(record),
+  offer: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record))
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+    }
+    return getUserOffer(user, record.orderdate)?._id
+  },
+  assessment_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record))
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+    }
+    if (!offer.assessment_quizz) {
+      console.error('No ass quizz for offer', offer)
+    }
+    return offer.assessment_quizz.cloneAsUserQuizz()
+  },
+  impact_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record))
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    return offer.assessment_quizz?.cloneAsUserQuizz()
+  },
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  migration_id: ({record}) => getProspectPatientUserId(record),
+}
+
+const PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
+  coaching: ({record, cache}) => cache('coaching', computeProspectC1Id(record.SDPROSPECTID)),
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  user: ({record}) => getProspectPatientUserId(record),
+  appointment_type: ({record}) =>record.company?.assessment_appointment_type?._id,
+  start_date: 'rendezvous',
+  end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
+  progress: async () => {
+    const copy=await progress_quizz.cloneAsUserQuizz()
+    return copy._id
+  },
+  migration_id: ({record}) => getProspectPatientUserId(record),
 })
 
 const importProspectsC1 = async (input_file) => {
@@ -1635,6 +1701,38 @@ const importProspectsC1 = async (input_file) => {
 
   await importData({
     model: 'appointment', data: prospectsC1, mapping: PROSPECT_C1_APPOINTMENT_MAPPING(progressQuizz),
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+}
+
+const importPatientsNoCoachingC1 = async (input_file) => {
+  const records=await loadRecords(input_file)
+  const companies=await Company.find({}, {code:1}).populate('assessment_appointment_type')
+  const progressQuizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
+
+  const emailsWithCoachings=(await Coaching.find().populate('user')).map(c => c.user.email)
+
+  const prospectsC1=records
+    .filter(r => !!r.SDPATIENTID?.trim())
+    .filter(r => !!r.rendezvous?.trim())
+    .filter(r => parseInt(r.status)==7) // COACHING
+    .filter(r => !!r.SDDIETID?.trim())
+    .filter(r => !emailsWithCoachings.includes(r.email))
+    .map(r => {
+      const company_code=COMPANY[r.branch]
+      const company=companies.find(c => c.code==company_code)
+      return {...r, company}
+    })
+  
+  console.log('Candidates are', prospectsC1.map(p => [p.SDPATIENTID, p.email]))
+
+  await importData({
+    model: 'coaching', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_COACHING_MAPPING,
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'appointment', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING(progressQuizz),
     identityKey: 'migration_id', migrationKey: 'migration_id',
   })
 }
@@ -1676,6 +1774,7 @@ module.exports={
   importLeads,
   importOperators,
   importProspectsC1,
+  importPatientsNoCoachingC1,
 }
 
 

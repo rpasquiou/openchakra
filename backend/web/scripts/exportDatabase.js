@@ -68,6 +68,7 @@ const exportDatabase = async (destinationDirectory) => {
     const models=Object.values(mongoose.models)
     let baseModels=models.filter(m => !isDerivedModel(m, models))
     baseModels=lodash.sortBy(baseModels, m => m.modelName)
+    baseModels=baseModels.filter(m => m.modelName!='userQuizzQuestion')
     console.log('Exporting models', baseModels.map(m => m.modelName))
     const res=await runPromisesWithDelay(baseModels.map(model => () => exportModel(model)))
     const errors=res.filter(r=> r.status=='rejected').map(r => r.reason)
