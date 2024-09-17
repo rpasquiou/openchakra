@@ -18,8 +18,8 @@ const {
 } = require('../../server/plugins/smartdiet/consts')
 const bcrypt = require('bcryptjs')
 const Coaching = require('../../server/models/Coaching')
-const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators, importProspectsC1 } = require('../../server/plugins/smartdiet/import')
-const { loadCache, saveCache } = require('../../utils/import')
+const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments, importLeads, importOperators, importProspectsC1, importPatientsNoCoachingC1 } = require('../../server/plugins/smartdiet/import')
+const { loadCache, saveCache, setCache } = require('../../utils/import')
 const Measure = require('../../server/models/Measure')
 const QuizzQuestion = require('../../server/models/QuizzQuestion')
 const Key = require('../../server/models/Key')
@@ -28,6 +28,7 @@ const { isDevelopment } = require('../../config/config')
 const { CREATED_AT_ATTRIBUTE } = require('../../utils/consts')
 const Item = require('../../server/models/Item')
 const Lead = require('../../server/models/Lead')
+const { runPromisesWithDelay } = require('../../server/utils/concurrency')
 
 const ORIGINAL_DB=true
 const DBNAME=ORIGINAL_DB ? 'smartdiet' : `test${moment().unix()}`
@@ -49,14 +50,25 @@ const DIET_EMAIL = 'raphaelleh.smartdiet@gmail.com'
 const QUIZZ_NAME = 'Saisons'
 const QUIZZ_ID = 17
 
+const displayCollectionCounts= async () => {
+  const models=lodash.sortBy(mongoose.models, m => m.modelName)
+  console.log(models)
+  await runPromisesWithDelay(models.map(model => async () => {
+    const count=await model.countDocuments()
+    console.log('Model', model.modelName, count)
+  }))
+}
+
+
 describe('Test imports', () => {
 
   beforeAll(async () => {
     console.log('Before opening database', DBNAME)
     await mongoose.connect(`mongodb://localhost/${DBNAME}`, MONGOOSE_OPTIONS)
     console.log('Opened database', DBNAME)
+    await displayCollectionCounts()
     await loadCache()
-    await fixFiles(ROOT)
+    // await fixFiles(ROOT)
   })
 
   afterEach(async () => {
@@ -64,8 +76,9 @@ describe('Test imports', () => {
   })
 
   afterAll(async () => {
-    await updateImportedCoachingStatus()
-    await updateDietCompanies()
+    await displayCollectionCounts()
+    // await updateImportedCoachingStatus()
+    // await updateDietCompanies()
     await saveCache()
     if (DROP) {
       await mongoose.connection.dropDatabase()
@@ -287,9 +300,65 @@ describe('Test imports', () => {
     expect(count(l=>!!l.source?.trim())).toEqual(importedLeads.length)
   })
 
-  it.only('must import prospects with C1', async () => {
-    return importProspectsC1(path.join(ROOT, 'smart_prospect.csv'))
+  it('must import prospects with C1', async () => {
+    const res=await importProspectsC1(path.join(ROOT, 'smart_prospect.csv'))
+    return res
   })
 
+  it.skip('must import patients with appointments but no coachings', async () => {
+    return importApptsWithoutCoachings(
+      path.join(ROOT, 'smart_patient.csv'),
+      path.join(ROOT, 'smart_consultation.csv'),
+      path.join(ROOT, 'smart_coaching.csv'),
+    )
+  })
+
+  it.only('must create coaching for M. SERREAU', async() => {
+    const migration_id=31392
+    const user=await User.findOne({email: /tof1971/})
+      .populate( {path: 'company', populate: 'assessment_appointment_type'})
+    console.log(JSON.stringify(user, null, 2))
+  })
+
+  it.only('must create missing coaching assessment_quizs', async() => {
+    console.time('Loading')
+    const coachings=await Coaching.find({assessment_quizz: null})
+      .populate({path: 'offer', populate: [
+        {path: 'assessment_quizz', populate: 'questions'},
+        {path: 'impact_quizz', populate: 'questions'},
+      ]})
+    console.timeEnd('Loading')
+    const res=await runPromisesWithDelay(coachings.map(coaching => async () => {
+      const userAssQuizz=await coaching.offer.assessment_quizz.cloneAsUserQuizz()
+      coaching.assessment_quizz=userAssQuizz
+      if (coaching.offer.impact_quizz) {
+        const userImpactQuizz=await coaching.offer.impact_quizz.cloneAsUserQuizz()
+        coaching.impact_quizz=userImpactQuizz
+      }
+      return coaching.save()
+    }))
+    console.log(lodash(res).groupBy('status').mapValues( v => v.length).value())
+  })
+
+  it.only('must create coaching/first appointment for prospect having a patientid but no coaching', async() => {
+    const res=await importPatientsNoCoachingC1(path.join(ROOT, 'smart_prospect.csv'))
+    return res
+  })
+
+  it.skip('must recreate patients cache', async() => {
+    const records=await loadRecords(path.join(ROOT, 'smart_patient.csv'))
+    const users=await User.find({role: ROLE_CUSTOMER}, {email:1}).lean()
+    records.forEach(async (r, idx) => {
+      idx%100==0 && console.log(idx, '/', records.length)
+      const user=users.find(u => u.email==u.emailCanonical)?._id
+      if (!user) {
+        console.warn('No user for email', r.emailCanonical)
+      }
+      else {
+        console.log('User', r.SDPATIENTID, user)
+        setCache('user', r.SDPATIENTID, user)
+      }
+    })
+  })
 })
 
