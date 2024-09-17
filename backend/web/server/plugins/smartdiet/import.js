@@ -442,7 +442,10 @@ const getUserOffer = async (user, date) => {
   const key=user.company._id.toString()
   let offers=companyOffersCache.get(key)
   if (!offers) {
-    offers=await Offer.find({company: user.company}).sort({validity_start: -1}).lean()
+    offers=await Offer.find({company: user.company})
+      .populate({path: 'assessment_quizz', populate: 'questions'})
+      .populate({path: 'impact_quizz', populate: 'questions'})
+      .sort({validity_start: -1})
     companyOffersCache.set(key, offers)
   }
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
@@ -1598,6 +1601,67 @@ const PROSPECT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
   diet: ({record, cache}) => cache('user', record.SDDIETID),
   user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
   appointment_type: ({record, cache}) =>record.company?.assessment_appointment_type?._id,
+  start_date: 'rendezvous',
+  end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
+  progress: async () => {
+    const copy=await progress_quizz.cloneAsUserQuizz()
+    return copy._id
+  },
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+})
+
+const getProspectPatientUserId = record => {
+  return cache('user', record.SDPATIENTID)
+}
+
+const PROSPECT_PATIENT_C1_COACHING_MAPPING = {
+  user: async ({record}) => getProspectPatientUserId(record),
+  offer: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record))
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
+    }
+    return (await getUserOffer(user, record.rendezvous))?._id
+  },
+  assessment_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record), {company:1})
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
+    }
+    if (!offer.assessment_quizz) {
+      console.error('No ass quizz for offer', offer)
+      return null
+    }
+    return (await offer.assessment_quizz.cloneAsUserQuizz())?._id
+  },
+  impact_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record),  {company:1})
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
+    }
+    return (await offer.impact_quizz?.cloneAsUserQuizz())?._id
+  },
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
+  coaching: ({record, cache}) => cache('coaching', computeProspectC1Id(record.SDPROSPECTID)),
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  user: ({record}) => getProspectPatientUserId(record),
+  appointment_type: ({record}) =>record.company?.assessment_appointment_type?._id,
   start_date: 'rendezvous',
   end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
   progress: async () => {

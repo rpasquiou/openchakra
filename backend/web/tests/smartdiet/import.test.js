@@ -49,6 +49,15 @@ const DIET_EMAIL = 'raphaelleh.smartdiet@gmail.com'
 const QUIZZ_NAME = 'Saisons'
 const QUIZZ_ID = 17
 
+const displayCollectionCounts= async () => {
+  const models=lodash.sortBy(mongoose.models, m => m.modelName)
+  await runPromisesWithDelay(models.map(model => async () => {
+    const count=await model.countDocuments()
+    console.log('Model', model.modelName, count)
+  }))
+}
+
+
 describe('Test imports', () => {
 
   beforeAll(async () => {
@@ -287,8 +296,51 @@ describe('Test imports', () => {
     expect(count(l=>!!l.source?.trim())).toEqual(importedLeads.length)
   })
 
-  it.only('must import prospects with C1', async () => {
-    return importProspectsC1(path.join(ROOT, 'smart_prospect.csv'))
+  it('must import prospects with C1', async () => {
+    const res=await importProspectsC1(path.join(ROOT, 'smart_prospect.csv'))
+    return res
+  })
+
+  it('must import patients with appointments but no coachings', async () => {
+    return importApptsWithoutCoachings(
+      path.join(ROOT, 'smart_patient.csv'),
+      path.join(ROOT, 'smart_consultation.csv'),
+      path.join(ROOT, 'smart_coaching.csv'),
+    )
+  })
+
+  it('must create coaching for M. SERREAU', async() => {
+    const migration_id=31392
+    const user=await User.findOne({email: /tof1971/})
+      .populate( {path: 'company', populate: 'assessment_appointment_type'})
+    console.log(JSON.stringify(user, null, 2))
+  })
+
+  it('must create missing coaching assessment_quizs', async() => {
+    console.time('Loading')
+    const coachings=await Coaching.find({assessment_quizz: null})
+      .populate({path: 'offer', populate: [
+        {path: 'assessment_quizz', populate: 'questions'},
+        {path: 'impact_quizz', populate: 'questions'},
+      ]})
+    console.timeEnd('Loading')
+    console.log('Setting ass quizz for', coachings.length, 'coachings')
+    const res=await runPromisesWithDelay(coachings.map((coaching, idx) => async () => {
+      console.log(idx, '/', coachings.length)
+      const userAssQuizz=await coaching.offer.assessment_quizz.cloneAsUserQuizz()
+      coaching.assessment_quizz=userAssQuizz
+      if (coaching.offer.impact_quizz) {
+        const userImpactQuizz=await coaching.offer.impact_quizz.cloneAsUserQuizz()
+        coaching.impact_quizz=userImpactQuizz
+      }
+      return coaching.save()
+    }))
+    console.log(lodash(res).groupBy('status').mapValues( v => v.length).value())
+  })
+
+  it('must create coaching/first appointment for prospect having a patientid but no coaching', async() => {
+    const res=await importPatientsNoCoachingC1(path.join(ROOT, 'smart_prospect.csv'))
+    return res
   })
 
 })
