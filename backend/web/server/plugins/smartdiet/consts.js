@@ -622,6 +622,10 @@ const PASSWORD_PATTERN=/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{
 const PASSWORD_LENGTH=15
 const PASSWORD_PATTERN_STR='15 caractères minimum dont une majuscule, une minuscule, un chiffre et un caractère spécial'
 
+const LEAD_SEARCH_TEXT_FIELDS='firsname lastname email phone'.split(' ')
+const USER_SEARCH_TEXT_FIELDS='firsname lastname email phone'.split(' ')
+
+
 module.exports={
   CONTENTS_TYPE,
   EVENT_TYPE,
@@ -719,4 +723,5 @@ module.exports={
   PASSWORD_PATTERN, PASSWORD_PATTERN_STR, CALL_STATUS_CONVERTI_COA, CALL_STATUS_CONVERTI_COA_CN, CALL_STATUS_CONVERTI_CN,
   PASSWORD_LENGTH, CALL_STATUS_CALL_2, CALL_STATUS_UNREACHABLE, CALL_STATUS_RECALL, CALL_STATUS_NOT_INTERESTED,
   CALL_STATUS_WRONG_NUMBER, CALL_STATUS_RECALL, CALL_STATUS_CONVERTI_CN,
+  LEAD_SEARCH_TEXT_FIELDS, USER_SEARCH_TEXT_FIELDS,
 }

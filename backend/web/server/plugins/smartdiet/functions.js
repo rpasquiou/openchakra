@@ -132,7 +132,8 @@ const {
   AVAILABILITIES_RANGE_DAYS,
   CALL_STATUS_CONVERTI_COA,
   CALL_STATUS_CONVERTI_COA_CN,
-  CALL_STATUS_CONVERTI_CN
+  CALL_STATUS_CONVERTI_CN,
+  LEAD_SEARCH_TEXT_FIELDS
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -150,7 +151,7 @@ const {
 
 const Category = require('../../models/Category')
 const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency')
-const {getSmartAgendaConfig} = require('../../../config/config')
+const {getSmartAgendaConfig, isDevelopment} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
 const { importLeads, getCompanyLeads } = require('./leads')
@@ -1689,6 +1690,7 @@ declareVirtualField({
     options: { ref: 'nutritionAdvice' }
   },
 })
+declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS })
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
@@ -2313,7 +2315,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 * * * * *', () => {
+!isDevelopment() && cron.schedule('0 * * * * *', () => {
   console.log(`Smartagenda accounts sync`)
   // Scan accounts with no smùartagenda_id, latest first
   return User.find(
