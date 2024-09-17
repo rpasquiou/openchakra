@@ -16,6 +16,7 @@ const {
   ROLE_EXTERNAL_DIET,
   ROLE_RH,
   STATUS_FAMILY,
+  USER_SEARCH_TEXT_FIELDS,
 } = require('../consts')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
@@ -825,6 +826,10 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
     }
   }
   return true
+})
+
+UserSchema.virtual("search_text", DUMMY_REF).get(function() {
+  return USER_SEARCH_TEXT_FIELDS.map(f => this[f]||null).filter(v => !!v).join(' ')
 })
 
 UserSchema.post('save', async function() {

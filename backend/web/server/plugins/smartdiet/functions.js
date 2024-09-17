@@ -18,6 +18,7 @@ const {
   simpleCloneModel,
   getDateFilter,
   setPrePutData,
+  createSearchFilter,
 } = require('../../utils/database')
 const {
   sendDietPreRegister2Admin,
@@ -133,7 +134,8 @@ const {
   CALL_STATUS_CONVERTI_COA,
   CALL_STATUS_CONVERTI_COA_CN,
   CALL_STATUS_CONVERTI_CN,
-  LEAD_SEARCH_TEXT_FIELDS
+  LEAD_SEARCH_TEXT_FIELDS,
+  USER_SEARCH_TEXT_FIELDS
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1031,6 +1033,10 @@ declareVirtualField({
       options: { ref: 'pack'}
     },
   })
+  declareVirtualField({ model: m, field: 'search_text', instance: 'String', requires: USER_SEARCH_TEXT_FIELDS,
+    dbFilter: createSearchFilter({attributes: USER_SEARCH_TEXT_FIELDS}),
+  })
+
 })
 // End user/loggedUser
 
@@ -1690,7 +1696,9 @@ declareVirtualField({
     options: { ref: 'nutritionAdvice' }
   },
 })
-declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS })
+declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
+  dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
+})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
