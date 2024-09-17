@@ -572,8 +572,11 @@ const preCreate = async ({ model, params, user }) => {
     const [usr]=await loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
-        'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 
+        'latest_coachings.appointment_type', 
+        'nutrition_advices', 
+        'company.current_offer.nutrition_credit', 'spent_nutrition_credits',
+        'company.reasons', 'phone', 'latest_coachings.diet',
       ],
       user,
     })
