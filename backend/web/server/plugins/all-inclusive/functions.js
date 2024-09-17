@@ -298,7 +298,7 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'recommandation'}}
   })
-  declareVirtualField({model: m, field: 'recommandations_count', instance: 'Number', requires: 'jobs'})
+  declareVirtualField({model: m, field: 'recommandations_count', instance: 'Number', requires: 'jobs.recommandations_count'})
   declareVirtualField({model: m, field: 'recommandations_note', instance: 'Number', requires: 'jobs'})
   declareVirtualField({model: m, field: 'comments_count', instance: 'Number', requires: 'missions.comments'})
   declareVirtualField({model: m, field: 'comments_note', instance: 'Number', requires: 'jobs'})
@@ -354,6 +354,16 @@ USER_MODELS.forEach(m => {
     caster: {
       instance: 'ObjectID',
       options: {ref: 'document'}}
+  })
+  declareVirtualField({
+    model: m,
+    field: 'leads',
+    instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'lead'}
+    }
   })
 })
 

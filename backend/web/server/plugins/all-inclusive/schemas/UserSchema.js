@@ -368,20 +368,13 @@ UserSchema.virtual("finished_missions_count", DUMMY_REF).get(function() {
   return this.missions.filter(m => m.status==MISSION_STATUS_FINISHED).length
 })
 
-// All recommandations
-UserSchema.virtual("_all_recommandations", {
-  ref: "recommandation", // The Model to use
-  localField: "dummy", // Find in Model, where localField
-  foreignField: "dummy" // is equal to foreignField
-});
-
 UserSchema.virtual("recommandations", DUMMY_REF).get(function() {
   const recos=this._all_recommandations?.filter(a => idEqual(a?.job?.user?._id, this._id)) || []
   return recos
 })
 
 UserSchema.virtual("recommandations_count", DUMMY_REF).get(function() {
-  return this.recommandations?.length || 0
+  return lodash.sumBy(this.jobs, 'recommandations_count') || 0
 })
 
 UserSchema.virtual("recommandations_note", DUMMY_REF).get(function() {
@@ -500,6 +493,12 @@ UserSchema.virtual("documents", {
   ref: "document", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "lead" // is equal to foreignField
+})
+
+UserSchema.virtual('leads', {
+    ref: 'lead',
+    localField: '_id',
+    foreignField: 'creator',
 })
 
 module.exports = UserSchema;
