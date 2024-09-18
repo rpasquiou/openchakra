@@ -2502,7 +2502,7 @@ cron.schedule('0 0 8 * * *', async () => {
 })
 
 // Update coaching status
-cron.schedule('0 0 * * * *', async () => {
+false && cron.schedule('0 0 * * * *', async () => {
   console.log('Updating coaching status')
   return Coaching.find({}, {_id:1})
     .then(coachings => coachings.map(c => updateCoachingStatus(c._id)))
