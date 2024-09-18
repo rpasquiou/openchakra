@@ -31,7 +31,7 @@ const moveChildInParent= async (childId, up) => {
   if (newOrder<1) {
     throw new ForbiddenError(`Déjà en tête de liste`)
   }
-  if (newOrder>=childrenCount) {
+  if (newOrder>childrenCount) {
     throw new ForbiddenError(`Déjà en fin de liste`)
   }
   const brother=await Block.findOne({parent: child.parent, order: child.order+delta})
