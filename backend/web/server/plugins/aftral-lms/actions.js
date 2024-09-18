@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
-const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -70,6 +70,7 @@ const removeChildAction = async ({parent, child}, user) => {
   }
   await Block.findByIdAndDelete(child)
   await Block.findByIdAndUpdate(parent, {last_updater: user})
+  await updateChildrenOrder(parent)
   // Propagate deletion
   const linkedChildren=await Block.find({origin: child}).populate('parent')
   await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))

@@ -430,13 +430,22 @@ const getBlockTicketsCount = async (userId, params, data) => {
   return count
 }
 
+const updateChildrenOrder = async parentId => {
+  const children=await mongoose.models.block.find({parent: parentId}).sort({order:1})
+  await Promise.all(children.map((child, idx) => {
+    child.order=idx+1
+    return child.save()
+  }))
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
-  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount
+  getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
+  updateChildrenOrder,
 }
 
 
