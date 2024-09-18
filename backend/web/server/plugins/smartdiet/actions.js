@@ -50,6 +50,7 @@ const { sendBufferToAWS } = require('../../middlewares/aws')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
 const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
+const { upsertAccount } = require('../agenda/smartagenda')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -119,7 +120,12 @@ const register = async (props, user) => {
       .then(extraProps => defaultRegister({ ...props, ...extraProps }))
       .then(data => {
         User.findById(data._id).populate('company')
-          .then(usr => sendAccountCreated({user: usr, password: props.password}))
+          .then(usr => {
+            sendAccountCreated({user: usr, password: props.password})
+            upsertAccount(lodash.pick(usr, ['email', 'firstname', 'lastname']))
+              .then(id => User.findByIdAndUpdate(data._id, {smartagenda_id: id}))
+              .catch(console.error)
+          })
         return data
       })
   }

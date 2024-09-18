@@ -31,7 +31,7 @@ catch(err) {
 }
 
 const validatePassword = async ({password, password2}) => {
-  console.log('validate', password, password2, 'with', PASSWORD_PATTERN)
+  console.log('validate', password, 'confirm with', password2, 'with', PASSWORD_PATTERN)
   if (!PASSWORD_PATTERN.test(password)) {
     console.log('not ok')
     throw new BadRequestError(`Mot de passe incorrect:${PASSWORD_PATTERN_STR}`)
