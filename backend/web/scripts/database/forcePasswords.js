@@ -16,4 +16,4 @@ const updatePasswords= async () => {
 updatePasswords()
   .then(console.log)
   .catch(console.error)
-  // .finally(() => process.exit(0))
+  .finally(() => process.exit(0))
