@@ -68,6 +68,12 @@ const EventSchema = new Schema({
     type: String,
     required: false,
   },
+  related_events: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'event'
+    }]
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

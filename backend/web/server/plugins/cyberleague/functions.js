@@ -259,6 +259,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'event', field: 'registered_users_count', instance: 'Number'})
+declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})

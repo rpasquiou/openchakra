@@ -1,4 +1,5 @@
 const lodash = require('lodash')
+const moment=require('moment')
 const { loadFromDb, idEqual } = require("../../utils/database")
 
 const compareCompanies = (company, expertises) => {
@@ -7,11 +8,18 @@ const compareCompanies = (company, expertises) => {
 }
 
 const getRelated = (model) => {
+  if (model == 'event') {
+    return async (userId, params, data) => {
+      const events = await loadFromDb({model: `event`, fields: [`start_date`, `name`, `picture`, `end_date`,`company.name`, `expertise_set.expertises`]})
+      return lodash.orderBy(lodash.filter(events, (e) => !idEqual(data._id,e._id) && moment(e.start_date).isAfter(moment())), (e) => e.start_date).slice(0, 10)
+     }
+  }
+
   if (model == `company`) {
    return async (userId, params, data) => {
     const companies = await loadFromDb({model: `company`, fields: [`expertise_set.expertises`, `name`, `picture`, `baseline`]})
     return lodash.orderBy(lodash.filter(companies, (c) => !idEqual(data._id,c._id)), (c) => compareCompanies(c, data.expertise_set?.expertises), `desc`).slice(0, 10)
-   } 
+   }
   }
 
   if (model == `user`) {
