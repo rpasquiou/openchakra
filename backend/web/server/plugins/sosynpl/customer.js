@@ -4,7 +4,7 @@ const { CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES } = require("./
 const customerProfileCompletion = (user) => {
   if (!user['customer_missing_attributes']) return 1
   const attrCount = CUSTOMER_REQUIRED_ATTRIBUTES.length
-  const missingCount = user['customer_missing_attributes'].split(` - `).length
+  const missingCount = user['customer_missing_attributes'].split(`- `).length
   return Math.floor(100-missingCount/attrCount*100)/100
 }
 
