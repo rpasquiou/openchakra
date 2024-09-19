@@ -67,6 +67,10 @@ const AnnounceSchema = new Schema({
   start_date: {
     type: Date,
     required: false,
+    validate: [
+      function(start_date) {return moment(start_date).isAfter(moment().endOf(`day`))},
+      `Vous devez choisir une date de début à partir de demain`
+    ]
   },
   sectors: {
     type: [{
