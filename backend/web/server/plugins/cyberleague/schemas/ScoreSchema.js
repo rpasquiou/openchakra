@@ -70,6 +70,11 @@ const ScoreSchema = new Schema({
         }]
       }
     }]
+  },
+  completed: {
+    type: Boolean,
+    required: true,
+    default: false
   }
 }, {...schemaOptions})
 
@@ -77,10 +82,6 @@ const ScoreSchema = new Schema({
 
 ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
   return this?.answers?.filter(a => a.answer==ANSWER_NO).length || 0
-})
-
-ScoreSchema.virtual('is_drafted', DUMMY_REF).get(function() {
-  return this?.answers?.filter(a => !a.answer).length == 0
 })
 
 ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {

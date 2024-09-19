@@ -268,7 +268,6 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
-declareVirtualField({model: 'score', field: 'is_drafted', requires: 'answers.answer', instance: 'Boolean'})
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
@@ -478,11 +477,12 @@ const postPutData = async ({model, id, params, user}) => {
   if (model == 'answer') {
     const answer = await Answer.findById(id)
     const score = await Score.findById(answer.score)
+    const completed = score.answers?.filter(a => !a.answer).length == 0
     
-    if (score.is_drafted) {
+    if (completed) {
       const computedScores = await computeScores(score.answers)
       
-      await Score.findByIdAndUpdate(score._id, {$set: {...computedScores}})
+      await Score.findByIdAndUpdate(score._id, {$set: {...computedScores, completed}})
     }
   }
   return {model, id, params, user}
