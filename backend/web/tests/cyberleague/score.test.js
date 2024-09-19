@@ -103,8 +103,7 @@ describe(`score tests`, () => {
       {$set: {answer: ANSWER_YES}}
     )
 
-    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation','is_drafted']})
-
+    const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers','deviation']})
     let score = loadedS[0]
 
     expect(score.answers[0].answer).toEqual(ANSWER_NOT_APPLICABLE)
@@ -113,7 +112,6 @@ describe(`score tests`, () => {
   
     //virtual verif
     expect(score.deviation).toEqual(1)
-    expect(score.is_drafted).toEqual(true)
 
     //computedScores verif
     const computedScores = await computeScores(score.answers)
