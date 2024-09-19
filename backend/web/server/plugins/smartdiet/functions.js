@@ -2257,7 +2257,7 @@ const getRegisterCompany = props => {
   // No email : FUCK YOU
   if (!props.email) { return Promise.resolve({}) }
   const NO_COMPANY_NAME = 'NEVER'.repeat(10000)
-  const code_re = props.company_code ? new RegExp(`^${props.company_code.replace(/[\t ]/g, '')}$`, 'i') : NO_COMPANY_NAME
+  const code_re = props.company_code?.trim() || NO_COMPANY_NAME
   const mail_re = props.email
   const result = {}
   return Promise.all([Lead.findOne({ email: mail_re }), Company.findOne({ code: code_re })])
