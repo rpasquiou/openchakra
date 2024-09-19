@@ -258,7 +258,7 @@ const CustomerSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'sector',
     set: v => v || undefined,
-    required: false,
+    required: [true, `Le secteur est obligatoire`],
   },
   // Default: customer not suspended, freelance standby
   activity_status: {
