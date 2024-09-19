@@ -159,13 +159,13 @@ const withDynamicContainer = Component => {
     }
 
     const hasPrev = () => getPageIndex()>0
-    const hasNext = () => data?.length>limit
+    const hasNext = () => originalData?.length>limit
 
 
-    const navigation=(data?.length>limit || getPageIndex()>0) && !hidePagination ?
+    const navigation=(originalData?.length>limit || getPageIndex()>0) && !hidePagination ?
     <Flex justifyContent={'space-around'} style={{width: '100%'}} flex={'row'}>
       <ArrowLeftIcon style={{opacity: !hasPrev() && '50%'}} enabled={hasPrev} onClick={prev} />
-      <Flex>{getPageIndex()*limit+1}-{getPageIndex()*limit+Math.min(limit, orgData.length)}</Flex>
+      <Flex>{getPageIndex()*limit+1}-{getPageIndex()*limit+Math.min(limit, originalData.length)}</Flex>
       <ArrowRightIcon style={{opacity: !hasNext() && '50%'}} enabled={hasNext} onClick={next} />
     </Flex>
     :
