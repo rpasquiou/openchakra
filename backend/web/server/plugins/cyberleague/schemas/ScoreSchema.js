@@ -71,6 +71,10 @@ const ScoreSchema = new Schema({
       }
     }]
   },
+  bellwether_count: {
+    type: Number,
+    default: 0
+  },
   completed: {
     type: Boolean,
     required: true,
