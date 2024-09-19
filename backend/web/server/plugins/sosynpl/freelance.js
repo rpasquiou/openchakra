@@ -1,8 +1,8 @@
 const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS, FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES } = require("./consts")
 
 const freelanceProfileCompletion = (user) => {
-  if (!user['freelance_missing_attributes'] || user['freelance_missing_attributes'].length === 0) return 1
-  const missing = user['freelance_missing_attributes'].map(attribute => attribute.trim())
+  if (!user['freelance_missing_attributes']) return 1
+  const missing = user['freelance_missing_attributes'].split(` - `).map(attribute => attribute.trim())
   let result = 0
   const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
   if (requiredMissing === 0) result += 40
@@ -33,7 +33,8 @@ const freelanceMissingAttributes = (user) => {
   } else {
     missingAttr[missingAttr.length - 1] = String(missingAttr[missingAttr.length - 1]).trim()
   }
-  return missingAttr
+  missingAttr = missingAttr.join(` - `)
+  return missingAttr.charAt(0).toUpperCase() + missingAttr.slice(1)
 }
 
 module.exports = { freelanceMissingAttributes, freelanceProfileCompletion }

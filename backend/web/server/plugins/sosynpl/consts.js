@@ -419,23 +419,23 @@ const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft
 const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
-  firstname : `Prénom`,
-  lastname : `Nom`,
-  main_job : `Métier principal`,
-  work_duration : `Durée de mission souhaitée`,
-  position : `Intitulé du poste`,
-  experience : `Expérience dans le poste`,
-  main_experience : `Expérience principale`,
-  soft_skills : `Soft Skills`,
-  picture : `Photo de profil`,
-  work_mode : `Mode de travail`,
-  mobility : `Mobilité`,
-  work_sector : `Secteur d'activité`,
-  expertises : `Compétences`,
-  experiences : `Expériences`,
-  trainings : `Formations`,
-  description : `Pourquoi moi?`,
-  rate : `Taux journalier moyen`
+  firstname : `prénom`,
+  lastname : `nom`,
+  main_job : `métier principal`,
+  work_duration : `durée de mission souhaitée`,
+  position : `intitulé du poste`,
+  experience : `expérience dans le poste`,
+  main_experience : `expérience principale`,
+  soft_skills : `soft Skills`,
+  picture : `photo de profil`,
+  work_mode : `mode de travail`,
+  mobility : `mobilité`,
+  work_sector : `secteur d'activité`,
+  expertises : `compétences`,
+  experiences : `expériences`,
+  trainings : `formations`,
+  description : `pourquoi moi?`,
+  rate : `taux journalier moyen`
 }
 
 //Customer profile completion
@@ -443,13 +443,13 @@ const CUSTOMER_REQUIRED_ATTRIBUTES = ['siren','company_size','description','comp
 
 const CUSTOMER_OUTPUT_ATTRIBUTES = {
   siren:'SIREN',
-  company_name:`Nom de l'entreprise`,
-  company_logo:'Logo',
-  description:`Description de l'entreprise`,
-  company_size:`Taille de l'entreprise`,
-  legal_status:`Statut de l'entreprise`,
-  registration_city:`Ville d'immatriculation`,
-  headquarter_address:`Adresse du siège de l'entreprise`,
+  company_name:`nom de l'entreprise`,
+  company_logo:'logo',
+  description:`description de l'entreprise`,
+  company_size:`taille de l'entreprise`,
+  legal_status:`forme juridique`,
+  registration_city:`ville d'immatriculation`,
+  headquarter_address:`adresse du siège de l'entreprise`,
 }
 
 module.exports={

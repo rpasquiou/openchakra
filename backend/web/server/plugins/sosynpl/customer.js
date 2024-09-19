@@ -2,9 +2,9 @@ const { CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES } = require("./
 
 
 const customerProfileCompletion = (user) => {
-  if (!user['customer_missing_attributes'] || user['customer_missing_attributes'].length === 0) return 1
+  if (!user['customer_missing_attributes']) return 1
   const attrCount = CUSTOMER_REQUIRED_ATTRIBUTES.length
-  const missingCount = user['customer_missing_attributes'].length
+  const missingCount = user['customer_missing_attributes'].split(` - `).length
   return Math.floor(100-missingCount/attrCount*100)/100
 }
 
@@ -17,7 +17,8 @@ const customerMissingAttributes = (user) => {
       missingAttr = [...missingAttr, attributeString]
     }
   })
-  return missingAttr
+  missingAttr = missingAttr.join(`- `)
+  return missingAttr.charAt(0).toUpperCase() + missingAttr.slice(1)
 }
 
 module.exports = { customerMissingAttributes, customerProfileCompletion }
