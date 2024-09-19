@@ -620,7 +620,9 @@ const preCreate = async ({ model, params, user }) => {
     if (isAppointment) {
       const start=moment(params.start_date)
       const availabilities=await getAvailabilities({
-        diet_id: diet.smartagenda_id, 
+        // FIX May lead to incorrect diet's appintment if taken by a diet other than te coaching's one
+        // The selected diet should be the logged one (pb diet/operator)
+        diet_id: latest_coaching?.diet?.smartagenda_id, 
         appointment_type: latest_coaching.appointment_type?.smartagenda_id,
         from: moment(start).add(-1, 'day').startOf('day'),
         to: moment(start).endOf('day'),

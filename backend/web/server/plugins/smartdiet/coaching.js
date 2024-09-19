@@ -76,7 +76,7 @@ const updateCoachingStatus = async coaching_id => {
 const getAvailableDiets = async (userId, params, data) => {
   console.log('Getting available diets for', userId, 'coaching', data._all_diets.length, 'company', data.user.company.name)
   let diets=data._all_diets
-  diets=diets.filter(d => !!d.smartagenda_id)
+  diets=diets.filter(d => !!parseInt(d.smartagenda_id))
   diets=diets.filter(d => d.diet_coaching_enabled)
   diets=diets.filter(d => d.customer_companies.map(c => c._id.toString()).includes(data.user.company._id.toString()))
   const hasAvailabilities = async diet_smartagenda_id => {
