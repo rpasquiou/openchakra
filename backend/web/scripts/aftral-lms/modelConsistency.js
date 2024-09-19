@@ -30,6 +30,7 @@ const countChildren = async id => {
 }
 
 const checkChildrenPropagation = async() => {
+  console.log('*'.repeat(10), 'START children propagation')
   const blocks=await Block.find({[BLOCK_TYPE]: {$nin: ['resource', 'session']}, origin: {$ne: null}, _locked: false}).lean()
   const grouped=lodash(blocks).groupBy(BLOCK_TYPE).mapValues(v => v.length)
   console.log(grouped.value())
@@ -51,9 +52,11 @@ const checkChildrenPropagation = async() => {
       console.log(err.message)
     }
   }
+  console.log('*'.repeat(10), 'END Checking children propagation')
 }
 
 const checkChildrenOrder = async() => {
+  console.log('*'.repeat(10), 'START children order')
   const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).sort({parent:1, order:1}).lean()
   const grouped=lodash(blocks)
     .groupBy(b=>b.parent._id.toString())
@@ -65,19 +68,21 @@ const checkChildrenOrder = async() => {
       console.log(`Incorrect children order for ${v[0].parent}:${orders}`)
     }
   })
+  console.log('*'.repeat(10), 'END children order')
 }
 
 const fixModel = async () => {
+  console.log('*'.repeat(10), 'START fix model')
   const parents=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}})
     .populate({path: 'children', populate: 'origin'}).lean()
   parents.forEach(p => {
+    console.log('Before', p.type, p.name, p.children.length)
     if (p.children.some(c => !c.origin)) {
       throw new Error(`${p.id}/${c._id} has no origin`)
     }
   })
-  const families=parents.map(p => ({type: p.type, id: p._id, name:p.name, children: p.children.map(c => c._id)}))
+  const families=parents.map(p => ({type: p.type, id: p._id, name:p.name, children: p.children.map(c => c.origin._id)}))
   const grouped=lodash.groupBy(families, 'type')
-  console.log(JSON.stringify(grouped, null, 2))
   const types=['sequence', 'module', 'chapter', 'program']
   // Remove all clones
   await Block.remove({origin: {$ne: null}, _locked:false})
@@ -85,8 +90,15 @@ const fixModel = async () => {
   const designer=await User.findOne({role: ROLE_CONCEPTEUR})
   const reAssociate = async blocks => {
     return Promise.all(blocks.map(({id, children}) => {
+      console.log('Running', id, children)
+      if (children.length==0) {
+        return
+      }
       return runPromisesWithDelay(children.map(child => async () => {
-        return addChildAction({parent: id, child: child}, designer)
+        console.log('start', id, child)
+        const res=addChildAction({parent: id, child: child}, designer).catch(console.error)
+        console.log('end', id, child)
+        return res
       }))
       .then(res => {
         const err=res.find(r => r.status=='rejected')
@@ -100,6 +112,12 @@ const fixModel = async () => {
   await reAssociate(grouped.module)
   await reAssociate(grouped.chapter)
   await reAssociate(grouped.program)
+  const parentsAfter=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}})
+    .populate('children')
+  parentsAfter.forEach(p => {
+    console.log('After', p.type, p.name, p.children.length)
+  })
+  console.log('*'.repeat(10), 'END fix model')
 }
 
 const checkConsistency = async () => {
