@@ -1531,6 +1531,7 @@ const LEAD_MAPPING={
   call_direction: () => CALL_DIRECTION_OUT_CALL,
   phone: 'tel',
   company_code: ({record}) => COMPANY[+record.branch],
+  campain: 'batchname',
   source: ({record}) => SOURCE[record.listtype],
   migration_id: 'SDPROSPECTID',
 }
