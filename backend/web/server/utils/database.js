@@ -437,20 +437,20 @@ const buildQuery = (model, id, fields, params) => {
   // Add filter fields
   fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
 
-  const select=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const selectedAttr=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const firstLevelAttr = getFirstLevelFields(modelAttributes)
+  const rejectedAttr = lodash.difference(firstLevelAttr, selectedAttr)
+  const projection = {}
 
-  const projection = [...modelAttributes].reduce((acc, attr) => {
-    if (![...select, `_id`, `id`, `creation_date`, `update_date`, `__t`, `__v`].includes(attr) && !attr.includes(`.`)) {
-      acc[attr] = 0
-    }
-    return acc
-  }, {})
+  lodash.forEach(rejectedAttr, attr => {
+    projection[attr] = 0
+  })
 
   const currentFilter=getCurrentFilter(filters, model)
   const currentSort=getCurrentSort(sorts, model)
   criterion={...criterion, ...currentFilter}
   // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
-  let query = mongoose.connection.models[model].find(criterion, projection).lean({virtuals:true})
+  let query = mongoose.connection.models[model].find(criterion, projection)
   query = query.collation(COLLATION)
   if (currentSort) {
     query=query.sort(currentSort)
