@@ -15,7 +15,7 @@ require('../../server/models/Answer')
 const Question = require('../../server/models/Question')
 const { loadFromDb, MONGOOSE_OPTIONS, idEqual } = require('../../server/utils/database')
 const { ensureQuestionCategories, testOnlyPostCreate } = require('../../server/plugins/cyberleague/functions')
-const { computeScores } = require('../../server/plugins/cyberleague/score')
+const { computeScoresIfRequired } = require('../../server/plugins/cyberleague/score')
 const Answer = require('../../server/models/Answer')
 require('../../server/plugins/cyberleague/functions')
 
@@ -109,28 +109,32 @@ describe(`score tests`, () => {
     expect(score.deviation).toEqual(1)
 
     //computedScores verif
-    const computedScores = await computeScores(score.answers)
+    const requestedScore = await Score.findOne({answers: score.answers[0]._id})
+    await computeScoresIfRequired(requestedScore._id)
 
-    expect(computedScores.category_rates.length).toEqual(2)
-    expect(computedScores.bellwether_rates.length).toEqual(1)
+    const loadedSAnswered = await loadFromDb({model: 'score', fields: ['category_rates','bellwether_rates','global_rate']})
+    const scoreAnswered = loadedSAnswered[0]
 
-    expect(computedScores.global_rate).toEqual(0.60)
+    expect(scoreAnswered.category_rates.length).toEqual(2)
+    expect(scoreAnswered.bellwether_rates.length).toEqual(1)
 
-    if (idEqual( computedScores.category_rates[0].question_category , categories[1]._id)) {
-      expect(computedScores.category_rates[1].question_category.toString()).toEqual(categories[2]._id.toString())
+    expect(scoreAnswered.global_rate).toEqual(0.60)
+
+    if (idEqual( scoreAnswered.category_rates[0].question_category , categories[1]._id)) {
+      expect(scoreAnswered.category_rates[1].question_category.toString()).toEqual(categories[2]._id.toString())
       
-      expect(computedScores.category_rates[0].category_rate).toEqual(0)
-      expect(computedScores.category_rates[1].category_rate).toEqual(1)
+      expect(scoreAnswered.category_rates[0].category_rate).toEqual(0)
+      expect(scoreAnswered.category_rates[1].category_rate).toEqual(1)
     } else {
-      expect(computedScores.category_rates[0].question_category.toString()).toEqual(categories[2]._id.toString())
-      expect(computedScores.category_rates[1].question_category.toString()).toEqual(categories[1]._id.toString())
+      expect(scoreAnswered.category_rates[0].question_category.toString()).toEqual(categories[2]._id.toString())
+      expect(scoreAnswered.category_rates[1].question_category.toString()).toEqual(categories[1]._id.toString())
 
-      expect(computedScores.category_rates[0].category_rate).toEqual(1)
-      expect(computedScores.category_rates[1].category_rate).toEqual(0)
+      expect(scoreAnswered.category_rates[0].category_rate).toEqual(1)
+      expect(scoreAnswered.category_rates[1].category_rate).toEqual(0)
     }
 
-    expect(computedScores.bellwether_rates[0].question_category.toString()).toEqual(categories[1]._id.toString())
-    expect(computedScores.bellwether_rates[0].category_rate).toEqual(0)
+    expect(scoreAnswered.bellwether_rates[0].question_category.toString()).toEqual(categories[1]._id.toString())
+    expect(scoreAnswered.bellwether_rates[0].category_rate).toEqual(0)
   })
 
   it(`must have correct questions_by_category`, async () => {
