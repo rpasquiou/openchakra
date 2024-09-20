@@ -311,7 +311,7 @@ const CUSTOMER_TIPS= {
   MISSION_STATUS_CUST_CANCELLED:"Vous avez annulé cette demande de mission",
   MISSION_STATUS_QUOT_SENT:"Un devis vous a été envoyé. Pour confirmer la mission, vous devez accepter le devis",
   MISSION_STATUS_QUOT_ACCEPTED:"Vous avez accepté ce devis. La mission commencera à la date indiquée.",
-  MISSION_STATUS_QUOT_REFUSED:"Vous avez refusé le devis. Vous pouvez contacter l'indépendant.e pour en obteniur un nouveau",
+  MISSION_STATUS_QUOT_REFUSED:"Vous avez refusé le devis. Vous pouvez contacter l'indépendant.e pour en obtenir un nouveau",
   MISSION_STATUS_TO_BILL:"La mission est terminée. L'indépendant.e va déposer sa facture. Vous serez notifié dès que la facture sera disponible pour validation",
   MISSION_STATUS_BILL_SENT:"La facture est disponible. Vous disposez d'un délai de 48h pour la valider. Sans validation de votre part, le paiement sera automatiquement versé à l'indépendant.e",
   MISSION_STATUS_FINISHED:"La mission s'achève. Vous avez la possibilité de laisser un avis à cet.te indépendant.e",
