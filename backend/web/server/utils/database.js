@@ -437,7 +437,7 @@ const buildQuery = (model, id, fields, params) => {
   // Add filter fields
   fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
 
-  const selectedAttr=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const selectedAttr=['_id', 'id', CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE, 'type', '__t', ...lodash.uniq(fields.map(f => f.split('.')[0]))]
   const firstLevelAttr = getFirstLevelFields(modelAttributes)
   const rejectedAttr = lodash.difference(firstLevelAttr, selectedAttr)
   const projection = {}
