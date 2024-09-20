@@ -1,17 +1,10 @@
 const { loadFromDb } = require("../../utils/database")
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require("./consts")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES} = require("./consts")
+const Score = require("../../models/Score")
 
 // questionArray: [{question, answer}]
-const computeScores = async (answerArray) => {
-
-  let answers= await Promise.all(answerArray.map((a) => 
-    loadFromDb({model: 'answer', fields: ['question', 'question.weight', 'question.question_category', 'question.is_bellwether','answer'], id: a})
-  ))
-
-  answers=answers.map((elem, idx) => {
-    return elem[0]
-  })
+const computeScores = async (answers) => {
 
   let total_weight =0
   let total_rate = 0
@@ -78,6 +71,21 @@ const computeScores = async (answerArray) => {
   return {global_rate, category_rates, bellwether_rates}
 }
 
+const computeScoresIfRequired = async (scoreId) => {
+  const score = await loadFromDb({
+    model: 'score',
+    fields: [`answers.answer`, `answers.question.weight`, `answers.question.question_category`, `answers.question.is_bellwether`],
+    id: scoreId
+  })
+  const completed = score[0].answers?.filter(a => !a.answer).length == 0
+  
+  if (completed) {
+    const computedScores = await computeScores(score[0].answers)
+    
+    await Score.findByIdAndUpdate(score[0]._id, {$set: {...computedScores, completed}})
+  }
+}
+
 const getQuestionsByCategory = async (userId, params, data) => {
   const groupedQuestions = lodash.groupBy(data.answers, (a) => a.question.question_category._id)
   const res = []
@@ -88,6 +96,6 @@ const getQuestionsByCategory = async (userId, params, data) => {
 }
 
 module.exports = {
-  computeScores,
+  computeScoresIfRequired,
   getQuestionsByCategory
 }

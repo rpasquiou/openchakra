@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { computeScores, getQuestionsByCategory } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Question = require('../../models/Question')
 const Answer = require('../../models/Answer')
@@ -477,15 +477,10 @@ const postPutData = async ({model, id, params, user}) => {
   }
 
   if (model == 'answer') {
-    const answer = await Answer.findById(id)
-    const score = await Score.findById(answer.score)
-    const completed = score.answers?.filter(a => !a.answer).length == 0
+    const score = await Score.findOne({answers: id})
 
-    if (completed) {
-      const computedScores = await computeScores(score.answers)
-      
-      await Score.findByIdAndUpdate(score._id, {$set: {...computedScores, completed}})
-    }
+    await computeScoresIfRequired(score._id)
+    
   }
   return {model, id, params, user}
 }
