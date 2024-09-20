@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const moment = require('moment')
 const User = require('../../server/models/User')
-const { ROLE_MEMBER, ANSWER_YES, ANSWER_NO, ANSWER_NOT_APPLICABLE, SCORE_LEVEL_1 } = require('../../server/plugins/cyberleague/consts')
+const { ROLE_MEMBER, ANSWER_YES, ANSWER_NO, ANSWER_NOT_APPLICABLE, SCORE_LEVEL_1, SCORE_LEVEL_2, SCORE_LEVEL_3 } = require('../../server/plugins/cyberleague/consts')
 const Score = require('../../server/models/Score')
 require('../../server/models/QuestionCategory')
 require('../../server/models/School')
@@ -28,9 +28,9 @@ beforeAll(async () => {
   dataQ1 = await Question.create({text: 'q1', weight: '1', question_category: categories[0]._id, is_bellwether: false, is_level_1: true})
   dataQ2 = await Question.create({text: 'q2', weight: '2', question_category: categories[1]._id, is_bellwether: true, is_level_1: true})
   dataQ3 = await Question.create({text: 'q3', weight: '3', question_category: categories[2]._id, is_bellwether: false, is_level_1: true})
-  dataUser=await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
-  dataScore=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_1})
-  dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})  
+  dataUser = await User.create({firstname: 'user', lastname: 'test', email: 'email@test.com', role: ROLE_MEMBER, password: 'test'})
+  dataScore = await Score.create({creator: dataUser._id, level: SCORE_LEVEL_1})
+  dataScore = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore, user: ``})
 })
 
 afterAll(async () => {
@@ -42,9 +42,6 @@ describe(`score tests`, () => {
   it(`must be initialized correctly`, async () => {
     
     const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
-    
-
-
     const loadedA = await loadFromDb({model: 'answer', fields:['question','score','answer']})
     const loadedU = await loadFromDb({model: 'user', fields: ['firstname']})
 
@@ -84,8 +81,6 @@ describe(`score tests`, () => {
     expect(!!a2.answer).toEqual(false)
     expect(!!a3.answer).toEqual(false)
   })
-
-
 
   it(`must compute correct rates`, async () => {
     
@@ -156,5 +151,39 @@ describe(`score tests`, () => {
     expect(QbC[0].answers[0].question._id).toEqual(dataQ1._id)
     expect(QbC[1].answers[0].question._id).toEqual(dataQ2._id)
     expect(QbC[2].answers[0].question._id).toEqual(dataQ3._id)
+  })
+
+  it(`must have questions according to level`, async () => {
+
+    const dataQL2 = await Question.create({text: 'q4', weight: '3', question_category: categories[2]._id, is_bellwether: false, is_level_2: true})
+    const dataQL3 = await Question.create({text: 'q5', weight: '3', question_category: categories[2]._id, is_bellwether: false, is_level_3: true})
+
+    let dataScore2=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_2})
+    let dataScore3=await Score.create({creator: dataUser._id, level: SCORE_LEVEL_3})
+
+    dataScore2 = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore2, user: ``})
+    dataScore3 = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore3, user: ``})
+
+    const loadedS = await loadFromDb({model: 'score', fields: ['answers.question','level']})
+
+    expect(loadedS.length).toEqual(3)
+
+    const score1 = loadedS[0]
+    const score2 = loadedS[1]
+    const score3 = loadedS[2]
+
+    //level verif
+    expect(score1.level).toEqual(SCORE_LEVEL_1)
+    expect(score2.level).toEqual(SCORE_LEVEL_2)
+    expect(score3.level).toEqual(SCORE_LEVEL_3)
+
+    //answers length verif
+    expect(score1.answers.length).toEqual(3)
+    expect(score2.answers.length).toEqual(4)
+    expect(score3.answers.length).toEqual(5)
+
+    //answers id verif
+    expect(score2.answers[3].question._id).toEqual(dataQL2._id)
+    expect(score3.answers[4].question._id).toEqual(dataQL3._id)
   })
 })
