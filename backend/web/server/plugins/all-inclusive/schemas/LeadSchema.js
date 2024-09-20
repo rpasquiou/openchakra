@@ -78,6 +78,10 @@ const LeadSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
+  other_source: {
+    type: String,
+    required: false,
+  },
 }, schemaOptions
 );
 
