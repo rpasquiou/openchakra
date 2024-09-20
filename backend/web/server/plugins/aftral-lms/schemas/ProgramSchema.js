@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT, DURATION_UNIT}=require('../consts')
+const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT, DURATION_UNIT, PROGRAM_STATUS_AVAILABLE}=require('../consts')
+const { BadRequestError } = require('../../../utils/errors')
 
 const ProgramSchema = new Schema({
   status: {
@@ -43,6 +44,10 @@ ProgramSchema.pre('validate', function(next) {
   // For non-template: exit
   if (!!this.origin) {
     return next()
+  }
+  //#155 Enforce code for production program
+  if (this.status==PROGRAM_STATUS_AVAILABLE && lodash.isEmpty(this.codes)) {
+    return next(new BadRequestError(`Un code est requis pour passer en production`))
   }
   //#155 If the program has code(s), check it's not already used
   if (!this._locked && !this.origin && !lodash.isEmpty(this.codes)) {

@@ -349,11 +349,11 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       )}
   }
 
-  if(model == `program`) {
-    const program = await Program.findById(id)
-    params.codes = program.codes
-    params.duration_unit = program.duration_unit
-  }
+  // if(model == `program`) {
+  //   const program = await Program.findById(id)
+  //   params.codes = program.codes
+  //   params.duration_unit = program.duration_unit
+  // }
 
   if (model == `group`){
     if(params.sessions) {
