@@ -44,11 +44,8 @@ ProgramSchema.pre('validate', function(next) {
   if (!!this.origin) {
     return next()
   }
-  // Allow no code, builders can set them later
-  // if (lodash.isEmpty(this.codes)) {
-  //   return next(new Error(`Au moins un code produit attendu`))
-  // }
-  if (!this._locked && !this.origin) {
+  //#155 If the program has code(s), check it's not already used
+  if (!this._locked && !this.origin && !lodash.isEmpty(this.codes)) {
     return mongoose.models['program'].findOne(
       {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}
     ).populate('codes')
