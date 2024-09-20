@@ -8,4 +8,5 @@ export const MESSAGES={
   smartdiet_join_team: 'Vous avez intégré cette team !',
   smartdiet_routine_challenge: 'Bravo !',
   smartdiet_set_company_code: 'Votre code entreprise a été pris en compte',
+  addChild: 'Ajouté',
 }
