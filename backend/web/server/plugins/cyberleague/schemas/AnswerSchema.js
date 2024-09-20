@@ -5,11 +5,6 @@ const { ANSWERS } = require('../consts')
 const Schema = mongoose.Schema
 
 const AnswerSchema = new Schema({
-  score: {
-    type: Schema.Types.ObjectId,
-    ref: 'score',
-    required: [true, `Le score est obligatoire dans la réponse`],
-  },
   question: {
     type: Schema.Types.ObjectId,
     ref: 'question',
