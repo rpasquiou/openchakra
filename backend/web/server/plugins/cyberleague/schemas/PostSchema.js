@@ -18,7 +18,7 @@ const PostSchema = new Schema({
   creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: [true, "L'auteur est obligatoire"],
+    required: [true, `L'auteur est obligatoire`],
   },
   picture: {
     type: String,
@@ -62,9 +62,9 @@ PostSchema.virtual('comments_count', {
 })
 
 PostSchema.virtual('comments', {
-  ref: "comment", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "post", // is equal to foreignField
+  ref: 'comment', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'post', // is equal to foreignField
 });
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function () {

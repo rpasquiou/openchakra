@@ -52,15 +52,15 @@ const GroupSchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 
 GroupSchema.virtual('posts', {
-  ref: "post", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "group" // is equal to foreignField
+  ref: 'post', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'group' // is equal to foreignField
 })
 
 GroupSchema.virtual('posts_count', {
-  ref: "post", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "group", // is equal to foreignField
+  ref: 'post', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'group', // is equal to foreignField
   count: true,
 })
 

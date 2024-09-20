@@ -23,9 +23,9 @@ const ExpertiseCategorySchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 
 ExpertiseCategorySchema.virtual('expertises', {
-  ref: "expertise", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "category" // is equal to foreignField
+  ref: 'expertise', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'category' // is equal to foreignField
 })
 
 /* eslint-enable prefer-arrow-callback */

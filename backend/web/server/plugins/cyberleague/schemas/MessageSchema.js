@@ -17,7 +17,7 @@ const MessageSchema = new Schema(
     sender: {
       type: Schema.Types.ObjectId,
       ref: 'user',
-      required: [true, "L'expéditeur est obligatoire"],
+      required: [true, `L'expéditeur est obligatoire`],
     },
     receiver: {
       type: Schema.Types.ObjectId,

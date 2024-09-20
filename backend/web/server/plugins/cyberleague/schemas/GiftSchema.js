@@ -8,15 +8,15 @@ const Schema = mongoose.Schema
 const GiftSchema = new Schema({
   name: {
     type: String,
-    required: [true, 'Le nom est obligatoire'],
+    required: [true, `Le nom est obligatoire`],
   },
   description: {
     type: String,
-    required: [true, "La description est obligatoire"],
+    required: [true, `La description est obligatoire`],
   },
   picture: {
     type: String,
-    required: [true, "L'illustration est obligatoire"],
+    required: [true, `L'illustration est obligatoire`],
   },
 }, schemaOptions)
 

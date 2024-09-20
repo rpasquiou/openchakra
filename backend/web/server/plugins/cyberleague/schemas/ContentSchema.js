@@ -107,9 +107,9 @@ ContentSchema.virtual('comments_count', {
 })
 
 ContentSchema.virtual('comments', {
-  ref: "comment", // The Model to use
-  localField: "_id", // Find in Model, where localField
-  foreignField: "content", // is equal to foreignField
+  ref: 'comment', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'content', // is equal to foreignField
 });
 
 ContentSchema.virtual('likes_count', DUMMY_REF).get(function () {

@@ -1,5 +1,5 @@
-const mongoose = require("mongoose")
-const { schemaOptions } = require("../../../utils/schemas")
+const mongoose = require('mongoose')
+const { schemaOptions } = require('../../../utils/schemas')
 const { ESTIMATED_DURATION_UNITS } = require('../consts')
 
 const Schema = mongoose.Schema
@@ -8,26 +8,26 @@ const MissionSchema = new Schema(
   {
     creator: {
       type: Schema.Types.ObjectId,
-      ref: "user",
-      required: [true, "L'utilisateur créateur de la mission est requis"],
+      ref: 'user',
+      required: [true, `L'utilisateur créateur de la mission est requis`],
     },
     name: {
       type: String,
-      required: [true, "Le nom de la mission est requis"],
+      required: [true, `Le nom de la mission est requis`],
     },
     date: {
       type: Date,
-      required: [true, "La date de la mission est requise"],
+      required: [true, `La date de la mission est requise`],
     },
     description: {
       type: String,
-      required: [true, 'La description est obligatoire'],
+      required: [true, `La description est obligatoire`],
     },
     required_expertises: {
       type: [
         {
           type: Schema.Types.ObjectId,
-          ref: "expertise",
+          ref: 'expertise',
           index: true,
           required: true,
         },
@@ -63,7 +63,7 @@ const MissionSchema = new Schema(
       type: [
         {
           type: Schema.Types.ObjectId,
-          ref: "company",
+          ref: 'company',
           index: true,
           required: false,
         },
