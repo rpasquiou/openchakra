@@ -10,7 +10,7 @@ const SearchSchema = new Schema({
   pattern: {
     type: String,
     set: v => v?.trim(),
-    required: [true, `Le texte de recherche est obligatoire`],
+    required: false,
   },
   blocks: [{
     type: Schema.Types.ObjectId,
