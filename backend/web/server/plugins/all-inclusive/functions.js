@@ -297,7 +297,6 @@ USER_MODELS.forEach(m => {
       options: {ref: 'mission'}}
   })
   declareVirtualField({model: m, field: 'recommandations', instance: 'Array', multiple: true,
-    requires: '_all_recommandations.job',
     caster: {
       instance: 'ObjectID',
       options: {ref: 'recommandation'}}
@@ -333,11 +332,6 @@ USER_MODELS.forEach(m => {
     caster: {
       instance: 'ObjectID',
       options: {ref: 'jobUser'}}
-  })
-  declareVirtualField({model: m, field: '_all_recommandations', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: {ref: 'recommandation'}}
   })
   declareVirtualField({model: m, field: 'search_text', type: 'String',
     requires:'firstname,lastname,qualified_str,visible_str,company_name,coaching,zip_code,admin_validated',
