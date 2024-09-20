@@ -158,7 +158,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
             const partner=getPartner(msgs[0], user)
             const newest_message = lodash.maxBy(msgs, m => new Date(m.creation_date))
             return ({_id: partner._id, partner, messages: msgs, newest_message: [newest_message]}) })
-          .sortBy(CREATED_AT_ATTRIBUTE, 'asc')
+          .orderBy(conv => new Date(conv.newest_message[0][CREATED_AT_ATTRIBUTE]), ['desc'])
         return {model, fields, id, data: convs, params}
       })
   }
