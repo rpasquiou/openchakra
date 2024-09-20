@@ -124,6 +124,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model == 'jobUser') {
+    if (id) {
+      const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
+      return { model, fields, id, data: [job], params }
+    }
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
   }
 
@@ -523,7 +527,7 @@ declareComputedField({model: 'message', field: 'mine', requires: 'sender', gette
 const filterDataUser = async ({ model, data, user, params }) => {
   if (model === 'jobUser') {
     const searchQuery = params?.['filter.search_field']?.toLowerCase()
-    if (!searchQuery) return data
+    const cityQuery = params?.['filter.city']?.toLowerCase()
 
     const allJobs = await JobUser.find()
       .populate('user')
@@ -531,26 +535,26 @@ const filterDataUser = async ({ model, data, user, params }) => {
       .populate('skills')
 
     return allJobs.filter((job) => {
-      const nameMatch = job.name.toLowerCase().includes(searchQuery)
-      const activityMatch = job.activities.some((activity) =>
-        activity.name.toLowerCase().includes(searchQuery)
-      )
-      const skillMatch = job.skills.some((skill) =>
-        skill.name.toLowerCase().includes(searchQuery)
-      )
-      const fullNameMatch = job.user?.full_name
-        ?.toLowerCase()
-        .includes(searchQuery)
-      const cityMatch = job.city?.toLowerCase().includes(searchQuery)
+      const nameMatch = searchQuery
+        ? job.name.toLowerCase().includes(searchQuery) ||
+          job.activities.some((activity) =>
+            activity.name.toLowerCase().includes(searchQuery)
+          ) ||
+          job.skills.some((skill) =>
+            skill.name.toLowerCase().includes(searchQuery)
+          ) ||
+          job.user?.full_name?.toLowerCase().includes(searchQuery)
+        : true
 
-      return (
-        nameMatch || activityMatch || skillMatch || fullNameMatch || cityMatch
-      )
+      const cityMatch = cityQuery
+        ? job.city?.toLowerCase().includes(cityQuery)
+        : true
+
+      return nameMatch && cityMatch
     })
   }
   return data
 }
-
 setFilterDataUser(filterDataUser)
 
 
