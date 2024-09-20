@@ -270,7 +270,7 @@ declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answ
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
-declareComputedField({model: 'score', field: 'bellwether_count', requires:'is_drafted', getterFn: getterCountFn('score', {'completed': true})})
+declareComputedField({model: 'score', field: 'bellwether_count', requires:'completed', getterFn: getterCountFn('score', {'completed': true})})
 
 //Answer declaration
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})
