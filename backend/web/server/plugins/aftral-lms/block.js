@@ -92,6 +92,25 @@ const cloneTree = async (blockId, parentId) => {
   return newBlock.save()
 }
 
+const cloneTemplate = async (blockId) => {
+  if (!blockId) {
+    throw new Error(`blockId is expected`)
+  }
+  const block=await mongoose.models.block.findById(blockId).populate('children')
+  const newName=`Copie de ${block.name}`
+  let blockData={
+    ...lodash.omit(block.toObject(), ['id', '_id', 'origin', 'parent']),
+    id: undefined, _id: undefined, origin: null,
+    name: newName,
+  }
+
+  const newBlock=new mongoose.models.block({...blockData})
+  await newBlock.save()
+  let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
+  newBlock.children=children.map(c => c._id)
+  return newBlock.save()
+}
+
 // Loads the chain from blockId to its root origin
 const loadChain = async blockId => {
   const result = await mongoose.models.block.aggregate([
@@ -445,7 +464,7 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder,
+  updateChildrenOrder, cloneTemplate,
 }
 
 
