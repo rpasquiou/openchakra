@@ -26,7 +26,10 @@ const ResourceSchema = new Schema({
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ResourceSchema.pre('validate', async function(next) {
-  return mongoose.models.resource.exists({_id: {$ne: this._id}, code: this.code})
+  if (!!this?.origin) {
+    return next()
+  }
+  return mongoose.models.resource.exists({_id: {$ne: this._id}, code: this.code, origin: null})
     .then(exists => {
       if (exists) {
         return next(new BadRequestError(`Une resource de code ${this.code} existe déjà`))
