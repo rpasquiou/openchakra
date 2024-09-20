@@ -1,7 +1,9 @@
 const { loadFromDb } = require("../../utils/database")
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES} = require("./consts")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1} = require("./consts")
 const Score = require("../../models/Score")
+const Question = require("../../models/Question")
+const Answer = require("../../models/Answer")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
@@ -95,7 +97,29 @@ const getQuestionsByCategory = async (userId, params, data) => {
   return res
 }
 
+const createAnswers = async (scoreId, scoreLevel) => {
+  let questions = await Question.find()
+
+  switch (scoreLevel) {
+    case SCORE_LEVEL_3:
+      questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2 || q.is_level_3)
+      break;
+    case SCORE_LEVEL_2:
+      questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2)
+      break;
+    case SCORE_LEVEL_1:
+      questions = lodash.filter(questions, (q) => q.is_level_1)
+      break;
+  }
+
+  const answers=await Promise.all(questions.map(async q => {
+    return Answer.create({question: q._id})
+  }))
+  await Score.findByIdAndUpdate(scoreId, {answers})
+}
+
 module.exports = {
   computeScoresIfRequired,
-  getQuestionsByCategory
+  getQuestionsByCategory,
+  createAnswers
 }

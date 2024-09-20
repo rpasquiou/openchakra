@@ -24,10 +24,8 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { getQuestionsByCategory, computeScoresIfRequired } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired, createAnswers } = require('./score')
 const Conversation = require('../../models/Conversation')
-const Question = require('../../models/Question')
-const Answer = require('../../models/Answer')
 const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
@@ -445,23 +443,7 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'score') {
-    let questions = await Question.find()
-
-    switch (data.level) {
-      case SCORE_LEVEL_3:
-        questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2 || q.is_level_3)
-        break;
-      case SCORE_LEVEL_2:
-        questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2)
-        break;
-      case SCORE_LEVEL_1:
-        questions = lodash.filter(questions, (q) => q.is_level_1)
-        break;
-    }
-    const answers=await Promise.all(questions.map(async q => {
-      return Answer.create({question: q._id})
-    }))
-    await mongoose.models[model].findByIdAndUpdate(data._id, {answers})
+    await createAnswers(data._id,data.level)
   }
 
   return data
