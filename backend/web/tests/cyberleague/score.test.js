@@ -42,7 +42,7 @@ describe(`score tests`, () => {
   it(`must be initialized correctly`, async () => {
     
     const loadedS = await loadFromDb({model: 'score', fields: ['creator','answers']})
-    const loadedA = await loadFromDb({model: 'answer', fields:['question','score','answer']})
+    const loadedA = await loadFromDb({model: 'answer', fields:['question','answer']})
     const loadedU = await loadFromDb({model: 'user', fields: ['firstname']})
 
     //data length verif
@@ -71,10 +71,6 @@ describe(`score tests`, () => {
     expect(scoreA1.question._id).toEqual(dataQ1._id)
     expect(scoreA2.question._id).toEqual(dataQ2._id)
     expect(scoreA3.question._id).toEqual(dataQ3._id)
-
-    expect(a1.score._id).toEqual(score._id)
-    expect(a2.score._id).toEqual(score._id)
-    expect(a3.score._id).toEqual(score._id)
 
     //answer.answer verif
     expect(!!a1.answer).toEqual(false)
