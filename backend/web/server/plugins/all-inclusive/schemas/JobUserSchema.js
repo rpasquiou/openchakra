@@ -82,6 +82,9 @@ const JobUserSchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 JobUserSchema.virtual("search_field", DUMMY_REF).get(function() {
   let res=[this.name]
+  if (this.city) {
+    res = [...res, this.city]
+  }
   if (this.skills) {
     res=[...res, this.skills.map(s => s.name)]
   }
