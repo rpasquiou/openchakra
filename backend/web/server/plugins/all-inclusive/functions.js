@@ -117,13 +117,17 @@ const postCreate = ({model, params, data}) => {
 
 setPostCreateData(postCreate)
 
-const preprocessGet = ({model, fields, id, user, params}) => {
+const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
   }
 
   if (model == 'jobUser') {
+    if (id) {
+      const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
+      return { model, fields, id, data: [job], params }
+    }
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
   }
 
@@ -383,8 +387,7 @@ declareVirtualField({model: 'jobUser', field: 'skills', instance: 'Array', requi
 })
 declareVirtualField({model: 'jobUser', field: 'location_str', instance: 'String', requires: 'customer_location,foreign_location'})
 declareVirtualField({
-  model: 'jobUser', field: 'search_field', instance: 'String', requires: 'name,skills.name,activities.name', 
-  dbFilter: value => ({name: new RegExp(value, 'i')}),
+  model: 'jobUser', field: 'search_field', instance: 'String', requires: 'name,skills.name,activities.name'
 })
 declareVirtualField({model: 'jobUser', field: 'experiences', instance: 'Array', requires: '', multiple: true,
   caster: {
@@ -522,24 +525,29 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
 /** End MESSAGE */
 
-const filterDataUser = ({model, data, user}) => {
-  // ALL-E admins have whole visibility
-  if (user?.role==ROLE_ALLE_ADMIN) {
-    return Promise.resolve(data)
-  }
-  if (model == 'jobUser') {
-    // Hide jobUser.user.hidden
-    return Promise.all(data.map(job => JobUser.findById(job._id).populate('user')
-        .then(dbJob => {
-          if (!user || dbJob?.user?.hidden==false || idEqual(user?._id, dbJob?.user?._id)) {
-            return job
-          }
-          return null
-        })
-      ))
-      .then(jobs => jobs.filter(v => !!v))
-  }
-  return data
+const filterDataUser = async ({ model, data, user, params }) => {
+  if (model !== 'jobUser') return data
+
+  const searchQuery = params?.['filter.search_field']?.toLowerCase()
+  if (!searchQuery) return data
+
+  const allJobs = await JobUser.find()
+    .populate('user')
+    .populate('activities')
+    .populate('skills')
+
+  return allJobs.filter(job => {
+    const nameMatch = job.name.toLowerCase().includes(searchQuery)
+    const activityMatch = job.activities.some(activity =>
+      activity.name.toLowerCase().includes(searchQuery)
+    )
+    const skillMatch = job.skills.some(skill =>
+      skill.name.toLowerCase().includes(searchQuery)
+    )
+    const fullNameMatch = job.user?.full_name?.toLowerCase().includes(searchQuery)
+
+    return nameMatch || activityMatch || skillMatch || fullNameMatch
+  })
 }
 
 setFilterDataUser(filterDataUser)
