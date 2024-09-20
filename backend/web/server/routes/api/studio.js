@@ -464,22 +464,6 @@ router.get('/checkenv', (req, res) => {
   return res.json(missingVars)
 })
 
-router.post('/contact', (req, res) => {
-  const model = 'contact'
-  let params=req.body
-  const context= req.query.context
-
-  return callPreCreateData({model, params})
-    .then(({model, params}) => {
-      return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
-        .then(([data]) => {
-          return callPostCreateData({model, params, data})
-        })
-        .then(data => res.json(data))
-    })
-})
-
 router.post('/import-data/:model', createMemoryMulter().single('file'), passport.authenticate('cookie', {session: false}), (req, res) => {
   const {model}=req.params
   const {file}=req
@@ -492,14 +476,11 @@ router.get('/form', passport.authenticate('cookie', {session: false}), (req, res
   console.log('Query is', req.query)
 })
 
-router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/:model', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
   const user=req.user
-
-  params=model=='order' && context ? {...params, booking: context}:params
-  params=model=='booking' ? {...params, booking_user: user}:params
 
   if (!model) {
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)
