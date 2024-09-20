@@ -460,9 +460,7 @@ const postPutData = async ({model, id, params, user}) => {
 
   if (model == 'answer') {
     const score = await Score.findOne({answers: id})
-
     await computeScoresIfRequired(score._id)
-    
   }
   return {model, id, params, user}
 }
