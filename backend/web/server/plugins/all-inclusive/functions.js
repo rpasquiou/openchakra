@@ -344,6 +344,11 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'opportunity'}}
   })
+  declareVirtualField({model: m, field: 'created_opportunities', instance: 'Array', requires: '', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'opportunity'}}
+  })
   declareVirtualField({model: m, field: 'documents', instance: 'Array', requires: '', multiple: true,
     caster: {
       instance: 'ObjectID',

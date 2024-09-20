@@ -483,6 +483,12 @@ UserSchema.virtual("opportunities", {
   foreignField: "user" // is equal to foreignField
 })
 
+UserSchema.virtual('created_opportunities', {
+  ref: 'opportunity',
+  localField: '_id',
+  foreignField: 'creator',
+})
+
 UserSchema.virtual("notes", {
   ref: "note", // The Model to use
   localField: "_id", // Find in Model, where localField
