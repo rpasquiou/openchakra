@@ -164,7 +164,7 @@ describe(`score tests`, () => {
     dataScore2 = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore2, user: ``})
     dataScore3 = await testOnlyPostCreate({model: `score`,params: ``,data: dataScore3, user: ``})
 
-    const loadedS = await loadFromDb({model: 'score', fields: ['answers.question','level']})
+    const loadedS = await loadFromDb({model: 'score', fields: ['answers.question','level','question_count']})
 
     expect(loadedS.length).toEqual(3)
 
@@ -185,5 +185,10 @@ describe(`score tests`, () => {
     //answers id verif
     expect(score2.answers[3].question._id).toEqual(dataQL2._id)
     expect(score3.answers[4].question._id).toEqual(dataQL3._id)
+
+    //question_count verif
+    expect(score1.question_count).toEqual(3)
+    expect(score2.question_count).toEqual(4)
+    expect(score3.question_count).toEqual(5)
   })
 })
