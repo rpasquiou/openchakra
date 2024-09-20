@@ -459,7 +459,7 @@ const postCreate = async ({ model, params, data, user }) => {
         break;
     }
     const answers=await Promise.all(questions.map(async q => {
-      return Answer.create({score: data._id, question: q._id})
+      return Answer.create({question: q._id})
     }))
     await mongoose.models[model].findByIdAndUpdate(data._id, {answers})
   }
