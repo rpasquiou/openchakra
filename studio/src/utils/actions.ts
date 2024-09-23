@@ -570,7 +570,7 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_next_question: {
-    label: 'SM Next question',
+    label: 'Next question',
     options: {},
     next: ['openPage'],
   },
