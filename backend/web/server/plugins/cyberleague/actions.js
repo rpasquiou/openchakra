@@ -5,6 +5,18 @@ const { idEqual } = require('../../utils/database')
 const { NotFoundError } = require('../../utils/errors')
 const { createScore } = require('./score')
 
+//
+const startSurvey = async (params, user) => {
+  console.log("params", params)
+
+  const firstQuestion = await createScore(user._id, params.level)
+
+  return firstQuestion
+}
+//TODO rename action to start_survey
+addAction('smartdiet_start_survey', startSurvey)
+
+
 //value : _id of the answered question
 const nextQuestion = async ({ value }, user) => {
   const score = await Score.findOne({answers: value}).populate('answers')

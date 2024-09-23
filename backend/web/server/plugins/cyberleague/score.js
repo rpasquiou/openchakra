@@ -97,29 +97,33 @@ const getQuestionsByCategory = async (userId, params, data) => {
   return res
 }
 
-const createAnswers = async (scoreId, scoreLevel) => {
-  let questions = await Question.find()
-
+const createScore = async (creatorId, scoreLevel) => {
+  let acceptedLevels = []
+  //deliberatlyly no breaks
   switch (scoreLevel) {
     case SCORE_LEVEL_3:
-      questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2 || q.is_level_3)
-      break;
+      acceptedLevels.push(SCORE_LEVEL_3)
     case SCORE_LEVEL_2:
-      questions = lodash.filter(questions, (q) => q.is_level_1 || q.is_level_2)
-      break;
+      acceptedLevels.push(SCORE_LEVEL_2)
     case SCORE_LEVEL_1:
-      questions = lodash.filter(questions, (q) => q.is_level_1)
-      break;
+      acceptedLevels.push(SCORE_LEVEL_1)
   }
+
+  level_filtered = {min_level: {$in: acceptedLevels}}
+
+  const questions = await Question.find(level_filtered)
 
   const answers=await Promise.all(questions.map(async q => {
     return Answer.create({question: q._id})
   }))
-  await Score.findByIdAndUpdate(scoreId, {answers})
+  await Score.Create({creator: creatorId, completed: false, level: params.level, answers: answers})
+
+  //for startSurvey action
+  return answers[0]._id
 }
 
 module.exports = {
   computeScoresIfRequired,
   getQuestionsByCategory,
-  createAnswers
+  createScore
 }
