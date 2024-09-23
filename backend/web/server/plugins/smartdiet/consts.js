@@ -536,10 +536,10 @@ const CALL_STATUS={
   [CALL_STATUS_RECALL]:"A rappeler",
   [CALL_STATUS_UNREACHABLE]:"Injoignable",
   [CALL_STATUS_TO_RENEW]:"A contacter renouvellement",
-  [CALL_STATUS_NOT_INTERESTED]: "Non intéressé(e)",
-  [CALL_STATUS_CONVERTI_COA]:"Converti COA",
+  [CALL_STATUS_NOT_INTERESTED]: "Refus",
+  [CALL_STATUS_CONVERTI_COA]:"CAO à venir",
   [CALL_STATUS_CONVERTI_CN]:"Converti CN",
-  [CALL_STATUS_CONVERTI_COA_CN]:"Converti COA CN",
+  [CALL_STATUS_CONVERTI_COA_CN]:"CAO à venir/CN",
   [CALL_STATUS_WRONG_NUMBER]:"Faux numéro",
 }
 
