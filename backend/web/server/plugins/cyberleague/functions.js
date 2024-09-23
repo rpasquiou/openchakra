@@ -14,7 +14,7 @@ const {
 const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require('./consts')
 const { PURCHASE_STATUS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
-const { BadRequestError } = require('../../utils/errors')
+const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { getQuestionsByCategory, computeScoresIfRequired, createAnswers } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
@@ -430,7 +430,11 @@ const preCreate = async ({model, params, user}) => {
     } else {
       params.group = null;
     }
-  } 
+  }
+
+  if (model == 'score') {
+    throw new ForbiddenError(`Un score doit être créé via l'action start survey`)
+  }
 
   return Promise.resolve({model, params})
 }
@@ -450,10 +454,6 @@ const postCreate = async ({ model, params, data, user }) => {
   if ([`user`,`content`,`company`,`group`,`event`].includes(model)) {
     data.expertise_set = await ExpertiseSet.create({})
     await data.save()
-  }
-
-  if (model == 'score') {
-    await createAnswers(data._id,data.level)
   }
 
   return data
