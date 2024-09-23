@@ -29,6 +29,7 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 setSmsContact('SoSynpL')
 
 addValidationAllowedDomain('sosynpl.com')
+addValidationAllowedDomain('yelowi.com')
 
 const sendCustomerConfirmEmail = async ({user}) => {
   const tagUrl=await getTagUrl('EMAIL_VALIDATION')
