@@ -12,8 +12,9 @@ const fillSession = async (session, trainee) => {
   const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
   const range = program.children[0].type == 'chapter' ? 5 : 4
+  // TODO get asked fields from front
   let fields=lodash.range(range).map(childCount => 
-    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', ]
+    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', 'type']
       .map(att => [...Array(childCount).fill('children'), att].join('.'))
   )
   fields=lodash.flatten(fields)
