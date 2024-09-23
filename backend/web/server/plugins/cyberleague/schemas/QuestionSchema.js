@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { SCORE_LEVELS } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -22,18 +23,11 @@ const QuestionSchema = new Schema({
     type: Boolean,
     required: [true, `Il est obligatoire de préciser si la question appartient au baromètre`]
   },
-  is_level_1: {
-    type: Boolean,
+  max_level: {
+    type: String,
+    enum : Object.keys(SCORE_LEVELS),
     required: false
   },
-  is_level_2: {
-    type: Boolean,
-    required: false
-  },
-  is_level_3: {
-    type: Boolean,
-    required: false
-  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
