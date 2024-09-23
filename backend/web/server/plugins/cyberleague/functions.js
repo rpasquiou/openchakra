@@ -283,7 +283,7 @@ declareComputedField({model: 'score', field: 'bellwether_count', requires:'compl
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})
 
 //Question declarations
-declareEnumField( {model: 'question', field: 'max_level', enumValues: SCORE_LEVELS})
+declareEnumField( {model: 'question', field: 'min_level', enumValues: SCORE_LEVELS})
 
 //questionCategory declarations
 declareVirtualField({model: 'questionCategory', field: 'questions', instance: 'Array', multiple: true,

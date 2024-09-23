@@ -23,7 +23,7 @@ const QuestionSchema = new Schema({
     type: Boolean,
     required: [true, `Il est obligatoire de préciser si la question appartient au baromètre`]
   },
-  max_level: {
+  min_level: {
     type: String,
     enum : Object.keys(SCORE_LEVELS),
     required: false
