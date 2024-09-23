@@ -268,6 +268,9 @@ UserSchema.virtual('scores', {
   ref:'score',
   localField:'_id',
   foreignField:'creator',
+  options: {
+    match: {completed: true},
+  },
 })
 
 UserSchema.virtual('latest_score', {
