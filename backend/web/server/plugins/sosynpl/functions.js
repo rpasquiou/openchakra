@@ -8,7 +8,7 @@ const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -748,6 +748,11 @@ const postCreate = async ({model, params, data}) => {
     if (parentModel=='announce') {
       await Announce.findByIdAndUpdate(params.parent, {$addToSet: {languages: data._id}})
     }
+  }
+  if (model=='contact') {
+    const admins=await User.find({role: ROLE_ADMIN})
+    const contact=data.toObject()
+    await Promise.all(admins.map(admin => sendNewContact2Admin({contact, admin})))
   }
   return Promise.resolve(data)
 }

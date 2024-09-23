@@ -6,10 +6,6 @@ const {
   getTagUrl,
   addValidationAllowedDomain
 } = require('../../utils/mailing')
-const {datetime_str} = require('../../../utils/dateutils')
-const moment=require('moment')
-const { formatDate, formatHour } = require('../../../utils/text')
-const { generateIcs } = require('../../../utils/ics')
 const { computeUrl } = require('../../../config/config')
 
 const SIB_IDS={
@@ -17,6 +13,7 @@ const SIB_IDS={
   FREELANCE_CONFIRM_EMAIL:2,
   FREELANCE_SEND_SUGGESTION: 31,
   CUSTOMER_SEND_APPLICATION: 39,
+  NEW_CONTACT: 47,
 }
 
 const SMS_CONTENTS={
@@ -85,7 +82,19 @@ const sendApplication2Customer = async ({freelance, announce, customer}) => {
   })
 }
 
+// Send contact info to admins
+const sendNewContact2Admin = async ({contact, admin}) => {
+  return sendNotification({
+    notification: SIB_IDS.NEW_CONTACT,
+    destinee: admin,
+    params: {
+      ...contact,
+    },
+  })
+}
+
 
 module.exports = {
   sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance, sendApplication2Customer,
+  sendNewContact2Admin,
 }
