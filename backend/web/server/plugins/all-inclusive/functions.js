@@ -124,10 +124,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model == 'jobUser') {
-    if (id) {
-      const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
-      return { model, fields, id, data: [job], params }
-    }
+    // if (id) {
+    //   const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
+    //   return { model, fields, id, data: [job], params }
+    // }
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
   }
 
@@ -524,8 +524,8 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
 /** End MESSAGE */
 
-const filterDataUser = async ({ model, data, user, params }) => {
-  if (model === 'jobUser') {
+const filterDataUser = async ({ id, model, data, user, params }) => {
+  if (model === 'jobUser' && !id) {
     const searchQuery = params?.['filter.search_field']?.toLowerCase()
     const cityQuery = params?.['filter.city']?.toLowerCase()
 
