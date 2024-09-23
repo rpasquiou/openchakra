@@ -6,12 +6,13 @@ require("../../models/Appointment")
 const Company = require("../../models/Company")
 const Quizz = require("../../models/Quizz")
 const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FINISHED, COACHING_END_DELAY, COACHING_STATUS_DROPPED, 
-  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS
+  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS, ROLE_EXTERNAL_DIET
 } = require("./consts")
 const { getAvailabilities } = require('../agenda/smartagenda')
 const Availability = require('../../models/Availability')
 const Range = require('../../models/Range')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
+const User = require('../../models/User')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -97,12 +98,35 @@ const getAvailableDiets = async (userId, params, data) => {
 }
 
 const getDietAvailabilities = async (userId, params, data) => {
-  const availabilities = await getAvailabilities({
-    diet_id: data.diet.smartagenda_id,
-    from: moment(),
-    to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
-    appointment_type: data.appointment_type.smartagenda_id
-  })
+  // If no diet, return availabilities for all diets of the company
+  let availabilities=[]
+  if (!data.diet) {
+    let diets=await User.find({
+      role: ROLE_EXTERNAL_DIET, smartagenda_id: {$exists: true}, smartagenda_id: {$ne: null},
+      diet_coaching_enabled: true, customer_companies: data.user.company,
+    })
+    console.log('diets:', diets.map(d => [d.email, d.smartagenda_id]))
+    console.log('appt type', data.appointment_type)
+    console.log('company', data.user.company.name)
+    await runPromisesWithDelay(diets.map(d => async () => {
+      const currentAvails= await getAvailabilities({
+        diet_id: d.smartagenda_id,
+        from: moment(),
+        to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+        appointment_type: data.appointment_type.smartagenda_id
+      })
+      availabilites=[...availabilities, ...currentAvails]
+    }))
+  }
+  else {
+    availabilities = await getAvailabilities({
+      diet_id: data.diet.smartagenda_id,
+      from: moment(),
+      to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+      appointment_type: data.appointment_type.smartagenda_id
+    })
+  }
+  console.log('Availabilities', availabilities)
   const res = lodash(availabilities)
     .groupBy(avail => moment(avail.start_date).startOf('day'))
     .entries()

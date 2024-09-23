@@ -1402,7 +1402,7 @@ declareVirtualField({
     options: { ref: 'userQuizz' }
   },
 })
-declareComputedField({model: 'coaching', field: 'diet_availabilities', requires:'diet,appointment_type', getterFn: getDietAvailabilities})
+declareComputedField({model: 'coaching', field: 'diet_availabilities', requires:'user.company,diet,appointment_type', getterFn: getDietAvailabilities})
 
 declareVirtualField({
   model: 'coaching', field: 'appointment_type', instance: 'appointmentType',
