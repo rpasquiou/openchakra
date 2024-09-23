@@ -75,6 +75,13 @@ USER_MODELS.forEach(m => {
       options: { ref: 'group' }
     },
   })
+  declareVirtualField({
+    model: m, field: 'groups_admin', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'group' }
+    },
+  })
   declareVirtualField({model: m, field: 'groups_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'pending_groups_count', instance: 'Number'})
   declareComputedField({model: m, field: 'partner_count', getterFn: getterCountFn('user', {'role': ROLE_PARTNER})})

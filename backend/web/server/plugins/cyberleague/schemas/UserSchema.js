@@ -219,6 +219,12 @@ UserSchema.virtual('groups_count', {
   count:true,
 })
 
+UserSchema.virtual('groups_admin', {
+  ref:'group',
+  localField:'_id',
+  foreignField:'admin',
+})
+
 UserSchema.virtual('pending_groups', {
   ref:'group',
   localField:'_id',
