@@ -23,15 +23,14 @@ addAction('smartdiet_start_survey', startSurvey)
 
 //value : _id of the answered question
 const nextQuestion = async ({ value }, user) => {
-  
   const score = await Score.findOne({answers: value}).populate('answers')
   
-  const nextQuestionIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, value)) + 1
-  if (nextQuestionIndex == score.answers.length) {
+  const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, value))
+  if (answerIndex +1 == score.answers.length) {
     throw new NotFoundError(`Question ${value} is the last of the quiz`)
   }
   
-  return score.answers[nextQuestionIndex]
+  return score.answers[answerIndex +1]
 }
 //TODO rename action to next_question
 addAction('smartdiet_next_question', nextQuestion)
