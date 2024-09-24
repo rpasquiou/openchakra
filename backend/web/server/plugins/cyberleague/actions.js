@@ -43,18 +43,34 @@ const finishSurvey = ({ value }, user) => {
 addAction('smartdiet_finish_survey', finishSurvey)
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
-  if (action == 'smartdiet_next_question') {
+  if (lodash.includes([,'smartdiet_next_question','smartdiet_finish_survey','previous_question'])) {
+
     const score = await Score.findOne({answers: dataId}).populate('answers')
     const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, dataId))
-
-    //if answer without answer
-    if (!lodash.includes(ANSWERS,score.answers[answerIndex])) {
-      throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir passer à la suivante`)
+    
+    if (action == 'smartdiet_next_question') {
+      
+      //if current answer is not answered
+      if (!lodash.includes(ANSWERS,score.answers[answerIndex])) {
+        throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir passer à la suivante`)
+      }
+      
+      //if no other answers
+      if (answerIndex + 1 == score.answers.length) {
+        throw new NotFoundError(`Il n'y a pas de question suivante`)
+      }
     }
+    
+    if (action == 'smartdiet_finish_survey') {
+      //if not the last answer
+      if (answerIndex < score.answers.length -1) {
+        throw new ForbiddenError(`Ce n'est pas la dernière question`)
+      }
 
-    //si pas d'autres questions -> throw error
-    if (answerIndex + 1 == score.answers.length) {
-      throw new NotFoundError(`Il n'y a pas de question suivante`)
+      //if current answer is not answered
+      if (!lodash.includes(ANSWERS,score.answers[answerIndex])) {
+        throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir terminer le questionnaire`)
+      }
     }
   }
 }
