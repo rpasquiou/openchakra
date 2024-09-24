@@ -818,6 +818,20 @@ return Promise.allSettled(imagePromises)
     }))
   },
 
+  previous_question: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'previous_question',
+      value: value._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        var searchParams = new URLSearchParams(window.location.search);
+        searchParams.set('id', res.data._id)
+        window.location.search=searchParams.toString()
+      })
+  },
+
   smartdiet_next_question: ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {

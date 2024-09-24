@@ -27,7 +27,7 @@ const nextQuestion = async ({ value }, user) => {
   
   const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, value))
   if (answerIndex +1 == score.answers.length) {
-    throw new NotFoundError(`Question ${value} is the last of the quiz`)
+    throw new NotFoundError(`Answer ${value} is the last of the quiz`)
   }
   
   return score.answers[answerIndex +1]
@@ -41,6 +41,20 @@ const finishSurvey = ({ value }, user) => {
 }
 //TODO rename action to finish_survey
 addAction('smartdiet_finish_survey', finishSurvey)
+
+//value : _id of the answered question
+const previousQuestion = async ({ value }, user) => {
+  const score = await Score.findOne({answers: value}).populate('answers')
+  
+  const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, value))
+  if (answerIndex == 0) {
+    throw new NotFoundError(`Answer ${value} is the first of the quiz`)
+  }
+  
+  return score.answers[answerIndex -1]
+}
+//TODO rename action to next_question
+addAction('previous_question', previousQuestion)
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (lodash.includes([,'smartdiet_next_question','smartdiet_finish_survey','previous_question'])) {

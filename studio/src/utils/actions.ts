@@ -569,6 +569,12 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
 
+  previous_question: {
+    label: 'Previous question',
+    options: {},
+    next: ['openPage'],
+  },
+
   smartdiet_next_question: {
     label: 'Next question',
     options: {},
