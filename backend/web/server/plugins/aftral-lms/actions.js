@@ -53,6 +53,12 @@ const addChildAction = async ({parent, child}, user) => {
   [parent, child] = await Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
   const [pType, cType]=[parent?.type, child?.type]
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
+  if (!!parent.origin) {
+    throw new BadRequestError(`Le parent doit être un template`)
+  }
+  if (!!child.origin) {
+    throw new BadRequestError(`Le fils doit être un template`)
+  }
   if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
   const createdChild = await cloneTree(child._id, parent._id)
   await Block.findByIdAndUpdate(parent, {last_updater: user})

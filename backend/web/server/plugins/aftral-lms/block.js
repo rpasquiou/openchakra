@@ -9,6 +9,7 @@ const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { createRegExpOR } = require("../../../utils/text");
 const Resource = require("../../models/Resource");
+const { addChildAction } = require("./actions");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -109,9 +110,7 @@ const cloneTemplate = async (blockId) => {
 
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
-  let children=await Promise.all(block.children.map(childId => cloneTree(childId._id, newBlock._id)))
-  newBlock.children=children.map(c => c._id)
-  return newBlock.save()
+  await Promise.all(block.children.map(child => addChildAction({parent: newBlock._id, child: child.origin._id})))
 }
 
 // Loads the chain from blockId to its root origin
