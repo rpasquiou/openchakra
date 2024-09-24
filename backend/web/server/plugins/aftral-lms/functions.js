@@ -222,6 +222,10 @@ CONVERSATION_MODELS.forEach(model => {
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
 // Session end
 
+// Session start
+declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
+// Session end
+
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
   params.last_updater=user._id

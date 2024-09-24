@@ -22,6 +22,17 @@ const HomeworkSchema = new Schema({
     type: String,
     required: false,
   },
+  note: {
+    type: Number,
+    required: false,
+    default: null,
+  },
+  //  Scale is set by the trainer
+  scale: {
+    type: String,
+    enum: Object.keys(SCALE),
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = HomeworkSchema
