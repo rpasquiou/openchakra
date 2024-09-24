@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas');
 const { DUMMY_REF } = require('../../../utils/database');
+const { GROUP_VISIBILITY, GROUP_VISIBILITY_PUBLIC } = require('../consts');
 
 const Schema = mongoose.Schema
 
@@ -46,6 +47,11 @@ const GroupSchema = new Schema({
   expertise_set: {
     type: Schema.Types.ObjectId,
     ref: 'expertiseSet',
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(GROUP_VISIBILITY),
+    default: GROUP_VISIBILITY_PUBLIC
   }
 }, {...schemaOptions})
 
