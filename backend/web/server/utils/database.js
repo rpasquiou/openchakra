@@ -621,6 +621,8 @@ const retainRequiredFields = ({data, fields}) => {
   const thisLevelFields = getFirstLevelFields(fields)
   const pickedData = lodash.pick(data, thisLevelFields)
   const nextLevelFields = getNextLevelFields(fields)
+  // HACK For AFTRAL to ensure homeworks are properly returned
+    .filter(f => f!='homeworks')
   nextLevelFields.forEach(f => {
     pickedData[f] = retainRequiredFields({
       data: data[f],
@@ -686,7 +688,11 @@ const addComputedFields = async (
   queryParams,
   data,
   model,
+  actualLogged
 ) => {
+  if (!actualLogged) {
+    actualLogged=userId
+  }
   let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
@@ -709,6 +715,7 @@ const addComputedFields = async (
               queryParams,
               child,
               attParams.type,
+              actualLogged,
             ),
           ),
         )
@@ -721,7 +728,7 @@ const addComputedFields = async (
         return runPromisesWithDelay(
           Object.keys(requiredCompFields).map(f => () => {
             const displayFields=getRequiredSubFields(originalFields, f)
-            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields, actualLogged)
               .then(res => {
                 data[f] = res
                 return data
@@ -1019,7 +1026,7 @@ const lean = ({model, data}) => {
 }
 
 const display = data => {
-  console.trace("Data", JSON.stringify(data))
+  console.trace("Data", JSON.stringify(data, null,2))
   return data
 }
 
@@ -1030,7 +1037,7 @@ const ensureUniqueDataFound = (id, data) => {
   return data
 }
 
-const loadFromDb = ({model, fields, id, user, params={}}) => {
+const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
   fields=lodash.uniq([...fields, ...Object.keys(filters)])

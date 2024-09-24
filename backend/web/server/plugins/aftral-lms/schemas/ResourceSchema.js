@@ -2,7 +2,6 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR}=require('../consts')
-const { DUMMY_REF } = require('../../../utils/database')
 const { BadRequestError } = require('../../../utils/errors')
 
 const ResourceSchema = new Schema({

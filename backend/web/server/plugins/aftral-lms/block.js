@@ -6,6 +6,9 @@ const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
+const Homework = require("../../models/Homework");
+const { createRegExpOR } = require("../../../utils/text");
+const Resource = require("../../models/Resource");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -334,11 +337,12 @@ const getAvailableCodes =  async (userId, params, data) => {
   return availableCodes
 }
 
-const getBlockHomeworks = async (userId, params, data) => {
-  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
-  const filter=isTrainee ? {block: data._id} : {block: data._id, user: userId}
-  const progress=await Progress.findOne(filter).populate('homeworks')
-  return progress?.homeworks || []
+const getBlockHomeworks = async (userId, params, data, displayFields, actualLogged) => {
+  const isTrainee=await User.exists({_id: actualLogged, role: ROLE_APPRENANT})
+  const filter=isTrainee ?  {resource: data._id, trainee: userId} : {resource: data._id}
+  const homeworks=await Homework.find(filter)
+    .populate(['trainee', 'resource'])
+  return homeworks
 }
 
 const getBlockHomeworksSubmitted = async (userId, params, data) => {
@@ -466,5 +470,4 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate,
 }
-
 
