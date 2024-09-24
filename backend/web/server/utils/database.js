@@ -978,9 +978,9 @@ const display = data => {
   return data
 }
 
-const ensureUniqueDataFound = (id, data) => {
+const ensureUniqueDataFound = (id, data, model) => {
   if (id && lodash.isEmpty(data)) {
-    throw new NotFoundError(`Can't find id ${id}`)
+    throw new NotFoundError(`Can't find model ${model} id ${id}`)
   }
   return data
 }
@@ -997,7 +997,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
       return buildQuery(model, id, fields, params)
-        .then(data => ensureUniqueDataFound(id, data))
+        .then(data => ensureUniqueDataFound(id, data, model))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
