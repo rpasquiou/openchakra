@@ -154,7 +154,7 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 
 // Progress start
 declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
-declareEnumField({model: 'progress', field: 'homeworks', instance: 'Array',
+declareVirtualField({model: 'progress', field: 'homeworks', instance: 'Array',
   caster: {
     instance: 'ObjectID',
     options: {ref: 'homework'}},
