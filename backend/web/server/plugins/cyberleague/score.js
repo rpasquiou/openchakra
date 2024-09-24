@@ -116,7 +116,7 @@ const createScore = async (creatorId, scoreLevel) => {
   const answers=await Promise.all(questions.map(async q => {
     return Answer.create({question: q._id})
   }))
-  await Score.Create({creator: creatorId, completed: false, level: params.level, answers: answers})
+  await Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
 
   //for startSurvey action
   return answers[0]._id
