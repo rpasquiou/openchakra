@@ -99,7 +99,7 @@ const getQuestionsByCategory = async (userId, params, data) => {
 
 const createScore = async (creatorId, scoreLevel) => {
   let acceptedLevels = []
-  //deliberatlyly no breaks
+  //deliberatly no breaks
   switch (scoreLevel) {
     case SCORE_LEVEL_3:
       acceptedLevels.push(SCORE_LEVEL_3)
@@ -116,10 +116,8 @@ const createScore = async (creatorId, scoreLevel) => {
   const answers=await Promise.all(questions.map(async q => {
     return Answer.create({question: q._id})
   }))
-  await Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
 
-  //for startSurvey action
-  return answers[0]._id
+  return Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
 }
 
 module.exports = {
