@@ -3,10 +3,12 @@ const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
+const User = require('../../models/User')
+const { BadRequestError } = require('../../utils/errors')
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
 const getBlockResources = async (blockId) => {
@@ -170,11 +172,35 @@ const canReplay = async ({dataId, user }) => {
 }
 
 const getBlockNote = async (userId, params, data) => {
-  return (await getProgress({user: userId, block: data._id}))?.note || null
+  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
+  if (!isTrainee) {
+    return undefined
+  }
+  if (!!data.homework_mode) {
+    const homeworks=await Homework.find({resource: data._id, trainee: userId})
+    const note=lodash.max(homeworks.map(h => h.note))
+    return note
+  }
+  else {
+    return (await getProgress({user: userId, block: data._id}))?.note || null
+  }
+}
+
+const setBlockNote = async ({ id, attribute, value, user }) => {
+  const bl=await Block.findById(id)
+  if (!lodash.inRange(value, 0, bl.success_note_max+1)) {
+    throw new BadRequestError(`La note doit être comprise ente 0 et ${bl.success_note_max}`)
+  }
+  if (!!bl.homework_mode) {
+    throw new BadRequestError(`La note doit être mise sur un devoir`)
+  }
+  pr = await getProgress({user, id})
+  pr.note=value
+  return pr.save()
 }
 
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockNote
+  getBlockResources, getBlockNote, setBlockNote,
 }

@@ -53,10 +53,6 @@ const ProgressSchema = new Schema({
   download: {
     type: Boolean
   },
-  homeworks: [{
-    type: Schema.Types.ObjectId,
-    ref: 'homework'
-  }],
   note: {
     type: Number,
   },
@@ -66,5 +62,11 @@ const ProgressSchema = new Schema({
     default: 0,
   }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+ProgressSchema.virtual('homeworks', {
+  ref: 'homework',
+  localField: 'block',
+  foreignField: 'resource',
+})
 
 module.exports = ProgressSchema

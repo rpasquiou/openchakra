@@ -25,7 +25,6 @@ const HomeworkSchema = new Schema({
   note: {
     type: Number,
     required: false,
-    default: null,
   },
   //  Scale is set by the trainer
   scale: {

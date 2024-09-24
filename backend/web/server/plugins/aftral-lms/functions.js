@@ -18,7 +18,7 @@ require('../../models/Search')
 require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockNote } = require('./resources')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockNote, setBlockNote } = require('./resources')
 const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
@@ -104,7 +104,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
-  declareComputedField({model, field: 'note', getterFn: getBlockNote})
+  declareComputedField({model, field: 'note', getterFn: getBlockNote, setterFn: setBlockNote})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
 })
 
@@ -154,6 +154,11 @@ declareFieldDependencies({model: 'search', field: 'users', requires: 'pattern'})
 
 // Progress start
 declareEnumField({model: 'progress', field: 'achievement_status', enumValues: BLOCK_STATUS})
+declareEnumField({model: 'progress', field: 'homeworks', instance: 'Array',
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'homework'}},
+})
 // Progress end
 
 // Message start
