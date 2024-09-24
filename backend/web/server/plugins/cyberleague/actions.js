@@ -1,10 +1,10 @@
-const { addAction } = require('../../utils/studio/actions')
+const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require("../../models/Score")
 const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
-const { NotFoundError } = require('../../utils/errors')
+const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1 } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS } = require('./consts')
 
 //
 const startSurvey = async (_, user) => {
@@ -34,3 +34,22 @@ const nextQuestion = async ({ value }, user) => {
 }
 //TODO rename action to next_question
 addAction('smartdiet_next_question', nextQuestion)
+
+const isActionAllowed = async ({action, dataId, user, ...rest}) => {
+  if (action == 'smartdiet_next_question') {
+    const score = await Score.findOne({answers: dataId}).populate('answers')
+    const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, dataId))
+
+    //if answer without answer
+    if (!lodash.includes(ANSWERS,score.answers[answerIndex])) {
+      throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir passer à la suivante`)
+    }
+
+    //si pas d'autres questions -> throw error
+    if (answerIndex + 1 == score.answers.length) {
+      throw new NotFoundError(`Il n'y a pas de question suivante`)
+    }
+  }
+}
+
+setAllowActionFn(isActionAllowed)
