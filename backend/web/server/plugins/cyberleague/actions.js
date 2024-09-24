@@ -30,7 +30,7 @@ const nextQuestion = async ({ value }, user) => {
   }
   console.log('next Question', score.answers[nextQuestionIndex]);
   
-  return score.answers[nextQuestionIndex]
+  return score.answers[nextQuestionIndex]._id
 }
 //TODO rename action to next_question
 addAction('smartdiet_next_question', nextQuestion)
