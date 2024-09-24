@@ -13,6 +13,7 @@ const Availability = require('../../models/Availability')
 const Range = require('../../models/Range')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const User = require('../../models/User')
+const NodeCache = require('node-cache')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -97,6 +98,8 @@ const getAvailableDiets = async (userId, params, data) => {
   return diets
 }
 
+const coachingAvailabilitiesCache=new NodeCache({stdTTL: 5*60})
+
 const getDietAvailabilities = async (userId, params, data) => {
   // If no diet, return availabilities for all diets of the company
   let availabilities=[]
@@ -115,7 +118,7 @@ const getDietAvailabilities = async (userId, params, data) => {
         to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
         appointment_type: data.appointment_type.smartagenda_id
       })
-      availabilites=[...availabilities, ...currentAvails]
+      availabilities=[...availabilities, ...currentAvails.map(a => ({...a, diet: d}))]
     }))
   }
   else {
@@ -126,7 +129,7 @@ const getDietAvailabilities = async (userId, params, data) => {
       appointment_type: data.appointment_type.smartagenda_id
     })
   }
-  console.log('Availabilities', availabilities)
+  coachingAvailabilitiesCache.set(data._id.toString(), availabilities)
   const res = lodash(availabilities)
     .groupBy(avail => moment(avail.start_date).startOf('day'))
     .entries()
@@ -156,5 +159,5 @@ const updateApptsOrder= async coachingId => {
 
 
 module.exports={
-  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder, coachingAvailabilitiesCache,
 }

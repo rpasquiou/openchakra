@@ -206,7 +206,7 @@ const Conversation = require('../../models/Conversation')
 const UserQuizz = require('../../models/UserQuizz')
 const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
-const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities } = require('./coaching')
+const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities, coachingAvailabilitiesCache } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
@@ -556,6 +556,8 @@ const preCreate = async ({ model, params, user }) => {
   }
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
+    const loadedModel=await getModel(params.parent)
+
     const isAppointment = model == 'appointment'
     if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) {
       throw new ForbiddenError(`Seuls les rôles patient, diet et support peuvent prendre un rendez-vous`)
@@ -563,8 +565,24 @@ const preCreate = async ({ model, params, user }) => {
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
-      customer_id = params.parent
-      diet=user
+      // Appointment created by operator directly with a 1st appointment
+      if (loadedModel=='coaching') {
+        const availabilities=coachingAvailabilitiesCache.get(params.parent)||[]
+        const paramMoment=moment(params.start_date)
+        const avail=availabilities.find(a => Math.abs(moment(a.start_date).diff(paramMoment))<10)
+        if (!avail) {
+          throw new BadRequestError(`Ce rendez-vous n'est plus disponible`)
+        }
+        const coaching=await Coaching.findById(params.parent)
+        diet=avail.diet
+        customer_id=coaching.user._id
+        coaching.diet=avail.diet
+        await coaching.save()
+      }
+      else {
+        customer_id = params.parent
+        diet=user
+      }
     }
     else { //CUSTOMER
       customer_id = user._id
