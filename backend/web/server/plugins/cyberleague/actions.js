@@ -7,11 +7,11 @@ const { createScore } = require('./score')
 const { SCORE_LEVEL_1 } = require('./consts')
 
 //
-const startSurvey = async (params, user) => {
+const startSurvey = async (_, user) => {
   console.log("params", params)
 
   //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
-  const level = params?.level ? params.level : SCORE_LEVEL_1
+  const level = SCORE_LEVEL_1
 
   const firstQuestion = await createScore(user._id, level)
 
