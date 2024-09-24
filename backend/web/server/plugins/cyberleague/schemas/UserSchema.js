@@ -264,7 +264,7 @@ UserSchema.virtual('companies', DUMMY_REF).get(function() {
   return this.company ? [this.company] : []
 })
 
-UserSchema.virtual('scores', {
+UserSchema.virtual('completed_scores', {
   ref:'score',
   localField:'_id',
   foreignField:'creator',
