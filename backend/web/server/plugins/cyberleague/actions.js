@@ -35,6 +35,13 @@ const nextQuestion = async ({ value }, user) => {
 //TODO rename action to next_question
 addAction('smartdiet_next_question', nextQuestion)
 
+//action defined only to use isActionAllowed
+const finishSurvey = ({ value }, user) => {
+  return {}
+}
+//TODO rename action to finish_survey
+addAction('smartdiet_finish_survey', finishSurvey)
+
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action == 'smartdiet_next_question') {
     const score = await Score.findOne({answers: dataId}).populate('answers')
