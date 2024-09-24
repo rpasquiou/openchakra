@@ -4,12 +4,16 @@ const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError } = require('../../utils/errors')
 const { createScore } = require('./score')
+const { SCORE_LEVEL_1 } = require('./consts')
 
 //
 const startSurvey = async (params, user) => {
   console.log("params", params)
 
-  const firstQuestion = await createScore(user._id, params.level)
+  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
+  const level = params.level ? params.level : SCORE_LEVEL_1
+
+  const firstQuestion = await createScore(user._id, level)
 
   return firstQuestion
 }
