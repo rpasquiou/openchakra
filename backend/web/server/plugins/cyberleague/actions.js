@@ -86,6 +86,13 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
         throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir terminer le questionnaire`)
       }
     }
+    
+    if (action == 'previous_question') {
+      //if first answer
+      if (answerIndex == 0) {
+        throw new NotFoundError(`Il n'y a pas de question précédente`)
+      }
+    }
   }
 }
 
