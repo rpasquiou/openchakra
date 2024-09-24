@@ -255,6 +255,7 @@ module.exports = {
   matches,
   formatIban,
   maskIban,
+  createRegExp,
   createRegExpOR,
   createRegExpAND,
   frenchFormat,

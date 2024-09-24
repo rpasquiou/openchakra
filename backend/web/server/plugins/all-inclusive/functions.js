@@ -80,6 +80,7 @@ const Message = require('../../models/Message')
 const JobUser = require('../../models/JobUser')
 const NATIONALITIES = require('./nationalities.json');
 const { isMine } = require('./message');
+const { normalize, createRegExpAND, createRegExpOR, createRegExp } = require('../../../utils/text');
 
 const postCreate = ({model, params, data}) => {
   if (model=='mission') {
@@ -526,32 +527,49 @@ declareComputedField({model: 'message', field: 'mine', requires: 'sender', gette
 
 const filterDataUser = async ({ id, model, data, user, params }) => {
   if (model === 'jobUser' && !id) {
-    const searchQuery = params?.['filter.search_field']?.toLowerCase()
-    const cityQuery = params?.['filter.city']?.toLowerCase()
+    const searchQuery = params?.['filter.search_field']
+    const cityQuery = params?.['filter.city']
 
-    const allJobs = await JobUser.find()
+    let jobs = await JobUser.find()
       .populate('user')
       .populate('activities')
       .populate('skills')
 
-    return allJobs.filter((job) => {
-      const nameMatch = searchQuery
-        ? job.name.toLowerCase().includes(searchQuery) ||
-          job.activities.some((activity) =>
-            activity.name.toLowerCase().includes(searchQuery)
-          ) ||
-          job.skills.some((skill) =>
-            skill.name.toLowerCase().includes(searchQuery)
-          ) ||
-          job.user?.full_name?.toLowerCase().includes(searchQuery)
-        : true
+    jobs = jobs.filter((j) => !j.user.hidden)
 
-      const cityMatch = cityQuery
-        ? job.city?.toLowerCase().includes(cityQuery)
-        : true
+    const cityRegExp = cityQuery ? createRegExp(cityQuery) : /./
 
-      return nameMatch && cityMatch
-    })
+    const createSearchString = (job) =>
+      normalize(
+        [
+          job.name,
+          ...job.activities.map((activity) => activity.name),
+          ...job.skills.map((skill) => skill.name),
+          job.user?.full_name,
+        ].join(' ')
+      )
+
+    const cityMatch = (job) => cityRegExp.test(job.city)
+
+    if (searchQuery) {
+      const regExpAND = createRegExpAND(searchQuery)
+      const regExpOR = createRegExpOR(searchQuery)
+
+      let filteredJobs = jobs
+      filteredJobs = jobs.filter((job) => {
+        const searchString = createSearchString(job)
+        return regExpAND.test(searchString) && cityMatch(job)
+      })
+
+      if (filteredJobs.length === 0) {
+        filteredJobs = jobs.filter((job) => {
+          const searchString = createSearchString(job)
+          return regExpOR.test(searchString) && cityMatch(job)
+        })
+      }
+      jobs = filteredJobs
+    }
+    return jobs
   }
   return data
 }
