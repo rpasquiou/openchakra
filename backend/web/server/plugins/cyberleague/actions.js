@@ -8,7 +8,7 @@ const { SCORE_LEVEL_1 } = require('./consts')
 
 //
 const startSurvey = async (_, user) => {
-  console.log("params", params)
+  //console.log("params", params)
 
   //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
   const level = SCORE_LEVEL_1
