@@ -576,7 +576,7 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_finish_survey: {
-    label: 'SM Finish survey',
+    label: 'Finish survey',
     options: {},
     next: ['openPage'],
   },
