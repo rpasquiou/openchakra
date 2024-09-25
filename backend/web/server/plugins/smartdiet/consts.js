@@ -538,8 +538,8 @@ const CALL_STATUS={
   [CALL_STATUS_TO_RENEW]:"A contacter renouvellement",
   [CALL_STATUS_NOT_INTERESTED]: "Refus",
   [CALL_STATUS_CONVERTI_COA]:"CAO à venir",
-  [CALL_STATUS_CONVERTI_CN]:"Converti CN",
-  [CALL_STATUS_CONVERTI_COA_CN]:"CAO à venir/CN",
+  [CALL_STATUS_CONVERTI_CN]:"CN à venir",
+  [CALL_STATUS_CONVERTI_COA_CN]:"CAO&CN à venir",
   [CALL_STATUS_WRONG_NUMBER]:"Faux numéro",
 }
 
