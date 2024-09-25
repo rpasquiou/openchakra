@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
-const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild } = require('./block')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -34,7 +34,7 @@ const moveChildInParent= async (childId, up) => {
 }
 
 const addChildAction = async ({parent, child}, user) => {
-  return addChild(user, parent, child)
+  return addChild({parent, child, user})
 }
 addAction('addChild', addChildAction)
 
@@ -159,3 +159,7 @@ const isActionAllowed = async ({ action, dataId, user }) => {
 
 setAllowActionFn(isActionAllowed)
 
+module.exports={
+  // Exported for programs import
+  addChildAction
+}

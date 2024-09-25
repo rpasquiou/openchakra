@@ -1,13 +1,12 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { 
-  BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, 
-  BLOCK_TYPE_SESSION, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE
-} = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
+const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
+const Homework = require("../../models/Homework");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -108,7 +107,8 @@ const cloneTemplate = async (blockId, user) => {
 
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
-  await Promise.all(block.children.map(child => addChild(user, newBlock._id, child.origin._id)))
+  await Promise.all(block.children.map(child => addChild({parent: newBlock._id, child: child.origin._id, user})))
+  return newBlock
 }
 
 // Loads the chain from blockId to its root origin
@@ -259,7 +259,7 @@ const getSession = async (userId, params, data, fields) => {
 }
 
 const getBlockLiked = async (userId, params, data) => {
-  const user = await mongoose.models.user.findById(userId, {role:1})
+  const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
   if(user.role == ROLE_CONCEPTEUR) {
     return template._liked_by.length > 0
@@ -268,7 +268,7 @@ const getBlockLiked = async (userId, params, data) => {
 }
 
 const getBlockDisliked = async (userId, params, data) => {
-  const user = await mongoose.models.user.findById(userId, {role:1})
+  const user = await User.findById(userId, {role:1})
   const template = await getTemplate(data._id)
   if(user.role == ROLE_CONCEPTEUR) {
     return template._disliked_by.length > 0
@@ -335,9 +335,9 @@ const getAvailableCodes =  async (userId, params, data) => {
 }
 
 const getBlockHomeworks = async (userId, params, data, displayFields, actualLogged) => {
-  const isTrainee=await mongoose.models.user.exists({_id: actualLogged, role: ROLE_APPRENANT})
+  const isTrainee=await User.exists({_id: actualLogged, role: ROLE_APPRENANT})
   const filter=isTrainee ?  {resource: data._id, trainee: userId} : {resource: data._id}
-  const homeworks=await mongoose.models.homework.find(filter)
+  const homeworks=await Homework.find(filter)
     .populate(['trainee', 'resource'])
   return homeworks
 }
@@ -391,7 +391,7 @@ const getBlockFinishedChildren = async (userId, params, data, fields) => {
 }
 
 const getSessionConversations = async (userId, params, data, fields) => {
-  const user = await mongoose.models.user.findById(userId)
+  const user = await User.findById(userId)
   const convs = await SessionConversation.find({
     session: data._id,
     ...user.role == ROLE_APPRENANT ? {trainee:user._id} : {}
@@ -458,39 +458,39 @@ const updateChildrenOrder = async parentId => {
   }))
 }
 
-const addChild = async (user, parent, child) => {
-  // Allow ADMIN to add child for session import
-  if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
-    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
-  }
-  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, { [BLOCK_TYPE]: 1 }).lean()))
-  const [pType, cType] = [parent?.type, child?.type]
-  if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')} 
-  if (!!parent.origin) {
-    throw new Error(`Le parent doit être un template`)
-  }
-  if (!!child.origin) {
-    throw new Error(`Le fils doit être un template`)
-  }
-  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)} 
-  const createdChild = await cloneTree(child._id, parent._id)
-  await mongoose.models.block.findByIdAndUpdate(parent, { last_updater: user })
-
-  // Now propagate to all origins
-  const origins = await mongoose.models.block.find({ origin: parent._id }, { _id: 1 })
-  await Promise.all(origins.map(origin => addChild(user, origin._id, createdChild._id)))
-}
-
 const ACCEPTS={
-  [BLOCK_TYPE_SESSION]: [BLOCK_TYPE_PROGRAM],
-  [BLOCK_TYPE_PROGRAM]: [BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE],
-  [BLOCK_TYPE_CHAPTER]: [BLOCK_TYPE_MODULE],
-  [BLOCK_TYPE_MODULE]: [BLOCK_TYPE_SEQUENCE],
-  [BLOCK_TYPE_SEQUENCE]: [BLOCK_TYPE_RESOURCE]
+  session: ['program'],
+  program: ['chapter', 'module'],
+  chapter: ['module'],
+  module: ['sequence'],
+  sequence: ['resource'],
 }
 
 const acceptsChild= (pType, cType) => {
   return ACCEPTS[pType]?.includes(cType)
+}
+
+const addChild = async ({parent, child, user}) => {
+  // Allow ADMIN to add child for session import
+  if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
+    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
+  }
+  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, {[BLOCK_TYPE]: 1})))
+  const [pType, cType]=[parent?.type, child?.type]
+  if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
+  if (!!parent.origin) {
+    throw new BadRequestError(`Le parent doit être un template`)
+  }
+  if (!!child.origin) {
+    throw new BadRequestError(`Le fils doit être un template`)
+  }
+  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
+  const createdChild = await cloneTree(child._id, parent._id)
+  await mongoose.models.block.findByIdAndUpdate(parent, {last_updater: user})
+
+  // Now propagate to all origins
+  const origins=await mongoose.models.block.find({origin: parent._id}, {_id:1})
+  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
 }
 
 module.exports={
@@ -500,6 +500,6 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder, cloneTemplate,addChild, acceptsChild,
+  updateChildrenOrder, cloneTemplate, addChild
 }
 

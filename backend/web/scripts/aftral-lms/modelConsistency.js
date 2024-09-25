@@ -3,9 +3,9 @@ const lodash=require('lodash')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const Block = require('../../server/models/Block')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR } = require('../../server/plugins/aftral-lms/consts')
-const { addChild } = require('../../server/plugins/aftral-lms/block')
 const { getDatabaseUri } = require('../../config/config')
 const { runPromisesWithDelay } = require('../../server/utils/concurrency')
+const {addChildAction}=require('../../server/plugins/aftral-lms/actions')
 const User = require('../../server/models/User')
 
 const getBlockName = block => {
@@ -32,7 +32,7 @@ const countChildren = async id => {
 const checkChildrenPropagation = async() => {
   console.log('*'.repeat(10), 'START children propagation')
   const blocks=await Block.find({[BLOCK_TYPE]: {$nin: ['resource', 'session']}, origin: {$ne: null}, _locked: false}).lean()
-  const grouped=lodash(blocks).groupBy(b => b[BLOCK_TYPE]).mapValues(v => v.length)
+  const grouped=lodash(blocks).groupBy(BLOCK_TYPE).mapValues(v => v.length)
   console.log(grouped.value())
   for (const block of blocks) {
     const actual=await countChildren(block._id)
@@ -57,7 +57,7 @@ const checkChildrenPropagation = async() => {
 
 const checkChildrenOrder = async() => {
   console.log('*'.repeat(10), 'START children order')
-  const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).sort({parent:1, order:1})
+  const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).sort({parent:1, order:1}).lean()
   const grouped=lodash(blocks)
     .groupBy(b=>b.parent._id.toString())
     .omitBy(v => v.length<2)
@@ -73,7 +73,7 @@ const checkChildrenOrder = async() => {
 
 const fixModel = async () => {
   console.log('*'.repeat(10), 'START fix model')
-  const parents=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}}).lean()
+  const parents=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}})
     .populate({path: 'children', populate: 'origin'}).lean()
   parents.forEach(p => {
     console.log('Before', p.type, p.name, p.children.length)
@@ -96,7 +96,7 @@ const fixModel = async () => {
       }
       return runPromisesWithDelay(children.map(child => async () => {
         console.log('start', id, child)
-        const res=await addChild(designer, id, child)
+        const res=addChildAction({parent: id, child: child}, designer).catch(console.error)
         console.log('end', id, child)
         return res
       }))
@@ -128,6 +128,5 @@ const checkConsistency = async () => {
 }
 
 checkConsistency()
-  .then(console.log)
   .catch(console.error)
   .finally(() => process.exit(0))
