@@ -74,13 +74,14 @@ const { BadRequestError } = require('../../utils/errors')
 const moment = require('moment')
 const Mission = require('../../models/Mission')
 const User = require('../../models/User')
-const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS } = require('../../../utils/consts')
+const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
 const lodash=require('lodash')
 const Message = require('../../models/Message')
 const JobUser = require('../../models/JobUser')
 const NATIONALITIES = require('./nationalities.json');
 const { isMine } = require('./message');
 const { normalize, createRegExpAND, createRegExpOR, createRegExp } = require('../../../utils/text');
+const search = require('../../utils/search');
 
 const postCreate = ({model, params, data}) => {
   if (model=='mission') {
@@ -124,12 +125,31 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     id = user?._id || 'INVALIDID'
   }
 
-  if (model == 'jobUser') {
-    // if (id) {
-    //   const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
-    //   return { model, fields, id, data: [job], params }
-    // }
+  if (model == 'jobUser' && params?.['filter.search_field']) {
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
+
+    // Extract search parameters
+    const searchQuery = params?.['filter.search_field']
+    const city = params?.['filter.city']
+
+    // Fetch all jobUsers with required fields
+    let jobUsers = await search({
+      model: 'jobUser',
+      fields: fields,
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: searchQuery || '',
+      user: user,
+    })
+
+    jobUsers = jobUsers.filter(j => !j.user.hidden)
+
+
+    if (city) {
+      const cityRegExp = createRegExpOR(city)
+      jobUsers = jobUsers.filter(j => cityRegExp.test(j.city))
+    }
+
+    return {model, fields, id, data: jobUsers, params}
   }
 
   if (model=='conversation') {
@@ -525,56 +545,30 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
 /** End MESSAGE */
 
-const filterDataUser = async ({ id, model, data, user, params }) => {
-  if (model === 'jobUser' && !id) {
-    const searchQuery = params?.['filter.search_field']
-    const cityQuery = params?.['filter.city']
+const filterDataUser = ({ model, data, user }) => {
+  if (model === 'jobUser') {
+    return Promise.all(
+      data.map((job) =>
+        JobUser.findById(job._id)
+          .populate('user')
+          .then((dbJob) => {
+            if(user && idEqual(user._id, dbJob.user._id)) {
+              return null
+            }
 
-    let jobs = await JobUser.find()
-      .populate('user')
-      .populate('activities')
-      .populate('skills')
-
-    jobs = jobs.filter((j) => !j.user.hidden)
-
-    const cityRegExp = cityQuery ? createRegExp(cityQuery) : /./
-
-    const createSearchString = (job) =>
-      normalize(
-        [
-          job.name,
-          ...job.activities.map((activity) => activity.name),
-          ...job.skills.map((skill) => skill.name),
-          job.user?.full_name,
-        ].join(' ')
+            if (
+              !dbJob?.user?.hidden
+            ) {
+              return job
+            }
+            return null
+          })
       )
-
-    const cityMatch = (job) => cityRegExp.test(job.city)
-
-    if (searchQuery) {
-      const regExpAND = createRegExpAND(searchQuery)
-      const regExpOR = createRegExpOR(searchQuery)
-
-      let filteredJobs = jobs
-      filteredJobs = jobs.filter((job) => {
-        const searchString = createSearchString(job)
-        return regExpAND.test(searchString) && cityMatch(job)
-      })
-
-      if (filteredJobs.length === 0) {
-        filteredJobs = jobs.filter((job) => {
-          const searchString = createSearchString(job)
-          return regExpOR.test(searchString) && cityMatch(job)
-        })
-      }
-      jobs = filteredJobs
-    }
-    return jobs
+    ).then((jobs) => jobs.filter((v) => !!v))
   }
   return data
 }
 setFilterDataUser(filterDataUser)
-
 
 const getDataPinned = (userId, params, data) => {
   const pinned=data?.pins?.some(l => idEqual(l._id, userId))

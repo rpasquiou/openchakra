@@ -88,6 +88,11 @@ JobUserSchema.virtual("search_field", DUMMY_REF).get(function() {
   if (this.activities) {
     res=[...res, this.activities.map(a => a.name)]
   }
+
+  if (this.user && this.user.full_name) {
+    res.push(this.user.full_name)
+  }
+  
   return res.join(',')
 })
 
