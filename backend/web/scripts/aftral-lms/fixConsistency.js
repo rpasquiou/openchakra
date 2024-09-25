@@ -13,7 +13,7 @@ const getBlockName = block => {
     return null
   }
   // return `${block.type} ${block.name} (${block._id})`
-  return `${block.type} ${block.name})`
+  return `${block.type} ${block.name}`
 }
 
 const getBlockHierarchyName = async block => {
