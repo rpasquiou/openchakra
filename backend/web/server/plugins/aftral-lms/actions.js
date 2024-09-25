@@ -3,25 +3,13 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
-const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate } = require('./block')
+const { cloneTree, onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild } = require('./block')
 const { lockSession } = require('./functions')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const { isProduction } = require('../../../config/config')
 const User = require('../../models/User')
 
-
-const ACCEPTS={
-  session: ['program'],
-  program: ['chapter', 'module'],
-  chapter: ['module'],
-  module: ['sequence'],
-  sequence: ['resource'],
-}
-
-const acceptsChild= (pType, cType) => {
-  return ACCEPTS[pType]?.includes(cType)
-}
 
 const moveChildInParent= async (childId, up) => {
   const delta=up ? -1 : 1
@@ -46,26 +34,7 @@ const moveChildInParent= async (childId, up) => {
 }
 
 const addChildAction = async ({parent, child}, user) => {
-  // Allow ADMIN to add child for session import
-  if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
-    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
-  }
-  [parent, child] = await Promise.all([parent, child].map(id => Block.findById(id, {[BLOCK_TYPE]: 1})))
-  const [pType, cType]=[parent?.type, child?.type]
-  if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
-  if (!!parent.origin) {
-    throw new BadRequestError(`Le parent doit être un template`)
-  }
-  if (!!child.origin) {
-    throw new BadRequestError(`Le fils doit être un template`)
-  }
-  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
-  const createdChild = await cloneTree(child._id, parent._id)
-  await Block.findByIdAndUpdate(parent, {last_updater: user})
-
-  // Now propagate to all origins
-  const origins=await Block.find({origin: parent._id}, {_id:1})
-  await Promise.all(origins.map(origin => addChildAction({parent: origin._id, child: createdChild._id}, user)))
+  return addChild(user, parent, child)
 }
 addAction('addChild', addChildAction)
 
@@ -122,7 +91,7 @@ addAction('next', async ({id}, user) => getNextResource(id, user))
 addAction('previous', async ({id}, user) => getPreviousResource(id, user))
 
 const clone = async ({value}, user) => {
-  return cloneTemplate(value)
+  return cloneTemplate(value, user)
 }
 
 addAction('clone', clone)
@@ -190,7 +159,3 @@ const isActionAllowed = async ({ action, dataId, user }) => {
 
 setAllowActionFn(isActionAllowed)
 
-module.exports={
-  // Exported for programs import
-  addChildAction
-}
