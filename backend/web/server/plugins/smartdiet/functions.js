@@ -637,17 +637,19 @@ const preCreate = async ({ model, params, user }) => {
     
     if (isAppointment) {
       const start=moment(params.start_date)
-      const availabilities=await getAvailabilities({
-        // FIX May lead to incorrect diet's appintment if taken by a diet other than te coaching's one
-        // The selected diet should be the logged one (pb diet/operator)
-        diet_id: latest_coaching?.diet?.smartagenda_id, 
-        appointment_type: latest_coaching.appointment_type?.smartagenda_id,
-        from: moment(start).add(-1, 'day').startOf('day'),
-        to: moment(start).endOf('day'),
-      })
-      const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
-      if (!exists) {
-        throw new Error(`Ce créneau n'est plus disponible`)
+      if (latest_coaching?.diet?.smartagenda_id) {
+        const availabilities=await getAvailabilities({
+          // FIX May lead to incorrect diet's appintment if taken by a diet other than te coaching's one
+          // The selected diet should be the logged one (pb diet/operator)
+          diet_id: latest_coaching?.diet?.smartagenda_id, 
+          appointment_type: latest_coaching.appointment_type?.smartagenda_id,
+          from: moment(start).add(-1, 'day').startOf('day'),
+          to: moment(start).endOf('day'),
+        })
+        const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
+        if (!exists) {
+          throw new Error(`Ce créneau n'est plus disponible`)
+        }
       }
       // Create progress quizz for appointment
       const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
@@ -2001,11 +2003,16 @@ const postCreate = async ({ model, params, data, user }) => {
          * - if user is an operator, set coaching conversion status to TO_COME
          * - if any user and lead is coaching cancelled, set status to TO_COME
         */
-        const isOperator = user.role == ROLE_SUPPORT
-        const statusFilter = isOperator ? {} : { coaching_converted: COACHING_CONVERSION_CANCELLED }
         Lead.findOneAndUpdate(
-          { email: coaching.user.email, ...statusFilter },
-          { coaching_converted: COACHING_CONVERSION_TO_COME },
+          { email: coaching.user.email, call_status: {$ne: CALL_STATUS_CONVERTI_CN}},
+          { call_status: CALL_STATUS_CONVERTI_COA, coaching_converted: COACHING_CONVERSION_TO_COME },
+          { new: true, runValidators: true }
+        )
+          .then(console.log)
+          .catch(console.error)
+        Lead.findOneAndUpdate(
+          { email: coaching.user.email, call_status: CALL_STATUS_CONVERTI_CN},
+          { call_status: CALL_STATUS_CONVERTI_COA_CN, coaching_converted: COACHING_CONVERSION_TO_COME },
           { new: true, runValidators: true }
         )
           .then(console.log)
