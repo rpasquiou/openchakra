@@ -3,7 +3,7 @@ const moment = require('moment')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES, SCALE}=require('../consts')
+const {BLOCK_DISCRIMINATOR, BLOCK_STATUS,RESOURCE_TYPE, ACHIEVEMENT_RULE_SUCCESS, RESOURCE_TYPE_SCORM, ACHIEVEMENT_RULE, AVAILABLE_ACHIEVEMENT_RULES, SCALE, BLOCK_TYPE_LABEL}=require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { BadRequestError } = require('../../../utils/errors')
 
@@ -365,6 +365,10 @@ BlockSchema.pre('validate', async function(next) {
 })
 
 BlockSchema.virtual('plain_url', DUMMY_REF)
+
+BlockSchema.virtual('type_str', DUMMY_REF).get(function() {
+  return BLOCK_TYPE_LABEL[this.type]
+})
 
 // BlockSchema.index(
 //   { name: 1},

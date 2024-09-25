@@ -106,6 +106,7 @@ BLOCK_MODELS.forEach(model => {
   declareEnumField({model, field: 'scale', enumValues: SCALE})
   declareComputedField({model, field: 'note', getterFn: getBlockNote, setterFn: setBlockNote})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
+  declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
 })
 
 //Program start

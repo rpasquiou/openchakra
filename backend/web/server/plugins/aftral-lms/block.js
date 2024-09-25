@@ -1,11 +1,13 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE } = require("./consts");
+const { 
+  BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, 
+  BLOCK_TYPE_SESSION, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE
+} = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const SessionConversation = require("../../models/SessionConversation");
-const { BadRequestError } = require("../../utils/errors");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -480,11 +482,11 @@ const addChild = async (user, parent, child) => {
 }
 
 const ACCEPTS={
-  session: ['program'],
-  program: ['chapter', 'module'],
-  chapter: ['module'],
-  module: ['sequence'],
-  sequence: ['resource'],
+  [BLOCK_TYPE_SESSION]: [BLOCK_TYPE_PROGRAM],
+  [BLOCK_TYPE_PROGRAM]: [BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE],
+  [BLOCK_TYPE_CHAPTER]: [BLOCK_TYPE_MODULE],
+  [BLOCK_TYPE_MODULE]: [BLOCK_TYPE_SEQUENCE],
+  [BLOCK_TYPE_SEQUENCE]: [BLOCK_TYPE_RESOURCE]
 }
 
 const acceptsChild= (pType, cType) => {
