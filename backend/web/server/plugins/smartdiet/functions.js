@@ -2004,15 +2004,8 @@ const postCreate = async ({ model, params, data, user }) => {
          * - if any user and lead is coaching cancelled, set status to TO_COME
         */
         Lead.findOneAndUpdate(
-          { email: coaching.user.email, call_status: {$ne: CALL_STATUS_CONVERTI_CN}},
-          { call_status: CALL_STATUS_CONVERTI_COA, coaching_converted: COACHING_CONVERSION_TO_COME },
-          { new: true, runValidators: true }
-        )
-          .then(console.log)
-          .catch(console.error)
-        Lead.findOneAndUpdate(
-          { email: coaching.user.email, call_status: CALL_STATUS_CONVERTI_CN},
-          { call_status: CALL_STATUS_CONVERTI_COA_CN, coaching_converted: COACHING_CONVERSION_TO_COME },
+          { email: coaching.user.email},
+          { coaching_converted: COACHING_CONVERSION_TO_COME },
           { new: true, runValidators: true }
         )
           .then(console.log)
