@@ -568,6 +568,16 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  smartdiet_start_survey_2: {
+    label: 'Start survey 2',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_start_survey_3: {
+    label: 'Start survey 3',
+    options: {},
+    next: ['openPage'],
+  },
 
   previous_question: {
     label: 'Previous question',

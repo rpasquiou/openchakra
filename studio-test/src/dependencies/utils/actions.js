@@ -817,6 +817,26 @@ return Promise.allSettled(imagePromises)
       value: res.data,
     }))
   },
+  smartdiet_start_survey_2: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_start_survey_2',
+    }
+    return axios.post(url, body).then(res => ({
+      model: 'userQuestion',
+      value: res.data,
+    }))
+  },
+  smartdiet_start_survey_3: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'smartdiet_start_survey_3',
+    }
+    return axios.post(url, body).then(res => ({
+      model: 'userQuestion',
+      value: res.data,
+    }))
+  },
 
   previous_question: ({value}) => {
     let url = `${API_ROOT}/action`

@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require('./consts')
 
 //
 const startSurvey = async (_, user) => {
@@ -19,6 +19,30 @@ const startSurvey = async (_, user) => {
 }
 //TODO rename action to start_survey
 addAction('smartdiet_start_survey', startSurvey)
+const startSurvey2 = async (_, user) => {
+  //console.log("params", params)
+
+  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
+  const level = SCORE_LEVEL_2
+
+  const score = await createScore(user._id, level)
+
+  return score.answers[0]
+}
+//TODO remove once start_survey take scorelevel into account
+addAction('smartdiet_start_survey_2', startSurvey)
+const startSurvey3 = async (_, user) => {
+  //console.log("params", params)
+
+  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
+  const level = SCORE_LEVEL_3
+
+  const score = await createScore(user._id, level)
+
+  return score.answers[0]
+}
+//TODO remove once start_survey take scorelevel into account
+addAction('smartdiet_start_survey_3', startSurvey)
 
 
 //value : _id of the answered question
