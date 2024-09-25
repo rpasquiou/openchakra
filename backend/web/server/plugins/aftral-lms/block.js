@@ -463,7 +463,7 @@ const addChild = async (user, parent, child) => {
   if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
-  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, { [BLOCK_TYPE]: 1 })))
+  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, { [BLOCK_TYPE]: 1 }).lean()))
   const [pType, cType] = [parent?.type, child?.type]
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')} 
   if (!!parent.origin) {
@@ -478,7 +478,7 @@ const addChild = async (user, parent, child) => {
 
   // Now propagate to all origins
   const origins = await mongoose.models.block.find({ origin: parent._id }, { _id: 1 })
-  await Promise.all(origins.map(origin => addChildAction({ parent: origin._id, child: createdChild._id }, user)))
+  await Promise.all(origins.map(origin => addChild(user, origin._id, createdChild._id)))
 }
 
 const ACCEPTS={
