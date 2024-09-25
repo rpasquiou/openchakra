@@ -19,6 +19,7 @@ const startSurvey = async (_, user) => {
 }
 //TODO rename action to start_survey
 addAction('smartdiet_start_survey', startSurvey)
+
 const startSurvey2 = async (_, user) => {
   //console.log("params", params)
 
@@ -30,7 +31,8 @@ const startSurvey2 = async (_, user) => {
   return score.answers[0]
 }
 //TODO remove once start_survey take scorelevel into account
-addAction('smartdiet_start_survey_2', startSurvey)
+addAction('smartdiet_start_survey_2', startSurvey2)
+
 const startSurvey3 = async (_, user) => {
   //console.log("params", params)
 
@@ -42,7 +44,7 @@ const startSurvey3 = async (_, user) => {
   return score.answers[0]
 }
 //TODO remove once start_survey take scorelevel into account
-addAction('smartdiet_start_survey_3', startSurvey)
+addAction('smartdiet_start_survey_3', startSurvey3)
 
 
 //value : _id of the answered question
