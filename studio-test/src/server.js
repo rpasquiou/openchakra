@@ -52,7 +52,7 @@ checkConfig()
       changeOrigin: true,
       secure: isSecure,
       onProxyReq: async (proxyReq, req, res) => {
-        const s3Params = {Bucket: 'my-alfred-data-test',Key: decodeURI(proxyReq.path).replace(/^\/SCORM\//, '')}
+        const s3Params = {Bucket: 'my-alfred-data-test',Key: decodeURI(proxyReq.path).replace(/^\/SCORM\//, '').replace(/\?v=.*$/, '')}
         const url=S3.getSignedUrl('getObject', s3Params)
         proxyReq.path=url
       },
