@@ -1,12 +1,11 @@
 import axios from 'axios'
 import lodash from 'lodash'
 import html2canvas from 'html2canvas'
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument} from 'pdf-lib'
 import Cookies from 'universal-cookie'
 import {
   clearComponentValue,
-  getComponent,
-  getComponentDataValue
+  getComponent
 } from './values';
 import { clearToken } from './token';
 import { generatePDF } from './tools'
