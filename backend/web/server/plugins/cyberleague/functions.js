@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { getQuestionsByCategory, computeScoresIfRequired, getCategoryRates } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired, getCategoryRates, updateMarketScore } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
@@ -346,6 +346,13 @@ const ensureGains = () => {
 
 ensureGains()
 
+//create score with market values
+const ensureMarketScore = async () => {
+  const _category_rates = null
+  await updateMarketScore(_category_rates)
+}
+
+ensureMarketScore()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
