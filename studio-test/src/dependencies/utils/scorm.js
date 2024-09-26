@@ -94,8 +94,9 @@ export class LMSAPI {
     }
 
     // Other version
-    Initialize(data){
-      this.initialized = true;
+    Initialize(){
+      this.initialized = true
+      console.trace('Initialize called')
       this.addLMSInfo(`Initialize`)
       return "true"
     }
@@ -112,28 +113,46 @@ export class LMSAPI {
       return this.LMSCommit()
     }
 
+    Terminate(p) {
+      return this.LMSFinish()
+    }
+
+    GetLastError() {
+      return this.LMSGetLastError()
+    }
+
+    GetErrorString(errorCode) {
+      return this.LMSGetErrorString(errorCode)
+    }
+    
+    GetDiagnostic(errorCode) {
+      return this.LMSGetDiagnostic(errorCode)
+    }
+    
   }
 
 export function SCORM2004_GrabAPI() {
-    const api=new LMSAPI()
-    console.log(api.LMSInitialize());
-    // console.log(api.LMSSetValue("learner_name", "John Doe"));
-    // console.log(api.LMSSetValue("course_progress", "50%"));
-    return api
-  }
+  console.log('Calling SCORM2004_GrabAPI')
+  const api=new LMSAPI()
+  return api
+}
 
+let api=null
 export function getAPI() {
-    var theAPI = SCORM2004_GrabAPI();
-    return theAPI;
+  console.log('Calling getAPI')
+  if (api==null) {
+    console.log('Building API instance')
+    api= new LMSAPI()
+  }
+  return api
 }
 
 
 if (isClient()) {
-  // alert('creating API')
   const API=getAPI()
   window.API=API
   window.API_1484_11=API
-  console.log(window.API)
+  console.log(`Scorm API created`)
 }
 
 
