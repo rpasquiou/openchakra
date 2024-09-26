@@ -92,6 +92,12 @@ ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
   return this.answers?.length || 0
 })
 
+ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
+  return this._category_rates.map((elem) => {
+    return {name: elem.question_category.name, value: elem.category_rate}
+  })
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = ScoreSchema
