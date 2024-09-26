@@ -159,6 +159,23 @@ const OfferSchema = new Schema({
     type: Number,
     index: true,
   },
+  assessment_price: {
+    type: Number,
+    required: [false, `Le tarif de bilan est obligatoire`]
+  },
+  followup_price: {
+    type: Number,
+    required: [false, `Le tarif de suivi est obligatoire`]
+  },
+  nutrition_price: {
+    type: Number,
+    required: [false, `Le tarif de conseil nutritionnel est obligatoire`]
+  },
+  impact_price: {
+    type: Number,
+    default: 0,
+    required: [false, `Le tarif d'étude d'impact est obligatoire`]
+  },
 }, schemaOptions)
 
 OfferSchema.methods.getContentLimit=function(type){
