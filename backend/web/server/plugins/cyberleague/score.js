@@ -1,4 +1,4 @@
-const { loadFromDb } = require("../../utils/database")
+const { loadFromDb, idEqual } = require("../../utils/database")
 const lodash = require('lodash')
 const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1} = require("./consts")
 const Score = require("../../models/Score")
@@ -120,8 +120,20 @@ const createScore = async (creatorId, scoreLevel) => {
   return Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
 }
 
+const getCategoryRates = async (userId, params, data) => {
+  const market = await Score.findOne({market: true}).populate(['_category_rates.name','_category_rates._id'])
+  const res = data._category_rates.map((elem) => {
+    const name = elem.category.name
+    const value = elem.rate
+    const market_value = lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)}).rate
+    return {name,value,market_value}
+  })
+  return res
+}
+
 module.exports = {
   computeScoresIfRequired,
   getQuestionsByCategory,
-  createScore
+  createScore,
+  getCategoryRates
 }
