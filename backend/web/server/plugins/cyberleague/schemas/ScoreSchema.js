@@ -109,7 +109,7 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
 
 ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
   return this._category_rates?.map((elem) => {
-    return {name: elem.category.name, value: elem.rate}
+    return {name: elem.category.name ? elem.category.name : 'Catégorie test', value: elem.rate}
   })
 })
 
