@@ -24,7 +24,7 @@ const ScoreSchema = new Schema({
     type: Number,
     default: false
   },
-  category_rates: {
+  _category_rates: {
     type: [{
       question_category: {
         type: Schema.Types.ObjectId,
