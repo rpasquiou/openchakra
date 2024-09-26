@@ -80,7 +80,7 @@ const ScoreSchema = new Schema({
     required: true,
     default: false,
   },
-  market: {
+  _market: {
     type: Boolean,
     default: false
   },

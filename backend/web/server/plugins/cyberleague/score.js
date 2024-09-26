@@ -121,7 +121,7 @@ const createScore = async (creatorId, scoreLevel) => {
 }
 
 const getCategoryRates = async (userId, params, data) => {
-  const market = await Score.findOne({market: true}).populate(['_category_rates.name','_category_rates._id'])
+  const market = await Score.findOne({_market: true}).populate(['_category_rates.name','_category_rates._id'])
   const res = data._category_rates.map((elem) => {
     const name = elem.category.name
     const value = elem.rate
