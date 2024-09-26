@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const ProgramSchema = new Schema({
     modules: {
         type: Schema.Types.ObjectId,
-        ref: 'module',
+        ref: 'cLModule',
         required: [true, 'Les modules sont obligatoires'],
     },
     name: {

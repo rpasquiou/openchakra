@@ -3,7 +3,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const ModuleSchema = new Schema({
+const CLModuleSchema = new Schema({
   resources: {
     type: [{
       type: Schema.Types.ObjectID,
@@ -26,4 +26,4 @@ const ModuleSchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = ModuleSchema
+module.exports = CLModuleSchema
