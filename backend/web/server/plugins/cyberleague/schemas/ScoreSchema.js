@@ -79,7 +79,11 @@ const ScoreSchema = new Schema({
     type: Boolean,
     required: true,
     default: false,
-  }
+  },
+  market: {
+    type: Boolean,
+    default: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -107,11 +111,11 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
   return {labels, series}
 })
 
-ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
-  return this._category_rates?.map((elem) => {
-    return {name: elem.category.name ? elem.category.name : 'Catégorie test', value: elem.rate}
-  })
-})
+// ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
+//   return this._category_rates?.map((elem) => {
+//     return {name: elem.category.name ? elem.category.name : 'Catégorie test', value: elem.rate}
+//   })
+// })
 
 /* eslint-enable prefer-arrow-callback */
 
