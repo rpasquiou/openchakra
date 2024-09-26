@@ -100,7 +100,7 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
     values: labels.map((l, idx) => ({label: l, y: idx+1})),
     color: 'rgb(255,0,0)'
   },{
-    label:'Market',
+    label:'Market (WIP)',
     values: [{label: labels[1], y:8}],
     color: 'rgb(0,255,0)'
   }]
