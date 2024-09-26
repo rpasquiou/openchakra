@@ -109,7 +109,7 @@ const createScore = async (creatorId, scoreLevel) => {
       acceptedLevels.push(SCORE_LEVEL_1)
   }
 
-  level_filtered = {min_level: {$in: acceptedLevels}}
+  const level_filtered = {min_level: {$in: acceptedLevels}}
 
   const questions = await Question.find(level_filtered)
 
