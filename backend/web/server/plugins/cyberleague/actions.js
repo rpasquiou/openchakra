@@ -84,7 +84,7 @@ const previousQuestion = async ({ value }, user) => {
 addAction('previous_question', previousQuestion)
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
-  if (lodash.includes([,'smartdiet_next_question','smartdiet_finish_survey','previous_question'])) {
+  if (lodash.includes(['smartdiet_next_question','smartdiet_finish_survey','previous_question'],action)) {
 
     const score = await Score.findOne({answers: dataId}).populate('answers')
     const answerIndex = lodash.findIndex(score.answers, (a)=> idEqual(a._id, dataId))
