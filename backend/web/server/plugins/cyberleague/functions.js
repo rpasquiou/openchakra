@@ -277,6 +277,17 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
+declareVirtualField({
+  model: 'score',
+  field: 'category_rates',
+  requires: '_category_rates.question_category.name,_category_rates.category_rate',
+  instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'pair' }
+  }
+})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
 declareComputedField({model: 'score', field: 'bellwether_count', requires:'completed', getterFn: getterCountFn('score', {'completed': true})})
@@ -483,5 +494,4 @@ setPostPutData(postPutData)
 module.exports = {
   ensureExpertiseCategories,
   ensureQuestionCategories,
-  testOnlyPostCreate: postCreate //for score.test.js
 }

@@ -62,15 +62,15 @@ const computeScores = async (answers) => {
   const computeRates = (weightsAndRates) => {
     let result = [];     
     Object.entries(weightsAndRates).forEach(([key,value]) => {
-      result.push({question_category: key, category_rate: value.rate / value.weight})
+      result.push({question_category: key, category_rate: Math.round(value.rate / value.weight *100) /100})
     })
     return result
   }
 
-  const category_rates = computeRates(category_weightsAndRates)
+  const _category_rates = computeRates(category_weightsAndRates)
   const bellwether_rates = computeRates(bellwether_weightsAndRates)
     
-  return {global_rate, category_rates, bellwether_rates}
+  return {global_rate, _category_rates, bellwether_rates}
 }
 
 const computeScoresIfRequired = async (scoreId) => {
@@ -109,7 +109,7 @@ const createScore = async (creatorId, scoreLevel) => {
       acceptedLevels.push(SCORE_LEVEL_1)
   }
 
-  level_filtered = {min_level: {$in: acceptedLevels}}
+  const level_filtered = {min_level: {$in: acceptedLevels}}
 
   const questions = await Question.find(level_filtered)
 
