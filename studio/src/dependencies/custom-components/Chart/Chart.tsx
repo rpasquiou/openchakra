@@ -61,6 +61,11 @@ const OwnChart = (
       const fontSize = isFontSize ? (parseInt(props.fontSize?.base, 10) || 12 ) : 14
 
       const options = {
+        plugins: {
+          colors: {
+            enabled: false
+          }
+        },
         responsive: true,
         maintainAspectRatio: false,
         scales: {
@@ -74,20 +79,20 @@ const OwnChart = (
           },
         },
         plugins: {
-            legend: {
-              position: 'bottom' as const,
-              labels: {
-                usePointStyle: true,
-                font: {
-                  family: isFontFamily ? font : 'inherit',
-                  size: isFontSize ? fontSize : 12
-                }
+          legend: {
+            position: 'bottom' as const,
+            labels: {
+              usePointStyle: true,
+              font: {
+                family: isFontFamily ? font : 'inherit',
+                size: isFontSize ? fontSize : 12
               }
-            },
-            // title: {
-            // display: true,
-            // text: 'Titre du graphe', // Chart Title
-            // },
+            }
+          },
+          title: {
+          display: true,
+          // text: 'Titre du graphe', // Chart Title
+          },
         },
       };
 
@@ -102,37 +107,24 @@ const OwnChart = (
       let data
 
       if (chartType == 'radar') {
-        const labels = []
-        const marketData = [] //fixe : aller chercher avec un loadFromDb
-        const myData = []
-        console.log(JSON.stringify(options,null,2));
-        
-        //parcourir donnée user et remplir labels, mydata et marketdata
-        value?.forEach(v => {
-          console.log('v',v);
-          
-        })
 
-        //building of data
-        const myDataset = {
-          label: 'Mes résultats',
-          data: myData,
-          fill: false,
-          order: 1
-          //color ? (borderColor = pointBackgroundColor = pointHoverBackgroundColor = pointHoverBorderColor = 'rgb(xx, xx, xx', backgroundColor : 'rgba(xx,xx,xx, 0.2)')
-        }
-
-        const marketDataset = {
-          label: 'Marché',
-          data: marketData,
-          fill: true,
-          order: 2
-          // color ? (borderColor = pointBackgroundColor = pointHoverBackgroundColor = pointHoverBorderColor = 'rgb(xx, xx, xx', backgroundColor : 'rgba(xx,xx,xx, 0.2)')
+        const orderValues =  (labels, values) => {
+          return labels.map(l => values.find(v => v.label==l)?.y)
         }
 
         data = {
-          labels: labels,
-          datasets: [myDataset, marketDataset]
+          labels: value?.labels,
+          datasets: (value?.series || []).map((s, idx) => ({
+            label: s.label,
+            data: orderValues(value?.labels, s.values),
+            fill: true,
+            backgroundColor: s.color,
+            borderColor: s.color,
+            pointBackgroundColor: s.color,
+            pointBorderColor: s.color,
+            pointHoverBackgroundColor: s.color,
+            pointHoverBorderColor: s.color,
+          }))
         }
 
       } else {
