@@ -4,6 +4,7 @@ const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_L
 const Score = require("../../models/Score")
 const Question = require("../../models/Question")
 const Answer = require("../../models/Answer")
+const User = require("../../models/User")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
@@ -131,9 +132,26 @@ const getCategoryRates = async (userId, params, data) => {
   return res
 }
 
+const updateMarketScore = async ({_category_rates}) => {
+  const marketScore = await Score.findOne({_market: true})
+  //if no market score we create one
+  if (!marketScore) {
+    const admin = await User.findOne({role: ROLE_ADMIN})
+    return Score.create({creator: admin._id, _market: true, _category_rates: _category_rates})
+  }
+  //if there is a market score we update only if _category_rates is not null
+  if (!_category_rates) {
+    return Promise.resolve()
+  } else {
+    Score.findOneAndUpdate({_market: true}, {_category_rates: _category_rates})
+  }
+
+}
+
 module.exports = {
   computeScoresIfRequired,
   getQuestionsByCategory,
   createScore,
-  getCategoryRates
+  getCategoryRates,
+  updateMarketScore
 }
