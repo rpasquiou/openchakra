@@ -37,6 +37,7 @@ const ChartPanel = () => {
   const chartTypes = {
     line: 'Line',
     bar: 'Bar',
+    radar: 'radar',
   }
 
   return (
