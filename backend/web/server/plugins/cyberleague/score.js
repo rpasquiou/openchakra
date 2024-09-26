@@ -67,10 +67,10 @@ const computeScores = async (answers) => {
     return result
   }
 
-  const category_rates = computeRates(category_weightsAndRates)
+  const _category_rates = computeRates(category_weightsAndRates)
   const bellwether_rates = computeRates(bellwether_weightsAndRates)
     
-  return {global_rate, category_rates, bellwether_rates}
+  return {global_rate, _category_rates, bellwether_rates}
 }
 
 const computeScoresIfRequired = async (scoreId) => {
