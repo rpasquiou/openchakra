@@ -280,7 +280,7 @@ declareVirtualField({model: 'score', field: 'question_count', require: 'answers'
 declareVirtualField({
   model: 'score',
   field: 'category_rates',
-  requires: '_category_rates.question_category.name,_category_rates.category_rate',
+  requires: '_category_rates.category.name,_category_rates.rate',
   instance: 'Array',
   multiple: true,
   caster: {

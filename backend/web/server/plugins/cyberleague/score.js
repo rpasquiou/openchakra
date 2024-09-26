@@ -62,7 +62,7 @@ const computeScores = async (answers) => {
   const computeRates = (weightsAndRates) => {
     let result = [];     
     Object.entries(weightsAndRates).forEach(([key,value]) => {
-      result.push({question_category: key, category_rate: Math.round(value.rate / value.weight *100) /100})
+      result.push({category: key, rate: Math.round(value.rate / value.weight *100) /100})
     })
     return result
   }

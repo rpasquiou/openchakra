@@ -26,12 +26,12 @@ const ScoreSchema = new Schema({
   },
   _category_rates: {
     type: [{
-      question_category: {
+      category: {
         type: Schema.Types.ObjectId,
         ref: 'questionCategory',
         required: true
       },
-      category_rate: {
+      rate: {
         type: Number,
         required: true
       }
@@ -40,12 +40,12 @@ const ScoreSchema = new Schema({
   },
   bellwether_rates: {
     type: [{
-      question_category: {
+      category: {
         type: Schema.Types.ObjectId,
         ref: 'questionCategory',
         required: true
       },
-      category_rate: {
+      rate: {
         type: Number,
         required: true
       }
@@ -109,7 +109,7 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
 
 ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
   return this._category_rates?.map((elem) => {
-    return {name: elem.question_category.name, value: elem.category_rate}
+    return {name: elem.category.name, value: elem.rate}
   })
 })
 
