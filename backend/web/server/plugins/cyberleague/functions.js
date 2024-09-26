@@ -349,7 +349,7 @@ ensureGains()
 //create score with market values
 const ensureMarketScore = async () => {
   const _category_rates = null
-  await updateMarketScore(_category_rates)
+  return updateMarketScore(_category_rates)
 }
 
 ensureMarketScore()
