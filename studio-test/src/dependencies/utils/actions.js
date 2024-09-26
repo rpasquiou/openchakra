@@ -13,7 +13,7 @@ import { generatePDF } from './tools'
 
 const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
-  login: ({ props, level, getComponentValue }) => {
+  login: async ({ props, level, getComponentValue }) => {
     const email = getComponentValue(props.email, level)
     const password = getComponentValue(props.password, level)
     let url = `${API_ROOT}/login`
@@ -28,7 +28,7 @@ export const ACTIONS = {
         return res
       })
   },
-  sendMessage: ({ value, props, level, getComponentValue, fireClearComponents }) => {
+  sendMessage: async ({ value, props, level, getComponentValue, fireClearComponents }) => {
     const destinee = props.destinee ? getComponentValue(props.destinee, level) : value._id
     const componentsIds=[props.contents, props.attachment]
     const components=componentsIds.map(comp => comp=getComponent(comp, level)).filter(c => !!c)
@@ -48,7 +48,7 @@ export const ACTIONS = {
         return res
       })
   },
-  createPost: ({ props, level, getComponentValue }) => {
+  createPost: async ({ props, level, getComponentValue }) => {
     const contents = getComponentValue(props.contents, level)
     const mediaComp = document.getElementById(props.media)
     const value=mediaComp && mediaComp.getAttribute('data-value')
@@ -88,7 +88,7 @@ export const ACTIONS = {
     return Promise.resolve()
   },
 
-  create: ({ value, context, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
+  create: async ({ value, context, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     console.log('component ids', componentsIds)
     const components=componentsIds.map(c => {
@@ -134,13 +134,13 @@ export const ACTIONS = {
       child: value._id,
     })
   },
-  next: ({ value, props }) => {
+  next: async ({ value, props }) => {
     let url = `${API_ROOT}/action`
     return axios
       .post(url, { action: 'next', id: value._id })
       .then(res => res.data)
   },
-  previous: ({ value, props }) => {
+  previous: async ({ value, props }) => {
     let url = `${API_ROOT}/action`
     return axios
       .post(url, { action: 'previous', id: value._id })
@@ -154,7 +154,7 @@ export const ACTIONS = {
       id: value._id,
     })
   },
-  gotoSession: ({ value, props }) => {
+  gotoSession: async ({ value, props }) => {
     let url = `${API_ROOT}/action`
     return axios
       .post(url, { action: 'session', id: value._id })
@@ -197,7 +197,7 @@ export const ACTIONS = {
     }
     return axios.post(url, body)
   },
-  inviteGuest: ({ value, props, context, level, getComponentValue }) => {
+  inviteGuest: async ({ value, props, context, level, getComponentValue }) => {
     const [email, phone] = ['email', 'phone'].map(att =>
       getComponentValue(props[att], level),
     )
@@ -215,7 +215,7 @@ export const ACTIONS = {
       return res
     })
   },
-  registerToEvent: ({ value }) => {
+  registerToEvent: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'registerToEvent',
@@ -226,7 +226,7 @@ export const ACTIONS = {
         return {_id: res.data}
       })
   },
-  unregisterFromEvent: ({ value }) => {
+  unregisterFromEvent: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'unregisterFromEvent',
@@ -237,7 +237,7 @@ export const ACTIONS = {
         return {_id: res.data}
       })
   },
-  save: ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
+  save: async ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     let url = `${API_ROOT}/${props.model}${dataSource?._id ? `/${dataSource._id}`:''}`
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const components=componentsIds.map(c => {
@@ -265,7 +265,7 @@ export const ACTIONS = {
     })
   },
 
-  payEvent: ({ context, props }) => {
+  payEvent: async ({ context, props }) => {
     let url = `${API_ROOT}/action`
     const body = {action: 'payEvent', context,...props}
     return axios.post(url, body)
@@ -278,7 +278,7 @@ export const ACTIONS = {
       })
   },
 
-  payOrder: ({ context, props }) => {
+  payOrder: async ({ context, props }) => {
     let url = `${API_ROOT}/action`
     const body = {action: 'payOrder', context,...props}
     return axios.post(url, body)
@@ -302,7 +302,7 @@ export const ACTIONS = {
     window.history.back()
   },
 
-  register: ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
+  register: async ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
     let url = `${API_ROOT}/register`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const body = Object.fromEntries(components.map(c =>
@@ -319,7 +319,7 @@ export const ACTIONS = {
       })
   },
 
-  registerAndLogin: ({ value, props, dataSource, level, getComponentValue }) => {
+  registerAndLogin: async ({ value, props, dataSource, level, getComponentValue }) => {
     let url = `${API_ROOT}/register-and-login`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
@@ -352,7 +352,7 @@ export const ACTIONS = {
     window.location='https://localhost/myAlfred/api/withings/settings'
   },
 
-  forgotPassword: ({ value, props, level, getComponentValue }) => {
+  forgotPassword: async ({ value, props, level, getComponentValue }) => {
     const email=getComponentValue(props.email, level)
     let url = `${API_ROOT}/anonymous-action`
     const body = {
@@ -367,7 +367,7 @@ export const ACTIONS = {
     })
   },
 
-  getCigarReview: ({ value}) => {
+  getCigarReview: async ({ value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'getCigarReview',
@@ -395,7 +395,7 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  savePagePDF: () => {
+  savePagePDF: async () => {
     //return window.print()
 
 const images = document.getElementsByTagName('img');
@@ -476,7 +476,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  createRecommandation: ({ value, props, level, getComponentValue }) => {
+  createRecommandation: async ({ value, props, level, getComponentValue }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute')  || getComponentAttribute(c, level),
@@ -530,7 +530,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  alle_accept_quotation: ({value, props}) => {
+  alle_accept_quotation: async ({value, props}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_accept_quotation',
@@ -548,7 +548,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  alle_can_accept_quotation: ({value, props}) => {
+  alle_can_accept_quotation: async ({value, props}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_can_accept_quotation',
@@ -577,7 +577,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  alle_edit_quotation: ({ value, context, props, level, getComponentValue }) => {
+  alle_edit_quotation: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_edit_quotation',
@@ -591,7 +591,7 @@ return Promise.allSettled(imagePromises)
       }))
   },
 
-  alle_finish_mission: ({ value, context, props, level, getComponentValue }) => {
+  alle_finish_mission: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_finish_mission',
@@ -602,7 +602,7 @@ return Promise.allSettled(imagePromises)
       .then(res => res.data)
   },
 
-  alle_store_bill: ({ value, context, props, level, getComponentValue }) => {
+  alle_store_bill: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_store_bill',
@@ -613,7 +613,7 @@ return Promise.allSettled(imagePromises)
       .then(res => res.data)
   },
 
-  alle_accept_bill: ({ value, context, props, level, getComponentValue }) => {
+  alle_accept_bill: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_accept_bill',
@@ -624,7 +624,7 @@ return Promise.allSettled(imagePromises)
     .then(res => res.data)
   },
 
-  alle_refuse_bill: ({ value, context, props, level, getComponentValue }) => {
+  alle_refuse_bill: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_refuse_bill',
@@ -635,7 +635,7 @@ return Promise.allSettled(imagePromises)
     .then(res => res.data)
   },
 
-  alle_leave_comment: ({ value, context, props, level, getComponentValue }) => {
+  alle_leave_comment: async ({ value, context, props, level, getComponentValue }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_leave_comment',
@@ -646,7 +646,7 @@ return Promise.allSettled(imagePromises)
       .then(res => res.data)
   },
 
-  alle_send_bill: ({value}) => {
+  alle_send_bill: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_send_bill',
@@ -656,7 +656,7 @@ return Promise.allSettled(imagePromises)
     .then(res => res.data)
   },
 
-  smartdiet_join_group: ({ value }) => {
+  smartdiet_join_group: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_join_group',
@@ -669,7 +669,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_leave_group: ({ value }) => {
+  smartdiet_leave_group: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_join_group',
@@ -682,7 +682,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_skip_event: ({ value }) => {
+  smartdiet_skip_event: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_skip_event',
@@ -694,7 +694,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_join_event: ({ value }) => {
+  smartdiet_join_event: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_join_event',
@@ -706,7 +706,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_pass_event: ({ value }) => {
+  smartdiet_pass_event: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_pass_event',
@@ -716,7 +716,7 @@ return Promise.allSettled(imagePromises)
       .then(res => res.data)
   },
 
-  smartdiet_fail_event: ({ value }) => {
+  smartdiet_fail_event: async ({ value }) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_fail_event',
@@ -772,7 +772,7 @@ return Promise.allSettled(imagePromises)
       a.remove();
   },
 
-  payMission: ({ context, props }) => {
+  payMission: async ({ context, props }) => {
     let url = `${API_ROOT}/action`
     const body = {action: 'payMission', context,...props}
     return axios.post(url, body)
@@ -807,7 +807,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  smartdiet_start_survey: () => {
+  smartdiet_start_survey: async () => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_start_survey',
@@ -817,7 +817,7 @@ return Promise.allSettled(imagePromises)
       value: res.data,
     }))
   },
-  smartdiet_start_survey_2: () => {
+  smartdiet_start_survey_2: async () => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_start_survey_2',
@@ -827,7 +827,7 @@ return Promise.allSettled(imagePromises)
       value: res.data,
     }))
   },
-  smartdiet_start_survey_3: () => {
+  smartdiet_start_survey_3: async () => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_start_survey_3',
@@ -838,7 +838,7 @@ return Promise.allSettled(imagePromises)
     }))
   },
 
-  previous_question: ({value}) => {
+  previous_question: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'previous_question',
@@ -852,7 +852,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_next_question: ({value}) => {
+  smartdiet_next_question: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_next_question',
@@ -866,7 +866,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  smartdiet_finish_survey: ({value}) => {
+  smartdiet_finish_survey: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_finish_survey',
@@ -894,7 +894,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  smartdiet_find_team_member: ({value}) => {
+  smartdiet_find_team_member: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_find_team_member',
@@ -906,7 +906,7 @@ return Promise.allSettled(imagePromises)
     }))
   },
 
-  smartdiet_open_team_page: ({value, props}) => {
+  smartdiet_open_team_page: async ({value, props}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_open_team_page',
@@ -946,7 +946,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  smartdiet_read_content: ({value}) => {
+  smartdiet_read_content: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_read_content',
@@ -1066,7 +1066,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  smartdiet_buy_pack: ({value}) => {
+  smartdiet_buy_pack: async ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'smartdiet_buy_pack',
