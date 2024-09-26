@@ -1,15 +1,12 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
-const { createRegExpOR } = require("../../../utils/text");
-const Resource = require("../../models/Resource");
-const { addChildAction } = require("./actions");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -96,7 +93,7 @@ const cloneTree = async (blockId, parentId) => {
   return newBlock.save()
 }
 
-const cloneTemplate = async (blockId) => {
+const cloneTemplate = async (blockId, user) => {
   if (!blockId) {
     throw new Error(`blockId is expected`)
   }
@@ -110,7 +107,8 @@ const cloneTemplate = async (blockId) => {
 
   const newBlock=new mongoose.models.block({...blockData})
   await newBlock.save()
-  await Promise.all(block.children.map(child => addChildAction({parent: newBlock._id, child: child.origin._id})))
+  await Promise.all(block.children.map(child => addChild({parent: newBlock._id, child: child.origin._id, user})))
+  return newBlock
 }
 
 // Loads the chain from blockId to its root origin
@@ -460,6 +458,41 @@ const updateChildrenOrder = async parentId => {
   }))
 }
 
+const ACCEPTS={
+  session: ['program'],
+  program: ['chapter', 'module'],
+  chapter: ['module'],
+  module: ['sequence'],
+  sequence: ['resource'],
+}
+
+const acceptsChild= (pType, cType) => {
+  return ACCEPTS[pType]?.includes(cType)
+}
+
+const addChild = async ({parent, child, user}) => {
+  // Allow ADMIN to add child for session import
+  if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
+    throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
+  }
+  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, {[BLOCK_TYPE]: 1})))
+  const [pType, cType]=[parent?.type, child?.type]
+  if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
+  if (!!parent.origin) {
+    throw new BadRequestError(`Le parent doit être un template`)
+  }
+  if (!!child.origin) {
+    throw new BadRequestError(`Le fils doit être un template`)
+  }
+  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
+  const createdChild = await cloneTree(child._id, parent._id)
+  await mongoose.models.block.findByIdAndUpdate(parent, {last_updater: user})
+
+  // Now propagate to all origins
+  const origins=await mongoose.models.block.find({origin: parent._id}, {_id:1})
+  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
@@ -467,6 +500,6 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder, cloneTemplate,
+  updateChildrenOrder, cloneTemplate, addChild
 }
 

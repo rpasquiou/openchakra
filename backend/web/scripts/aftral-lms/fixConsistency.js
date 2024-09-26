@@ -13,7 +13,7 @@ const getBlockName = block => {
     return null
   }
   // return `${block.type} ${block.name} (${block._id})`
-  return `${block.type} ${block.name})`
+  return `${block.type} ${block.name}`
 }
 
 const getBlockHierarchyName = async block => {
@@ -103,7 +103,7 @@ const fixModel = async () => {
       .then(res => {
         const err=res.find(r => r.status=='rejected')
         if (err) {
-          throw new Error(r.reason)
+          throw new Error(err.reason)
         }
       })
     })
@@ -128,6 +128,5 @@ const checkConsistency = async () => {
 }
 
 checkConsistency()
-  .then(console.log)
   .catch(console.error)
   .finally(() => process.exit(0))
