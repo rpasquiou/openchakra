@@ -3,7 +3,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const CLModuleSchema = new Schema({
+const ModuleSchema = new Schema({
   resources: {
     type: [{
       type: Schema.Types.ObjectID,
@@ -14,20 +14,16 @@ const CLModuleSchema = new Schema({
   },
   name: {
     type: String,
-    required: [true, `Le nom est obligatoire`]
+    required: [true, `Le nom du module est obligatoire`]
   },
   trophy: {
     type: Schema.Types.ObjectId,
     ref: 'gift',
     required: false,
   },
-  coin: {
-    type: Number,
-    required: false,
-  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = CLModuleSchema
+module.exports = ModuleSchema

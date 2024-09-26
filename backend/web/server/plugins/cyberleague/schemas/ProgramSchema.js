@@ -6,8 +6,8 @@ const Schema = mongoose.Schema
 const ProgramSchema = new Schema({
     modules: {
         type: Schema.Types.ObjectId,
-        ref: 'clModule',
-        required: [true, 'Les modules sont obligatoire'],
+        ref: 'module',
+        required: [true, 'Les modules sont obligatoires'],
     },
     name: {
         type: String,
@@ -16,11 +16,6 @@ const ProgramSchema = new Schema({
     picture: {
         type: String,
         required: false,
-    },
-    expertise_levels: {
-      type: Schema.Types.ObjectId,
-      ref: 'expertiseLevel',
-      required: [true, `Les expertises et leurs niveaux sont obligatoire`]
     },
     creator: {
         type: Schema.Types.ObjectId,
