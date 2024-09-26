@@ -107,7 +107,7 @@ export const mediaWrapper = ({
     else {//Certainly a SCORM
       if (PATTERN.test(parsedUrl.hostname)) {
         const scormId=parsedUrl.pathname
-        src=`/SCORM/${scormId}`
+        src=`/SCORM${scormId}`
       }
     }
 
