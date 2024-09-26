@@ -78,8 +78,7 @@ const ScoreSchema = new Schema({
   completed: {
     type: Boolean,
     required: true,
-    default: false
-  }
+    default: s
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -90,6 +89,21 @@ ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
 
 ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
   return this.answers?.length || 0
+})
+
+ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
+  const COUNT=5
+  const labels=['Cybersécurité', 'Veille techno', 'Infomation générale', 'Prévention hacking', 'Scan système']
+  const series=[{
+    label:'Mes données',
+    values: labels.map((l, idx) => ({label: l, y: idx+1})),
+    color: 'rgb(255,0,0)'
+  },{
+    label:'Market',
+    values: [{label: labels[1], y:8}],
+    color: 'rgb(0,255,0)'
+  }]
+  return {labels, series}
 })
 
 /* eslint-enable prefer-arrow-callback */
