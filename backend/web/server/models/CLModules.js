@@ -13,4 +13,4 @@ catch(err) {
   }
 }
 
-module.exports = CLModuleSchema ? mongoose.model('clModule', CLModuleSchema) : null
+module.exports = CLModuleSchema ? mongoose.model('cLModule', CLModuleSchema) : null
