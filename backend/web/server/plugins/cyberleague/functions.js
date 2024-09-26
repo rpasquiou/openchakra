@@ -24,7 +24,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { getQuestionsByCategory, computeScoresIfRequired } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired, getCategoryRates, updateMarketScore } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
@@ -277,21 +277,11 @@ declareVirtualField({model: 'expertiseSet', field: 'display_categories', require
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
-declareVirtualField({
-  model: 'score',
-  field: 'category_rates',
-  requires: '_category_rates.question_category.name,_category_rates.category_rate',
-  instance: 'Array',
-  multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'pair' }
-  }
-})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
 declareComputedField({model: 'score', field: 'bellwether_count', requires:'completed', getterFn: getterCountFn('score', {'completed': true})})
 declareVirtualField({model: 'score', field: 'chart_data', instance: 'chartData'})
+declareComputedField({model: 'score', field: 'category_rates', requires: '_category_rates.category.name,_category_rates.rate,_category_rates.category._id', getterFn: getCategoryRates})
 
 //Answer declaration
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})
@@ -356,6 +346,13 @@ const ensureGains = () => {
 
 ensureGains()
 
+//create score with market values
+const ensureMarketScore = async () => {
+  const _category_rates = null
+  return updateMarketScore(_category_rates)
+}
+
+ensureMarketScore()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {

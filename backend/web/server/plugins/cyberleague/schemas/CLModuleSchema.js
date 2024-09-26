@@ -14,17 +14,13 @@ const CLModuleSchema = new Schema({
   },
   name: {
     type: String,
-    required: [true, `Le nom est obligatoire`]
+    required: [true, `Le nom du module est obligatoire`]
   },
   trophy: {
     type: Schema.Types.ObjectId,
     ref: 'gift',
     required: false,
   },
-  coin: {
-    type: Number,
-    required: false,
-  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

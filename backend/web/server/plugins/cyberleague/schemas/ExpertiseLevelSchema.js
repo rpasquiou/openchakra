@@ -9,7 +9,7 @@ const ExpertiseLevelSchema = new Schema({
         ref: 'expertise',
         required: [true, `L'expertise est obligatoire`],
     },
-    leve: {
+    level: {
         type: Number,
         required: [true, `Le niveau d'expertise est obligatoire`],
     },

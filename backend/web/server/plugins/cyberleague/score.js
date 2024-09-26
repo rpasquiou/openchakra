@@ -1,9 +1,10 @@
-const { loadFromDb } = require("../../utils/database")
+const { loadFromDb, idEqual } = require("../../utils/database")
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1} = require("./consts")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1, ROLE_ADMIN} = require("./consts")
 const Score = require("../../models/Score")
 const Question = require("../../models/Question")
 const Answer = require("../../models/Answer")
+const User = require("../../models/User")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
@@ -62,7 +63,7 @@ const computeScores = async (answers) => {
   const computeRates = (weightsAndRates) => {
     let result = [];     
     Object.entries(weightsAndRates).forEach(([key,value]) => {
-      result.push({question_category: key, category_rate: Math.round(value.rate / value.weight *100) /100})
+      result.push({category: key, rate: Math.round(value.rate / value.weight *100) /100})
     })
     return result
   }
@@ -120,8 +121,37 @@ const createScore = async (creatorId, scoreLevel) => {
   return Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
 }
 
+const getCategoryRates = async (userId, params, data) => {
+  const market = await Score.findOne({_market: true}).populate(['_category_rates.name','_category_rates._id'])
+  const res = data._category_rates.map((elem) => {
+    const name = elem.category.name
+    const value = elem.rate
+    const market_value = lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)}).rate
+    return {name,value,market_value}
+  })
+  return res
+}
+
+const updateMarketScore = async (_category_rates) => {
+  const marketScore = await Score.findOne({_market: true})
+  //if no market score we create one
+  if (!marketScore) {
+    const admin = await User.findOne({role: ROLE_ADMIN})
+    return Score.create({creator: admin._id, _market: true, _category_rates: _category_rates, level: SCORE_LEVEL_1})
+  }
+  //if there is a market score we update only if _category_rates is not null
+  if (!_category_rates) {
+    return Promise.resolve()
+  } else {
+    Score.findOneAndUpdate({_market: true}, {_category_rates: _category_rates})
+  }
+
+}
+
 module.exports = {
   computeScoresIfRequired,
   getQuestionsByCategory,
-  createScore
+  createScore,
+  getCategoryRates,
+  updateMarketScore
 }

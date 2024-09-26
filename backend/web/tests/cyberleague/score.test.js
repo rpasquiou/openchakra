@@ -122,8 +122,8 @@ describe(`score tests`, () => {
     expect(scoreAnswered.category_rates[0].value).toEqual(0)
     expect(scoreAnswered.category_rates[1].value).toEqual(1)
 
-    expect(scoreAnswered.bellwether_rates[0].question_category.toString()).toEqual(categories[1].name.toString())
-    expect(scoreAnswered.bellwether_rates[0].category_rate).toEqual(0)
+    expect(scoreAnswered.bellwether_rates[0].category.toString()).toEqual(categories[1]._id.toString())
+    expect(scoreAnswered.bellwether_rates[0].rate).toEqual(0)
   })
 
   it(`must have correct questions_by_category`, async () => {

@@ -26,12 +26,12 @@ const ScoreSchema = new Schema({
   },
   _category_rates: {
     type: [{
-      question_category: {
+      category: {
         type: Schema.Types.ObjectId,
         ref: 'questionCategory',
         required: true
       },
-      category_rate: {
+      rate: {
         type: Number,
         required: true
       }
@@ -40,12 +40,12 @@ const ScoreSchema = new Schema({
   },
   bellwether_rates: {
     type: [{
-      question_category: {
+      category: {
         type: Schema.Types.ObjectId,
         ref: 'questionCategory',
         required: true
       },
-      category_rate: {
+      rate: {
         type: Number,
         required: true
       }
@@ -79,7 +79,17 @@ const ScoreSchema = new Schema({
     type: Boolean,
     required: true,
     default: false,
-  }
+  },
+  _market: {
+    type: Boolean,
+    default: false
+  },
+  category_rates: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'triple'
+    }]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -100,17 +110,11 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
     values: labels.map((l, idx) => ({label: l, y: idx+1})),
     color: 'rgb(255,0,0)'
   },{
-    label:'Market',
+    label:'Market (WIP)',
     values: [{label: labels[1], y:8}],
     color: 'rgb(0,255,0)'
   }]
   return {labels, series}
-})
-
-ScoreSchema.virtual('category_rates', DUMMY_REF).get(function () {
-  return this._category_rates?.map((elem) => {
-    return {name: elem.question_category.name, value: elem.category_rate}
-  })
 })
 
 /* eslint-enable prefer-arrow-callback */

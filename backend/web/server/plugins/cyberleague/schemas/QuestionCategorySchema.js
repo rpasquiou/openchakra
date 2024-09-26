@@ -12,7 +12,7 @@ const QuestionCategorySchema = new Schema({
   },
   name: {
     type: String,
-    required: [true, `Le nom de la question est obligatoire`],
+    required: [true, `Le nom de la catégorie est obligatoire`],
   }
 }, {...schemaOptions})
 
