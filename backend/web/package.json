@@ -17,6 +17,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.409.0",
     "@aws-sdk/lib-storage": "^3.409.0",
+    "adm-zip": "^0.5.10",
     "axios": "^0.24.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
@@ -54,6 +55,7 @@
     "lodash": "^4.17.21",
     "lodash.product": "^18.10.0",
     "luhn": "^2.4.1",
+    "mime": "2.4.4",
     "mime-types": "^2.1.35",
     "moment": "^2.29.1",
     "moment-range": "^4.0.2",
@@ -96,7 +98,8 @@
     "url-loader": "^4.1.1",
     "uuid": "^3.3.3",
     "validator": "^10.11.0",
-    "webpackbar": "^5.0.2"
+    "webpackbar": "^5.0.2",
+    "xml-js": "^1.6.11"
   },
   "devDependencies": {
     "@babel/core": "^7.13.1",
@@ -121,6 +124,7 @@
     "eslint-plugin-react": "^7.26.0",
     "eslint-plugin-react-hooks": "^4.4.0",
     "fakingoose": "^2.3.3",
+    "file": "^0.2.2",
     "geolib": "^3.2.1",
     "is-webview": "^1.0.1",
     "jest": "^27.5.1",

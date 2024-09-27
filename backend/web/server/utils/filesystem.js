@@ -3,6 +3,8 @@ const path = require('path')
 const crypto = require('crypto')
 const multer = require('multer')
 const {IMAGE_EXTENSIONS, TEXT_EXTENSIONS, XL_EXTENSIONS, PDF_EXTENSIONS} = require('../../utils/consts')
+const AdmZip = require('adm-zip')
+const { xml2js } = require('xml-js')
 
 const ensureDirectoryExists = dirName => {
   const rootDir = path.join(path.dirname(require.main.filename), '..')
@@ -90,6 +92,26 @@ const createMemoryMulter = fileFilter => {
   return upload
 }
 
+const isScorm = async ({buffer}) => {
+  let zip=null
+  try { zip=new AdmZip(buffer)} catch { return false }
+  const entry=zip.getEntries().find(e => e.entryName=='imsmanifest.xml')
+  if (!entry) { return false}
+  const contents=entry.getData().toString('utf-8')
+  const imsmanifest = xml2js(contents, { compact: true })
+  const scormVersion = imsmanifest?.manifest?._attributes?.version
+  const mainResource = imsmanifest?.manifest?.resources?.resource?._attributes?.href
+  if (scormVersion && mainResource) {
+    return ({version: scormVersion, entrypoint: mainResource, entries: zip.getEntries()})
+  }
+  return false
+}
+
+const removeExtension = fullpath => {
+  const pathInfo=path.parse(fullpath)
+  return path.join(pathInfo.dir, pathInfo.name)
+}
+
 // Check if first exists and is newer than second (dependencies)
 const isNewerThan= (first, second) => {
   return fs.existsSync(first) && fs.existsSync(second) && fs.statSync(first).mtimeMs>fs.statSync(second).mtimeMs
@@ -102,5 +124,7 @@ module.exports = {
   TEXT_FILTER,
   XL_FILTER,
   PDF_FILTER,
+  isScorm,
+  removeExtension,
   isNewerThan,
 }
