@@ -18,10 +18,9 @@ const computeScores = async (answers) => {
   category_weightsAndRates: {category: {weight, rate}} 
   where weight is the sum of the weights of already cosnidered questions of that category 
   and rate is wieghts of those questions which answer is YES
-  Same for bellwether_weightsAndRates but only for bellwether questions
   */
 
-  //weightsAndRates is like category_weights or bellwether_weights
+  //weightsAndRates is like category_weights
   const updateWeightsAndRates = (weightsAndRates, question,answer) => {
     const category = question.question_category._id.toString()
     const weight = question.weight
@@ -42,7 +41,6 @@ const computeScores = async (answers) => {
   }
 
   let category_weightsAndRates={}
-  let bellwether_weightsAndRates = {}
 
   lodash.forEach(answers, ({question, answer}) => {
     
@@ -53,10 +51,6 @@ const computeScores = async (answers) => {
 
       total_weight += question.weight
       total_rate += answer == ANSWER_YES ? question.weight : 0
-
-      if (question.is_bellwether) {
-        updateWeightsAndRates(bellwether_weightsAndRates,question,answer)
-      }
     }
   })
     
@@ -70,15 +64,14 @@ const computeScores = async (answers) => {
   }
 
   const _category_rates = await computeRates(category_weightsAndRates)
-  const bellwether_rates = []//computeRates(bellwether_weightsAndRates)
 
-  return {global_rate, _category_rates, bellwether_rates}
+  return {global_rate, _category_rates}
 }
 
 const computeScoresIfRequired = async (scoreId) => {
   const score = await loadFromDb({
     model: 'score',
-    fields: [`answers.answer`, `answers.question.weight`, `answers.question.question_category`, `answers.question.is_bellwether`],
+    fields: [`answers.answer`, `answers.question.weight`, `answers.question.question_category`],
     id: scoreId
   })
   const completed = score[0].answers?.filter(a => !a.answer).length == 0

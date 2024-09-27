@@ -32,20 +32,6 @@ const ScoreSchema = new Schema({
     }],
     default: []
   },
-  bellwether_rates: {
-    type: [{
-      category: {
-        type: Schema.Types.ObjectId,
-        ref: 'questionCategory',
-        required: true
-      },
-      rate: {
-        type: Number,
-        required: true
-      }
-    }],
-    default: []
-  },
   level: {
     type: String,
     enum: Object.keys(SCORE_LEVELS),

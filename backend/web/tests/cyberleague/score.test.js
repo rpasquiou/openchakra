@@ -107,23 +107,17 @@ describe(`score tests`, () => {
     const requestedScore = await Score.findOne({answers: score.answers[0]._id})
     await computeScoresIfRequired(requestedScore._id)
 
-    const loadedSAnswered = await loadFromDb({model: 'score', fields: ['category_rates','bellwether_rates','global_rate']})
+    const loadedSAnswered = await loadFromDb({model: 'score', fields: ['category_rates','global_rate']})
     const scoreAnswered = loadedSAnswered[0]
 
     expect(scoreAnswered.category_rates.length).toEqual(2)
-    expect(scoreAnswered.bellwether_rates.length).toEqual(1)
 
     expect(scoreAnswered.global_rate).toEqual(0.60)
-
-    console.log(scoreAnswered.category_rates);
     
     expect(scoreAnswered.category_rates[1].name).toEqual(categories[2].name)
     
     expect(scoreAnswered.category_rates[0].value).toEqual(0)
     expect(scoreAnswered.category_rates[1].value).toEqual(1)
-
-    expect(scoreAnswered.bellwether_rates[0].category.toString()).toEqual(categories[1]._id.toString())
-    expect(scoreAnswered.bellwether_rates[0].rate).toEqual(0)
   })
 
   it(`must have correct questions_by_category`, async () => {
