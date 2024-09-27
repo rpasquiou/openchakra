@@ -105,11 +105,11 @@ ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
     return elem.category.name
   })
   const series=[{
-    label:'Mes données',
+    name:'Mes données',
     values: myData,
     color: 'rgb(255,0,0)'
   },{
-    label:'Market (WIP)',
+    name:'Market (WIP)',
     values: [{label: myData[1].label, y:8}],
     color: 'rgb(0,255,0)'
   }]
