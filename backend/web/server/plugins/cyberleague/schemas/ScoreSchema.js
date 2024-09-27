@@ -103,15 +103,19 @@ ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
 })
 
 ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
-  const COUNT=5
-  const labels=['Cybersécurité', 'Veille techno', 'Infomation générale', 'Prévention hacking', 'Scan système']
+  const labels = []
+  const myData = []
+  this._category_rates.map((elem) => {
+    labels.push(elem.category.name)
+    myData.push({label: elem.category.name, y: elem.rate*100})
+  })
   const series=[{
     label:'Mes données',
-    values: labels.map((l, idx) => ({label: l, y: idx+1})),
+    values: myData,
     color: 'rgb(255,0,0)'
   },{
     label:'Market (WIP)',
-    values: [{label: labels[1], y:8}],
+    values: [{label: myData[1].label, y:8}],
     color: 'rgb(0,255,0)'
   }]
   return {labels, series}
