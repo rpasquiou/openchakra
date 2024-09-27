@@ -26,15 +26,9 @@ const ScoreSchema = new Schema({
   },
   _category_rates: {
     type: [{
-      category: {
         type: Schema.Types.ObjectId,
-        ref: 'questionCategory',
+        ref: 'categoryRate',
         required: true
-      },
-      rate: {
-        type: Number,
-        required: true
-      }
     }],
     default: []
   },
@@ -103,11 +97,12 @@ ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
 })
 
 ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
-  const labels = []
   const myData = []
-  this._category_rates.map((elem) => {
-    labels.push(elem.category.name)
+  const labels = this._category_rates.map((elem) => {
+    console.log("elem",elem);
+    
     myData.push({label: elem.category.name, y: elem.rate*100})
+    return elem.category.name
   })
   const series=[{
     label:'Mes données',

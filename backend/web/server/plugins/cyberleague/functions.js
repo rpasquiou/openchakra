@@ -280,7 +280,7 @@ declareVirtualField({model: 'score', field: 'question_count', require: 'answers'
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
 declareComputedField({model: 'score', field: 'bellwether_count', requires:'completed', getterFn: getterCountFn('score', {'completed': true})})
-declareVirtualField({model: 'score', field: 'chart_data', requires: '_category_rates.category.name' , instance: 'chartData'})
+declareVirtualField({model: 'score', field: 'chart_data', requires: '_category_rates.category.name,_category_rates.rate' , instance: 'chartData'})
 //declareComputedField({model: 'score', field: 'chart_data', requires: '', getterFn: ()=>{}})
 declareComputedField({model: 'score', field: 'category_rates', requires: '_category_rates.category.name,_category_rates.rate,_category_rates.category._id', getterFn: getCategoryRates})
 

@@ -5,6 +5,8 @@ const Score = require("../../models/Score")
 const Question = require("../../models/Question")
 const Answer = require("../../models/Answer")
 const User = require("../../models/User")
+const Triple = require("../../models/Triple")
+const CategoryRate = require("../../models/CategoryRate")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
@@ -60,17 +62,16 @@ const computeScores = async (answers) => {
     
   const global_rate = Math.round(total_rate / total_weight *100) /100
 
-  const computeRates = (weightsAndRates) => {
-    let result = [];     
-    Object.entries(weightsAndRates).forEach(([key,value]) => {
-      result.push({category: key, rate: Math.round(value.rate / value.weight *100) /100})
-    })
-    return result
+  const computeRates = async (weightsAndRates) => {   
+    return Promise.all(Object.entries(weightsAndRates).map(async ([key,value]) => {
+      const catRate = await CategoryRate.create({category: key, rate: Math.round(value.rate / value.weight *100) /100})
+      return catRate._id
+    }))
   }
 
-  const _category_rates = computeRates(category_weightsAndRates)
-  const bellwether_rates = computeRates(bellwether_weightsAndRates)
-    
+  const _category_rates = await computeRates(category_weightsAndRates)
+  const bellwether_rates = []//computeRates(bellwether_weightsAndRates)
+
   return {global_rate, _category_rates, bellwether_rates}
 }
 
@@ -127,8 +128,10 @@ const getCategoryRates = async (userId, params, data) => {
     const name = elem.category.name
     const value = elem.rate
     const market_value = lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)})?.rate 
-    return {name,value,market_value}
+    return new Triple({name,value,market_value})
   })
+  console.log("category_rates",res);
+  
   return res
 }
 
