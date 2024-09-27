@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { idEqual, DUMMY_REF } = require('../../../utils/database')
+const { EXPERTISE_CATEGORIES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -20,6 +21,11 @@ const ExpertiseSet = new Schema({
       required: true,
     }],
     default: []
+  },
+  main_expertise_category: {
+    type: String,
+    enum: Object.keys(EXPERTISE_CATEGORIES),
+    required: false
   }
 }, schemaOptions)
 
