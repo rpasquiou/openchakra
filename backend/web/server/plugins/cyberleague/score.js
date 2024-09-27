@@ -126,7 +126,7 @@ const getCategoryRates = async (userId, params, data) => {
   const res = data._category_rates.map((elem) => {
     const name = elem.category.name
     const value = elem.rate
-    const market_value = market ? lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)}).rate : null
+    const market_value = lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)})?.rate 
     return {name,value,market_value}
   })
   return res
