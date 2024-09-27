@@ -500,6 +500,6 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder, cloneTemplate, addChild
+  updateChildrenOrder, cloneTemplate, addChild, getTemplate,
 }
 

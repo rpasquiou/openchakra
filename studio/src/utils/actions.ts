@@ -792,6 +792,11 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+  get_template: {
+    label: 'Get template',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

@@ -185,7 +185,7 @@ export const ACTIONS = {
       id: value._id,
     })
   },
-  gotoSession: ({ value, props }) => {
+  gotoSession: async ({ value, props }) => {
     let url = `${API_ROOT}/action`
     return axios
       .post(url, { action: 'session', id: value._id })
@@ -1190,6 +1190,19 @@ return Promise.allSettled(imagePromises)
     const value3=getComponentValue(props.component3, level)
     const values=[value1, value2, value3].filter(v => !!v).join('-')
     return {_id: values}
+  },
+
+  get_template: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'get_template',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        console.log('Received', res.data)
+        return res.data
+      })
   },
 
 }
