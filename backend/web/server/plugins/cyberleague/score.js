@@ -150,7 +150,7 @@ const getChartData = async (userId, params, data) => {
   const series=[{
     name:'Mes données',
     values: myData,
-    color: 'rgb(255,0,0)'
+    color: 'rgb(255,119,255)'
   },]
   const res={labels, series}
   console.log(JSON.stringify(res, null, 2))
