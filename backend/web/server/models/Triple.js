@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { getDataModel } = require('../../config/config')
 
 let TripleSchema=null
 
