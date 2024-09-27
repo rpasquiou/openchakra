@@ -7,6 +7,7 @@ const Answer = require("../../models/Answer")
 const User = require("../../models/User")
 const Triple = require("../../models/Triple")
 const CategoryRate = require("../../models/CategoryRate")
+const ChartData = require("../../models/ChartData")
 
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
@@ -123,6 +124,8 @@ const createScore = async (creatorId, scoreLevel) => {
 }
 
 const getCategoryRates = async (userId, params, data) => {
+  data= await Score.findById(data._id)
+    .populate({path: '_category_rates', populate:'category'})
   const market = await Score.findOne({_market: true}).populate(['_category_rates.name','_category_rates._id'])
   const res = data._category_rates.map((elem) => {
     const name = elem.category.name
@@ -133,6 +136,25 @@ const getCategoryRates = async (userId, params, data) => {
   console.log("category_rates",res);
   
   return res
+}
+
+const getChartData = async (userId, params, data) => {
+  data= await Score.findById(data._id)
+    .populate({path: '_category_rates', populate:'category'})
+  const myData = []
+  const labels = data._category_rates.map((elem) => {
+   
+    myData.push({label: elem.category.name, y: elem.rate*100})
+    return elem.category.name
+  })
+  const series=[{
+    name:'Mes données',
+    values: myData,
+    color: 'rgb(255,0,0)'
+  },]
+  const res={labels, series}
+  console.log(JSON.stringify(res, null, 2))
+  return new ChartData(res)
 }
 
 const updateMarketScore = async (_category_rates) => {
@@ -156,5 +178,6 @@ module.exports = {
   getQuestionsByCategory,
   createScore,
   getCategoryRates,
-  updateMarketScore
+  updateMarketScore,
+  getChartData,
 }

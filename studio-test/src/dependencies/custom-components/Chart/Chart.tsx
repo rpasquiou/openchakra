@@ -68,16 +68,6 @@ const OwnChart = (
         },
         responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          x: {
-            min: props.minX || undefined,
-            max: props.maxX || undefined,
-          },
-          y: {
-            min: props.minY || undefined,
-            max: props.maxY || undefined,
-          },
-        },
         plugins: {
           legend: {
             position: 'bottom' as const,
@@ -115,7 +105,7 @@ const OwnChart = (
         data = {
           labels: value?.labels,
           datasets: (value?.series || []).map((s, idx) => ({
-            label: s.label,
+            label: s.name,
             data: orderValues(value?.labels, s.values),
             fill: true,
             backgroundColor: s.color,
