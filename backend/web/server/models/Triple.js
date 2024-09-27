@@ -1,14 +1,14 @@
 const mongoose = require('mongoose')
 
-let Schema=null
+let TripleSchema=null
 
 try {
-  Schema=require(`./TripleSchema`)
-  Schema.plugin(require('mongoose-lean-virtuals'))
+  TripleSchema=require(`../plugins/${getDataModel()}/schemas/TripleSchema`)
+  TripleSchema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') {
     throw err
   }
 }
-module.exports = Schema ? mongoose.model('triple', Schema) : null
+module.exports = TripleSchema ? mongoose.model('triple', TripleSchema) : null
