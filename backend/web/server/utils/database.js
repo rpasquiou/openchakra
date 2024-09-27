@@ -1028,7 +1028,7 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import data function: expected model and function`)
   }
   if (!!DATA_IMPORT_FN[model]) {
-    throw new Error(`Import funciton already exists for model ${model}`)
+    throw new Error(`Import function already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
 }
