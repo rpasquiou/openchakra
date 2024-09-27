@@ -274,6 +274,9 @@ declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValue
 // ExpertiseSet declarations
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
 
+//ExpertiseLevel declarations
+declareVirtualField({model: 'expertiseLevel', field: 'expertise_level_STR', requires: 'expertise.name', instance: 'String'})
+
 //Score declarations
 declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answer', instance: 'Number'})
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
