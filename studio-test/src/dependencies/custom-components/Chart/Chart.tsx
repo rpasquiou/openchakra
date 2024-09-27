@@ -72,9 +72,9 @@ const OwnChart = (
             pointLabels: {
               color: '#FFFFFF',  // Color of the labels around the radar chart
             },
-            ticks: {
-              display: false // Hides the labels in the middel (numbers)
-          }
+            // ticks: {
+            //   display: false // Hides the labels in the middel (numbers)
+            // }
           }
         },
         plugins: {
