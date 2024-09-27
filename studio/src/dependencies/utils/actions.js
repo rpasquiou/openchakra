@@ -285,7 +285,7 @@ export const ACTIONS = {
         return {_id: res.data}
       })
   },
-  save: ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
+  save: async ({ value, props, context, dataSource, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     let url = `${API_ROOT}/${props.model}${dataSource?._id ? `/${dataSource._id}`:''}`
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
     const components=componentsIds.map(c => {

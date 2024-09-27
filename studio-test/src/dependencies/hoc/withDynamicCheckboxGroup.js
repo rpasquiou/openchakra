@@ -39,8 +39,8 @@ const withDynamicCheckboxGroup = Component => {
     }
 
     return (
-      <div {...props} key={internalValue} value={internalValue}>
-      <Component {...props} id={undefined} onChange={onChange} value={internalValue}>
+      <div {...props} key={internalValue} value={internalValue} data-value={internalValue}>
+      <Component {...props} id={undefined} onChange={onChange} data-value={internalValue}>
         {enumValues ?
           <Flex flexDirection={props.flexDirection} justifyContent={props.justifyContent}>
           {
