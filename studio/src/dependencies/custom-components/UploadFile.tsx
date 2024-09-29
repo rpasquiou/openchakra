@@ -1,8 +1,9 @@
-import { Box, Text } from '@chakra-ui/react'
+import { Box, Button, Flex, Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay, Text } from '@chakra-ui/react'
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'
 import styled from '@emotion/styled'
 import { ACTIONS } from '../utils/actions';
+import Media from './Media';
 
 const uploadUrl = `/myAlfred/api/studio/s3uploadfile`
 
@@ -24,8 +25,18 @@ const uploadFileToS3 = (file: File) => {
 const UploadFile = ({
   model,
   notifmsg,
-  okmsg = 'Ressource ajoutée',
+  okmsg = '',
   komsg = 'Échec ajout ressource',
+  prvmsg = '',
+  previewmsg,
+  preview,
+  previewtype = false,
+  buttonbg,
+  buttonhoverbg,
+  buttoncolor,
+  buttonhovercolor,
+  border,
+  borderRadius,
   dataSource,
   attribute,
   value,
@@ -39,6 +50,16 @@ const UploadFile = ({
   notifmsg: boolean
   okmsg: string
   komsg: string
+  prvmsg: string
+  previewmsg: boolean
+  preview: boolean
+  previewtype: boolean
+  buttonbg : string
+  buttonhoverbg : string
+  buttoncolor : string
+  buttonhovercolor : string
+  border : string
+  borderRadius : string
   dataSource: { _id: null } | null
   attribute: string
   value: string
@@ -48,13 +69,13 @@ const UploadFile = ({
   clearComponents: [string]
 }) => {
 
-  const [uploadInfo, setUploadInfo] = useState('')
+  const [uploadInfo, setUploadInfo] = useState(dataSource?.[attribute] ? okmsg : '')
   const [isLoading, setIsLoading] = useState(false)
-  const [s3File, setS3File] = useState<string|null>()
+  const [s3File, setS3File] = useState<string|null>(dataSource?.[attribute] || null)
+  const [fileName, setFileName] = useState<string>('')
 
   useEffect(() => {
     if (!!model && clearComponents.includes(props.id)) {
-      console.log(`Clear ${props.id} contents`)
       setS3File(null)
       setUploadInfo('')
     }
@@ -64,6 +85,9 @@ const UploadFile = ({
     e.preventDefault()
     const currentFile = e.target.files && e.target.files[0]
     if (currentFile) {
+      if(previewmsg) {
+        setFileName(currentFile.name)
+      }
       await handleUpload(currentFile)
     }
   }
@@ -86,7 +110,6 @@ const UploadFile = ({
           .then(async result => {
             // @ts-ignore
             const filepath = result?.data
-            console.log(`s3 file:${filepath}`)
             setS3File(filepath)
             paramsBack = { ...paramsBack, value: filepath}
             setUploadInfo(okmsg)
@@ -132,20 +155,77 @@ const UploadFile = ({
   // SAU to propagate attribute
   const pr={...props, attribute, value: s3File}
 
+  const [isPreviewOpen, setPreviewOpen] = useState(false);
+
+  const togglePreview = () => {
+    setPreviewOpen(!isPreviewOpen)
+  }
+
   return (
-    <Box {...pr} data-value={s3File} display='flex' flexDirection='row' position={'relative'}>
-      <form id="uploadressource">
-        <UploadZone>
-          <input type="file" onChange={onFileNameChange} />
-          {/* Whatever in children, it bring focus on InputFile */}
-          {children}
-        </UploadZone>
-      </form>
-      {uploadInfo &&
-      // @ts-ignore
-      <Text>{uploadInfo}</Text>} {/*Component status */}
-      {isLoading && <Loading />}
-    </Box>
+    <>
+      <Flex {...pr} data-value={s3File}>
+        <form id="uploadressource">
+          <UploadZone>
+            <input type="file" onChange={onFileNameChange} />
+            {/* Whatever in children, it brings focus on InputFile */}
+            {children}
+          </UploadZone>
+        </form>
+    
+        {uploadInfo && (
+          // @ts-ignore
+          <Text alignSelf={'center'} ml={2}>{uploadInfo}</Text> 
+        )}
+    
+        {fileName && uploadInfo && (
+          <Text alignItems={'center'} ml={1}>:</Text>
+        )}
+    
+        {fileName && (
+          <Text ml={1}>{fileName}</Text>
+        )}
+        
+        {isLoading && <Loading />}
+        
+        {preview && previewtype && s3File &&(
+          <Button 
+            {...props} ml={2} 
+            color={buttoncolor}
+            backgroundColor={buttonbg} 
+            _hover={
+              { backgroundColor: buttonhoverbg,
+                color: buttonhovercolor,
+               }
+            }
+            border={border}
+            borderRadius={borderRadius}
+            onClick={togglePreview}>Visualiser</Button>
+        )}
+
+        {/* Modal for previewing the media */}
+        {preview && previewtype && (
+          <Modal isOpen={isPreviewOpen} onClose={togglePreview}>
+            <ModalOverlay />
+            <ModalContent height="80%" maxWidth="80%">
+              <ModalHeader>Media Preview</ModalHeader>
+              <ModalCloseButton />
+              <ModalBody>
+                <Media src={s3File} />
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        )}
+      </Flex>
+      {preview && !previewtype && (
+        <Flex
+        width='10%'
+        height='10%'>
+        <Media 
+          src={s3File}
+          ></Media>
+        </Flex>
+      )}
+    </>
   )
 }
 

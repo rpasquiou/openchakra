@@ -1,5 +1,5 @@
 import { AsyncSelect } from 'chakra-react-select'
-import React,  {useState} from 'react'
+import React,  {useEffect, useState} from 'react'
 import axios from 'axios'
 import {debounce} from 'lodash'
 import lodash from 'lodash'
@@ -12,6 +12,12 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
   if (props.setComponentAttribute) {
     props.setComponentAttribute(props.id, props.attribute)
   }
+
+  useEffect(() => {
+    if (props.setComponentValue) {
+      props.setComponentValue(props.id, address)
+    }
+  }, [address])
 
   const addressToOption = addr => {
     return addr ?
@@ -28,8 +34,9 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
   }
 
   const onAddressChange = ev => {
-    setAddress(ev.value)
-    onChange && onChange(ev.value)
+    const value = ev?.value || null
+    setAddress(value)
+    onChange && onChange({target: {value}})
   }
   const loadSuggestions=debounce(_loadSuggestions, 500)
   
@@ -49,10 +56,10 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
       fontFamily: props.fontFamily || provided.fontFamily,
       borderRadius: props.borderRadius || provided.borderRadius,
       backgroundColor: props.backgroundColor || provided.backgroundColor,
+      border: 'none',
     }),
     dropdownIndicator: (provided, status) => ({
-      ...provided, 
-      backgroundColor: props.backgroundColor || provided.backgroundColor,
+      display: 'none',
     }),
   }
 
@@ -62,7 +69,11 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
       chakraStyles={chakraStyles}
       value={addressToOption(address)}
       loadOptions={loadSuggestions} 
-      onChange={onAddressChange} 
+      noOptionsMessage={()=> 'Aucune suggestion'}
+      loadingMessage={()=> 'Recherche...'}
+      placeholder={isCityOnly ? 'Ville...' : 'Adresse...'}
+      onChange={onAddressChange}
+      isClearable 
     />
   )
 }

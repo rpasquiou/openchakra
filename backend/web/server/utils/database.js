@@ -427,7 +427,7 @@ const buildSort = params => {
 }
 
 const buildQuery = (model, id, fields, params) => {
-  const modelAttributes = Object.fromEntries(getModelAttributes(model))
+  const modelAttributes = Object.keys(getModels()[model].attributes)
 
   let criterion = id ? {_id: id} : {}
   const filters=extractFilters(params)
@@ -437,12 +437,20 @@ const buildQuery = (model, id, fields, params) => {
   // Add filter fields
   fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
 
-  const select=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const selectedAttr=['_id', 'id', CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE, 'type', '__t', ...lodash.uniq(fields.map(f => f.split('.')[0]))]
+  const firstLevelAttr = getFirstLevelFields(modelAttributes)
+  const rejectedAttr = lodash.difference(firstLevelAttr, selectedAttr)
+  const projection = {}
+
+  lodash.forEach(rejectedAttr, attr => {
+    projection[attr] = 0
+  })
+
   const currentFilter=getCurrentFilter(filters, model)
   const currentSort=getCurrentSort(sorts, model)
   criterion={...criterion, ...currentFilter}
   // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
-  let query = mongoose.connection.models[model].find(criterion, select)
+  let query = mongoose.connection.models[model].find(criterion, projection)
   query = query.collation(COLLATION)
   if (currentSort) {
     query=query.sort(currentSort)
@@ -659,13 +667,13 @@ const getFieldsToCompute = ({model, fields}) => {
 }
 
 const addComputedFields = (
-  fields,
+  originalFields,
   userId,
   queryParams,
   data,
   model,
 ) => {
-  fields=getFieldsToCompute({model, fields})
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
@@ -693,16 +701,18 @@ const addComputedFields = (
       }))
       .then(() => {
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-        const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+        const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
         return Promise.all(
-          Object.keys(requiredCompFields).map(f =>
-            requiredCompFields[f](newUserId, queryParams, data)
+          Object.keys(requiredCompFields).map(f => {
+            const displayFields=getRequiredSubFields(originalFields, f)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
               .then(res => {
                 data[f] = res
                 return data
               })
+            }
           ),
       )})
       .then(() => data)
@@ -985,6 +995,13 @@ const ensureUniqueDataFound = (id, data, model) => {
   return data
 }
 
+
+/*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
+ * example: 
+ * let c = await loadfromdb({...})
+ * c = new Announce(c)
+ * doesn't keep the virtuals and the deep objects, like c.user.company_name
+*/
 const loadFromDb = ({model, fields, id, user, params={}}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
@@ -1001,7 +1018,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        //.then(data =>  retainRequiredFields({data, fields}))
     })
 
 }

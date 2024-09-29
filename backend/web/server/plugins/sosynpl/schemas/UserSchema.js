@@ -4,6 +4,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
 const { ROLES, DEACTIVATION_REASON } = require('../consts')
+const { getCurrentMissions, getComingMissions } = require('../missions')
 
 const Schema = mongoose.Schema
 
@@ -40,22 +41,41 @@ const UserSchema = new Schema({
     type: Boolean,
     required: false,
   },
-  fullname: {
+  picture: {
     type: String,
-    get: function() {return `${this.firstname} ${this.lastname}`},
-    set: () => {}
+    required: false,
   },
-  shortname: {
+  company_logo: {
     type: String,
-    get: function() {return `${this.firstname} ${this.lastname[0]}.`},
-    set: () => {}
+    required: false,
   },
-  }, {...schemaOptions})
+  company_name: {
+    type: String,
+    required: false
+  }
+}, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
 // Required for register validation only
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
 
+UserSchema.virtual('pinned_freelances', {
+  ref: 'customerFreelance',
+  localField: '_id',
+  foreignField: 'pinned_by',
+})
+
+UserSchema.virtual('current_missions', DUMMY_REF).get(function() {getCurrentMissions(this)})
+
+UserSchema.virtual('coming_missions', DUMMY_REF).get(function() {getComingMissions(this)})
+
+UserSchema.virtual('fullname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname}`
+})
+
+UserSchema.virtual('shortname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname?.[0]}`
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

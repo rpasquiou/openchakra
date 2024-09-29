@@ -7,7 +7,6 @@ const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { NATIONALITIES } = require('../../../../utils/consts')
-
 const Schema = mongoose.Schema
 
 const CustomerSchema = new Schema({
@@ -259,7 +258,7 @@ const CustomerSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'sector',
     set: v => v || undefined,
-    required: false,
+    required: [function () {return this.role == ROLE_CUSTOMER}, `Le secteur est obligatoire`],
   },
   // Default: customer not suspended, freelance standby
   activity_status: {
@@ -297,7 +296,7 @@ CustomerSchema.virtual('pinned_missions', {
 })
 
 CustomerSchema.virtual('pinned_freelances', {
-  ref: 'freelance',
+  ref: 'customerFreelance',
   localField: '_id',
   foreignField: 'pinned_by',
 })

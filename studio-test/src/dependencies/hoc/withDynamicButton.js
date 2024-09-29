@@ -37,19 +37,18 @@ const withDynamicButton = Component => {
     let onClick=() => {}
 
     const [actionAllowed, setActionAllowed]=useState(true)
-
-    function checkAllowed() {
-      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
-        .then(res => setActionAllowed(res.data))
-        .catch(err => console.error(err))
-    }
+    const [actionMessage, setActionMessage]=useState('')
 
     useEffect(()=> {
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
-      checkAllowed()
-
+      axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
+        .then(res => {
+           setActionAllowed(res.data.allowed)
+           setActionMessage(res.data.message || 'Action autorisée')
+	})
+        .catch(err => console.error(err))
     }, [action, value])
 
     if (action) {
@@ -123,6 +122,7 @@ const withDynamicButton = Component => {
       <Component disabled={!actionAllowed}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
+          title={{actionMessage}}
         {...conditionalProperties}
         isLoading={insideAction}
         />

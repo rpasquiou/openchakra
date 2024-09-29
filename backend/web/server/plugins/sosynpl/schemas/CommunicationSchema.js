@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const CommunicationSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'freelance',
+    ref: 'customerFreelance',
     required: [true, `Le freelance est obligatoire`],
   },
   title: {
@@ -15,7 +15,7 @@ const CommunicationSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, `La description est obligatoire`],
+    required: false,
   },
   date: {
     type: String,

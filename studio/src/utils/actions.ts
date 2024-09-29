@@ -398,12 +398,12 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_cancel_mission: {
-    label: 'AE Cancel mission',
+    label: 'Cancel',
     options: {},
     next: ['openPage'],
   },
   alle_send_quotation: {
-    label: 'AE Send quotation',
+    label: 'Send quotation',
     options: {},
     next: ['openPage'],
   },
@@ -437,7 +437,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_finish_mission: {
-    label: 'AE Finish mission',
+    label: 'Finish mission',
     options: {},
     next: ['openPage'],
   },
@@ -708,6 +708,18 @@ export const ACTIONS: IActions = {
   },
   clone: {
     label: 'Clone',
+    options: {},
+    next: ['openPage'],
+  },
+  refuse: {
+    label: 'Refuse',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
+  accept: {
+    label: 'Accept',
     options: {},
     next: ['openPage'],
   },
