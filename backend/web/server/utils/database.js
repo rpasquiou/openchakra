@@ -703,7 +703,6 @@ const addComputedFields = (
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
         const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
-
         return Promise.all(
           Object.keys(requiredCompFields).map(f => {
             const displayFields=getRequiredSubFields(originalFields, f)
@@ -933,7 +932,7 @@ const removeData = dataId => {
 
 // Compares ObjecTID/string with ObjectId/string
 const idEqual = (id1, id2) => {
-  return JSON.stringify(id1)==JSON.stringify(id2)
+  return !!id1 && !!id2 && id1.toString()==id2.toString()
 }
 
 // Returns intersection betwenn two sets of _id
@@ -1020,7 +1019,6 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => callFilterDataUser({model, data, id, user, params}))
         //.then(data =>  retainRequiredFields({data, fields}))
     })
-
 }
 
 const DATA_IMPORT_FN={}
@@ -1038,7 +1036,7 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import data function: expected model and function`)
   }
   if (!!DATA_IMPORT_FN[model]) {
-    throw new Error(`Import funciton already exists for model ${model}`)
+    throw new Error(`Import function already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
 }

@@ -107,7 +107,7 @@ const PROJECT_CONTEXT_PATH = 'src/pages'
 
 
 const login = (email, password) => {
-  console.log(`Login with ${email} and ${password}`)
+  console.log(`Login ${email}`)
   return User.findOne({email}).then(user => {
     if (!user) {
       console.error(`No user with email ${email}`)
@@ -133,7 +133,6 @@ const login = (email, password) => {
       console.error(`Deactived user ${email}`)
       throw new NotFoundError(`Ce compte est désactivé`)
     }
-    console.log(`Comparing ${password} and ${user.password}`)
     const matched=bcrypt.compareSync(password, user.password)
     if (!matched) {
       throw new NotFoundError(`Email ou mot de passe invalide`)
