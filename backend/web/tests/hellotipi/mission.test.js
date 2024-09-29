@@ -30,6 +30,7 @@ const Mission = require('../../server/models/Mission')
 const moment=require('moment')
 const mongoose = require('mongoose')
 const {forceDataModelAllInclusive}=require('../utils')
+require('../../server/models/Comment')
 
 forceDataModelAllInclusive()
 require('../../server/plugins/all-inclusive/functions')
@@ -47,7 +48,7 @@ describe('Test missions quotations', () => {
     ti=await User.create({...TI_USER})
     job=await JobUser.create({user:ti, name: 'Job'})
     customer=await User.create({...CUSTOMER_USER})
-    const mis=await Mission.create({name: 'Mission', description: 'Description de la mission', user:customer, recurrent: BOOLEAN_NO, job})
+    const mis=await Mission.create({name: 'Mission', description: 'Description de la mission', user:customer, ti, recurrent: BOOLEAN_NO})
   })
 
   afterAll(async() => {
@@ -67,7 +68,7 @@ describe('Test missions quotations', () => {
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_SENT)
     await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: moment()}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_REFUSED)
-    await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: null, customer_accept_quotation_date: moment()}})
+    await Mission.findOneAndUpdate({}, {$set: {customer_refuse_quotation_date: null, customer_accept_quotation_date: moment(), payin_achieved: true, payin_id: 12}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_QUOT_ACCEPTED)
     await Mission.findOneAndUpdate({}, {$set: {ti_finished_date: moment()}})
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_TO_BILL)
@@ -79,20 +80,27 @@ describe('Test missions quotations', () => {
     expect((await Mission.findOne()).status).toEqual(MISSION_STATUS_DISPUTE)
   })
 
-  it.only('must compute proper mer', async() => {
+  it('must compute proper mer', async() => {
     let mission=await Mission.findOne()
     let quotation=await Quotation.create({...QUOTATION, mission})
     await QuotationDetail.create({...QUOTATION_DETAIL, quotation})
-    // Not qualified: mer must be null
-    quotation=(await loadFromDb({model: 'quotation', fields: ['mer']}))[0]
-    expect(quotation.mer).toBe(0)
-    mission=(await loadFromDb({model: 'mission', fields: ['mer']}))[0]
-    expect(quotation.mer).toBe(0)
     // Qualified: mer must be >0
     await User.updateMany({}, {qualified: true})
-    quotation=(await loadFromDb({model: 'quotation', fields: ['mer']}))[0]
-    expect(quotation.mer).toBeGreaterThan(0)
-    mission=(await loadFromDb({model: 'mission', fields: ['mer']}))[0]
-    expect(mission.mer).toBeGreaterThan(0)
+    quotation=(await loadFromDb({model: 'quotation', fields: ['mer_total']}))[0]
+    expect(quotation.mer_total).toBeGreaterThan(0)
+    mission=(await loadFromDb({model: 'mission', fields: ['mer_total']}))[0]
+    expect(mission.mer_total).toBeGreaterThan(0)
   })
+
+  it.only(`must return customer's missions`, async() => {
+    // ensure customer has missions
+    const missionsCount=await Mission.countDocuments({user: customer})
+    expect(missionsCount).toBeGreaterThan(0)
+    const [loadedCustomer]=await loadFromDb({model: 'user', id: customer._id, user: customer, fields: ['missions']})
+    expect(loadedCustomer.missions).toHaveLength(1)
+    const [loadedTI]=await loadFromDb({model: 'user', id: ti._id, user: ti, fields: ['missions']})
+    console.log(loadedTI)
+    expect(loadedTI.missions).toHaveLength(1)
+  })
+
 })

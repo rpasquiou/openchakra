@@ -676,6 +676,13 @@ export const ACTIONS: IActions = {
     next: [],
   },
 
+  refresh: {
+    label: 'Refresh',
+    options: {},
+    next: [],
+  },
+
+
   smartdiet_rabbit_appointment: {
     label: 'SM appt. rabbit',
     options: {},
