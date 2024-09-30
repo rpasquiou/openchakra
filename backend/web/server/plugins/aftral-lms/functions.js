@@ -313,6 +313,10 @@ const preCreate = async ({model, params, user}) => {
       throw new ForbiddenError(`Vous ne pouvez plus importer de devoir`)
     }
   }
+
+  if (model=='user') {
+    params.plain_password=params.password
+  }
   return Promise.resolve({model, params})
 }
 

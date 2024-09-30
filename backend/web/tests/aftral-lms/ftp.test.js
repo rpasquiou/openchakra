@@ -43,7 +43,7 @@ describe('Test session/trainees polling', () => {
     expect(trainers).toEqual(113)
   })
 
-  it('Must import trainees', async () => {
+  it.only('Must import trainees', async () => {
     await importTrainees(TRAINEES_FILE)
     let trainees=await User.countDocuments({role: ROLE_APPRENANT})
     expect(trainees).toEqual(60)
@@ -55,7 +55,7 @@ describe('Test session/trainees polling', () => {
     expect(sessions).toBeGreaterThan(0)
   })
 
-  it.only('Must poll files', async () => {
+  it('Must poll files', async () => {
     console.log('echange directory', getExchangeDirectory())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Apprenant.csv'), new Date(), new Date())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Session_Formateur.csv'), new Date(), new Date())

@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const bcrypt = require('bcryptjs')
 const { isEmailOk } = require("../../../../utils/sms")
-const { ROLES } = require("../consts")
+const { ROLES, ROLE_APPRENANT } = require("../consts")
 const { schemaOptions } = require("../../../utils/schemas")
 const { DUMMY_REF } = require("../../../utils/database")
 
@@ -32,6 +32,10 @@ const UserSchema = new Schema({
     type: String,
     required: [true, 'Le mot de passe est obligatoire'],
     set: pass => pass ? bcrypt.hashSync(pass, 10) : null,
+  },
+  plain_password: {
+    type: String,
+    required: [function() {this.role==ROLE_APPRENANT}, 'Le mot de passe est obligatoire'],
   },
   role: {
     type: String,

@@ -319,6 +319,7 @@ const TRAINEE_MAPPING = {
   email: 'EMAIL_STAGIAIRE',
   aftral_id: TRAINEE_AFTRAL_ID,
   password: TRAINEE_AFTRAL_ID,
+  plain_password: TRAINEE_AFTRAL_ID,
 }
 
 const TRAINEE_KEY='aftral_id'
