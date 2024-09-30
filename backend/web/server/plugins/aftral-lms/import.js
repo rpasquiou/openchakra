@@ -28,7 +28,7 @@ const Session = require('../../models/Session')
 const { cloneTree, lockSession } = require('./block')
 const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
-const { sendInitTrainee } = require('./mailing')
+const { sendInitTrainee, sendInitTrainer } = require('./mailing')
 const { generatePassword } = require('../../../utils/passwords')
 require('../../models/Resource')
 
@@ -405,7 +405,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     if (!program) {
       return Promise.reject(`Session ${record.CODE_SESSION} programme de code ${record.CODE_PRODUIT} introuvable`)
     }
-    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainees')
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate(['trainers', 'trainees'])
     console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
     if (!session) {
       return
@@ -415,8 +415,10 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
     await lockSession(session._id)
     // Mail to trainees
-    console.log('Sending session init to trainees', session.trainees)
+    console.log('Sending session init to trainees & trainers', session.trainees)
+    const externalTrainers=session.trainers.filter(t => isExternalTrainer(t.email))
     await Promise.allSettled(session.trainees.map(trainee => sendInitTrainee({trainee, session}))).then(console.log)
+    await Promise.allSettled(externalTrainers.map(trainer => sendInitTrainer({trainer}))).then(console.log)
   }))
   result=[...result, ...programsResult]
   return result

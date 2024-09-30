@@ -8,6 +8,7 @@ const { formatDate, formatHour, formatDateTime } = require('../../../utils/text'
 
 const SIB_IDS={
   TRAINEE_REGISTER: 6,
+  TRAINER_REGISTER: 7,
   ADMIN_IMPORT: 8,
 }
 
@@ -22,6 +23,19 @@ setSmsContact('Aftral')
 addValidationAllowedDomain('aftral.com')
 addValidationAllowedDomain('gmail.com')
 
+
+// Send regiter info to trainer
+const sendInitTrainer = async ({trainer}) => {
+  return sendNotification({
+    notification: SIB_IDS.TRAINER_REGISTER,
+    destinee: trainer,
+    params: {
+      firstname: trainer.firstname,
+      email: trainer.email,
+      plain_password: trainer.plain_password,
+    },
+  })
+}
 
 // Send regiter info to trainee
 const sendInitTrainee = async ({trainee, session}) => {
@@ -55,5 +69,5 @@ const sendImportError = async ({admin, date, message}) => {
 
 
 module.exports = {
-  sendImportError, sendInitTrainee,
+  sendImportError, sendInitTrainee, sendInitTrainer,
 }
