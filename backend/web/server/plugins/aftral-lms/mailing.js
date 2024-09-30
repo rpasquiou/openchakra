@@ -20,6 +20,7 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 setSmsContact('Aftral')
 
 addValidationAllowedDomain('aftral.com')
+addValidationAllowedDomain('gmail.com')
 
 
 // Send regiter info to trainee
