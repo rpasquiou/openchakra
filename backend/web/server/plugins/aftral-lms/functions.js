@@ -48,7 +48,9 @@ const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 const Search = require('../../models/Search')
 const Conversation = require('../../models/Conversation')
-require('./cron')
+const cron = require('../../utils/cron')
+const { isDevelopment } = require('../../../config/config')
+const {pollNewFiles}=require('./ftp')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -624,50 +626,6 @@ const cloneAndLock = blockId => {
     })
   }
 
-const setSessionInitialStatus = async (blockId, trainees) => {
-  const block=await Block.findById(blockId).populate('children')
-  await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
-      {block: block._id, user: t._id},
-      {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
-      {upsert: true}
-    )
-  ))
-  await Progress.deleteMany({block: blockId, user: {$nin: trainees}})
-  return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
-}
-
-const lockSession = async blockId => {
-  const toManage=[await Block.findById(blockId)]
-  while (toManage.length>0) {
-    let block=toManage.pop()
-    if (!block) {
-      throw new Error('blcok numm')
-    }
-    const children=await Block.find({parent: block._id})
-    if (block.type=='session') {
-      if (lodash.isEmpty(block.trainees)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas d'apprenant`)
-      }
-      if (lodash.isEmpty(children)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas de programme`)
-      }
-    }
-    if (block._locked) {
-      // console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
-    }
-    if (block.type=='session') {
-      setSessionInitialStatus(block._id, block.trainees.map(t => t._id))
-    }
-
-    block._locked=true
-    await block.save().catch(err => {
-      err.message=`${block._id}:${err}`
-      throw err
-    })
-    toManage.push(...children)
-  }
-}
-
 //Make sure permissions are upserted
 Promise.all(
   Object.entries(PERMISSIONS).map(([key, value]) =>
@@ -722,6 +680,17 @@ const postCreate = async ({model, params, data}) => {
 
 setPostCreateData(postCreate)
 
+const freq=isDevelopment() ? '*/5 * * * * *' : '0 */5 * * * *'
+cron.schedule(freq, async () => {
+  try {
+    console.log('Polling new files')
+    return await pollNewFiles().then(console.log)
+  }
+  catch(err) {
+    console.error(`Polling error:${err}`)
+  }
+}, null, true, 'Europe/Paris')
+
 module.exports={
-  lockSession, setSessionInitialStatus, preCreate, prePut, postCreate
+  preCreate, prePut, postCreate
 }

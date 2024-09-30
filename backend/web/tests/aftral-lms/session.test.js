@@ -4,8 +4,7 @@ const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
 require('../../server/models/Chapter')
 require('../../server/plugins/aftral-lms/functions')
 const Block = require('../../server/models/Block')
-const { setSessionInitialStatus, lockSession } = require('../../server/plugins/aftral-lms/functions')
-const { getSessionBlocks } = require('../../server/plugins/aftral-lms/block')
+const { getSessionBlocks, lockSession } = require('../../server/plugins/aftral-lms/block')
 
 jest.setTimeout(60000)
 

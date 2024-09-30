@@ -493,6 +493,50 @@ const addChild = async ({parent, child, user}) => {
   await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
 }
 
+const lockSession = async blockId => {
+  const toManage=[await mongoose.models.block.findById(blockId)]
+  while (toManage.length>0) {
+    let block=toManage.pop()
+    if (!block) {
+      throw new Error('blcok numm')
+    }
+    const children=await  mongoose.models.block.find({parent: block._id})
+    if (block.type=='session') {
+      if (lodash.isEmpty(block.trainees)) {
+        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas d'apprenant`)
+      }
+      if (lodash.isEmpty(children)) {
+        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas de programme`)
+      }
+    }
+    if (block._locked) {
+      // console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
+    }
+    if (block.type=='session') {
+      setSessionInitialStatus(block._id, block.trainees.map(t => t._id))
+    }
+
+    block._locked=true
+    await block.save().catch(err => {
+      err.message=`${block._id}:${err}`
+      throw err
+    })
+    toManage.push(...children)
+  }
+}
+
+const setSessionInitialStatus = async (blockId, trainees) => {
+  const block=await mongoose.models.block.findById(blockId).populate('children')
+  await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
+      {block: block._id, user: t._id},
+      {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
+      {upsert: true}
+    )
+  ))
+  await Progress.deleteMany({block: blockId, user: {$nin: trainees}})
+  return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
@@ -500,6 +544,6 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder, cloneTemplate, addChild, getTemplate,
+  updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
 }
 

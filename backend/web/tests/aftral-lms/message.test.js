@@ -6,7 +6,6 @@ const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, RESOURCE_TYPE, BLOCK_STATUS_UNAVAILABLE
 const Resource=require('../../server/models/Resource')
 const {forceDataModelAftral}=require('../utils')
 forceDataModelAftral()
-const { updateAllDurations, updateDuration, lockSession } = require('../../server/plugins/aftral-lms/functions')
 const Message = require('../../server/models/Message')
 const lodash=require('lodash')
 

@@ -25,8 +25,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
-const { cloneTree } = require('./block')
-const { lockSession } = require('./functions')
+const { cloneTree, lockSession } = require('./block')
 const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
 const { sendInitTrainee } = require('./mailing')
@@ -315,8 +314,8 @@ const TRAINER_MAPPING = {
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
   aftral_id: TRAINER_AFTRAL_ID,
-  password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : undefined,
-  plain_password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : undefined,
+  password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  plain_password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
 }
 
 const TRAINER_KEY='aftral_id'
@@ -416,7 +415,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
     await lockSession(session._id)
     // Mail to trainees
-    console.log('Seding to trainees', session.trainees)
+    console.log('Sending session init to trainees', session.trainees)
     await Promise.allSettled(session.trainees.map(trainee => sendInitTrainee({trainee, session}))).then(console.log)
   }))
   result=[...result, ...programsResult]

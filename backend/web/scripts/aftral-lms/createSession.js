@@ -8,8 +8,7 @@ const { ROLE_FORMATEUR, ROLE_APPRENANT } = require('../../server/plugins/aftral-
 const Program = require('../../server/models/Program')
 const User = require('../../server/models/User')
 const Session = require('../../server/models/Session')
-const { lockSession } = require('../../server/plugins/aftral-lms/functions')
-const Block = require('../../server/models/Block')
+const { lockSession } = require('../../server/plugins/aftral-lms/block')
 
 // Import all data models
 const modelsPath=path.join(__dirname, '../../server/models')

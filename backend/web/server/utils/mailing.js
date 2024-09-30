@@ -28,7 +28,7 @@ const ALLOWED_VALIDATION_DOMAINS=[
 ]
 const addValidationAllowedDomain = domain => {
   if (isDevelopment()) {
-    console.warn(`No extra mailing domain in development mode`)
+    return console.warn(`No extra mailing domain in development mode`)
   }
   if (!isValidDomain(domain)) {
     throw new Error(`Invalid domain:${domain}`)
