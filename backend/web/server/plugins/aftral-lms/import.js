@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK, isExternalTrainer } = require('./consts')
 const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -29,6 +29,8 @@ const { cloneTree } = require('./block')
 const { lockSession } = require('./functions')
 const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
+const { sendInitTrainee } = require('./mailing')
+const { generatePassword } = require('../../../utils/passwords')
 require('../../models/Resource')
 
 const filesCache=new NodeCache()
@@ -291,13 +293,30 @@ const importCodes= async (filename, tabName, fromLine=0) => {
   })
 }
 
+const passwordCache= new NodeCache()
+
+const getPassword = email => {
+  let password=passwordCache.get(email)
+  if (!password) {
+    password=generatePassword()
+    passwordCache.set(email, password)
+  }
+  return password
+}
+
+const hasPassword = async email => {
+  const user=await User.findOne({email: email})
+  return !lodash.isEmpty(user?.plain_password)
+}
+
 const TRAINER_MAPPING = {
   email: 'EMAIL_FORMATEUR',
   firstname: 'PRENOM_FORMATEUR',
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
   aftral_id: TRAINER_AFTRAL_ID,
-  password: () => 'Password1;'
+  password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : undefined,
+  plain_password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : undefined,
 }
 
 const TRAINER_KEY='aftral_id'
@@ -353,6 +372,7 @@ const SESSION_MAPPING = admin => ({
     const trainees=await User.find({aftral_id: {$in: record.TRAINEES}})
     return trainees.filter(t => !!t)
   },
+  location: 'NOM_CENTRE',
 })
 
 const SESSION_KEY='aftral_id'
@@ -386,12 +406,18 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     if (!program) {
       return Promise.reject(`Session ${record.CODE_SESSION} programme de code ${record.CODE_PRODUIT} introuvable`)
     }
-    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]})
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainees')
     console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
+    if (!session) {
+      return
+    }
     const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
     console.log('Cloned program', clonedProgram._id)
     await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
     await lockSession(session._id)
+    // Mail to trainees
+    console.log('Seding to trainees', session.trainees)
+    await Promise.allSettled(session.trainees.map(trainee => sendInitTrainee({trainee, session}))).then(console.log)
   }))
   result=[...result, ...programsResult]
   return result
