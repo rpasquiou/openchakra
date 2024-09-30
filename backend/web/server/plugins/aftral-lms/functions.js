@@ -48,6 +48,7 @@ const SessionConversation = require('../../models/SessionConversation')
 const { getUserPermissions } = require('./user')
 const Search = require('../../models/Search')
 const Conversation = require('../../models/Conversation')
+require('./cron')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -627,6 +628,7 @@ const setSessionInitialStatus = async (blockId, trainees) => {
       {upsert: true}
     )
   ))
+  await Progress.deleteMany({block: blockId, user: {$nin: trainees}})
   return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
 }
 
@@ -639,21 +641,18 @@ const lockSession = async blockId => {
     }
     const children=await Block.find({parent: block._id})
     if (block.type=='session') {
-      if (lodash.isEmpty(block.trainers)) {
-        throw new BadRequestError(`Démarrage session impossible: pas de formateur`)
-      }
       if (lodash.isEmpty(block.trainees)) {
-        throw new BadRequestError(`Démarrage session impossible: pas d'apprenant`)
+        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas d'apprenant`)
       }
       if (lodash.isEmpty(children)) {
-        throw new BadRequestError(`Démarrage session impossible: pas de programme`)
+        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas de programme`)
       }
     }
     if (block._locked) {
-      console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
+      // console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
     }
     if (block.type=='session') {
-      setSessionInitialStatus(block._id, block.trainees)
+      setSessionInitialStatus(block._id, block.trainees.map(t => t._id))
     }
 
     block._locked=true

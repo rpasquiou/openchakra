@@ -36,25 +36,25 @@ const TRAINER_AFTRAL_ID='FORMATEUR_ID'
 const TRAINEE_AFTRAL_ID='REF_STAGIAIRE' // === Default password
 const SESSION_AFTRAL_ID='CODE_SESSION'
 
-const getFileParams = async path => {
-  let params=filesCache.get(path)
+const getFileParams = async filename => {
+  let params=filesCache.get(filename)
   if (!params) {
     params={}
-    params.contents=fs.readFileSync(path)
+    params.contents=fs.readFileSync(filename)
     params.type=await guessFileType(params.contents)
     if (params.type==TEXT_TYPE) {
       params.delimiter=await guessDelimiter(params.contents.toString())
     }
-    filesCache.set(path, params)
+    filesCache.set(filename, params)
   }
   return params
 }
 
-const loadRecords = async (path, tab_name, from_line) =>  {
-  const msg=`Loading records from ${path}`
+const loadRecords = async (filename, tab_name, from_line) =>  {
+  const msg=`Loading records from ${filename}`
   console.time(msg)
   const options={tab: tab_name, from_line}
-  const params=await getFileParams(path)
+  const params=await getFileParams(filename)
   return extractData(params.contents, {format: params.type, ...params, ...options})
     .then(({records}) => {
       console.timeEnd(msg)
@@ -305,13 +305,10 @@ const TRAINER_KEY='aftral_id'
 const importTrainers = async (filename) => {
   const records=await loadRecords(filename)
   const uniqueTrainers=lodash.uniqBy(records, TRAINER_AFTRAL_ID)
-  console.log(records.length, uniqueTrainers.length)
-  const progressCb=(index, total) => console.log(index, '/', total)
   return importData({model: 'user', data: uniqueTrainers, 
     mapping: TRAINER_MAPPING, 
     identityKey: TRAINER_KEY, 
     migrationKey: TRAINER_KEY,
-    progressCb
   })
 }
 
@@ -329,13 +326,10 @@ const TRAINEE_KEY='aftral_id'
 const importTrainees = async (filename) => {
   const records=await loadRecords(filename)
   const uniqueTrainees=lodash.uniqBy(records, TRAINEE_AFTRAL_ID)
-  console.log(records.length, uniqueTrainees.length)
-  const progressCb=(index, total) => console.log(index, '/', total)
   return importData({model: 'user', data: uniqueTrainees, 
     mapping: TRAINEE_MAPPING, 
     identityKey: TRAINEE_KEY, 
     migrationKey: TRAINEE_KEY,
-    progressCb
   })
 }
 
@@ -363,10 +357,12 @@ const SESSION_MAPPING = admin => ({
 const SESSION_KEY='aftral_id'
 
 const importSessions = async (trainersFilename, traineesFilename) => {
-  const trainees=await loadRecords(traineesFilename)
+  let result=[]
+  const trainees=(await loadRecords(traineesFilename)).filter(t => !!parseInt(t.FLAG))
   const trainers=await loadRecords(trainersFilename)
   let uniqueSessions=lodash
     .uniqBy(trainees, SESSION_AFTRAL_ID)
+    .filter(s => trainers.some(t => s[SESSION_AFTRAL_ID]==t[SESSION_AFTRAL_ID]))
   // Set trainees
   uniqueSessions=uniqueSessions.map(s => ({
     ...s, 
@@ -375,18 +371,20 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   }))
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
-  console.log(uniqueSessions.map(s => s.TRAINERS))
-  await importData({model: 'session', data: uniqueSessions, 
+  const importResult=await importData({model: 'session', data: uniqueSessions, 
     mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
     progressCb
   })
-  .then(console.log)
+  result=[...importResult]
   // Set programs
-  await runPromisesWithDelay(uniqueSessions.map(record => async () => {
+  const programsResult=await runPromisesWithDelay(uniqueSessions.map(record => async () => {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=await Program.findOne({codes: code, origin: null, _locked: false})
+    if (!program) {
+      return Promise.reject(`Session ${record.CODE_SESSION} programme de code ${record.CODE_PRODUIT} introuvable`)
+    }
     const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]})
     console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
     const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
@@ -394,7 +392,8 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
     await lockSession(session._id)
   }))
-  .then(console.log)
+  result=[...result, ...programsResult]
+  return result
 }
 
 module.exports={

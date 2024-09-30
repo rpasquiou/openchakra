@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const fs = require('fs')
 const path = require('path')
-const moment = require('moment')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { pollNewFiles } = require('../../server/plugins/aftral-lms/ftp')
 const User = require('../../server/models/User')
@@ -11,6 +10,7 @@ const Session = require('../../server/models/Session')
 const ProductCode = require('../../server/models/ProductCode')
 const Program = require('../../server/models/Program')
 const Block = require('../../server/models/Block')
+const { getExchangeDirectory } = require('../../config/config')
 
 jest.setTimeout(600000)
 
@@ -23,13 +23,10 @@ describe('Test session/trainees polling', () => {
 
   beforeAll(async() => {
     await mongoose.connect(`mongodb://localhost/aftral-lms`, MONGOOSE_OPTIONS)
-    await User.findOneAndUpdate(
-      {role: ROLE_ADMINISTRATEUR},
-      {role: ROLE_ADMINISTRATEUR, email: 'admin@admin.com'}, 
-      {upsert: true}
-    )
-    .then(console.log)
-
+    const admin=await User.findOne({role: ROLE_ADMINISTRATEUR})
+    if (!admin) {
+      await User.insert({firstname: 'admin', lastname: 'admin', role: ROLE_ADMINISTRATEUR, email: 'admin@admin.com'})
+    }
   })
 
   afterAll(async() => {
@@ -52,10 +49,17 @@ describe('Test session/trainees polling', () => {
     expect(trainees).toEqual(60)
   })
 
-  it.only('Must import sessions', async () => {
+  it('Must import sessions', async () => {
     await importSessions(TRAINERS_FILE, TRAINEES_FILE)
     let sessions=await Block.countDocuments({type: 'session'}) //Session.countDocuments()
     expect(sessions).toBeGreaterThan(0)
+  })
+
+  it.only('Must poll files', async () => {
+    console.log('echange directory', getExchangeDirectory())
+    await fs.utimesSync(path.join(getExchangeDirectory(), 'Apprenant.csv'), new Date(), new Date())
+    await fs.utimesSync(path.join(getExchangeDirectory(), 'Session_Formateur.csv'), new Date(), new Date())
+    await pollNewFiles()
   })
 
 })

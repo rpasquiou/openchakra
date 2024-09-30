@@ -9,6 +9,7 @@ const isValidDomain = require('is-valid-domain')
 const {
   getMailProvider,
   isProduction,
+  isDevelopment,
 } = require('../../config/config')
 const lodash=require('lodash')
 const {fillSms} = require('../../utils/sms')
@@ -26,6 +27,9 @@ const ALLOWED_VALIDATION_DOMAINS=[
   '@wappizy.com',
 ]
 const addValidationAllowedDomain = domain => {
+  if (isDevelopment()) {
+    console.warn(`No extra mailing domain in development mode`)
+  }
   if (!isValidDomain(domain)) {
     throw new Error(`Invalid domain:${domain}`)
   }

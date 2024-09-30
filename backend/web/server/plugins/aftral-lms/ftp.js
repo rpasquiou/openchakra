@@ -1,22 +1,14 @@
 const fs=require('fs')
 const path=require('path')
+const moment=require('moment')
 const lodash=require('lodash')
 const {getExchangeDirectory} = require('../../../config/config')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const storage = require('../../utils/storage')
-const { extractData, guessFileType } = require('../../../utils/import')
-const { TEXT_TYPE } = require('../../../utils/consts')
-const { importTrainers, importSessions } = require('./import')
-
-const loadSession = async filename => {
-  const data=await extractData(fs.readFileSync(filename), {format:TEXT_TYPE, delimiter: ';'})
-  await importTrainers(filename)
-  await importSessions(filename)
-}
-
-const loadTrainees = async filename => {
-  await importTrainers(filename)
-}
+const { importTrainers, importSessions, importTrainees } = require('./import')
+const User = require('../../models/User')
+const { ROLE_ADMINISTRATEUR } = require('./consts')
+const { sendImportError } = require('./mailing')
 
 const pollNewFiles = async () => {
   const store=storage.namespace('exchange')
@@ -25,23 +17,31 @@ const pollNewFiles = async () => {
     throw new Error(`EXCHANGE_DIRECTORY must be defined in .env`)
   }
 
-  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur.*\.csv$/, loadSession]
-  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant.*\.csv$/, loadTrainees]
+  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant.*\.csv$/, importTrainees]
+  const TRAINERS_PARAMS=['latest-trainers-filedate', /Session_Formateur.*\.csv$/, importTrainers]
+  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur.*\.csv$/, importSessions]
 
   const allFiles=await fs.readdirSync(folder)
-  const res=await runPromisesWithDelay([SESSION_PARAMS, TRAINEES_PARAMS].map(([key, filePattern, importFn]) => async () => {
-    const latest_date=store.get('key') ? moment(store.get(key)) : null
+  let res=await runPromisesWithDelay([TRAINERS_PARAMS, TRAINEES_PARAMS, SESSION_PARAMS].map(([key, filePattern, importFn]) => async () => {
+    const latest_date=store.get(key) ? moment(store.get(key)) : null
+    console.log('Getting latest files after', latest_date)
     const latestFile=lodash(allFiles)
       .map(f => path.join(folder, f))
       .filter(f => filePattern.test(f) && fs.statSync(f).mtime > latest_date )
       .maxBy(f => fs.statSync(f).mtime)
-    console.log(`Found ${latestFile}`)
     if (latestFile) {
-      console.log('Handling', latestFile)
-      await importFn(latestFile)
+      console.log('Handling', latestFile, fs.statSync(latestFile).mtime.toString())
+      store.set(key, fs.statSync(latestFile).mtime)
+      return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
     }
   }))
-  console.log(res)
+  res=lodash.flattenDeep(res.map(r => r.value).filter(v => !!v))
+  const errors=res.filter(r => r.status=='rejected').map(r => r.reason)
+  if (!lodash.isEmpty(errors)) {
+    const admins=await User.find({role: ROLE_ADMINISTRATEUR})
+    await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: errors.join('\n')})))
+  }
+  return res
 }
 
 module.exports={
