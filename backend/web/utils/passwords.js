@@ -40,7 +40,7 @@ const validatePassword = ({password, password2}) => {
 
 const generatePassword = () => {
   const length=8
-  const wishlist = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~!@-#$'
+  const wishlist = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@-#$'
   return Array.from(crypto.randomFillSync(new Uint32Array(length)))
     .map((x) => wishlist[x % wishlist.length])
     .join('')
