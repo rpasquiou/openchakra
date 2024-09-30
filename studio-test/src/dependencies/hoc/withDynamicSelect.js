@@ -14,6 +14,7 @@ const withDynamicSelect = Component => {
       value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
+    setComponentValue(props.id, internalValue)
     if (props.setComponentAttribute) {
       props.setComponentAttribute(props.id, props.attribute)
     }
