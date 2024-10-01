@@ -170,7 +170,7 @@ const UserSchema = new Schema({
       ref: 'user'
     }]
   },
-  token: {
+  tokens: {
     type: Number,
     default: 0
   },
