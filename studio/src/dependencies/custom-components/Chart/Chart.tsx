@@ -77,17 +77,13 @@ const OwnChart = (
             // }
           }
         },
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             title: {
               color: 'rgb(FF,FF,FF)',
             },
-          },
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
             position: 'bottom' as const,
             labels: {
               usePointStyle: true,
