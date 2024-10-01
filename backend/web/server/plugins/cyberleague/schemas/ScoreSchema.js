@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
-const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANSWER_NO, SCORE_LEVELS, QUESTION_CATEGORIES } = require('../consts')
+const { ANSWER_NO, SCORE_LEVELS} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -85,26 +84,6 @@ ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
 ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
   return this.answers?.length || 0
 })
-
-// ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
-//   const myData = []
-//   const labels = this._category_rates.map((elem) => {
-//     console.log("elem",elem);
-    
-//     myData.push({label: elem.category.name, y: elem.rate*100})
-//     return elem.category.name
-//   })
-//   const series=[{
-//     label:'Mes données',
-//     values: myData,
-//     color: 'rgb(255,0,0)'
-//   },{
-//     label:'Market (WIP)',
-//     values: [{label: myData[1].label, y:8}],
-//     color: 'rgb(0,255,0)'
-//   }]
-//   return {labels, series}
-// })
 
 /* eslint-enable prefer-arrow-callback */
 

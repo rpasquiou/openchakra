@@ -137,7 +137,6 @@ const createScore = async (creatorId, scoreLevel) => {
 const getCategoryRates = async (userId, params, data) => {
   data= await Score.findById(data._id)
     .populate({path: '_category_rates', populate:'category'})
-  const market = await Score.findOne({_market: true}).populate(['_category_rates.name','_category_rates._id'])
   const res = data._category_rates.map((elem) => {
     const name = elem.category.name
     const value = elem.rate
@@ -169,7 +168,6 @@ const getChartData = async (userId, params, data) => {
     }
   ]
   const res={labels, series}
-  console.log(JSON.stringify(res, null, 2))
   return new ChartData(res)
 }
 

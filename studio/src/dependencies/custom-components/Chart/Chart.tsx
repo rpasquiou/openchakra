@@ -159,11 +159,8 @@ const OwnChart = (
           labels,
           datasets
         };
-
       }
-      console.log('retainedChart',RetainedChart);
-      console.log('data', data);
-      
+
       const FinalChart:TypedChartComponent<ChartType> = () => React.createElement(RetainedChart, {data, options})
 
   return (
