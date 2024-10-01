@@ -169,7 +169,11 @@ const UserSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'user'
     }]
-  }
+  },
+  token: {
+    type: Number,
+    default: 0
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
