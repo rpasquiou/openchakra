@@ -458,6 +458,10 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Un score doit être créé via l'action start survey`)
   }
 
+  if (model == 'expertiseCategory') {
+    throw new ForbiddenError(`Il est impossible de créer une catégorie d'expertise`)
+  }
+
   return Promise.resolve({model, params})
 }
 
