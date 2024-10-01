@@ -11,9 +11,17 @@ const User = require('../../models/User')
 const { BadRequestError } = require('../../utils/errors')
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
-const getBlockResources = async (blockId) => {
+const getBlockResources = async (blockId, userId) => {
+  if (!userId) {
+    return console.trace(`User is null`)
+  }
+  const resourceFilter={ 'descendants.type': 'resource'}
+  const role=(await User.findById(userId)).role
+  if (role==ROLE_APPRENANT) {
+    resourceFilter['descendants.masked']={$ne: true}
+  }
   const pipeline = [
-    { $match: { _id: mongoose.Types.ObjectId(blockId) } },
+    { $match: { _id: mongoose.Types.ObjectId(blockId), masked: {$ne: true }}},
     {
       $graphLookup: {
         from: 'blocks',
@@ -24,7 +32,7 @@ const getBlockResources = async (blockId) => {
       }
     },
     { $unwind: { path: '$descendants'} },
-    { $match: { 'descendants.type': 'resource' } },
+    { $match:  resourceFilter},
     { $project: { resourceId: '$descendants._id'} }
   ]
 
@@ -155,7 +163,7 @@ const getResourceType = async url => {
 }
 
 const getResourcesCount = async (userId, params, data) => {
-  const subResourcesIds=await getBlockResources(data._id)
+  const subResourcesIds=await getBlockResources(data._id, userId)
   return subResourcesIds.length
 }
 
