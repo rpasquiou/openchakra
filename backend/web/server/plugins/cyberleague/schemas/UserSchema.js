@@ -3,7 +3,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -297,6 +297,16 @@ UserSchema.virtual('comments', {
   ref: 'comment',
   localField: '_id',
   foreignField: 'creator',
+})
+
+UserSchema.virtual('level', DUMMY_REF).get(function() {
+  if (this.tokens < LEVEL_THRESHOLD_EXPLORER) {
+    return USER_LEVEL_CURIOUS
+  }
+  if (this.tokens >= LEVEL_THRESHOLD_AMBASSADOR) {
+    return USER_LEVEL_AMBASSADOR
+  }
+  return USER_LEVEL_EXPLORER
 })
 
 /* eslint-enable prefer-arrow-callback */
