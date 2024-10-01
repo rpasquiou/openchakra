@@ -115,21 +115,20 @@ addAction('get_template', getTemplateAction)
 
 
 // TODO dev only
-if (!isProduction()) {
-  const forceFinishResource = async ({value, dataId}, user) => {
-    if([ROLE_HELPDESK, ROLE_FORMATEUR].includes(user.role) && dataId) {
-      user = await User.findById(dataId)
-    }
-    await Progress.findOneAndUpdate(
-      {user, block: value._id},
-      {user, block: value._id, achievement_status: BLOCK_STATUS_FINISHED},
-      {upsert: true, new: true}
-    )
-    await onBlockFinished(user, await Block.findById(value._id))
+const forceFinishResource = async ({value, dataId, trainee}, user) => {
+  if(![ROLE_HELPDESK, ROLE_FORMATEUR].includes(user.role) && dataId) {
+    throw new ForbiddenError(`Déblocage non autorisé`)
   }
-
-  addAction('alle_finish_mission', forceFinishResource)
+  user = await User.findById(trainee)
+  await Progress.findOneAndUpdate(
+    {user, block: value},
+    {user, block: value, achievement_status: BLOCK_STATUS_FINISHED},
+    {upsert: true, new: true}
+  )
+  await onBlockFinished(user, await Block.findById(value))
 }
+
+addAction('alle_finish_mission', forceFinishResource)
 
 
 const isActionAllowed = async ({ action, dataId, user }) => {

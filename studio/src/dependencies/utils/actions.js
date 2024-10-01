@@ -654,7 +654,8 @@ return Promise.allSettled(imagePromises)
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_finish_mission',
-      value,
+      value: value._id,
+      trainee,
       context,
     }
     return axios.post(url, body)
