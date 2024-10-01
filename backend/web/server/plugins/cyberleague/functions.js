@@ -462,6 +462,10 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Il est impossible de créer une catégorie d'expertise`)
   }
 
+  if (model == 'questionCategory') {
+    throw new ForbiddenError(`Il est impossible de créer une catégorie de question`)
+  }
+
   return Promise.resolve({model, params})
 }
 
