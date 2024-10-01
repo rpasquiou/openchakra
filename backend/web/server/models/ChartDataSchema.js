@@ -8,6 +8,7 @@ const ChartDataSchema = new Schema({
   labels: [String],
   series: [{
     name: String,
+    color: String,
     values: [{
       label: String,
       x: Number,

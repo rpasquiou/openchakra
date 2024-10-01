@@ -7,7 +7,26 @@ const Answer = require("../../models/Answer")
 const User = require("../../models/User")
 const Triple = require("../../models/Triple")
 const CategoryRate = require("../../models/CategoryRate")
+const ChartData = require("../../models/ChartData")
 
+const MARKET_VALUES={
+  'MANAGEMENT DE LA SECURITE ET GOUVERNANCE': 0.67,
+  'FORMATION ET SENSIBILISATION A LA SECURITE':	0.78,
+  'GESTION DES INCIDENTS DE SECURITE':	0.81,
+  'GESTION DES ACTIFS ET DES TIERS':	0.78,
+  "GESTION DE l'IDENTITE ET DES HABILITATIONS":	0.64,
+  'JOURNALISATION ET SUPERVISION':	0.59,
+  "SAUVEGARDE ET REPRISE D'ACTIVITE":	0.63,
+  'CONFIDENTIALITE DES DONNEES':	0.6,
+  'TRAITEMENT DES DONNEES PERSONNELLES':	0.69,
+  'SECURITE PHYSIQUE':	0.72,
+  "SECURITE DES RESEAUX ET DES ENVIRONNEMENTS D'ADMINISTRATION":	0.59,
+  'PROTECTION ANTIVIRUS':	0.45,
+  'SECURITE DES END POINTS (POSTES DE TRAVAIL ET TELEPHONES)'	:0.64,
+  'VEILLE ET GESTION DES MISES A JOUR':	0.62,
+  'SECURITE DES OPERATIONS BANCAIRES':	0.69,
+  'SECURITE DES EQUIPEMENTS ET RESEAUX INDUSTRIELS (OT)':	0.46,
+}
 // questionArray: [{question, answer}]
 const computeScores = async (answers) => {
 
@@ -116,16 +135,42 @@ const createScore = async (creatorId, scoreLevel) => {
 }
 
 const getCategoryRates = async (userId, params, data) => {
+  data= await Score.findById(data._id)
+    .populate({path: '_category_rates', populate:'category'})
   const market = await Score.findOne({_market: true}).populate(['_category_rates.name','_category_rates._id'])
   const res = data._category_rates.map((elem) => {
     const name = elem.category.name
     const value = elem.rate
-    const market_value = lodash.find(market._category_rates, (e) => {idEqual(e.category._id, elem.category._id)})?.rate 
+    const market_value = MARKET_VALUES[elem.category.name]
     return new Triple({name,value,market_value})
   })
   console.log("category_rates",res);
   
   return res
+}
+
+const getChartData = async (userId, params, data) => {
+  data= await Score.findById(data._id)
+    .populate({path: '_category_rates', populate:'category'})
+  const myData = []
+  const labels = data._category_rates.map((elem) => {
+   
+    myData.push({label: elem.category.name, y: elem.rate*100})
+    return elem.category.name
+  })
+  const series=[{
+      name:'Mes données',
+      values: myData,
+      color: 'rgb(255,119,255)'
+    }, {
+      name:'Données du marché',
+      values: labels.map(l => ({label: l, y: MARKET_VALUES[l]*100})),
+      color: 'rgb(255,183,0)'
+    }
+  ]
+  const res={labels, series}
+  console.log(JSON.stringify(res, null, 2))
+  return new ChartData(res)
 }
 
 const updateMarketScore = async (_category_rates) => {
@@ -149,5 +194,6 @@ module.exports = {
   getQuestionsByCategory,
   createScore,
   getCategoryRates,
-  updateMarketScore
+  updateMarketScore,
+  getChartData,
 }

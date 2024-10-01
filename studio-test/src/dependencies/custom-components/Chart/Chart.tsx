@@ -60,32 +60,36 @@ const OwnChart = (
       const isFontSize = props.hasOwnProperty('fontSize')
       const fontSize = isFontSize ? (parseInt(props.fontSize?.base, 10) || 12 ) : 14
 
-      const options = {
-        plugins: {
-          colors: {
-            enabled: false
+      let options = {
+        scales: {
+          r: {
+            grid: {
+              color: '#FFFFFF' // Color of the grid lines (spider web)
+            },
+            angleLines: {
+              color: '#FFFFFF' // Color of the lines that radiate from the center (spokes)
+            },
+            pointLabels: {
+              color: '#FFFFFF',  // Color of the labels around the radar chart
+            },
+            // ticks: {
+            //   display: false // Hides the labels in the middel (numbers)
+            // }
           }
         },
         responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          x: {
-            min: props.minX || undefined,
-            max: props.maxX || undefined,
-          },
-          y: {
-            min: props.minY || undefined,
-            max: props.maxY || undefined,
-          },
-        },
         plugins: {
           legend: {
+            title: {
+              color: 'rgb(FF,FF,FF)',
+            },
             position: 'bottom' as const,
             labels: {
               usePointStyle: true,
               font: {
                 family: isFontFamily ? font : 'inherit',
-                size: isFontSize ? fontSize : 12
+                size: isFontSize ? fontSize : 12,
               }
             }
           },
@@ -115,7 +119,7 @@ const OwnChart = (
         data = {
           labels: value?.labels,
           datasets: (value?.series || []).map((s, idx) => ({
-            label: s.label,
+            label: s.name,
             data: orderValues(value?.labels, s.values),
             fill: true,
             backgroundColor: s.color,

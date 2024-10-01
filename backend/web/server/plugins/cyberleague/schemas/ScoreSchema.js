@@ -70,6 +70,10 @@ const ScoreSchema = new Schema({
       ref: 'triple'
     }]
   },
+  chart_data: {
+    type: Schema.Types.ObjectId,
+    ref: 'chartData',
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -82,25 +86,25 @@ ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
   return this.answers?.length || 0
 })
 
-ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
-  const myData = []
-  const labels = this._category_rates.map((elem) => {
-    console.log("elem",elem);
+// ScoreSchema.virtual('chart_data',DUMMY_REF).get(function() {
+//   const myData = []
+//   const labels = this._category_rates.map((elem) => {
+//     console.log("elem",elem);
     
-    myData.push({label: elem.category.name, y: elem.rate*100})
-    return elem.category.name
-  })
-  const series=[{
-    name:'Mes données',
-    values: myData,
-    color: 'rgb(255,0,0)'
-  },{
-    name:'Market (WIP)',
-    values: [{label: myData[1].label, y:8}],
-    color: 'rgb(0,255,0)'
-  }]
-  return {labels, series}
-})
+//     myData.push({label: elem.category.name, y: elem.rate*100})
+//     return elem.category.name
+//   })
+//   const series=[{
+//     label:'Mes données',
+//     values: myData,
+//     color: 'rgb(255,0,0)'
+//   },{
+//     label:'Market (WIP)',
+//     values: [{label: myData[1].label, y:8}],
+//     color: 'rgb(0,255,0)'
+//   }]
+//   return {labels, series}
+// })
 
 /* eslint-enable prefer-arrow-callback */
 
