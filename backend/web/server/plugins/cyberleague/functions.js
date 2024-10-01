@@ -466,6 +466,10 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Il est impossible de créer une catégorie de question`)
   }
 
+  if (model == 'gain') {
+    throw new ForbiddenError(`Il est impossible de créer de nouvelles manières de gagner des jetons`)
+  }
+
   return Promise.resolve({model, params})
 }
 
