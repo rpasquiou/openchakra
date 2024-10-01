@@ -31,6 +31,7 @@ const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
 const { getLooking } = require('./user')
+const { computeBellwetherStatistics } = require('./statistic')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -388,6 +389,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       }
     }
   }
+
+  if (model == 'statistic') {
+    const computedStatistics = computeBellwetherStatistics(params.filters ? params.filters : {})
+    params = {...params, ...computedStatistics}
+  }
+  
   return Promise.resolve({model, fields, id, user, params})
 }
 
