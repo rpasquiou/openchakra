@@ -60,24 +60,25 @@ const getCertificate = async (userId, params, data) => {
   return result
 }
 
-const getEvalResources = async (userId, params, data, fields) => {
-  const resourceIds = await getBlockResources(data._id)
+const getEvalResources = async (userId, params, data, fields, actualLogged) => {
+  const resourceIds = await getBlockResources(data._id, actualLogged)
   
   const newParams = {
     [`filter._id`]: {$in: resourceIds},
   }
-  const user = await User.findById(userId)
+  const user = await User.findById(actualLogged)
 
+  console.log(user.email)
   let resources = await loadFromDb({
     model: `resource`,
     user,
-    fields: [...fields, `note`, `scale`, `homework_mode`, `resource_type`, `name`, `success_note_max`, `max_attempts`, `homeworks`],
+    fields: [...fields, `note`, `evaluation`, `scale`, `homework_mode`, `resource_type`, `name`, `success_note_max`, `max_attempts`, `homeworks`],
     params: newParams
   })
 
-  // resources = resources.filter(r => 
-  //   r.homework_mode == true || (r.note !== undefined && r.note !== null) || (r.scale !== undefined && r.scale !== null)
-  // )
+  resources = resources.filter(r => 
+    !!r.evaluation
+  )
 
   return resources.map(r => new Resource(r))
 }
