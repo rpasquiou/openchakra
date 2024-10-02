@@ -650,7 +650,8 @@ return Promise.allSettled(imagePromises)
       }))
   },
 
-  alle_finish_mission: ({ value, context, props, level, getComponentValue }) => {
+  alle_finish_mission: async ({ value, context, props, level, getComponentValue }) => {
+    const trainee=await getComponentValue(props.trainee, level)
     let url = `${API_ROOT}/action`
     const body = {
       action: 'alle_finish_mission',
