@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
+const { CONTRACT_TYPES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -14,6 +15,11 @@ const CarreerSchema = new Schema(
       type: String,
       required: [true, `L'intitulé de poste est obligatoire`]
     },
+    contract_type: {
+      type: String,
+      enum: Object.keys(CONTRACT_TYPES),
+      required: [true, `Le type de contrat est obligatoire`]
+    }
   },
   schemaOptions
 )
