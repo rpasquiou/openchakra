@@ -476,6 +476,11 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Il est impossible de créer de nouvelles manières de gagner des jetons`)
   }
 
+  if (model == 'carreer') {
+    //TODO verif that user is admin of its company
+    params.company = user.company
+  }
+
   return Promise.resolve({model, params})
 }
 
