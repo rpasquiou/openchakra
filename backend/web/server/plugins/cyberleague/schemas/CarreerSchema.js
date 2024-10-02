@@ -32,6 +32,10 @@ const CarreerSchema = new Schema(
       type: String,
       required: false
     },
+    post_description: {
+      type: String,
+      required: false
+    },
   },
   schemaOptions
 )
