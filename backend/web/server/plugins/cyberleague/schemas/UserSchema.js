@@ -174,6 +174,11 @@ const UserSchema = new Schema({
     type: Number,
     default: 0
   },
+  company_sponsorship: {
+    type: Schema.Types.ObjectId,
+    ref: 'company',
+    required: false
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
