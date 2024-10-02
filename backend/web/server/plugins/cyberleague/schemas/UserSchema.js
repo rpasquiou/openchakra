@@ -179,6 +179,10 @@ const UserSchema = new Schema({
     ref: 'company',
     required: false
   },
+  desactivation_reason: {
+    type: String,
+    required: false
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
