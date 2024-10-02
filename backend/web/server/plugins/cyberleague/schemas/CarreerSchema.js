@@ -40,6 +40,10 @@ const CarreerSchema = new Schema(
       type: String,
       required: false
     },
+    profil_description: {
+      type: String,
+      required: false
+    },
   },
   schemaOptions
 )
