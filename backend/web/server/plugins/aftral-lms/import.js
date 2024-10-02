@@ -32,22 +32,18 @@ const { sendInitTrainee, sendInitTrainer } = require('./mailing')
 const { generatePassword } = require('../../../utils/passwords')
 require('../../models/Resource')
 
-const filesCache=new NodeCache()
 const TRAINER_AFTRAL_ID='FORMATEUR_ID'
 const TRAINEE_AFTRAL_ID='REF_STAGIAIRE' // === Default password
 const SESSION_AFTRAL_ID='CODE_SESSION'
 
 const getFileParams = async filename => {
-  let params=filesCache.get(filename)
-  if (!params) {
-    params={}
-    params.contents=fs.readFileSync(filename)
-    params.type=await guessFileType(params.contents)
-    if (params.type==TEXT_TYPE) {
-      params.delimiter=await guessDelimiter(params.contents.toString())
-    }
-    filesCache.set(filename, params)
+  const params={}
+  params.contents=fs.readFileSync(filename)
+  params.type=await guessFileType(params.contents)
+  if (params.type==TEXT_TYPE) {
+    params.delimiter=await guessDelimiter(params.contents.toString())
   }
+  params.date=fs.statSync(filename).mtimeMs
   return params
 }
 
@@ -305,7 +301,7 @@ const getPassword = email => {
 
 const hasPassword = async email => {
   const user=await User.findOne({email: email})
-  return !lodash.isEmpty(user?.plain_password)
+  return !lodash.isEmpty(user?.password)
 }
 
 const TRAINER_MAPPING = {
@@ -314,8 +310,8 @@ const TRAINER_MAPPING = {
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
   aftral_id: TRAINER_AFTRAL_ID,
-  password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
-  plain_password: async ({record}) => isExternalTrainer(record.EMAIL_FORMATEUR) && !(await hasPassword(record.EMAIL_FORMATEUR)) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
 }
 
 const TRAINER_KEY='aftral_id'

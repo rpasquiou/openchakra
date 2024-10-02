@@ -680,7 +680,7 @@ const postCreate = async ({model, params, data}) => {
 
 setPostCreateData(postCreate)
 
-const freq=isDevelopment() ? '*/5 * * * * *' : '0 */5 * * * *'
+const freq='0 */5 * * * *'
 cron.schedule(freq, async () => {
   try {
     console.log('Polling new files')

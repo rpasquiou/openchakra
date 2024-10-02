@@ -61,6 +61,13 @@ describe('Test session/trainees polling', () => {
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Apprenant.csv'), new Date(), new Date())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Session_Formateur.csv'), new Date(), new Date())
     await pollNewFiles()
+    const sessions=await Session.find().populate(['trainers', 'trainees', 'children'])
+    console.log(sessions.map(s => ({
+      name: s.name,
+      aftral_id: s.aftral_id,
+      trainers: s.trainers.map(t => t.fullname),
+      trainees: s.trainees.map(t => t.fullname),
+    })))
   })
 
   it('Must check internal/external trainer', async () => {
