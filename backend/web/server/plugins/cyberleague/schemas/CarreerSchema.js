@@ -19,7 +19,15 @@ const CarreerSchema = new Schema(
       type: String,
       enum: Object.keys(CONTRACT_TYPES),
       required: [true, `Le type de contrat est obligatoire`]
-    }
+    },
+    candidates: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'user',
+        required: true
+      }],
+      default: []
+    },
   },
   schemaOptions
 )
