@@ -129,10 +129,12 @@ const mapAttribute=async ({record, mappingFn, ...rest}) => {
 }
 
 const mapRecord = async ({record, mapping, ...rest}) => {
-  const mapped={}
+  let mapped={}
   for (const k of Object.keys(mapping)) {
     mapped[k]=await mapAttribute({record, mappingFn: mapping[k], ...rest})
   }
+  // remove undefined values
+  mapped=lodash.omitBy(mapped, v => lodash.isUndefined(v))
   return mapped
 }
 
