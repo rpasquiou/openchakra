@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { CONTRACT_TYPES } = require('../consts')
+const { CONTRACT_TYPES, WORK_DURATIONS } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -42,6 +42,11 @@ const CarreerSchema = new Schema(
     },
     profil_description: {
       type: String,
+      required: false
+    },
+    work_duration: {
+      type: String,
+      enum: Object.keys(WORK_DURATIONS),
       required: false
     },
   },
