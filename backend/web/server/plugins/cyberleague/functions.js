@@ -477,7 +477,9 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'carreer') {
-    //TODO verif that user is admin of its company
+    if (!user.is_company_admin) {
+      throw new BadRequestError(`Il faut être admin de son entreprise pour pouvoir créer une offre d'emploi`)
+    }
     params.company = user.company
   }
 
