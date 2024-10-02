@@ -36,6 +36,10 @@ const CarreerSchema = new Schema(
       type: String,
       required: false
     },
+    location: {
+      type: String,
+      required: false
+    },
   },
   schemaOptions
 )
