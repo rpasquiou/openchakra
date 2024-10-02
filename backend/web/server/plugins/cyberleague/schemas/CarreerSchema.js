@@ -28,6 +28,10 @@ const CarreerSchema = new Schema(
       }],
       default: []
     },
+    company_description: {
+      type: String,
+      required: false
+    },
   },
   schemaOptions
 )
