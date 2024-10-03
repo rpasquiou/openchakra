@@ -83,6 +83,13 @@ const regexSensibilization = (text) => {
   return regex.test(text)
 }
 
+const increaseValueCount = (data, field, increaseValue) => {
+  data[field].count += 1
+  if (increaseValue) {
+    data[field].value += 1
+  }
+}
+
 const computeBellwetherStatistics = async (filters) => {
   //TODO take filters into account (company sector, region, size)
   const companyFilter = {size: {$ne: COMPANY_SIZE_5001_PLUS}}
