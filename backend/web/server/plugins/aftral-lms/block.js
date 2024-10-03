@@ -1,13 +1,14 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
+const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -170,16 +171,29 @@ const onBlockFinished = async (user, block) => {
 }
 
 const onBlockAction = async (user, block) => {
+  const bl=await mongoose.models.block.findById(block)
+  // Homework priority on other rules
+  if (bl.homework_mode) {
+    const homeworks=await Homework.find({trainee: user, resource: block}).sort({[CREATED_AT_ATTRIBUTE]: 1})
+    const latest_homework=homeworks.pop()
+    if (!!latest_homework) {
+      if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
+      ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
+        await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
+        return onBlockFinished(user, block)
+      }
+      else {
+        await removeBlockStatus(user, block)
+      }
+    }
+    return
+  }
   const progress=await Progress.findOne({user, block})
   const rule=block.achievement_rule
   console.log('rule is', rule)
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
-  await Progress.findOneAndUpdate(
-    {block, user},
-    {block, user, achievement_status: status},
-    {upsert: true}
-  )
+  await saveBlockStatus(user, block, status)
   if (finished) {
     console.log(`Block ${block._id} finished`)
     onBlockFinished(user, block)
@@ -512,12 +526,20 @@ const saveBlockStatus= async (userId, blockId, status) => {
   if (!userId || !blockId || !status) {
     throw new Error(userId, blockId, status)
   }
+  status==BLOCK_STATUS_TO_COME && console.trace('set block status to come')
   await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
   return status
+}
+
+const removeBlockStatus= async (userId, blockId, status) => {
+  if (!userId || !blockId) {
+    throw new Error(userId, blockId, status)
+  }
+  return Progress.remove({block: blockId, user: userId})
 }
 
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {

@@ -571,6 +571,9 @@ const postPutData = async ({model, id, attribute, params, data, user}) => {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
     await propagateAttributes(id)
   }
+  if (model=='homework') {
+    await onBlockAction(data.trainee, data.resource)
+  }
   return data
 }
 

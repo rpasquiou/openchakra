@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
-const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession } = require('./block')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const { isProduction } = require('../../../config/config')
@@ -63,11 +63,12 @@ addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
   const toUpdate=[id, ...(await getParentBlocks(id))]
-  return Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
+  await Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
     {user, block: blockId},
-    {user, block: blockId, $inc: {spent_time: duration/1000}, achievement_status: BLOCK_STATUS_TO_COME},
+    {user, block: blockId, $inc: {spent_time: duration/1000}},
     {upsert: true, new: true}
     )))
+  return onBlockAction(user, id)
 }
 
 addAction('addSpentTime', addSpentTimeAction)
