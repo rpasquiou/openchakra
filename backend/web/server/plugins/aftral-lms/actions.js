@@ -65,7 +65,7 @@ const addSpentTimeAction = async ({id, duration}, user) => {
   const toUpdate=[id, ...(await getParentBlocks(id))]
   return Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
     {user, block: blockId},
-    {user, block: blockId, $inc: {spent_time: duration/1000}},
+    {user, block: blockId, $inc: {spent_time: duration/1000}, achievement_status: BLOCK_STATUS_TO_COME},
     {upsert: true, new: true}
     )))
 }

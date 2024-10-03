@@ -1,7 +1,7 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -39,6 +39,10 @@ const ensureMongooseModel = data => {
   if (data.constructor.name != 'model') {
     throw new Error(`Expecting mongoose object:`, JSON.stringify(data));
   }
+}
+
+const getProgress = async (userId, blockId) => {
+  return mongoose.models.progress.findOne({user: userId, block: blockId})
 }
 
 const setParentSession = async (session_id) => {
@@ -159,36 +163,9 @@ const isFinished = async (user, block) => {
 }
 
 const onBlockFinished = async (user, block) => {
-  ensureMongooseModel(block)
-  await block.populate('parent').execPopulate()
-  if (!block.parent) {
-    return
-  }
-  await block.parent.populate('children').execPopulate()
-  const allChildrenFinished = (await Promise.all(block.parent.children.map(c => isFinished(user, c)))).every(v => !!v)
-
-  if (allChildrenFinished) {
-    await Progress.findOneAndUpdate(
-      {block: block.parent, user},
-      {block: block.parent, user, achievement_status: BLOCK_STATUS_FINISHED},
-      {upsert: true}
-    )
-    await onBlockFinished(user, block.parent)
-  }
-}
-
-// Set all parents to current
-const onBlockCurrent = async (user, block) => {
-  ensureMongooseModel(block)
-  await block.populate('parent').execPopulate()
-  if (block.parent) {
-    await Progress.findOneAndUpdate(
-      {block: block.parent._id, user},
-      {block: block.parent._id, user, achievement_status: BLOCK_STATUS_CURRENT},
-      {upsert: true}
-    )    
-    return onBlockCurrent(user, block.parent)
-  }
+  await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
+  const session=await getBlockSession(block)
+  return updateSessionStatus(session._id, user._id)
 }
 
 const onBlockAction = async (user, block) => {
@@ -205,10 +182,6 @@ const onBlockAction = async (user, block) => {
   if (finished) {
     console.log(`Block ${block._id} finished`)
     onBlockFinished(user, block)
-  }
-  else {
-    console.log(`Block ${block._id} becomes current`)
-    onBlockCurrent(user, block)
   }
 }
 
@@ -525,25 +498,131 @@ const lockSession = async blockId => {
   }
 }
 
-const setSessionInitialStatus = async (blockId, trainees) => {
+const setSessionInitialStatus = async blockId => {
+  return updateSessionStatus(blockId)
+}
+
+const hasParentMasked = async (blockId) => {
+  const block=await mongoose.models.block.findById(blockId, {masked: true}).lean({virtuals: false})
+  return block.masked || (block.parent && hasParentMasked(block.parent))
+}
+
+const saveBlockStatus= async (userId, blockId, status) => {
+  if (!userId || !blockId || !status) {
+    throw new Error(userId, blockId, status)
+  }
+  await Progress.findOneAndUpdate(
+    {block: blockId, user: userId},
+    {block: blockId, user: userId, achievement_status: status},
+    {upsert: true}
+  )
+  return status
+}
+
+const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
+
   const block=await mongoose.models.block.findById(blockId).populate('children')
-  await Promise.all(trainees.map(t => Progress.findOneAndUpdate(
-      {block: block._id, user: t._id},
-      {block: block._id, user: t._id, achievement_status: BLOCK_STATUS_TO_COME},
-      {upsert: true}
-    )
-  ))
-  await Progress.deleteMany({block: blockId, user: {$nin: trainees}})
-  return Promise.all(block.children.map(child => setSessionInitialStatus(child, trainees)))
+
+  if (block.type === BLOCK_TYPE_RESOURCE) {
+    const isFinished = await isFinishedBlock(block)
+    const status = isFinished || block.optional ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_TO_COME;
+    await setBlockStatus(block.id, status)
+    return status;
+  }
+
+  let allChildrenTerminated = true;
+  let availableChildFound = false;
+
+  // Traverse children
+  for (let i = 0; i < block.children.length; i++) {
+    const child = block.children[i]
+    const childState = await computeBlockStatus(child, isFinishedBlock, setBlockStatus)
+
+    if (childState !== BLOCK_STATUS_FINISHED) {
+      allChildrenTerminated = false;
+    }
+
+    // Closed
+    if (block.closed) {
+      if (childState !== BLOCK_STATUS_FINISHED) {
+        const status = BLOCK_STATUS_UNAVAILABLE;
+        await setBlockStatus(block.id, status)
+        return status
+      }
+    } else if (block.ordered) {
+      if (i === 0 || (await computeBlockStatus(block.children[i - 1], isFinishedBlock, setBlockStatus)) === BLOCK_STATUS_FINISHED) {
+        if (!availableChildFound) {
+          availableChildFound = true;
+          const status = BLOCK_STATUS_TO_COME;
+          await setBlockStatus(block.id, status)
+          return status;
+        }
+      }
+    } else {
+      if (childState === BLOCK_STATUS_TO_COME && !availableChildFound) {
+        availableChildFound = true;
+      }
+    }
+  }
+
+  if (block.access_condition) {
+    for (let i = 0; i < block.children.length; i++) {
+      const child = block.children[i];
+      for (let j = 0; j < i; j++) {
+        const leftSiblingState = await computeBlockStatus(block.children[j], isFinishedBlock, setBlockStatus);
+        if (leftSiblingState !== BLOCK_STATUS_FINISHED) {
+          const status = BLOCK_STATUS_UNAVAILABLE;
+          await setBlockStatus(block.id, status)
+          return status;
+        }
+      }
+      const status = BLOCK_STATUS_TO_COME;
+      await setBlockStatus(block.id, status)
+      return status;
+    }
+  }
+
+  if (allChildrenTerminated) {
+    const status = BLOCK_STATUS_FINISHED;
+    await setBlockStatus(block.id, status)
+    return status;
+  }
+
+  // Si un enfant est disponible, le bloc est disponible
+  if (availableChildFound) {
+    const status = BLOCK_STATUS_TO_COME;
+    await setBlockStatus(block.id, status)
+    return status;
+  }
+
+  // Sinon, le bloc n'est pas disponible
+  const status = BLOCK_STATUS_UNAVAILABLE;
+  console.log(block.type, block.name, block.order, status)
+  await setBlockStatus(block.id, status)
+  return status;
+}
+
+
+const updateSessionStatus = async (sessionId, trainee) => {
+  console.time('update session status')
+  const session=await mongoose.models.session.findById(sessionId)
+  const trainees=!!trainee ? [trainee] : session.trainees
+  await Promise.all(trainees.map(async t => {
+    const isFinishedBlock = async blockId => isFinished(t._id, blockId)
+    const setBlockStatus = (blockId, status) => saveBlockStatus(t._id, blockId, status)
+    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus)
+  }))
+  console.timeEnd('update session status')
 }
 
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
-  cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockCurrent, onBlockAction,
+  cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
   getNextResource, getPreviousResource, getParentBlocks,LINKED_ATTRIBUTES_CONVERSION,
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
+  updateSessionStatus, saveBlockStatus,
 }
 

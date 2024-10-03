@@ -1,10 +1,11 @@
 const mongoose = require('mongoose')
-const lodash = require('lodash')
-const {MONGOOSE_OPTIONS, loadFromDb} = require('../../server/utils/database')
+const {MONGOOSE_OPTIONS} = require('../../server/utils/database')
 require('../../server/models/Chapter')
 require('../../server/plugins/aftral-lms/functions')
 const Block = require('../../server/models/Block')
-const { getSessionBlocks, lockSession } = require('../../server/plugins/aftral-lms/block')
+const { getSessionBlocks, lockSession, updateSessionStatus, } = require('../../server/plugins/aftral-lms/block')
+const Session = require('../../server/models/Session')
+const Progress = require('../../server/models/Progress')
 
 jest.setTimeout(60000)
 
@@ -24,7 +25,7 @@ describe('Test models computations', () => {
     await setSessionInitialStatus(session._id)
   })
 
-  it.only('must lock session', async() => {
+  it('must lock session', async() => {
     const sessions=await Block.find({type: 'session'})
     await Promise.all(sessions.map(s => lockSession(s._id)))
   })
@@ -40,5 +41,17 @@ describe('Test models computations', () => {
     await session.populate('origin').execPopulate()
     console.log(session.origin.constructor.name)
   })
+
+  it.only('Must update session status', async() => {
+    const session=await Session.findOne().populate('trainees')
+    // await Progress.deleteMany({})
+    let status=await Progress.distinct('achievement_status')
+    let count=await Progress.countDocuments()
+    console.log(status, count)
+    await updateSessionStatus(session._id)
+    status=await Progress.distinct('achievement_status')
+    count=await Progress.countDocuments()
+    console.log(status, count)
+})
 
 })
