@@ -1,4 +1,3 @@
-const User = require('../../models/User')
 const lodash = require('lodash')
 const { loadFromDb } = require('../../utils/database')
 
