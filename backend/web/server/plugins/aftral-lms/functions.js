@@ -545,6 +545,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       params['filter._locked']=true
       params['filter.trainees']=user._id
     }
+    if (user.role==ROLE_FORMATEUR) {
+      params['filter._locked']=true
+      params['filter.trainers']=user._id
+    }
   }
 
   if (model == `search`) {
