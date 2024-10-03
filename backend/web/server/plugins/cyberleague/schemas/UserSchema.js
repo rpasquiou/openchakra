@@ -318,6 +318,12 @@ UserSchema.virtual('level', DUMMY_REF).get(function() {
   return USER_LEVEL_EXPLORER
 })
 
+UserSchema.virtual('carreer_applications', {
+  ref:'carreer',
+  localField:'_id',
+  foreignField:'candidates',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

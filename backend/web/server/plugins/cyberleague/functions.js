@@ -142,6 +142,12 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'level', requires: 'tokens', instance: 'String', enumValues: USER_LEVELS})
   declareComputedField({model: m, field: 'related_users',  requires:'function,company.size,company.sector,shortname', getterFn: getRelated('user')})
+  declareVirtualField({model: m, field: 'carreer_applications', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'carreer'}
+    }
+  })
 })
 
 //Company declarations
