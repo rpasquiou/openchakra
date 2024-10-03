@@ -528,10 +528,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model == 'feed') {
-    return getFeeds(user, id)
-      .then(res => {
-        return Promise.resolve({data: res})
-      }) 
+    let feeds=await getFeeds(user, id)
+    const sessions=await Session.find({_id: {$in: feeds.map(f => f._id)}})
+    feeds=feeds.filter(feed => {
+      const session=sessions.find(s => idEqual(s._id, feed._id))
+      return !session || moment().isBefore(session.end_date)
+    })
+    return ({data: feeds})
   }
 
   if (model=='statistics') {
@@ -571,6 +574,13 @@ setPreprocessGet(preprocessGet)
 const filterDataUser = async ({model, data, id, user}) => {
   if (model=='session' && user.role==ROLE_APPRENANT) {
     data=data.filter(d => moment().isBefore(d.end_date))
+  }
+  if (model=='feed' && user.role==ROLE_APPRENANT) {
+    data=data.filter(async d => {
+      const session=await Session.findBy(d._id)
+      return session && moment().isBefore(session.end_date)
+    })
+    data=[]
   }
   return data
 }
