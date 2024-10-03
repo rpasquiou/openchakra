@@ -25,7 +25,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
-const { cloneTree, lockSession } = require('./block')
+const { cloneTree, lockSession, setSessionInitialStatus } = require('./block')
 const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
 const { sendInitTrainee, sendInitTrainer } = require('./mailing')
@@ -447,6 +447,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
       await lockSession(session._id)
     }
+    await setSessionInitialStatus(session._id)
     // Mail to trainees
     const previousSession=previousState[session.aftral_id]
     const newTrainees=session.trainees.filter(t => !!t.aftral_id && !previousSession?.trainees.find(tr => t.aftral_id==tr))
