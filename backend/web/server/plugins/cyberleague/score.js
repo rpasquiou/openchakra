@@ -143,7 +143,6 @@ const getCategoryRates = async (userId, params, data) => {
     const market_value = MARKET_VALUES[elem.category.name]
     return new Triple({name,value,market_value})
   })
-  console.log("category_rates",res);
   
   return res
 }
@@ -153,7 +152,6 @@ const getChartData = async (userId, params, data) => {
     .populate({path: '_category_rates', populate:'category'})
   const myData = []
   const labels = data._category_rates.map((elem) => {
-   
     myData.push({label: elem.category.name, y: elem.rate*100})
     return elem.category.name
   })
@@ -184,7 +182,6 @@ const updateMarketScore = async (_category_rates) => {
   } else {
     Score.findOneAndUpdate({_market: true}, {_category_rates: _category_rates})
   }
-
 }
 
 module.exports = {
