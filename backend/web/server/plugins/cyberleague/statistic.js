@@ -90,8 +90,7 @@ const computeBellwetherStatistics = async (filters) => {
   //Getting scores that will be used to do statistics
   const companies = await Company.find(companyFilter)
 
-  //if user is not attach to a recorded company, we check its company size (TODO : and apply filters)
-  const users = await User.find({$or: [{company: {$in: companies.map((c) => {return c._id})}}, {company: undefined, company_size: {$lte: 5000}}]})
+  const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
 
   const scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}}).populate([
     {path: 'answers', populate: {path:'answer'}},
