@@ -1,4 +1,5 @@
 const Block = require('../../models/Block')
+const moment=require('moment')
 const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
@@ -545,6 +546,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (user.role==ROLE_APPRENANT) {
       params['filter._locked']=true
       params['filter.trainees']=user._id
+      // To filter finished session in filterDataUser
+      fields=lodash.uniq([...fields, 'end_date'])
     }
     if (user.role==ROLE_FORMATEUR) {
       params['filter._locked']=true
@@ -566,6 +569,9 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const filterDataUser = async ({model, data, id, user}) => {
+  if (model=='session' && user.role==ROLE_APPRENANT) {
+    data=data.filter(d => moment().isBefore(d.end_date))
+  }
   return data
 }
 
