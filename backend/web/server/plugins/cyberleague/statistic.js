@@ -84,7 +84,7 @@ const regexSensibilization = (text) => {
 }
 
 const computeBellwetherStatistics = async (filters) => {
-  //TODO take filters into account (company sector and / or company region)
+  //TODO take filters into account (company sector, region, size)
   const companyFilter = {size: {$ne: COMPANY_SIZE_5001_PLUS}}
 
   //Getting scores that will be used to do statistics
