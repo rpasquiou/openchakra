@@ -152,6 +152,12 @@ const CompanySchema = new Schema(
         ref: 'company'
       }]
     },
+    founders: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'company'
+      }]
+    },
   },
   schemaOptions,
 )

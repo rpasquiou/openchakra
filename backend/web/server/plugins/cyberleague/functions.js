@@ -193,6 +193,7 @@ declareVirtualField({model: 'company', field: 'sponsored', instance: 'Array', mu
   }
 })
 declareComputedField({model: 'company', field: 'sponsors', getterFn: getterStatus({field: 'statut', value: STATUT_SPONSOR})})
+declareComputedField({model: 'company', field: 'founders', getterFn: getterStatus({field: 'statut', value: STATUT_FOUNDER})})
 
 //Expertise declarations
 
