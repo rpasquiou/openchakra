@@ -20,7 +20,7 @@ const CompanySchema = new Schema(
     size: {
       type: String,
       enum: Object.keys(COMPANY_SIZE),
-      required: false,
+      required: true,
     },
     administrators: {
       type: [{
@@ -33,7 +33,7 @@ const CompanySchema = new Schema(
     sector: {
       type: String,
       enum: Object.keys(SECTOR),
-      required: false,
+      required: true,
     },
     email: {
       type: String,
