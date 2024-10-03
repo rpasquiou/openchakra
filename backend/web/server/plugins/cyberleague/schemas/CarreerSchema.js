@@ -30,11 +30,11 @@ const CarreerSchema = new Schema(
     },
     company_description: {
       type: String,
-      required: false
+      required: true
     },
     post_description: {
       type: String,
-      required: false
+      required: true
     },
     location: {
       type: String,
@@ -42,7 +42,7 @@ const CarreerSchema = new Schema(
     },
     profil_description: {
       type: String,
-      required: false
+      required: true
     },
     work_duration: {
       type: String,
