@@ -149,6 +149,12 @@ USER_MODELS.forEach(m => {
       options: {ref: 'carreer'}
     }
   })
+  declareVirtualField({model: m, field: 'published_missions', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'mission'}
+    }
+  })
 })
 
 //Company declarations

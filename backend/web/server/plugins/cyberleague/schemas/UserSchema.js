@@ -316,6 +316,12 @@ UserSchema.virtual('carreer_applications', {
   foreignField:'candidates',
 })
 
+UserSchema.virtual('published_missions', {
+  ref:'mission',
+  localField:'_id',
+  foreignField:'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
