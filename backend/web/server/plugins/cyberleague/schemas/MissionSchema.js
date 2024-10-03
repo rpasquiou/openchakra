@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { ESTIMATED_DURATION_UNITS } = require('../consts')
+const { ESTIMATED_DURATION_UNITS, STATUSES, STATUS_ACTIVE } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -69,6 +69,11 @@ const MissionSchema = new Schema(
         },
       ],
       default: [],
+    },
+    status: {
+      type: String,
+      enum: Object.keys(STATUSES),
+      dafault: STATUS_ACTIVE
     },
   },
   schemaOptions
