@@ -189,13 +189,12 @@ const onBlockAction = async (user, block) => {
     return
   }
   const progress=await Progress.findOne({user, block})
-  const rule=block.achievement_rule
-  console.log('rule is', rule)
+  const rule=bl.achievement_rule
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
   await saveBlockStatus(user, block, status)
   if (finished) {
-    console.log(`Block ${block._id} finished`)
+    console.log(`Block ${block} finished`)
     onBlockFinished(user, block)
   }
 }
