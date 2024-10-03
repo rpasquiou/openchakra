@@ -186,6 +186,12 @@ declareEnumField( {model: 'company', field: 'statut', enumValues: STATUTS})
 declareComputedField({model: 'company', field: 'pinned', getterFn: getterPinnedFn('company', 'pinned_by'), setterFn: setterPinnedFn('company', 'pinned_by'), requires:'pinned_by'})
 declareComputedField({model: 'company', field: 'contents',  requires:'users', getterFn: getContents})
 declareComputedField({model: 'company', field: 'related_companies',  requires:'expertise_set.expertises', getterFn: getRelated('company')})
+declareVirtualField({model: 'company', field: 'sponsored', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'user'}
+  }
+})
 
 //Expertise declarations
 

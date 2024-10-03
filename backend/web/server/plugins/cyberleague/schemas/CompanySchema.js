@@ -174,6 +174,12 @@ CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
   return this.pinned_by?.length || 0
 })
 
+CompanySchema.virtual('sponsored', {
+  ref: 'user',
+  localField: '_id',
+  foreignField: 'company_sponsorship'
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CompanySchema
