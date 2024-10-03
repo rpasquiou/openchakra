@@ -2,7 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
-const { COMPANY_SIZE_5001_PLUS } = require("./consts")
+const { COMPANY_SIZE_5001_PLUS, STAT_MIN_SCORES } = require("./consts")
 
 
 const bellwetherDataStructure = {
@@ -96,6 +96,11 @@ const computeBellwetherStatistics = async (filters) => {
     {path: 'answers', populate: {path:'answer'}},
     {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
   ])
+
+  //if less than STAT_MIN_SCORES stats are not relevant
+  if (scores.length < STAT_MIN_SCORES) {
+    //TODO
+  }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means answer is not bellwether
   const cleanScores = scores.map((s)=> {
