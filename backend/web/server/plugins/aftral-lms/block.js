@@ -7,6 +7,7 @@ const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
+const { BadRequestError } = require("../../utils/errors");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,

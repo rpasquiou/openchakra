@@ -4,14 +4,11 @@ const path = require('path')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { pollNewFiles } = require('../../server/plugins/aftral-lms/ftp')
 const User = require('../../server/models/User')
-const { ROLE_ADMINISTRATEUR, ROLE_FORMATEUR, ROLE_APPRENANT, isExternalTrainer } = require('../../server/plugins/aftral-lms/consts')
+const { ROLE_ADMINISTRATEUR, ROLE_FORMATEUR, ROLE_APPRENANT, isExternalTrainer, BLOCK_TYPE_SESSION } = require('../../server/plugins/aftral-lms/consts')
 const { importTrainers, importSessions, importTrainees } = require('../../server/plugins/aftral-lms/import')
 const Session = require('../../server/models/Session')
-const ProductCode = require('../../server/models/ProductCode')
-const Program = require('../../server/models/Program')
 const Block = require('../../server/models/Block')
 const { getExchangeDirectory } = require('../../config/config')
-const { isExternal } = require('util/types')
 
 jest.setTimeout(600000)
 
@@ -65,8 +62,9 @@ describe('Test session/trainees polling', () => {
     console.log(sessions.map(s => ({
       name: s.name,
       aftral_id: s.aftral_id,
+      children: s.children.length,
       trainers: s.trainers.map(t => t.fullname),
-      trainees: s.trainees.map(t => t.fullname),
+      trainees: s.trainees.map(t => [t.fullname, t.email]),
     })))
   })
 

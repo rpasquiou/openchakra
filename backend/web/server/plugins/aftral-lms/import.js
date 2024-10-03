@@ -317,13 +317,19 @@ const TRAINER_MAPPING = {
 const TRAINER_KEY='aftral_id'
 
 const importTrainers = async (filename) => {
+  const previousTrainers=await getAftralTrainers()
   const records=await loadRecords(filename)
   const uniqueTrainers=lodash.uniqBy(records, TRAINER_AFTRAL_ID)
-  return importData({model: 'user', data: uniqueTrainers, 
+  const res=await importData({model: 'user', data: uniqueTrainers, 
     mapping: TRAINER_MAPPING, 
     identityKey: TRAINER_KEY, 
     migrationKey: TRAINER_KEY,
   })
+  // Mail new traines
+  const newTrainers=await User.find({role: ROLE_FORMATEUR, aftral_id: {$ne: null, $nin: previousTrainers}})
+  console.log(`Sending init to trainers`, newTrainers.map(t => t.email))
+  await Promise.allSettled(newTrainers.map(trainer => sendInitTrainer({trainer})))
+  return res
 }
 
 const TRAINEE_MAPPING = {
@@ -360,21 +366,49 @@ const SESSION_MAPPING = admin => ({
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
   trainers: async ({record}) => {
-    const trainers=await User.find({aftral_id: {$in: record.TRAINERS}})
-    return trainers.filter(t => !!t)
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainers')
+    const previousTrainers=session?.trainers.map(t => t.aftral_id) || []
+    const importTrainers=record.TRAINERS.map(t => parseInt(t[TRAINER_AFTRAL_ID]))
+    const trainersIds=lodash.uniq([...previousTrainers, ...importTrainers])
+    const trainers=await User.find({aftral_id: {$in: trainersIds}})
+    return trainers
   },
   trainees: async ({record}) => {
-    const trainees=await User.find({aftral_id: {$in: record.TRAINEES}})
-    return trainees.filter(t => !!t)
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainees')
+    const previousTrainees=session?.trainees.map(t => t.aftral_id) || []
+    const importTrainees=record.TRAINEES.map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
+    let traineesIds=lodash.uniq([...previousTrainees, ...importTrainees])
+    // Remove unregistered trainees
+    const unregisterd=record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
+    traineesIds=lodash.difference(traineesIds, unregisterd)
+    const trainees=await User.find({aftral_id: {$in: traineesIds}})
+    return trainees
   },
   location: 'NOM_CENTRE',
 })
 
 const SESSION_KEY='aftral_id'
 
+const getSessionsState = async () => {
+  const sessions=await Session.find({aftral_id: {$ne: null}}).populate(['trainers', 'trainees'])
+  return Object.fromEntries(sessions.map(s => 
+    [
+      s.aftral_id, 
+      {trainers: s.trainers.map(t => t.aftral_id),trainees: s.trainees.map(t => t.aftral_id)}
+    ]
+  ))
+}
+
+const getAftralTrainers = async () => {
+  const trainers=await User.find({role: ROLE_FORMATEUR, aftral_id: {$ne: null}})
+  return trainers.map(t => t.aftral_id)
+}
+
 const importSessions = async (trainersFilename, traineesFilename) => {
+  // Get previous sessions state
+  const previousState=await getSessionsState()
   let result=[]
-  const trainees=(await loadRecords(traineesFilename)).filter(t => !!parseInt(t.FLAG))
+  const trainees=(await loadRecords(traineesFilename))
   const trainers=await loadRecords(trainersFilename)
   let uniqueSessions=lodash
     .uniqBy(trainees, SESSION_AFTRAL_ID)
@@ -382,18 +416,19 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   // Set trainees
   uniqueSessions=uniqueSessions.map(s => ({
     ...s, 
-    TRAINEES: trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINEE_AFTRAL_ID]),
-    TRAINERS: trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]).map(t => t[TRAINER_AFTRAL_ID]),
+    TRAINEES: trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]),
+    TRAINERS: trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]),
   }))
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
   const importResult=await importData({model: 'session', data: uniqueSessions, 
-    mapping: SESSION_MAPPING(oneAdmin), 
+  mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
     progressCb
   })
   result=[...importResult]
+
   // Set programs
   const programsResult=await runPromisesWithDelay(uniqueSessions.map(record => async () => {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
@@ -401,20 +436,22 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     if (!program) {
       return Promise.reject(`Session ${record.CODE_SESSION} programme de code ${record.CODE_PRODUIT} introuvable`)
     }
-    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate(['trainers', 'trainees'])
-    console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate(['trainers', 'trainees', 'children'])
     if (!session) {
       return
     }
-    const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
-    console.log('Cloned program', clonedProgram._id)
-    await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
-    await lockSession(session._id)
+    if (lodash.isEmpty(session.children)) {
+      console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)
+      const clonedProgram=await cloneTree(program._id, session._id, oneAdmin).catch(console.Error)
+      console.log('Cloned program', clonedProgram._id)
+      await Program.findByIdAndUpdate(clonedProgram._id, {parent: session._id})
+      await lockSession(session._id)
+    }
     // Mail to trainees
-    console.log('Sending session init to trainees & trainers', session.trainees)
-    const externalTrainers=session.trainers.filter(t => isExternalTrainer(t.email))
-    await Promise.allSettled(session.trainees.map(trainee => sendInitTrainee({trainee, session}))).then(console.log)
-    await Promise.allSettled(externalTrainers.map(trainer => sendInitTrainer({trainer}))).then(console.log)
+    const previousSession=previousState[session.aftral_id]
+    const newTrainees=session.trainees.filter(t => !!t.aftral_id && !previousSession?.trainees.find(tr => t.aftral_id==tr))
+    console.log(`Sending session`, session.name,`init to trainees`, newTrainees.map(t => t.email))
+    await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({trainee, session})))
   }))
   result=[...result, ...programsResult]
   return result
