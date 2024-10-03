@@ -199,6 +199,12 @@ declareVirtualField({model: 'company', field: 'sponsored', instance: 'Array', mu
     options: {ref: 'user'}
   }
 })
+declareVirtualField({ model: 'company', field: 'carreers', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'carreer' }
+  },
+})
 declareComputedField({model: 'company', field: 'sponsors', getterFn: getterStatus({field: 'statut', value: STATUT_SPONSOR})})
 declareComputedField({model: 'company', field: 'founders', getterFn: getterStatus({field: 'statut', value: STATUT_FOUNDER})})
 

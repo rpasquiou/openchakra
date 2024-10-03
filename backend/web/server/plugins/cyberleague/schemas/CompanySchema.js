@@ -192,6 +192,12 @@ CompanySchema.virtual('sponsored', {
   foreignField: 'company_sponsorship'
 })
 
+CompanySchema.virtual('carreers', {
+  ref: 'carreer',
+  localField: '_id',
+  foreignField: 'company'
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CompanySchema
