@@ -1,9 +1,39 @@
+import axios from "axios";
+import { API_ROOT } from "./consts"
 import { isClient } from "./misc"
 
+const SCORM_URL = `${API_ROOT}/scorm`
 export class LMSAPI {
+
     constructor() {
       this.initialized = false;
       this.data = {}; // to store data values
+      axios.get(`${API_ROOT}/current-user`)
+        .then(res => {
+          this.data['cmi.core.student_name']=res.data.fullname
+          this.data['cmi.core.student_id']=res.data._id
+        })
+    }
+
+    _postData() {
+      console.log('here')
+      if (!isClient()) {
+        return console.warn(`Not in browser`)
+      }
+      const url=new URL(globalThis.window.location.toString())
+      const resourceId=url.searchParams.get('id')
+      if (!resourceId) {
+        return console.warn(`No resource id found in URL ${window.location}`)
+      }
+      const postData = {
+        resourceId,
+        scormData: this.data,
+      }
+      const headers={'Content-Type': 'application/json'}
+      console.log('POSTing',postData, 'to', SCORM_URL)
+      axios.post(SCORM_URL, postData, {headers})
+       .then(console.log)
+       .catch(console.error)
     }
     
     addLMSInfo(info) {
@@ -11,10 +41,6 @@ export class LMSAPI {
     }
     // Initialize communication with the LMS
     LMSInitialize() {
-      // if (this.initialized) {
-      //   this.addLMSInfo("LMS is already initialized.");
-      //   return "false";
-      // }
       this.initialized = true;
       this.addLMSInfo("LMS Initialized.");
       return "true";
@@ -63,7 +89,12 @@ export class LMSAPI {
         return "false";
       }
       this.addLMSInfo(`Commit ${JSON.stringify(this.data)}`)
-      console.log("Data committed:", this.data);
+      try {
+        this._postData()
+      }
+      catch(err) {
+        console.error(err)
+      }
       return "true";
     }
   

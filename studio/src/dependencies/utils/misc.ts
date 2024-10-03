@@ -114,5 +114,5 @@ export const redirectExists = () =>{
 } 
 
 export const isClient = () => {
-  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+  return !!globalThis.window
 }

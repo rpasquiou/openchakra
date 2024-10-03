@@ -60,7 +60,10 @@ const ProgressSchema = new Schema({
     type: Number,
     required: true,
     default: 0,
-  }
+  },
+  scorm_data: {
+    type: String
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ProgressSchema.virtual('homeworks', {

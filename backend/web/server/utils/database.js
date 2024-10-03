@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const moment=require('moment')
 const formatDuration = require('format-duration')
 const {splitRemaining} = require('../../utils/text')
-const {UPDATED_AT_ATTRIBUTE, CREATED_AT_ATTRIBUTE, MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
+const {MODEL_ATTRIBUTES_DEPTH} = require('../../utils/consts')
 const UserSessionData = require('../models/UserSessionData')
 const Booking = require('../models/Booking')
 const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
@@ -11,6 +11,19 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 const {runPromisesWithDelay}=require('./concurrency')
+
+let scormCallback=null
+
+const setScormCallback = fn => {
+  console.log('Setting scorm callback to', fn)
+  scormCallback=fn
+}
+
+const callScormCallback = async p => {
+  if (scormCallback) {
+    return scormCallback(p)
+  }
+}
 
 const LEAN_DATA=false
 
@@ -1176,6 +1189,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, setPreDeleteData,
+  setPrePutData, callPrePutData, setPreDeleteData, setScormCallback, callScormCallback,
 }
 

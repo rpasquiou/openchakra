@@ -14,6 +14,7 @@ const {
   putToDb,
   retainRequiredFields,
   importData,
+  callScormCallback,
 } = require('../../utils/database')
 
 const path = require('path')
@@ -152,6 +153,13 @@ router.get('/roles', (req, res) => {
   console.log()
   return res.json(ROLES)
 })
+
+// SCORM specific
+router.post('/scorm', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  await callScormCallback({user: req.user, data: req.body})
+  return res.status(200).json('ok')
+})
+
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result

@@ -6,12 +6,11 @@ import Cookies from 'universal-cookie'
 import {
   clearComponentValue,
   getComponent,
-  getComponentDataValue
 } from './values';
 import { clearToken } from './token';
 import { generatePDF } from './tools'
+import { API_ROOT } from './consts'
 
-const API_ROOT = '/myAlfred/api/studio'
 export const ACTIONS = {
   login: ({ props, level, getComponentValue }) => {
     const email = getComponentValue(props.email, level)

@@ -1,7 +1,7 @@
 const lodash = require("lodash");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -172,6 +172,17 @@ const onBlockFinished = async (user, block) => {
 
 const onBlockAction = async (user, block) => {
   const bl=await mongoose.models.block.findById(block)
+  // Is it a scorm ?
+  if (bl.resource_type==RESOURCE_TYPE_SCORM) {
+    const data=await getBlockScormData(user, block)
+    if (data?.['cmi.core.lesson_status']=='passed')  {
+      if (!(await isFinished(user, block))) {
+        await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
+        return onBlockFinished(user, block)
+      }
+    }
+    return
+  }
   // Homework priority on other rules
   if (bl.homework_mode) {
     const homeworks=await Homework.find({trainee: user, resource: block}).sort({[CREATED_AT_ATTRIBUTE]: 1})
@@ -179,8 +190,10 @@ const onBlockAction = async (user, block) => {
     if (!!latest_homework) {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
-        await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-        return onBlockFinished(user, block)
+    if (!(await isFinished(user, block))) {
+          await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
+          return onBlockFinished(user, block)
+        }
       }
       else {
         await removeBlockStatus(user, block)
@@ -525,13 +538,33 @@ const saveBlockStatus= async (userId, blockId, status) => {
   if (!userId || !blockId || !status) {
     throw new Error(userId, blockId, status)
   }
-  status==BLOCK_STATUS_TO_COME && console.trace('set block status to come')
   await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
   return status
+}
+
+const saveBlockScormData = async (userId, blockId, data) => {
+  if (!userId || !blockId || !data) {
+    throw new Error(userId, blockId, data)
+  }
+  await Progress.findOneAndUpdate(
+    {block: blockId, user: userId},
+    {block: blockId, user: userId, scorm_data: JSON.stringify(data)},
+    {upsert: true}
+  )
+}
+
+const getBlockScormData = async (userId, blockId) => {
+  if (!userId || !blockId) {
+    throw new Error(userId, blockId)
+  }
+  const pr=await Progress.findOne({block: blockId, user: userId})
+  if (pr?.scorm_data) {
+    return JSON.parse(pr.scorm_data)
+  }
 }
 
 const removeBlockStatus= async (userId, blockId, status) => {
@@ -637,6 +670,11 @@ const updateSessionStatus = async (sessionId, trainee) => {
   console.timeEnd('update session status')
 }
 
+const setScormData= async (userId, blockId, data) => {
+  await saveBlockScormData(userId, blockId, data)
+  await onBlockAction(userId, blockId)
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
@@ -645,6 +683,5 @@ module.exports={
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
-  updateSessionStatus, saveBlockStatus,
+  updateSessionStatus, saveBlockStatus, setScormData,
 }
-
