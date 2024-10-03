@@ -146,6 +146,12 @@ const CompanySchema = new Schema(
       enum: Object.keys(STATUTS),
       required: false
     },
+    sponsor: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'company'
+      }]
+    },
   },
   schemaOptions,
 )

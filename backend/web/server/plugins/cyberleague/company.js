@@ -1,3 +1,4 @@
+const Company = require('../../models/Company')
 const Content = require('../../models/Content')
 
 const getContents = async (userId, params, data) => {
@@ -5,4 +6,14 @@ const getContents = async (userId, params, data) => {
   return contents
 }
 
-module.exports = { getContents }
+const getterStatus = ({field, value}) => {
+  return async (userId, params, data) => {
+    const companies = Company.find({[field]: value})
+    return companies.map((c) => {return c._id})
+  }
+}
+
+module.exports = { 
+  getContents,
+  getterStatus
+ }
