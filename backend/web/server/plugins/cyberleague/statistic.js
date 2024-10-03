@@ -2,7 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
-const { COMPANY_SIZE_5001_PLUS, STAT_MIN_SCORES } = require("./consts")
+const { COMPANY_SIZE_1001_PLUS, STAT_MIN_SCORES, COMPANY_SIZE_0_10 } = require("./consts")
 
 
 const bellwetherDataStructure = {
@@ -92,7 +92,7 @@ const increaseValueCount = (data, field, increaseValue) => {
 
 const computeBellwetherStatistics = async (filters) => {
   //TODO take filters into account (company sector, region, size)
-  const companyFilter = {size: {$ne: COMPANY_SIZE_5001_PLUS}}
+  const companyFilter = {size: {$nin: [COMPANY_SIZE_1001_PLUS, COMPANY_SIZE_0_10]}}
 
   //Getting scores that will be used to do statistics
   const companies = await Company.find(companyFilter)
