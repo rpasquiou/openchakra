@@ -63,7 +63,7 @@ const extractCsv=(bufferData, options) => {
       const opts={columns: true, bom: true, relax_column_count: true, ...options}
       const records=csv_parse(contents, opts)
       if (opts.columns) {
-        const headers=Object.keys(records[0])
+        const headers=records?.length > 0 ? Object.keys(records[0]) : []
         resolve({headers: headers, records: records})
       }
       else {
