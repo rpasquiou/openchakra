@@ -121,7 +121,9 @@ const computeBellwetherStatistics = async (filters) => {
     protectionAntivirus: {value: 0, count: 0},
     practicesCharter: {value: 0, count: 0},
     practicesFinancial: {value: 0, count: 0},
-    practicesSensibilization: {value: 0, count: 0}
+    practicesSensibilization: {value: 0, count: 0},
+    mfa: {value: 0, count: 0},
+    admin: {value: 0, count: 0}
   }
 
   cleanScores.forEach((s)=> {
