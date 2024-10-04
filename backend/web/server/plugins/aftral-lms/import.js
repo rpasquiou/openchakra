@@ -431,7 +431,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   result=[...importResult]
 
   // Set programs
-  const programsResult=await runPromisesWithDelay(uniqueSessions.map(record => async () => {
+  const programsResult=await runPromisesWithDelay(sessions.map(record => async () => {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=await Program.findOne({codes: code, origin: null, _locked: false})
     if (!program) {
@@ -455,6 +455,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     console.log(`Sending session`, session.name,`init to trainees`, newTrainees.map(t => t.email))
     await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({trainee, session})))
   }))
+  .then(res => console.log(res.filter(r => r.status=='rejected')))
   result=[...result, ...programsResult]
   return result
 }

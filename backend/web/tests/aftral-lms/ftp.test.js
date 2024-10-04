@@ -58,7 +58,7 @@ describe('Test session/trainees polling', () => {
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Apprenant.csv'), new Date(), new Date())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Session_Formateur.csv'), new Date(), new Date())
     await pollNewFiles()
-    const sessions=await Session.find().populate(['trainers', 'trainees', 'children'])
+    const sessions=await Session.find({aftral_id: {$ne: null}}).populate(['trainers', 'trainees', 'children'])
     console.log(sessions.map(s => ({
       name: s.name,
       aftral_id: s.aftral_id,
