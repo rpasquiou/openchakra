@@ -1,4 +1,4 @@
-const { RESOURCE_TYPE_LINK, ACHIEVEMENT_RULE_CONSULT, ROLE_CONCEPTEUR } = require("../../server/plugins/aftral-lms/consts")
+const { RESOURCE_TYPE_LINK, ACHIEVEMENT_RULE_CONSULT, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("../../server/plugins/aftral-lms/consts")
 
 const BaseUser={
   firstname: 'Firstname',
@@ -10,6 +10,12 @@ const BaseBuilder={
   ...BaseUser,
   role: ROLE_CONCEPTEUR,
   email: 'hello+concepteur@wappizy.com',
+}
+
+const BaseTrainee={
+  ...BaseUser,
+  role: ROLE_APPRENANT,
+  email: 'hello+apprenant@wappizy.com',
 }
 
 const BaseResource={
@@ -28,5 +34,5 @@ const BaseSequence={
 }
 
 module.exports={
-  BaseResource, BaseBuilder, BaseModule, BaseSequence,
+  BaseResource, BaseBuilder, BaseModule, BaseSequence, BaseTrainee,
 }

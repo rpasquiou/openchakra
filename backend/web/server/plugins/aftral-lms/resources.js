@@ -3,19 +3,54 @@ const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT, BLOCK_STATUS, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 const User = require('../../models/User')
 const { BadRequestError } = require('../../utils/errors')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
+
+// HACK: use $sortArray in original when under mongo > 5.02
+const getBlockResources = async (blockId, userId) => {
+  // return getBlockResourcesOriginal(blockId, userId)
+  return getBlockResourcesNew(blockId, userId)
+}
+
+const getBlockResourcesNew = async (blockId, userId, role=null) => {
+
+  if (!role) {
+    role = (await User.findById(userId))?.role
+  }
+
+  const blocks=await Block.find({parent: blockId, masked: {$ne: true}}).sort({order:1})
+  // blocks.length>0 && console.log('children', blocks)
+  let res=[]
+  const result=await runPromisesWithDelay(blocks.map(b => async () => {
+    if (b.type==BLOCK_TYPE_RESOURCE) {
+      if (role==ROLE_APPRENANT) {
+        const available=await Progress.exists({block: b._id, user: userId, achievement_status: {$in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT]}})
+        if (!available) {
+          return
+        }
+      }
+        res.push(b)
+    }
+    else {
+      const subResources=await getBlockResources(b._id, userId)
+      res=[...res, ...subResources]
+    }
+  }))
+  return res
+}
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
-const getBlockResources = async (blockId, userId) => {
+const getBlockResourcesOriginal = async (blockId, userId) => {
+
   if (!userId) {
     return console.trace(`User is null`)
   }
-  const resourceFilter={ 'descendants.type': 'resource'}
+  const resourceFilter={ 'descendants.type': BLOCK_TYPE_RESOURCE}
   const role=(await User.findById(userId)).role
   if (role==ROLE_APPRENANT) {
     resourceFilter['descendants.masked']={$ne: true}

@@ -9,6 +9,7 @@ const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
+const Resource = require("../../models/Resource");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -225,24 +226,23 @@ const getBlockSession = async blockId => {
 }
 
 const getNextResource= async (blockId, user) => {
-  const session=await getBlockSession(blockId)
-  const resources=await getBlockResources(session)
-  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
-  if (!brothers[0]) {
+  const session=await getBlockSession(blockId, user)
+  const resources=await getBlockResources(session, user)
+  const idx=resources.findIndex(r => idEqual(r._id, blockId))
+  if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
   }
-  return {_id: brothers[0]}
+  return {_id: resources[idx+1]._id}
 }
 
 const getPreviousResource= async (blockId, user) => {
-  const session=await getBlockSession(blockId)
-  let resources=await getBlockResources(session)
-  resources.reverse()
-  const brothers=lodash.dropWhile(resources, id => !idEqual(id, blockId)).slice(1)
-  if (!brothers[0]) {
+  const session=await getBlockSession(blockId, user)
+  const resources=await getBlockResources(session, user)
+  const idx=resources.findIndex(r => idEqual(r._id, blockId))
+  if (idx==0) {
     throw new Error('Pas de ressource précédente')
   }
-  return {_id: brothers[0]}
+  return {_id: resources[idx-1]._id}
 }
 
 const getSession = async (userId, params, data, fields) => {
