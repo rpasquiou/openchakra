@@ -208,7 +208,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     }
     const enumObjectKeys=Object.keys(enumObject)
     // Allow null in enums if attribute is not required
-    if (!att.options.required) {
+    if (!att.options?.required) {
       enumObjectKeys.push(null)
     }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
