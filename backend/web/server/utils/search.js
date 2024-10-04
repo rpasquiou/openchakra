@@ -3,9 +3,9 @@ const { normalize, createRegExpAND, createRegExpOR } = require("../../utils/text
 const { loadFromDb } = require("./database")
 
 
-const search = async ({ model, fields, search_field = SEARCH_FIELD_ATTRIBUTE, search_value, user }) => {
-  const loadFields = [...fields, SEARCH_FIELD_ATTRIBUTE]
-  const data = await loadFromDb({ model, fields: loadFields, user })
+const search = async ({ model, fields, search_field = SEARCH_FIELD_ATTRIBUTE, search_value, user, filter = {} }) => {
+  const loadFields = [...fields, search_field]
+  const data = await loadFromDb({ model, fields: loadFields, user, params: filter })
 
   const normalizedSearchValue = normalize(search_value)
 
@@ -20,7 +20,7 @@ const search = async ({ model, fields, search_field = SEARCH_FIELD_ATTRIBUTE, se
   if (filteredData.length === 0) {
     const regExpOR = createRegExpOR(normalizedSearchValue)
     filteredData = data.filter((item) => {
-      const normalizedSearchField = normalize(item[SEARCH_FIELD_ATTRIBUTE])
+      const normalizedSearchField = normalize(item[search_field])
       return regExpOR.test(normalizedSearchField)
     })
   }
