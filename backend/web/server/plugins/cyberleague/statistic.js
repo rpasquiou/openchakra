@@ -6,72 +6,72 @@ const { COMPANY_SIZE_1001_PLUS, STAT_MIN_SCORES, COMPANY_SIZE_0_10 } = require("
 
 
 const regexSecurityIncidentManagement = (text) => {
-  const regex = /.*gestion.*/
+  const regex = /.*gestion.*/ //Avez-vous une procédure de gestion des incidents de sécurité ?
   return regex.test(text)
 }
 
 const regexPartner = (text) => {
-  const regex = /.*partenaire.*/
+  const regex = /.*partenaire.*/ //Avez-vous identifié un partenaire spécialisé dans la réponse à incident de cybersécurité ?
   return regex.test(text)
 }
 
 const regexInventory = (text) => {
-  const regex = /.*inventaire.*/
+  const regex = /.*inventaire.*/ //Avez-vous un inventaire à jour de l'ensemble de vos actifs informatiques (matériels, logiciels, sites Web, nom de domaine, IP,... ) ?
   return regex.test(text)
 }
 
 const regexInsurance = (text) => {
-  const regex = /.*assurance.*/
+  const regex = /.*assurance.*/ //Avez-vous une assurance cybersécurité ?
   return regex.test(text)
 }
 
 const regexCyberRef = (text) => {
-  const regex = /.*référent.*/
+  const regex = /.*référent.*/ //Avez-vous un responsable ou un référent cybersécurité ?
   return regex.test(text)
 }
 
 const regexIntrusion = (text) => {
-  const regex = /.*intrusion.*/
+  const regex = /.*intrusion.*/ //Effectuez-vous des tests d'intrusion sur votre SI ?
   return regex.test(text)
 }
 
 const regexExternalized = (text) => {
-  const regex = /.*sauvegarde.*/
+  const regex = /.*sauvegarde.*/ //Disposez-vous de sauvegarde hors-ligne ? (sur média indépendant délocalisé du lieu de production) ?
   return regex.test(text)
 }
 
 const regexWebApp = (text) => {
-  const regex = /.*WAF.*/
+  const regex = /.*WAF.*/ //Vos sites web sont-ils protégés par des mécanismes de pare-feu applicatif (WAF) ?
   return regex.test(text)
 }
 
 const regexAntivirus = (text) => {
-  const regex = /.*antivirus.*/
+  const regex = /.*antivirus.*/ //Disposez-vous d'un antivirus de dernière génération (EDR/XDR, Analyse comportementale, Analyse mémoire) ?
   return regex.test(text)
 }
 
 const regexCharter = (text) => {
-  const regex = /.*charte.*/
+  const regex = /.*charte.*/ //Avez-vous diffusé une charte informatique à l'ensemble de vos collaborateurs ?
   return regex.test(text)
 }
 
 const regexFinancial = (text) => {
-  const regex = /.*banques.*/
+  const regex = /.*banques.*/ //Disposez-vous d’une procédure unique transverse ( pour toutes les banques) d’exécution des virements et/ou de changement d’IBAN  (montants autorisés France et international, plafonds cumulés, circuit de validation avec double regard (unitaire et en masse), ajout de bénéficiaire, etc) ?
   return regex.test(text)
 }
 
 const regexSensibilization = (text) => {
-  const regex = /.*Sensibilisez.*/
+  const regex = /.*Sensibilisez.*/ //Sensibilisez-vous vos collaborateurs à la cybersécurité ?
   return regex.test(text)
 }
 
 const regexMFA = (text) => {
-  const regex = /.*MFA.*/
+  const regex = /.*MFA.*/ //Avez-vous mis en place le MFA (Authentification Multifacteurs) pour les utilisateurs ?
   return regex.test(text)
 }
 
 const regexAdmin = (text) => {
-  const regex = /.*admin.*/
+  const regex = /.*admin.*/ //Interdisez-vous à vos collaborateurs d'être administrateurs de leurs postes ?
   return regex.test(text)
 }
 
