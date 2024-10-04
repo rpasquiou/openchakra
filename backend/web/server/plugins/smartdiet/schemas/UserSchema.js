@@ -282,6 +282,14 @@ const UserSchema = new Schema({
     type: Boolean,
     required: false,
   },
+  diet_calls_enabled: {
+    type: Boolean,
+    validate: [
+      function(v) {return !v || this.role==ROLE_EXTERNAL_DIET},
+      `Appels sortants autorisés aux diets uniquement`
+    ],
+    required: false,
+  },
   // END TODO: handle multiple enum declaration
   // TODO :set to ACTIVE when profile is 100%
   registration_status: {
@@ -343,6 +351,15 @@ const UserSchema = new Schema({
   // comment on user from diet
   diet_comment: {
     type: String,
+  },
+  // Box handling
+  box_sent_date: {
+    type: Date,
+    required: false,
+  },
+  box_batch_code: {
+    type: Date,
+    required: false,
   },
 }, {...schemaOptions})
 

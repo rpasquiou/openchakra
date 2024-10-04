@@ -65,6 +65,7 @@ async function fillForm(sourceLink, data) {
     }
     setFieldValue(form, field, fieldValue)
   })
+  form.flatten()
   return sourcePDF
 }
 

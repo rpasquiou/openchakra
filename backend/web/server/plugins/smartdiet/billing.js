@@ -42,6 +42,8 @@ const getAppointmentPrice = ({pricesList, appointment}) => {
   return prices?.[PRICES_MAPPING[appointment.type]]||undefined
 }
 
+// Computes blliing for the logged user
+// If diet is provided, return only this diet's billings
 const computeBilling = async ({ user, diet, fields, params }) => {
   let data
   if (user.role === ROLE_ADMIN || user.role === ROLE_SUPER_ADMIN) {
@@ -64,7 +66,9 @@ const computeBilling = async ({ user, diet, fields, params }) => {
   return { model: 'billing', data }
 }
 
+// diet : loggedUser, validDiet: diet id to filter on
 const computeDietBilling = async (diet, fields, params, validDiet) => {
+  console.log('params', params)
   const company = params['filter.company']
   const prices = await getPrices()
   const appointments = company ?
@@ -118,10 +122,11 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     ])
     : await NutritionAdvice.find({ diet }, { start_date: 1 })
 
-  let startDate = lodash.minBy([...appointments, ...nutAdvices], obj => obj.start_date)?.start_date
-  if (params['filter.start_date']) {
-    startDate = moment(params['filter.start_date'])
-  }
+  const startDate = params['filter.start_date'] ? 
+    moment(params['filter.start_date'])
+    :
+    lodash.minBy([...appointments, ...nutAdvices], obj => obj.start_date)?.start_date
+
   const endDate = params['filter.end_date'] ? moment(params['filter.end_date']) : moment()
 
   const months = []
@@ -130,8 +135,11 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     months.push(current.clone())
     current.add(1, 'month')
   }
+  if (params['sort.month']=='desc') {
+    months.reverse()
+  }
 
-  const data = []
+  let data = []
   for (const month of months) {
     const monthFilter = getMonthFilter({ attribute: 'start_date', month })
     const appts = await Appointment.find({ ...monthFilter, validated: true, diet }, { appointment_type: 1, start_date: 1 })
@@ -207,6 +215,14 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     }]
   }
 
+  if (params.limit) {
+    const limit=parseInt(params.limit)
+    let start=0
+    if (params.page) {
+      start=parseInt(params.page)*limit
+    }
+    data=data.slice(start, start+params.limit+1)
+  }
   return data
 }
 

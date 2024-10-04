@@ -17,7 +17,7 @@ const {
 } = require('../../server/plugins/smartdiet/consts')
 const bcrypt = require('bcryptjs')
 const Coaching = require('../../server/models/Coaching')
-const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms } = require('../../server/plugins/smartdiet/import')
+const { importDiets, importCoachings, importAppointments, importCompanies, importMeasures, fixFiles, importQuizz, importQuizzQuestions, importQuizzQuestionAnswer, importUserQuizz, importKeys, importProgressQuizz, importUserProgressQuizz, importOffers, importUserObjectives, importUserAssessmentId, importUserImpactId, importConversations, importMessages, updateImportedCoachingStatus, updateDietCompanies, importSpecs, importDietSpecs, importPatients, importPatientHeight, generateProgress, fixAppointments, importFoodDocuments, importUserFoodDocuments, importNutAdvices, importNetworks, importDietNetworks, importDiploma, importOtherDiploma, importPatientWeight,loadRecords, generateQuizz, importFoodPrograms, fixFoodDocuments } = require('../../server/plugins/smartdiet/import')
 const { getCacheKeys, displayCache, loadCache, saveCache } = require('../../utils/import')
 const Measure = require('../../server/models/Measure')
 const QuizzQuestion = require('../../server/models/QuizzQuestion')
@@ -77,9 +77,9 @@ describe('Test imports', () => {
   })
 
   it('must import companies', async () => {
-    const res = await importCompanies(path.join(ROOT, 'smart_project.csv'))
+    await importCompanies(path.join(ROOT, 'smart_project.csv'))
     const companies=await Company.find()
-    expect(companies.length).toEqual(13)
+    expect(companies.length).toEqual(15)
   })
 
   it('must import patients', async () => {

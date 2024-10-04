@@ -123,18 +123,18 @@ export const getConditionsPropertyName = property => {
   return `conditions${property}`
 }
 
-export const buildFilter = (dataSourceId, filterAttributes, componentsValues) => {
+export const buildFilter = (dataSourceId, filterAttributes, getComponentValue) => {
   // componentsValues stores comp-XXX_0_1_2 while componentName is the studio's one (i.e. comp-XXX)
-  const log=dataSourceId=='root' ? console.log : () => {}
-  const getComponentValue= compId => {
-    const val=Object.entries(componentsValues).find(([compo, value]) => compo.startsWith(compId))?.[1]
-    return val
-  }
   const filters=filterAttributes[dataSourceId]
   const constants=filters?.constants?.map(([att, value]) => `filter.${att}=${value}`) || []
-  const chunked=lodash.chunk(filters?.variables?.[0] || [], 2)
-  const variables=chunked.filter(([att, comp]) => ![null, undefined].includes(getComponentValue(comp)))
-    .map(([att, comp]) => `filter.${att}=${getComponentValue(comp)}`)  || []
+  const chunks=lodash.chunk(filters?.variables?.[0]||[], 2)
+  // To get value if filter is inside a dynamic container
+  const customGetComponentValue = compId => {
+    return getComponentValue(compId) || getComponentValue(compId+'_0')
+  }
+  const variables=chunks.filter(([att, comp]) => !lodash.isNil(customGetComponentValue(comp)))
+      .map(([att, comp]) => `filter.${att}=${customGetComponentValue(comp)}`)  
+    || []
   const allFilters=[...constants, ...variables]
   const res=allFilters.length>0 ? allFilters.join('&')+'&' : ''
   return res

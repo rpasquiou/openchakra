@@ -10,7 +10,6 @@ try {
   Customer=User.discriminator(DISC_CUSTOMER_FREELANCE, customerSchema)
 }
 catch(err) {
-  console.error(err)
   if (err.code !== 'MODULE_NOT_FOUND') {
     throw err
   }

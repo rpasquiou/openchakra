@@ -19,11 +19,11 @@ require('../../server/models/Comment')
 describe('Prospects', () => {
 
   let leadsData
-  beforeEach(async () => {
+  beforeAll(async () => {
     await mongoose.connect(`mongodb://localhost/test${moment().unix()}`, MONGOOSE_OPTIONS)
   })
 
-  afterEach(async () => {
+  afterAll(async () => {
     await mongoose.connection.dropDatabase()
     await mongoose.connection.close()
   })
