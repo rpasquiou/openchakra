@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUSES, STATUS_ACTIVE } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -38,7 +39,7 @@ const CarreerSchema = new Schema(
       required: true
     },
     location: {
-      type: String,
+      type: AddressSchema,
       required: false
     },
     profil_description: {
