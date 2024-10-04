@@ -5,27 +5,6 @@ const User = require("../../models/User")
 const { COMPANY_SIZE_1001_PLUS, STAT_MIN_SCORES, COMPANY_SIZE_0_10 } = require("./consts")
 
 
-const bellwetherDataStructure = {
-  threatSecurityIncident: {value: 0, count: 0},
-  threatSecurityIncidentETI: {value: 0, count: 0},
-  threatLeakage: {value: 0, count: 0},
-  threatCriticalIncident: {value: 0, count: 0},
-  maturityBudget: {value: 0, count: 0},
-  maturityBudgetPME: {value: 0, count: 0},
-  maturityCyberRef: {value: 0, count: 0},
-  protectionIntrusion: {value: 0, count: 0},
-  protectionIntrusionPME: {value: 0, count: 0},
-  protectionIntrusionETI: {value: 0, count: 0},
-  protectionExternalized: {value: 0, count: 0},
-  protectionWebApp: {value: 0, count: 0},
-  protectionWebAppPME: {value: 0, count: 0},
-  protectionWebAppETI: {value: 0, count: 0},
-  protectionAntivirus: {value: 0, count: 0},
-  practicesCharter: {value: 0, count: 0},
-  practicesFinancial: {value: 0, count: 0},
-  practicesSensibilization: {value: 0, count: 0}
-}
-
 const regexSecurityIncident = (text) => {
   return false
 }
@@ -116,6 +95,27 @@ const computeBellwetherStatistics = async (filters) => {
     })
     return s
   })
+
+  const bellwetherData = {
+    threatSecurityIncident: {value: 0, count: 0},
+    threatSecurityIncidentETI: {value: 0, count: 0},
+    threatLeakage: {value: 0, count: 0},
+    threatCriticalIncident: {value: 0, count: 0},
+    maturityBudget: {value: 0, count: 0},
+    maturityBudgetPME: {value: 0, count: 0},
+    maturityCyberRef: {value: 0, count: 0},
+    protectionIntrusion: {value: 0, count: 0},
+    protectionIntrusionPME: {value: 0, count: 0},
+    protectionIntrusionETI: {value: 0, count: 0},
+    protectionExternalized: {value: 0, count: 0},
+    protectionWebApp: {value: 0, count: 0},
+    protectionWebAppPME: {value: 0, count: 0},
+    protectionWebAppETI: {value: 0, count: 0},
+    protectionAntivirus: {value: 0, count: 0},
+    practicesCharter: {value: 0, count: 0},
+    practicesFinancial: {value: 0, count: 0},
+    practicesSensibilization: {value: 0, count: 0}
+  }
 
   cleanScores.forEach((s)=> {
     s.answers.forEach((a) => {
