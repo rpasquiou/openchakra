@@ -199,7 +199,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum
+    enumValues=att.options.enum.filter(v => v !==null)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
@@ -207,6 +207,10 @@ const getAttributeCaracteristics = (modelName, att) => {
       throw new Error(`${modelName}.${att.path}:no declared enum`)
     }
     const enumObjectKeys=Object.keys(enumObject)
+    // Allow null in enums if attribute is not required
+    if (!att.options.required) {
+      enumObjectKeys.push(null)
+    }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
       throw new Error(`${modelName}.${att.path}:inconsistent enum:${JSON.stringify(enumValues)}/${JSON.stringify(enumObjectKeys)}`)
     }
