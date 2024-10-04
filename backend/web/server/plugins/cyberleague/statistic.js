@@ -104,7 +104,7 @@ const computeBellwetherStatistics = async (filters) => {
     {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
   ])
 
-  //if less than STAT_MIN_SCORES stats are not relevant
+  //if less answers than STAT_MIN_SCORES stats are not relevant
   if (scores.length < STAT_MIN_SCORES) {
     //TODO
   }
