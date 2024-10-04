@@ -96,9 +96,26 @@ const computeBellwetherStatistics = async (filters) => {
     {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
   ])
 
+  const res = {
+    securityIncidentManagement: 0,
+    partner: 0,
+    inventory: 0,
+    insurance: 0,
+    cyberRef: 0,
+    intrusion: 0,
+    externalized: 0,
+    webApp: 0,
+    antivirus: 0,
+    charter: 0,
+    financial: 0,
+    sensibilization: 0,
+    mfa: 0,
+    admin: 0
+  }
+
   //if less answers than STAT_MIN_SCORES stats are not relevant
   if (scores.length < STAT_MIN_SCORES) {
-    //TODO
+    //TODO return 'not enough scores to have relevant data'
   }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means answer is not bellwether
@@ -163,7 +180,7 @@ const computeBellwetherStatistics = async (filters) => {
   })
 
   //Compute ratios for bellwether
-
+  
 }
 
 module.exports = {
