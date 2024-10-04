@@ -48,7 +48,7 @@ const CarreerSchema = new Schema(
     work_duration: {
       type: String,
       enum: Object.keys(WORK_DURATIONS),
-      required: false
+      required: true
     },
     pay: {
       type: String,
