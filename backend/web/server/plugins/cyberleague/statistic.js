@@ -10,7 +10,7 @@ const regexSecurityIncidentManagement = (text) => {
   return regex.test(text)
 }
 
-const regexLeakage = (text) => {
+const regexPartner = (text) => {
   const regex = /.*partenaire.*/
   return regex.test(text)
 }
@@ -110,18 +110,18 @@ const computeBellwetherStatistics = async (filters) => {
   })
 
   const bellwetherData = {
-    threatSecurityIncident: {value: 0, count: 0},
-    threatLeakage: {value: 0, count: 0},
-    threatCriticalIncident: {value: 0, count: 0},
-    maturityInsurance: {value: 0, count: 0},
-    maturityCyberRef: {value: 0, count: 0},
-    protectionIntrusion: {value: 0, count: 0},
-    protectionExternalized: {value: 0, count: 0},
-    protectionWebApp: {value: 0, count: 0},
-    protectionAntivirus: {value: 0, count: 0},
-    practicesCharter: {value: 0, count: 0},
-    practicesFinancial: {value: 0, count: 0},
-    practicesSensibilization: {value: 0, count: 0},
+    securityIncidentManagement: {value: 0, count: 0},
+    partner: {value: 0, count: 0},
+    inventory: {value: 0, count: 0},
+    insurance: {value: 0, count: 0},
+    cyberRef: {value: 0, count: 0},
+    intrusion: {value: 0, count: 0},
+    externalized: {value: 0, count: 0},
+    webApp: {value: 0, count: 0},
+    antivirus: {value: 0, count: 0},
+    charter: {value: 0, count: 0},
+    financial: {value: 0, count: 0},
+    sensibilization: {value: 0, count: 0},
     mfa: {value: 0, count: 0},
     admin: {value: 0, count: 0}
   }
@@ -144,7 +144,7 @@ const computeBellwetherStatistics = async (filters) => {
 
       } else if (regexIntrusion(a.question.text)) {
 
-      } else if (regexLeakage(a.question.text)) {
+      } else if (regexPartner(a.question.text)) {
         
       } else if (regexSecurityIncidentManagement(a.question.text)) {
         
