@@ -80,7 +80,11 @@ const MissionSchema = new Schema(
       type: String,
       enum: Object.keys(REGIONS),
       required: false
-    }
+    },
+    budget: {
+      type: Number,
+      required: false
+    },
   },
   schemaOptions
 )
