@@ -532,7 +532,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     const sessions=await Session.find({_id: {$in: feeds.map(f => f._id)}})
     feeds=feeds.filter(feed => {
       const session=sessions.find(s => idEqual(s._id, feed._id))
-      return !session || moment().isBefore(session.end_date)
+      return !session || moment().isBetween(session.start_date, session.end_date)
     })
     return ({data: feeds})
   }
@@ -546,11 +546,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model=='session') {
+    fields=lodash.uniq([...fields, 'start_date', 'end_date'])
     if (user.role==ROLE_APPRENANT) {
       params['filter._locked']=true
       params['filter.trainees']=user._id
       // To filter finished session in filterDataUser
-      fields=lodash.uniq([...fields, 'end_date'])
     }
     if (user.role==ROLE_FORMATEUR) {
       params['filter._locked']=true
@@ -572,13 +572,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const filterDataUser = async ({model, data, id, user}) => {
-  if (model=='session' && user.role==ROLE_APPRENANT) {
-    data=data.filter(d => moment().isBefore(d.end_date))
+  if (model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+    data=data.filter(d => moment().isBetween(d.start_date, d.end_date))
   }
-  if (model=='feed' && user.role==ROLE_APPRENANT) {
+  if (model=='feed' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
     data=data.filter(async d => {
       const session=await Session.findBy(d._id)
-      return session && moment().isBefore(session.end_date)
+      return session && moment().isBetween(session.start_date, session.end_date)
     })
     data=[]
   }

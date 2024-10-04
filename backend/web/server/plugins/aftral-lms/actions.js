@@ -1,14 +1,27 @@
-const mongoose=require('mongoose')
+const moment=require('moment')
 const Block = require('../../models/Block')
-const { ForbiddenError, NotFoundError, BadRequestError } = require('../../utils/errors')
+const Session = require('../../models/Session')
+const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { BLOCK_TYPE, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED, BLOCK_STATUS_CURRENT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ROLE_ADMINISTRATEUR, RESOURCE_TYPE_SCORM, ROLE_HELPDESK } = require('./consts')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT } = require('./consts')
 const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
-const { isProduction } = require('../../../config/config')
 const User = require('../../models/User')
+const { setpreLogin } = require('../../utils/database')
 
+const preLogin = async ({email}) => {
+  const user=await User.findOne({email})
+  if (user && [ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role)) {
+    const attribute=user.role==ROLE_APPRENANT ? 'trazinees' : 'trainers'
+    const currentExists=await Session.exists({_locked: true, [attribute]: user, start_date: {$lte: moment()}, end_date: {$gte: moment()}})
+    if (!currentExists) {
+      throw new Error(`Vous n'avez pas de session en cours`)
+    }
+  }
+}
+
+setpreLogin(preLogin)
 
 const moveChildInParent= async (childId, up) => {
   const delta=up ? -1 : 1
