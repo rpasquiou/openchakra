@@ -98,19 +98,13 @@ const computeBellwetherStatistics = async (filters) => {
 
   const bellwetherData = {
     threatSecurityIncident: {value: 0, count: 0},
-    threatSecurityIncidentETI: {value: 0, count: 0},
     threatLeakage: {value: 0, count: 0},
     threatCriticalIncident: {value: 0, count: 0},
     maturityBudget: {value: 0, count: 0},
-    maturityBudgetPME: {value: 0, count: 0},
     maturityCyberRef: {value: 0, count: 0},
     protectionIntrusion: {value: 0, count: 0},
-    protectionIntrusionPME: {value: 0, count: 0},
-    protectionIntrusionETI: {value: 0, count: 0},
     protectionExternalized: {value: 0, count: 0},
     protectionWebApp: {value: 0, count: 0},
-    protectionWebAppPME: {value: 0, count: 0},
-    protectionWebAppETI: {value: 0, count: 0},
     protectionAntivirus: {value: 0, count: 0},
     practicesCharter: {value: 0, count: 0},
     practicesFinancial: {value: 0, count: 0},
@@ -122,8 +116,6 @@ const computeBellwetherStatistics = async (filters) => {
       if (regexAntivirus(a.question.text)) {
         
       } else if (regexBudget(a.question.text)) {
-        // 3 questions for this one
-        // need to check if PME
         
       } else if (regexCharter(a.question.text)) {
         
@@ -136,23 +128,23 @@ const computeBellwetherStatistics = async (filters) => {
       } else if (regexFinancial(a.question.text)) {
 
       } else if (regexIntrusion(a.question.text)) {
-        // need to check if PME or ETI
 
       } else if (regexLeakage(a.question.text)) {
         
       } else if (regexSecurityIncident(a.question.text)) {
-        // need to check if ETI
         
       } else if (regexSensibilization(a.question.text)) {
         
       } else if (regexWebApp(a.question.text)) {
-        // need to check if PME or ETI
         
       } else {
         throw new Error(`La question '${a.question.text}' ne fait pas partie du baromètre`)
       }
     })
   })
+
+  //Compute ratios for bellwether
+
 }
 
 module.exports = {
