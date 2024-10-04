@@ -15,6 +15,7 @@ const {
   retainRequiredFields,
   importData,
   callScormCallback,
+  callPreLogin,
 } = require('../../utils/database')
 
 const path = require('path')
@@ -105,8 +106,9 @@ const PRODUCTION_ROOT = getProductionRoot()
 const PROJECT_CONTEXT_PATH = 'src/pages'
 
 
-const login = (email, password) => {
+const login = async (email, password) => {
   console.log(`Login with ${email} and ${password}`)
+  await callPreLogin({email})
   return User.findOne({email}).then(user => {
     if (!user) {
       console.error(`No user with email ${email}`)

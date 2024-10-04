@@ -25,6 +25,18 @@ const callScormCallback = async p => {
   }
 }
 
+let preLogin=null
+
+const setpreLogin = fn => {
+  preLogin=fn
+}
+
+const callPreLogin = async p => {
+  if (preLogin) {
+    return preLogin(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -1190,5 +1202,6 @@ module.exports = {
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
   setPrePutData, callPrePutData, setPreDeleteData, setScormCallback, callScormCallback,
+  setpreLogin, callPreLogin,
 }
 
