@@ -13,7 +13,7 @@ const {
   loadFromDb,
 } = require('../../utils/database')
 const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES } = require('./consts')
-const { PURCHASE_STATUS } = require('../../../utils/consts')
+const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
@@ -300,6 +300,7 @@ declareComputedField({model: 'event', field: 'related_events',  requires:'start_
 // Enums Mission Schema
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 declareEnumField({model: 'mission', field: 'status', enumValues: STATUSES})
+declareEnumField({model: 'mission', field: 'region', enumValues: REGIONS})
 
 // ExpertiseSet declarations
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
