@@ -665,6 +665,28 @@ CustomerFreelanceSchema.virtual('customer_sent_reports_count', DUMMY_REF).get(fu
     : 0
 })
 
+CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
+  let fields = [this.position]
+
+  if (this.expertises) {
+    fields = fields.concat(this.expertises.map(e => e.name))
+  }
+
+  if (this.main_job) {
+    fields.push(this.main_job.name)
+  }
+
+  if (this.second_job) {
+    fields.push(this.second_job.name)
+  }
+
+  if (this.third_job) {
+    fields.push(this.third_job.name)
+  }
+
+  return fields.join(' ')
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
