@@ -5,20 +5,23 @@ const User = require("../../models/User")
 const { COMPANY_SIZE_1001_PLUS, STAT_MIN_SCORES, COMPANY_SIZE_0_10 } = require("./consts")
 
 
-const regexSecurityIncident = (text) => {
-  return false
+const regexSecurityIncidentManagement = (text) => {
+  const regex = /.*gestion.*/
+  return regex.test(text)
 }
 
 const regexLeakage = (text) => {
-  return false
+  const regex = /.*partenaire.*/
+  return regex.test(text)
 }
 
-const regexCriticalIncident = (text) => {
-  return false
+const regexInventory = (text) => {
+  const regex = /.*inventaire.*/
+  return regex.test(text)
 }
 
-const regexBudget = (text) => {
-  const regex = /.*assurance.*|.*incident.*|.*partenaire.*/
+const regexInsurance = (text) => {
+  const regex = /.*assurance.*/
   return regex.test(text)
 }
 
@@ -62,6 +65,16 @@ const regexSensibilization = (text) => {
   return regex.test(text)
 }
 
+const regexMFA = (text) => {
+  const regex = /.*MFA.*/
+  return regex.test(text)
+}
+
+const regexAdmin = (text) => {
+  const regex = /.*admin.*/
+  return regex.test(text)
+}
+
 const increaseValueCount = (data, field, increaseValue) => {
   data[field].count += 1
   if (increaseValue) {
@@ -100,7 +113,7 @@ const computeBellwetherStatistics = async (filters) => {
     threatSecurityIncident: {value: 0, count: 0},
     threatLeakage: {value: 0, count: 0},
     threatCriticalIncident: {value: 0, count: 0},
-    maturityBudget: {value: 0, count: 0},
+    maturityInsurance: {value: 0, count: 0},
     maturityCyberRef: {value: 0, count: 0},
     protectionIntrusion: {value: 0, count: 0},
     protectionExternalized: {value: 0, count: 0},
@@ -115,11 +128,11 @@ const computeBellwetherStatistics = async (filters) => {
     s.answers.forEach((a) => {
       if (regexAntivirus(a.question.text)) {
         
-      } else if (regexBudget(a.question.text)) {
+      } else if (regexInsurance(a.question.text)) {
         
       } else if (regexCharter(a.question.text)) {
         
-      } else if (regexCriticalIncident(a.question.text)) {
+      } else if (regexInventory(a.question.text)) {
         
       } else if (regexCyberRef(a.question.text)) {
         
@@ -131,11 +144,15 @@ const computeBellwetherStatistics = async (filters) => {
 
       } else if (regexLeakage(a.question.text)) {
         
-      } else if (regexSecurityIncident(a.question.text)) {
+      } else if (regexSecurityIncidentManagement(a.question.text)) {
         
       } else if (regexSensibilization(a.question.text)) {
         
       } else if (regexWebApp(a.question.text)) {
+        
+      } else if (regexMFA(a.question.text)) {
+        
+      } else if (regexAdmin(a.question.text)) {
         
       } else {
         throw new Error(`La question '${a.question.text}' ne fait pas partie du baromètre`)
