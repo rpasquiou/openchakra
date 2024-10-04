@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUSES, STATUS_ACTIVE } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -64,6 +65,11 @@ const CarreerSchema = new Schema(
 )
 
 /* eslint-disable prefer-arrow-callback */
+
+CarreerSchema.virtual('candidates_count', DUMMY_REF).get(function() {
+  return this. candidates?.length
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CarreerSchema

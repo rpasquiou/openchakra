@@ -343,6 +343,7 @@ declareEnumField({model: 'carreer', field: 'contract_type', enumValues: CONTRACT
 declareEnumField({model: 'carreer', field: 'work_duration', enumValues: WORK_DURATIONS})
 declareEnumField({model: 'carreer', field: 'pay', enumValues: PAY})
 declareEnumField({model: 'carreer', field: 'status', enumValues: STATUSES})
+declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'candidates', instance: 'Number'})
 
 
 
