@@ -95,7 +95,7 @@ export const mediaWrapper = ({
   if (ext=='html') {
     const parsedUrl = new URL(src)
     // Embed youtube
-    if (/youtube.com/.test(parsedUrl.hostname)) {
+    if (/youtube.com/.test(parsedUrl.hostname) && !/embed/.test(src)) {
       const videoId=parsedUrl.searchParams.get('v')
       src=`https://www.youtube.com/embed/${videoId}`
     }
