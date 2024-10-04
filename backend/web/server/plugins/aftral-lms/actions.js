@@ -12,9 +12,8 @@ const { setpreLogin } = require('../../utils/database')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
-  if (user && [ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role)) {
-    const attribute=user.role==ROLE_APPRENANT ? 'trazinees' : 'trainers'
-    const currentExists=await Session.exists({_locked: true, [attribute]: user, start_date: {$lte: moment()}, end_date: {$gte: moment()}})
+  if (user && [ROLE_APPRENANT].includes(user.role)) {
+    const currentExists=await Session.exists({_locked: true, trainees: user, start_date: {$lte: moment()}, end_date: {$gte: moment()}})
     if (!currentExists) {
       throw new Error(`Vous n'avez pas de session en cours`)
     }
