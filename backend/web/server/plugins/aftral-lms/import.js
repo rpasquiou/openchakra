@@ -356,8 +356,8 @@ const importTrainees = async (filename) => {
 
 const SESSION_MAPPING = admin => ({
   creator: () => admin,
-  start_date: ({record}) => moment(record.DATE_DEBUT_SESSION, 'DD-MM-YYYY').startOf('day'),
-  end_date: ({record}) => moment(record.DATE_FIN_SESSION, 'DD-MM-YYYY').endOf('day'),
+  start_date: ({record}) => record.DATE_DEBUT_SESSION && moment(record.DATE_DEBUT_SESSION, 'DD-MM-YYYY').startOf('day') || record.DATE_DEBUT_SESSION,
+  end_date: ({record}) => record.DATE_FIN_SESSION && moment(record.DATE_FIN_SESSION, 'DD-MM-YYYY').endOf('day') || record.DATE_FIN_SESSION,
   name: async ({record}) =>  {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=code ? await Program.findOne({codes: code}) : null
@@ -408,20 +408,21 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   // Get previous sessions state
   const previousState=await getSessionsState()
   let result=[]
-  const trainees=(await loadRecords(traineesFilename))
+  const sessions=(await loadRecords(trainersFilename))
+  const trainees=(await loadRecords(traineesFilename).catch(console.error))
   const trainers=await loadRecords(trainersFilename)
-  let uniqueSessions=lodash
-    .uniqBy(trainees, SESSION_AFTRAL_ID)
-    .filter(s => trainers.some(t => s[SESSION_AFTRAL_ID]==t[SESSION_AFTRAL_ID]))
-  // Set trainees
-  uniqueSessions=uniqueSessions.map(s => ({
-    ...s, 
-    TRAINEES: trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]),
-    TRAINERS: trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID]),
-  }))
+  sessions.forEach(s => {
+    const session_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
+    s.TRAINEES=session_trainees
+    s.TRAINERS=trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID])
+    if (session_trainees[0]) {
+      s.DATE_DEBUT_SESSION=session_trainees[0].DATE_DEBUT_SESSION
+      s.DATE_FIN_SESSION=session_trainees[0].DATE_FIN_SESSION
+    }
+  })
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
-  const importResult=await importData({model: 'session', data: uniqueSessions, 
+  const importResult=await importData({model: 'session', data: sessions, 
   mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
@@ -448,7 +449,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       await lockSession(session._id)
     }
     await setSessionInitialStatus(session._id)
-    // Mail to trainees
+    // Mailing to new trainees
     const previousSession=previousState[session.aftral_id]
     const newTrainees=session.trainees.filter(t => !!t.aftral_id && !previousSession?.trainees.find(tr => t.aftral_id==tr))
     console.log(`Sending session`, session.name,`init to trainees`, newTrainees.map(t => t.email))
