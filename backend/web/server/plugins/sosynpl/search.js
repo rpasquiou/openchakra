@@ -8,6 +8,7 @@ const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL } = require('../../../utils/consts')
 const { loadFromDb } = require('../../utils/database')
+const search = require('../../utils/search')
 
 // Limit results if no pattern or city was provided
 const MAX_RESULTS_NO_CRITERION=12
@@ -124,68 +125,84 @@ const computeSuggestedFreelances = async (userId, params, data) => {
   return sortedFreelances
 }
 
-const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
+// const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
 
 const searchFreelances = async (userId, params, data, fields)  => {
-  let filter={role: ROLE_FREELANCE}
-  if (!lodash.isEmpty(data.work_modes)) {
-    filter.work_mode={$in: data.work_modes}
-  }
-  if (!lodash.isEmpty(data.work_durations)) {
-    filter.work_duration={$in: data.work_durations}
-  }
-  if (!lodash.isEmpty(data.experiences)) {
-    filter.main_experience={$in: data.experiences}
-  }
-  if (!lodash.isEmpty(data.sectors)) {
-    filter.work_sector={$in: data.sectors}
-  }
-  if (!lodash.isEmpty(data.expertises)) {
-    filter.expertises={$in: data.expertises}
-  }
-  if (!!data.available) {
-    filter.availability=AVAILABILITY_ON
-  }
-  if (!!data.min_daily_rate || !!data.max_daily_rate) {
-    filter.rate={}
-    if (!!data.min_daily_rate) {
-      filter.rate={...filter.rate, $gte: data.min_daily_rate}
-    }
-    if (!!data.max_daily_rate) {
-      filter.rate={...filter.rate, $lte: data.max_daily_rate}
-    }
-  }
   
-  fields=[...fields, ...PROFILE_TEXT_SEARCH_FIELDS, 'freelance_profile_completion', 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
+  fields=[...fields, 'freelance_profile_completion', 'address']
+
+  let freelances = await search({
+    // Why not customerFreelance?
+    model: 'freelance',
+    fields,
+    user: userId,
+    filter: {},
+    search_field: 'search_field',
+    search_value: data.pattern || '',
+  })  
+
+  freelances.forEach(freelance => {
+    console.log(freelance.shortname)
+  })
   
-  const subParams=lodash(filter)
-      .mapKeys((v,k) => `filter.${k}`)
-      .value()
-  let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params: subParams})
+  // let filter={role: ROLE_FREELANCE}
+  // if (!lodash.isEmpty(data.work_modes)) {
+  //   filter.work_mode={$in: data.work_modes}
+  // }
+  // if (!lodash.isEmpty(data.work_durations)) {
+  //   filter.work_duration={$in: data.work_durations}
+  // }
+  // if (!lodash.isEmpty(data.experiences)) {
+  //   filter.main_experience={$in: data.experiences}
+  // }
+  // if (!lodash.isEmpty(data.sectors)) {
+  //   filter.work_sector={$in: data.sectors}
+  // }
+  // if (!lodash.isEmpty(data.expertises)) {
+  //   filter.expertises={$in: data.expertises}
+  // }
+  // if (!!data.available) {
+  //   filter.availability=AVAILABILITY_ON
+  // }
+  // if (!!data.min_daily_rate || !!data.max_daily_rate) {
+  //   filter.rate={}
+  //   if (!!data.min_daily_rate) {
+  //     filter.rate={...filter.rate, $gte: data.min_daily_rate}
+  //   }
+  //   if (!!data.max_daily_rate) {
+  //     filter.rate={...filter.rate, $lte: data.max_daily_rate}
+  //   }
+  // }
+  
+  
+  // const subParams=lodash(filter)
+  //     .mapKeys((v,k) => `filter.${k}`)
+  //     .value()
+  // let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params: subParams})
 
   if (!lodash.isEmpty(data.city)) {
-    candidates=candidates.filter(c => {
+    freelances=freelances.filter(c => {
       const distance=computeDistanceKm(c.address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
 
-  if (!lodash.isEmpty(data.pattern?.trim())) {
-    const regExp = new RegExp(data.pattern, 'i')
-    const filterPattern = candidate => {
-      return PROFILE_TEXT_SEARCH_FIELDS.some(f => regExp.test(candidate[f]))
-    }
-    candidates=candidates.filter(c => filterPattern(c))
-  }
+  // if (!lodash.isEmpty(data.pattern?.trim())) {
+  //   const regExp = new RegExp(data.pattern, 'i')
+  //   const filterPattern = candidate => {
+  //     return PROFILE_TEXT_SEARCH_FIELDS.some(f => regExp.test(candidate[f]))
+  //   }
+  //   candidates=candidates.filter(c => filterPattern(c))
+  // }
 
   // Limt results if no criterion was provided
   if (!data.pattern?.trim() && !data.city) {
-    candidates=candidates.slice(0, MAX_RESULTS_NO_CRITERION)
+    freelances=freelances.slice(0, MAX_RESULTS_NO_CRITERION)
   }
 
-  candidates = candidates.filter(c => c.freelance_profile_completion == 1)
-  candidates=Object.keys(candidates).map(c => new CustomerFreelance(candidates[c]))
-  return candidates
+  freelances = freelances.filter(c => c.freelance_profile_completion == 1)
+  freelances=Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
+  return freelances
 }
 
 // TODO: database should compute fields using dependency tree, so I can get data.profiles.length

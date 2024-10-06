@@ -18,15 +18,19 @@ describe('Search Freelance', function() {
 
     const expertise1 = await Expertise.create({ name: 'Javascript' })
     const expertise2 = await Expertise.create({ name: 'SQL' })
+    const expertise3 = await Expertise.create({ name: 'Boulangerie' })
 
     const jobFile1 = await JobFile.create({ code: 'D2003', name: 'Développement Web' })
     const jobFile2 = await JobFile.create({ code: 'D2004', name: 'Data Science' })
+    const jobFile3 = await JobFile.create({ code: 'B2005', name: 'Boulangerie' })
 
     const job1 = await Job.create({ name: 'Développeur Fullstack', job_file: jobFile1._id })
     const job2 = await Job.create({ name: 'Data Scientist', job_file: jobFile2._id })
+    const job3 = await Job.create({ name: 'Boulanger', job_file: jobFile3._id })
 
     const sector1 = await Sector.create({ name: 'IT' })
     const sector2 = await Sector.create({ name: 'Finance' })
+    const sector3 = await Sector.create({ name: 'Métier de bouche' })
 
     const freelanceData = [
       {
@@ -139,6 +143,28 @@ describe('Search Freelance', function() {
         company_name: 'Martin Web Solutions',
         expertises: [expertise1._id]
       },
+      {
+        firstname: 'Paul',
+        lastname: 'Baker',
+        email: 'paul.baker@example.com',
+        password: 'Password6;',
+        address: { address: '303 Rue de la Boulangerie', city: 'Marseille', zip_code: '13000', country: 'France', latitude: 43.2965, longitude: 5.3698 },
+        main_job: job3._id,
+        main_experience: EXPERIENCE_EXPERT,
+        experience: '10',
+        work_sector: [sector3._id],
+        work_duration: [WORK_DURATION__1_TO_6_MONTHS],
+        source: SOURCE_RECOMMANDATION,
+        linkedin: 'https://www.linkedin.com/in/paul-baker',
+        motivation: 'Passionné par la boulangerie artisanale',
+        position: 'Boulanger',
+        phone: '0612121212',
+        siren: '913683181',
+        legal_status: 'EI',
+        cgu_accepted: true,
+        company_name: 'Baker Artisan',
+        expertises: [expertise3._id]
+      },
     ]
 
     const createdFreelances = await Promise.all(freelanceData.map(data => CustomerFreelance.create(data)))
@@ -151,7 +177,7 @@ describe('Search Freelance', function() {
     await mongoose.connection.close()
   })
 
-  it('should just return 5 freelancers', async function () {
+  it('should just return 6 freelancers', async function () {
     const searchResults = await search({
       model: 'customerFreelance',
       fields: [],
@@ -159,8 +185,7 @@ describe('Search Freelance', function() {
       search_value: '',
     })
 
-    console.log(JSON.stringify(searchResults, null, 2))
-    expect(searchResults.length).toBe(5)
+    expect(searchResults.length).toBe(6)
   })
 
   it('should search freelancers by position', async function () {
@@ -190,7 +215,7 @@ describe('Search Freelance', function() {
     expect(searchResults.length).toBeGreaterThan(0)
 
     searchResults.forEach(freelance => {
-      expect(freelance.search_field.toLowerCase()).toContain('javascript')
+      expect(freelance.expertises.map(e => e.name).join(' ').toLowerCase()).toContain('javascript')
     })
   })
 
@@ -205,7 +230,7 @@ describe('Search Freelance', function() {
     expect(searchResults.length).toBeGreaterThan(0)
 
     searchResults.forEach(freelance => {
-      expect(freelance.search_field.toLowerCase()).toContain('sql')
+      expect(freelance.expertises.map(e => e.name).join(' ').toLowerCase()).toContain('sql')
     })
   })
 
@@ -217,12 +242,68 @@ describe('Search Freelance', function() {
       search_value: 'Data Scientist',
     })
 
-    console.log(JSON.stringify(searchResults, null, 2))
-
     expect(searchResults.length).toBeGreaterThan(0)
 
     searchResults.forEach(freelance => {
       expect(freelance.main_job.name.toLowerCase()).toContain('data scientist')
     })
+  })
+
+  it('should search freelancers with two search terms', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: 'SQL Data',
+    })
+
+    expect(searchResults.length).toBeGreaterThan(0)
+  })
+
+  it('should search freelancers with exact position', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: 'Développeur Junior',
+    })
+    
+    expect(searchResults.length).toBeGreaterThan(0)
+
+    searchResults.forEach(freelance => {
+      expect(freelance.position.toLowerCase()).toContain('développeur junior')
+    })
+  })
+
+  it('should search freelancers with two options (boulanger and data scientist)', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: 'Boulanger Data Scientist',
+    })
+    
+    expect(searchResults.length).toBe(3)
+  })
+
+  it('should search freelancers with empty search_value', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: null,
+    })
+
+    expect(searchResults.length).toBe(6)
+  })
+
+  it('should search freelancers with wrong search_value', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: 'Dresseur de chiens',
+    })
+    expect(searchResults.length).toBe(0)
   })
 })
