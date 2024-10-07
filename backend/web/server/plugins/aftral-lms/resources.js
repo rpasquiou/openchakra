@@ -3,7 +3,7 @@ const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE, RESOURCE_TYPE_SCORM } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
@@ -12,32 +12,43 @@ const { BadRequestError } = require('../../utils/errors')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 
 // HACK: use $sortArray in original when under mongo > 5.02
-const getBlockResources = async (blockId, userId) => {
-  // return getBlockResourcesOriginal(blockId, userId)
-  return getBlockResourcesNew(blockId, userId)
+const getBlockResources = async ({blockId, userId, allResources}) => {
+  if (!blockId) {
+    console.error('blockId is required')
+    throw new Error('blockId is required')
+  }
+  if (!userId) {
+    console.error('userId is required')
+    throw new Error('userId is required')
+  }
+  if (lodash.isNil(allResources)) {
+    console.trace('allResources is required')
+    throw new Error('allResources is required')
+  }
+  // return getBlockResourcesOriginal({blockId, userId, allResources})
+  return getBlockResourcesNew({blockId, userId, allResources})
 }
 
-const getBlockResourcesNew = async (blockId, userId, role=null) => {
+const getBlockResourcesNew = async ({blockId, userId, allResources, role}) => {
 
   if (!role) {
     role = (await User.findById(userId))?.role
   }
 
   const blocks=await Block.find({parent: blockId, masked: {$ne: true}}).sort({order:1})
-  // blocks.length>0 && console.log('children', blocks)
   let res=[]
   const result=await runPromisesWithDelay(blocks.map(b => async () => {
     if (b.type==BLOCK_TYPE_RESOURCE) {
-      if (role==ROLE_APPRENANT) {
+      if (role==ROLE_APPRENANT && !allResources) {
         const available=await Progress.exists({block: b._id, user: userId, achievement_status: {$in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT]}})
         if (!available) {
           return
         }
       }
-        res.push(b)
+      res.push(b)
     }
     else {
-      const subResources=await getBlockResources(b._id, userId)
+      const subResources=await getBlockResources({blockId: b._id, userId, allResources})
       res=[...res, ...subResources]
     }
   }))
@@ -45,7 +56,7 @@ const getBlockResourcesNew = async (blockId, userId, role=null) => {
 }
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
-const getBlockResourcesOriginal = async (blockId, userId) => {
+const getBlockResourcesOriginal = async ({blockId, userId}) => {
 
   if (!userId) {
     return console.trace(`User is null`)
@@ -198,7 +209,7 @@ const getResourceType = async url => {
 }
 
 const getResourcesCount = async (userId, params, data) => {
-  const subResourcesIds=await getBlockResources(data._id, userId)
+  const subResourcesIds=await getBlockResources({blockId: data._id, userId, allResources: true})
   return subResourcesIds.length
 }
 
@@ -214,36 +225,8 @@ const canReplay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
-const getBlockNote = async (userId, params, data) => {
-  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
-  if (!isTrainee) {
-    return undefined
-  }
-  if (!!data.homework_mode) {
-    const homeworks=await Homework.find({resource: data._id, trainee: userId})
-    const note=lodash.max(homeworks.map(h => h.note))
-    return note
-  }
-  else {
-    return (await getProgress({user: userId, block: data._id}))?.note || null
-  }
-}
-
-const setBlockNote = async ({ id, attribute, value, user }) => {
-  const bl=await Block.findById(id)
-  if (!lodash.inRange(value, 0, bl.success_note_max+1)) {
-    throw new BadRequestError(`La note doit être comprise ente 0 et ${bl.success_note_max}`)
-  }
-  if (!!bl.homework_mode) {
-    throw new BadRequestError(`La note doit être mise sur un devoir`)
-  }
-  pr = await getProgress({user, id})
-  pr.note=value
-  return pr.save()
-}
-
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockNote, setBlockNote,
+  getBlockResources
 }

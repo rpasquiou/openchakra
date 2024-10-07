@@ -44,7 +44,7 @@ describe('Test attributes propagation', () => {
     // Expect all dependants have become optional
     resources=await Resource.find().sort({[CREATED_AT_ATTRIBUTE]:1})
     expect(resources.map(r => !!r.optional)).toEqual([true, true, true])
-    const sequenceResources=await getBlockResources(sequence)
+    const sequenceResources=await getBlockResources({blockId: sequence})
     // Set sequenceresource optional
     await putToDb({model: 'resource', params:{optional: false}, id:sequenceResources[0]})
     // Expect module resource have becom optional

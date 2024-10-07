@@ -227,7 +227,7 @@ const getBlockSession = async blockId => {
 
 const getNextResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources(session, user)
+  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
@@ -237,7 +237,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources(session, user)
+  const resources=await getBlockResources({blockId: session, userId: user})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
@@ -675,6 +675,39 @@ const setScormData= async (userId, blockId, data) => {
   await onBlockAction(userId, blockId)
 }
 
+const getBlockNote = async (userId, params, data) => {
+  const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
+  if (!isTrainee) {
+    return undefined
+  }
+  if (!!data.homework_mode) {
+    const homeworks=await Homework.find({resource: data._id, trainee: userId})
+    const note=lodash.max(homeworks.map(h => h.note))
+    return note
+  }
+  else if (data.resource_type==RESOURCE_TYPE_SCORM) {
+    const scormData=await getBlockScormData(userId, data._id)
+    return scormData?.['cmi.core.score.raw'] || undefined
+  }
+  else {
+    return (await getProgress({user: userId, block: data._id}))?.note || null
+  }
+}
+
+const setBlockNote = async ({ id, attribute, value, user }) => {
+  const bl=await Block.findById(id)
+  if (!lodash.inRange(value, 0, bl.success_note_max+1)) {
+    throw new BadRequestError(`La note doit être comprise ente 0 et ${bl.success_note_max}`)
+  }
+  if (!!bl.homework_mode) {
+    throw new BadRequestError(`La note doit être mise sur un devoir`)
+  }
+  pr = await getProgress({user, id})
+  pr.note=value
+  return pr.save()
+}
+
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
@@ -683,5 +716,5 @@ module.exports={
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
-  updateSessionStatus, saveBlockStatus, setScormData,
+  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote,
 }

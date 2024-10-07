@@ -8,6 +8,7 @@ const path = require('path')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
 const Homework = require('../../models/Homework')
+const { RESOURCE_TYPE_SCORM } = require('./consts')
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template1'
 
@@ -61,23 +62,21 @@ const getCertificate = async (userId, params, data) => {
 }
 
 const getEvalResources = async (userId, params, data, fields, actualLogged) => {
-  const resourceIds = await getBlockResources(data._id, actualLogged)
-  
+  const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, allResources: true})
+
   const newParams = {
     [`filter._id`]: {$in: resourceIds},
   }
   const user = await User.findById(actualLogged)
-
-  console.log(user.email)
+  
   let resources = await loadFromDb({
     model: `resource`,
     user,
     fields: [...fields, `note`, `evaluation`, `scale`, `homework_mode`, `resource_type`, `name`, `success_note_max`, `max_attempts`, `homeworks`],
     params: newParams
   })
-
-  resources = resources.filter(r => 
-    !!r.evaluation
+  
+  resources = resources.filter(r => !!r.evaluation
   )
 
   return resources.map(r => new Resource(r))

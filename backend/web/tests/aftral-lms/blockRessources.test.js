@@ -36,7 +36,7 @@ describe('Block resources', () => {
       }
     }
     console.time('Get block resources')
-    const resources=await getBlockResources(chapter._id, user._id)
+    const resources=await getBlockResources({blockId: chapter._id, userId: user._id, allResources: true})
     console.timeEnd('Get block resources')
     const display=await Promise.all(resources.map(async r => {
       const res=await Resource.findById(r)
