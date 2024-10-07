@@ -29,7 +29,7 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED} = require('../../../utils/consts')
+const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED, VERB_GET, VERB_PUT, VERB_POST} = require('../../../utils/consts')
 const {date_str, datetime_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
@@ -98,6 +98,7 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
+const { checkPermission } = require('../../plugins/smartdiet/permissions')
 
 const router = express.Router()
 
@@ -515,7 +516,8 @@ router.get('/form', passport.authenticate('cookie', {session: false}), (req, res
   console.log('Query is', req.query)
 })
 
-router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/:model', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_POST, model: req.params.model, id: req.params.id, user: req.user, referrer: req.get('Referrer')})
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
@@ -544,7 +546,8 @@ router.post('/:model', passport.authenticate('cookie', {session: false}), (req, 
     })
 })
 
-const putFromRequest = (req, res) => {
+const putFromRequest = async (req, res) => {
+  await checkPermission?.({verb: VERB_GET, model: req.params.model, id: req.params.id, user: req.user, referrer: req.get('Referrer')})
   const model = req.params.model
   const id = req.params.id
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
@@ -562,7 +565,8 @@ const putFromRequest = (req, res) => {
     })
 }
 
-router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.put('/:model/:id', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_PUT, model: req.params.model, id: req.params.id, user: req.user, referrer: req.get('Referrer')})
   return putFromRequest(req, res)
 })
 
@@ -603,7 +607,8 @@ router.get('/sector/:id?', passport.authenticate(['cookie', 'anonymous'], {sessi
 })
 
 // Update last_activity
-router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/:model/:id?', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  await checkPermission?.({verb: VERB_GET, model: req.params.model, id: req.params.id, user: req.user, referrer: req.get('Referrer')})
   return User.findByIdAndUpdate(req.user?._id, {last_activity: moment()})
     .then(()=>loadFromRequest(req, res))
 })

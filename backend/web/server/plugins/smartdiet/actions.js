@@ -102,6 +102,9 @@ const register = async (props, user) => {
     props.role = ROLE_CUSTOMER
     console.log(`Setting role ${JSON.stringify(props.role)}`)
   }
+  if (props.role!=ROLE_CUSTOMER && !([ROLE_SUPER_ADMIN, ROLE_ADMIN].includes(user?.role))) {
+    throw new ForbiddenError(`Action interdite`)
+  }
   if (user?.role==ROLE_EXTERNAL_DIET && !props.password) {
     const password=generatePassword()
     props.password=password

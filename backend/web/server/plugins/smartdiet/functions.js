@@ -221,6 +221,7 @@ const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
 const { registerPreSave } = require('../../utils/schemas')
 const { crmUpsertAccount } = require('../../utils/crm')
+const { getDietUsers } = require('./permissions')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -379,20 +380,29 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     }
   }
 
-  if (model=='patient') {
-    if (user.role==ROLE_EXTERNAL_DIET) {
-      return Coaching.distinct('user', {diet: user._id})
-        .then(ids => {
-          console.log(`Got ${ids.length} patients`)
-          params['filter._id']={$in: ids}
-          return ({ model:'user', params, fields, id, user })
-        })
+  if (['patient','user'].includes(model)) {
+    if (user.role==ROLE_EXTERNAL_DIET && !id) {
+      const userIds=await getDietUsers(user) 
+      params['filter._id']={$in: userIds}
     }
   }
 
   if (model=='diet') {
     params['filter.role']=ROLE_EXTERNAL_DIET
     model='user'
+    if (user.role==ROLE_CUSTOMER) {
+      params['filter.customer_companies']=user.company
+    }
+  }
+
+  if (model=='coaching') {
+    let ids=[]
+    if (user.role==ROLE_CUSTOMER || user.role==ROLE_EXTERNAL_DIET) {
+      const filter=user.role==ROLE_CUSTOMER ? {user}: {diet: user}
+      ids=await Coaching.find({...filter}, {_id:1})
+        .then(coachings => coachings.map(c => c._id))
+      params['filter._id']={$in: ids}
+    }
   }
 
   if (model=='logbookDay') {
