@@ -5,14 +5,10 @@ const {
   PAYMENT_SUCCESS
 } = require('../../plugins/fumoir/consts')
 const {
-  callFilterDataUser,
   callPostCreateData,
-  callPostPutData,
   callPreCreateData,
-  callPreprocessGet,
   loadFromDb,
   putToDb,
-  retainRequiredFields,
   importData,
 } = require('../../utils/database')
 
@@ -20,7 +16,6 @@ const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
 const child_process = require('child_process')
-const url = require('url')
 const moment = require('moment')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
@@ -29,8 +24,8 @@ const mongoose = require('mongoose')
 const passport = require('passport')
 const {resizeImage} = require('../../middlewares/resizeImage')
 const {sendFilesToAWS, getFilesFromAWS, deleteFileFromAWS} = require('../../middlewares/aws')
-const {IMAGE_SIZE_MARKER, PURCHASE_STATUS_COMPLETE, PURCHASE_STATUS_FAILED, VERB_GET, VERB_PUT, VERB_POST} = require('../../../utils/consts')
-const {date_str, datetime_str} = require('../../../utils/dateutils')
+const {IMAGE_SIZE_MARKER, VERB_GET, VERB_PUT, VERB_POST, VERB_DELETE} = require('../../../utils/consts')
+const {date_str} = require('../../../utils/dateutils')
 const Payment = require('../../models/Payment')
 const {
   HOOK_PAYMENT_FAILED,
@@ -327,7 +322,10 @@ router.post('/start', (req, res) => {
   return res.json(result)
 })
 
-router.post('/action', passport.authenticate(['cookie', 'anonymous']), (req, res) => {
+router.post('/action', passport.authenticate(['cookie', 'anonymous']), async (req, res) => {
+  if (req.body.action=='delete') {
+    await checkPermission?.({verb: VERB_DELETE, model: req.body.model, id: req.body.id, user: req.user, referrer: req.get('Referrer')})
+  }
   const action = req.body.action
   const actionFn = ACTIONS[action]
   if (!actionFn) {
@@ -566,6 +564,7 @@ const putFromRequest = async (req, res) => {
 }
 
 router.put('/:model/:id', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  console.log('put')
   await checkPermission?.({verb: VERB_PUT, model: req.params.model, id: req.params.id, user: req.user, referrer: req.get('Referrer')})
   return putFromRequest(req, res)
 })

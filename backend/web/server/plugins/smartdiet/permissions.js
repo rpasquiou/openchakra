@@ -10,6 +10,10 @@ const checkPermission = async ({verb, model, id, user, referrer}) => {
   //   throw new NotLoggedError('Unauthorized')
   // }
   console.log('Checking permission', verb, model, id, !!user)
+  // No DELETE for now
+  if (verb==VERB_DELETE) {
+    throw new ForbiddenError('Unauthorized')
+  }
   // Allow anonymous recommandation GET and PUT for one item
   if (!user) {
     if (model=='recommandation' && [VERB_GET, VERB_PUT].includes(verb) && !!id) {
@@ -32,6 +36,9 @@ const checkPermission = async ({verb, model, id, user, referrer}) => {
   if (user.role==ROLE_CUSTOMER) {
     console.log(verb, model, id)
     if (verb==VERB_GET && (model!='user' && model!='lead')) {
+      return
+    }
+    if (verb==VERB_POST && (model=='coaching')) {
       return
     }
   }
