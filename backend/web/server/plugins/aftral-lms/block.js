@@ -239,7 +239,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user})
+  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
