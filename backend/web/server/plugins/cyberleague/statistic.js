@@ -129,7 +129,7 @@ const computeBellwetherStatistics = async (filters) => {
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
   const cleanScores = scores.map((s)=> {
     s.answers = lodash.filter(s.answers,(a) => {
-      return !a.question 
+      return !!a.question 
     })
     return s
   })
