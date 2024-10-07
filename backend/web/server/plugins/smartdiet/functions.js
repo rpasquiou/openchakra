@@ -381,6 +381,7 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
   }
 
   if (['patient','user'].includes(model)) {
+    model='user'
     if (user.role==ROLE_EXTERNAL_DIET && !id) {
       const userIds=await getDietUsers(user) 
       params['filter._id']={$in: userIds}

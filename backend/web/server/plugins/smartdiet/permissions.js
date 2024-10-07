@@ -31,7 +31,7 @@ const checkPermission = async ({verb, model, id, user, referrer}) => {
   // User: get only his information
   if (user.role==ROLE_CUSTOMER) {
     console.log(verb, model, id)
-    if (verb==VERB_GET && model!='user') {
+    if (verb==VERB_GET && (model!='user' && model!='lead')) {
       return
     }
   }
