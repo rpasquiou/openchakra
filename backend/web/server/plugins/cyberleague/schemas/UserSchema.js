@@ -4,7 +4,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETION_FIELDS } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -324,9 +324,11 @@ UserSchema.virtual('published_missions', {
 })
 
 UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
-  const requiredField = [this.job, this.company,this.function,this.city]
+  const completionFields = COMPLETION_FIELDS.map((_,key) => {
+    return this[key]
+  })
 
-  return Math.round((lodash.filter(requiredField, (e)=> {return !!e})+2) / 6 * 100) /100  
+  return Math.round((lodash.filter(completionFields, (e)=> {return !!e}).length + 2) / 6 * 100) /100  
 })
 
 /* eslint-enable prefer-arrow-callback */
