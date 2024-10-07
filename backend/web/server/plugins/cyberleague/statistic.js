@@ -126,7 +126,7 @@ const computeBellwetherStatistics = async (filters) => {
     //TODO return 'not enough scores to have relevant data'
   }
 
-  // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means answer is not bellwether
+  // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
   const cleanScores = scores.map((s)=> {
     s.answers = lodash.filter(s.answers,(a) => {
       return !a.question 
@@ -187,7 +187,7 @@ const computeBellwetherStatistics = async (filters) => {
     })
   })
 
-  //Compute ratios for bellwether
+  //Compute ratios for bellwether / benchmark
   res.forEach((_,k) => {
     res[k] = Math.round(bellwetherData[k].value / bellwetherData[k].count * 100) /100
   })
