@@ -84,17 +84,25 @@ const increaseValueCount = (data, field, increaseValue) => {
 
 const computeBellwetherStatistics = async (filters) => {
   //TODO take filters into account (company sector, region, size)
-  const companyFilter = {size: {$nin: [COMPANY_SIZE_1001_PLUS, COMPANY_SIZE_0_10]}}
+  const companyFilter = {}
 
   //Getting scores that will be used to do statistics
-  const companies = await Company.find(companyFilter)
+  let scores
 
-  const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
+  if (companyFilter != {}) {
 
-  const scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}}).populate([
-    {path: 'answers', populate: {path:'answer'}},
-    {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
-  ])
+    const companies = await Company.find(companyFilter)
+
+    const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
+
+    scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}}).populate([
+      {path: 'answers', populate: {path:'answer'}},
+      {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
+    ])
+
+  } else {
+    scores = await Score.find()
+  }
 
   let res = {
     securityIncidentManagement: 0,
