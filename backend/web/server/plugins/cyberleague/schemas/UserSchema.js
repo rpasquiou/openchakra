@@ -324,7 +324,7 @@ UserSchema.virtual('published_missions', {
 })
 
 UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
-  const completionFields = COMPLETION_FIELDS.map((_,key) => {
+  const completionFields = lodash.map(COMPLETION_FIELDS, (_,key) => {
     return this[key]
   })
 
