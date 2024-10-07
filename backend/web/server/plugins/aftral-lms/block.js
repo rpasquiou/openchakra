@@ -175,8 +175,10 @@ const onBlockAction = async (user, block) => {
   const bl=await mongoose.models.block.findById(block)
   // Is it a scorm ?
   if (bl.resource_type==RESOURCE_TYPE_SCORM) {
-    const data=await getBlockScormData(user, block)
-    if (data?.['cmi.core.lesson_status']=='passed')  {
+    const scormData=await getBlockScormData(user, block)
+    const scormSuccess=scormData?.['cmi.core.lesson_status']=='passed'
+    const scormMinNoteReached=!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
+    if (scormSuccess || scormMinNoteReached)  {
       if (!(await isFinished(user, block))) {
         await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
         return onBlockFinished(user, block)
