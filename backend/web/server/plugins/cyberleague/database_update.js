@@ -1,6 +1,10 @@
 const User = require('../../models/User')
 const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS } = require('./consts')
 const Company = require('../../models/Company')
+const ExpertiseSet = require('../../models/ExpertiseSet')
+const Group = require('../../models/Group')
+const Content = require('../../models/Content')
+const Event = require('../../models/Event')
 
 const log = (...params) => {
   return console.log(`DB Update`, ...params)
@@ -61,12 +65,60 @@ const normalizeCompanySize = async () => {
   ))
 }
 
+const addExpertiseSet = async () => {
+
+  const filter = {expertise_set: {$exists: false}}
+  const blankExpertiseSet = {expertises: [], categories: []}
+
+  log(`Adding expertiseSet to users`)
+  const users = await User.find(filter)
+
+  users.forEach(async (u) => {
+    expSet = await ExpertiseSet.create(blankExpertiseSet)
+    await User.findByIdAndUpdate({_id: u._id},{expertise_set: expSet._id})
+  })
+
+  log(`Adding expertiseSet to groups`)
+  const groups = await Group.find(filter)
+
+  groups.forEach(async (g) => {
+    expSet = await ExpertiseSet.create(blankExpertiseSet)
+    await Group.findByIdAndUpdate({_id: g._id},{expertise_set: expSet._id})
+  })
+
+  log(`Adding expertiseSet to companies`)
+  const companies = await Company.find(filter)
+
+  companies.forEach(async (c) => {
+    expSet = await ExpertiseSet.create(blankExpertiseSet)
+    await Company.findByIdAndUpdate({_id: c._id},{expertise_set: expSet._id})
+  })
+
+  log(`Adding expertiseSet to contents`)
+  const contents = await Content.find(filter)
+
+  contents.forEach(async (c) => {
+    expSet = await ExpertiseSet.create(blankExpertiseSet)
+    await Content.findByIdAndUpdate({_id: c._id},{expertise_set: expSet._id})
+  })
+
+  log(`Adding expertiseSet to events`)
+  const events = await Event.find(filter)
+
+  events.forEach(async (e) => {
+    expSet = await ExpertiseSet.create(blankExpertiseSet)
+    await Event.findByIdAndUpdate({_id: e._id},{expertise_set: expSet._id})
+  })
+
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizeRoles()
   await updateCompanyAdmin()
   await normalizeJobs()
   await normalizeCompanySize()
+  await addExpertiseSet()
 }
 
 module.exports=databaseUpdate
