@@ -159,7 +159,8 @@ USER_MODELS.forEach(m => {
     model: m,
     field: 'profil_completion',
     instance: 'Number',
-    requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)})
+    requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
+  })
 })
 
 //Company declarations
