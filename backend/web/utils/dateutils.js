@@ -136,6 +136,13 @@ const getMicroTime = () =>  {
   return hrTime[0] * 1000000 + hrTime[1] / 1000
 }
 
+const parseScormTime = scormTime => {
+  if (!scormTime) {
+    return scormTime
+  }
+  return moment.duration(scormTime).asSeconds()
+}
+
 module.exports = {
-  datetime_str, date_str, getMicroTime,
+  datetime_str, date_str, getMicroTime, parseScormTime,
 }

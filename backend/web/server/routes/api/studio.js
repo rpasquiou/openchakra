@@ -14,8 +14,9 @@ const {
   putToDb,
   retainRequiredFields,
   importData,
-  callScormCallback,
   callPreLogin,
+  callScormCallbackPost,
+  callScormCallbackGet,
 } = require('../../utils/database')
 
 const path = require('path')
@@ -158,8 +159,13 @@ router.get('/roles', (req, res) => {
 
 // SCORM specific
 router.post('/scorm', passport.authenticate('cookie', {session: false}), async (req, res) => {
-  await callScormCallback({user: req.user, data: req.body})
+  await callScormCallbackPost({user: req.user, data: req.body})
   return res.status(200).json('ok')
+})
+
+router.get('/scorm/:id', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  const scormData=await callScormCallbackGet({user: req.user, resource: req.params.id})
+  return res.json(scormData)
 })
 
 

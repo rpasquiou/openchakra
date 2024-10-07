@@ -12,16 +12,29 @@ const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 const {runPromisesWithDelay}=require('./concurrency')
 
-let scormCallback=null
+let scormCallbackPost=null
 
-const setScormCallback = fn => {
-  console.log('Setting scorm callback to', fn)
-  scormCallback=fn
+const setScormCallbackPost = fn => {
+  console.log('Setting scorm callback POST to', fn)
+  scormCallbackPost=fn
 }
 
-const callScormCallback = async p => {
-  if (scormCallback) {
-    return scormCallback(p)
+const callScormCallbackPost = async p => {
+  if (scormCallbackPost) {
+    return scormCallbackPost(p)
+  }
+}
+
+let scormCallbackGet=null
+
+const setScormCallbackGet = fn => {
+  console.log('Setting scorm callback GET to', fn)
+  scormCallbackGet=fn
+}
+
+const callScormCallbackGet = async p => {
+  if (scormCallbackGet) {
+    return scormCallbackGet(p)
   }
 }
 
@@ -1201,7 +1214,7 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, setPreDeleteData, setScormCallback, callScormCallback,
-  setpreLogin, callPreLogin,
+  setPrePutData, callPrePutData, setPreDeleteData, setScormCallbackPost, callScormCallbackPost,
+  setpreLogin, callPreLogin, setScormCallbackGet, callScormCallbackGet,
 }
 

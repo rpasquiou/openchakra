@@ -10,6 +10,7 @@ const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const Resource = require("../../models/Resource");
+const { parseScormTime } = require("../../../utils/dateutils");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -552,11 +553,12 @@ const saveBlockScormData = async (userId, blockId, data) => {
   if (!userId || !blockId || !data) {
     throw new Error(userId, blockId, data)
   }
-  await Progress.findOneAndUpdate(
-    {block: blockId, user: userId},
-    {block: blockId, user: userId, scorm_data: JSON.stringify(data)},
-    {upsert: true}
-  )
+  const set={block: blockId, user: userId, scorm_data: JSON.stringify(data)}
+  const spentTime=parseScormTime(data['cmi.core.session_time'])
+  if (spentTime) {
+    set.spent_time=spentTime
+  }
+  await Progress.findOneAndUpdate({block: blockId, user: userId},set,{upsert: true})
 }
 
 const getBlockScormData = async (userId, blockId) => {
@@ -718,5 +720,5 @@ module.exports={
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
-  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote,
+  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,
 }
