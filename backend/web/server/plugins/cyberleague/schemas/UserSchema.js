@@ -331,6 +331,14 @@ UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
   return Math.round((lodash.filter(completionFields, (e)=> {return !!e}).length + 2) / 6 * 100) /100  
 })
 
+UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
+  const completionFields = lodash.map(COMPLETION_FIELDS, (_,key) => {
+    return [key, this[key]]
+  })
+  const missingFields = lodash.filter(completionFields, (e)=> {return !!e[1]})
+  return `Informations manquantes : ` + missingFields.map((e)=> {return COMPLETION_FIELDS[e[0]]}).join(`, `)
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

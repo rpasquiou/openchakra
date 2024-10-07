@@ -161,6 +161,12 @@ USER_MODELS.forEach(m => {
     instance: 'Number',
     requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
   })
+  declareVirtualField({
+    model: m,
+    field: 'missing_attributes',
+    instance: 'String',
+    requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
+  })
 })
 
 //Company declarations
