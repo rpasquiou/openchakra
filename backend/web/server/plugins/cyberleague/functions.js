@@ -155,6 +155,7 @@ USER_MODELS.forEach(m => {
       options: {ref: 'mission'}
     }
   })
+  declareVirtualField({model: m, field: 'profil_completion', requires: 'company,job,function,city', instance: 'Number'})
 })
 
 //Company declarations

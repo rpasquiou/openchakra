@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
@@ -320,6 +321,12 @@ UserSchema.virtual('published_missions', {
   ref:'mission',
   localField:'_id',
   foreignField:'creator',
+})
+
+UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
+  const requiredField = [this.job, this.company,this.function,this.city]
+
+  return Math.round((lodash.filter(requiredField, (e)=> {return !!e})+2) / 6 * 100) /100  
 })
 
 /* eslint-enable prefer-arrow-callback */
