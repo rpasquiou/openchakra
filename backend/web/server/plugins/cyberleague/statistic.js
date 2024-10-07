@@ -96,7 +96,7 @@ const computeBellwetherStatistics = async (filters) => {
     {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
   ])
 
-  const res = {
+  let res = {
     securityIncidentManagement: 0,
     partner: 0,
     inventory: 0,
@@ -180,7 +180,11 @@ const computeBellwetherStatistics = async (filters) => {
   })
 
   //Compute ratios for bellwether
-  
+  res.forEach((_,k) => {
+    res[k] = Math.round(bellwetherData[k].value / bellwetherData[k].count * 100) /100
+  })
+
+  return res
 }
 
 module.exports = {
