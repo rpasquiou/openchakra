@@ -23,8 +23,8 @@ const ExpertiseSet = new Schema({
     default: []
   },
   main_expertise_category: {
-    type: String,
-    enum: Object.keys(EXPERTISE_CATEGORIES),
+    type: Schema.Types.ObjectId,
+    ref: 'expertiseCategory',
     required: false
   }
 }, schemaOptions)
