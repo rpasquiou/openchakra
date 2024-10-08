@@ -363,6 +363,7 @@ const SESSION_MAPPING = admin => ({
     const program=code ? await Program.findOne({codes: code}) : null
     return program?.name
   },
+  session_product_code: 'CODE_PRODUIT',
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
   trainers: async ({record}) => {
@@ -389,12 +390,12 @@ const SESSION_MAPPING = admin => ({
 
 const SESSION_KEY='aftral_id'
 
-const getSessionsState = async () => {
-  const sessions=await Session.find({aftral_id: {$ne: null}}).populate(['trainers', 'trainees'])
+const getSessionsStates = async sessions_ids => {
+  const sessions=await Session.find({aftral_id: {$in: sessions_ids}}).populate(['trainers', 'trainees'])
   return Object.fromEntries(sessions.map(s => 
     [
       s.aftral_id, 
-      {trainers: s.trainers.map(t => t.aftral_id),trainees: s.trainees.map(t => t.aftral_id)}
+      {trainees: s.trainees.map(t => t.aftral_id)}
     ]
   ))
 }
@@ -406,21 +407,26 @@ const getAftralTrainers = async () => {
 
 const importSessions = async (trainersFilename, traineesFilename) => {
   // Get previous sessions state
-  const previousState=await getSessionsState()
   let result=[]
-  const sessions=(await loadRecords(trainersFilename))
-  const trainees=(await loadRecords(traineesFilename).catch(console.error))
+  const trainees=await loadRecords(traineesFilename)
   const trainers=await loadRecords(trainersFilename)
-  sessions.forEach(s => {
-    const session_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
-    s.TRAINEES=session_trainees
-    s.TRAINERS=trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID])
-    if (session_trainees[0]) {
-      s.DATE_DEBUT_SESSION=session_trainees[0].DATE_DEBUT_SESSION
-      s.DATE_FIN_SESSION=session_trainees[0].DATE_FIN_SESSION
-      s.NOM_CENTRE=session_trainees[0].NOM_CENTRE
+  let sessions=lodash(trainers)
+    .uniqBy(SESSION_AFTRAL_ID)
+    .map(s => {
+      const sess_trainers=trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID])
+      const sess_trainees=trainees.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID])
+      return {
+        [SESSION_AFTRAL_ID]: s[SESSION_AFTRAL_ID],
+        CODE_PRODUIT: s.CODE_PRODUIT,
+        TRAINERS: sess_trainers,
+        TRAINEES: sess_trainees,
+        DATE_DEBUT_SESSION:sess_trainees[0]?.DATE_DEBUT_SESSION,
+        DATE_FIN_SESSION:sess_trainees[0]?.DATE_FIN_SESSION,
+        NOM_CENTRE:sess_trainees[0]?.NOM_CENTRE,
     }
-  })
+    })
+    .value()
+  const previousSessions=await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
   const importResult=await importData({model: 'session', data: sessions, 
@@ -451,12 +457,13 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     }
     await setSessionInitialStatus(session._id)
     // Mailing to new trainees
-    const previousSession=previousState[session.aftral_id]
-    const newTrainees=session.trainees.filter(t => !!t.aftral_id && !previousSession?.trainees.find(tr => t.aftral_id==tr))
-    console.log(`Sending session`, session.name,`init to trainees`, newTrainees.map(t => t.email))
-    await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({trainee, session})))
+    const previousSession=previousSessions[session.aftral_id]
+    const newTrainees=lodash.differenceBy(session.trainees, previousSession?.trainees || [], t => t.aftral_id || t)
+    if (!lodash.isEmpty(newTrainees)) {
+      console.log(`Sending session`, session.name, session.code, `init to trainees`, newTrainees.map(t => t.email))
+      await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({trainee, session})))
+    }
   }))
-  .then(res => console.log(res.filter(r => r.status=='rejected')))
   result=[...result, ...programsResult]
   return result
 }

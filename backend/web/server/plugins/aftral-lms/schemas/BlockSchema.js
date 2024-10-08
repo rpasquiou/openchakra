@@ -41,6 +41,12 @@ const BlockSchema = new Schema({
     type: Number,
     required: [function() { return this.parent}, `L'ordre est obligatoire`]
   },
+  // Product code for session
+  session_product_code: {
+    type: String,
+    default: null,
+    required: false,
+  },
   code: {
     type: String,
     default: null,
