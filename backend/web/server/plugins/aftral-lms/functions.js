@@ -54,6 +54,7 @@ const Conversation = require('../../models/Conversation')
 const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
+const { session } = require('passport')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -444,7 +445,10 @@ const getFeed = async (id) => {
     const model = await getModel(id, ['session', 'group'])
     type = model === 'session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
     const feed = await mongoose.connection.models[model].findById(id)
-    name = `${feed.code} ${feed.name}`
+    name = feed.name
+    if (model=='session') {
+      name= `${feed.code} ${name}`
+    }
   }
 
   let posts = await Post.find({ _feed: id })
@@ -479,8 +483,11 @@ const getFeed = async (id) => {
 const getFeeds = async (user, id) => {
   let ids=[]
   if (!id) {
-    ids=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
-    ids=[...ids, GENERAL_FEED_ID]
+    const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
+    ids=[...sessionIds, GENERAL_FEED_ID]
+    const groupIds=(await Group.find({sessions: {$in:sessionIds}})).map(s => s._id)
+    ids=[...ids, ...groupIds]
+    console.log('session', sessionIds, 'groups', groupIds)
   }
   else {
     ids=[id]
