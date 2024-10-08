@@ -304,12 +304,19 @@ const hasPassword = async email => {
   return !lodash.isEmpty(user?.password)
 }
 
+const ensureNumber = value => {
+  if (!parseInt(value)) {
+    throw new Error(`${value}: entier attendu`)
+  }
+  return value
+}
+
 const TRAINER_MAPPING = {
   email: 'EMAIL_FORMATEUR',
   firstname: 'PRENOM_FORMATEUR',
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
-  aftral_id: TRAINER_AFTRAL_ID,
+  aftral_id: ({record}) => ensureNumber(record[TRAINER_AFTRAL_ID]),
   password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
   plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
 }
@@ -337,7 +344,7 @@ const TRAINEE_MAPPING = {
   firstname: 'PRENOM_STAGIAIRE',
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
-  aftral_id: TRAINEE_AFTRAL_ID,
+  aftral_id: ({record}) => ensureNumber(record[TRAINEE_AFTRAL_ID]),
   password: TRAINEE_AFTRAL_ID,
   plain_password: TRAINEE_AFTRAL_ID,
 }
@@ -347,6 +354,10 @@ const TRAINEE_KEY='aftral_id'
 const importTrainees = async (filename) => {
   const records=await loadRecords(filename)
   const uniqueTrainees=lodash.uniqBy(records, TRAINEE_AFTRAL_ID)
+  const duplicates=lodash(uniqueTrainees)
+    .countBy('EMAIL_STAGIAIRE')
+    // .pickBy(v => {console.log(v); return v.length>1})
+    .value()
   return importData({model: 'user', data: uniqueTrainees, 
     mapping: TRAINEE_MAPPING, 
     identityKey: TRAINEE_KEY, 
@@ -361,15 +372,18 @@ const SESSION_MAPPING = admin => ({
   name: async ({record}) =>  {
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=code ? await Program.findOne({codes: code}) : null
+    if (!program) {
+      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
+    }
     return program?.name
   },
   session_product_code: 'CODE_PRODUIT',
   code: 'CODE_SESSION',
-  aftral_id: SESSION_AFTRAL_ID,
+  aftral_id: ({record}) => ensureNumber(record[SESSION_AFTRAL_ID]),
   trainers: async ({record}) => {
     const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainers')
     const previousTrainers=session?.trainers.map(t => t.aftral_id) || []
-    const importTrainers=record.TRAINERS.map(t => parseInt(t[TRAINER_AFTRAL_ID]))
+    const importTrainers=record.TRAINERS.map(t => ensureNumber(t[TRAINER_AFTRAL_ID]))
     const trainersIds=lodash.uniq([...previousTrainers, ...importTrainers])
     const trainers=await User.find({aftral_id: {$in: trainersIds}})
     return trainers
@@ -430,7 +444,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
   const oneAdmin=await User.findOne({role: ROLE_ADMINISTRATEUR})
   const importResult=await importData({model: 'session', data: sessions, 
-  mapping: SESSION_MAPPING(oneAdmin), 
+    mapping: SESSION_MAPPING(oneAdmin), 
     identityKey: SESSION_KEY, 
     migrationKey: SESSION_KEY,
     progressCb
@@ -439,14 +453,14 @@ const importSessions = async (trainersFilename, traineesFilename) => {
 
   // Set programs
   const programsResult=await runPromisesWithDelay(sessions.map(record => async () => {
+    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate(['trainers', 'trainees', 'children'])
+    if (!session) {
+      return
+    }
     const code=await ProductCode.findOne({code: record.CODE_PRODUIT})
     const program=await Program.findOne({codes: code, origin: null, _locked: false})
     if (!program) {
       return Promise.reject(`Session ${record.CODE_SESSION} programme de code ${record.CODE_PRODUIT} introuvable`)
-    }
-    const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate(['trainers', 'trainees', 'children'])
-    if (!session) {
-      return
     }
     if (lodash.isEmpty(session.children)) {
       console.log('Program for', record[SESSION_AFTRAL_ID], !!session, !!program)

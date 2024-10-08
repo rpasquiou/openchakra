@@ -17,12 +17,14 @@ const pollNewFiles = async () => {
     throw new Error(`EXCHANGE_DIRECTORY must be defined in .env`)
   }
 
-  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant.*\.csv$/, importTrainees]
-  const TRAINERS_PARAMS=['latest-trainers-filedate', /Session_Formateur.*\.csv$/, importTrainers]
-  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur.*\.csv$/, importSessions]
+  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant.*\.csv$/, importTrainees, 'Import apprenant']
+  const TRAINERS_PARAMS=['latest-trainers-filedate', /Session_Formateur.*\.csv$/, importTrainers, 'Import formateurs']
+  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur.*\.csv$/, importSessions, 'Import sessions']
 
+  const STEPS=[TRAINERS_PARAMS, TRAINEES_PARAMS, SESSION_PARAMS]
   const allFiles=await fs.readdirSync(folder)
-  let res=await runPromisesWithDelay([TRAINERS_PARAMS, TRAINEES_PARAMS, SESSION_PARAMS].map(([key, filePattern, importFn]) => async () => {
+  let errors=[]
+  let res=await runPromisesWithDelay(STEPS.map(([key, filePattern, importFn, topicName]) => async () => {
     const latest_date=store.get(key) ? moment(store.get(key)) : null
     console.log('Getting latest files after', latest_date)
     const latestFile=lodash(allFiles)
@@ -33,13 +35,16 @@ const pollNewFiles = async () => {
       console.log('Handling', latestFile, fs.statSync(latestFile).mtime.toString())
       store.set(key, fs.statSync(latestFile).mtime)
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
+        .then(res => {
+          console.log(res)
+          errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason.message}`)]
+          return res
+        })
     }
   }))
-  res=lodash.flattenDeep(res.map(r => r.value).filter(v => !!v))
-  const errors=res.filter(r => r.status=='rejected').map(r => r.reason)
   if (!lodash.isEmpty(errors)) {
     const admins=await User.find({role: ROLE_ADMINISTRATEUR})
-    await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: errors.join('\n')})))
+    await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: errors.filter(v => !lodash.isEmpty(v)).join('\n')})))
   }
   return res
 }

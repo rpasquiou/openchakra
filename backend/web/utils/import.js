@@ -142,7 +142,7 @@ const dataCache = new NodeCache()
 
 const setCache = (model, migrationKey, destinationKey) => {
   if (lodash.isNil(migrationKey)) {
-    throw new Error(`${model}:migration key is empty`)
+    throw new Error(`${model}/${migrationKey}/${destinationKey}:migration key is empty`)
   }
   if (lodash.isNil(destinationKey)) {
     throw new Error(`${model}:${migrationKey} dest key is empty`)
@@ -169,10 +169,10 @@ const countCache = (model) => {
   return dataCache.keys().filter(k => k.startsWith(`${model}/`)).length
 }
 
-function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
+const upsertRecord= async ({model, record, identityKey, migrationKey, updateOnly}) => {
   const identityFilter=computeIdentityFilter(identityKey, migrationKey, record)
   return model.findOne(identityFilter, {[migrationKey]:1})
-    .then(result => {
+    .then(async result => {
       if (!result) {
         if (updateOnly) {
           throw new Error(`Could not find ${model.modelName} matching ${JSON.stringify(identityFilter)}`)
@@ -180,6 +180,7 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
         return model.create({...record})
       }
       Object.assign(result, record)
+      await result.validate()
       return result.save()
         .then(() => ({_id: result._id}))
       // return model.findByIdAndUpdate(result._id, record, {runValidators:true, new: true})
@@ -190,8 +191,8 @@ function upsertRecord({model, record, identityKey, migrationKey, updateOnly}) {
       return result
     })
     .catch(err => {
-      const msg=`Model ${model.modelName}, record ${JSON.stringify(record)}, error(s):${err.toString()}`
-      console.error(msg)
+      err.message=`Model ${model.modelName}, record ${JSON.stringify(record)}, error(s):${err.message}`
+      throw err
     })
 }
 
@@ -203,7 +204,7 @@ const computeIdentityFilter = (identityKey, migrationKey, record) => {
   return filter
 }
 
-const importData = ({model, data, mapping, identityKey, migrationKey, progressCb, updateOnly, ...rest}) => {
+const importData = async ({model, data, mapping, identityKey, migrationKey, progressCb, updateOnly, ...rest}) => {
   if (!model || lodash.isEmpty(data) || !lodash.isObject(mapping) || lodash.isEmpty(identityKey) || lodash.isEmpty(migrationKey)) {
     throw new Error(`Expecting model, data, mapping, identityKey, migrationKey`)
   }
@@ -211,37 +212,15 @@ const importData = ({model, data, mapping, identityKey, migrationKey, progressCb
   console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
-  console.time('Mapping records')
-  return Promise.all(data.map(record => mapRecord({record, mapping, ...rest})))
-    .then(mappedData => {
-      console.timeEnd('Mapping records')
-      const recordsCount=mappedData.length
-      console.time(msg)
-      return runPromisesWithDelay(mappedData.map((data, index) => () => {
-        return upsertRecord({model: mongoModel, record: data, identityKey, migrationKey, updateOnly})
-          .finally(() => progressCb && progressCb(index, recordsCount))
-      }
-      ))
-      .then(results => {
-        const rejected=lodash.zip([results, mappedData]).filter(([res, ]) => res.status=='rejected')
-        if (!lodash.isEmpty(rejected)) {
-          console.error('rejected', JSON.stringify(rejected))
-          throw new Error(JSON.stringify(rejected))
-        }
-        const createResult=(result, index) => ({
-          index,
-          success: result.status=='fulfilled',
-          error: result.reason?.message || result.reason?._message || result.reason
-        })
-        const mappedResults=results.map((r, index) => createResult(r, index))
-        return mappedResults
-      })
-    })
-    .finally(()=> {
-      delete mongoose.model(model)
-      saveCache()
-      console.timeEnd(msg)
-    })
+  return Promise.allSettled(data.map(async record => {
+    const mapped=await mapRecord({record, mapping, ...rest})
+    await upsertRecord({model: mongoModel, record: mapped, identityKey, migrationKey, updateOnly})
+  }))
+  .finally(()=> {
+    // delete mongoose.model(model)
+    saveCache()
+    console.timeEnd(msg)
+  })
 }
 
 const CACHE_PATH='/tmp/migration-cache'

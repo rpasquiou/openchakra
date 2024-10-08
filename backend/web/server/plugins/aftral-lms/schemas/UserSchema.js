@@ -23,6 +23,8 @@ const UserSchema = new Schema({
     required: [true, 'L\'email est obligatoire'],
     set: v => v ? v.toLowerCase().trim() : v,
     validate: [isEmailOk, "L'email est invalide"],
+    index: true,
+    unique: true,
   },
   picture: {
     type: String,
@@ -68,6 +70,8 @@ const UserSchema = new Schema({
   },
 }, schemaOptions)
 
+/* eslint-disable prefer-arrow-callback */
+
 UserSchema.virtual('fullname', DUMMY_REF).get(function() {
   return `${this.firstname || ''} ${this.lastname || ''}`
 })
@@ -85,7 +89,9 @@ UserSchema.virtual('tickets_count', {
   count: true,
 })
 
-/* eslint-disable prefer-arrow-callback */
+UserSchema.index(
+  { email: 1},
+  { unique: true, message: 'Email dupliqué' });
 
 /* eslint-enable prefer-arrow-callback */
 
