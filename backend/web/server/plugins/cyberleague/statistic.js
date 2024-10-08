@@ -26,7 +26,7 @@ const regexTest = (field, text) => {
 }
 
 const getIncreaseValue = (field, answer) => {
-  //tester en fonction de si on veut answer_yes ou answer_no
+  //tester en fonction de si on veut answer_yes ou answer_no selon le champ
 }
 
 const increaseValueCount = (data, field, increaseValue) => {
@@ -114,7 +114,6 @@ const computeBellwetherStatistics = async (filters) => {
       })
     })
   })
-
 
   let res = {
     securityIncidentManagement: 0,
