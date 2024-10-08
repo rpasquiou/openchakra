@@ -444,7 +444,7 @@ const getFeed = async (id) => {
     const model = await getModel(id, ['session', 'group'])
     type = model === 'session' ? FEED_TYPE_SESSION : FEED_TYPE_GROUP
     const feed = await mongoose.connection.models[model].findById(id)
-    name = feed.name
+    name = `${feed.code} ${feed.name}`
   }
 
   let posts = await Post.find({ _feed: id })
@@ -566,6 +566,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   if (model == `ticket` && ![ROLE_CONCEPTEUR, ROLE_HELPDESK].includes(user.role)) {
     params[`filter.user`] = user._id
+  }
+
+  if (model=='group') {
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role)) {
+      const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
+      params['filter.sessions']={$in: sessions}
+    }
   }
   return Promise.resolve({model, fields, id, user, params})
 }
