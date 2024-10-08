@@ -35,6 +35,10 @@ const OfferSchema = new Schema({
     type: String,
     required: false
   },
+  price_duration: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
