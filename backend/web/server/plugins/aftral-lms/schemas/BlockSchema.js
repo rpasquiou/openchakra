@@ -257,6 +257,10 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
+  finished_children_count: {
+    type: Number,
+    required: false,
+  },
   tickets_count: {
     type: Number,
     required: false,
