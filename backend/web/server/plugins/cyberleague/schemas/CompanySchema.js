@@ -176,6 +176,13 @@ CompanySchema.virtual('missions', {
   foreignField: 'companies', // is equal to foreignField
 });
 
+CompanySchema.virtual('missions_count', {
+  ref: 'mission', // The Model to use
+  localField: '_id', // Find in Model, where localField
+  foreignField: 'companies', // is equal to foreignField
+  count: true,
+});
+
 CompanySchema.virtual('events', {
   ref: 'event', // The Model to use
   localField: '_id', // Find in Model, where localField
