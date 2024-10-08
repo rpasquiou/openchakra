@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { OFFER_VISIBILITY, OFFER_VISIBILITY_PUBLIC } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -38,6 +39,11 @@ const OfferSchema = new Schema({
   price_duration: {
     type: String,
     required: false
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(OFFER_VISIBILITY),
+    default: OFFER_VISIBILITY_PUBLIC
   },
 }, {...schemaOptions})
 
