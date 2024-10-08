@@ -133,7 +133,7 @@ const computeBellwetherStatistics = async (filters) => {
     })
   })
 
-  let res = {
+  const res = {
     securityIncidentManagement: 0,
     partner: 0,
     inventory: 0,
@@ -151,8 +151,8 @@ const computeBellwetherStatistics = async (filters) => {
   }
 
   //Compute ratios for bellwether / benchmark
-  res.forEach((_,k) => {
-    res[k] = Math.round(bellwetherData[k].value / bellwetherData[k].count * 100) /100
+  fields.forEach((field) => {
+    res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
   })
 
   return res
