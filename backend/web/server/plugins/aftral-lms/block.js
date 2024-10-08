@@ -1,4 +1,5 @@
 const lodash = require("lodash");
+const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM } = require("./consts");
@@ -9,7 +10,6 @@ const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
-const Resource = require("../../models/Resource");
 const { parseScormTime } = require("../../../utils/dateutils");
 
 const LINKED_ATTRIBUTES_CONVERSION={
@@ -78,6 +78,12 @@ const getParentBlocks = async blockId => {
 }
 
 const getBlockStatus = async (userId, params, data) => {
+  if (data.type=='session') {
+    const finished=await mongoose.models.session.exists({_id: data._id, end_date: {$lt: moment()}})
+    if (finished) {
+      return BLOCK_STATUS_FINISHED
+    }
+  }
   return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
 }
 

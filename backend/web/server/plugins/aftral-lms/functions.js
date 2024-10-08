@@ -76,7 +76,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'spent_time', getterFn: getBlockSpentTime})
   declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
-  declareComputedField({model, field: 'achievement_status', getterFn: getBlockStatus})
+  declareComputedField({model, field: 'achievement_status', requries: 'type', getterFn: getBlockStatus})
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
@@ -492,7 +492,6 @@ const getFeeds = async (user, id) => {
     ids=[...sessionIds, GENERAL_FEED_ID]
     const groupIds=(await Group.find({sessions: {$in:sessionIds}, visible_feed: true})).map(s => s._id)
     ids=[...ids, ...groupIds]
-    console.log('session', sessionIds, 'groups', groupIds)
   }
   else {
     ids=[id]
@@ -742,8 +741,8 @@ const scormCalbackGet = async ({user, resource}) => {
 
 setScormCallbackGet(scormCalbackGet)
 
-const freq='0 */5 * * * *'
-!isDevelopment() && cron.schedule(freq, async () => {
+const POLLING_FREQUENCY='0 */5 * * * *'
+!isDevelopment() && cron.schedule(POLLING_FREQUENCY, async () => {
   try {
     console.log('Polling new files')
     return await pollNewFiles().then(console.log)
