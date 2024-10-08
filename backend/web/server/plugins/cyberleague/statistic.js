@@ -26,6 +26,7 @@ const regexTest = (field, text) => {
 }
 
 const getIncreaseValue = (field, answer) => {
+  //need specs to complete
   const expectedAnswer = {
     securityIncidentManagement: ANSWER_NO, //for example
     partner: ANSWER_YES, // for example
@@ -43,7 +44,7 @@ const getIncreaseValue = (field, answer) => {
     admin: 'todo',
   }
 
-  //tester en fonction de si on veut answer_yes ou answer_no selon le champ
+  return answer == expectedAnswer[field]
 }
 
 const increaseValueCount = (data, field, increaseValue) => {
