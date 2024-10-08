@@ -9,6 +9,10 @@ const OfferSchema = new Schema({
     ref: 'company',
     required: [true,`L'entreprise proposant l'offre est obligatoire`]
   },
+  title: {
+    type: String,
+    required: [true, `Le titre de l'offre est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
