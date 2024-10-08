@@ -266,6 +266,11 @@ const preCreate = async ({model, params, user}) => {
   if (model=='post') {
     params.author=user
     const parentId=params.parent
+    // If in a non visible group, forbid
+    const canPost=await Group.exists({_id: parentId, can_post_feed: true})
+    if (!canPost) {
+      throw new ForbiddenError(`Ce forum est verrouillé`)
+    }
     const modelPromise=parentId==GENERAL_FEED_ID ? Promise.resolve(FEED_TYPE_GENERAL) :  getModel(parentId, [FEED_TYPE_GROUP, FEED_TYPE_SESSION])
     return modelPromise
       .then(modelName => {
