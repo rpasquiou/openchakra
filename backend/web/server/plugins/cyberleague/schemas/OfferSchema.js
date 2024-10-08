@@ -18,6 +18,11 @@ const OfferSchema = new Schema({
     ref: 'expertise',
     required: [true,`L'expertise principale de l'offre est obligatoire`]
   },
+  description: {
+    type: String,
+    validate: [value => value.length > 14, `La description de l'offre doit avoir plus de trois caractères`],
+    required: true
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
