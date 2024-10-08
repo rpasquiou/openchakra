@@ -93,12 +93,12 @@ const computeScoresIfRequired = async (scoreId) => {
     fields: [`answers.answer`, `answers.question.weight`, `answers.question.question_category`],
     id: scoreId
   })
-  const completed = score[0].answers?.filter(a => !a.answer).length == 0
+  const _completed = score[0].answers?.filter(a => !a.answer).length == 0
   
-  if (completed) {
+  if (_completed) {
     const computedScores = await computeScores(score[0].answers)
     
-    await Score.findByIdAndUpdate(score[0]._id, {$set: {...computedScores, completed}})
+    await Score.findByIdAndUpdate(score[0]._id, {$set: {...computedScores, _completed}})
   }
 }
 

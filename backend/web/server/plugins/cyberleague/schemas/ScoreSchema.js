@@ -54,7 +54,7 @@ const ScoreSchema = new Schema({
     type: Number,
     default: 0
   },
-  completed: {
+  _completed: {
     type: Boolean,
     required: true,
     default: false,
