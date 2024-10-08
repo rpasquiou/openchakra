@@ -5,74 +5,28 @@ const User = require("../../models/User")
 const { COMPANY_SIZE_1001_PLUS, STAT_MIN_SCORES, COMPANY_SIZE_0_10 } = require("./consts")
 
 
-const regexSecurityIncidentManagement = (text) => {
-  const regex = /.*gestion.*/ //Avez-vous une procédure de gestion des incidents de sécurité ?
-  return regex.test(text)
+const regexTest = (field, text) => {
+  const regex = {
+    securityIncidentManagement: /.*gestion.*/, //Avez-vous une procédure de gestion des incidents de sécurité ?
+    partner: /.*partenaire.*/, //Avez-vous identifié un partenaire spécialisé dans la réponse à incident de cybersécurité ?
+    inventory: /.*inventaire.*/, //Avez-vous un inventaire à jour de l'ensemble de vos actifs informatiques (matériels, logiciels, sites Web, nom de domaine, IP,... ) ?
+    insurance: /.*assurance.*/, //Avez-vous une assurance cybersécurité ?
+    cyberRef: /.*référent.*/, //Avez-vous un responsable ou un référent cybersécurité ?
+    intrusion: /.*intrusion.*/, //Effectuez-vous des tests d'intrusion sur votre SI ?
+    externalized: /.*sauvegarde.*/, //Disposez-vous de sauvegarde hors-ligne ? (sur média indépendant délocalisé du lieu de production) ?
+    webApp: /.*WAF.*/, //Vos sites web sont-ils protégés par des mécanismes de pare-feu applicatif (WAF) ?
+    antivirus: /.*antivirus.*/, //Disposez-vous d'un antivirus de dernière génération (EDR/XDR, Analyse comportementale, Analyse mémoire) ?
+    charter: /.*charte.*/, //Avez-vous diffusé une charte informatique à l'ensemble de vos collaborateurs ?
+    financial: /.*banques.*/, //Disposez-vous d’une procédure unique transverse ( pour toutes les banques) d’exécution des virements et/ou de changement d’IBAN  (montants autorisés France et international, plafonds cumulés, circuit de validation avec double regard (unitaire et en masse), ajout de bénéficiaire, etc) ?
+    sensibilization: /.*Sensibilisez.*/, //Sensibilisez-vous vos collaborateurs à la cybersécurité ?
+    mfa: /.*MFA.*/, //Avez-vous mis en place le MFA (Authentification Multifacteurs) pour les utilisateurs ?
+    admin: /.*admin.*/ //Interdisez-vous à vos collaborateurs d'être administrateurs de leurs postes ?
+  }
+  return regex[field].test(text)
 }
 
-const regexPartner = (text) => {
-  const regex = /.*partenaire.*/ //Avez-vous identifié un partenaire spécialisé dans la réponse à incident de cybersécurité ?
-  return regex.test(text)
-}
-
-const regexInventory = (text) => {
-  const regex = /.*inventaire.*/ //Avez-vous un inventaire à jour de l'ensemble de vos actifs informatiques (matériels, logiciels, sites Web, nom de domaine, IP,... ) ?
-  return regex.test(text)
-}
-
-const regexInsurance = (text) => {
-  const regex = /.*assurance.*/ //Avez-vous une assurance cybersécurité ?
-  return regex.test(text)
-}
-
-const regexCyberRef = (text) => {
-  const regex = /.*référent.*/ //Avez-vous un responsable ou un référent cybersécurité ?
-  return regex.test(text)
-}
-
-const regexIntrusion = (text) => {
-  const regex = /.*intrusion.*/ //Effectuez-vous des tests d'intrusion sur votre SI ?
-  return regex.test(text)
-}
-
-const regexExternalized = (text) => {
-  const regex = /.*sauvegarde.*/ //Disposez-vous de sauvegarde hors-ligne ? (sur média indépendant délocalisé du lieu de production) ?
-  return regex.test(text)
-}
-
-const regexWebApp = (text) => {
-  const regex = /.*WAF.*/ //Vos sites web sont-ils protégés par des mécanismes de pare-feu applicatif (WAF) ?
-  return regex.test(text)
-}
-
-const regexAntivirus = (text) => {
-  const regex = /.*antivirus.*/ //Disposez-vous d'un antivirus de dernière génération (EDR/XDR, Analyse comportementale, Analyse mémoire) ?
-  return regex.test(text)
-}
-
-const regexCharter = (text) => {
-  const regex = /.*charte.*/ //Avez-vous diffusé une charte informatique à l'ensemble de vos collaborateurs ?
-  return regex.test(text)
-}
-
-const regexFinancial = (text) => {
-  const regex = /.*banques.*/ //Disposez-vous d’une procédure unique transverse ( pour toutes les banques) d’exécution des virements et/ou de changement d’IBAN  (montants autorisés France et international, plafonds cumulés, circuit de validation avec double regard (unitaire et en masse), ajout de bénéficiaire, etc) ?
-  return regex.test(text)
-}
-
-const regexSensibilization = (text) => {
-  const regex = /.*Sensibilisez.*/ //Sensibilisez-vous vos collaborateurs à la cybersécurité ?
-  return regex.test(text)
-}
-
-const regexMFA = (text) => {
-  const regex = /.*MFA.*/ //Avez-vous mis en place le MFA (Authentification Multifacteurs) pour les utilisateurs ?
-  return regex.test(text)
-}
-
-const regexAdmin = (text) => {
-  const regex = /.*admin.*/ //Interdisez-vous à vos collaborateurs d'être administrateurs de leurs postes ?
-  return regex.test(text)
+const getIncreaseValue = (field, answer) => {
+  //tester en fonction de si on veut answer_yes ou answer_no
 }
 
 const increaseValueCount = (data, field, increaseValue) => {
@@ -104,23 +58,6 @@ const computeBellwetherStatistics = async (filters) => {
     scores = await Score.find()
   }
 
-  let res = {
-    securityIncidentManagement: 0,
-    partner: 0,
-    inventory: 0,
-    insurance: 0,
-    cyberRef: 0,
-    intrusion: 0,
-    externalized: 0,
-    webApp: 0,
-    antivirus: 0,
-    charter: 0,
-    financial: 0,
-    sensibilization: 0,
-    mfa: 0,
-    admin: 0
-  }
-
   //if less answers than STAT_MIN_SCORES stats are not relevant
   if (scores.length < STAT_MIN_SCORES) {
     //TODO return 'not enough scores to have relevant data'
@@ -133,6 +70,23 @@ const computeBellwetherStatistics = async (filters) => {
     })
     return s
   })
+
+  const fields = [
+    `securityIncidentManagement`,
+    `partner`,
+    `inventory`,
+    `insurance`,
+    `cyberRef`,
+    `intrusion`,
+    `externalized`,
+    `webApp`,
+    `antivirus`,
+    `charter`,
+    `financial`,
+    `sensibilization`,
+    `mfa`,
+    `admin`
+  ]
 
   const bellwetherData = {
     securityIncidentManagement: {value: 0, count: 0},
@@ -153,39 +107,31 @@ const computeBellwetherStatistics = async (filters) => {
 
   cleanScores.forEach((s)=> {
     s.answers.forEach((a) => {
-      if (regexAntivirus(a.question.text)) {
-        
-      } else if (regexInsurance(a.question.text)) {
-        
-      } else if (regexCharter(a.question.text)) {
-        
-      } else if (regexInventory(a.question.text)) {
-        
-      } else if (regexCyberRef(a.question.text)) {
-        
-      } else if (regexExternalized(a.question.text)) {
-        
-      } else if (regexFinancial(a.question.text)) {
-
-      } else if (regexIntrusion(a.question.text)) {
-
-      } else if (regexPartner(a.question.text)) {
-        
-      } else if (regexSecurityIncidentManagement(a.question.text)) {
-        
-      } else if (regexSensibilization(a.question.text)) {
-        
-      } else if (regexWebApp(a.question.text)) {
-        
-      } else if (regexMFA(a.question.text)) {
-        
-      } else if (regexAdmin(a.question.text)) {
-        
-      } else {
-        throw new Error(`La question '${a.question.text}' ne fait pas partie du baromètre`)
-      }
+      fields.forEach((field) => {
+        if (regexTest(field,a.question.text)) {
+          increaseValueCount(bellwetherData, field, getIncreaseValue(field, a.answer))
+        }
+      })
     })
   })
+
+
+  let res = {
+    securityIncidentManagement: 0,
+    partner: 0,
+    inventory: 0,
+    insurance: 0,
+    cyberRef: 0,
+    intrusion: 0,
+    externalized: 0,
+    webApp: 0,
+    antivirus: 0,
+    charter: 0,
+    financial: 0,
+    sensibilization: 0,
+    mfa: 0,
+    admin: 0
+  }
 
   //Compute ratios for bellwether / benchmark
   res.forEach((_,k) => {
