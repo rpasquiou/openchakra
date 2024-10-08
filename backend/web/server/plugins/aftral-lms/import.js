@@ -418,6 +418,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     if (session_trainees[0]) {
       s.DATE_DEBUT_SESSION=session_trainees[0].DATE_DEBUT_SESSION
       s.DATE_FIN_SESSION=session_trainees[0].DATE_FIN_SESSION
+      s.NOM_CENTRE=session_trainees[0].NOM_CENTRE
     }
   })
   const progressCb=(index, total) => index%10==0 && console.log(index, '/', total)
