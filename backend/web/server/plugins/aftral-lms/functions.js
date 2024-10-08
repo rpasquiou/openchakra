@@ -580,7 +580,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model=='group') {
-    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role)) {
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
       const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
       params['filter.sessions']={$in: sessions}
     }
