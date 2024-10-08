@@ -8,10 +8,17 @@ export class LMSAPI {
     constructor() {
       this.initialized = false;
       this.data = {}; // to store data values
-      axios.get(`${API_ROOT}/current-user`)
+      if (!isClient()) {
+        return console.warn(`Not in browser`)
+      }
+      const url=new URL(globalThis.window.location.toString())
+      const resourceId=url.searchParams.get('id')
+      if (!resourceId) {
+        return console.warn(`No resource id found in URL ${window.location}`)
+      }
+      axios.get(`${API_ROOT}/scorm/`+resourceId)
         .then(res => {
-          this.data['cmi.core.student_name']=res.data.fullname
-          this.data['cmi.core.student_id']=res.data._id
+          this.data=res.data
         })
     }
 

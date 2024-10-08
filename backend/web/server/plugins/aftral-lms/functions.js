@@ -4,7 +4,8 @@ const lodash=require('lodash')
 const {
   declareVirtualField, setPreCreateData, setPreprocessGet, setMaxPopulateDepth, setFilterDataUser, declareComputedField, declareEnumField, idEqual, getModel, declareFieldDependencies, setPostPutData, setPreDeleteData, setPrePutData, loadFromDb,
   setPostCreateData,
-  setScormCallback,
+  setScormCallbackPost,
+  setScormCallbackGet,
 } = require('../../utils/database')
 const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM } = require('./consts')
 const mongoose = require('mongoose')
@@ -21,7 +22,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -704,12 +705,23 @@ const postCreate = async ({model, params, data}) => {
 
 setPostCreateData(postCreate)
 
-const scormCalback = async ({user, data}) => {
-  console.log('Got data', data, 'from', user)
+const scormCalbackPost = async ({user, data}) => {
   return setScormData(user._id, data.resourceId, data.scormData)
 }
 
-setScormCallback(scormCalback)
+setScormCallbackPost(scormCalbackPost)
+
+const scormCalbackGet = async ({user, resource}) => {
+  let loadedData=await getBlockScormData(user, resource)
+  const data={
+    'cmi.core.student_name': user.fullname,
+    'cmi.core.student_id': user._id.toString(),
+    ...loadedData,
+  }
+  return data
+}
+
+setScormCallbackGet(scormCalbackGet)
 
 const freq='0 */5 * * * *'
 !isDevelopment() && cron.schedule(freq, async () => {

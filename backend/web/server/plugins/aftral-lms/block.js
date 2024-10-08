@@ -10,6 +10,7 @@ const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const Resource = require("../../models/Resource");
+const { parseScormTime } = require("../../../utils/dateutils");
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -239,7 +240,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user})
+  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
@@ -552,11 +553,12 @@ const saveBlockScormData = async (userId, blockId, data) => {
   if (!userId || !blockId || !data) {
     throw new Error(userId, blockId, data)
   }
-  await Progress.findOneAndUpdate(
-    {block: blockId, user: userId},
-    {block: blockId, user: userId, scorm_data: JSON.stringify(data)},
-    {upsert: true}
-  )
+  const set={block: blockId, user: userId, scorm_data: JSON.stringify(data)}
+  const spentTime=parseScormTime(data['cmi.core.session_time'])
+  if (spentTime) {
+    set.spent_time=spentTime
+  }
+  await Progress.findOneAndUpdate({block: blockId, user: userId},set,{upsert: true})
 }
 
 const getBlockScormData = async (userId, blockId) => {
@@ -718,5 +720,5 @@ module.exports={
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
-  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote,
+  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,
 }
