@@ -109,7 +109,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'homeworks_missing_count', type: 'Number', requires: 'session', getterFn: getBlockHomeworksMissing})
   declareComputedField({model, field: 'trainees_count', type: 'Number', requires: 'session', getterFn: getBlockTraineesCount})
   declareComputedField({model, field: 'finished_children', getterFn: getBlockFinishedChildren, type:`Array`})
-  declareComputedField({model, field: 'finished_children_count', requires: 'children', getterFn: getFinishedChildrenCount, type:`Number`})
+  declareComputedField({model, field: 'finished_children_count', getterFn: getFinishedChildrenCount, type:`Number`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
   declareComputedField({model, field: 'note', requires: 'resource_type,homework_mode', getterFn: getBlockNote, setterFn: setBlockNote})

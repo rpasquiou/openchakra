@@ -400,7 +400,9 @@ const getBlockFinishedChildren = async (userId, params, data, fields) => {
 }
 
 const getFinishedChildrenCount = async (userId, params, data, fields) => {
-  return 15
+  const children=await mongoose.models.block.find({parent: data._id, masked:{$ne: true}}, {_id: 1})
+  const finished=await Progress.countDocuments({block: {$in: children}, user: userId, achievement_status: BLOCK_STATUS_FINISHED})
+  return finished.filter(Boolean).length
 }
 
 const getSessionConversations = async (userId, params, data, fields) => {
