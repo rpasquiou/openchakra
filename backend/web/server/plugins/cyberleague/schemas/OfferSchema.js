@@ -23,6 +23,10 @@ const OfferSchema = new Schema({
     validate: [value => value.length > 14, `La description de l'offre doit avoir plus de trois caractères`],
     required: true
   },
+  url: {
+    type: String,
+    required: [true, `Le lien de l'offre est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
