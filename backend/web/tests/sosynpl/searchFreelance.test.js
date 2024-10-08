@@ -53,7 +53,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'John Doe SAS',
-        expertises: [expertise1._id, expertise2._id]
+        expertises: [expertise1._id, expertise2._id],
+        pinned_expertises: [expertise1._id],
+        headquarter_address: { address: '123 Rue de la Paix', city: 'Paris', zip_code: '75000', country: 'France', latitude: 48.8566, longitude: 2.3522 }
       },
       {
         firstname: 'Jane',
@@ -75,7 +77,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'Smith Data SASU',
-        expertises: [expertise1._id]
+        expertises: [expertise1._id],
+        pinned_expertises: [expertise1._id],
+        headquarter_address: { address: '456 Avenue des Champs-Élysées', city: 'Paris', zip_code: '75008', country: 'France', latitude: 48.8698, longitude: 2.3075 }
       },
       {
         firstname: 'Pierre',
@@ -97,7 +101,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'Dupont Dev EURL',
-        expertises: [expertise1._id]
+        expertises: [expertise1._id],
+        pinned_expertises: [expertise1._id],
+        headquarter_address: { address: '789 Rue de la République', city: 'Lyon', zip_code: '69002', country: 'France', latitude: 45.7578, longitude: 4.8320 }
       },
       {
         firstname: 'Marie',
@@ -119,7 +125,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'Laurent Analytics',
-        expertises: [expertise1._id]
+        expertises: [expertise1._id],
+        pinned_expertises: [expertise1._id],
+        headquarter_address: { address: '101 Cours Mirabeau', city: 'Aix-en-Provence', zip_code: '13100', country: 'France', latitude: 43.5297, longitude: 5.4474 }
       },
       {
         firstname: 'Lucas',
@@ -141,7 +149,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'Martin Web Solutions',
-        expertises: [expertise1._id]
+        expertises: [expertise1._id],
+        pinned_expertises: [expertise1._id],
+        headquarter_address: { address: '202 Quai des Chartrons', city: 'Bordeaux', zip_code: '33000', country: 'France', latitude: 44.8486, longitude: -0.5783 }
       },
       {
         firstname: 'Paul',
@@ -163,7 +173,9 @@ describe('Search Freelance', function() {
         legal_status: 'EI',
         cgu_accepted: true,
         company_name: 'Baker Artisan',
-        expertises: [expertise3._id]
+        expertises: [expertise3._id],
+        pinned_expertises: [expertise3._id],
+        headquarter_address: { address: '303 Rue de la Boulangerie', city: 'Marseille', zip_code: '13000', country: 'France', latitude: 43.2965, longitude: 5.3698 }
       },
     ]
 
@@ -305,5 +317,18 @@ describe('Search Freelance', function() {
       search_value: 'Dresseur de chiens',
     })
     expect(searchResults.length).toBe(0)
+  })
+
+  it('should search freelancers with pinned expertise', async function () {
+    const searchResults = await search({
+      model: 'customerFreelance',
+      fields: [],
+      search_field: SEARCH_FIELD_ATTRIBUTE,
+      search_value: 'Boulangerie',
+    })
+
+    console.log(JSON.stringify(searchResults, null, 2))
+
+    expect(searchResults.length).toBe(1)
   })
 })

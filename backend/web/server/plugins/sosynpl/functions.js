@@ -465,7 +465,7 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     },
   })
   declareVirtualField({
-    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name'
+    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name,pinned_expertises,pinned_expertises.name'
   })
   declareVirtualField({
     model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports.mission.freelance.fullname',

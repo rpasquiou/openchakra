@@ -684,6 +684,10 @@ CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
     fields.push(this.third_job.name)
   }
 
+  if (this.pinned_expertises) {
+    fields = fields.concat(this.pinned_expertises.map(e => e.name))
+  }
+
   return fields.join(' ')
 })
 

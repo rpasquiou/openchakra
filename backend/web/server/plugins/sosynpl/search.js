@@ -6,7 +6,7 @@ const CustomerFreelance = require("../../models/CustomerFreelance")
 const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
-const { REGIONS_FULL } = require('../../../utils/consts')
+const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
 const { loadFromDb } = require('../../utils/database')
 const search = require('../../utils/search')
 
@@ -125,83 +125,63 @@ const computeSuggestedFreelances = async (userId, params, data) => {
   return sortedFreelances
 }
 
-// const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
-
 const searchFreelances = async (userId, params, data, fields)  => {
-  
-  fields=[...fields, 'freelance_profile_completion', 'address']
+  let filter = { ...params, 'filter.role': ROLE_FREELANCE }
+
+  fields = [...fields, 'freelance_profile_completion']
+
+  if (!lodash.isEmpty(data.work_modes)) {
+    filter['filter.work_mode'] = { $in: data.work_modes }
+  }
+  if (!lodash.isEmpty(data.work_durations)) {
+    filter['filter.work_duration'] = { $in: data.work_durations }
+  }
+  if (!lodash.isEmpty(data.experiences)) {
+    filter['filter.main_experience'] = { $in: data.experiences }
+  }
+  if (!lodash.isEmpty(data.sectors)) {
+    filter['filter.work_sector'] = { $in: data.sectors }
+  }
+  if (!lodash.isEmpty(data.expertises)) {
+    filter['filter.expertises'] = { $in: data.expertises }
+  }
+  if (!!data.available) {
+    filter['filter.availability'] = AVAILABILITY_ON
+  }
+  if (!!data.min_daily_rate || !!data.max_daily_rate) {
+    filter['filter.rate'] = {}
+    if (!!data.min_daily_rate) {
+      filter['filter.rate'] = { ...filter['filter.rate'], $gte: data.min_daily_rate }
+    }
+    if (!!data.max_daily_rate) {
+      filter['filter.rate'] = { ...filter['filter.rate'], $lte: data.max_daily_rate }
+    }
+  }
 
   let freelances = await search({
-    // Why not customerFreelance?
-    model: 'freelance',
+    model: 'customerFreelance',
     fields,
     user: userId,
-    filter: {},
-    search_field: 'search_field',
+    params: filter,
+    search_field: SEARCH_FIELD_ATTRIBUTE,
     search_value: data.pattern || '',
-  })  
-
-  freelances.forEach(freelance => {
-    console.log(freelance.shortname)
   })
-  
-  // let filter={role: ROLE_FREELANCE}
-  // if (!lodash.isEmpty(data.work_modes)) {
-  //   filter.work_mode={$in: data.work_modes}
-  // }
-  // if (!lodash.isEmpty(data.work_durations)) {
-  //   filter.work_duration={$in: data.work_durations}
-  // }
-  // if (!lodash.isEmpty(data.experiences)) {
-  //   filter.main_experience={$in: data.experiences}
-  // }
-  // if (!lodash.isEmpty(data.sectors)) {
-  //   filter.work_sector={$in: data.sectors}
-  // }
-  // if (!lodash.isEmpty(data.expertises)) {
-  //   filter.expertises={$in: data.expertises}
-  // }
-  // if (!!data.available) {
-  //   filter.availability=AVAILABILITY_ON
-  // }
-  // if (!!data.min_daily_rate || !!data.max_daily_rate) {
-  //   filter.rate={}
-  //   if (!!data.min_daily_rate) {
-  //     filter.rate={...filter.rate, $gte: data.min_daily_rate}
-  //   }
-  //   if (!!data.max_daily_rate) {
-  //     filter.rate={...filter.rate, $lte: data.max_daily_rate}
-  //   }
-  // }
-  
-  
-  // const subParams=lodash(filter)
-  //     .mapKeys((v,k) => `filter.${k}`)
-  //     .value()
-  // let candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params: subParams})
 
+  // Filtrer par distance après la recherche
   if (!lodash.isEmpty(data.city)) {
-    freelances=freelances.filter(c => {
-      const distance=computeDistanceKm(c.address, data.city)
+    freelances = freelances.filter(freelances => {
+      const distance = computeDistanceKm(freelances.headquarter_address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
 
-  // if (!lodash.isEmpty(data.pattern?.trim())) {
-  //   const regExp = new RegExp(data.pattern, 'i')
-  //   const filterPattern = candidate => {
-  //     return PROFILE_TEXT_SEARCH_FIELDS.some(f => regExp.test(candidate[f]))
-  //   }
-  //   candidates=candidates.filter(c => filterPattern(c))
-  // }
-
-  // Limt results if no criterion was provided
+  // Limiter les résultats si aucun critère n'a été fourni
   if (!data.pattern?.trim() && !data.city) {
-    freelances=freelances.slice(0, MAX_RESULTS_NO_CRITERION)
+    freelances = freelances.slice(0, MAX_RESULTS_NO_CRITERION)
   }
 
-  freelances = freelances.filter(c => c.freelance_profile_completion == 1)
-  freelances=Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
+  freelances = freelances.filter(c => c.freelance_profile_completion === 1)
+  freelances = Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
   return freelances
 }
 
