@@ -2,7 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
-const { STAT_MIN_SCORES } = require("./consts")
+const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES } = require("./consts")
 
 
 const regexTest = (field, text) => {
@@ -26,6 +26,23 @@ const regexTest = (field, text) => {
 }
 
 const getIncreaseValue = (field, answer) => {
+  const expectedAnswer = {
+    securityIncidentManagement: ANSWER_NO, //for example
+    partner: ANSWER_YES, // for example
+    inventory: 'todo',
+    insurance: 'todo',
+    cyberRef: 'todo',
+    intrusion: 'todo',
+    externalized: 'todo',
+    webApp: 'todo',
+    antivirus: 'todo',
+    charter: 'todo',
+    financial: 'todo',
+    sensibilization: 'todo',
+    mfa: 'todo',
+    admin: 'todo',
+  }
+
   //tester en fonction de si on veut answer_yes ou answer_no selon le champ
 }
 
