@@ -9,6 +9,7 @@ const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
 const { setpreLogin } = require('../../utils/database')
+const { sendForgotPassword } = require('./mailing')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
@@ -147,6 +148,17 @@ const forceFinishResource = async ({value, dataId, trainee}, user) => {
 }
 
 addAction('alle_finish_mission', forceFinishResource)
+
+
+const forgotPasswordAction = async ({email}) => {
+  console.log('value', email)
+  const user=await User.findOne({email})
+  if (user) {
+    return sendForgotPassword({user})
+  }
+}
+
+addAction('forgotPassword', forgotPasswordAction)
 
 
 const isActionAllowed = async ({ action, dataId, user }) => {

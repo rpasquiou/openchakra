@@ -7,6 +7,7 @@ const {
 const { formatDate, formatHour, formatDateTime } = require('../../../utils/text')
 
 const SIB_IDS={
+  SEND_PASSWORD: 5,
   TRAINEE_REGISTER: 6,
   TRAINER_REGISTER: 7,
   ADMIN_IMPORT: 8,
@@ -67,7 +68,19 @@ const sendImportError = async ({admin, date, message}) => {
   })
 }
 
+// Send FTP import errors to admins
+const sendForgotPassword = async ({user}) => {
+  return sendNotification({
+    notification: SIB_IDS.SEND_PASSWORD,
+    destinee: user,
+    params: {
+      login: user.email,
+      password: user.plain_password,
+    },
+  })
+}
+
 
 module.exports = {
-  sendImportError, sendInitTrainee, sendInitTrainer,
+  sendImportError, sendInitTrainee, sendInitTrainer, sendForgotPassword,
 }
