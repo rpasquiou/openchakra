@@ -39,7 +39,8 @@ const BlockSchema = new Schema({
   },
   order: {
     type: Number,
-    required: [function() { return this.parent}, `L'ordre est obligatoire`]
+    required: [function() { return this.parent}, `L'ordre est obligatoire`],
+    index: true,
   },
   // Product code for session
   session_product_code: {

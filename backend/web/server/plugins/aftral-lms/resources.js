@@ -29,31 +29,43 @@ const getBlockResources = async ({blockId, userId, allResources}) => {
   return getBlockResourcesNew({blockId, userId, allResources})
 }
 
-const getBlockResourcesNew = async ({blockId, userId, allResources, role}) => {
-
+const getBlockResourcesNew = async ({ blockId, userId, allResources, role }) => {
   if (!role) {
-    role = (await User.findById(userId))?.role
+    role = (await User.findById(userId))?.role;
   }
 
-  const blocks=await Block.find({parent: blockId, masked: {$ne: true}}).sort({order:1})
-  let res=[]
-  const result=await runPromisesWithDelay(blocks.map(b => async () => {
-    if (b.type==BLOCK_TYPE_RESOURCE) {
-      if (role==ROLE_APPRENANT && !allResources) {
-        const available=await Progress.exists({block: b._id, user: userId, achievement_status: {$in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT]}})
-        if (!available) {
-          return
-        }
+  const blocks = await Block.find({ parent: blockId, masked: { $ne: true } })
+    .select({ _id: 1, type: 1, order: 1 })
+    .sort({ order: 1 });
+
+  let res = [];
+
+  // Process each block, and ensure correct ordering of results
+  for (const b of blocks) {
+    if (b.type == BLOCK_TYPE_RESOURCE) {
+      if (role == ROLE_APPRENANT && !allResources) {
+        const available = await Progress.exists({
+          block: b._id,
+          user: userId,
+          achievement_status: { $in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT] }
+        });
+        if (!available) continue
       }
       res.push(b)
+    } else {
+      const subResources = await getBlockResourcesNew({
+        blockId: b._id,
+        userId,
+        allResources,
+        role
+      });
+      res = [...res, ...subResources]
     }
-    else {
-      const subResources=await getBlockResources({blockId: b._id, userId, allResources})
-      res=[...res, ...subResources]
-    }
-  }))
-  return res
-}
+  }
+
+  return res;
+};
+
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
 const getBlockResourcesOriginal = async ({blockId, userId}) => {
