@@ -26,7 +26,12 @@ const GroupSchema = new Schema({
     ref: `feed`,
     required: false,
   },
-  cant_post: {
+  can_post_feed: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  visible_feed: {
     type: Boolean,
     required: true,
     default: false,
