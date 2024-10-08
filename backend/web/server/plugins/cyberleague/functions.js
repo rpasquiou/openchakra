@@ -521,11 +521,11 @@ const preCreate = async ({model, params, user}) => {
 
   if (model == 'carreer') {
     if (!user.company) {
-      throw new BadRequestError(`Il faut faire partie d'une entreprise pour pouvoir créer une offre d'emploi`)
+      throw new BadRequestError(`Il faut faire partie d'une entreprise pour pouvoir créer un job`)
     }
     const [company]=await loadFromDb({model: 'company', id: user.company, fields:['statut']})
     if (!company.statut) {
-      throw new BadRequestError(`Il faut faire partie d'une entreprise partenaire, sponor ou fondateur pour pouvoir créer une offre d'emploi`)
+      throw new BadRequestError(`Il faut faire partie d'une entreprise partenaire, sponor ou fondateur pour pouvoir créer un job`)
     }
     params.company = user.company
   }

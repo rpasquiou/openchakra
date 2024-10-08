@@ -11,7 +11,7 @@ const CarreerSchema = new Schema(
     company: {
       type: Schema.Types.ObjectId,
       ref: 'company',
-      required: [true,`L'entreprise proposant l'emploi est obligatoire`]
+      required: [true,`L'entreprise proposant le job est obligatoire`]
     },
     position: {
       type: String,
