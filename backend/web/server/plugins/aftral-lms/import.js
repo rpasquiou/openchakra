@@ -352,17 +352,27 @@ const TRAINEE_MAPPING = {
 const TRAINEE_KEY='aftral_id'
 
 const importTrainees = async (filename) => {
+  let res=[]
   const records=await loadRecords(filename)
-  const uniqueTrainees=lodash.uniqBy(records, TRAINEE_AFTRAL_ID)
+  let uniqueTrainees=lodash.uniqBy(records, TRAINEE_AFTRAL_ID)
   const duplicates=lodash(uniqueTrainees)
     .countBy('EMAIL_STAGIAIRE')
-    // .pickBy(v => {console.log(v); return v.length>1})
+    .pickBy(v => v>1)
+    .keys()
     .value()
-  return importData({model: 'user', data: uniqueTrainees, 
+  if (!lodash.isEmpty(duplicates)) {
+    res=[...res, {status: 'rejected', reason: {message: `Les email(s) non unique(s) ${duplicates.join(',')} ne seront pas importés`}}]
+    uniqueTrainees=uniqueTrainees.filter(t => !duplicates.includes(t.EMAIL_STAGIAIRE))
+  }
+  if (lodash.isEmpty(uniqueTrainees)) {
+    return res
+  }
+  const importRes=await importData({model: 'user', data: uniqueTrainees, 
     mapping: TRAINEE_MAPPING, 
     identityKey: TRAINEE_KEY, 
     migrationKey: TRAINEE_KEY,
   })
+  return [...res, ...importRes]
 }
 
 const SESSION_MAPPING = admin => ({

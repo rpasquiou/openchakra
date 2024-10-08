@@ -37,12 +37,12 @@ const pollNewFiles = async () => {
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
         .then(res => {
           console.log(res)
-          errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason.message}`)]
+          errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason.message}`).filter(v => !lodash.isEmpty(v))]
           return res
         })
     }
   }))
-  if (!lodash.isEmpty(errors)) {
+  if (!lodash.isEmpty(errors.join('\n'))) {
     const admins=await User.find({role: ROLE_ADMINISTRATEUR})
     await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: errors.filter(v => !lodash.isEmpty(v)).join('\n')})))
   }
