@@ -490,7 +490,7 @@ const getFeeds = async (user, id) => {
   if (!id) {
     const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
     ids=[...sessionIds, GENERAL_FEED_ID]
-    const groupIds=(await Group.find({sessions: {$in:sessionIds}})).map(s => s._id)
+    const groupIds=(await Group.find({sessions: {$in:sessionIds}, visible_feed: true})).map(s => s._id)
     ids=[...ids, ...groupIds]
     console.log('session', sessionIds, 'groups', groupIds)
   }
