@@ -399,6 +399,10 @@ const getBlockFinishedChildren = async (userId, params, data, fields) => {
   return finishedChildren
 }
 
+const getFinishedChildrenCount = async (userId, params, data, fields) => {
+  return 15
+}
+
 const getSessionConversations = async (userId, params, data, fields) => {
   const user = await User.findById(userId)
   const convs = await SessionConversation.find({
@@ -726,5 +730,5 @@ module.exports={
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
-  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,
+  updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
 }
