@@ -31,6 +31,10 @@ const OfferSchema = new Schema({
     type: String,
     required: [true, `Le prix de l'offre est obligatoire`]
   },
+  price_member: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
