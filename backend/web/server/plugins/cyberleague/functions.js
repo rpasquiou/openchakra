@@ -12,7 +12,7 @@ const {
   idEqual,
   loadFromDb,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -526,6 +526,17 @@ const preCreate = async ({model, params, user}) => {
     const [company]=await loadFromDb({model: 'company', id: user.company, fields:['statut']})
     if (!company.statut) {
       throw new BadRequestError(`Il faut faire partie d'une entreprise partenaire, sponor ou fondateur pour pouvoir créer un job`)
+    }
+    params.company = user.company
+  }
+
+  if (model == 'offer') {
+    if (!user.company) {
+      throw new BadRequestError(`Il faut faire partie d'une entreprise pour pouvoir créer une offre`)
+    }
+    const [company]=await loadFromDb({model: 'company', id: user.company, fields:['statut']})
+    if (!company.statut || company.statut == STATUT_PARTNER) {
+      throw new BadRequestError(`Il faut faire partie d'une entreprise sponor ou fondateur pour pouvoir créer une offre`)
     }
     params.company = user.company
   }
