@@ -271,6 +271,12 @@ const CustomerSchema = new Schema({
     set: v => v || undefined,
     required: false,
   },
+  billing_contact: {
+    type: String,
+    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
+    set: v => v?.replace(/^0/, '+33'),
+    required: false
+  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
