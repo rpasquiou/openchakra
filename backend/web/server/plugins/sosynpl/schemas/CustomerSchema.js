@@ -246,10 +246,6 @@ const CustomerSchema = new Schema({
     type: String,
     required: [function() {return this.vat_subject===true}, `Le numéro de TVA est obligatoire`],
   },
-  address: {
-    type: AddressSchema,
-    required: false,
-  },
   sector: {
     type: Schema.Types.ObjectId,
     ref: 'sector',
