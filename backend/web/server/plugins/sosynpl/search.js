@@ -180,7 +180,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     freelances = freelances.slice(0, MAX_RESULTS_NO_CRITERION)
   }
 
-  freelances = freelances.filter(c => c.freelance_profile_completion > 0.9)
+  freelances = freelances.filter(c => c.freelance_profile_completion === 1)
   console.log(JSON.stringify(freelances, null, 1))
   freelances = Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
   return freelances
