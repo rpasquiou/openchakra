@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { ESTIMATED_DURATION_UNITS, STATUSES, STATUS_ACTIVE } = require('../consts')
+const { ESTIMATED_DURATION_UNITS, STATUSES, STATUS_ACTIVE, MISSION_VISIBILITY_PRIVATE, MISSION_VISIBILITY_PUBLIC } = require('../consts')
 const { REGIONS } = require('../../../../utils/consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -90,6 +91,11 @@ const MissionSchema = new Schema(
 )
 
 /* eslint-disable prefer-arrow-callback */
+
+MissionSchema.virtual('visibility', DUMMY_REF).get(function() {
+  return this.is_private ? MISSION_VISIBILITY_PRIVATE : MISSION_VISIBILITY_PUBLIC
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = MissionSchema
