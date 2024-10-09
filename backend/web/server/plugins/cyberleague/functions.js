@@ -371,7 +371,7 @@ declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'can
 declareEnumField({model: 'offer', field: 'visibility', enumValues: OFFER_VISIBILITY})
 
 //Mission declarations
-declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_private', instance: 'String', enumValues: MISSION_VISIBILITY})
+declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_public', instance: 'String', enumValues: MISSION_VISIBILITY})
 
 
 
@@ -560,7 +560,7 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'mission') {
     if (params.parent) {
       params.company = params.parent
-      params.is_private = true
+      params.is_public = true
     }
   }
 

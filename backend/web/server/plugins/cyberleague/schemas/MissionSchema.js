@@ -57,7 +57,7 @@ const MissionSchema = new Schema(
       type: String,
       required: false,
     },
-    is_private: {
+    is_public: {
       type: Boolean,
       required: false,
     },
@@ -93,7 +93,7 @@ const MissionSchema = new Schema(
 /* eslint-disable prefer-arrow-callback */
 
 MissionSchema.virtual('visibility', DUMMY_REF).get(function() {
-  return this.is_private ? MISSION_VISIBILITY_PRIVATE : MISSION_VISIBILITY_PUBLIC
+  return this.is_public ? MISSION_VISIBILITY_PUBLIC : MISSION_VISIBILITY_PRIVATE
 })
 
 /* eslint-enable prefer-arrow-callback */
