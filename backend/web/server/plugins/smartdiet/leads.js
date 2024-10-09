@@ -135,13 +135,14 @@ const getCompanyLeads = async (userId, params, data, fields) => {
     .mapKeys((v, k) => k.replace(/sort\./, ''))
     .value()
   let query=Lead.find(filter).sort(sort)
+  query = query.populate('registered_user').select(fields?.concat(['registered']))
   if (params.page) {
     query=query.skip(parseInt(params.page)*parseInt(params.limit))
   }
   if (params.limit) {
     query=query.limit(parseInt(params.limit)+1)
   }
-  query.sort({update_date: 'asc'})
+  query.sort({update_date: 'desc'})
   return query
 }
 

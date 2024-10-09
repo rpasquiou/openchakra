@@ -102,6 +102,11 @@ const ContentSchema = new Schema({
   pinned: {
     type: Boolean,
   },
+  companies: [{
+    type: Schema.Types.ObjectId,
+    ref: 'company',
+    required: false,
+  }],
 }, schemaOptions)
 
 ContentSchema.virtual('likes_count', DUMMY_REF).get(function() {

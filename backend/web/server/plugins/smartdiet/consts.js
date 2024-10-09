@@ -622,7 +622,7 @@ const PASSWORD_PATTERN=/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{
 const PASSWORD_LENGTH=15
 const PASSWORD_PATTERN_STR='15 caractères minimum dont une majuscule, une minuscule, un chiffre et un caractère spécial'
 
-const LEAD_SEARCH_TEXT_FIELDS='firstname lastname email phone'.split(' ')
+const LEAD_SEARCH_TEXT_FIELDS='firstname lastname email phone campain'.split(' ')
 const USER_SEARCH_TEXT_FIELDS='firstname lastname email phone'.split(' ')
 
 

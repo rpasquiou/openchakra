@@ -1101,6 +1101,12 @@ declareVirtualField({
     options: { ref: 'company' }
   },
 })
+declareVirtualField({model: 'company', field: 'contents', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'content' }
+  },
+})
 declareVirtualField({
   model: 'company', field: 'collective_challenges', instance: 'Array', multiple: true,
   caster: {
