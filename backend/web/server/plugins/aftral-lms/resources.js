@@ -237,8 +237,30 @@ const canReplay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_FINISHED})
 }
 
+const getBlockChildren = async ({blockId}) => {
+
+  const pipeline = [
+    { $match: { _id: mongoose.Types.ObjectId(blockId), masked: {$ne: true }}},
+    {
+      $graphLookup: {
+        from: 'blocks',
+        startWith: '$_id',
+        connectFromField: '_id',
+        connectToField: 'parent',
+        as: 'descendants'
+      }
+    },
+    { $unwind: { path: '$descendants'} },
+    { $project: { blockId: '$descendants._id'} }
+  ]
+
+  const result = await Block.aggregate(pipeline)
+
+  return result.map(doc => doc.blockId);
+}
+
 module.exports={
   getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources
+  getBlockResources, getBlockChildren,
 }
