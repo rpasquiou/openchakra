@@ -558,8 +558,10 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'mission') {
-    console.log('params', params);
-    
+    if (params.parent) {
+      params.company = params.parent
+      params.is_private = true
+    }
   }
 
   return Promise.resolve({model, params})
