@@ -371,7 +371,7 @@ declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'can
 declareEnumField({model: 'offer', field: 'visibility', enumValues: OFFER_VISIBILITY})
 
 //Mission declarations
-declareEnumField({model: 'mission', field: 'visibility', enumValues: MISSION_VISIBILITY})
+declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_private', instance: 'String', enumValues: MISSION_VISIBILITY})
 
 
 
@@ -555,6 +555,11 @@ const preCreate = async ({model, params, user}) => {
       throw new BadRequestError(`Il faut faire partie d'une entreprise sponor ou fondateur pour pouvoir créer une offre`)
     }
     params.company = user.company
+  }
+
+  if (model == 'mission') {
+    console.log('params', params);
+    
   }
 
   return Promise.resolve({model, params})
