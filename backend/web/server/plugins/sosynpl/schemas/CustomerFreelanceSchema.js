@@ -56,7 +56,7 @@ const CustomerFreelanceSchema = new Schema({
   ...customerSchema.obj,
   // Ovveride address => mandatory
   // For freelacne only
-  address: {
+  headquarter_address: {
     type: AddressSchema,
     required: [function() {return isFreelance(this)}, `L'adresse est obligatoire`],
   },

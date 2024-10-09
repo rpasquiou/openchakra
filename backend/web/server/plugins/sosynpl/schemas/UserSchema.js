@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
 const { ROLES, DEACTIVATION_REASON } = require('../consts')
 const { getCurrentMissions, getComingMissions } = require('../missions')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -52,7 +53,11 @@ const UserSchema = new Schema({
   company_name: {
     type: String,
     required: false
-  }
+  },
+  address: {
+    type: AddressSchema,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
