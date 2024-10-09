@@ -142,7 +142,7 @@ const getCompanyLeads = async (userId, params, data, fields) => {
   if (params.limit) {
     query=query.limit(parseInt(params.limit)+1)
   }
-  query.sort({update_date: 'asc'})
+  query.sort({update_date: 'desc'})
   return query
 }
 
