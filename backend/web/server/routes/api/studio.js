@@ -377,7 +377,7 @@ router.get('/geoloc', async (req, res) => {
 })
 
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
-  return res.json(req.user)
+  return res.json(lodash.pick(req.user,['_id', 'role']))
 })
 
 router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
