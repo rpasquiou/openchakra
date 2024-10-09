@@ -126,6 +126,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   if (model == 'jobUser' && params?.['filter.search_field']) {
+    if (id) {
+      const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
+      return { model, fields, id, data: [job], params }
+    }
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
 
     // Extract search parameters
