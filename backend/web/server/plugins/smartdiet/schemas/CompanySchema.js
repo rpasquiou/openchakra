@@ -156,6 +156,12 @@ CompanySchema.virtual("groups", {
   foreignField: "companies", // is equal to foreignField
 });
 
+CompanySchema.virtual('contents', {
+  ref: 'content',
+  localField: '_id',
+  foreignField: 'companies',
+})
+
 CompanySchema.virtual('groups_count', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.groups?.length || 0
 })
