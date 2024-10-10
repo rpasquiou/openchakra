@@ -74,7 +74,8 @@ const SSOStrategy = new SamlStrategy(
     if (!user) {
       const firstname=getSamlAttribute(profile, 'givenname')
       const lastname=getSamlAttribute(profile, 'surname')
-      const role=getSamlAttribute(profile, 'jobtitle')=='FORMATEUR'
+      const role=getSamlAttribute(profile, 'jobtitle')=='FORMATEUR' ? 'FORMATEUR' : 'GESTIONNAIRE',
+      
       user=await User.create({
         email, firstname, lastname, role, password: 'PASSWD',
       })
