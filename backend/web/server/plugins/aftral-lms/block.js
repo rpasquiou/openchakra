@@ -577,12 +577,10 @@ const saveBlockScormData = async (userId, blockId, data) => {
   if (!userId || !blockId || !data) {
     throw new Error(userId, blockId, data)
   }
-  const set={block: blockId, user: userId, scorm_data: JSON.stringify(data)}
-  const spentTime=parseScormTime(data['cmi.core.session_time'])
-  if (spentTime) {
-    set.spent_time=spentTime
-  }
-  await Progress.findOneAndUpdate({block: blockId, user: userId},set,{upsert: true})
+  await Progress.findOneAndUpdate(
+    {block: blockId, user: userId},
+    {block: blockId, user: userId, scorm_data: JSON.stringify(data)},
+    {upsert: true})
 }
 
 const getBlockScormData = async (userId, blockId) => {
@@ -605,6 +603,7 @@ const removeBlockStatus= async (userId, blockId, status) => {
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
 
   const block=await mongoose.models.block.findById(blockId).populate('children')
+  //const blockStatus=await locGetBlockStatus()
 
   if (block.type === BLOCK_TYPE_RESOURCE) {
     return locGetBlockStatus(block._id)
@@ -686,8 +685,8 @@ const updateSessionStatus = async (sessionId, trainee) => {
   await Promise.all(trainees.map(async t => {
     const isFinishedBlock = async blockId => isFinished(t._id, blockId)
     const setBlockStatus = (blockId, status) => saveBlockStatus(t._id, blockId, status)
-    const locGetBLockStatus = (blockId) => getBlockStatus(t._id, null, {_id: blockId})
-    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus, locGetBLockStatus)
+    const locGetBlockStatus = (blockId) => getBlockStatus(t._id, null, {_id: blockId})
+    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus, locGetBlockStatus)
   }))
   console.timeEnd('update session status')
 }

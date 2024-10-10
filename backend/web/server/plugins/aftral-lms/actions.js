@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM } = require('./consts')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT } = require('./consts')
 const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -75,15 +75,10 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  const resourceType=(await Block.findById(id))?.resource_type
-  // SCORM Spent time is updated through POSTED Scorm data
-  if (resourceType==RESOURCE_TYPE_SCORM) {
-    return
-  }
   const toUpdate=[id, ...(await getParentBlocks(id))]
   await Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
     {user, block: blockId},
-    {user, block: blockId, $inc: {spent_time: duration/1000}},
+    {user, block: blockId, $inc: {spent_time: duration/1000}, achievement_status: BLOCK_STATUS_CURRENT},
     {upsert: true, new: true}
     )))
   return onBlockAction(user, id)
