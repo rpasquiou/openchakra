@@ -642,7 +642,7 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_read_content: {
-    label: 'SM Read content',
+    label: 'Read content',
     options: {},
     next: ['openPage'],
   },
