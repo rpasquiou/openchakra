@@ -274,7 +274,7 @@ const BlockSchema = new Schema({
   },
   // Computed
   note_str: {
-    type: Number,
+    type: String,
     required: false,
     default: null,
   },

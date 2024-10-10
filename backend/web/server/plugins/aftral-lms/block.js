@@ -2,7 +2,7 @@ const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE } = require("./consts");
 const { getBlockResources } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -697,6 +697,9 @@ const setScormData= async (userId, blockId, data) => {
 }
 
 const getBlockNote = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return undefined
+  }
   const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
   if (!isTrainee) {
     return undefined
@@ -728,6 +731,24 @@ const setBlockNote = async ({ id, attribute, value, user }) => {
   return pr.save()
 }
 
+const getBlockNoteStr = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return undefined
+  }
+  if (data.success_scale) {
+    let scaleStr=null
+    if (!!data.homework_mode) {
+      const homeworks=await Homework.find({resource: data._id, trainee: userId})
+      const scale=homeworks.find(h => !!h.scale)?.scale
+      scaleStr=SCALE[scale]
+    }
+    return scaleStr
+  }
+  const note=await getBlockNote(userId, params, data)
+  if (note) {
+    return `${note}/${data.success_note_max}`
+  }
+}
 
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
@@ -738,4 +759,5 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
+  getBlockNoteStr,
 }
