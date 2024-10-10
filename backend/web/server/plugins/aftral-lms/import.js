@@ -389,7 +389,7 @@ const SESSION_MAPPING = admin => ({
   },
   session_product_code: 'CODE_PRODUIT',
   code: 'CODE_SESSION',
-  aftral_id: ({record}) => ensureNumber(record[SESSION_AFTRAL_ID]),
+  aftral_id: SESSION_AFTRAL_ID,
   trainers: async ({record}) => {
     const session=await Session.findOne({aftral_id: record[SESSION_AFTRAL_ID]}).populate('trainers')
     const previousTrainers=session?.trainers.map(t => t.aftral_id) || []
