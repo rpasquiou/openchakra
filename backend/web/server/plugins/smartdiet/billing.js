@@ -27,19 +27,26 @@ const getAppointmentType = async ({appointmentType}) => {
   return result
 }
 
-const getPrices = async () => {
-  return await PriceList.find().sort({date: 1})
+const getPrices = async (diet) => {
+  diet = await User.findById(diet)
+    .populate({
+      path: 'company',
+      populate:({
+        path: 'current_offer'
+      })
+    })
+  return diet.company.current_offer || await PriceList.find().sort({date: 1})
 }
 
 const PRICES_MAPPING={
-  [APPOINTMENT_TYPE_ASSESSMENT]: 'assessment',
-  [APPOINTMENT_TYPE_FOLLOWUP]: 'followup',
-  [APPOINTMENT_TYPE_NUTRITION]: 'nutrition',
+  [APPOINTMENT_TYPE_ASSESSMENT]: 'assessment_price',
+  [APPOINTMENT_TYPE_FOLLOWUP]: 'followup_price',
+  [APPOINTMENT_TYPE_NUTRITION]: 'nutrition_price',
 }
 
-const getAppointmentPrice = ({pricesList, appointment}) => {
-  const prices=lodash(pricesList).filter(p => moment(p.date).isBefore(appointment.start_date)).maxBy('date')
-  return prices?.[PRICES_MAPPING[appointment.type]]||undefined
+const getAppointmentPrice = (currentOffer, type) => {
+  const priceField = PRICES_MAPPING[type]
+  return currentOffer?.[priceField] || 0
 }
 
 // Computes blliing for the logged user
@@ -68,34 +75,41 @@ const computeBilling = async ({ user, diet, fields, params }) => {
 
 // diet : loggedUser, validDiet: diet id to filter on
 const computeDietBilling = async (diet, fields, params, validDiet) => {
-  console.log('params', params)
   const company = params['filter.company']
-  const prices = await getPrices()
-  const appointments = company ?
-    await Appointment.aggregate([
+  const prices = await getPrices(diet)
+  const companyFilter = company
+  ? [
       {
-        $match:{
-          diet:diet
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user'
         }
       },
       {
-        $lookup:{
-          from:'users',
-          localField:'user',
-          foreignField:'_id',
-          as:'user'
-        }
+        $unwind: '$user'
       },
       {
-        $unwind:'$user'
-      },
-      {
-        $match:{
-          'user.company':mongoose.Types.ObjectId(company)
+        $match: {
+          'user.company': mongoose.Types.ObjectId(company)
         }
-      },
-    ])
-    : await Appointment.find({ diet }, { start_date: 1 })
+      }
+    ]
+  : []
+
+  const appointments = await Appointment.aggregate([
+    {
+      $match: {
+        diet: diet
+      }
+    },
+    ...companyFilter,
+    {
+      $project: {start_date:1}
+    }
+  ])
+
   const nutAdvices = company ?
     await NutritionAdvice.aggregate([
       {
@@ -122,7 +136,7 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     ])
     : await NutritionAdvice.find({ diet }, { start_date: 1 })
 
-  const startDate = params['filter.start_date'] ? 
+  const startDate = params['filter.start_date'] ?
     moment(params['filter.start_date'])
     :
     lodash.minBy([...appointments, ...nutAdvices], obj => obj.start_date)?.start_date
@@ -148,9 +162,17 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     const nutAdvices = await NutritionAdvice.find({ diet, ...monthFilter })
     typedAppts = [
       ...typedAppts,
-      ...nutAdvices.map(n => ({ ...n.toObject(), type: APPOINTMENT_TYPE_NUTRITION })),
+      ...nutAdvices.map(n => ({
+        ...n.toObject(),
+        type: APPOINTMENT_TYPE_NUTRITION,
+        price: getAppointmentPrice(prices, APPOINTMENT_TYPE_NUTRITION),
+      }))
     ]
-    typedAppts = typedAppts.map(appt => ({ ...appt, price: getAppointmentPrice({ pricesList: prices, appointment: appt }) }))
+
+    typedAppts = typedAppts.map(appt => ({
+      ...appt,
+      price: getAppointmentPrice(prices, appt.type)
+    }))
 
     const grouped = lodash.groupBy(typedAppts, 'type')
     const currentData = {
