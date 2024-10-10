@@ -369,6 +369,7 @@ declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'can
 
 //Offer declarations
 declareEnumField({model: 'offer', field: 'visibility', enumValues: OFFER_VISIBILITY})
+declareEnumField({model: 'offer', field: 'price_member_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 
 //Mission declarations
 declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_public', instance: 'String', enumValues: MISSION_VISIBILITY})
