@@ -201,15 +201,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
  // Permission end
 
 // Group start
-declareVirtualField({model:`group`, field: `excluded_trainees`, instance: `Array`, requires: `trainees,available_trainees`, multiple: true,
-  caster: {
-    instance: `ObjectID`,
-    options: {ref: `user`}
-  }
-})
-declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: `trainees`})
-declareVirtualField({model: `group`, field: `available_trainees_count`, instance: `Number`, requires: `available_trainees`})
-declareVirtualField({model: `group`, field: `excluded_trainees_count`, instance: `Number`, requires: `trainees,available_trainees`})
+declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
 // Group end
 
 // HelpDeskConversation start
@@ -587,18 +579,18 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     params[`filter.user`] = user._id
   }
 
+  // To filter group containing sessions I belong to
   if (model=='group') {
-    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
-      const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
-      params['filter.sessions']={$in: sessions}
-    }
+    fields=lodash.uniq([...fields, 'sessions'])
   }
+  
   return Promise.resolve({model, fields, id, user, params})
 }
 
 setPreprocessGet(preprocessGet)
 
 const filterDataUser = async ({model, data, id, user}) => {
+  console.log('filter', model, 'id', id)
   if (model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
     data=data.filter(d => moment().isBetween(d.start_date, d.end_date))
   }
@@ -609,6 +601,13 @@ const filterDataUser = async ({model, data, id, user}) => {
     })
     data=[]
   }
+  if (model=='group' && !id) {
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
+      const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})).map(s => s._id)
+      data=data.filter(group => group.sessions.some(gs => sessionIds.some(si => idEqual(gs._id, si._id))))
+    }
+  }
+
   return data
 }
 
