@@ -3,7 +3,7 @@ const {schemaOptions} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
-const TipSchema = new Schema({
+const DidYouKnowSchema = new Schema({
   body: {
     type: String,
     required: [true, 'Le contenu est obligatoire'],
@@ -17,4 +17,4 @@ const TipSchema = new Schema({
 /* eslint-disable prefer-arrow-callback */
 /* eslint-enable prefer-arrow-callback */
 
-module.exports = TipSchema
+module.exports = DidYouKnowSchema
