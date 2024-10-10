@@ -69,7 +69,7 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
     model: `resource`,
     user: actualLogged,
     fields: [...fields, 'evaluation'],
-    params: newParams
+    params: params,
   })
   
   resources = resources.filter(r => !!r.evaluation
