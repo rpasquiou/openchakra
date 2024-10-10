@@ -267,8 +267,8 @@ const preCreate = async ({model, params, user}) => {
   if (model=='post') {
     params.author=user
     const parentId=params.parent
-    // If in a non visible group, forbid
-    const canPost=await Group.exists({_id: parentId, can_post_feed: true})
+    // If in a non visible group or session, forbid
+    const canPost=(await Group.exists({_id: parentId, can_post_feed: true})) || (await Session.exists({_id: parentId, can_post_feed: true}))
     if (!canPost) {
       throw new ForbiddenError(`Ce forum est verrouillé`)
     }
@@ -489,7 +489,7 @@ const getFeed = async (id) => {
 const getFeeds = async (user, id) => {
   let ids=[]
   if (!id) {
-    const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
+    const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}], visible_feed: true})).map(s => s._id)
     ids=[...sessionIds, GENERAL_FEED_ID]
     const groupIds=(await Group.find({sessions: {$in:sessionIds}, visible_feed: true})).map(s => s._id)
     ids=[...ids, ...groupIds]
