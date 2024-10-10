@@ -543,7 +543,7 @@ const preCreate = async ({model, params, user}) => {
     }
     const [company]=await loadFromDb({model: 'company', id: user.company, fields:['statut']})
     if (!company.statut) {
-      throw new BadRequestError(`Il faut faire partie d'une entreprise partenaire, sponor ou fondateur pour pouvoir créer un job`)
+      throw new BadRequestError(`Il faut faire partie d'une entreprise partenaire, sponsor ou fondatrice pour pouvoir créer un job`)
     }
     params.company = user.company
   }
@@ -554,7 +554,7 @@ const preCreate = async ({model, params, user}) => {
     }
     const [company]=await loadFromDb({model: 'company', id: user.company, fields:['statut']})
     if (!company.statut || company.statut == STATUT_PARTNER) {
-      throw new BadRequestError(`Il faut faire partie d'une entreprise sponor ou fondateur pour pouvoir créer une offre`)
+      throw new BadRequestError(`Il faut faire partie d'une entreprise sponsor ou fondatrice pour pouvoir créer une offre`)
     }
     params.company = user.company
   }
