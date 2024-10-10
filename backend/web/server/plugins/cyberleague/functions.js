@@ -626,6 +626,15 @@ const prePutData = async ({model, id, params, user}) => {
     params.administrators = params.administrators.split(',')
   }
 
+  if (model == 'post') {
+    const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
+    if (params.liked) {
+      await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+    } else {
+      await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+    }
+  }
+
   return {model, id, params, user}
 }
 
