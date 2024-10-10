@@ -29,7 +29,7 @@ const MissionSchema = new Schema(
       type: [
         {
           type: Schema.Types.ObjectId,
-          ref: 'expertise',
+          ref: 'expertiseCategory',
           index: true,
           required: true,
         },
