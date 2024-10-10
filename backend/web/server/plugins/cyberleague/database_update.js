@@ -1,5 +1,5 @@
 const User = require('../../models/User')
-const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS } = require('./consts')
+const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS, SECTOR_AERONAUTICS } = require('./consts')
 const Company = require('../../models/Company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const Group = require('../../models/Group')
@@ -112,6 +112,13 @@ const addExpertiseSet = async () => {
 
 }
 
+const addSector = async () => {
+  log('Add sector to companies without one')
+
+  await Company.updateMany({sector: {$exists: false}}, {sector: SECTOR_AERONAUTICS})// if not exists
+
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizeRoles()
@@ -119,6 +126,7 @@ const databaseUpdate = async () => {
   await normalizeJobs()
   await normalizeCompanySize()
   await addExpertiseSet()
+  await addSector()
 }
 
 module.exports=databaseUpdate
