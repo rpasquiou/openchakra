@@ -45,7 +45,11 @@ const LeadSchema = new Schema({
   phone: {
     type: String,
     validate: [value => !value || isPhoneOk(value), v => `Le numéro de téléphone '${v?.value}' doit commencer par 0 ou +33`],
-    set: v => v?.replace(/^0/, '+33'),
+    set: v => {
+      if (!v) return v;
+      const formatted = v.replace(/^0/, '+33').replace(/(\+33)(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5 $6');
+      return formatted;
+    },
     required: false,
   },
   // Calls attributes
