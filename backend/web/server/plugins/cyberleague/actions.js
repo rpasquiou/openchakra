@@ -8,7 +8,7 @@ const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINN
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 
-//
+
 const startSurvey = async (_, user) => {
   //console.log("params", params)
 
@@ -22,6 +22,7 @@ const startSurvey = async (_, user) => {
 //TODO rename action to start_survey
 addAction('smartdiet_start_survey', startSurvey)
 
+
 const startSurvey2 = async (_, user) => {
   //console.log("params", params)
 
@@ -34,6 +35,7 @@ const startSurvey2 = async (_, user) => {
 }
 //TODO remove once start_survey take scorelevel into account
 addAction('smartdiet_start_survey_2', startSurvey2)
+
 
 const startSurvey3 = async (_, user) => {
   //console.log("params", params)
@@ -63,7 +65,7 @@ const nextQuestion = async ({ value }, user) => {
 //TODO rename action to next_question
 addAction('smartdiet_next_question', nextQuestion)
 
-//action defined only to use isActionAllowed
+
 const finishSurvey = async ({ value }, user) => {
   const score = await Score.findOne({answers: value}).populate('answers')
   let gain
@@ -84,6 +86,7 @@ const finishSurvey = async ({ value }, user) => {
 //TODO rename action to finish_survey
 addAction('smartdiet_finish_survey', finishSurvey)
 
+
 //value : _id of the answered question
 const previousQuestion = async ({ value }, user) => {
   const score = await Score.findOne({answers: value}).populate('answers')
@@ -95,8 +98,8 @@ const previousQuestion = async ({ value }, user) => {
   
   return score.answers[answerIndex -1]
 }
-//TODO rename action to next_question
 addAction('previous_question', previousQuestion)
+
 
 const readContent = async ({ value }, user) => {
   const gain = await Gain.findOne({source: COIN_SOURCE_WATCH})
@@ -104,6 +107,7 @@ const readContent = async ({ value }, user) => {
 }
 //TODO rename action to read_content
 addAction('smartdiet_read_content', readContent)
+
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (lodash.includes(['smartdiet_next_question','smartdiet_finish_survey','previous_question'],action)) {
