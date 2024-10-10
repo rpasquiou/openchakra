@@ -78,7 +78,7 @@ const finishSurvey = async ({ value }, user) => {
       gain = await Gain.findOne({source: COIN_SOURCE_EXPERT_DIAG})
       break;
   }
-  await User.findByIdAndUpdate({_id: user._id}, {tokens: user.tokens + gain.gain})
+  await User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
   return score
 }
 //TODO rename action to finish_survey
