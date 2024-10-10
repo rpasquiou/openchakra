@@ -276,7 +276,7 @@ UserSchema.virtual('completed_scores', {
   localField:'_id',
   foreignField:'creator',
   options: {
-    match: {completed: true},
+    match: {_completed: true},
   },
 })
 
