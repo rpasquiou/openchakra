@@ -54,6 +54,11 @@ console.log('SSO issuer', process.env.SSO_ISSUER)
 console.log('SSO callback', process.env.SSO_CALLBACK_URL)
 console.log('SSO certificate', `${process.env.HOME}/.ssh/aftral.pem`)
 
+const getSamlAttribute = (samlAnswer, attribute) => {
+  const samlAttribute=`http://schemas.xmlsoap.org/ws/2005/05/identity/claims/${attribute}`
+  return samlAnswer(samlAttribute)
+}
+
 const SSOStrategy = new SamlStrategy(
   {
     entryPoint: process.env.SSO_ENTRYPOINT,
@@ -62,9 +67,18 @@ const SSOStrategy = new SamlStrategy(
     protocol: 'https://',
     cert: fs.readFileSync(`${process.env.HOME}/.ssh/aftral.pem`, 'utf8'),
   },
-  (profile, done) => {
+  async (profile, done) => {
     console.log('In SAML cb:got', profile)
-    return done(null, profile)
+    const email=getSamlAttribute(profile, 'emailaddress')
+    const user=await User.findOne({email})
+    if (!user) {
+      const firstname=getSamlAttribute(profile, 'givenname')
+      const lastname=getSamlAttribute(profile, 'surname')
+      user=await User.create({
+        email, firstname, lastname, password: 'PASSWD',
+      })
+    }
+    return done(null, user)
   }
 );
 
