@@ -441,9 +441,9 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   expertises: 'expertises',
   experiences: 'expériences',
   trainings: 'formations',
-  gold_soft_skills: 'Compétences douces or',
-  silver_soft_skills: 'Compétences douces argent',
-  bronze_soft_skills: 'Compétences douces bronze',
+  gold_soft_skills: 'Soft skills gold',
+  silver_soft_skills: 'Soft skills silver',
+  bronze_soft_skills: 'Soft skills bronze',
 }
 
 //Customer profile completion
