@@ -272,6 +272,12 @@ const BlockSchema = new Schema({
     required: false,
     default: null,
   },
+  // Computed
+  note_str: {
+    type: Number,
+    required: false,
+    default: null,
+  },
   //  Scale is set by the trainer
   scale: {
     type: String,
