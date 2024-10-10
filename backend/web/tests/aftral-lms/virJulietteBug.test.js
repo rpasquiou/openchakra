@@ -14,7 +14,7 @@ describe('Post', () => {
     await mongoose.connection.close()
   })
 
-  it('must return comments on post', async() => {
+  it('must find children with zombie parents', async() => {
     let allParents=(await Block.find({parent: {$ne: null}}).select({parent:1})).map(b => b.parent)
     console.log('before', allParents.length)
     allParents=lodash.uniqBy(allParents, p => p._id.toString())
@@ -22,4 +22,15 @@ describe('Post', () => {
     const parents=await Block.countDocuments({_id: {$in: allParents}})
     console.log('found parents', parents)
   })
+
+  it.only('must find blocks with zombie origins', async() => {
+    let allRelatives=(await Block.find({origin: {$ne: null}}).select({origin:1})).map(b => b.origin)
+    console.log('before', allRelatives.length)
+    allRelatives=lodash.uniqBy(allRelatives, p => p._id.toString())
+    console.log('after (unique)', allRelatives.length)
+    const parents=await Block.find({_id: {$in: allRelatives}})
+    console.log('found origins', parents.length)
+    console.log(lodash.differenceBy(allRelatives, parents, obj => obj._id.toString()))
+  })
+
 })
