@@ -1,3 +1,5 @@
+const bodyParser = require("body-parser")
+
 const { createMemoryMulter } = require('../../utils/filesystem')
 const {
   FUMOIR_MEMBER,
@@ -172,9 +174,14 @@ router.get('/login/sso',
   passport.authenticate('saml', {})
 )
 
-router.post("/auth-callback", passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }), async (req, res) {
-  res.redirect("/");
-})
+router.post(
+  "/auth-callback",
+  bodyParser.urlencoded({ extended: false }),
+  passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }),
+  function (req, res) {
+    res.redirect("/");
+  }
+);
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result

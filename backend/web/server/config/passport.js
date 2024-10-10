@@ -52,24 +52,31 @@ passport.use(new BasicStrategy(
 console.log('SSO entry point', process.env.SSO_ENTRYPOINT)
 console.log('SSO issuer', process.env.SSO_ISSUER)
 console.log('SSO callback', process.env.SSO_CALLBACK_URL)
+console.log('SSO certificate', `${process.env.HOME}/.ssh/aftral.pem`)
 
 const SSOStrategy = new SamlStrategy(
   {
     entryPoint: process.env.SSO_ENTRYPOINT,
     issuer: process.env.SSO_ISSUER,
     path: process.env.SSO_CALLBACK_URL,
-    cert: fs.readFileSync(`${process.env.HOME}/.ssh/aftral.pem`),
+    protocol: 'https://',
+    cert: fs.readFileSync(`${process.env.HOME}/.ssh/aftral.pem`, 'utf8'),
   },
-  (profile, done) => done(null, profile),
+  (profile, done) => {
+    console.log('In SAML cb:got', profile)
+    return done(null, profile)
+  }
 );
 
 passport.use(SSOStrategy)
 
 passport.serializeUser(function(user, done) {
+  console.log('serialize user', user)
   done(null, user._id);
 })
 
 passport.deserializeUser(function(id, done) {
+  console.log('serialize user', id)
   User.findById(id, function(err, user) {
     done(err, user);
   })
