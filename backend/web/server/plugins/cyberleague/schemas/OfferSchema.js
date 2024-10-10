@@ -16,7 +16,7 @@ const OfferSchema = new Schema({
   },
   main_expertise: {
     type: Schema.Types.ObjectId,
-    ref: 'expertise',
+    ref: 'expertiseCategory',
     required: [true,`L'expertise principale de l'offre est obligatoire`]
   },
   description: {
