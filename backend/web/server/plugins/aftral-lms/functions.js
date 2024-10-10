@@ -558,7 +558,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     params['filter.user']=user
   }
 
-  if (model=='session') {
+  if (model=='session' && !id) {
     fields=lodash.uniq([...fields, 'start_date', 'end_date'])
     if (user.role==ROLE_APPRENANT) {
       params['filter._locked']=true
