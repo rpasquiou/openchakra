@@ -12,7 +12,7 @@ const {
   idEqual,
   loadFromDb,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, SCORE_LEVEL_1, SCORE_LEVEL_3, SCORE_LEVEL_2, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_SHARE_COMMENT } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -33,6 +33,7 @@ const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
 const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
+const User = require('../../models/User')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -589,6 +590,11 @@ const postCreate = async ({ model, params, data, user }) => {
     await data.save()
   }
 
+  if (model == 'comment') {
+    const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_SHARE_COMMENT})
+    await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
+  }
+
   return data
 }
 
@@ -605,6 +611,7 @@ const postPutData = async ({model, id, params, user}) => {
     const score = await Score.findOne({answers: id})
     await computeScoresIfRequired(score._id)
   }
+
   return {model, id, params, user}
 }
 
