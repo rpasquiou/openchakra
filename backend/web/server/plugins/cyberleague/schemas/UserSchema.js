@@ -165,7 +165,8 @@ const UserSchema = new Schema({
   },
   tokens: {
     type: Number,
-    default: 0
+    default: 1,
+    required: true
   },
   company_sponsorship: {
     type: Schema.Types.ObjectId,
