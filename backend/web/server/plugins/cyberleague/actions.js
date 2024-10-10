@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 
@@ -97,6 +97,13 @@ const previousQuestion = async ({ value }, user) => {
 }
 //TODO rename action to next_question
 addAction('previous_question', previousQuestion)
+
+const readContent = async ({ value }, user) => {
+  const gain = await Gain.findOne({source: COIN_SOURCE_WATCH})
+  return User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
+}
+//TODO rename action to read_content
+addAction('smartdiet_read_content', readContent)
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (lodash.includes(['smartdiet_next_question','smartdiet_finish_survey','previous_question'],action)) {
