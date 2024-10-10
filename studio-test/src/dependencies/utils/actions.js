@@ -1206,4 +1206,8 @@ return Promise.allSettled(imagePromises)
       })
   },
 
+  login_sso: async ({value}) => {
+    alert('SSO in progress')
+  },
+
 }
