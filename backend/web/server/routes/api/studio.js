@@ -172,6 +172,10 @@ router.get('/login/sso',
   passport.authenticate('saml', {})
 )
 
+router.post("/auth-callback", passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }), async (req, res) {
+  res.redirect("/");
+})
+
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
   // filter image original file
