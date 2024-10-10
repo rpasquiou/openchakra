@@ -563,8 +563,7 @@ const preCreate = async ({model, params, user}) => {
       params.is_public = true
     } else {
       if (!params.company && !params.is_public) {
-        throw new Error(`Merci de renseigner une entreprise ou de rendre la mission publique avant d'envoyer votre demande`);
-        
+        throw new Error(`Merci de renseigner une entreprise ou de rendre la mission publique avant d'envoyer votre demande`)
       }
     }
   }
