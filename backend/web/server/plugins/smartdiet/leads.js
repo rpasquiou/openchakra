@@ -135,7 +135,15 @@ const getCompanyLeads = async (userId, params, data, fields) => {
     .mapKeys((v, k) => k.replace(/sort\./, ''))
     .value()
   let query=Lead.find(filter).sort(sort)
-  query = query.populate({path: 'registered_user', populate: 'latest_coachings'}).select(fields?.concat(['registered']))
+  query = query.populate({
+    path: 'registered_user',
+    populate: {
+      path: 'latest_coachings',
+      populate: {
+        path: 'appointments'
+      }
+    }
+  })
   if (params.page) {
     query=query.skip(parseInt(params.page)*parseInt(params.limit))
   }
