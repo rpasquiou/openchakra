@@ -169,10 +169,7 @@ router.get('/scorm/:id', passport.authenticate('cookie', {session: false}), asyn
 })
 
 router.get('/login/sso',
-  passport.authenticate('saml', {
-    successRedirect: '/',
-    failureRedirect: '/login',
-  })
+  passport.authenticate('saml', {})
 )
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {

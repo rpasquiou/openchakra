@@ -58,7 +58,7 @@ const SSOStrategy = new SamlStrategy(
     entryPoint: process.env.SSO_ENTRYPOINT,
     issuer: process.env.SSO_ISSUER,
     path: process.env.SSO_CALLBACK_URL,
-    cert: fs.readFileSync(`${process.env.HOME}/.ssh/fullchain.pem`),
+    cert: fs.readFileSync(`${process.env.HOME}/.ssh/aftral.pem`),
   },
   (profile, done) => done(null, profile),
 );
