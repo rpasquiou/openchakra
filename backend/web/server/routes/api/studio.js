@@ -168,6 +168,12 @@ router.get('/scorm/:id', passport.authenticate('cookie', {session: false}), asyn
   return res.json(scormData)
 })
 
+router.get('/login/sso',
+  passport.authenticate('saml', {
+    successRedirect: '/',
+    failureRedirect: '/login',
+  })
+)
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result

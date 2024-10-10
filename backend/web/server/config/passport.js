@@ -3,8 +3,10 @@ const passport = require('passport')
 const CookieStrategy = require('passport-cookie').Strategy
 const AnonymousStrategy = require('passport-anonymous').Strategy
 const BasicStrategy = require('passport-http').BasicStrategy
+const SamlStrategy = require('passport-saml').Strategy
 const bcrypt = require('bcryptjs')
 const User = require('../models/User')
+const fs=require('fs')
 
 // Requires connection
 const cookieStrategy=new CookieStrategy(
@@ -47,6 +49,22 @@ passport.use(new BasicStrategy(
     }
 ))
 
+console.log('SSO entry point', process.env.SSO_ENTRYPOINT)
+console.log('SSO issuer', process.env.SSO_ISSUER)
+console.log('SSO callback', process.env.SSO_CALLBACK_URL)
+
+const SSOStrategy = new SamlStrategy(
+  {
+    entryPoint: process.env.SSO_ENTRYPOINT,
+    issuer: process.env.SSO_ISSUER,
+    path: process.env.SSO_CALLBACK_URL,
+    cert: fs.readFileSync(`${process.env.HOME}/.ssh/fullchain.pem`),
+  },
+  (profile, done) => done(null, profile),
+);
+
+passport.use(SSOStrategy)
+
 passport.serializeUser(function(user, done) {
   done(null, user._id);
 })
@@ -56,5 +74,6 @@ passport.deserializeUser(function(id, done) {
     done(err, user);
   })
 })
+
 
 module.exports={sendCookie}
