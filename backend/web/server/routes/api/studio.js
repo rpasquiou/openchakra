@@ -400,7 +400,7 @@ router.get('/geoloc', async (req, res) => {
   return res.json(suggestions)
 })
 
-router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.get('/current-user', passport.authenticate('cookie', {session: false}), passport.authenticate('saml'),(req, res) => {
   return res.json(req.user)
 })
 
