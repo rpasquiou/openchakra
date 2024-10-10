@@ -5,6 +5,7 @@ const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
+const { Fields } = require("@smithy/protocol-http")
 
 const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
@@ -51,7 +52,9 @@ const computeStatistics = async ({fields, id, user, params}) => {
       }
     }))
   }
-  return loadFromDb({model: 'session', user, fields, ...sessionId})
+  fields=[...fields, 'start_date', 'end_date']
+  const loaded=await loadFromDb({model: 'session', user, fields, ...sessionId})
+  return Promise.resolve(loaded)
     .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{sessions}]))
 }
