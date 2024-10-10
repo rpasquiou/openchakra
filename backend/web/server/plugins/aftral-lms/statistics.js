@@ -6,6 +6,7 @@ const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
 const { Fields } = require("@smithy/protocol-http")
+const Group = require("../../models/Group")
 
 const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
@@ -42,9 +43,13 @@ const computeStatistics = async ({fields, id, user, params}) => {
     const ids=id.split('-').filter(v => !!v)
     console.log('id is', id, typeof id, 'ids are', JSON.stringify(ids))
     await Promise.all(ids.map(async localId => {
-      const model=await getModel(localId, ['user', 'session'])
+      const model=await getModel(localId, ['user', 'session', 'group'])
       if (model=='session') {
         sessionId.id = localId
+      }
+      else if (model=='group') {
+        const group=await Group.findById(localId)
+        sessionId.params={'filter._id':{$in: group.sessions}}
       }
       // Else must be a user
       else {
