@@ -1,12 +1,13 @@
-const Session = require("../../models/Session")
 const { loadFromDb, getModel } = require("../../utils/database")
 const lodash=require('lodash')
 const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
+const Session = require("../../models/Session")
 const { Fields } = require("@smithy/protocol-http")
 const Group = require("../../models/Group")
+const { ObjectId } = require("bson")
 
 const fillSession = async (session, trainee) => {
   console.log('Filling session', session._id)
@@ -57,11 +58,11 @@ const computeStatistics = async ({fields, id, user, params}) => {
       }
     }))
   }
-  fields=[...fields, 'start_date', 'end_date']
+  fields=[...fields, 'start_date', 'end_date', 'trainees']
   const loaded=await loadFromDb({model: 'session', user, fields, ...sessionId})
   return Promise.resolve(loaded)
     .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
-    .then(sessions => ([{sessions}]))
+    .then(sessions => ([{_id: id, sessions}]))
 }
   
 const getRandomInt = max => {
