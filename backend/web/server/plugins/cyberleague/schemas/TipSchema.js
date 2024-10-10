@@ -8,6 +8,10 @@ const TipSchema = new Schema({
     type: String,
     required: [true, 'Le contenu est obligatoire'],
   },
+  number: {
+    type: String,
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
