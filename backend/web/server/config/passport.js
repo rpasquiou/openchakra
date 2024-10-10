@@ -56,7 +56,7 @@ console.log('SSO certificate', `${process.env.HOME}/.ssh/aftral.pem`)
 
 const getSamlAttribute = (samlAnswer, attribute) => {
   const samlAttribute=`http://schemas.xmlsoap.org/ws/2005/05/identity/claims/${attribute}`
-  return samlAnswer(samlAttribute)
+  return samlAnswer[samlAttribute]
 }
 
 const SSOStrategy = new SamlStrategy(
