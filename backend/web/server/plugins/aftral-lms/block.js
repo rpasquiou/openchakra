@@ -172,8 +172,20 @@ const isFinished = async (user, block) => {
   return Progress.exists({user, block, achievement_status: BLOCK_STATUS_FINISHED})
 }
 
+const checkAccessCondition = async (user, blockId) => {
+  const bl=await mongoose.models.block.findById(blockId)
+  const brother=await mongoose.models.block.findOne({parent: bl.parent, order: bl.order+1, access_condition: true})
+  if (brother) {
+    const brotherState=await getBlockStatus(user, null, {_id: brother._id})
+    if (brotherState!=BLOCK_STATUS_FINISHED) {
+      await saveBlockStatus(user, brother._id, BLOCK_STATUS_TO_COME)
+    }
+  }
+}
+
 const onBlockFinished = async (user, block) => {
   await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
+  await checkAccessCondition(user, block)
   const session=await getBlockSession(block)
   return updateSessionStatus(session._id, user._id)
 }
@@ -590,15 +602,12 @@ const removeBlockStatus= async (userId, blockId, status) => {
   return Progress.remove({block: blockId, user: userId})
 }
 
-const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
+const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
 
   const block=await mongoose.models.block.findById(blockId).populate('children')
 
   if (block.type === BLOCK_TYPE_RESOURCE) {
-    const isFinished = await isFinishedBlock(block)
-    const status = isFinished || block.optional ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_TO_COME;
-    await setBlockStatus(block.id, status)
-    return status;
+    return locGetBlockStatus(block._id)
   }
 
   let allChildrenTerminated = true;
@@ -607,7 +616,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
   // Traverse children
   for (let i = 0; i < block.children.length; i++) {
     const child = block.children[i]
-    const childState = await computeBlockStatus(child, isFinishedBlock, setBlockStatus)
+    const childState = await computeBlockStatus(child, isFinishedBlock, setBlockStatus, locGetBlockStatus)
 
     if (childState !== BLOCK_STATUS_FINISHED) {
       allChildrenTerminated = false;
@@ -621,7 +630,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
         return status
       }
     } else if (block.ordered) {
-      if (i === 0 || (await computeBlockStatus(block.children[i - 1], isFinishedBlock, setBlockStatus)) === BLOCK_STATUS_FINISHED) {
+      if (i === 0 || (await computeBlockStatus(block.children[i - 1], isFinishedBlock, setBlockStatus, locGetBlockStatus)) === BLOCK_STATUS_FINISHED) {
         if (!availableChildFound) {
           availableChildFound = true;
           const status = BLOCK_STATUS_TO_COME;
@@ -637,17 +646,13 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
   }
 
   if (block.access_condition) {
-    for (let i = 0; i < block.children.length; i++) {
-      const child = block.children[i];
-      for (let j = 0; j < i; j++) {
-        const leftSiblingState = await computeBlockStatus(block.children[j], isFinishedBlock, setBlockStatus);
-        if (leftSiblingState !== BLOCK_STATUS_FINISHED) {
-          const status = BLOCK_STATUS_UNAVAILABLE;
-          await setBlockStatus(block.id, status)
-          return status;
-        }
+    let status=BLOCK_STATUS_TO_COME
+    if (i>0) {
+      const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1}).populate('children')
+      const brotherState = await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
+      if (brotherState !== BLOCK_STATUS_FINISHED) {
+        status = BLOCK_STATUS_UNAVAILABLE;
       }
-      const status = BLOCK_STATUS_TO_COME;
       await setBlockStatus(block.id, status)
       return status;
     }
@@ -681,7 +686,8 @@ const updateSessionStatus = async (sessionId, trainee) => {
   await Promise.all(trainees.map(async t => {
     const isFinishedBlock = async blockId => isFinished(t._id, blockId)
     const setBlockStatus = (blockId, status) => saveBlockStatus(t._id, blockId, status)
-    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus)
+    const locGetBLockStatus = (blockId) => getBlockStatus(t._id, null, {_id: blockId})
+    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus, locGetBLockStatus)
   }))
   console.timeEnd('update session status')
 }
