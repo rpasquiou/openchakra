@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const bcrypt=require('bcryptjs')
-const {HOME_STATUS, CONTENTS_TYPE} = require('../consts')
+const {HOME_STATUS, CONTENTS_TYPE, CONTENT_VISIBILITY, CONTENT_VISIBILITY_FOR_ALL, CONTENT_ARTICLE, CONTENT_ARTICLE_NO_STAR} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
 
@@ -29,6 +29,18 @@ const ContentSchema = new Schema({
     type: String,
     enum: Object.keys(CONTENTS_TYPE),
     required: [true, 'Le type est obligatoire'],
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(CONTENT_VISIBILITY),
+    default: CONTENT_VISIBILITY_FOR_ALL,
+    required: false,
+  },
+  article_star: {
+    type: String,
+    enum: Object.keys(CONTENT_ARTICLE),
+    default: CONTENT_ARTICLE_NO_STAR,
+    required: false,
   },
   contents: {
     type: String,

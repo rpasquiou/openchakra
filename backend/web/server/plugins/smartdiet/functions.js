@@ -135,7 +135,9 @@ const {
   CALL_STATUS_CONVERTI_COA_CN,
   CALL_STATUS_CONVERTI_CN,
   LEAD_SEARCH_TEXT_FIELDS,
-  USER_SEARCH_TEXT_FIELDS
+  USER_SEARCH_TEXT_FIELDS,
+  CONTENT_VISIBILITY,
+  CONTENT_ARTICLE
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1144,6 +1146,8 @@ declareVirtualField({
 })
 declareVirtualField({ model: 'content', field: 'comments_count', instance: 'Number', requires: 'comments' })
 declareVirtualField({ model: 'content', field: 'search_text', instance: 'String', requires: 'name,contents' })
+declareEnumField({ model: 'content', field: 'visibility', enumValues: CONTENT_VISIBILITY })
+declareEnumField({ model: 'content', field: 'article_star', enumValues: CONTENT_ARTICLE })
 
 declareVirtualField({ model: 'dietComment', field: '_defined_notes', instance: 'Number', multiple: 'true' })
 
