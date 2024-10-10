@@ -45,6 +45,16 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  can_post_feed: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  visible_feed: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema
