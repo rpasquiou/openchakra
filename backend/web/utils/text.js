@@ -203,6 +203,10 @@ const splitRemaining = (pattern, delimiter) => {
   return [first, rest.join(delimiter)]
 }
 
+const formatDateTimeShort = datetime => {
+  return moment(datetime).format('DD/MM/YY HH:mm')
+}
+
 const formatDateTime = datetime => {
   return `le ${formatDate(datetime)} à ${formatHour(datetime)}`
 }
@@ -276,4 +280,5 @@ module.exports = {
   formatDateTime, formatDate, formatHour,
   getWordsDistance, getNearestWord,
   sortObject,
+  formatDateTimeShort,
 }

@@ -150,6 +150,7 @@ LeadSchema.virtual("registered_user", {
   ref: "user", // The Model to use
   localField: "email", // Find in Model, where localField
   foreignField: "email", // is equal to foreignField
+  justOne: true,
 });
 
 LeadSchema.virtual('registered', DUMMY_REF).get(function() {
