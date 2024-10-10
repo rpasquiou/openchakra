@@ -92,7 +92,7 @@ passport.serializeUser(function(user, done) {
 })
 
 passport.deserializeUser(function(id, done) {
-  console.log('serialize user', id)
+  console.log('deserialize user', id)
   User.findById(id, function(err, user) {
     done(err, user);
   })
