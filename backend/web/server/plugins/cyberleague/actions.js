@@ -4,7 +4,9 @@ const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2 } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG } = require('./consts')
+const User = require('../../models/User')
+const Gain = require('../../models/Gain')
 
 //
 const startSurvey = async (_, user) => {
@@ -55,7 +57,7 @@ const nextQuestion = async ({ value }, user) => {
   if (answerIndex +1 == score.answers.length) {
     throw new NotFoundError(`Answer ${value} is the last of the quiz`)
   }
-  
+
   return score.answers[answerIndex +1]
 }
 //TODO rename action to next_question
@@ -64,6 +66,19 @@ addAction('smartdiet_next_question', nextQuestion)
 //action defined only to use isActionAllowed
 const finishSurvey = async ({ value }, user) => {
   const score = await Score.findOne({answers: value}).populate('answers')
+  let gain
+  switch (score.level) {
+    case SCORE_LEVEL_1:
+      gain = await Gain.findOne({source: COIN_SOURCE_BEGINNER_DIAG})
+      break;
+    case SCORE_LEVEL_2:
+      gain = await Gain.findOne({source: COIN_SOURCE_MEDIUM_DIAG})
+      break;
+    case SCORE_LEVEL_3:
+      gain = await Gain.findOne({source: COIN_SOURCE_EXPERT_DIAG})
+      break;
+  }
+  await User.findByIdAndUpdate({_id: user._id}, {tokens: user.tokens + gain.gain})
   return score
 }
 //TODO rename action to finish_survey
