@@ -252,6 +252,9 @@ const preCreate = async ({model, params, user}) => {
     if (params.max_attempts && params.resource_type != RESOURCE_TYPE_SCORM) {
       throw new Error(`Vous ne pouvez pas mettre de nombre de tentatives maximum sur une ressource autre qu'un SCORM`)
     }
+    if (!params.success_note_max && params.resource_type == RESOURCE_TYPE_SCORM) {
+      params.success_note_max=100
+    }
     if (!params.url && !params.plain_url) {
       throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
     }
@@ -515,7 +518,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (!id && model!='session' && user.role==ROLE_CONCEPTEUR) {
       params['filter._locked']=false // No session data
       params['filter.origin']=null // Templates only
-      }
+    }
   }
 
   // If a student loads a resource, mark as CURRENT
@@ -559,8 +562,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     params['filter.user']=user
   }
 
-  if (model=='session' && !id) {
+  // To filter current sessions in filterDataUser
+  if (model=='session') {
     fields=lodash.uniq([...fields, 'start_date', 'end_date'])
+  }
+  if (model=='session' && !id) {
     if (user.role==ROLE_APPRENANT) {
       params['filter._locked']=true
       params['filter.trainees']=user._id
