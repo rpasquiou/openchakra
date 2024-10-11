@@ -41,7 +41,7 @@ const moveChildInParent= async (childId, up) => {
   child.order=newOrder
   brother.order=brother.order-delta
   await Promise.all([child.save(), brother.save()])
-  const linkedBlocks=await Block.find({origin: childId})
+  const linkedBlocks=await Block.find({origin: childId, _locked: false})
   return Promise.all(linkedBlocks.map(block => moveChildInParent(block._id, up)))
 }
 
@@ -59,7 +59,7 @@ const removeChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {last_updater: user})
   await updateChildrenOrder(parent)
   // Propagate deletion
-  const linkedChildren=await Block.find({origin: child}).populate('parent')
+  const linkedChildren=await Block.find({origin: child, _locked: false}).populate('parent')
   await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))
 }
 addAction('removeChild', removeChildAction)
