@@ -186,7 +186,6 @@ const checkAccessCondition = async (user, blockId) => {
 
 const onBlockFinished = async (user, block) => {
   await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-  await checkAccessCondition(user, block)
   const session=await getBlockSession(block)
   return updateSessionStatus(session._id, user._id)
 }
@@ -230,7 +229,6 @@ const onBlockAction = async (user, block) => {
   const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
   await saveBlockStatus(user, block, status)
   if (finished) {
-    console.log(`Block ${block} finished`)
     onBlockFinished(user, block)
   }
 }
@@ -636,6 +634,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       // Next children are unavailable
       await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx], BLOCK_STATUS_UNAVAILABLE)))
     }
+    return blockStatus
   }
 
   await Promise.all(block.children.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
