@@ -637,6 +637,17 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
+  if (model == 'event') {
+    if (!lodash.isNil(params.registered)) {
+      const gain = await Gain.findOne({source: COIN_SOURCE_PARTICIPATE})
+      if (lodash.includes(params.registered_users, user._id.toString())) {
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+      } else {
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+      }
+    }
+  }
+
   return {model, id, params, user}
 }
 
