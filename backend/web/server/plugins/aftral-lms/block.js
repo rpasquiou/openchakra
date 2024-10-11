@@ -517,7 +517,7 @@ const addChild = async ({parent, child, user}) => {
   await mongoose.models.block.findByIdAndUpdate(parent, {last_updater: user})
 
   // Now propagate to all origins
-  const origins=await mongoose.models.block.find({origin: parent._id}, {_id:1})
+  const origins=await mongoose.models.block.find({origin: parent._id, _locked: false}, {_id:1})
   await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
 }
 
@@ -760,5 +760,5 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
-  getBlockNoteStr,
+  getBlockNoteStr, computeBlockStatus, isFinished,
 }
