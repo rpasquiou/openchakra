@@ -148,15 +148,6 @@ const UserSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'user'
   }],
-  registered_events: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'event',
-      index: true,
-      required: false,
-    }],
-    default: []
-  },
   related_users: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -338,6 +329,12 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   const missingFields = lodash.filter(completionFields, (e)=> {return !e[1]})
   const s = missingFields.length > 1 ? 's' : ''
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return COMPLETION_FIELDS[e[0]]}).join(`, `)
+})
+
+UserSchema.virtual('registered_events', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
 })
 
 /* eslint-enable prefer-arrow-callback */

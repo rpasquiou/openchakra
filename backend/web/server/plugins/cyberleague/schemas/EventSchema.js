@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -73,22 +74,21 @@ const EventSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'event'
     }]
-  }
+  },
+  registered_users: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
 
-EventSchema.virtual('registered_users', {
-  ref:'user',
-  localField:'_id',
-  foreignField:'registered_events',
-})
-
-EventSchema.virtual('registered_users_count', {
-  ref:'user',
-  localField:'_id',
-  foreignField:'registered_events',
-  count:true,
+EventSchema.virtual('registered_users_count', DUMMY_REF).get(function() {
+  return this.registered_users?.length
 })
 
 /* eslint-enable prefer-arrow-callback */

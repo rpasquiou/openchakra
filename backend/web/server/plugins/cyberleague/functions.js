@@ -169,6 +169,13 @@ USER_MODELS.forEach(m => {
     instance: 'String',
     requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
   })
+  declareVirtualField({
+    model: m, field: 'registered_events', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'event' }
+    },
+  })
 })
 
 //Company declarations
@@ -308,14 +315,7 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
-declareVirtualField({
-  model: 'event', field: 'registered_users', instance: 'Array', multiple: true,
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'user' }
-  },
-})
-declareVirtualField({model: 'event', field: 'registered_users_count', instance: 'Number'})
+declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 
 // Enums Mission Schema
