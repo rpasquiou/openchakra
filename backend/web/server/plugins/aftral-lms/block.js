@@ -383,7 +383,7 @@ const getBlockHomeworksMissing = async (userId, params, data) => {
 
 const getBlockTraineesCount = async (userId, params, data) => {
   const session = await mongoose.models.session.findById(data.session)
-  return session.trainees ? session.trainees.length : 0
+  return session?.trainees?.length || 0
 }
 
 const getBlockFinishedChildren = async (userId, params, data, fields) => {
