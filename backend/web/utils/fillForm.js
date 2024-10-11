@@ -121,6 +121,7 @@ async function fillForm(sourceLink, data, font = StandardFonts.Helvetica, fontSi
     const fieldValue = data[fieldName]
 
     if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
+      console.log('****',fieldValue[0])
       const textFields = Object.keys(fieldValue[0])
       const numberOfDuplicates = fieldValue.length
       await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
