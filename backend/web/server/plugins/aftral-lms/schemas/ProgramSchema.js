@@ -52,7 +52,7 @@ ProgramSchema.pre('validate', function(next) {
   //#155 If the program has code(s), check it's not already used
   if (!this._locked && !this.origin && !lodash.isEmpty(this.codes)) {
     return mongoose.models['program'].findOne(
-      {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null}
+      {_id: {$ne : this._id}, codes: {$in : this.codes}, origin: null, _locked: {$ne: true}}
     ).populate('codes')
     .then(program => {
       if (program) { 
