@@ -335,10 +335,10 @@ declareVirtualField({model: 'score', field: 'deviation', requires: 'answers.answ
 declareVirtualField({model: 'score', field: 'question_count', require: 'answers', instance: 'Number'})
 declareEnumField( {model: 'score', field: 'level', enumValues: SCORE_LEVELS})
 declareComputedField({model: 'score', field: 'questions_by_category', requires: 'answers.question.question_category._id', getterFn: getQuestionsByCategory})
-declareComputedField({model: 'score', field: 'bellwether_count', requires:'_completed', getterFn: getterCountFn('score', {'_completed': true})})
+declareComputedField({model: 'score', field: 'bellwether_count', requires:'completed', getterFn: getterCountFn('score', {'completed': COMPLETED_YES})})
 declareComputedField({model: 'score', field: 'chart_data', getterFn: getChartData})
 declareComputedField({model: 'score', field: 'category_rates', requires: '_category_rates.category.name,_category_rates.rate,_category_rates.category._id', getterFn: getCategoryRates})
-declareVirtualField({model: 'score', field: 'completed', require: '_completed', instance: 'String', enumValues: COMPLETED,dbFilter: value => ({_completed: value == COMPLETED_YES})})
+declareEnumField({model: 'score', field: 'completed', enumValues: COMPLETED})
 
 //Answer declaration
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})

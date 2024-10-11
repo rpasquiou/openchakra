@@ -1,6 +1,6 @@
 const { loadFromDb, idEqual } = require("../../utils/database")
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1, ROLE_ADMIN} = require("./consts")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1, ROLE_ADMIN, COMPLETED_YES, COMPLETED_NO} = require("./consts")
 const Score = require("../../models/Score")
 const Question = require("../../models/Question")
 const Answer = require("../../models/Answer")
@@ -93,12 +93,12 @@ const computeScoresIfRequired = async (scoreId) => {
     fields: [`answers.answer`, `answers.question.weight`, `answers.question.question_category`],
     id: scoreId
   })
-  const _completed = score[0].answers?.filter(a => !a.answer).length == 0
+  const completed = score[0].answers?.filter(a => !a.answer).length == 0 ? COMPLETED_YES : COMPLETED_NO
   
-  if (_completed) {
+  if (completed == COMPLETED_YES) {
     const computedScores = await computeScores(score[0].answers)
     
-    await Score.findByIdAndUpdate(score[0]._id, {$set: {...computedScores, _completed}})
+    await Score.findByIdAndUpdate(score[0]._id, {$set: {...computedScores, completed}})
   }
 }
 
@@ -131,7 +131,7 @@ const createScore = async (creatorId, scoreLevel) => {
     return Answer.create({question: q._id})
   }))
 
-  return Score.create({creator: creatorId, completed: false, level: scoreLevel, answers: answers})
+  return Score.create({creator: creatorId, completed: COMPLETED_NO, level: scoreLevel, answers: answers})
 }
 
 const getCategoryRates = async (userId, params, data) => {

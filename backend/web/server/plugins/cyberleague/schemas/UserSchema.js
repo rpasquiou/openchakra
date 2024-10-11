@@ -4,7 +4,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETION_FIELDS } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETION_FIELDS, COMPLETED_YES } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -267,7 +267,7 @@ UserSchema.virtual('completed_scores', {
   localField:'_id',
   foreignField:'creator',
   options: {
-    match: {_completed: true},
+    match: {completed: COMPLETED_YES},
   },
 })
 

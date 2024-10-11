@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ANSWER_NO, SCORE_LEVELS, COMPLETED_YES, COMPLETED_NO} = require('../consts')
+const { ANSWER_NO, SCORE_LEVELS, COMPLETED, COMPLETED_NO} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -54,10 +54,11 @@ const ScoreSchema = new Schema({
     type: Number,
     default: 0
   },
-  _completed: {
-    type: Boolean,
+  completed: {
+    type: String,
+    enum: Object.keys(COMPLETED),
     required: true,
-    default: false,
+    default: COMPLETED_NO,
   },
   _market: {
     type: Boolean,
@@ -83,10 +84,6 @@ ScoreSchema.virtual('deviation', DUMMY_REF).get(function() {
 
 ScoreSchema.virtual('question_count',DUMMY_REF).get(function() {
   return this.answers?.length || 0
-})
-
-ScoreSchema.virtual('completed', DUMMY_REF).get(function() {
-  return this._completed ? COMPLETED_YES : COMPLETED_NO
 })
 
 /* eslint-enable prefer-arrow-callback */
