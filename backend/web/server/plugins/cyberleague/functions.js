@@ -461,7 +461,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     const computedStatistics = computeBellwetherStatistics(params.filters ? params.filters : {})
     params = {...params, ...computedStatistics}
   }
-  
+
   return Promise.resolve({model, fields, id, user, params})
 }
 
@@ -623,7 +623,9 @@ setPostPutData(postPutData)
 const prePutData = async ({model, id, params, user}) => {
 
   if (model == 'company') {
-    params.administrators = params.administrators.split(',')
+    if (params.administrators) {
+      params.administrators = params.administrators.split(',')
+    }
   }
 
   if (model == 'post') {
