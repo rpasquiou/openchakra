@@ -3,7 +3,7 @@ const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE } = require("./consts");
-const { getBlockResources } = require("./resources");
+const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
@@ -602,81 +602,45 @@ const removeBlockStatus= async (userId, blockId, status) => {
 }
 
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
-
-  const block=await mongoose.models.block.findById(blockId).populate('children')
-  //const blockStatus=await locGetBlockStatus()
-
-  if (block.type === BLOCK_TYPE_RESOURCE) {
-    return locGetBlockStatus(block._id)
-  }
-
-  let allChildrenTerminated = true;
-  let availableChildFound = false;
-
-  // Traverse children
-  for (let i = 0; i < block.children.length; i++) {
-    const child = block.children[i]
-    const childState = await computeBlockStatus(child, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-
-    if (childState !== BLOCK_STATUS_FINISHED) {
-      allChildrenTerminated = false;
+  const block = await mongoose.models.block.findById(blockId).populate('children')
+  const blockStatus=await locGetBlockStatus(blockId)
+  if (block.type==BLOCK_TYPE_RESOURCE) {
+    if (block.status==BLOCK_STATUS_FINISHED) {
+      return block.status
     }
-
-    // Closed
-    if (block.closed) {
-      if (childState !== BLOCK_STATUS_FINISHED) {
-        const status = BLOCK_STATUS_UNAVAILABLE;
-        await setBlockStatus(block.id, status)
-        return status
-      }
-    } else if (block.ordered) {
-      if (i === 0 || (await computeBlockStatus(block.children[i - 1], isFinishedBlock, setBlockStatus, locGetBlockStatus)) === BLOCK_STATUS_FINISHED) {
-        if (!availableChildFound) {
-          availableChildFound = true;
-          const status = BLOCK_STATUS_TO_COME;
-          await setBlockStatus(block.id, status)
-          return status;
+    if (block.access_condition && block.order>1) {
+      const prevBrother=await mongoose.models.block.find({parent: block.parent, order: block.order-1})
+      const prevStatus=await locGetBlockStatus(prevBrother._id)
+      if (prevStatus==BLOCK_STATUS_FINISHED) {
+        return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
         }
-      }
-    } else {
-      if (childState === BLOCK_STATUS_TO_COME && !availableChildFound) {
-        availableChildFound = true;
-      }
+    }
+    if (lodash.isNil(blockStatus)) {
+      return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+    }
+    return blockStatus
+  }
+  const childrenStatus=await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)))
+  const allChildrenFinished=lodash(childrenStatus).uniq().isEqual([BLOCK_STATUS_FINISHED])
+
+  // Block finished if all children finished
+  if (allChildrenFinished) {
+    return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
+  }
+  // If one child finished, next is available
+  if (block.closed) {
+    const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
+    if (lastFinished<block.children.length-1) {
+      const brother=block.children[lastFinished+1]
+      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
+      // Next children are unavailable
+      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx], BLOCK_STATUS_UNAVAILABLE)))
     }
   }
 
-  if (block.access_condition) {
-    let status=BLOCK_STATUS_TO_COME
-    if (i>0) {
-      const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1}).populate('children')
-      const brotherState = await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-      if (brotherState !== BLOCK_STATUS_FINISHED) {
-        status = BLOCK_STATUS_UNAVAILABLE;
-      }
-      await setBlockStatus(block.id, status)
-      return status;
-    }
-  }
-
-  if (allChildrenTerminated) {
-    const status = BLOCK_STATUS_FINISHED;
-    await setBlockStatus(block.id, status)
-    return status;
-  }
-
-  // Si un enfant est disponible, le bloc est disponible
-  if (availableChildFound) {
-    const status = BLOCK_STATUS_TO_COME;
-    await setBlockStatus(block.id, status)
-    return status;
-  }
-
-  // Sinon, le bloc n'est pas disponible
-  const status = BLOCK_STATUS_UNAVAILABLE;
-  console.log(block.type, block.name, block.order, status)
-  await setBlockStatus(block.id, status)
-  return status;
-}
+  await Promise.all(block.children.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+  return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+};
 
 
 const updateSessionStatus = async (sessionId, trainee) => {
