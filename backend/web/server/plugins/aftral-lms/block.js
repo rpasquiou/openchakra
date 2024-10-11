@@ -33,6 +33,7 @@ const LINKED_ATTRIBUTES_CONVERSION={
   note: lodash.identity,
   scale: lodash.identity,
   correction: lodash.identity,
+  external: v=>v || false,
 }
 
 const LINKED_ATTRIBUTES=Object.keys(LINKED_ATTRIBUTES_CONVERSION)

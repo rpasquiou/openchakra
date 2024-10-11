@@ -79,6 +79,12 @@ const BlockSchema = new Schema({
     default: false,
     required: [true, `L'état optionnel est obligatoire`],
   },
+  // For resources ; external tells must open in a new tab
+  external: {
+    type: Boolean,
+    default: false,
+    required: [true, `L'état 'externe'' est obligatoire`],
+  },
   origin: {
     type: Schema.Types.ObjectId,
     ref: 'block',
