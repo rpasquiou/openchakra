@@ -9,6 +9,8 @@
 */}
 
 const axios = require('axios')
+const lodash = require('lodash')
+const moment = require('moment')
 const { PDFDocument, StandardFonts } = require('pdf-lib')
 const fs = require('fs').promises
 const validator = require('validator')
@@ -59,6 +61,7 @@ const setFieldValue = (form, field, value, fallbackFont, fallbackFontSize) => {
   const fieldType = field.constructor.name
   if (fieldType === 'PDFTextField') {
     field.enableMultiline()
+    return field.setText(value)
     const widgets = field.acroField.getWidgets()
 
     widgets.forEach(widget => {
@@ -281,6 +284,99 @@ const allFieldsExist = (data, fields) => {
   return true
 }
 
+const copyField = (form, field, name) => {
+  const f=form.createTextField(name)
+  return f
+}
+
+const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontSize = 12) => {
+  const sourcePDFBytes = await getPDFBytes(sourceLink)
+  const pdfDoc = await PDFDocument.load(sourcePDFBytes)
+  const pdfFont = await pdfDoc.embedFont(font)
+  const form = pdfDoc.getForm()
+
+  let compIdx=0
+  for (const fieldName in data) {
+    const fieldValue = data[fieldName]
+
+    if (!(/level_/.test(fieldName))) {
+      const field = form.getTextField(fieldName)
+      if (field) {
+        setFieldValue(form, field, fieldValue, pdfFont, fontSize)
+      } else {
+        console.log(`No data found for field ${fieldName}`)
+      }
+    }
+  }
+    // const f=form.getTextField('level_1.name')
+    // setFieldValue(form, f, 'TAGADA')
+
+    let currentY=null
+
+    const manageChildren = (level, allData) => {
+      allData.forEach(data => {
+        const simpleAttrs=lodash.pickBy(data, (v, k) => !(/^level_[0-9]+$/).test(k))
+        let lowestY=null
+        Object.keys(simpleAttrs).forEach((attr, idx) => {
+          const field=form.getTextField(`level_${level}.${attr}`)
+          const orgRect=field.acroField.getWidgets()[0].getRectangle()
+          if (currentY==null) {
+            currentY=orgRect.y
+          }
+          // currentY-=orgRect.height
+          const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
+          setFieldValue(form, dup, data[attr])
+          dup.addToPage(pdfDoc.getPage(0), {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+          // if (lowestY==null) {
+            lowestY=currentY-(orgRect.height*1.1)
+          // }
+          // else {
+          //   lowestY=Math.min(lowestY, orgRect.y-orgRect.height)
+          // }
+        })
+        currentY=lowestY
+        console.log('After', simpleAttrs, 'lowest y is', currentY)
+        const children=data[`level_${level+1}`]
+        if (!lodash.isEmpty(children)) {
+          manageChildren(level+1, children)
+        }
+      })
+    }
+
+    await manageChildren(1, data.level_1)
+    // if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
+    //   console.log('****',fieldValue[0])
+    //   const textFields = Object.keys(fieldValue[0])
+    //   const numberOfDuplicates = fieldValue.length
+    //   await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
+      
+    //   fieldValue.forEach((detail, index) => {
+    //     console.log(detail, index)
+    //     const fieldIndex = index + 1
+    //     for (const key in detail) {
+    //       const newFieldName = `${key}_copy_${fieldIndex}`
+    //       const field = form.getTextField(newFieldName)
+    //       if (field) {
+    //         setFieldValue(form, field, detail[key].toString(), pdfFont, fontSize)
+    //       } else {
+    //         console.warn(`Field ${newFieldName} does not exist in the form.`)
+    //       }
+    //     }
+    //   })
+    // } else {
+    //   const field = form.getTextField(fieldName)
+    //   if (field) {
+    //     setFieldValue(form, field, fieldValue, pdfFont, fontSize)
+    //   } else {
+    //     console.log(`No data found for field ${fieldName}`)
+    //   }
+    // }
+
+  form.updateFieldAppearances(pdfFont)
+  form.flatten()
+  return pdfDoc
+}
+
 module.exports = {
   getPDFBytes,
   copyPDF,
@@ -291,4 +387,5 @@ module.exports = {
   setFieldValue,
   generateDocument,
   allFieldsExist,
+  fillForm2,
 }
