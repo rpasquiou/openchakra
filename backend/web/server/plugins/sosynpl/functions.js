@@ -8,7 +8,7 @@ const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -25,6 +25,8 @@ const { usersCount, customersCount, freelancesCount, currentMissionsCount, comin
 const Statistic = require("../../models/Statistic");
 const Mission = require("../../models/Mission");
 const Application = require("../../models/Application");
+const { isEmailOk } = require("../../../utils/sms");
+const { BadRequestError } = require("../../utils/errors");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -710,6 +712,12 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     params.receiver=await conversation.getPartner(user)
   }
   if (model == 'recommandation') {
+    if (!params.creator_email) {
+      throw new BadRequestError(`L'email est obligatoire`)
+    }
+    if (!isEmailOk(params.creator_email)) {
+      throw new BadRequestError(`L'email ${params.creator_email || 'vide'} est invalide`)
+    }
     skip_validation=true
     params.freelance=user
   }
@@ -727,7 +735,7 @@ const preCreate = async ({model, params, user, skip_validation}) => {
 
 setPreCreateData(preCreate)
 
-const postCreate = async ({model, params, data}) => {
+const postCreate = async ({model, params, data, user}) => {
   if (data.role==ROLE_CUSTOMER) {
     await sendCustomerConfirmEmail({user: data})
   }
@@ -756,6 +764,12 @@ const postCreate = async ({model, params, data}) => {
     const admins=await User.find({role: ROLE_ADMIN})
     const contact=data.toObject()
     await Promise.all(admins.map(admin => sendNewContact2Admin({contact, admin})))
+  }
+  if (model=='recommandation') {
+    await sendAskRecommandation({
+      user, external_email: data.creator_email, external_firstname: data.creator_firstname, 
+      message: data.message, recommendation_id: data._id,
+    })
   }
   return Promise.resolve(data)
 }
