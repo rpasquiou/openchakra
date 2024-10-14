@@ -13,7 +13,7 @@ const {
   loadFromDb,
   setPrePutData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -602,10 +602,10 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 
-const postPutData = async ({model, id, params, user}) => {
+const postPutData = async ({model, id, user, attribute, value}) => {
   if (model == `group`) {
-    if (`users` in params) {
-      await Group.updateOne({_id:id}, {$pull: {pending_users: params.users}})
+    if (attribute == 'users') {
+      await Group.updateOne({_id:id}, {$pull: {pending_users: value}})
     }
   }
 
@@ -614,7 +614,34 @@ const postPutData = async ({model, id, params, user}) => {
     await computeScoresIfRequired(score._id)
   }
 
-  return {model, id, params, user}
+console.log('attribute',attribute);
+console.log('value', value);
+
+  if (model == 'post') {
+    const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
+    if (attribute == 'liked') {
+      if (value) {
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+      } else {
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+      }
+    }
+  }
+
+  if (model == 'event') {
+    if (attribute == 'registered_users') {
+      const gain = await Gain.findOne({source: COIN_SOURCE_PARTICIPATE})
+      if (lodash.includes(value, user._id.toString())) {
+        console.log('registered');
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+      } else {
+        console.log('unregistered');
+        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+      }
+    }
+  }
+
+  return {model, user, attribute, value}
 }
 
 setPostPutData(postPutData)
@@ -625,26 +652,6 @@ const prePutData = async ({model, id, params, user}) => {
   if (model == 'company') {
     if (params.administrators) {
       params.administrators = params.administrators.split(',')
-    }
-  }
-
-  if (model == 'post') {
-    const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
-    if (params.liked) {
-      await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
-    } else {
-      await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
-    }
-  }
-
-  if (model == 'event') {
-    if (!lodash.isNil(params.registered)) {
-      const gain = await Gain.findOne({source: COIN_SOURCE_PARTICIPATE})
-      if (lodash.includes(params.registered_users, user._id.toString())) {
-        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
-      } else {
-        await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
-      }
     }
   }
 
