@@ -13,7 +13,7 @@ const {
   loadFromDb,
   setPrePutData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, COMPLETION_FIELDS, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -161,13 +161,19 @@ USER_MODELS.forEach(m => {
     model: m,
     field: 'profil_completion',
     instance: 'Number',
-    requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
+    requires: lodash.join(lodash.concat(
+      lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {return key}),
+      lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {return key})
+    ),`,`)
   })
   declareVirtualField({
     model: m,
     field: 'missing_attributes',
     instance: 'String',
-    requires: lodash.join(lodash.map(COMPLETION_FIELDS,(_,key)=> {return key}),`,`)
+    requires: lodash.join(lodash.concat(
+      lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {return key}),
+      lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {return key})
+    ),`,`)
   })
   declareVirtualField({
     model: m, field: 'registered_events', instance: 'Array', multiple: true,

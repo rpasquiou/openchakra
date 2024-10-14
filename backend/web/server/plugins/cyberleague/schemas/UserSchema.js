@@ -4,7 +4,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETION_FIELDS, COMPLETED_YES } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, JOB_STUDENT, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -316,19 +316,27 @@ UserSchema.virtual('published_missions', {
 })
 
 UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
-  const completionFields = lodash.map(COMPLETION_FIELDS, (_,key) => {
+  const requiredCompletionFields = lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {
     return this[key]
-  })
+  }).filter((e) => !lodash.isNil(e))
 
-  return Math.round((lodash.filter(completionFields, (e)=> {return !!e}).length + 2) / 6 * 100) /100  
+  const optionalCompletionFields = lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {
+    return this[key]
+  }).filter((e) => !lodash.isNil(e))
+
+  return (31 + requiredCompletionFields.length * 15 + optionalCompletionFields.length * 3)/100
 })
 
 UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
-  const completionFields = lodash.map(COMPLETION_FIELDS, (_,key) => {return [key, this[key]]
-  })
+  const completionFields = lodash.concat(
+    lodash.map(REQUIRED_COMPLETION_FIELDS, (v,key) => {return [key, this[key],v]}),
+    lodash.map(OPTIONAL_COMPLETION_FIELDS, (v,key) => {return [key, this[key],v]})
+  )
+
   const missingFields = lodash.filter(completionFields, (e)=> {return !e[1]})
   const s = missingFields.length > 1 ? 's' : ''
-  return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return COMPLETION_FIELDS[e[0]]}).join(`, `)
+
+  return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
 
 UserSchema.virtual('registered_events', {
