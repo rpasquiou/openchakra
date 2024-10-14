@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK, isExternalTrainer } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK, isExternalTrainer, PROGRAM_STATUS_AVAILABLE, PROGRAM_STATUS } = require('./consts')
 const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -384,6 +384,9 @@ const SESSION_MAPPING = admin => ({
     const program=code ? await Program.findOne({codes: code}) : null
     if (!program) {
       throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
+    }
+    if (program.status!=PROGRAM_STATUS_AVAILABLE) {
+      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} est en mode ${PROGRAM_STATUS[program.status]}`)
     }
     return program?.name
   },
