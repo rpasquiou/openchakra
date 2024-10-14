@@ -1,6 +1,6 @@
 const path = require("path")
 const fs = require("fs")
-const { logFormFields, fillForm, savePDFFile } = require("../../utils/fillForm")
+const { logFormFields, fillForm, savePDFFile, fillForm2 } = require("../../utils/fillForm")
 
 const DATA_PATH=path.join(__dirname, '..', 'data', 'misc')
 const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation.pdf')
@@ -11,16 +11,43 @@ describe('Misc text tests', () => {
     console.log(TEMPLATE_PDF_PATH)
     const fieldsDefinition=await logFormFields(TEMPLATE_PDF_PATH)
     console.log('Found fields', Object.keys(fieldsDefinition))
-    const EXPECTED_FIELDS=['code', 'creation_date', 'end_date', 'level_1_resource_progress'].sort()
+    const EXPECTED_FIELDS=['session_code', 'creation_date', 'end_date', 'level_1.resources_progress'].sort()
     expect(Object.keys(fieldsDefinition).sort()).toEqual(expect.arrayContaining(EXPECTED_FIELDS))
-    const generated=await fillForm(TEMPLATE_PDF_PATH, {code: 'test', location: 'Rouen', start_date: '10/10/2024', end_date: '15/10/2024',
-    trainee_fullname: 'Apprenant 15', 
-      level_1_spent_time_str: [{level_1_spent_time_str: 12}, {level_1_spent_time_str: 16}],
-      level_1: [{level_1: 'module 1'}, {level_1: 'module 2'}],
-      level_1_resource_progress: [{level_1_resource_progress: '5%'}, {level_1_resource_progress: '15%'}],
-      level_2: [{level_2: 'séquence 1'}, {level_2: 'séquence 2'}],
-      level_3: [{level_3: 'ressource 1'}, {level_3: 'ressource 2'}],
-    })
+    const data={
+      location: 'Rouen',
+      session_code: 'PSWAHJKDGHJK75',
+      session_code: 'PS109',
+      session_name: 'PSWAHJKDGHJK75 - PAWW01 Sesion matières dangereuses',
+      start_date: '10/10/2024', end_date: '15/10/2024',
+      trainee_fullname: 'Jean-Robert', first_connection: '10/15/2024',
+      total_spent_time_str: '12h15',
+      total_resources_progress: '20%',
+      creation_date: '15/10/2024',
+      achievement_status: 'En cours',
+      level_1: [{
+        name: 'Module 1', resources_progress: '15%', spent_time_str: '1h12',
+        level_2: [
+          {name: 'Séquence 1.1'},
+          {name: 'Séquence 1.2'},
+        ]
+      },
+      {
+        name: 'Module 2', resources_progress: '15%', spent_time_str: '15h13',
+        level_2: [
+          {name: 'Séquence 2.1'},
+          {name: 'Séquence 2.2'},
+        ]
+      },
+      {
+        name: 'Module 3', resources_progress: '15%', spent_time_str: '1h12',
+        level_2: [
+          {name: 'Séquence 3.1'},
+          {name: 'Séquence 3.2'},
+        ]
+      }
+    ],
+    }
+    const generated=await fillForm2(TEMPLATE_PDF_PATH, data)
     await savePDFFile(generated, '/home/seb/generated.pdf')
     
   })
