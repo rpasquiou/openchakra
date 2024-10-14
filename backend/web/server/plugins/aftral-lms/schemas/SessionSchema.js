@@ -55,6 +55,14 @@ const SessionSchema = new Schema({
     required: true,
     default: false,
   },
+  proof: {
+    type: String,
+    required: false,
+  },
+  certificate: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema
