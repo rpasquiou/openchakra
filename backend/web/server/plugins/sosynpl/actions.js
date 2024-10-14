@@ -13,12 +13,13 @@ const { ROLE_ADMIN } = require("../smartdiet/consts")
 const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT, ROLE_FREELANCE, MISSION_STATUS_CURRENT, MISSION_STATUS, ROLE_CUSTOMER, MISSION_STATUS_FREELANCE_FINISHED} = require("./consts")
 const {clone, canCancel, cancelAnnounce} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
-const { sendSuggestion2Freelance, sendApplication2Customer } = require("./mailing")
+const { sendSuggestion2Freelance, sendApplication2Customer, sendForgotPassword } = require("./mailing")
 const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
 const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport, canRefuseReport } = require("./report")
 const Mission = require("../../models/Mission")
 const Evaluation = require("../../models/Evaluation")
+const { generatePassword } = require("../../../utils/passwords")
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
@@ -196,6 +197,16 @@ const finishMission = async ({value}, user) => {
 }
 addAction('alle_finish_mission', finishMission)
 
+const forgotPasswordAction= async ({context, parent, email}) => {
+  const account=await User.findOne({email})
+  console.log(`Forgot password for ${email}: account found`, !!account)
+  if (account) {
+    const password=await generatePassword()
+    await User.findByIdAndUpdate(account._id, {password} )
+    return sendForgotPassword({user: account, password})
+  }
+}
+addAction('forgotPassword', forgotPasswordAction)
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='validate_email') {

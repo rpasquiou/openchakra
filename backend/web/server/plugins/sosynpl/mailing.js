@@ -7,10 +7,12 @@ const {
   addValidationAllowedDomain
 } = require('../../utils/mailing')
 const { computeUrl } = require('../../../config/config')
+const { generatePassword } = require('../../../utils/passwords')
 
 const SIB_IDS={
-  CUSTOMER_CONFIRM_EMAIL:1,
-  FREELANCE_CONFIRM_EMAIL:2,
+  CUSTOMER_CONFIRM_EMAIL: 1,
+  FREELANCE_CONFIRM_EMAIL: 2,
+  FORGOT_PASSWORD: 4,
   FREELANCE_SEND_SUGGESTION: 31,
   CUSTOMER_SEND_APPLICATION: 39,
   NEW_CONTACT: 47,
@@ -94,8 +96,20 @@ const sendNewContact2Admin = async ({contact, admin}) => {
   })
 }
 
+// Send contact info to admins
+const sendForgotPassword = async ({user, password}) => {
+  return sendNotification({
+    notification: SIB_IDS.FORGOT_PASSWORD,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      temporary_password: password,
+    },
+  })
+}
+
 
 module.exports = {
   sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance, sendApplication2Customer,
-  sendNewContact2Admin,
+  sendNewContact2Admin, sendForgotPassword,
 }
