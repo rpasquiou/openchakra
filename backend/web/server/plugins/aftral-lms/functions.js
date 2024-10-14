@@ -22,7 +22,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -116,6 +116,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'note_str', requires: 'note,success_scale,success_note_max,type', getterFn: getBlockNoteStr})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
+  declareComputedField({model: 'session', field: 'proof', getterFn: getSessionProof})
 })
 
 //Program start
@@ -590,7 +591,6 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const filterDataUser = async ({model, data, id, user}) => {
-  console.log('filter', model, 'id', id)
   if (model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
     data=data.filter(d => moment().isBetween(d.start_date, d.end_date))
   }
