@@ -9,6 +9,14 @@ const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 
 
+const deleteForbidden = async () => {
+  throw new ForbiddenError(`Pas de delete pour l'instant`)
+  
+}
+
+addAction('delete',deleteForbidden)
+
+
 const startSurvey = async (_, user) => {
   //console.log("params", params)
 
