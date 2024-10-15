@@ -94,7 +94,7 @@ const computeBellwetherStatistics = async (filters) => {
     `admin`
   ]
 
-  const res=Object.fromEntries(fields.map(f => [f, 0]))
+  let res=Object.fromEntries(fields.map(f => [f, 0]))
   // let res = {
   //   securityIncidentManagement: 0,
   //   partner: 0,
