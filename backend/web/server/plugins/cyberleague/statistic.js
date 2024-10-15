@@ -76,9 +76,30 @@ const computeBellwetherStatistics = async (filters) => {
     scores = await Score.find()
   }
 
+
+  const res = {
+    enoughScores: false,
+    securityIncidentManagement: 0,
+    partner: 0,
+    inventory: 0,
+    insurance: 0,
+    cyberRef: 0,
+    intrusion: 0,
+    externalized: 0,
+    webApp: 0,
+    antivirus: 0,
+    charter: 0,
+    financial: 0,
+    sensibilization: 0,
+    mfa: 0,
+    admin: 0
+  }
+
+  res.enoughScores = scores.length < STAT_MIN_SCORES
   //if less answers than STAT_MIN_SCORES stats are not relevant
-  if (scores.length < STAT_MIN_SCORES) {
-    //TODO return 'not enough scores to have relevant data'
+  if (!enoughScores) {
+    //not enough scores to have relevant data
+    return res
   }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
@@ -132,23 +153,6 @@ const computeBellwetherStatistics = async (filters) => {
       })
     })
   })
-
-  const res = {
-    securityIncidentManagement: 0,
-    partner: 0,
-    inventory: 0,
-    insurance: 0,
-    cyberRef: 0,
-    intrusion: 0,
-    externalized: 0,
-    webApp: 0,
-    antivirus: 0,
-    charter: 0,
-    financial: 0,
-    sensibilization: 0,
-    mfa: 0,
-    admin: 0
-  }
 
   //Compute ratios for bellwether / benchmark
   fields.forEach((field) => {
