@@ -1,4 +1,6 @@
+const AdmZip = require('adm-zip')
 const mime=require('mime-types')
+const path=require('path')
 const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
@@ -14,6 +16,8 @@ const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const { parseScormTime } = require("../../../utils/dateutils");
 const { sendBufferToAWS } = require("../../middlewares/aws");
 const { fillForm2, logFormFields } = require("../../../utils/fillForm");
+const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
+const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -440,24 +444,39 @@ const getSessionConversations = async (userId, params, data, fields) => {
 }
 
 const getSessionProof = async (userId, params, data, fields, actualLogged) => {
-  const sessionFields=['name', 'start_date', 'end_date', 'code', 'children.resources_progress', 'children.name', 'children.spent_time_str', 'children.children.name', 'children.children.spent_time_str']
-  const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: userId})
-  const [trainee]=await loadFromDb({model: 'user', id: userId, fields:['fullname'], user: userId})
-  const pdfData={start_date: session.start_date.toString(), end_date: session.end_date.toString(), 
-    session_name: `${session.code}-${session.name}}`, trainee_fullname: trainee.fullname, 
-    level_1:session.children.map(c => ({
-      resources_progress: c.resources_progress?.toString() || 'N/A',
-      name: c.name, spent_time_str: c.spent_time_str,
-      level_2: c.children.map(c2 => ({
-        name: c2.name, spent_time_str: c2.spent_time_str
+  const locations=await Promise.all(data.trainees.map(async trainee => {
+
+    const sessionFields=['name', 'start_date', 'end_date', 'code', 'children.resources_progress', 'children.name', 'children.spent_time_str', 
+    'children.children.name', 'children.children.spent_time_str', 'trainees.fullname']
+
+    const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
+    const pdfData={start_date: session.start_date.toString(), end_date: session.end_date.toString(), 
+      session_name: `${session.code}-${session.name}}`, trainee_fullname: trainee.fullname, 
+      level_1:session.children.map(c => ({
+        resources_progress: c.resources_progress?.toString() || 'N/A',
+        name: c.name, spent_time_str: c.spent_time_str,
+        level_2: c.children.map(c2 => ({
+          name: c2.name, spent_time_str: c2.spent_time_str
+        }))
       }))
-  }))}
-  const pdfPath='/Users/seb/workspace/aftral-lms/backend/web/tests/data/misc/template justificatif de formation.pdf'
-  const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
-  const buffer=await pdf.save()
-  const filename=`${session.code}-${trainee.fullname}.pdf`
-  const {Location}=await sendBufferToAWS({filename, buffer, type: 'proof', mimeType: mime.lookup(filename)})
-  console.log(`Generated ${Location}`)
+    }
+    
+    const pdfPath=path.join(ROOT, TEMPLATE_NAME)
+    const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
+    const buffer=await pdf.save()
+    const filename=`${data.code}-${trainee.fullname}.pdf`
+    await sendBufferToAWS({filename, buffer, type: 'proof', mimeType: mime.lookup(filename)}).catch(console.error)
+    return {filename: filename, buffer}
+  }))
+
+  // Generate a zip
+  const zip=new AdmZip()
+  locations.map(({filename, buffer}) => {
+    zip.addFile(filename, buffer)
+  })
+  const buffer=zip.toBuffer()
+  const filename=`Justificatifs-${data.code}.zip`
+  const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificates', mimeType: mime.lookup(filename)}).catch(console.error)
   return Location
 }
 
