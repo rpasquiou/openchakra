@@ -2,7 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
-const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5 } = require("./consts")
+const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES } = require("./consts")
 
 
 const regexTest = (field, text) => {
@@ -77,7 +77,7 @@ const computeBellwetherStatistics = async (filters) => {
   }
 
   let res = {
-    enoughScores: false,
+    enoughScores: ENOUGH_SCORES_NO,
     securityIncidentManagement: 0,
     partner: 0,
     inventory: 0,
@@ -94,9 +94,9 @@ const computeBellwetherStatistics = async (filters) => {
     admin: 0
   }
 
-  res.enoughScores = scores.length < STAT_MIN_SCORES
+  res.enoughScores = scores.length < STAT_MIN_SCORES ? ENOUGH_SCORES_NO : ENOUGH_SCORES_YES
   //if less answers than STAT_MIN_SCORES stats are not relevant
-  if (!res.enoughScores) {
+  if (res.enoughScores == ENOUGH_SCORES_NO) {
     return res
   }
 
