@@ -155,9 +155,12 @@ const computeBellwetherStatistics = async (filters) => {
 
   //Compute ratios for bellwether / benchmark
   fields.forEach((field) => {
+
     //Adapt value of field that need to be in [0,10]
     if (lodash.includes(BENCHMARK_FIELDS_10, field)) {
       res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 10)
+
+    //Adapt value of field that need to be in [0,5]
     } else if (lodash.includes(BENCHMARK_FIELDS_5, field)) {
       res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 5)
     } else {
