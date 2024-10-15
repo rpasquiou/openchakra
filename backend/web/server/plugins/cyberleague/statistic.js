@@ -98,7 +98,6 @@ const computeBellwetherStatistics = async (filters) => {
   res.enoughScores = scores.length < STAT_MIN_SCORES
   //if less answers than STAT_MIN_SCORES stats are not relevant
   if (!enoughScores) {
-    //not enough scores to have relevant data
     return res
   }
 
