@@ -2,7 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
-const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES } = require("./consts")
+const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10 } = require("./consts")
 
 
 const regexTest = (field, text) => {
@@ -152,7 +152,12 @@ const computeBellwetherStatistics = async (filters) => {
 
   //Compute ratios for bellwether / benchmark
   fields.forEach((field) => {
-    res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
+    //Adapt value of field that need to be in [0,10]
+    if (lodash.includes(BENCHMARK_FIELDS_10, field)) {
+      res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 10)
+    } else {
+      res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
+    }
   })
 
   return res
