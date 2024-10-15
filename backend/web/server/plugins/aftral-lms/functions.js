@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -487,6 +487,14 @@ const getFeeds = async (user, id) => {
 }
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+  if (['block', BLOCK_TYPE_SESSION].includes(model) && !!id && user?.role==ROLE_APPRENANT) {
+    const block=await Block.findById(id)
+    if (block.type==BLOCK_TYPE_SESSION) {
+      if (!block._trainees_connections.find(tc => idEqual(tc.trainee, user._id))) {
+        await Session.findByIdAndUpdate(id, {$push: {_trainees_connections: {trainee: user._id, date: moment()}}})
+      }
+    }
+  }
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'

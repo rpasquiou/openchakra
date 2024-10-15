@@ -63,6 +63,17 @@ const SessionSchema = new Schema({
     type: String,
     required: false,
   },
+  _trainees_connections: [{
+    trainee: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    }
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema
