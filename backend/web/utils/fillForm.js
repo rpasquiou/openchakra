@@ -17,6 +17,8 @@ const { sendBufferToAWS } = require('../server/middlewares/aws')
 const mime = require('mime-types')
 const mongoose = require('mongoose')
 
+const MARGIN=30
+
 async function getPDFBytes(filePath) {
   const isUrl = validator.isURL(filePath)
   if (isUrl) {
@@ -282,9 +284,13 @@ const allFieldsExist = (data, fields) => {
   return true
 }
 
-const copyField = (form, field, name) => {
-  const f=form.createTextField(name)
-  return f
+const copyField = (form, orgField, name) => {
+  const newField=form.createTextField(name)
+  return newField
+}
+
+const getFieldRect = field => {
+  return field.acroField.getWidgets()[0].getRectangle()
 }
 
 const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontSize = 12) => {
@@ -293,13 +299,18 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   const pdfFont = await pdfDoc.embedFont(font)
   const form = pdfDoc.getForm()
 
+  let currentPage=pdfDoc.getPages()[0]
   const res=await logFormFields(sourceLink)
-  console.log('Found fields', Object.keys(res))
+
+  let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
+  let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
+  const remaining=sorted.slice(lastLevel+1)
+  
   let compIdx=0
   for (const fieldName in data) {
     const fieldValue = data[fieldName]
 
-    if (!(/level_/.test(fieldName))) {
+    if (!(/level_/.test(fieldName)) && !(remaining.includes(fieldName))) {
       try {
         const field = form.getTextField(fieldName)
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
@@ -309,8 +320,6 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
       }
     }
   }
-    // const f=form.getTextField('level_1.name')
-    // setFieldValue(form, f, 'TAGADA')
 
     let currentY=null
 
@@ -327,22 +336,22 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
             console.warn(`No data found for field level_${level}.${attr}`)
             return
           }
-          const orgRect=field.acroField.getWidgets()[0].getRectangle()
+          const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
           if (currentY==null) {
             currentY=orgRect.y
           }
           // currentY-=orgRect.height
           const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
+        
           setFieldValue(form, dup, data[attr])
-          dup.addToPage(pdfDoc.getPage(0), {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
-          // if (lowestY==null) {
-            lowestY=currentY-(orgRect.height*1.1)
-          // }
-          // else {
-          //   lowestY=Math.min(lowestY, orgRect.y-orgRect.height)
-          // }
+          dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+          lowestY=currentY-(orgRect.height*1.2)
         })
         currentY=lowestY
+        if (currentY<MARGIN) {
+          currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
+          currentY=currentPage.getHeight()-MARGIN
+        }
         const children=data[`level_${level+1}`]
         if (!lodash.isEmpty(children)) {
           manageChildren(level+1, children)
@@ -351,34 +360,17 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
     }
 
     await manageChildren(1, data.level_1)
-    // if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
-    //   console.log('****',fieldValue[0])
-    //   const textFields = Object.keys(fieldValue[0])
-    //   const numberOfDuplicates = fieldValue.length
-    //   await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
-      
-    //   fieldValue.forEach((detail, index) => {
-    //     console.log(detail, index)
-    //     const fieldIndex = index + 1
-    //     for (const key in detail) {
-    //       const newFieldName = `${key}_copy_${fieldIndex}`
-    //       const field = form.getTextField(newFieldName)
-    //       if (field) {
-    //         setFieldValue(form, field, detail[key].toString(), pdfFont, fontSize)
-    //       } else {
-    //         console.warn(`Field ${newFieldName} does not exist in the form.`)
-    //       }
-    //     }
-    //   })
-    // } else {
-    //   const field = form.getTextField(fieldName)
-    //   if (field) {
-    //     setFieldValue(form, field, fieldValue, pdfFont, fontSize)
-    //   } else {
-    //     console.log(`No data found for field ${fieldName}`)
-    //   }
-    // }
 
+    currentY=currentY-MARGIN
+    remaining.map(fieldName => {
+      const fieldValue = data[fieldName]
+      const field = form.getTextField(fieldName)
+      const dup=copyField(form, field, `${fieldName}_1`)
+      setFieldValue(form, dup, fieldValue)
+      const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
+      dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+  })
+  
   form.updateFieldAppearances(pdfFont)
   form.flatten()
   return pdfDoc

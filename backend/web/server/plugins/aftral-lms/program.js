@@ -8,6 +8,7 @@ const { BLOCK_TYPE_SESSION } = require('./consts')
 const { formatDateTime } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
+const { isDevelopment } = require('../../../config/config')
 
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
@@ -37,6 +38,7 @@ async function getChapterData(userId, params, data) {
 
 // trainee_fullname,end_date,location
 const getSessionCertificate = async (userId, params, data) => {
+
   if (data.type!=BLOCK_TYPE_SESSION) {
     return null
   }
