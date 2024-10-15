@@ -9,13 +9,15 @@
 */}
 
 const axios = require('axios')
+const lodash = require('lodash')
 const { PDFDocument, StandardFonts } = require('pdf-lib')
 const fs = require('fs').promises
 const validator = require('validator')
-const { getModel } = require('../server/utils/database')
 const { sendBufferToAWS } = require('../server/middlewares/aws')
 const mime = require('mime-types')
 const mongoose = require('mongoose')
+
+const MARGIN=30
 
 async function getPDFBytes(filePath) {
   const isUrl = validator.isURL(filePath)
@@ -59,6 +61,7 @@ const setFieldValue = (form, field, value, fallbackFont, fallbackFontSize) => {
   const fieldType = field.constructor.name
   if (fieldType === 'PDFTextField') {
     field.enableMultiline()
+    return field.setText(value)
     const widgets = field.acroField.getWidgets()
 
     widgets.forEach(widget => {
@@ -281,6 +284,98 @@ const allFieldsExist = (data, fields) => {
   return true
 }
 
+const copyField = (form, orgField, name) => {
+  const newField=form.createTextField(name)
+  return newField
+}
+
+const getFieldRect = field => {
+  return field.acroField.getWidgets()[0].getRectangle()
+}
+
+const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontSize = 12) => {
+  const sourcePDFBytes = await getPDFBytes(sourceLink)
+  const pdfDoc = await PDFDocument.load(sourcePDFBytes)
+  const pdfFont = await pdfDoc.embedFont(font)
+  const form = pdfDoc.getForm()
+
+  let currentPage=pdfDoc.getPages()[0]
+  const res=await logFormFields(sourceLink)
+
+  let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
+  let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
+  const remaining=sorted.slice(lastLevel+1)
+  
+  let compIdx=0
+  for (const fieldName in data) {
+    const fieldValue = data[fieldName]
+
+    if (!(/level_/.test(fieldName)) && !(remaining.includes(fieldName))) {
+      try {
+        const field = form.getTextField(fieldName)
+        setFieldValue(form, field, fieldValue, pdfFont, fontSize)
+      }
+      catch(err) {
+        console.warn(`No data found for field ${fieldName}`)
+      }
+    }
+  }
+
+    let currentY=null
+
+    const manageChildren = (level, allData) => {
+      allData.forEach(data => {
+        const simpleAttrs=lodash.pickBy(data, (v, k) => !(/^level_[0-9]+$/).test(k))
+        let lowestY=null
+        Object.keys(simpleAttrs).forEach((attr, idx) => {
+          let field
+          try {
+            field=form.getTextField(`level_${level}.${attr}`)
+          }
+          catch(err) {
+            console.warn(`No data found for field level_${level}.${attr}`)
+            return
+          }
+          const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
+          if (currentY==null) {
+            currentY=orgRect.y
+          }
+          // currentY-=orgRect.height
+          const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
+        
+          setFieldValue(form, dup, data[attr])
+          dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+          lowestY=currentY-(orgRect.height*1.2)
+        })
+        currentY=lowestY
+        if (currentY<MARGIN) {
+          currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
+          currentY=currentPage.getHeight()-MARGIN
+        }
+        const children=data[`level_${level+1}`]
+        if (!lodash.isEmpty(children)) {
+          manageChildren(level+1, children)
+        }
+      })
+    }
+
+    await manageChildren(1, data.level_1)
+
+    currentY=currentY-MARGIN
+    remaining.map(fieldName => {
+      const fieldValue = data[fieldName]
+      const field = form.getTextField(fieldName)
+      const dup=copyField(form, field, `${fieldName}_1`)
+      setFieldValue(form, dup, fieldValue)
+      const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
+      dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+  })
+  
+  form.updateFieldAppearances(pdfFont)
+  form.flatten()
+  return pdfDoc
+}
+
 module.exports = {
   getPDFBytes,
   copyPDF,
@@ -291,4 +386,5 @@ module.exports = {
   setFieldValue,
   generateDocument,
   allFieldsExist,
+  fillForm2,
 }

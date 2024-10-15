@@ -1,8 +1,11 @@
+const AdmZip = require('adm-zip')
+const mime=require('mime-types')
+const path=require('path')
 const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS } = require("./consts");
 const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -11,6 +14,12 @@ const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const { parseScormTime } = require("../../../utils/dateutils");
+const { sendBufferToAWS } = require("../../middlewares/aws");
+const { fillForm2, logFormFields } = require("../../../utils/fillForm");
+const { formatDate, formatPercent } = require('../../../utils/text');
+const { isDevelopment } = require('../../../config/config');
+const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
+const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -436,6 +445,70 @@ const getSessionConversations = async (userId, params, data, fields) => {
   return res
 }
 
+const getSessionProof = async (userId, params, data, fields, actualLogged) => {
+  
+  const actualLoggedUser=await User.findById(actualLogged)
+  if (actualLoggedUser?.role==ROLE_APPRENANT) {
+    console.warn(`Session proof forbidden for trainee ${actualLoggedUser.email}`)
+    return null
+  }
+
+  const locations=await Promise.all(data.trainees.map(async trainee => {
+
+    const sessionFields=[
+      'name', 'start_date', 'end_date', 'code', 'location', 'achievement_status', 'order', 'spent_time_str', 'resources_progress', '_trainees_connections',
+      'children.order', 'children.name', 'children.resources_progress', 'children.spent_time_str', 
+      'children.children.order', 'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 
+      'children.children.children.order', 'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str',
+      'children.children.children.children.name', 'children.children.children.children.resources_progress', 'children.children.children.children.spent_time_str',
+      'children.children.children.children.children.name', 'children.children.children.children.children.resources_progress', 'children.children.children.children.children.spent_time_str',
+    ]
+
+    const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
+
+    const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
+
+    const pdfData={
+      start_date: formatDate(session.start_date, true), end_date: formatDate(session.end_date, true), location: session.location,
+      session_name: session.name, trainee_fullname: trainee.fullname, session_code: session.code,
+      achievement_status: BLOCK_STATUS[session.achievement_status], creation_date: formatDate(moment(), true),
+      spent_time_str: `Temps total du parcours : ${session.spent_time_str}`, resources_progress: formatPercent(session.resources_progress),
+      first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
+      level_1:session.children[0].children.map(c => ({
+        resources_progress: formatPercent(c.resources_progress),
+        name: c.name, spent_time_str: c.spent_time_str,
+        level_2: c.children.map(c2 => ({
+          name: c2.name, spent_time_str: c2.spent_time_str, order: c2.order.toString(),
+          level_3: c2.children.map(c3 => ({
+            name: c3.name, spent_time_str: c3.spent_time_str,
+            level_4: c3.children.map(c4 => ({
+              name: c4.name, spent_time_str: c4.spent_time_str
+            }))
+  
+          }))
+        }))
+      }))
+    }
+    
+    const pdfPath=path.join(ROOT, TEMPLATE_NAME)
+    const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
+    const buffer=await pdf.save()
+    const filename=`${data.code}-${trainee.fullname}.pdf`
+    const  {Location}=await sendBufferToAWS({filename, buffer, type: 'proof', mimeType: mime.lookup(filename)}).catch(console.error)
+    return {filename: filename, buffer, locaiton: Location}
+  }))
+
+  // Generate a zip
+  const zip=new AdmZip()
+  locations.map(({filename, buffer}) => {
+    zip.addFile(filename, buffer)
+  })
+  const buffer=zip.toBuffer()
+  const filename=`Justificatifs-${data.code}.zip`
+  const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificates', mimeType: mime.lookup(filename)}).catch(console.error)
+  return Location
+}
+
 const propagateAttributes=async (blockId, attributes=null) => {
   if (attributes && attributes.length==0) {
     return
@@ -723,5 +796,5 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
-  getBlockNoteStr, computeBlockStatus, isFinished,
+  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof,
 }

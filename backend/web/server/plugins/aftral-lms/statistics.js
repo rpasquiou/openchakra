@@ -10,7 +10,6 @@ const Group = require("../../models/Group")
 const { ObjectId } = require("bson")
 
 const fillSession = async (session, trainee) => {
-  console.log('Filling session', session._id)
   session.trainees = trainee ? [trainee] : session.trainees
   const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id

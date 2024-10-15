@@ -1,16 +1,14 @@
-const ProductCode=require('../../models/ProductCode')
+const mime=require('mime-types')
 const Program=require('../../models/Program')
-const lodash=require('lodash')
-const User = require('../../models/User')
 const { getResourcesProgress, getBlockResources } = require('./resources')
-const { generateDocument } = require('../../../utils/fillForm')
-const path = require('path')
+const { fillForm2 } = require('../../../utils/fillForm')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
-const Homework = require('../../models/Homework')
-const { RESOURCE_TYPE_SCORM } = require('./consts')
-const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
-const TEMPLATE_NAME = 'template1'
+const { BLOCK_TYPE_SESSION } = require('./consts')
+const { formatDateTime } = require('../../../utils/text')
+const { sendBufferToAWS } = require('../../middlewares/aws')
+const AdmZip = require('adm-zip')
+const { isDevelopment } = require('../../../config/config')
 
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
@@ -38,27 +36,50 @@ async function getChapterData(userId, params, data) {
   })))
 }
 
-const getCertificate = async (userId, params, data) => {
-  if (data._certificate) {
-    return data._certificate
+// trainee_fullname,end_date,location
+const getSessionCertificate = async (userId, params, data) => {
+
+  if (data.type!=BLOCK_TYPE_SESSION) {
+    return null
   }
 
-  const user = await User.findById(userId)
-  const fillData = {
-    _id: data._id,
-    trainee_fullname: `${user.firstname} ${user.lastname}`,
-    resources_progress: await getResourcesProgress(userId, params, data.parent),
-    program_name: data.name,
-    session_name: data.parent.name,
-    end_date: data.parent.end_date,
-    chapter_data: await getChapterData(userId, params, data),
+  let template=(await Program.findOne(data.children[0]._id).populate('template'))?.template
+
+  if (!template) {
+    console.warn(`Getting certificate in the program`)
+    template=(await Program.findOne({name: data.children[0].name, origin: null}))?.template
   }
 
-  // console.log(JSON.stringify(fillData, null, 2))
+  if (!template) {
+    console.error(`No template for session ${data._id}, program ${data.children[0].name}`)
+    return null
+  }
 
-  const TEMPLATE_PATH = `${path.join(ROOT, TEMPLATE_NAME)}.pdf`
-  const result = await generateDocument('certificate', 'certificate', '_certificate', TEMPLATE_PATH, TEMPLATE_NAME, fillData)
-  return result
+  const locations=await Promise.all(data.trainees.map(async trainee => {
+    const pdfData = {
+      trainee_fullname: trainee.fullname,
+      end_date: formatDateTime(data.end_date),
+      location: data.location,
+      level_1:[],
+    }
+  
+    const pdfPath=template.url
+    const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
+    const buffer=await pdf.save()
+    const filename=`${data.code}-${trainee.fullname}.pdf`
+    await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
+    return {filename: filename, buffer}
+  }))
+
+  // Generate a zip
+  const zip=new AdmZip()
+  locations.map(({filename, buffer}) => {
+    zip.addFile(filename, buffer)
+  })
+  const buffer=zip.toBuffer()
+  const filename=`Certificats-${data.code}.zip`
+  const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificates', mimeType: mime.lookup(filename)}).catch(console.error)
+  return Location
 }
 
 const getEvalResources = async (userId, params, data, fields, actualLogged) => {
@@ -79,5 +100,5 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
 }
 
 module.exports={
-  getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources
+  getSessionCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources
 }

@@ -2,7 +2,7 @@ const fs=require('fs')
 const path=require('path')
 const moment=require('moment')
 const lodash=require('lodash')
-const {getExchangeDirectory} = require('../../../config/config')
+const {getExchangeDirectory, isValidation} = require('../../../config/config')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const storage = require('../../utils/storage')
 const { importTrainers, importSessions, importTrainees } = require('./import')
@@ -44,7 +44,9 @@ const pollNewFiles = async () => {
   }))
   if (!lodash.isEmpty(errors.join('\n'))) {
     const admins=await User.find({role: ROLE_ADMINISTRATEUR})
-    await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: errors.filter(v => !lodash.isEmpty(v)).join('\n')})))
+    let message=isValidation() ? 'En validation:\n': ''
+    message = message+errors.filter(v => !lodash.isEmpty(v)).join('\n')
+    await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: message})))
   }
   return res
 }

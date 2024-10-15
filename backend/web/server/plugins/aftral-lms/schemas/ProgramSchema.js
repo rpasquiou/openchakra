@@ -26,14 +26,6 @@ const ProgramSchema = new Schema({
     ref: 'certification',
     required: false,
   },
-  certificate: {
-    type: String,
-    required: false,
-  },
-  _certificate: {
-    type: String,
-    required: false,
-  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 /* eslint-disable prefer-arrow-callback */

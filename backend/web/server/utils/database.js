@@ -771,6 +771,9 @@ const addComputedFields = async (
                 data[f] = res
                 return data
               })
+              .catch(err => {
+                console.error(`Compute ${model}.${f}:${err}`)
+              })
             }),
       )})
       .then(() => data)
