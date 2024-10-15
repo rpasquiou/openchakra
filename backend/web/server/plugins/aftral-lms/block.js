@@ -456,7 +456,7 @@ const getSessionProof = async (userId, params, data, fields, actualLogged) => {
   const locations=await Promise.all(data.trainees.map(async trainee => {
 
     const sessionFields=[
-      'name', 'start_date', 'end_date', 'code', 'location', 'achievement_status', 'order', 'spent_time_str', 'resources_progress',
+      'name', 'start_date', 'end_date', 'code', 'location', 'achievement_status', 'order', 'spent_time_str', 'resources_progress', '_trainees_connections',
       'children.order', 'children.name', 'children.resources_progress', 'children.spent_time_str', 
       'children.children.order', 'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 
       'children.children.children.order', 'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str',
@@ -466,11 +466,14 @@ const getSessionProof = async (userId, params, data, fields, actualLogged) => {
 
     const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
 
+    const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
+
     const pdfData={
-      start_date: formatDate(session.start_date), end_date: formatDate(session.end_date), location: session.location,
+      start_date: formatDate(session.start_date, true), end_date: formatDate(session.end_date, true), location: session.location,
       session_name: session.name, trainee_fullname: trainee.fullname, session_code: session.code,
-      achievement_status: BLOCK_STATUS[session.achievement_status], creation_date: formatDate(moment()),
+      achievement_status: BLOCK_STATUS[session.achievement_status], creation_date: formatDate(moment(), true),
       spent_time_str: `Temps total du parcours : ${session.spent_time_str}`, resources_progress: formatPercent(session.resources_progress),
+      first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
       level_1:session.children[0].children.map(c => ({
         resources_progress: formatPercent(c.resources_progress),
         name: c.name, spent_time_str: c.spent_time_str,

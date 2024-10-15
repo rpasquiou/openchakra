@@ -127,8 +127,8 @@ const formatDateTime = datetime => {
   return `le ${formatDate(datetime)} à ${formatHour(datetime)}`
 }
 
-const formatDate = datetime => {
-  return moment(datetime).format(`DD/MM/YY`)
+const formatDate = (datetime, fullYear) => {
+  return moment(datetime).format(fullYear ? `DD/MM/YYYY` : `DD/MM/YY`)
 }
 
 const formatHour = datetime => {
