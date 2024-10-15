@@ -124,7 +124,7 @@ const splitRemaining = (pattern, delimiter) => {
 }
 
 const formatDateTime = datetime => {
-  return `le ${formatDate(datetime)} à ${formatTime(datetime)}`
+  return `le ${formatDate(datetime)} à ${formatHour(datetime)}`
 }
 
 const formatDate = datetime => {
