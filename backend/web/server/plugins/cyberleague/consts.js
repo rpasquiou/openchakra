@@ -363,9 +363,9 @@ const MISSION_VISIBILITY = {
   [MISSION_VISIBILITY_PUBLIC]: `publique`
 }
 
-const BENCHMARK_FIELDS_10 = ['sensibilization', 'admin', 'antivirus', 'cyberRef']
+const BENCHMARK_FIELDS_10 = [ 'admin', 'antivirus', 'cyberRef']
 
-const BENCHMARK_FIELDS_5 = ['insurance', 'externalized', 'financial']
+const BENCHMARK_FIELDS_5 = ['sensibilization', 'insurance', 'externalized', 'financial']
 
 module.exports = {
   DISC_ADMIN, DISC_MEMBER, DISC_PARTNER, DISCRIMINATOR_KEY,
