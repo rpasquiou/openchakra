@@ -290,6 +290,7 @@ const copyField = (form, orgField, name) => {
 }
 
 const getFieldRect = field => {
+  console.log('Acro', field.acroField.dict?.dict?.['/DA'])
   return field.acroField.getWidgets()[0].getRectangle()
 }
 
