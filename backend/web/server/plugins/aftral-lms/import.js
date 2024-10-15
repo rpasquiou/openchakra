@@ -317,8 +317,11 @@ const TRAINER_MAPPING = {
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
   aftral_id: ({record}) => ensureNumber(record[TRAINER_AFTRAL_ID]),
-  password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
-  plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  // HACK: No SSO available so aftral trainers must get a password
+  // password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  // plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
+  password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : getPassword(record.EMAIL_FORMATEUR),
+  plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : getPassword(record.EMAIL_FORMATEUR),
 }
 
 const TRAINER_KEY='aftral_id'
@@ -332,7 +335,7 @@ const importTrainers = async (filename) => {
     identityKey: TRAINER_KEY, 
     migrationKey: TRAINER_KEY,
   })
-  // Mail new traines
+  // Mail new trainers
   const newTrainers=await User.find({role: ROLE_FORMATEUR, aftral_id: {$ne: null, $nin: previousTrainers}})
   console.log(`Sending init to trainers`, newTrainers.map(t => t.email))
   await Promise.allSettled(newTrainers.map(trainer => sendInitTrainer({trainer})))
