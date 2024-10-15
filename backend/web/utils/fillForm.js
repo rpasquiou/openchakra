@@ -10,11 +10,9 @@
 
 const axios = require('axios')
 const lodash = require('lodash')
-const moment = require('moment')
 const { PDFDocument, StandardFonts } = require('pdf-lib')
 const fs = require('fs').promises
 const validator = require('validator')
-const { getModel } = require('../server/utils/database')
 const { sendBufferToAWS } = require('../server/middlewares/aws')
 const mime = require('mime-types')
 const mongoose = require('mongoose')
@@ -295,16 +293,19 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   const pdfFont = await pdfDoc.embedFont(font)
   const form = pdfDoc.getForm()
 
+  const res=await logFormFields(sourceLink)
+  console.log('Found fields', Object.keys(res))
   let compIdx=0
   for (const fieldName in data) {
     const fieldValue = data[fieldName]
 
     if (!(/level_/.test(fieldName))) {
-      const field = form.getTextField(fieldName)
-      if (field) {
+      try {
+        const field = form.getTextField(fieldName)
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
-      } else {
-        console.log(`No data found for field ${fieldName}`)
+      }
+      catch(err) {
+        console.warn(`No data found for field ${fieldName}`)
       }
     }
   }
@@ -318,7 +319,14 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
         const simpleAttrs=lodash.pickBy(data, (v, k) => !(/^level_[0-9]+$/).test(k))
         let lowestY=null
         Object.keys(simpleAttrs).forEach((attr, idx) => {
-          const field=form.getTextField(`level_${level}.${attr}`)
+          let field
+          try {
+            field=form.getTextField(`level_${level}.${attr}`)
+          }
+          catch(err) {
+            console.warn(`No data found for field level_${level}.${attr}`)
+            return
+          }
           const orgRect=field.acroField.getWidgets()[0].getRectangle()
           if (currentY==null) {
             currentY=orgRect.y
@@ -335,7 +343,6 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
           // }
         })
         currentY=lowestY
-        console.log('After', simpleAttrs, 'lowest y is', currentY)
         const children=data[`level_${level+1}`]
         if (!lodash.isEmpty(children)) {
           manageChildren(level+1, children)

@@ -27,7 +27,7 @@ const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
+const { getSessionCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -116,18 +116,13 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'note_str', requires: 'note,success_scale,success_note_max,type', getterFn: getBlockNoteStr})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
-  declareComputedField({model: 'session', field: 'proof', getterFn: getSessionProof})
+  declareComputedField({model, field: 'proof', getterFn: getSessionProof})
+  declareComputedField({model,  field: 'certificate', requires: 'type,trainees.fullname,children,end_date,location,code', getterFn: getSessionCertificate })
 })
 
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
-declareComputedField({
-  model: 'program', 
-  field: 'certificate',
-  requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
-  getterFn: getCertificate, 
-})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
@@ -372,12 +367,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
         }
       )}
   }
-
-  // if(model == `program`) {
-  //   const program = await Program.findById(id)
-  //   params.codes = program.codes
-  //   params.duration_unit = program.duration_unit
-  // }
 
   if (model == `group`){
     if(params.sessions) {
