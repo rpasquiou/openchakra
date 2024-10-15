@@ -151,7 +151,7 @@ const getNearestWord = (word, words, limit=undefined) => {
 
 // Formats [0, 1.0] value
 const formatPercent = value => {
-  return lodash.isNil(value) ? value : `${parseInt(value)*100}%`
+  return lodash.isNil(value) ? value : `${parseInt(value*100)}%`
 } 
 
 const formatDuration = durationSeconds => {
