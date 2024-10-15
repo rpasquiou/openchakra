@@ -2,6 +2,7 @@ const lodash = require('lodash')
 const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
+const Statistic = require("../../models/Statistic")
 const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES } = require("./consts")
 
 
@@ -76,38 +77,6 @@ const computeBellwetherStatistics = async (filters) => {
     scores = await Score.find()
   }
 
-  let res = {
-    enoughScores: ENOUGH_SCORES_NO,
-    securityIncidentManagement: 0,
-    partner: 0,
-    inventory: 0,
-    insurance: 0,
-    cyberRef: 0,
-    intrusion: 0,
-    externalized: 0,
-    webApp: 0,
-    antivirus: 0,
-    charter: 0,
-    financial: 0,
-    sensibilization: 0,
-    mfa: 0,
-    admin: 0
-  }
-
-  res.enoughScores = scores.length < STAT_MIN_SCORES ? ENOUGH_SCORES_NO : ENOUGH_SCORES_YES
-  //if less answers than STAT_MIN_SCORES stats are not relevant
-  if (res.enoughScores == ENOUGH_SCORES_NO) {
-    return res
-  }
-
-  // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
-  const cleanScores = scores.map((s)=> {
-    s.answers = lodash.filter(s.answers,(a) => {
-      return !!a.question 
-    })
-    return s
-  })
-
   const fields = [
     `securityIncidentManagement`,
     `partner`,
@@ -125,22 +94,56 @@ const computeBellwetherStatistics = async (filters) => {
     `admin`
   ]
 
-  const bellwetherData = {
-    securityIncidentManagement: {value: 0, count: 0},
-    partner: {value: 0, count: 0},
-    inventory: {value: 0, count: 0},
-    insurance: {value: 0, count: 0},
-    cyberRef: {value: 0, count: 0},
-    intrusion: {value: 0, count: 0},
-    externalized: {value: 0, count: 0},
-    webApp: {value: 0, count: 0},
-    antivirus: {value: 0, count: 0},
-    charter: {value: 0, count: 0},
-    financial: {value: 0, count: 0},
-    sensibilization: {value: 0, count: 0},
-    mfa: {value: 0, count: 0},
-    admin: {value: 0, count: 0}
+  const res=Object.fromEntries(fields.map(f => [f, 0]))
+  // let res = {
+  //   securityIncidentManagement: 0,
+  //   partner: 0,
+  //   inventory: 0,
+  //   insurance: 0,
+  //   cyberRef: 0,
+  //   intrusion: 0,
+  //   externalized: 0,
+  //   webApp: 0,
+  //   antivirus: 0,
+  //   charter: 0,
+  //   financial: 0,
+  //   sensibilization: 0,
+  //   mfa: 0,
+  //   admin: 0
+  // }
+
+  res.enoughScores = scores.length < STAT_MIN_SCORES ? ENOUGH_SCORES_NO : ENOUGH_SCORES_YES
+
+  //if less answers than STAT_MIN_SCORES stats are not relevant
+  if (res.enoughScores == ENOUGH_SCORES_NO) {
+    return res
   }
+
+  // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
+  const cleanScores = scores.map((s)=> {
+    s.answers = lodash.filter(s.answers,(a) => {
+      return !!a.question 
+    })
+    return s
+  })
+
+  const bellwetherData=Object.fromEntries(fields.map(f => [f, {value: 0, count: 0}]))
+  // const bellwetherData = {
+  //   securityIncidentManagement: {value: 0, count: 0},
+  //   partner: {value: 0, count: 0},
+  //   inventory: {value: 0, count: 0},
+  //   insurance: {value: 0, count: 0},
+  //   cyberRef: {value: 0, count: 0},
+  //   intrusion: {value: 0, count: 0},
+  //   externalized: {value: 0, count: 0},
+  //   webApp: {value: 0, count: 0},
+  //   antivirus: {value: 0, count: 0},
+  //   charter: {value: 0, count: 0},
+  //   financial: {value: 0, count: 0},
+  //   sensibilization: {value: 0, count: 0},
+  //   mfa: {value: 0, count: 0},
+  //   admin: {value: 0, count: 0}
+  // }
 
   cleanScores.forEach((s)=> {
     s.answers.forEach((a) => {
@@ -162,10 +165,14 @@ const computeBellwetherStatistics = async (filters) => {
     //Adapt value of field that need to be in [0,5]
     } else if (lodash.includes(BENCHMARK_FIELDS_5, field)) {
       res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 5)
+
     } else {
       res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
     }
   })
+
+  res = new Statistic(...res)
+  await res.validate()
 
   return res
 }

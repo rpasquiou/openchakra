@@ -466,12 +466,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
+  let data
+
   if (model == 'statistic') {
-    const computedStatistics = computeBellwetherStatistics(params.filters ? params.filters : {})
-    params = {...params, ...computedStatistics}
+    data = computeBellwetherStatistics(params.filters ? params.filters : {})
   }
 
-  return Promise.resolve({model, fields, id, user, params})
+  return Promise.resolve({model, fields, id, user, params, data})
 }
 
 setPreprocessGet(preprocessGet)
