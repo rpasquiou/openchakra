@@ -267,8 +267,7 @@ const CustomerSchema = new Schema({
   },
   suspended_reason: {
     type: String,
-    enum: Object.keys(SUSPEND_REASON),
-    set: v => v || undefined,
+    enum: [null, ...Object.keys(SUSPEND_REASON)],
     required: false,
   },
   billing_contact: {
