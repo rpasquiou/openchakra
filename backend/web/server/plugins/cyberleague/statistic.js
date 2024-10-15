@@ -76,8 +76,7 @@ const computeBellwetherStatistics = async (filters) => {
     scores = await Score.find()
   }
 
-
-  const res = {
+  let res = {
     enoughScores: false,
     securityIncidentManagement: 0,
     partner: 0,
@@ -97,7 +96,7 @@ const computeBellwetherStatistics = async (filters) => {
 
   res.enoughScores = scores.length < STAT_MIN_SCORES
   //if less answers than STAT_MIN_SCORES stats are not relevant
-  if (!enoughScores) {
+  if (!res.enoughScores) {
     return res
   }
 
