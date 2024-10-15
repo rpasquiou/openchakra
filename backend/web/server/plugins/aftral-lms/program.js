@@ -1,21 +1,13 @@
 const mime=require('mime-types')
-const ProductCode=require('../../models/ProductCode')
 const Program=require('../../models/Program')
-const lodash=require('lodash')
-const User = require('../../models/User')
 const { getResourcesProgress, getBlockResources } = require('./resources')
 const { fillForm2 } = require('../../../utils/fillForm')
-const path = require('path')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
-const Homework = require('../../models/Homework')
 const { BLOCK_TYPE_SESSION } = require('./consts')
 const { formatDateTime } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
-const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
-const TEMPLATE_NAME = 'template1'
 const AdmZip = require('adm-zip')
-const ProgramSchema = require('./schemas/ProgramSchema')
 
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
@@ -45,8 +37,6 @@ async function getChapterData(userId, params, data) {
 
 // trainee_fullname,end_date,location
 const getSessionCertificate = async (userId, params, data) => {
-  console.log('in data type', data.type)
-
   if (data.type!=BLOCK_TYPE_SESSION) {
     return null
   }
@@ -55,10 +45,10 @@ const getSessionCertificate = async (userId, params, data) => {
 
   if (!template) {
     console.warn(`Getting certificate in the program`)
-    template=(await Program.findOne({name: data.children[0], origin: null}))?.template
+    template=(await Program.findOne({name: data.children[0].name, origin: null}))?.template
   }
 
-  if (template) {
+  if (!template) {
     console.error(`No template for session ${data._id}, program ${data.children[0].name}`)
     return null
   }
@@ -71,11 +61,11 @@ const getSessionCertificate = async (userId, params, data) => {
       level_1:[],
     }
   
-    const pdfPath=program.template.url
+    const pdfPath=template.url
     const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
     const buffer=await pdf.save()
     const filename=`${data.code}-${trainee.fullname}.pdf`
-    const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
+    await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
     return {filename: filename, buffer}
   }))
 
@@ -85,7 +75,6 @@ const getSessionCertificate = async (userId, params, data) => {
     zip.addFile(filename, buffer)
   })
   const buffer=zip.toBuffer()
-  console.log(buffer)
   const filename=`Certificats-${data.code}.zip`
   const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificates', mimeType: mime.lookup(filename)}).catch(console.error)
   return Location

@@ -116,7 +116,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'note_str', requires: 'note,success_scale,success_note_max,type', getterFn: getBlockNoteStr})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
-  declareComputedField({model, field: 'proof', getterFn: getSessionProof})
+  declareComputedField({model, field: 'proof', requires: 'trainees.fullname' ,getterFn: getSessionProof})
   declareComputedField({model,  field: 'certificate', requires: 'type,trainees.fullname,children,end_date,location,code', getterFn: getSessionCertificate })
 })
 
