@@ -377,7 +377,7 @@ const CustomerFreelanceSchema = new Schema({
   },
   interested_by: {
     type: [{
-      type: Object.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'freelance',
       required: true
     }],
