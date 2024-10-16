@@ -57,6 +57,10 @@ describe('Test session/trainees polling', () => {
     console.log('echange directory', getExchangeDirectory())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Apprenant.csv'), new Date(), new Date())
     await fs.utimesSync(path.join(getExchangeDirectory(), 'Session_Formateur.csv'), new Date(), new Date())
+
+    // Clear sessions and Aftral trainers/trainees
+    await Block.remove({type: BLOCK_TYPE_SESSION}).then(res => console.log(`Deleted ${res.deletedCount} sessions`))
+    await User.remove({aftral_id: {$gt : 0}}).then(res => console.log(`Deleted ${res.deletedCount} users`))
     await pollNewFiles()
     const sessions=await Session.find({aftral_id: {$ne: null}}).populate(['trainers', 'trainees', 'children'])
     console.log(sessions.map(s => ({
