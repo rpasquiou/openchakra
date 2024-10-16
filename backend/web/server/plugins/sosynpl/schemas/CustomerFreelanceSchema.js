@@ -374,7 +374,15 @@ const CustomerFreelanceSchema = new Schema({
   },
   temporary_picture: {
     type: String,
-  }
+  },
+  interested_by: {
+    type: [{
+      type: Object.Types.ObjectId,
+      ref: 'freelance',
+      required: true
+    }],
+    default: [],
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
