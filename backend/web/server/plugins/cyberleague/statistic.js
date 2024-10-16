@@ -62,8 +62,7 @@ const computeBellwetherStatistics = async (filters) => {
   //Getting scores that will be used to do statistics
   let scores
 
-  if (companyFilter != {}) {
-
+  if (Object.keys(companyFilter).length > 0) {    
     const companies = await Company.find(companyFilter)
 
     const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
