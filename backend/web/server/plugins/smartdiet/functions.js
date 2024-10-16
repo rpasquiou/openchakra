@@ -693,8 +693,7 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
   // Validate appointment if this is a progress quizz answer
   if (model=='userQuizzQuestion') {
     const quizz=await UserQuizz.findOne({questions: id, type: QUIZZ_TYPE_PROGRESS})
-    const coaching=await Coaching.findOne({progress: quizz}).populate('latest_appointments')
-    const appt=coaching?.latest_appointments?.[0]
+    const appt=await Appointment.findOne({progress: quizz})
     if (appt) {
       appt.validated=true
       await appt.save().catch(console.error)
