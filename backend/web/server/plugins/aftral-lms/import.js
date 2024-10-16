@@ -437,7 +437,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   let result=[]
   const trainees=await loadRecords(traineesFilename)
   const trainers=await loadRecords(trainersFilename)
-  let sessions=lodash(trainers)
+  let sessions=lodash(trainees)
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
       const sess_trainers=trainers.filter(t => t[SESSION_AFTRAL_ID]==s[SESSION_AFTRAL_ID])
@@ -447,9 +447,9 @@ const importSessions = async (trainersFilename, traineesFilename) => {
         CODE_PRODUIT: s.CODE_PRODUIT,
         TRAINERS: sess_trainers,
         TRAINEES: sess_trainees,
-        DATE_DEBUT_SESSION:sess_trainees[0]?.DATE_DEBUT_SESSION,
-        DATE_FIN_SESSION:sess_trainees[0]?.DATE_FIN_SESSION,
-        NOM_CENTRE:sess_trainees[0]?.NOM_CENTRE,
+        DATE_DEBUT_SESSION: s.DATE_DEBUT_SESSION,
+        DATE_FIN_SESSION: s.DATE_FIN_SESSION,
+        NOM_CENTRE: s.NOM_CENTRE,
     }
     })
     .value()
