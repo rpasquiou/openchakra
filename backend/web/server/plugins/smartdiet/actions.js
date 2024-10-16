@@ -391,6 +391,11 @@ const buyPack = async ({value}, sender) => {
 }
 addAction('smartdiet_buy_pack', buyPack)
 
+const validateAction = async ({value}, sender) => {
+  return Appointment.findByIdAndUpdate(value, {validated: true})
+}
+addAction('validate', validateAction)
+
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
@@ -460,6 +465,11 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     return true
   } 
 
+  if (action=='validate') {
+    if (!(await Appointment.exists({_id: dataId}))) {
+      throw new NotFoundError(`Rendez-vous ${value} introuvable`)
+    }
+  }
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
   return promise
     .then(modelName => {

@@ -711,6 +711,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  validate: {
+    label: 'Validate',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
