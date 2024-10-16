@@ -175,7 +175,7 @@ const CustomerFreelanceSchema = new Schema({
   },
   google_visible: {
     type: Boolean,
-    default: false,
+    default: true,
     required: [function() {return isFreelance(this)}, `La visibilité Google est obligatoire`]
   },
   hard_skills_categories: [{
