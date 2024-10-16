@@ -1782,6 +1782,7 @@ module.exports={
   importOperators,
   importProspectsC1,
   importPatientsNoCoachingC1,
+  loadRecords,
 }
 
 
