@@ -29,20 +29,20 @@ const regexTest = (field, text) => {
 const getIncreaseValue = (field, answer) => {
   //need specs to complete
   const expectedAnswer = {
-    securityIncidentManagement: ANSWER_NO, //for example
-    partner: ANSWER_YES, // for example
-    inventory: 'todo',
-    insurance: 'todo',
-    cyberRef: 'todo',
-    intrusion: 'todo',
-    externalized: 'todo',
-    webApp: 'todo',
-    antivirus: 'todo',
-    charter: 'todo',
-    financial: 'todo',
-    sensibilization: 'todo',
-    mfa: 'todo',
-    admin: 'todo',
+    securityIncidentManagement: ANSWER_YES,
+    partner: ANSWER_YES,
+    inventory: ANSWER_YES,
+    insurance: ANSWER_YES,
+    cyberRef: ANSWER_YES,
+    intrusion: ANSWER_NO,
+    externalized: ANSWER_YES,
+    webApp: ANSWER_YES,
+    antivirus: ANSWER_YES,
+    charter: ANSWER_NO,
+    financial: ANSWER_YES,
+    sensibilization: ANSWER_NO,
+    mfa: ANSWER_YES,
+    admin: ANSWER_YES,
   }
 
   return answer == expectedAnswer[field]
