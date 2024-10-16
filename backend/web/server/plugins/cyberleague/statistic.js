@@ -115,9 +115,9 @@ const computeBellwetherStatistics = async (filters) => {
   res.enoughScores = scores.length < STAT_MIN_SCORES ? ENOUGH_SCORES_NO : ENOUGH_SCORES_YES
 
   //if less answers than STAT_MIN_SCORES stats are not relevant
-  if (res.enoughScores == ENOUGH_SCORES_NO) {
-    return res
-  }
+  // if (res.enoughScores == ENOUGH_SCORES_NO) {
+  //   return res
+  // }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
   const cleanScores = scores.map((s)=> {
