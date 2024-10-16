@@ -3,7 +3,7 @@ const Company = require("../../models/Company")
 const Score = require("../../models/Score")
 const User = require("../../models/User")
 const Statistic = require("../../models/Statistic")
-const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES } = require("./consts")
+const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES, COMPLETED_YES } = require("./consts")
 
 
 const regexTest = (field, text) => {
@@ -67,13 +67,14 @@ const computeBellwetherStatistics = async (filters) => {
 
     const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
 
-    scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}}).populate([
-      {path: 'answers', populate: {path:'answer'}},
-      {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}, populate: {path: 'text'}}}
+    scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}, completed: COMPLETED_YES}).populate([
+      {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}}}
     ])
 
   } else {
-    scores = await Score.find()
+    scores = await Score.find({completed: COMPLETED_YES}).populate([
+      {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}}}
+    ])
   }
 
   const fields = [
