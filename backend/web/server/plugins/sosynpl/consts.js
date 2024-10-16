@@ -436,7 +436,7 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   rate: 'tarif horaire',
   description: 'description',
   work_mode: 'mode de travail',
-  work_company_size: 'taille de l\'entreprise',
+  work_company_size: 'préférence de taille d\'entreprise',
   mobility: 'mobilité',
   expertises: 'expertises',
   experiences: 'expériences',

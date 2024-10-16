@@ -34,15 +34,15 @@ const freelanceMissingAttributes = (user) => {
     }
   })
   
-  SOFT_SKILLS_ATTR.forEach((skillAttr) => {
-    if (!user[skillAttr] || user[skillAttr].length === 0) {
-      const skillString = FREELANCE_OUTPUT_ATTRIBUTES[skillAttr] || skillAttr
-      missingAttr = [...missingAttr, skillString]
-    }
-  })
+
+  if (!user['bronze_soft_skills'] || user['bronze_soft_skills'].length === 0) {
+    const skillString = 'soft skills'
+    missingAttr = [...missingAttr, skillString]
+  }
+
 
   if (!user['expertises'] || user['expertises'].length < 3) {
-    missingAttr = [...missingAttr, 'au moins 3 expertises']
+    missingAttr = [...missingAttr, 'au moins 3 compétences']
   }
   missingAttr = missingAttr.join(` - `)
   return missingAttr.charAt(0).toUpperCase() + missingAttr.slice(1)
