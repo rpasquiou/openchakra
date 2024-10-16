@@ -1,6 +1,7 @@
 const path = require("path")
 const fs = require("fs")
-const { logFormFields, fillForm, savePDFFile, fillForm2 } = require("../../utils/fillForm")
+const lodash = require("lodash")
+const { logFormFields, fillForm, savePDFFile, fillForm2, getPDFBytes } = require("../../utils/fillForm")
 
 const DATA_PATH=path.join(__dirname, '..', 'data', 'misc')
 const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation.pdf')
@@ -20,8 +21,8 @@ describe('Misc text tests', () => {
       session_name: 'PSWAHJKDGHJK75 - PAWW01 Sesion matières dangereuses',
       start_date: '10/10/2024', end_date: '15/10/2024',
       trainee_fullname: 'Jean-Robert', first_connection: '10/15/2024',
-      total_spent_time_str: '12h15',
-      total_resources_progress: '20%',
+      spent_time_str: '12h15',
+      resources_progress: '20%',
       creation_date: '15/10/2024',
       achievement_status: 'En cours',
       level_1: [{
