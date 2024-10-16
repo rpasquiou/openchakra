@@ -171,7 +171,7 @@ const computeBellwetherStatistics = async (filters) => {
     }
   })
 
-  res = new Statistic(...res)
+  res = new Statistic(res)
   await res.validate()
 
   return res
