@@ -184,6 +184,11 @@ const updateMarketScore = async (_category_rates) => {
   }
 }
 
+const getAnswerIndex = async (userId, params, data) => {
+  const score = await Score.findOne({answers: data._id})
+  return 1+lodash.findIndex(score.answers, (a)=> idEqual(a, data._id))
+}
+
 module.exports = {
   computeScoresIfRequired,
   getQuestionsByCategory,
@@ -191,4 +196,5 @@ module.exports = {
   getCategoryRates,
   updateMarketScore,
   getChartData,
+  getAnswerIndex
 }

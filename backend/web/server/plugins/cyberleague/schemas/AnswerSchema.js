@@ -19,6 +19,10 @@ const AnswerSchema = new Schema({
     type: Number,
     required: false
   },
+  index: {
+    type: Number,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

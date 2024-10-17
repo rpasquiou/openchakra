@@ -26,7 +26,7 @@ const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
 const { getConversationPartner } = require('./conversation')
 const ExpertiseCategory = require('../../models/ExpertiseCategory')
-const { getQuestionsByCategory, computeScoresIfRequired, getCategoryRates, updateMarketScore, getChartData } = require('./score')
+const { getQuestionsByCategory, computeScoresIfRequired, getCategoryRates, updateMarketScore, getChartData, getAnswerIndex } = require('./score')
 const Conversation = require('../../models/Conversation')
 const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
@@ -348,6 +348,7 @@ declareEnumField({model: 'score', field: 'completed', enumValues: COMPLETED})
 
 //Answer declaration
 declareEnumField( {model: 'answer', field: 'answer', enumValues: ANSWERS})
+declareComputedField({model: 'answer', field: 'index', getterFn: getAnswerIndex})
 
 //Question declarations
 declareEnumField( {model: 'question', field: 'min_level', enumValues: SCORE_LEVELS})
