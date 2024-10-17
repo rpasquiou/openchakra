@@ -1014,11 +1014,13 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  suspend_account: ({value}) => {
+  suspend_account: ({value, props, getComponentValue, level}) => {
+    const reason = getComponentValue(props.reason, level)
     let url = `${API_ROOT}/action`
     const body = {
       action: 'suspend_account',
       value: value._id,
+      reason,
     }
     return axios.post(url, body)
   },

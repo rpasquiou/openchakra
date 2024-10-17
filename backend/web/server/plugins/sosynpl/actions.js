@@ -10,10 +10,10 @@ const { getModel, loadFromDb, idEqual, setpreLogin } = require("../../utils/data
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
 const { addAction, setAllowActionFn, ACTIONS } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
-const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT, ROLE_FREELANCE, MISSION_STATUS_CURRENT, MISSION_STATUS, ROLE_CUSTOMER, MISSION_STATUS_FREELANCE_FINISHED} = require("./consts")
+const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT, ROLE_FREELANCE, MISSION_STATUS_CURRENT, MISSION_STATUS, ROLE_CUSTOMER, MISSION_STATUS_FREELANCE_FINISHED, SUSPEND_REASON} = require("./consts")
 const {clone, canCancel, cancelAnnounce} = require('./announce')
 const AnnounceSuggestion = require("../../models/AnnounceSuggestion")
-const { sendSuggestion2Freelance, sendApplication2Customer, sendForgotPassword } = require("./mailing")
+const { sendSuggestion2Freelance, sendApplication2Customer, sendForgotPassword, sendAccountSuspended, sendFreelanceValidated } = require("./mailing")
 const { sendQuotation } = require("./quotation")
 const { canAcceptApplication, acceptApplication, refuseApplication, canRefuseApplication } = require("./application")
 const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport, canRefuseReport } = require("./report")
@@ -23,8 +23,11 @@ const { generatePassword } = require("../../../utils/passwords")
 
 const preLogin = async ({email}) => {
   const user=await CustomerFreelance.findOne({email})
-  if (user && [ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_DISABLED].includes(user.activity_status)) {
-    throw new ForbiddenError(`Votre compte est inactif`)
+  if (user && ACTIVITY_STATE_SUSPENDED==user.activity_status) {
+    throw new ForbiddenError(`Ce compte est suspendu`)
+  }
+  if (user && ACTIVITY_STATE_DISABLED==user.activity_status) {
+    throw new ForbiddenError(`Ce compte est désactivé`)
   }
 }
 
@@ -55,25 +58,31 @@ addAction('deactivateAccount', deactivateAccount)
 const suspendAccount = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'suspend_account', dataId: value, user})
   if (!ok) {return false}
+  if (!reason) {
+    throw new BadRequestError(`La raison est obligatoire`)
+  }
   const model=await getModel(value)
   await mongoose.models[model].findByIdAndUpdate(
     value,
     {activity_status: ACTIVITY_STATE_SUSPENDED, suspended_reason: reason},
     {runValidators: true, new: true},
   )
+  const loadedUser=await mongoose.models[model].findById(value)
+  await sendAccountSuspended({user: loadedUser, suspend_reason: SUSPEND_REASON[reason]})
 }
 addAction('suspend_account', suspendAccount)
 
 const activateAccount = async ({value, reason}, user) => {
   const ok=await isActionAllowed({action:'activate_account', dataId: value, user})
-  console.log('can activate', !!ok)
   if (!ok) {return false}
   const model=await getModel(value)
-  return mongoose.models[model].findByIdAndUpdate(
+  await mongoose.models[model].findByIdAndUpdate(
     value,
     {activity_status: ACTIVITY_STATE_ACTIVE, suspended_reason:null},
     {runValidators: true, new: true},
   )
+  const loadedUser=await User.findById(value)
+  await sendFreelanceValidated({user: loadedUser})
 }
 addAction('activate_account', activateAccount)
 
