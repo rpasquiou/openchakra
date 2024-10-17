@@ -11,6 +11,18 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 
+let preLogin=null
+
+const setpreLogin = fn => {
+  preLogin=fn
+}
+
+const callPreLogin = async p => {
+  if (preLogin) {
+    return preLogin(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -1139,6 +1151,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin, 
 }
 

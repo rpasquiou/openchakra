@@ -6,9 +6,9 @@ const Announce = require("../../models/Announce")
 const Application = require("../../models/Application")
 const Quotation = require("../../models/Quotation")
 const CustomerFreelance = require("../../models/CustomerFreelance")
-const { getModel, loadFromDb, idEqual } = require("../../utils/database")
+const { getModel, loadFromDb, idEqual, setpreLogin } = require("../../utils/database")
 const { NotFoundError, BadRequestError, ForbiddenError } = require("../../utils/errors")
-const { addAction, setAllowActionFn } = require("../../utils/studio/actions")
+const { addAction, setAllowActionFn, ACTIONS } = require("../../utils/studio/actions")
 const { ROLE_ADMIN } = require("../smartdiet/consts")
 const { ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_ACTIVE, ACTIVITY_STATE_DISABLED, ANNOUNCE_STATUS_DRAFT, ANNOUNCE_SUGGESTION_REFUSED, APPLICATION_STATUS_DRAFT, APPLICATION_STATUS_SENT, QUOTATION_STATUS_DRAFT, ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_SUGGESTION_SENT, ROLE_FREELANCE, MISSION_STATUS_CURRENT, MISSION_STATUS, ROLE_CUSTOMER, MISSION_STATUS_FREELANCE_FINISHED} = require("./consts")
 const {clone, canCancel, cancelAnnounce} = require('./announce')
@@ -20,6 +20,15 @@ const { canAcceptReport, sendReport, acceptReport, refuseReport, canSendReport, 
 const Mission = require("../../models/Mission")
 const Evaluation = require("../../models/Evaluation")
 const { generatePassword } = require("../../../utils/passwords")
+
+const preLogin = async ({email}) => {
+  const user=await CustomerFreelance.findOne({email})
+  if (user && [ACTIVITY_STATE_SUSPENDED, ACTIVITY_STATE_DISABLED].includes(user.activity_status)) {
+    throw new ForbiddenError(`Votre compte est inactif`)
+  }
+}
+
+setpreLogin(preLogin)
 
 const validate_email = async ({ value }) => {
   const user=await User.exists({_id: value})
