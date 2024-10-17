@@ -380,8 +380,7 @@ const MISSION_REMINDER_DELAY=3
 const PENDING_QUOTATION_DELAY=[2,3]
 const MISSING_QUOTATION_DELAY=2
 
-[#149]
-// Commission on customer
+// [#149] Commission on customer
 const MER_RATE=0.1
 // Commission on TI
 const AA_RATE=0
