@@ -463,13 +463,16 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   const previousSessions = await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))
   const progressCb = (index, total) => index % 10 == 0 && console.log(index, '/', total)
   const oneAdmin = await User.findOne({ role: ROLE_ADMINISTRATEUR })
-  const importResult = await importData({
-    model: 'session', data: sessions,
-    mapping: SESSION_MAPPING(oneAdmin),
-    identityKey: SESSION_KEY,
-    migrationKey: SESSION_KEY,
-    progressCb
-  })
+  let importResult=[]
+  if (sessions.length>0) {
+    importResult = await importData({
+      model: 'session', data: sessions,
+      mapping: SESSION_MAPPING(oneAdmin),
+      identityKey: SESSION_KEY,
+      migrationKey: SESSION_KEY,
+      progressCb
+    })
+  }
   result = [...importResult]
 
   // Set programs
@@ -500,6 +503,23 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     }
   }))
   result = [...result, ...programsResult]
+
+
+  const trainersResult=await Promise.allSettled(trainers.map(async t => {
+    const session=await Block.findOne({type: 'session', code: t[SESSION_AFTRAL_ID]})
+    if (!session) {
+      throw new Error(`Ajout formateur: session ${t[SESSION_AFTRAL_ID]} introuvable`)
+    }
+    const trainer=await User.findOne({[TRAINER_KEY]: t[TRAINER_AFTRAL_ID]})
+    if (!trainer) {
+      throw new Error(`Ajout formateur: formateur ${t[TRAINER_KEY]} introuvable`)
+    }
+    console.log('HERE', session._id, trainer._id)
+    await Session.findByIdAndUpdate(session._id, {$addToSet: {trainers: trainer._id}}).then(console.log)
+  }))
+
+  result = [...result, ...trainersResult]
+
   return result
 }
 

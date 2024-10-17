@@ -37,7 +37,7 @@ const pollNewFiles = async () => {
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
         .then(res => {
           console.log(res)
-          errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason.message}`).filter(v => !lodash.isEmpty(v))]
+          errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason}`).filter(v => !lodash.isEmpty(v))]
           return res
         })
     }
