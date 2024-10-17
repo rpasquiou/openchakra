@@ -125,6 +125,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     id = user?._id || 'INVALIDID'
   }
 
+  if (model=='jobUser' && !id) {
+    // Must not return hidden users's  jobUsers 
+    const userIds=(await User.find({hidden: true})).map(u => u._id)
+    params['filter.user']={$nin: userIds}
+  }
   if (model == 'jobUser' && params?.['filter.search_field']) {
     if (id) {
       const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
@@ -549,30 +554,6 @@ declareEnumField( {model: 'purchase', field: 'status', enumValues: PURCHASE_STAT
 declareComputedField({model: 'message', field: 'mine', requires: 'sender', getterFn: isMine})
 /** End MESSAGE */
 
-const filterDataUser = ({ model, data, user }) => {
-  if (model === 'jobUser') {
-    return Promise.all(
-      data.map((job) =>
-        JobUser.findById(job._id)
-          .populate('user')
-          .then((dbJob) => {
-            if(user && idEqual(user._id, dbJob.user._id)) {
-              return null
-            }
-
-            if (
-              !dbJob?.user?.hidden
-            ) {
-              return job
-            }
-            return null
-          })
-      )
-    ).then((jobs) => jobs.filter((v) => !!v))
-  }
-  return data
-}
-setFilterDataUser(filterDataUser)
 
 const getDataPinned = (userId, params, data) => {
   const pinned=data?.pins?.some(l => idEqual(l._id, userId))
