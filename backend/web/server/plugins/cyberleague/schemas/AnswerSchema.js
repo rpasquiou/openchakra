@@ -14,7 +14,11 @@ const AnswerSchema = new Schema({
     type: String,
     enum: Object.keys(ANSWERS),
     required: false
-  }
+  },
+  total_questions: {
+    type: Number,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

@@ -128,7 +128,7 @@ const createScore = async (creatorId, scoreLevel) => {
   const questions = await Question.find(level_filtered)
 
   const answers=await Promise.all(questions.map(async q => {
-    return Answer.create({question: q._id})
+    return Answer.create({question: q._id, total_questions: questions.length})
   }))
 
   return Score.create({creator: creatorId, completed: COMPLETED_NO, level: scoreLevel, answers: answers})
