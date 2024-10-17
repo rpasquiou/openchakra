@@ -625,9 +625,6 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     await computeScoresIfRequired(score._id)
   }
 
-console.log('attribute',attribute);
-console.log('value', value);
-
   if (model == 'post') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     if (attribute == 'liked') {
