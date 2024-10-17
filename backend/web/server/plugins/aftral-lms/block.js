@@ -5,7 +5,7 @@ const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED } = require("./consts");
 const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -18,6 +18,7 @@ const { sendBufferToAWS } = require("../../middlewares/aws");
 const { fillForm2, logFormFields } = require("../../../utils/fillForm");
 const { formatDate, formatPercent } = require('../../../utils/text');
 const { isDevelopment } = require('../../../config/config');
+const Block = require('../../models/Block');
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
@@ -201,19 +202,6 @@ const onBlockFinished = async (user, block) => {
 
 const onBlockAction = async (user, block) => {
   const bl=await mongoose.models.block.findById(block)
-  // Is it a scorm ?
-  if (bl.resource_type==RESOURCE_TYPE_SCORM) {
-    const scormData=await getBlockScormData(user, block)
-    const scormSuccess=scormData?.['cmi.core.lesson_status']=='passed'
-    const scormMinNoteReached=!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
-    if (scormSuccess || scormMinNoteReached)  {
-      if (!(await isFinished(user, block))) {
-        await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-        return onBlockFinished(user, block)
-      }
-    }
-    return
-  }
   // Homework priority on other rules
   if (bl.homework_mode) {
     const homeworks=await Homework.find({trainee: user, resource: block}).sort({[CREATED_AT_ATTRIBUTE]: 1})
@@ -221,7 +209,7 @@ const onBlockAction = async (user, block) => {
     if (!!latest_homework) {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
-    if (!(await isFinished(user, block))) {
+      if (!(await isFinished(user, block))) {
           await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
           return onBlockFinished(user, block)
         }
@@ -730,6 +718,23 @@ const updateSessionStatus = async (sessionId, trainee) => {
 
 const setScormData= async (userId, blockId, data) => {
   await saveBlockScormData(userId, blockId, data)
+  const block=await Block.findById(blockId)
+  console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}, null, 2))
+  const scormData=await getBlockScormData(userId, block)
+  const lesson_status=scormData?.['cmi.core.lesson_status']
+  // If a min note is defined on the resource, use it
+  const hasNote=!!scormData?.['cmi.core.score.raw']
+  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
+  const update={
+    success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
+    finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
+    consult_full: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status),
+  }
+  await Progress.findOneAndUpdate(
+    {block, user: userId},
+    {block, user: userId, ...update},
+    {upsert: true},
+  )
   await onBlockAction(userId, blockId)
 }
 
