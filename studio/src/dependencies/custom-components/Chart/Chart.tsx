@@ -131,6 +131,12 @@ const OwnChart = (
           }))
         }
 
+        //Change color of boxes around axis numbers
+        options.scales.r.ticks = {
+          color: 'white',
+          backdropColor: 'black'
+        }
+
       } else {
 
         const dateSeries=value?.some(v => !!v.date)
