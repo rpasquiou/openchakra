@@ -485,7 +485,10 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
   declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
-  declareVirtualField({model, field: 'freelance_profile_completion', requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), instance: 'Number'})
+  declareVirtualField({model, field: 'freelance_profile_completion', 
+    requires:['expertises', ...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), 
+    instance: 'Number',
+  })
   declareVirtualField({
     model, field: 'freelance_missing_attributes', instance: 'Array', multiple: true, requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'mobility_city', 'mobility_city_distance'].join(','),
     caster: {

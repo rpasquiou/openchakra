@@ -143,7 +143,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     filter['filter.work_sector'] = { $in: data.sectors.map(s => s._id) }
   }
   if (!lodash.isEmpty(data.expertises)) {
-    filter['filter.expertises'] = { $in: data.expertises.map(e => e._id) }
+    filter['filter.expertises'] = { $in: data.expertises.map(s => s._id) }
   }
   if (!!data.available) {
     filter['filter.availability'] = AVAILABILITY_ON
@@ -162,7 +162,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     model: 'customerFreelance',
     fields,
     user: userId,
-    params: lodash.omitBy(filter, (_, k) => /^limit./.test(k)),
+    params: lodash.omitBy(filter, (_, k) => /^limit/.test(k)),
     search_field: SEARCH_FIELD_ATTRIBUTE,
     search_value: data.pattern || '',
   })
