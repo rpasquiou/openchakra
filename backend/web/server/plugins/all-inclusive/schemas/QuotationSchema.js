@@ -78,7 +78,7 @@ QuotationSchema.virtual('customer_total', DUMMY_REF).get(function() {
 
 QuotationSchema.virtual('mer_ht', DUMMY_REF).get(function() {
   // Mission without customer => handled by TIPI
-  const mer_rate=this.mission?.job?.user?.qualified ? MER_RATE : 0
+  const mer_rate=MER_RATE
   return this.gross_ht*mer_rate
 })
 
