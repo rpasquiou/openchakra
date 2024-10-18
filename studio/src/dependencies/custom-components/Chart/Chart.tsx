@@ -137,6 +137,9 @@ const OwnChart = (
           backdropColor: 'black'
         }
 
+        //Change color of legend label
+        options.plugins.legend.labels.color = 'white'
+
       } else {
 
         const dateSeries=value?.some(v => !!v.date)
