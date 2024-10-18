@@ -659,13 +659,13 @@ const getFieldsToCompute = ({model, fields}) => {
 }
 
 const addComputedFields = (
-  fields,
+  originalFields,
   userId,
   queryParams,
   data,
   model,
 ) => {
-  fields=getFieldsToCompute({model, fields})
+  let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
   }
@@ -693,16 +693,18 @@ const addComputedFields = (
       }))
       .then(() => {
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
-        const presentCompFields = lodash(fields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
+        const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
 
         return Promise.all(
-          Object.keys(requiredCompFields).map(f =>
-            requiredCompFields[f](newUserId, queryParams, data)
+          Object.keys(requiredCompFields).map(f => {
+            const displayFields=getRequiredSubFields(originalFields, f)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
               .then(res => {
                 data[f] = res
                 return data
               })
+            }
           ),
       )})
       .then(() => data)

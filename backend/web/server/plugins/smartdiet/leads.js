@@ -4,8 +4,9 @@ const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const { extractData, guessFileType } = require('../../../utils/import')
 const lodash=require('lodash')
-const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL, ROLE_SUPER_ADMIN } = require('./consts')
+const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL, ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET } = require('./consts')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
+const { loadFromDb } = require('../../utils/database')
 
 const VALID_CALLS={'Entrant': CALL_DIRECTION_IN_CALL, 'Sortant': CALL_DIRECTION_OUT_CALL}
 const VALID_CONSENT={'Oui': true, 'Non': false}
@@ -117,41 +118,22 @@ const importLeads= async (buffer, user) => {
 }
 
 const getCompanyLeads = async (userId, params, data, fields) => {
-  const userRole=(await User.findById(userId))?.role
-  params=lodash.mapKeys(params, (v, k) => k.replace('.leads', ''))
-  let filter=lodash(params)
-    .pickBy((v, k) => /filter\./.test(k))
-    .mapKeys((v, k) => k.replace(/filter\./, ''))
+  const role=(await User.findById(userId))?.role
+
+  params=lodash(params)
+    .pickBy((_, k) => /^limit.leads/.test(k) || /^sort.leads/.test(k) || /^filter.leads/.test(k))
+    .mapKeys((_, k) => k.replace(/^limit.leads/, 'limit').replace(/^sort.leads/, 'sort').replace(/^filter.leads/, 'filter'))
     .value()
-  if (![ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(userRole)) {
-    filter={$and: [
-      {company_code: data.code},
-      filter,
-      {$or: [{call_status: CALL_STATUS_TO_CALL}, {operator: userId}]}
-    ]}
-  }
-  const sort=lodash(params)
-    .pickBy((v, k) => /sort\./.test(k))
-    .mapKeys((v, k) => k.replace(/sort\./, ''))
-    .value()
-  let query=Lead.find(filter).sort(sort)
-  query = query.populate({
-    path: 'registered_user',
-    populate: {
-      path: 'latest_coachings',
-      populate: {
-        path: 'appointments'
-      }
-    }
-  })
-  if (params.page) {
-    query=query.skip(parseInt(params.page)*parseInt(params.limit))
-  }
-  if (params.limit) {
-    query=query.limit(parseInt(params.limit)+1)
-  }
-  query.sort({update_date: 'desc'})
-  return query
+
+    // Filter lads from their company
+  params['filter.company_code']=data.code
+
+  // To call allowed for any diet, else only their leads
+  if (role==ROLE_EXTERNAL_DIET && params['filter.call_status']!=CALL_STATUS_TO_CALL) {
+    params['filter.operator']=userId
+  }    
+  return loadFromDb({model: 'lead', fields, user: userId, params})
+    .then(res => res.map(r => new Lead(r)))
 }
 
 module.exports={
