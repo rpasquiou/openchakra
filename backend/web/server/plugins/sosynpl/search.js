@@ -128,7 +128,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
 const searchFreelances = async (userId, params, data, fields)  => {
   let filter = { ...params, 'filter.role': ROLE_FREELANCE }
 
-  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences']
+  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises']
 
   if (!lodash.isEmpty(data.work_modes)) {
     filter['filter.work_mode'] = { $in: data.work_modes }
@@ -140,10 +140,10 @@ const searchFreelances = async (userId, params, data, fields)  => {
     filter['filter.main_experience'] = { $in: data.experiences }
   }
   if (!lodash.isEmpty(data.sectors)) {
-    filter['filter.work_sector'] = { $in: data.sectors }
+    filter['filter.work_sector'] = { $in: data.sectors.map(s => s._id) }
   }
   if (!lodash.isEmpty(data.expertises)) {
-    filter['filter.expertises'] = { $in: data.expertises }
+    filter['filter.expertises'] = { $in: data.expertises.map(e => e._id) }
   }
   if (!!data.available) {
     filter['filter.availability'] = AVAILABILITY_ON
@@ -162,7 +162,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     model: 'customerFreelance',
     fields,
     user: userId,
-    params: filter,
+    params: lodash.omitBy(filter, (_, k) => /^limit./.test(k)),
     search_field: SEARCH_FIELD_ATTRIBUTE,
     search_value: data.pattern || '',
   })
@@ -175,13 +175,13 @@ const searchFreelances = async (userId, params, data, fields)  => {
     })
   }
 
+  freelances = freelances.filter(c => c.freelance_profile_completion === 1)
+
   // Limiter les résultats si aucun critère n'a été fourni
   if (!data.pattern?.trim() && !data.city) {
     freelances = freelances.slice(0, MAX_RESULTS_NO_CRITERION)
   }
 
-  freelances = freelances.filter(c => c.freelance_profile_completion === 1)
-  console.log(JSON.stringify(freelances, null, 1))
   freelances = Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
   return freelances
 }
