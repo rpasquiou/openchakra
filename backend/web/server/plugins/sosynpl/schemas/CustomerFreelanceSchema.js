@@ -372,9 +372,6 @@ const CustomerFreelanceSchema = new Schema({
     type: String,
     required: false,
   },
-  temporary_picture: {
-    type: String,
-  },
   interested_by: {
     type: [{
       type: Schema.Types.ObjectId,
