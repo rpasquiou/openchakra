@@ -18,9 +18,12 @@ const Metadata = ({
   metaFavicon32?: string
   metaGaTag?: string | null
 }) => {
+
+  const isProduction = process.env.MODE == 'production'
+
   return (
     <Head>
-      <meta name="robots" content="noindex, nofollow" />
+      {!isProduction && <meta name="robots" content="noindex, nofollow" />}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="theme-color" content="#000000" />
       <meta name="description" content={metaDescription} />
