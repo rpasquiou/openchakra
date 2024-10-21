@@ -132,7 +132,8 @@ const getCompanyLeads = async (userId, params, data, fields) => {
   if (role==ROLE_EXTERNAL_DIET && params['filter.call_status']!=CALL_STATUS_TO_CALL) {
     params['filter.operator']=userId
   }    
-  return loadFromDb({model: 'lead', fields, user: userId, params})
+  return loadFromDb({model: 'lead', fields: [...fields, 'fullname', 'firstname', 'lastname'], user: userId, params})
+    .then(leads => leads.map(l => new Lead(l)))
 }
 
 module.exports={
