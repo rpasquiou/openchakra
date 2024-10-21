@@ -1,5 +1,6 @@
 const path=require('path')
 const lodash=require('lodash')
+const moment=require('moment')
 const { getDatabaseUri } = require('../../config/config')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const mongoose = require('mongoose')
@@ -17,13 +18,18 @@ const fixNeverValidated = async () => {
     .filter(r => parseInt(r.status) <= 1)
     .map(r => r.SDCONSULTID)
   // Amongst them, find the ones whose progress are empty
-  await Promise.all(invalidAppointments.map(async smartdiet_id => {
+  return Promise.all(invalidAppointments.map(async smartdiet_id => {
     const appt=await Appointment.findOne({migration_id: smartdiet_id}).populate({path: 'progress', populate: 'questions'})
     if (appt) {
       const someAnswered=appt.progress.questions.some(q => !!q.single_enum_answer)
       if (!appt.validated && !!someAnswered) {
         console.log(appt._id, 'to validate because not valid in import but progress changed')
         appt.validated=true
+        return appt.save()
+      }
+      if (appt.validated && !someAnswered) {
+        console.log(appt._id, 'to devalidate because not valid in import and no progress changed')
+        appt.validated=false
         return appt.save()
       }
     }
@@ -36,8 +42,8 @@ const fixNeverValidated = async () => {
 // All appts not valid in import file having no progress must not be valid
 const fixNotValidWithAnswers = async () => {
   // Find all not validated appointments but having answers
-  const appts=await Appointment.find({validated: {$ne: true}}).populate({path: 'progress', populate: 'questions'})
-  await Promise.all(appts.map(async appt => {
+  const appts=await Appointment.find({validated: {$ne: true}, start_date: {$lte: moment()}}).populate({path: 'progress', populate: 'questions'})
+  return Promise.all(appts.map(async appt => {
     const someAnswered=appt.progress.questions.some(q => !!q.single_enum_answer)
     if (someAnswered) {
       console.log(appt._id, 'to validate because not valid in DB but progress changed')
