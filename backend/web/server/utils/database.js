@@ -1003,7 +1003,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        // .then(data =>  retainRequiredFields({data, fields}))
+        .then(data =>  retainRequiredFields({data, fields}))
     })
 
 }
