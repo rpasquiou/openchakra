@@ -133,7 +133,6 @@ const getCompanyLeads = async (userId, params, data, fields) => {
     params['filter.operator']=userId
   }    
   return loadFromDb({model: 'lead', fields, user: userId, params})
-    .then(res => res.map(r => new Lead(r)))
 }
 
 module.exports={
