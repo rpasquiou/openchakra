@@ -305,7 +305,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
 
   let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
   let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
-  const remaining=sorted.slice(lastLevel+1)
+  const remaining=lastLevel>-1 ? sorted.slice(lastLevel+1) : []
   
   let compIdx=0
   for (const fieldName in data) {
