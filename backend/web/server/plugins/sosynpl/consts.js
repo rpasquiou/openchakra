@@ -433,7 +433,7 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   legal_status: 'forme juridique',
   work_sector: 'secteur d\'activité',
   headquarter_address: 'adresse du siège de l\'entreprise',
-  rate: 'tarif horaire',
+  rate: 'tarif journalier',
   description: 'description',
   work_mode: 'mode de travail',
   work_company_size: 'préférence de taille d\'entreprise',
