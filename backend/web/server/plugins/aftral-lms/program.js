@@ -1,11 +1,11 @@
 const mime=require('mime-types')
 const Program=require('../../models/Program')
 const { getResourcesProgress, getBlockResources } = require('./resources')
-const { fillForm2 } = require('../../../utils/fillForm')
+const { fillForm2, getFormFields } = require('../../../utils/fillForm')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
 const { BLOCK_TYPE_SESSION } = require('./consts')
-const { formatDateTime } = require('../../../utils/text')
+const { formatDateTime, formatPercent, formatDate } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
 const { isDevelopment } = require('../../../config/config')
@@ -46,8 +46,8 @@ const getSessionCertificate = async (userId, params, data) => {
   let template=(await Program.findOne(data.children[0]._id).populate('template'))?.template
 
   if (!template) {
-    console.warn(`Getting certificate in the program`)
-    template=(await Program.findOne({name: data.children[0].name, origin: null}))?.template
+    console.warn(`Getting certificate in the program`, data.children[0].name)
+    template=(await Program.findOne({name: data.children[0].name, origin: null}).populate('template'))?.template
   }
 
   if (!template) {
@@ -55,12 +55,37 @@ const getSessionCertificate = async (userId, params, data) => {
     return null
   }
 
-  const locations=await Promise.all(data.trainees.map(async trainee => {
+  const documents=await Promise.all(data.trainees.map(async trainee => {
+
+    const sessionFields=[
+      'name', 'start_date', 'end_date', 'resources_progress', 'location', 'code', 'achievement_status', '_trainees_connections', 'spent_time_str',
+      'children.name', 'children.resources_progress', 'children.spent_time_str', 'children.order',
+      'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 'children.children.order', 
+      'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str', 'children.children.children.order', 
+      
+    ]
+
+    const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
+
+    const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
+
     const pdfData = {
+      session_name: session.name, session_code: session.code,
+      first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
+      achievement_status: session.achievement_status,
       trainee_fullname: trainee.fullname,
-      end_date: formatDateTime(data.end_date),
-      location: data.location,
-      level_1:[],
+      start_date: 'Le '+formatDate(session.start_date, true), end_date: 'Le '+formatDate(session.end_date, true),
+      location: 'À '+session.location,
+      total_resources_progress: formatPercent(session.resources_progress),
+      level_1:session.children.map(child => ({
+        name: child.name, resources_progress: formatPercent(child.resources_progress), spent_time_str: child.spent_time_str, order: child.order,
+        level_2:child.children.map(child2 => ({
+          name: child2.name, resources_progress: formatPercent(child2.resources_progress), spent_time_str: child2.spent_time_str, order: child2.order,
+          level_3:child2.children.map(child3 => ({
+            name: child3.name, resources_progress: formatPercent(child3.resources_progress), spent_time_str: child3.spent_time_str, order: child3.order,
+          }))
+          }))
+      }))
     }
   
     const pdfPath=template.url
@@ -73,7 +98,7 @@ const getSessionCertificate = async (userId, params, data) => {
 
   // Generate a zip
   const zip=new AdmZip()
-  locations.map(({filename, buffer}) => {
+  documents.map(({filename, buffer}) => {
     zip.addFile(filename, buffer)
   })
   const buffer=zip.toBuffer()
