@@ -305,7 +305,9 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
   let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
   const remaining=lastLevel>-1 ? sorted.slice(lastLevel+1) : []
-  
+
+  let currentY=null
+
   let compIdx=0
   for (const fieldName in data) {
     const fieldValue = data[fieldName]
@@ -314,6 +316,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
       try {
         const field = form.getTextField(fieldName)
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
+        currentY=getFieldRect(field).y
       }
       catch(err) {
         console.warn(`No data found for field ${fieldName}`)
@@ -321,7 +324,6 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
     }
   }
 
-    let currentY=null
 
     const manageChildren = (level, allData) => {
       allData.forEach(data => {
@@ -331,23 +333,24 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
           let field
           try {
             field=form.getTextField(`level_${level}.${attr}`)
+            const orgRect=getFieldRect(field)
+            if (currentY==null) {
+              currentY=orgRect.y
+            }
+  
+            const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
+          
+            setFieldValue(form, dup, data[attr])
+            dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+            lowestY=currentY-(orgRect.height*1.2)
+            console.log(currentY)
           }
           catch(err) {
             console.warn(`No data found for field level_${level}.${attr}`)
             return
           }
-          const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
-          if (currentY==null) {
-            currentY=orgRect.y
-          }
-          // currentY-=orgRect.height
-          const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
-        
-          setFieldValue(form, dup, data[attr])
-          dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
-          lowestY=currentY-(orgRect.height*1.2)
         })
-        currentY=lowestY
+        if (lowestY) {currentY=lowestY}
         if (currentY<MARGIN) {
           currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
           currentY=currentPage.getHeight()-MARGIN
