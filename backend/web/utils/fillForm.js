@@ -19,7 +19,7 @@ const mongoose = require('mongoose')
 
 const MARGIN=30
 
-async function getPDFBytes(filePath) {
+const getPDFBytes = async filePath => {
   const isUrl = validator.isURL(filePath)
   if (isUrl) {
     const { data } = await axios.get(filePath, { responseType: 'arraybuffer' })
@@ -29,13 +29,13 @@ async function getPDFBytes(filePath) {
   return pdf.buffer
 }
 
-async function copyPDF(sourceLink) {
+const copyPDF = async sourceLink => {
   const pdfBytes = await getPDFBytes(sourceLink)
   const pdf = await PDFDocument.load(pdfBytes)
   return pdf
 }
 
-async function logFormFields(sourceLink) {
+const getFormFields = async sourceLink => {
   const sourcePDFBytes = await getPDFBytes(sourceLink)
   const sourcePDF = await PDFDocument.load(sourcePDFBytes)
   const form = sourcePDF.getForm()
@@ -163,7 +163,7 @@ async function savePDFFile(pdf, outputFilePath) {
   await fs.writeFile(outputFilePath, buffer)
 }
 
-async function duplicateFields(sourcePDF, textFields, numberOfDuplicates = 1, margin = 10) {
+const duplicateFields = async (sourcePDF, textFields, numberOfDuplicates = 1, margin = 10) => {
   const form = sourcePDF.getForm()
   const fieldMap = {}
 
@@ -301,7 +301,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   const form = pdfDoc.getForm()
 
   let currentPage=pdfDoc.getPages()[0]
-  const res=await logFormFields(sourceLink)
+  const res=await getFormFields(sourceLink)
 
   let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
   let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
@@ -380,7 +380,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
 module.exports = {
   getPDFBytes,
   copyPDF,
-  logFormFields,
+  getFormFields,
   fillForm,
   savePDFFile,
   duplicateFields,
