@@ -3,11 +3,12 @@
 */
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
+const Sector = require("../../models/Sector")
 const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
-const { loadFromDb, setIntersects } = require('../../utils/database')
+const { loadFromDb, setIntersects, idEqual } = require('../../utils/database')
 const search = require('../../utils/search')
 
 // Limit results if no pattern or city was provided
@@ -140,7 +141,12 @@ const searchFreelances = async (userId, params, data, fields)  => {
     filter['filter.main_experience'] = { $in: data.experiences }
   }
   if (!lodash.isEmpty(data.sectors)) {
-    filter['filter.work_sector'] = { $in: data.sectors }
+    const allSectors=await Sector.findOne({name: /tou.*sect/i})
+    console.log('allSectors', allSectors)
+    // If filter by "All sectors" => don't filter
+    if (!data.sectors.find(s => idEqual(s._id, allSectors._id))) {
+      filter['filter.work_sector'] = { $in: [...data.sectors, allSectors]}
+    }
   }
   if (!!data.available) {
     filter['filter.availability'] = AVAILABILITY_ON
