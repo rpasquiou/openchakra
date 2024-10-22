@@ -7,7 +7,7 @@ const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
-const { loadFromDb } = require('../../utils/database')
+const { loadFromDb, setIntersects } = require('../../utils/database')
 const search = require('../../utils/search')
 
 // Limit results if no pattern or city was provided
@@ -140,10 +140,7 @@ const searchFreelances = async (userId, params, data, fields)  => {
     filter['filter.main_experience'] = { $in: data.experiences }
   }
   if (!lodash.isEmpty(data.sectors)) {
-    filter['filter.work_sector'] = { $in: data.sectors.map(s => s._id) }
-  }
-  if (!lodash.isEmpty(data.expertises)) {
-    filter['filter.expertises'] = { $in: data.expertises.map(s => s._id) }
+    filter['filter.work_sector'] = { $in: data.sectors }
   }
   if (!!data.available) {
     filter['filter.availability'] = AVAILABILITY_ON
@@ -157,7 +154,6 @@ const searchFreelances = async (userId, params, data, fields)  => {
       filter['filter.rate'] = { ...filter['filter.rate'], $lte: data.max_daily_rate }
     }
   }
-
   let freelances = await search({
     model: 'customerFreelance',
     fields,
@@ -173,6 +169,10 @@ const searchFreelances = async (userId, params, data, fields)  => {
       const distance = computeDistanceKm(freelances.headquarter_address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
+  }
+
+  if (!lodash.isEmpty(data.expertises)) {
+    freelances=freelances.filter(f => setIntersects(f.expertises, data.expertises))
   }
 
   freelances = freelances.filter(c => c.freelance_profile_completion === 1)
