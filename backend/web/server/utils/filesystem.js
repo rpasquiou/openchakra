@@ -100,7 +100,8 @@ const isScorm = async ({buffer}) => {
   const contents=entry.getData().toString('utf-8')
   const imsmanifest = xml2js(contents, { compact: true })
   const scormVersion = imsmanifest?.manifest?._attributes?.version
-  const mainResource = imsmanifest?.manifest?.resources?.resource?._attributes?.href
+  const resources = imsmanifest?.manifest?.resources?.resource
+  const mainResource = (resources?.[0] || resources)._attributes?.href
   // Sosynpl #183 scorm version may exist but be empty 
   if (scormVersion!==undefined && mainResource) {
     return ({version: scormVersion, entrypoint: mainResource, entries: zip.getEntries()})
