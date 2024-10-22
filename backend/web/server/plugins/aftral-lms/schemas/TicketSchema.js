@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const autoIncrement = require('mongoose-auto-increment')
 const {schemaOptions} = require('../../../utils/schemas')
 const { TICKET_STATUS, TICKET_STATUS_NOT_TREATED, TICKET_TAG } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -59,7 +60,7 @@ if (mongoose.connection) {
 
 TicketSchema.plugin(autoIncrement.plugin, { model: 'ticket', field: '_number', startAt: 1});
 
-TicketSchema.virtual('number', async() => {
+TicketSchema.virtual('number', DUMMY_REF).get(function() {
   return this._number?.toString().padStart(6, '0') || ''
 })
 
