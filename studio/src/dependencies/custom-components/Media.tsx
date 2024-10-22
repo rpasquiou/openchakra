@@ -9,6 +9,7 @@ const Media = ({
   downloadable,
   isIframe = false,
   visio = false,
+  ...props
 }:{
   src: string,
   htmlWidth: string,
@@ -21,7 +22,7 @@ const Media = ({
   return (
   <>
   {src ? <>
-    {mediaWrapper({src, htmlWidth, htmlHeight, isIframe, visio, downloadable})}
+    {mediaWrapper({src, htmlWidth, htmlHeight, isIframe, visio, downloadable, ...props})}
     </> : null
   }
   </>

@@ -25,6 +25,7 @@ export const mediaWrapper = ({
   isIframe = false,
   visio,
   downloadable,
+  ...props
 }: {
   src: string
   htmlHeight?: string
@@ -85,6 +86,8 @@ export const mediaWrapper = ({
       (
       <div style={{display:'flex', justifyContent:'center'}} ><IconButton
         aria-label='download'
+        color={props.color}
+        backgroundColor={props.backgroundColor}
         icon={<DownloadIcon />}
         onClick={() => downloadResource(src||undefined)}
       /></div>) || (null)
