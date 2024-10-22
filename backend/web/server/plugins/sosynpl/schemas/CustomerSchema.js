@@ -202,12 +202,6 @@ const CustomerSchema = new Schema({
   },
   billing_contact_address: {
     type: AddressSchema,
-    get: function(v) {
-      if (!!this.billing_contact_self) {
-        return this.address
-      }
-      return v
-    },
     required: false,
   },
   // End billing contact
