@@ -190,6 +190,7 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+declareVirtualField({model:'ticket', field: 'number', instance: 'String', requires: '_number'})
  // Ticket end
 
  // Permission start
