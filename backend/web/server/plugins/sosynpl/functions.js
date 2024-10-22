@@ -780,6 +780,10 @@ const postCreate = async ({model, params, data, user}) => {
 setPostCreateData(postCreate)
 
 const prePutData = async ({model, id, params, user}) => {
+  // Check passwords
+  if (MODELS.includes(model) && 'password' in params) {
+    await validatePassword(params)
+  }
   // Skip validaaiton for these models. Will be validated on publish action
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
