@@ -2,7 +2,7 @@ const mime=require('mime-types')
 const Program=require('../../models/Program')
 const { getResourcesProgress, getBlockResources } = require('./resources')
 const { fillForm2, getFormFields } = require('../../../utils/fillForm')
-const { loadFromDb } = require('../../utils/database')
+const { loadFromDb, idEqual } = require('../../utils/database')
 const Resource = require('../../models/Resource')
 const { BLOCK_TYPE_SESSION, BLOCK_STATUS } = require('./consts')
 const { formatDateTime, formatPercent, formatDate } = require('../../../utils/text')
@@ -47,7 +47,7 @@ const getSessionCertificate = async (userId, params, data) => {
 
   if (!template) {
     console.warn(`Getting certificate in the program`, data.children[0].name)
-    template=(await Program.findOne({name: data.children[0].name, origin: null}).populate('template'))?.template
+    template=(await Program.findOne({name: data.children[0].name, origin: null, _locked: {$ne: true}}).populate('template'))?.template
   }
 
   if (!template) {
