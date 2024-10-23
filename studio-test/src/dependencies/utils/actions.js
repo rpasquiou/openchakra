@@ -336,6 +336,17 @@ export const ACTIONS = {
       })
   },
 
+  reset_soft_skills: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'reset_soft_skills',
+    }
+    return axios.post(url, body)
+      .then(res => ({
+        value: res.data
+      }))
+  },
+
   logout: () => {
     clearToken()
     window.location='/'

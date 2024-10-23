@@ -303,6 +303,12 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+
+  reset_soft_skills: {
+    label: 'Reset soft skills',
+    options: {},
+    next: ['openPage'],
+  },
   logout: {
     label: 'Logout',
     options: {},
