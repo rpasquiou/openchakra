@@ -347,7 +347,8 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
           }
         })
         if (lowestY) {currentY=lowestY}
-        if (currentY<MARGIN) {
+        if (!!currentY && currentY<MARGIN) {
+          console.log('Add page')
           currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
           currentY=currentPage.getHeight()-MARGIN
         }
