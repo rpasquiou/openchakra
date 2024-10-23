@@ -1,7 +1,7 @@
 const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS, FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES, SOFT_SKILLS_ATTR } = require("./consts")
 
 const freelanceProfileCompletion = (user) => {
-  const missing = user['freelance_missing_attributes'].split(` - `).map(attribute => attribute.trim())
+  const missing = user['freelance_missing_attributes'].split(` - `).map(attribute => attribute.trim().toLowerCase())
   let result = 0
   const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
   if (requiredMissing > 0) {
@@ -10,8 +10,8 @@ const freelanceProfileCompletion = (user) => {
 
   result += 40
   
-  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr])).length
-  const softSkillsMissing = SOFT_SKILLS_ATTR.filter(skillAttr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[skillAttr])).length
+  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr].toLowerCase())).length
+  const softSkillsMissing = SOFT_SKILLS_ATTR.filter(skillAttr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[skillAttr].toLowerCase())).length
   const totalMandatoryMissing = mandatoryMissing + softSkillsMissing
   const mandatoryPenalty = Math.floor((60 / (FREELANCE_MANDATORY_ATTRIBUTES.length + SOFT_SKILLS_ATTR.length)) * totalMandatoryMissing)
 
