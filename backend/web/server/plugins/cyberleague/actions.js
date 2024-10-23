@@ -155,6 +155,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
       }
     }
   }
+  return true
 }
 
 setAllowActionFn(isActionAllowed)
