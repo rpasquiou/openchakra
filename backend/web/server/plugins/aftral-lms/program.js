@@ -4,7 +4,7 @@ const { getResourcesProgress, getBlockResources } = require('./resources')
 const { fillForm2, getFormFields } = require('../../../utils/fillForm')
 const { loadFromDb } = require('../../utils/database')
 const Resource = require('../../models/Resource')
-const { BLOCK_TYPE_SESSION } = require('./consts')
+const { BLOCK_TYPE_SESSION, BLOCK_STATUS } = require('./consts')
 const { formatDateTime, formatPercent, formatDate } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
@@ -72,7 +72,7 @@ const getSessionCertificate = async (userId, params, data) => {
     const pdfData = {
       session_name: session.name, session_code: session.code,
       first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
-      achievement_status: session.achievement_status,
+      achievement_status:  BLOCK_STATUS[session.achievement_status],
       trainee_fullname: trainee.fullname,
       start_date: 'Le '+formatDate(session.start_date, true), end_date: 'Le '+formatDate(session.end_date, true),
       location: 'À '+session.location,
@@ -91,7 +91,7 @@ const getSessionCertificate = async (userId, params, data) => {
     const pdfPath=template.url
     const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
     const buffer=await pdf.save()
-    const filename=`${data.code}-${trainee.fullname}.pdf`
+    const filename=`${data.code}-certif-${trainee.fullname}.pdf`
     await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
     return {filename: filename, buffer}
   }))

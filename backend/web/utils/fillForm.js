@@ -309,20 +309,19 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   let currentY=null
 
   let compIdx=0
-  for (const fieldName in data) {
+  sorted.forEach(fieldName => {
     const fieldValue = data[fieldName]
 
     if (!(/level_/.test(fieldName)) && !(remaining.includes(fieldName))) {
       try {
         const field = form.getTextField(fieldName)
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
-        currentY=getFieldRect(field).y
       }
       catch(err) {
         console.warn(`No data found for field ${fieldName}`)
       }
     }
-  }
+  })
 
 
     const manageChildren = (level, allData) => {
