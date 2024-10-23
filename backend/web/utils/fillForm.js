@@ -124,13 +124,11 @@ async function fillForm(sourceLink, data, font = StandardFonts.Helvetica, fontSi
     const fieldValue = data[fieldName]
 
     if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
-      console.log('****',fieldValue[0])
       const textFields = Object.keys(fieldValue[0])
       const numberOfDuplicates = fieldValue.length
       await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
       
       fieldValue.forEach((detail, index) => {
-        console.log(detail, index)
         const fieldIndex = index + 1
         for (const key in detail) {
           const newFieldName = `${key}_copy_${fieldIndex}`
@@ -342,7 +340,6 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
             setFieldValue(form, dup, data[attr])
             dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
             lowestY=currentY-(orgRect.height*1.2)
-            console.log(currentY)
           }
           catch(err) {
             console.warn(`No data found for field level_${level}.${attr}`)
