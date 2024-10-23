@@ -96,13 +96,13 @@ const withDynamicInput = Component => {
         </InputGroup>
       )
       :
-      (<Component {...props} onChange={onChange} />)
+      (<Component {...props} setComponentValue={setComponentValue} onChange={onChange} />)
     }
 
     return displayEye ?
       withDisplayEye(Component)
       :
-      <Component {...props} dataSource={dataSource} onChange={onChange}/>
+      <Component {...props} dataSource={dataSource} setComponentValue={setComponentValue} onChange={onChange}/>
   }
 
   return Internal

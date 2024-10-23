@@ -1,4 +1,4 @@
-const { VERB_GET, VERB_PUT } = require("../../../utils/consts")
+const { VERB_GET, VERB_PUT, VERB_POST } = require("../../../utils/consts")
 const { NotLoggedError } = require("../../utils/errors")
 
 const checkPermission = async ({verb, model, id, user}) => {
@@ -6,6 +6,9 @@ const checkPermission = async ({verb, model, id, user}) => {
   // Allow anonymous recommandation GET and PUT for one item
   if (!user) {
     if (model=='recommandation' && [VERB_GET, VERB_PUT].includes(verb) && !!id) {
+      return
+    }
+    if (model=='contact' && [VERB_POST].includes(verb) && !!id) {
       return
     }
     throw new NotLoggedError('Unauthorized')

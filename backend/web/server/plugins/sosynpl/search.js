@@ -3,11 +3,16 @@
 */
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
+const Sector = require("../../models/Sector")
 const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
-const { REGIONS_FULL } = require('../../../utils/consts')
-const { loadFromDb } = require('../../utils/database')
+const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
+const { loadFromDb, setIntersects, idEqual } = require('../../utils/database')
+const search = require('../../utils/search')
+
+// Limit results if no pattern or city was provided
+const MAX_RESULTS_NO_CRITERION=12
 
 const FREELANCE_SUGGESTION_REQUIRES = [
   'job',
@@ -95,8 +100,8 @@ const computeSuggestedFreelances = async (userId, params, data) => {
         }
       } else if (data.mobility === MOBILITY_REGIONS) {
         if (
-          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions.includes(data.mobility_regions)) ||
-          (freelance.mobility === MOBILITY_CITY && data.mobility_regions.includes(getRegionFromZipcode(freelance.mobility_city.zip_code)))
+          (freelance.mobility === MOBILITY_REGIONS && freelance.mobility_regions?.includes(data.mobility_regions)) ||
+          (freelance.mobility === MOBILITY_CITY && data.mobility_regions?.includes(getRegionFromZipcode(freelance.mobility_city.zip_code)))
         ) {
           score += POWERS.mobility
         }
@@ -121,72 +126,70 @@ const computeSuggestedFreelances = async (userId, params, data) => {
   return sortedFreelances
 }
 
-const PROFILE_TEXT_SEARCH_FIELDS=['position', 'description', 'motivation']
-
 const searchFreelances = async (userId, params, data, fields)  => {
-  let filter={role: ROLE_FREELANCE}
+  let filter = { ...params, 'filter.role': ROLE_FREELANCE }
+
+  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises']
+
   if (!lodash.isEmpty(data.work_modes)) {
-    filter.work_mode={$in: data.work_modes}
+    filter['filter.work_mode'] = { $in: data.work_modes }
   }
   if (!lodash.isEmpty(data.work_durations)) {
-    filter.work_duration={$in: data.work_durations}
+    filter['filter.work_duration'] = { $in: data.work_durations }
   }
   if (!lodash.isEmpty(data.experiences)) {
-    filter.main_experience={$in: data.experiences}
+    filter['filter.main_experience'] = { $in: data.experiences }
   }
   if (!lodash.isEmpty(data.sectors)) {
-    filter.work_sector={$in: data.sectors}
-  }
-  if (!lodash.isEmpty(data.expertises)) {
-    filter.expertises={$in: data.expertises}
+    const allSectors=await Sector.findOne({name: /tou.*sect/i})
+    console.log('allSectors', allSectors)
+    // If filter by "All sectors" => don't filter
+    if (!data.sectors.find(s => idEqual(s._id, allSectors._id))) {
+      filter['filter.work_sector'] = { $in: [...data.sectors, allSectors]}
+    }
   }
   if (!!data.available) {
-    filter.availability=AVAILABILITY_ON
+    filter['filter.availability'] = AVAILABILITY_ON
   }
   if (!!data.min_daily_rate || !!data.max_daily_rate) {
-    console.log('i have rates', data.min_daily_rate, data.max_daily_rate)
-    filter.rate={}
+    filter['filter.rate'] = {}
     if (!!data.min_daily_rate) {
-      filter.rate={...filter.rate, $gte: data.min_daily_rate}
+      filter['filter.rate'] = { ...filter['filter.rate'], $gte: data.min_daily_rate }
     }
     if (!!data.max_daily_rate) {
-      filter.rate={...filter.rate, $lte: data.max_daily_rate}
+      filter['filter.rate'] = { ...filter['filter.rate'], $lte: data.max_daily_rate }
     }
   }
-  
-  fields=[...fields, 'shortname', 'firstname', 'lastname', 'address', 'pinned_by', 'pinned', 'expertises', 'expertises.name', 'company_logo', 'company_name']
-  let candidates = {}
-  
-  if (data.pattern?.trim()) {
-    const regExp = new RegExp(data.pattern, 'i')
-    const allCandidates = await Promise.all(Object.keys(PROFILE_TEXT_SEARCH_FIELDS).map(async (field) => {
-      const newFilter = { ...filter, [PROFILE_TEXT_SEARCH_FIELDS[field]]: regExp }
-      const newParams = lodash(newFilter)
-        .mapKeys((v, k) => `filter.${k}`)
-        .value()
-      const cand = await loadFromDb({ model: 'customerFreelance', user: userId, filter: newFilter, params: newParams, fields })
-      return cand
-    }))
+  let freelances = await search({
+    model: 'customerFreelance',
+    fields,
+    user: userId,
+    params: lodash.omitBy(filter, (_, k) => /^limit/.test(k)),
+    search_field: SEARCH_FIELD_ATTRIBUTE,
+    search_value: data.pattern || '',
+  })
 
-    candidates = Object.assign({}, ...allCandidates)
-  }
-
-  else {
-    const params=lodash(filter)
-        .mapKeys((v,k) => `filter.${k}`)
-        .value()
-    candidates=await loadFromDb({model: 'customerFreelance', user: userId, fields, params})
-  }
-
+  // Filtrer par distance après la recherche
   if (!lodash.isEmpty(data.city)) {
-    candidates=candidates.filter(c => {
-      const distance=computeDistanceKm(c.address, data.city)
+    freelances = freelances.filter(freelances => {
+      const distance = computeDistanceKm(freelances.headquarter_address, data.city)
       return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
     })
   }
-  candidates = candidates.filter(c => c.freelance_profile_completion == 1)
-  candidates=Object.keys(candidates).map(c => new CustomerFreelance(candidates[c]))
-  return candidates
+
+  if (!lodash.isEmpty(data.expertises)) {
+    freelances=freelances.filter(f => setIntersects(f.expertises, data.expertises))
+  }
+
+  freelances = freelances.filter(c => c.freelance_profile_completion === 1)
+
+  // Limiter les résultats si aucun critère n'a été fourni
+  if (!data.pattern?.trim() && !data.city) {
+    freelances = freelances.slice(0, MAX_RESULTS_NO_CRITERION)
+  }
+
+  freelances = Object.keys(freelances).map(c => new CustomerFreelance(freelances[c]))
+  return freelances
 }
 
 // TODO: database should compute fields using dependency tree, so I can get data.profiles.length
@@ -221,7 +224,7 @@ const searchAnnounces = async (userId, params, data, fields)  => {
       const cand = await processFilters(params, fields, data, newFilter, userId)
       candidates = [...candidates, ...cand]
     })
-    console.log(candidates)
+
     return candidates
   }
 
