@@ -211,6 +211,10 @@ CompanySchema.virtual('offers', {
   foreignField: 'company'
 })
 
+CompanySchema.virtual('region', DUMMY_REF).get(function () {
+  return null
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CompanySchema

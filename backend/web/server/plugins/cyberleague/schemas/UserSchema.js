@@ -345,6 +345,12 @@ UserSchema.virtual('registered_events', {
   foreignField:'registered_users',
 })
 
+UserSchema.virtual('scans', {
+  ref: 'scan',
+  localField: '_id',
+  foreignField: 'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
