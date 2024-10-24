@@ -13,7 +13,7 @@ const { ROLE_APPRENANT } = require('../../server/plugins/aftral-lms/consts')
 const path = require('path')
 const { exec } = require('child_process')
 const moment = require('moment')
-const { logFormFields } = require('../../utils/fillForm')
+const { getFormFields } = require('../../utils/fillForm')
 
 const ROOT = path.join(__dirname, './../data/pdf')
 const FILEPATH = path.join(ROOT, 't.pdf')
@@ -30,7 +30,7 @@ describe('Certificates', () => {
   })
 
   it.only('must retrieve PDF fields', async () => {
-    const fields = await logFormFields(FILEPATH)
+    const fields = await getFormFields(FILEPATH)
     console.log(JSON.stringify(Object.keys(fields), null, 2))
   })
 

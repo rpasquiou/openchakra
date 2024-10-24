@@ -15,7 +15,7 @@ const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const { parseScormTime } = require("../../../utils/dateutils");
 const { sendBufferToAWS } = require("../../middlewares/aws");
-const { fillForm2, logFormFields } = require("../../../utils/fillForm");
+const { fillForm2, getFormFields } = require("../../../utils/fillForm");
 const { formatDate, formatPercent } = require('../../../utils/text');
 const { isDevelopment } = require('../../../config/config');
 const Block = require('../../models/Block');
@@ -621,7 +621,7 @@ const hasParentMasked = async (blockId) => {
   return block.masked || (block.parent && hasParentMasked(block.parent))
 }
 
-const saveBlockStatus= async (userId, blockId, status) => {
+const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
     throw new Error(userId, blockId, status)
   }
@@ -630,6 +630,12 @@ const saveBlockStatus= async (userId, blockId, status) => {
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
+  if (withChildren) {
+    const children=await mongoose.models.block.find({ parent: blockId})
+    if (children.length>0) {
+      await Promise.all(children.map(child => saveBlockStatus(userId, child._id, status, withChildren)))
+    }
+  }
   return status
 }
 
@@ -693,7 +699,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       const brother=block.children[lastFinished+1]
       await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
       // Next children are unavailable
-      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx], BLOCK_STATUS_UNAVAILABLE)))
+      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx], BLOCK_STATUS_UNAVAILABLE, true)))
     }
     return blockStatus
   }
@@ -709,7 +715,7 @@ const updateSessionStatus = async (sessionId, trainee) => {
   const trainees=!!trainee ? [trainee] : session.trainees
   await Promise.all(trainees.map(async t => {
     const isFinishedBlock = async blockId => isFinished(t._id, blockId)
-    const setBlockStatus = (blockId, status) => saveBlockStatus(t._id, blockId, status)
+    const setBlockStatus = (blockId, status, withChildren) => saveBlockStatus(t._id, blockId, status, withChildren)
     const locGetBlockStatus = (blockId) => getBlockStatus(t._id, null, {_id: blockId})
     await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus, locGetBlockStatus)
   }))

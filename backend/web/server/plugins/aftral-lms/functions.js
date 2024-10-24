@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, BLOCK_TYPE_SESSION } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -190,6 +190,7 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+declareVirtualField({model:'ticket', field: 'number', instance: 'String', requires: '_number'})
  // Ticket end
 
  // Permission start
@@ -505,7 +506,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       fields=[...fields, 'creator']
     }
     // Full list: only return template blocks not included in sessions
-    if (!id && model!='session' && user.role==ROLE_CONCEPTEUR) {
+    if (!id && model!='session' && user.role!=ROLE_APPRENANT) {
       params['filter._locked']=false // No session data
       params['filter.origin']=null // Templates only
     }

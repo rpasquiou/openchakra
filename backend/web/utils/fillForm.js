@@ -19,7 +19,7 @@ const mongoose = require('mongoose')
 
 const MARGIN=30
 
-async function getPDFBytes(filePath) {
+const getPDFBytes = async filePath => {
   const isUrl = validator.isURL(filePath)
   if (isUrl) {
     const { data } = await axios.get(filePath, { responseType: 'arraybuffer' })
@@ -29,13 +29,13 @@ async function getPDFBytes(filePath) {
   return pdf.buffer
 }
 
-async function copyPDF(sourceLink) {
+const copyPDF = async sourceLink => {
   const pdfBytes = await getPDFBytes(sourceLink)
   const pdf = await PDFDocument.load(pdfBytes)
   return pdf
 }
 
-async function logFormFields(sourceLink) {
+const getFormFields = async sourceLink => {
   const sourcePDFBytes = await getPDFBytes(sourceLink)
   const sourcePDF = await PDFDocument.load(sourcePDFBytes)
   const form = sourcePDF.getForm()
@@ -124,13 +124,11 @@ async function fillForm(sourceLink, data, font = StandardFonts.Helvetica, fontSi
     const fieldValue = data[fieldName]
 
     if (typeof fieldValue === 'object' && Array.isArray(fieldValue)) {
-      console.log('****',fieldValue[0])
       const textFields = Object.keys(fieldValue[0])
       const numberOfDuplicates = fieldValue.length
       await duplicateFields(pdfDoc, textFields, numberOfDuplicates, 10)
       
       fieldValue.forEach((detail, index) => {
-        console.log(detail, index)
         const fieldIndex = index + 1
         for (const key in detail) {
           const newFieldName = `${key}_copy_${fieldIndex}`
@@ -163,7 +161,7 @@ async function savePDFFile(pdf, outputFilePath) {
   await fs.writeFile(outputFilePath, buffer)
 }
 
-async function duplicateFields(sourcePDF, textFields, numberOfDuplicates = 1, margin = 10) {
+const duplicateFields = async (sourcePDF, textFields, numberOfDuplicates = 1, margin = 10) => {
   const form = sourcePDF.getForm()
   const fieldMap = {}
 
@@ -290,7 +288,6 @@ const copyField = (form, orgField, name) => {
 }
 
 const getFieldRect = field => {
-  console.log('Acro', field.acroField.dict?.dict?.['/DA'])
   return field.acroField.getWidgets()[0].getRectangle()
 }
 
@@ -301,14 +298,16 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
   const form = pdfDoc.getForm()
 
   let currentPage=pdfDoc.getPages()[0]
-  const res=await logFormFields(sourceLink)
+  const res=await getFormFields(sourceLink)
 
   let sorted=lodash.sortBy(Object.keys(res), k => -res[k].positions[0].y)
   let lastLevel=lodash.findLastIndex(sorted, k => /level_/.test(k))
-  const remaining=sorted.slice(lastLevel+1)
-  
+  const remaining=lastLevel>-1 ? sorted.slice(lastLevel+1) : []
+
+  let currentY=null
+
   let compIdx=0
-  for (const fieldName in data) {
+  sorted.forEach(fieldName => {
     const fieldValue = data[fieldName]
 
     if (!(/level_/.test(fieldName)) && !(remaining.includes(fieldName))) {
@@ -320,9 +319,8 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
         console.warn(`No data found for field ${fieldName}`)
       }
     }
-  }
+  })
 
-    let currentY=null
 
     const manageChildren = (level, allData) => {
       allData.forEach(data => {
@@ -332,24 +330,25 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
           let field
           try {
             field=form.getTextField(`level_${level}.${attr}`)
+            const orgRect=getFieldRect(field)
+            if (currentY==null) {
+              currentY=orgRect.y
+            }
+  
+            const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
+          
+            setFieldValue(form, dup, data[attr])
+            dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
+            lowestY=currentY-(orgRect.height*1.2)
           }
           catch(err) {
             console.warn(`No data found for field level_${level}.${attr}`)
             return
           }
-          const orgRect=getFieldRect(field) // field.acroField.getWidgets()[0].getRectangle()
-          if (currentY==null) {
-            currentY=orgRect.y
-          }
-          // currentY-=orgRect.height
-          const dup=copyField(form, field, `${attr}_${level}_${compIdx++}`)
-        
-          setFieldValue(form, dup, data[attr])
-          dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
-          lowestY=currentY-(orgRect.height*1.2)
         })
-        currentY=lowestY
-        if (currentY<MARGIN) {
+        if (lowestY) {currentY=lowestY}
+        if (!!currentY && currentY<MARGIN) {
+          console.log('Add page')
           currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
           currentY=currentPage.getHeight()-MARGIN
         }
@@ -380,7 +379,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
 module.exports = {
   getPDFBytes,
   copyPDF,
-  logFormFields,
+  getFormFields,
   fillForm,
   savePDFFile,
   duplicateFields,
