@@ -13,6 +13,10 @@ const SchoolSchema = new Schema({
     type: Number,
     required: [true, `Le score de protocole est obligatoire`]
   },
+  key_exchange_rate: {
+    type: Number,
+    required: [true, `Le score de clé est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
