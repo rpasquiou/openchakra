@@ -143,7 +143,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
       }
 
       //if current answer is not answered
-      if (!lodash.includes(ANSWERS,score.answers[answerIndex])) {
+      if (!lodash.includes(lodash.keys(ANSWERS),score.answers[answerIndex].answer)) {
         throw new ForbiddenError(`Il faut répondre à la question avant de pouvoir terminer le questionnaire`)
       }
     }
