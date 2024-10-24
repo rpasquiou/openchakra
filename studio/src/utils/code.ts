@@ -364,6 +364,10 @@ const buildBlock = ({
             if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
           }
 
+          if (propName === 'hidescrollbar') {
+              propsContent += ` css='::-webkit-scrollbar{display: none;}scrollbar-width: none;-ms-overflow-style: none;'`
+          }
+
           if (propName === 'subDataSource') {
             propsContent += ` subDataSourceId={'${propsValue}'}`
           }
