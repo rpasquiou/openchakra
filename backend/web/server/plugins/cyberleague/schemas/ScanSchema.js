@@ -17,6 +17,10 @@ const SchoolSchema = new Schema({
     type: Number,
     required: [true, `Le score de clé est obligatoire`]
   },
+  cipher_strength_rate: {
+    type: Number,
+    required: [true, `Le score de puissance de chiffrement est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
