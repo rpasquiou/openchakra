@@ -1,17 +1,24 @@
+import { Text } from '@chakra-ui/react'
 import { AsyncSelect } from 'chakra-react-select'
-import React,  {useState} from 'react'
+import React,  {useEffect, useState} from 'react'
 import axios from 'axios'
 import {debounce} from 'lodash'
 import lodash from 'lodash'
 
 
-const Address = ({children, onChange, value, isCityOnly, ...props}: {children: React.ReactNode}) => {
+const Address = ({children, onChange, value, isCityOnly, readOnly, ...props}: {children: React.ReactNode}) => {
   
   const [address, setAddress]=useState(lodash.isEmpty(value) ? null : lodash.isString(value) ? {city: value} : value)
 
   if (props.setComponentAttribute) {
     props.setComponentAttribute(props.id, props.attribute)
   }
+
+  useEffect(() => {
+    if (props.setComponentValue) {
+      props.setComponentValue(props.id, address)
+    }
+  }, [address])
 
   const addressToOption = addr => {
     return addr ?
@@ -57,8 +64,22 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
     }),
   }
 
-  return ( 
-    <AsyncSelect 
+  return (
+    readOnly ? (
+      <Text
+        id={props.id}
+        sx={{
+          fontFamily: props.fontFamily || '',
+          backgroundColor: props.backgroundColor || '',
+          borderRadius: props.borderRadius || '',
+          border: props.border || '',
+          color: props.color || '',
+        }}
+      >
+        {address ? addressToOption(address).label : null}
+      </Text>
+    ) : (
+      <AsyncSelect 
       id={props.id}
       chakraStyles={chakraStyles}
       value={addressToOption(address)}
@@ -68,7 +89,8 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
       placeholder={isCityOnly ? 'Ville...' : 'Adresse...'}
       onChange={onAddressChange}
       isClearable 
-    />
+      />
+    )
   )
 }
 

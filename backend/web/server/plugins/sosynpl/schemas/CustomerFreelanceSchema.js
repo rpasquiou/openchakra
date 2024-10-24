@@ -56,7 +56,7 @@ const CustomerFreelanceSchema = new Schema({
   ...customerSchema.obj,
   // Ovveride address => mandatory
   // For freelacne only
-  address: {
+  headquarter_address: {
     type: AddressSchema,
     required: [function() {return isFreelance(this)}, `L'adresse est obligatoire`],
   },
@@ -175,7 +175,7 @@ const CustomerFreelanceSchema = new Schema({
   },
   google_visible: {
     type: Boolean,
-    default: false,
+    default: true,
     required: [function() {return isFreelance(this)}, `La visibilité Google est obligatoire`]
   },
   hard_skills_categories: [{
@@ -371,7 +371,15 @@ const CustomerFreelanceSchema = new Schema({
   kbis: {
     type: String,
     required: false,
-  }
+  },
+  interested_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'freelance',
+      required: true
+    }],
+    default: [],
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -410,6 +418,41 @@ CustomerFreelanceSchema.virtual('certifications', {
   ref: 'certification',
   localField: '_id',
   foreignField: 'user',
+})
+
+CustomerFreelanceSchema.virtual('expertises_count', {
+  ref: 'expertise',
+  foreignField: '_id',
+  localField: 'expertises',
+  count: true,
+})
+
+CustomerFreelanceSchema.virtual('pinned_expertises_count', {
+    ref: 'expertise',
+    foreignField: '_id',
+    localField: 'pinned_expertises',
+    count: true,
+})
+
+CustomerFreelanceSchema.virtual('gold_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'gold_soft_skills',
+    count: true,
+})
+
+CustomerFreelanceSchema.virtual('silver_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'silver_soft_skills',
+    count: true,
+})
+
+CustomerFreelanceSchema.virtual('bronze_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'bronze_soft_skills',
+    count: true,
 })
 
 CustomerFreelanceSchema.virtual('trainings', {
@@ -625,6 +668,32 @@ CustomerFreelanceSchema.virtual('customer_sent_reports_count', DUMMY_REF).get(fu
         .flat()
         .filter(report => report && report.status === REPORT_STATUS_SENT).length
     : 0
+})
+
+CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
+  let fields = [this.position]
+
+  if (this.expertises) {
+    fields = fields.concat(this.expertises.map(e => e.name))
+  }
+
+  if (this.main_job) {
+    fields.push(this.main_job.name)
+  }
+
+  if (this.second_job) {
+    fields.push(this.second_job.name)
+  }
+
+  if (this.third_job) {
+    fields.push(this.third_job.name)
+  }
+
+  if (this.pinned_expertises) {
+    fields = fields.concat(this.pinned_expertises.map(e => e.name))
+  }
+
+  return fields.join(' ')
 })
 
 /* eslint-enable prefer-arrow-callback */

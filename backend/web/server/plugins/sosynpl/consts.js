@@ -29,7 +29,7 @@ const COMPANY_SIZE={
   [COMPANY_SIZE_LESS_10]:`< 10`,
   [COMPANY_SIZE__11__250]:`11 - 250`,
   [COMPANY_SIZE__251_5000]:`251 - 5000`,
-  [COMPANY_SIZE_MORE_5001]:`> 500`,
+  [COMPANY_SIZE_MORE_5001]:`> 5000`,
 }
 
 const WORK_MODE_REMOTE=`WORK_MODE_REMOTE`
@@ -69,7 +69,7 @@ const VALID_STATUS={
 }
 
 const SOURCE_RECOMMANDATION=`SOURCE_RECOMMANDATION`
-const SOURCE_SOSYNPL_CONTACT=`SOURCE_SOSYNPL_CONTACT`
+const SOURCE_YELOWI_CONTACT=`SOURCE_YELOWI_CONTACT`
 const SOURCE_EVENT=`SOURCE_EVENT`
 const SOURCE_SOCIAL_NETWORK=`SOURCE_SOCIAL_NETWORK`
 const SOURCE_NEWS_BLOG=`SOURCE_NEWS_BLOG`
@@ -77,7 +77,7 @@ const SOURCE_OTHER=`SOURCE_OTHER`
 
 const SOURCE={
   [SOURCE_RECOMMANDATION]:`Recommandation`,
-  [SOURCE_SOSYNPL_CONTACT]:`Contacté par SoSynpL`,
+  [SOURCE_YELOWI_CONTACT]:`Contacté par Yelowi`,
   [SOURCE_EVENT]:`Evénement`,
   [SOURCE_SOCIAL_NETWORK]:`Réseaux sociaux`,
   [SOURCE_NEWS_BLOG]:`Blogs/news`,
@@ -145,19 +145,23 @@ const REASON_OTHER=`REASON_OTHER`
 
 const DEACTIVATION_REASON={
   [REASON_NOT_FREELANCE]:`Je ne suis plus indépendant`,
-  [REASON_NO_NEED]:`Je n’ai plus besoin du service de So SynpL`,
-  [REASON_NOT_SATISFIED]:`Je ne suis pas satisfait du service de So SynpL`,
+  [REASON_NO_NEED]:`Je n’ai plus besoin du service de Yelowi`,
+  [REASON_NOT_SATISFIED]:`Je ne suis pas satisfait du service de Yelowi`,
   [REASON_OTHER]:`Autre`,
 }
 
-const SUSPEND_REASON_INACTIVE=`Compte inactif`
-const SUSPEND_REASON_CRITERION=`Ne corespond pas à la charte de So SynpL`
+const SUSPEND_REASON_INACTIVE=`SUSPEND_REASON_INACTIVE`
+const SUSPEND_REASON_CRITERION=`SUSPEND_REASON_CRITERION`
 const SUSPEND_REASON_OTHER=`SUSPEND_REASON_OTHER`
+const SUSPEND_REASON_NOT_COMPLIANT=`SUSPEND_REASON_NOT_COMPLIANT`
+const SUSPEND_REASON_NOT_SELL=`SUSPEND_REASON_NOT_SELL`
 
 const SUSPEND_REASON={
   [SUSPEND_REASON_INACTIVE]: `Compte inactif`,
-  [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de So SynpL`,
+  [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de Yelowi`,
   [SUSPEND_REASON_OTHER]: `Autre`,
+  [SUSPEND_REASON_NOT_COMPLIANT]: `Informations communiquées non conformes aux CGU/CGV`,
+  [SUSPEND_REASON_NOT_SELL] : `Yelowi n'est pas encore spécialisé sur votre domaine d'activité`
 }
 
 const ACTIVITY_STATE_SUSPENDED=`ACTIVITY_STATE_SUSPENDED`
@@ -414,28 +418,36 @@ const CF_MAX_SILVER_SOFT_SKILLS=2
 const CF_MAX_BRONZE_SOFT_SKILLS=3
 
 //Freelance profile completion
-const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
+const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'phone', 'email', 'position', 'experience', 'main_experience', 'work_duration', 'company_name', 'siren', 'legal_status', 'work_sector']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['headquarter_address', 'rate', 'description', 'work_mode', 'work_company_size', 'mobility', 'expertises', 'experiences', 'trainings']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
-  firstname : `Prénom`,
-  lastname : `Nom`,
-  main_job : `Métier principal`,
-  work_duration : `Durée de mission souhaitée`,
-  position : `Intitulé du poste`,
-  experience : `Expérience dans le poste`,
-  main_experience : `Expérience principale`,
-  soft_skills : `Soft Skills`,
-  picture : `Photo de profil`,
-  work_mode : `Mode de travail`,
-  mobility : `Mobilité`,
-  work_sector : `Secteur d'activité`,
-  expertises : `Compétences`,
-  experiences : `Expériences`,
-  trainings : `Formations`,
-  description : `Pourquoi moi?`,
-  rate : `Taux journalier moyen`
+  firstname: 'prénom',
+  lastname: 'nom',
+  main_job: 'métier principal',
+  phone: 'numéro de téléphone',
+  email: 'email',
+  position: 'poste',
+  experience: 'expérience',
+  main_experience: 'expérience principale',
+  work_duration: 'durée de travail',
+  company_name: 'nom de l\'entreprise',
+  siren: 'SIREN',
+  legal_status: 'forme juridique',
+  work_sector: 'secteur d\'activité',
+  headquarter_address: 'adresse du siège de l\'entreprise',
+  rate: 'tarif journalier',
+  description: 'description',
+  work_mode: 'mode de travail',
+  work_company_size: 'préférence de taille d\'entreprise',
+  mobility: 'mobilité',
+  expertises: 'expertises',
+  experiences: 'expériences',
+  trainings: 'formations',
+  gold_soft_skills: 'Soft skills gold',
+  silver_soft_skills: 'Soft skills silver',
+  bronze_soft_skills: 'Soft skills bronze',
 }
 
 //Customer profile completion
@@ -443,13 +455,13 @@ const CUSTOMER_REQUIRED_ATTRIBUTES = ['siren','company_size','description','comp
 
 const CUSTOMER_OUTPUT_ATTRIBUTES = {
   siren:'SIREN',
-  company_name:`Nom de l'entreprise`,
-  company_logo:'Logo',
-  description:`Description de l'entreprise`,
-  company_size:`Taille de l'entreprise`,
-  legal_status:`Statut de l'entreprise`,
-  registration_city:`Ville d'immatriculation`,
-  headquarter_address:`Adresse du siège de l'entreprise`,
+  company_name:`nom de l'entreprise`,
+  company_logo:'logo',
+  description:`description de l'entreprise`,
+  company_size:`taille de l'entreprise`,
+  legal_status:`forme juridique`,
+  registration_city:`ville d'immatriculation`,
+  headquarter_address:`adresse du siège de l'entreprise`,
 }
 
 module.exports={

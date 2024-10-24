@@ -76,7 +76,6 @@ const UploadFile = ({
 
   useEffect(() => {
     if (!!model && clearComponents.includes(props.id)) {
-      console.log(`Clear ${props.id} contents`)
       setS3File(null)
       setUploadInfo('')
     }
@@ -111,7 +110,6 @@ const UploadFile = ({
           .then(async result => {
             // @ts-ignore
             const filepath = result?.data
-            console.log(`s3 file:${filepath}`)
             setS3File(filepath)
             paramsBack = { ...paramsBack, value: filepath}
             setUploadInfo(okmsg)
@@ -162,8 +160,6 @@ const UploadFile = ({
   const togglePreview = () => {
     setPreviewOpen(!isPreviewOpen)
   }
-
-  console.log(border, borderRadius, '**********')
 
   return (
     <>

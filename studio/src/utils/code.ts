@@ -143,9 +143,9 @@ type BuildBlockParams = {
 // Wether component is linked to a save action, thus must not save during onChange
 const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
   let c=Object.values(components)
-    .filter(c => ['save', 'create', 'smartdiet_set_company_code'].includes(c.props?.action) && c.props?.actionProps)
+    .filter(c => ['save', 'create', 'smartdiet_set_company_code', 'sendMessage'].includes(c.props?.action) && c.props?.actionProps)
     .map(c => JSON.parse(c.props.actionProps))
-  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_|^code$/.test(k)))
+  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_|^code$|^contents$|^attachment$/.test(k)))
   c=c.map(obj => Object.values(obj).filter(v => !!v))
   c=lodash.flattenDeep(c)
   c=lodash.uniq(c)
@@ -165,6 +165,9 @@ const buildBlock = ({
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let child = components[key]
+    if (!child) {
+      throw new Error(`Declared child ${key} does not exist under parent ${component.id}`)
+    }
     if (child.type === 'DataProvider') {
       return
     }
@@ -744,7 +747,7 @@ const buildHooks = (components: IComponents) => {
         const sortParams = getSortParams(dataId)
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, componentsValues)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, getComponentValue)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :

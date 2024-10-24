@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs')
 const { DUMMY_REF } = require('../../../utils/database')
 const { ROLES, DEACTIVATION_REASON } = require('../consts')
 const { getCurrentMissions, getComingMissions } = require('../missions')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -41,16 +42,6 @@ const UserSchema = new Schema({
     type: Boolean,
     required: false,
   },
-  fullname: {
-    type: String,
-    get: function() {return `${this.firstname} ${this.lastname}`},
-    set: () => {}
-  },
-  shortname: {
-    type: String,
-    get: function() {return `${this.firstname} ${this.lastname[0]}.`},
-    set: () => {}
-  },
   picture: {
     type: String,
     required: false,
@@ -62,7 +53,11 @@ const UserSchema = new Schema({
   company_name: {
     type: String,
     required: false
-  }
+  },
+  address: {
+    type: AddressSchema,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
@@ -78,6 +73,14 @@ UserSchema.virtual('pinned_freelances', {
 UserSchema.virtual('current_missions', DUMMY_REF).get(function() {getCurrentMissions(this)})
 
 UserSchema.virtual('coming_missions', DUMMY_REF).get(function() {getComingMissions(this)})
+
+UserSchema.virtual('fullname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname}`
+})
+
+UserSchema.virtual('shortname', DUMMY_REF).get(function() {
+  return `${this.firstname} ${this.lastname?.[0]}`
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

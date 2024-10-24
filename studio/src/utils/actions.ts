@@ -303,6 +303,12 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+
+  reset_soft_skills: {
+    label: 'Reset soft skills',
+    options: {},
+    next: ['openPage'],
+  },
   logout: {
     label: 'Logout',
     options: {},
@@ -675,6 +681,13 @@ export const ACTIONS: IActions = {
     options: {},
     next: [],
   },
+
+  refresh: {
+    label: 'Refresh',
+    options: {},
+    next: [],
+  },
+
 
   smartdiet_rabbit_appointment: {
     label: 'SM appt. rabbit',

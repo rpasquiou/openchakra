@@ -67,6 +67,10 @@ const AnnounceSchema = new Schema({
   start_date: {
     type: Date,
     required: false,
+    validate: [
+      function(start_date) {return moment(start_date).isAfter(moment().endOf(`day`))},
+      `Vous devez choisir une date de début à partir de demain`
+    ]
   },
   sectors: {
     type: [{
@@ -331,6 +335,41 @@ AnnounceSchema.virtual('received_applications_count', {
     status: APPLICATION_STATUS_SENT,
   },
   count: true,
+})
+
+AnnounceSchema.virtual('expertises_count', {
+    ref: 'expertise',
+    foreignField: '_id',
+    localField: 'expertises',
+    count: true,
+})
+
+AnnounceSchema.virtual('pinned_expertises_count', {
+    ref: 'expertise',
+    foreignField: '_id',
+    localField: 'pinned_expertises',
+    count: true,
+})
+
+AnnounceSchema.virtual('gold_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'gold_soft_skills',
+    count: true,
+})
+
+AnnounceSchema.virtual('silver_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'silver_soft_skills',
+    count: true,
+})
+
+AnnounceSchema.virtual('bronze_soft_skills_count', {
+    ref: 'softSkill',
+    foreignField: '_id',
+    localField: 'bronze_soft_skills',
+    count: true,
 })
 
 AnnounceSchema.virtual('average_daily_rate', DUMMY_REF).get(function() {

@@ -160,7 +160,7 @@ const sendPendingQuotation = (mission) => {
     destinee: mission.user,
     params: {
       customer_firstname: mission.user.firstname,
-      user_firstname: mission.job.user.firstname,
+      jobuser_firstname: mission.job.user.firstname,
       mission_name: mission.name,
       mission_description: mission.description,
     },
@@ -200,7 +200,7 @@ const sendMissionAskedReminder = mission => {
     destinee: mission.job.user,
     params: {
       customer_company_name: mission.user.company_name,
-      user_first_name: mission.job.user.firstname,
+      jobuser_first_name: mission.job.user.firstname,
       mission_name: mission.name,
     },
   })
