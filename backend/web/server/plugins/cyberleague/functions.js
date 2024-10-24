@@ -182,6 +182,13 @@ USER_MODELS.forEach(m => {
       options: { ref: 'event' }
     },
   })
+  declareVirtualField({
+    model: m, field: 'scans', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'scan' }
+    },
+  })
 })
 
 //Company declarations
