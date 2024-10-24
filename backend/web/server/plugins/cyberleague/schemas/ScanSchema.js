@@ -9,6 +9,10 @@ const SchoolSchema = new Schema({
     ref: 'user',
     required: [true, `Le créateur du score est obligatoire`]
   },
+  protocole_rate: {
+    type: Number,
+    required: [true, `Le score de protocole est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
