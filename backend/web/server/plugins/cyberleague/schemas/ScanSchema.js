@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { NUTRISCORE } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -20,6 +21,11 @@ const ScanSchema = new Schema({
   cipher_strength_rate: {
     type: Number,
     required: [true, `Le score de puissance de chiffrement est obligatoire`]
+  },
+  nutriscore: {
+    type: String,
+    enum: Object.keys(NUTRISCORE),
+    required: [true,`Le nutriscore est obligatoire`]
   },
 }, {...schemaOptions})
 
