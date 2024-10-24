@@ -15,7 +15,7 @@ const SchoolSchema = new Schema({
   },
   key_exchange_rate: {
     type: Number,
-    required: [true, `Le score de clé est obligatoire`]
+    required: [true, `Le score de clé de chiffrement est obligatoire`]
   },
   cipher_strength_rate: {
     type: Number,
