@@ -74,19 +74,12 @@ const DataSourcePanel: React.FC = () => {
 
   useEffect(()=> {
     if (isChart && dataSource && attribute && models && !lodash.isEmpty(attributes)) {
-      console.log('isChart', isChart);
-      console.log('dataSource', dataSource);
-      console.log('attribute',attribute);
-      console.log('models', models);
-      console.log('attributes',attributes)
       
       const type=attributes[attribute]?.type
-      console.log('type',type);
       const chartModel=models[type]
       const numberAttributes=lodash(chartModel.attributes).pickBy((att, attName) =>
         att.type=='Number' && att.multiple==false && !attName.includes('.')).keys().value()
         setAvailableSeries(numberAttributes)
-      console.log(('datasourcepanel1'));
       
     }
     else {
@@ -139,9 +132,7 @@ const DataSourcePanel: React.FC = () => {
             .value()
           setSubAttributes(subAttrs)
         }
-        console.log(`SubAttribute:${JSON.stringify(!!subAttribute)}`)
         const subModel=subAttribute ? models[model.attributes[subAttribute].type] : model
-        console.log(`SubModel:${typeof(subModel)}`)
         const subAttrsDisplay = lodash(subModel.attributes)
           .pickBy((def, k) => !def.multiple && !def.ref)
           .value()
@@ -187,7 +178,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onDataSourceOrModelChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }
@@ -200,7 +190,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onSubDataSourceChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }
@@ -213,7 +202,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onSubAttributeChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }
@@ -226,7 +214,6 @@ const DataSourcePanel: React.FC = () => {
   const onCheckboxChange = ev => {
     setValue(ev.target.name, ev.target.checked)
   }
-console.log('datasourcepanel2');
 
   return (
     <Accordion allowToggle={true}>
