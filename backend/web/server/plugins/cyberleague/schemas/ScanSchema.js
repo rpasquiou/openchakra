@@ -7,7 +7,7 @@ const SchoolSchema = new Schema({
   creator: {
     type: Schema.Types.ObjectId,
     ref: 'user',
-    required: [true, `L créateur du score est obligatoire`]
+    required: [true, `Le créateur du score est obligatoire`]
   },
 }, {...schemaOptions})
 
