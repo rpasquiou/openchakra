@@ -37,7 +37,7 @@ const TicketSchema = new Schema({
   },
   tag: {
     type: String,
-    enum: Object.keys(TICKET_TAG),
+    enum: [null, ...Object.keys(TICKET_TAG)],
     required: false,
   },
   notes: {
