@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -260,6 +260,10 @@ const preCreate = async ({model, params, user}) => {
   if (model=='post') {
     params.author=user
     const parentId=params.parent
+    // trainee, trainer & manager can not post on general feed
+    if (parentId==GENERAL_FEED_ID && [ROLE_APPRENANT, ROLE_FORMATEUR, ROLE_GESTIONNAIRE].includes(user.role)) {
+      throw new ForbiddenError(`Ce forum est verrouillé`)
+    }
     // If in a non visible group or session, forbid
     const canPost=(await Group.exists({_id: parentId, can_post_feed: true})) || (await Session.exists({_id: parentId, can_post_feed: true}))
     if (!canPost && user.role==ROLE_APPRENANT) {
