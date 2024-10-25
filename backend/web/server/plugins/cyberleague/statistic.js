@@ -134,7 +134,10 @@ const computeBellwetherStatistics = async (params) => {
   }
   //if less answers than STAT_MIN_SCORES stats are not relevant
   // if (res.enoughScores == ENOUGH_SCORES_NO) {
-  //   return res
+    // res = new Statistic(res)
+    // await res.validate()
+  
+    // return [res]
   // }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
