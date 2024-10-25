@@ -18,19 +18,23 @@ const getLocationSuggestions = (value, type) => {
     .then(res => {
       let suggestions=lodash.orderBy(res, r => -r.importance)
       if (cityOnly) {
-        suggestions=res.filter(r => r.address && r.lat && r.lon && ((r.address.city || r.address.village || r.address.town || r.address.county)))
+        suggestions=res.filter(r => r.address && r.lat && r.lon && r.address.state && ((r.address.city || r.address.village || r.address.town)))
       }
       else {
-        suggestions=res.filter(r => r.address && r.lat && r.lon && (r.address.postcode && r.address.road && (r.address.city || r.address.village || r.address.town || r.address.county)))
+        suggestions=res.filter(r => r.address && r.lat && r.lon && r.address.state && (r.address.postcode && r.address.road && (r.address.city || r.address.village || r.address.town || r.address.county)))
       }
+      console.log('Suggestions', JSON.stringify(suggestions, null, 2))
       suggestions=suggestions.map(r => ({
         address: r.address.road,
         city: r.address.city || r.address.village || r.address.town || r.address.county,
         zip_code: r.address.postcode,
-        country: r.country,
+        country: r.address.country,
         latitude: r.lat,
-        longitude: r.lon}))
-      suggestions=lodash.uniqBy(suggestions, r => (cityOnly ? `${r.city},${r.postcode},${r.country}`: `${r.name},${r.city},${r.postcode},${r.country}`))
+        longitude: r.lon,
+        region: r.address.state,
+      }))
+
+      suggestions=lodash.uniqBy(suggestions, r => (cityOnly ? `${r.city},${r.zip_code},${r.country},${r.region}`: `${r.name},${r.city},${r.zip_code},${r.country},${r.region}`))
       const number=parseInt(value)
       if (!isNaN(number)) {
         suggestions=suggestions.map(r => ({...r, address: `${number} ${r.address}`}))
