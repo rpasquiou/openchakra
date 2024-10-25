@@ -15,7 +15,7 @@ const Address = ({children, onChange, value, isCityOnly, ...props}: {children: R
 
   const addressToOption = addr => {
     return addr ?
-      ({value: addr, label : isCityOnly ? addr.city : `${addr.address}, ${addr.zip_code} ${addr.city}`})
+      ({value: addr, label : isCityOnly ? `${addr.city} (${addr.zip_code || addr.region})` : `${addr.address}, ${addr.zip_code} ${addr.city}`})
     : null
   }
   
