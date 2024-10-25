@@ -11,6 +11,18 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 
+let preLogin=null
+
+const setpreLogin = fn => {
+  preLogin=fn
+}
+
+const callPreLogin = async p => {
+  if (preLogin) {
+    return preLogin(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -199,7 +211,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum
+    enumValues=att.options.enum?.filter(v => !!v)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
@@ -1139,6 +1151,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin, 
 }
 

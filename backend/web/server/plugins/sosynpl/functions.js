@@ -8,7 +8,7 @@ const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -25,6 +25,8 @@ const { usersCount, customersCount, freelancesCount, currentMissionsCount, comin
 const Statistic = require("../../models/Statistic");
 const Mission = require("../../models/Mission");
 const Application = require("../../models/Application");
+const { isEmailOk } = require("../../../utils/sms");
+const { BadRequestError } = require("../../utils/errors");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -465,6 +467,9 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     },
   })
   declareVirtualField({
+    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name,pinned_expertises,pinned_expertises.name'
+  })
+  declareVirtualField({
     model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports.mission.freelance.fullname',
     caster: {
       instance: 'ObjectID',
@@ -480,7 +485,10 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
   declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
-  declareVirtualField({model, field: 'freelance_profile_completion', requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), instance: 'Number'})
+  declareVirtualField({model, field: 'freelance_profile_completion', 
+    requires:['expertises', ...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), 
+    instance: 'Number',
+  })
   declareVirtualField({
     model, field: 'freelance_missing_attributes', instance: 'Array', multiple: true, requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'mobility_city', 'mobility_city_distance'].join(','),
     caster: {
@@ -707,6 +715,12 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     params.receiver=await conversation.getPartner(user)
   }
   if (model == 'recommandation') {
+    if (!params.creator_email) {
+      throw new BadRequestError(`L'email est obligatoire`)
+    }
+    if (!isEmailOk(params.creator_email)) {
+      throw new BadRequestError(`L'email ${params.creator_email || 'vide'} est invalide`)
+    }
     skip_validation=true
     params.freelance=user
   }
@@ -724,7 +738,7 @@ const preCreate = async ({model, params, user, skip_validation}) => {
 
 setPreCreateData(preCreate)
 
-const postCreate = async ({model, params, data}) => {
+const postCreate = async ({model, params, data, user}) => {
   if (data.role==ROLE_CUSTOMER) {
     await sendCustomerConfirmEmail({user: data})
   }
@@ -754,12 +768,22 @@ const postCreate = async ({model, params, data}) => {
     const contact=data.toObject()
     await Promise.all(admins.map(admin => sendNewContact2Admin({contact, admin})))
   }
+  if (model=='recommandation') {
+    await sendAskRecommandation({
+      user, external_email: data.creator_email, external_firstname: data.creator_firstname, 
+      message: data.message, recommendation_id: data._id,
+    })
+  }
   return Promise.resolve(data)
 }
 
 setPostCreateData(postCreate)
 
 const prePutData = async ({model, id, params, user}) => {
+  // Check passwords
+  if (MODELS.includes(model) && 'password' in params) {
+    await validatePassword(params)
+  }
   // Skip validaaiton for these models. Will be validated on publish action
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}

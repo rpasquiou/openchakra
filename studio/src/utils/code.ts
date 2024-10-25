@@ -143,9 +143,9 @@ type BuildBlockParams = {
 // Wether component is linked to a save action, thus must not save during onChange
 const getNoAutoSaveComponents = (components: IComponents): IComponent[] => {
   let c=Object.values(components)
-    .filter(c => ['save', 'create', 'smartdiet_set_company_code'].includes(c.props?.action) && c.props?.actionProps)
+    .filter(c => ['save', 'create', 'smartdiet_set_company_code', 'sendMessage'].includes(c.props?.action) && c.props?.actionProps)
     .map(c => JSON.parse(c.props.actionProps))
-  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_|^code$/.test(k)))
+  c=c.map(obj => lodash.pickBy(obj, (_, k)=> /^component_|^code$|^contents$|^attachment$/.test(k)))
   c=c.map(obj => Object.values(obj).filter(v => !!v))
   c=lodash.flattenDeep(c)
   c=lodash.uniq(c)
@@ -165,6 +165,9 @@ const buildBlock = ({
   const singleData=isSingleDataPage(components)
   component.children.forEach((key: string) => {
     let child = components[key]
+    if (!child) {
+      throw new Error(`Declared child ${key} does not exist under parent ${component.id}`)
+    }
     if (child.type === 'DataProvider') {
       return
     }
@@ -744,7 +747,7 @@ const buildHooks = (components: IComponents) => {
         const sortParams = getSortParams(dataId)
         const urlRest='${new URLSearchParams(queryRest)}'
         const apiUrl = `/myAlfred/api/studio/${dp.props.model}/${idPart}${
-          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, componentsValues)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
+          dpFields ? `?fields=${dpFields}&` : '?'}${limits ? `${limits.join('&')}&` : ''}${sortParams}&\${buildFilter('${dp.id}', FILTER_ATTRIBUTES, getComponentValue)}\${computePagesIndex('${dataId}')}${dp.id=='root' ? urlRest: ''}`
         let thenClause=dp.id=='root' && singlePage ?
          `.then(res => set${capitalize(dataId)}(res.data[0]))`
          :
@@ -871,7 +874,7 @@ export const generateCode = async (
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
   const { settings } = project
-  const {description, metaImage, name, url, favicon32, gaTag} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
+  const {description, metaImage, name, url, favicon32, gaTag, consentId} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
   const loginPage=Object.values(pages).find(page => page.components?.root?.props?.tag=='LOGIN')!
   const loginUrl=loginPage ? '/'+getPageUrl(loginPage.pageId, pages) : ''
@@ -978,6 +981,17 @@ export const generateCode = async (
       axios.post('/myAlfred/api/studio/tags', tagPages)
     }, [])`
   }
+
+  const generateConsentBanner = () => {
+    if (!consentId) {
+      return ''
+    }
+    return `<script type="text/javascript" 
+      charset="UTF-8" src="//cdn.cookie-script.com/s/${consentId}.js">
+      </script>
+    `
+  }
+
   let renderNullCode=''
   if(components.root.props.allowNotConnected=="false"){
     renderNullCode+= `if(!user){
@@ -1087,6 +1101,7 @@ const ${componentName} = () => {
       metaFavicon32={'${favicon32 && addBackslashes(favicon32)}'}
       metaGaTag={'${gaTag}'}
     />
+    ${generateConsentBanner()}
     ${code}
     </>
 )};

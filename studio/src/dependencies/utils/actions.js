@@ -28,7 +28,7 @@ export const ACTIONS = {
         return res
       })
   },
-  sendMessage: ({ value, props, level, getComponentValue, fireClearComponents }) => {
+  sendMessage: ({ value, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     const destinee = props.destinee ? getComponentValue(props.destinee, level) : value._id
     const componentsIds=[props.contents, props.attachment]
     const components=componentsIds.map(comp => comp=getComponent(comp, level)).filter(c => !!c)
@@ -319,7 +319,7 @@ export const ACTIONS = {
       })
   },
 
-  registerAndLogin: ({ value, props, dataSource, level, getComponentValue }) => {
+  registerAndLogin: ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
     let url = `${API_ROOT}/register-and-login`
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
@@ -334,6 +334,17 @@ export const ACTIONS = {
           value: res.data,
         })
       })
+  },
+
+  reset_soft_skills: () => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'reset_soft_skills',
+    }
+    return axios.post(url, body)
+      .then(res => ({
+        value: res.data
+      }))
   },
 
   logout: () => {
@@ -451,7 +462,7 @@ return Promise.allSettled(imagePromises)
   },
   generatePDF: ({props, level, getComponentValue})=> {
     const prefix=getComponentValue(props.prefix, level)
-    return generatePDF(props.targetId+level, prefix)
+    return generatePDF(props.targetId, level, prefix)
   },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
@@ -476,7 +487,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  createRecommandation: ({ value, props, level, getComponentValue }) => {
+  createRecommandation: ({ value, props, level, getComponentValue, getComponentAttribute }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute')  || getComponentAttribute(c, level),
@@ -728,7 +739,7 @@ return Promise.allSettled(imagePromises)
       })
   },
 
-  alle_ask_contact: ({ value, context, props, level, getComponentValue }) => {
+  alle_ask_contact: ({ value, context, props, level, getComponentValue, getComponentAttribute }) => {
     const components=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values()
     const body = Object.fromEntries(components.map(c =>
       [getComponent(c, level)?.getAttribute('attribute') || getComponent(c, level)?.getAttribute('data-attribute') || getComponentAttribute(c, level),
@@ -1014,11 +1025,13 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
-  suspend_account: ({value}) => {
+  suspend_account: ({value, props, getComponentValue, level}) => {
+    const reason = getComponentValue(props.reason, level)
     let url = `${API_ROOT}/action`
     const body = {
       action: 'suspend_account',
       value: value._id,
+      reason,
     }
     return axios.post(url, body)
   },
@@ -1086,4 +1099,7 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  refresh: async ({reload}) => {
+    reload()
+  },
 }

@@ -219,7 +219,7 @@ remaining_calls tells the number of recursive calls
 */
 const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls=3}) => {
   if (!(diet_id && from && to && appointment_type)) {
-    throw new Error(`diet_id/from/to/appointment_type are required:${[diet_id, from, to, appointment_type, remaining_calls]}`)
+    throw new Error(`diet_id/from/to/appointment_type are required:${[diet_id, from, to, appointment_type]}`)
   }
 
   const params={pdo_agenda_id: diet_id, pdo_type_rdv_id: appointment_type, date_a_partir_de: from.format('YYYY-MM-DD') }

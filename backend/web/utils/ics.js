@@ -20,7 +20,6 @@ const generateIcs = async ({start, end, title, description, ...rest}) => {
   if (error) {
     return Promise.reject(error)
   }
-  console.log(value)
   return value
 }
 

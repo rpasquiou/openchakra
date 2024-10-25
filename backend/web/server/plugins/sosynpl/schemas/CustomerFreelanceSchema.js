@@ -56,7 +56,7 @@ const CustomerFreelanceSchema = new Schema({
   ...customerSchema.obj,
   // Ovveride address => mandatory
   // For freelacne only
-  address: {
+  headquarter_address: {
     type: AddressSchema,
     required: [function() {return isFreelance(this)}, `L'adresse est obligatoire`],
   },
@@ -131,10 +131,14 @@ const CustomerFreelanceSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'sector',
     }],
-    validate: [
-      function(sectors) {return !isFreelance(this) || lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1)}, 
-      `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
-    ]
+    validate: [{
+      validator: function(sectors) {return !isFreelance(this) || lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1)}, 
+      message: `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
+    },
+    {
+      validator: function(sectors) { return !isFreelance(this) || !sectors.some(s => lodash.isNil(s))}, 
+      message: `Le secteur d'activité est obligatoire` 
+    }]
   },
   work_company_size: {
     type: [{
@@ -175,7 +179,7 @@ const CustomerFreelanceSchema = new Schema({
   },
   google_visible: {
     type: Boolean,
-    default: false,
+    default: true,
     required: [function() {return isFreelance(this)}, `La visibilité Google est obligatoire`]
   },
   hard_skills_categories: [{
@@ -372,9 +376,6 @@ const CustomerFreelanceSchema = new Schema({
     type: String,
     required: false,
   },
-  temporary_picture: {
-    type: String,
-  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -663,6 +664,32 @@ CustomerFreelanceSchema.virtual('customer_sent_reports_count', DUMMY_REF).get(fu
         .flat()
         .filter(report => report && report.status === REPORT_STATUS_SENT).length
     : 0
+})
+
+CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
+  let fields = [this.position]
+
+  if (this.expertises) {
+    fields = fields.concat(this.expertises.map(e => e.name))
+  }
+
+  if (this.main_job) {
+    fields.push(this.main_job.name)
+  }
+
+  if (this.second_job) {
+    fields.push(this.second_job.name)
+  }
+
+  if (this.third_job) {
+    fields.push(this.third_job.name)
+  }
+
+  if (this.pinned_expertises) {
+    fields = fields.concat(this.pinned_expertises.map(e => e.name))
+  }
+
+  return fields.join(' ')
 })
 
 /* eslint-enable prefer-arrow-callback */

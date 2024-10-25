@@ -150,14 +150,18 @@ const DEACTIVATION_REASON={
   [REASON_OTHER]:`Autre`,
 }
 
-const SUSPEND_REASON_INACTIVE=`Compte inactif`
-const SUSPEND_REASON_CRITERION=`Ne corespond pas à la charte de Yelowi`
+const SUSPEND_REASON_INACTIVE=`SUSPEND_REASON_INACTIVE`
+const SUSPEND_REASON_CRITERION=`SUSPEND_REASON_CRITERION`
 const SUSPEND_REASON_OTHER=`SUSPEND_REASON_OTHER`
+const SUSPEND_REASON_NOT_COMPLIANT=`SUSPEND_REASON_NOT_COMPLIANT`
+const SUSPEND_REASON_NOT_SELL=`SUSPEND_REASON_NOT_SELL`
 
 const SUSPEND_REASON={
   [SUSPEND_REASON_INACTIVE]: `Compte inactif`,
   [SUSPEND_REASON_CRITERION]: `Ne corespond pas à la charte de Yelowi`,
   [SUSPEND_REASON_OTHER]: `Autre`,
+  [SUSPEND_REASON_NOT_COMPLIANT]: `Informations communiquées non conformes aux CGU/CGV`,
+  [SUSPEND_REASON_NOT_SELL] : `Yelowi n'est pas encore spécialisé sur votre domaine d'activité`
 }
 
 const ACTIVITY_STATE_SUSPENDED=`ACTIVITY_STATE_SUSPENDED`
@@ -414,28 +418,36 @@ const CF_MAX_SILVER_SOFT_SKILLS=2
 const CF_MAX_BRONZE_SOFT_SKILLS=3
 
 //Freelance profile completion
-const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'work_duration', 'position', 'experience', 'main_experience']
+const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'phone', 'email', 'position', 'experience', 'main_experience', 'work_duration', 'company_name', 'siren', 'legal_status', 'work_sector']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['picture', 'work_mode', 'mobility', 'work_sector', 'expertises', 'experiences', 'trainings', 'description', 'rate']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['headquarter_address', 'rate', 'description', 'work_mode', 'work_company_size', 'mobility', 'expertises', 'experiences', 'trainings']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
-  firstname : `prénom`,
-  lastname : `nom`,
-  main_job : `métier principal`,
-  work_duration : `durée de mission souhaitée`,
-  position : `intitulé du poste`,
-  experience : `expérience dans le poste`,
-  main_experience : `expérience principale`,
-  soft_skills : `soft Skills`,
-  picture : `photo de profil`,
-  work_mode : `mode de travail`,
-  mobility : `mobilité`,
-  work_sector : `secteur d'activité`,
-  expertises : `compétences`,
-  experiences : `expériences`,
-  trainings : `formations`,
-  description : `pourquoi moi?`,
-  rate : `taux journalier moyen`
+  firstname: 'prénom',
+  lastname: 'nom',
+  main_job: 'métier principal',
+  phone: 'numéro de téléphone',
+  email: 'email',
+  position: 'poste',
+  experience: 'expérience',
+  main_experience: 'expérience principale',
+  work_duration: 'durée de travail',
+  company_name: 'nom de l\'entreprise',
+  siren: 'SIREN',
+  legal_status: 'forme juridique',
+  work_sector: 'secteur d\'activité',
+  headquarter_address: 'adresse du siège de l\'entreprise',
+  rate: 'tarif journalier',
+  description: 'description',
+  work_mode: 'mode de travail',
+  work_company_size: 'préférence de taille d\'entreprise',
+  mobility: 'mobilité',
+  expertises: 'expertises',
+  experiences: 'expériences',
+  trainings: 'formations',
+  gold_soft_skills: 'Soft skills gold',
+  silver_soft_skills: 'Soft skills silver',
+  bronze_soft_skills: 'Soft skills bronze',
 }
 
 //Customer profile completion
