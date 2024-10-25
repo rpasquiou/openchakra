@@ -140,14 +140,6 @@ const searchFreelances = async (userId, params, data, fields)  => {
   if (!lodash.isEmpty(data.experiences)) {
     filter['filter.main_experience'] = { $in: data.experiences }
   }
-  if (!lodash.isEmpty(data.sectors)) {
-    const allSectors=await Sector.findOne({name: /tou.*sect/i})
-    console.log('allSectors', allSectors)
-    // If filter by "All sectors" => don't filter
-    if (!data.sectors.find(s => idEqual(s._id, allSectors._id))) {
-      filter['filter.work_sector'] = { $in: [...data.sectors, allSectors]}
-    }
-  }
   if (!!data.available) {
     filter['filter.availability'] = AVAILABILITY_ON
   }
@@ -180,6 +172,19 @@ const searchFreelances = async (userId, params, data, fields)  => {
   if (!lodash.isEmpty(data.expertises)) {
     freelances=freelances.filter(f => setIntersects(f.expertises, data.expertises))
   }
+
+  if (!lodash.isEmpty(data.sectors)) {
+    const allSectors=await Sector.findOne({name: /tou.*sect/i})
+    // If filter by "All sectors" => don't filter
+    if (!data.sectors.some(s => idEqual(s._id, allSectors._id))) {
+      freelances=freelances.filter(f => {
+        // Freelances with "All sectors" will be returned
+        return f.work_sector.find(s => idEqual(s._id, allSectors._id))
+          || setIntersects(f.work_sector, data.sectors)
+      })
+    }
+  }
+
 
   freelances = freelances.filter(c => c.freelance_profile_completion === 1)
 
