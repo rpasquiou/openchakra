@@ -180,7 +180,7 @@ const computeBellwetherStatistics = async (filters) => {
   res = new Statistic(res)
   await res.validate()
 
-  return res
+  return [res]
 }
 
 module.exports = {
