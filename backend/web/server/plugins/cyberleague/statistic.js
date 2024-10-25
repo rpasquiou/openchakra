@@ -55,20 +55,25 @@ const increaseValueCount = (data, field, increaseValue) => {
   }
 }
 
-const computeFilters = (filters) => {
-  
-  return {}
-}
+const computeBellwetherStatistics = async (params) => {
 
-const computeBellwetherStatistics = async (filters) => {
-  //Take filters into account (company sector, region, size)
-  const companyFilter = filters ? computeFilters(filters) : {}
+  //Build filters from params (company sector, region, size)
+  let filters = {}
+
+  lodash.forEach(params, (v,k)=> {
+    if (lodash.startsWith(k, 'filter.') && k != 'filter.region') {
+      filters[k.slice(7)] = v
+    }
+    if (k == 'filter.region') {
+      //TODO filters.region = 
+    }
+  })
 
   //Getting scores that will be used to do statistics
   let scores
 
-  if (Object.keys(companyFilter).length > 0) {    
-    const companies = await Company.find(companyFilter)
+  if (Object.keys(filters).length > 0) {    
+    const companies = await Company.find(filters)
 
     const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
 
