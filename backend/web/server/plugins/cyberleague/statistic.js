@@ -55,9 +55,14 @@ const increaseValueCount = (data, field, increaseValue) => {
   }
 }
 
+const computeFilters = (filters) => {
+  
+  return {}
+}
+
 const computeBellwetherStatistics = async (filters) => {
-  //TODO take filters into account (company sector, region, size)
-  const companyFilter = {}
+  //Take filters into account (company sector, region, size)
+  const companyFilter = filters ? computeFilters(filters) : {}
 
   //Getting scores that will be used to do statistics
   let scores
