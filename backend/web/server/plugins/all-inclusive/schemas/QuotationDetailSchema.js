@@ -4,6 +4,7 @@ const mongoose = require("mongoose")
 const bcrypt=require('bcryptjs')
 const { schemaOptions } = require('../../../utils/schemas')
 const IBANValidator = require('iban-validator-js')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema;
 
@@ -36,15 +37,15 @@ const QuotationDetailSchema = new Schema({
 }, schemaOptions
 );
 
-QuotationDetailSchema.virtual('total').get(function() {
+QuotationDetailSchema.virtual('total', DUMMY_REF).get(function() {
   return this.ht_price*this.quantity*(1+this.vat/100.0)
 })
 
-QuotationDetailSchema.virtual('vat_total').get(function() {
+QuotationDetailSchema.virtual('vat_total', DUMMY_REF).get(function() {
   return this.ht_price*this.quantity*this.vat/100.0
 })
 
-QuotationDetailSchema.virtual('ht_total').get(function() {
+QuotationDetailSchema.virtual('ht_total', DUMMY_REF).get(function() {
   return this.ht_price*this.quantity
 })
 

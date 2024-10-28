@@ -303,6 +303,12 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+
+  reset_soft_skills: {
+    label: 'Reset soft skills',
+    options: {},
+    next: ['openPage'],
+  },
   logout: {
     label: 'Logout',
     options: {},
@@ -398,12 +404,12 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_cancel_mission: {
-    label: 'AE Cancel mission',
+    label: 'Cancel',
     options: {},
     next: ['openPage'],
   },
   alle_send_quotation: {
-    label: 'AE Send quotation',
+    label: 'Send quotation',
     options: {},
     next: ['openPage'],
   },
@@ -437,7 +443,7 @@ export const ACTIONS: IActions = {
     next: ['openPage'],
   },
   alle_finish_mission: {
-    label: 'AE Finish mission',
+    label: 'Finish mission',
     options: {},
     next: ['openPage'],
   },
@@ -564,19 +570,35 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_start_survey: {
-    label: 'SM Start survey',
+    label: 'Start survey',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_start_survey_2: {
+    label: 'Start survey 2',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_start_survey_3: {
+    label: 'Start survey 3',
+    options: {},
+    next: ['openPage'],
+  },
+
+  previous_question: {
+    label: 'Previous question',
     options: {},
     next: ['openPage'],
   },
 
   smartdiet_next_question: {
-    label: 'SM Next question',
+    label: 'Next question',
     options: {},
     next: ['openPage'],
   },
 
   smartdiet_finish_survey: {
-    label: 'SM Finish survey',
+    label: 'Finish survey',
     options: {},
     next: ['openPage'],
   },
@@ -626,7 +648,7 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_read_content: {
-    label: 'SM Read content',
+    label: 'Read content',
     options: {},
     next: ['openPage'],
   },
@@ -659,6 +681,13 @@ export const ACTIONS: IActions = {
     options: {},
     next: [],
   },
+
+  refresh: {
+    label: 'Refresh',
+    options: {},
+    next: [],
+  },
+
 
   smartdiet_rabbit_appointment: {
     label: 'SM appt. rabbit',
@@ -708,6 +737,18 @@ export const ACTIONS: IActions = {
   },
   clone: {
     label: 'Clone',
+    options: {},
+    next: ['openPage'],
+  },
+  refuse: {
+    label: 'Refuse',
+    options: {
+      reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: ['openPage'],
+  },
+  accept: {
+    label: 'Accept',
     options: {},
     next: ['openPage'],
   },

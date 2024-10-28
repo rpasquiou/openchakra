@@ -14,6 +14,7 @@ const withDynamicSelect = Component => {
       value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
+    setComponentValue(props.id, internalValue)
     if (props.setComponentAttribute) {
       props.setComponentAttribute(props.id, props.attribute)
     }
@@ -22,7 +23,20 @@ const withDynamicSelect = Component => {
       const enumValues=props.enum ? JSON.parse(props.enum) : null
       let refValues=null
       if (subDataSource) {
-        refValues=lodash.get(subDataSource, subAttribute, subDataSource)
+        if (props.dataSourceId==props.subDataSourceId) {
+          refValues=[dataSource]
+        }
+        else {
+          refValues=subDataSource
+        }
+        if (subAttribute) {
+          refValues=refValues.map(subData => lodash.get(subData, subAttribute))
+        }
+        refValues=lodash.flatten(refValues)
+        if (!!refValues[0]?._id) {
+          refValues=lodash.uniqBy(refValues, '_id')
+        }
+        
       }
       const attribute = props.attribute
 
@@ -60,7 +74,7 @@ const withDynamicSelect = Component => {
       if (setComponentValue) {
         setComponentValue(props.id, value)
       }
-      if (!noautosave) {
+      if (!!dataSource && !noautosave && !props.model) {
         ACTIONS.putValue({
           context: dataSource?._id,
           value: value,
@@ -68,9 +82,6 @@ const withDynamicSelect = Component => {
         })
           .then(() => props.reload())
           .catch(err => console.error(err))
-      }
-      if (props.onChange) {
-        
       }
     }
 
@@ -99,9 +110,9 @@ const withDynamicSelect = Component => {
 
     if (isSearchable || isMulti) {
       const selValue=isMulti ?
-        options?.filter(opt => value.some(v => v==opt.key))
-        :
-        options?.find(opt => opt.key==value)
+      options?.filter(opt => internalValue.some(v => v==opt.key))
+      :
+      options?.find(opt => opt.key==internalValue)
       return (
         <Select {...props} onChange={onChange}
           value={selValue}
@@ -113,7 +124,7 @@ const withDynamicSelect = Component => {
     }
 
     return (
-      <Component {...props} value={internalValue} onChange={onChange} >
+      <Component {...props} value={internalValue} onChange={onChange}>
         <option style={{...props}} value={undefined}></option>
         {options.map(opt => (<option style={{...props}} key={opt.key} value={opt.value}>{opt.label}</option>))}
       </Component>

@@ -113,3 +113,7 @@ export const redirectExists = () =>{
   const redirect=cookies.get('redirect')
   return !!redirect
 } 
+
+export const isClient = () => {
+  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+}

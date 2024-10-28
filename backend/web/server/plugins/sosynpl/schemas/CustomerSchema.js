@@ -7,7 +7,6 @@ const siret = require('siret')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
 const { NATIONALITIES } = require('../../../../utils/consts')
-
 const Schema = mongoose.Schema
 
 const CustomerSchema = new Schema({
@@ -203,12 +202,6 @@ const CustomerSchema = new Schema({
   },
   billing_contact_address: {
     type: AddressSchema,
-    get: function(v) {
-      if (!!this.billing_contact_self) {
-        return this.address
-      }
-      return v
-    },
     required: false,
   },
   // End billing contact
@@ -225,10 +218,6 @@ const CustomerSchema = new Schema({
     required: false,
   },
   // HQ address
-  headquarter_address: {
-    type: AddressSchema,
-    required: false,
-  },
   // Délégation de pouvoir
   authority_delegated: {
     type: String,
@@ -251,15 +240,11 @@ const CustomerSchema = new Schema({
     type: String,
     required: [function() {return this.vat_subject===true}, `Le numéro de TVA est obligatoire`],
   },
-  address: {
-    type: AddressSchema,
-    required: false,
-  },
   sector: {
     type: Schema.Types.ObjectId,
     ref: 'sector',
     set: v => v || undefined,
-    required: false,
+    required: [function () {return this.role == ROLE_CUSTOMER}, `Le secteur est obligatoire`],
   },
   // Default: customer not suspended, freelance standby
   activity_status: {
@@ -276,10 +261,15 @@ const CustomerSchema = new Schema({
   },
   suspended_reason: {
     type: String,
-    enum: Object.keys(SUSPEND_REASON),
-    set: v => v || undefined,
+    enum: [null, ...Object.keys(SUSPEND_REASON)],
     required: false,
   },
+  billing_contact: {
+    type: String,
+    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
+    set: v => v?.replace(/^0/, '+33'),
+    required: false
+  }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -297,7 +287,7 @@ CustomerSchema.virtual('pinned_missions', {
 })
 
 CustomerSchema.virtual('pinned_freelances', {
-  ref: 'freelance',
+  ref: 'customerFreelance',
   localField: '_id',
   foreignField: 'pinned_by',
 })

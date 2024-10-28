@@ -74,11 +74,13 @@ const DataSourcePanel: React.FC = () => {
 
   useEffect(()=> {
     if (isChart && dataSource && attribute && models && !lodash.isEmpty(attributes)) {
+      
       const type=attributes[attribute]?.type
       const chartModel=models[type]
       const numberAttributes=lodash(chartModel.attributes).pickBy((att, attName) =>
         att.type=='Number' && att.multiple==false && !attName.includes('.')).keys().value()
         setAvailableSeries(numberAttributes)
+      
     }
     else {
       setAvailableSeries([])
@@ -130,9 +132,7 @@ const DataSourcePanel: React.FC = () => {
             .value()
           setSubAttributes(subAttrs)
         }
-        console.log(`SubAttribute:${JSON.stringify(!!subAttribute)}`)
         const subModel=subAttribute ? models[model.attributes[subAttribute].type] : model
-        console.log(`SubModel:${typeof(subModel)}`)
         const subAttrsDisplay = lodash(subModel.attributes)
           .pickBy((def, k) => !def.multiple && !def.ref)
           .value()
@@ -178,7 +178,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onDataSourceOrModelChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }
@@ -191,7 +190,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onSubDataSourceChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }
@@ -204,7 +202,6 @@ const DataSourcePanel: React.FC = () => {
 
   const onSubAttributeChange = ev => {
     const {name, value}=ev.target
-    console.log(name, value)
     if (!value) {
       removeValue(name)
     }

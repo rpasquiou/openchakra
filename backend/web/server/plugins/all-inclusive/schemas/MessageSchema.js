@@ -28,6 +28,11 @@ const MessageSchema = new Schema({
     ref: 'user',
     required: [true, `L'émetteur est obligatoire`],
   },
+  mine: {
+    type: Boolean,
+    required: true,
+    default: false
+  }
 }, schemaOptions)
 
 MessageSchema.methods.getPartner = function(user) {

@@ -11,6 +11,18 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 
+let preLogin=null
+
+const setpreLogin = fn => {
+  preLogin=fn
+}
+
+const callPreLogin = async p => {
+  if (preLogin) {
+    return preLogin(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -199,7 +211,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum.filter(v => !!v)
+    enumValues=att.options.enum.filter(v => v !==null)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
@@ -207,6 +219,10 @@ const getAttributeCaracteristics = (modelName, att) => {
       throw new Error(`${modelName}.${att.path}:no declared enum`)
     }
     const enumObjectKeys=Object.keys(enumObject)
+    // Allow null in enums if attribute is not required
+    if (!att.options?.required) {
+      enumObjectKeys.push(null)
+    }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
       throw new Error(`${modelName}.${att.path}:inconsistent enum:${JSON.stringify(enumValues)}/${JSON.stringify(enumObjectKeys)}`)
     }
@@ -427,7 +443,7 @@ const buildSort = params => {
 }
 
 const buildQuery = (model, id, fields, params) => {
-  const modelAttributes = Object.fromEntries(getModelAttributes(model))
+  const modelAttributes = Object.keys(getModels()[model].attributes)
 
   let criterion = id ? {_id: id} : {}
   const filters=extractFilters(params)
@@ -437,12 +453,20 @@ const buildQuery = (model, id, fields, params) => {
   // Add filter fields
   fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
 
-  const select=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const selectedAttr=['_id', 'id', CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE, 'type', '__t', ...lodash.uniq(fields.map(f => f.split('.')[0]))]
+  const firstLevelAttr = getFirstLevelFields(modelAttributes)
+  const rejectedAttr = lodash.difference(firstLevelAttr, selectedAttr)
+  const projection = {}
+
+  lodash.forEach(rejectedAttr, attr => {
+    projection[attr] = 0
+  })
+
   const currentFilter=getCurrentFilter(filters, model)
   const currentSort=getCurrentSort(sorts, model)
   criterion={...criterion, ...currentFilter}
   // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
-  let query = mongoose.connection.models[model].find(criterion, select)
+  let query = mongoose.connection.models[model].find(criterion, projection)
   query = query.collation(COLLATION)
   if (currentSort) {
     query=query.sort(currentSort)
@@ -695,7 +719,6 @@ const addComputedFields = (
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
         const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
-
         return Promise.all(
           Object.keys(requiredCompFields).map(f => {
             const displayFields=getRequiredSubFields(originalFields, f)
@@ -925,7 +948,7 @@ const removeData = dataId => {
 
 // Compares ObjecTID/string with ObjectId/string
 const idEqual = (id1, id2) => {
-  return JSON.stringify(id1)==JSON.stringify(id2)
+  return !!id1 && !!id2 && id1.toString()==id2.toString()
 }
 
 // Returns intersection betwenn two sets of _id
@@ -987,6 +1010,13 @@ const ensureUniqueDataFound = (id, data, model) => {
   return data
 }
 
+
+/*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
+ * example: 
+ * let c = await loadfromdb({...})
+ * c = new Announce(c)
+ * doesn't keep the virtuals and the deep objects, like c.user.company_name
+*/
 const loadFromDb = ({model, fields, id, user, params={}}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
@@ -1003,9 +1033,8 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        //.then(data =>  retainRequiredFields({data, fields}))
     })
-
 }
 
 const DATA_IMPORT_FN={}
@@ -1023,7 +1052,7 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import data function: expected model and function`)
   }
   if (!!DATA_IMPORT_FN[model]) {
-    throw new Error(`Import funciton already exists for model ${model}`)
+    throw new Error(`Import function already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
 }
@@ -1133,6 +1162,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, createSearchFilter,
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter,
 }
 

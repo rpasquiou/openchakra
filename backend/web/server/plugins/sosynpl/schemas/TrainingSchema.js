@@ -7,7 +7,7 @@ const Schema = mongoose.Schema
 const TrainingSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
-    ref: 'freelance',
+    ref: 'customerFreelance',
     require: [true, `Le freelance est obligatoire`],
   },
   title: {
@@ -24,7 +24,7 @@ const TrainingSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, `La description est obligatoire`],
+    required: false,
   },
   school_name: {
     type: String,
