@@ -273,7 +273,14 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
 }
 
 const computeAllDietBillings = async (fields, params) => {
-  const diets = await User.aggregate([
+  let start=0
+  let limit=1000000
+  if (params.limit) {
+    limit=parseInt(params.limit)+1
+    start=parseInt(params.page)*parseInt(params.limit) || 0
+  }
+
+  let diets = await User.aggregate([
     {
       $match: {
         role: ROLE_EXTERNAL_DIET,
@@ -293,9 +300,23 @@ const computeAllDietBillings = async (fields, params) => {
         'coachings.0': { $exists: true },
       },
     },
+    {
+      $sort: { lastname: 1}
+    },
+    {
+      $skip: start
+    },
+    {
+      $limit: limit
+    }
   ])
 
+
   let totalBillings = 0
+
+  // Remove limit && page for each diet request
+  const detailsParams=lodash.omitBy(params, (v, k) => /^limit/.test(k) || /^page/.test(k))
+
   const data = await Promise.all(
     diets.map(async (diet) => {
       const billings = {
@@ -308,7 +329,7 @@ const computeAllDietBillings = async (fields, params) => {
         nutrition_total: 0,
       }
 
-      const details = await computeDietBilling(diet._id, fields, params)
+      const details = await computeDietBilling(diet._id, fields, detailsParams)
       const monthlyBillings = details
 
       const dietDetails = {
