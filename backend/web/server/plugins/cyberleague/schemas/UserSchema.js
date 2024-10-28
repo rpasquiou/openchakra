@@ -101,8 +101,7 @@ const UserSchema = new Schema({
   school: {
     type: Schema.Types.ObjectId,
     ref: 'school',
-    required: false,
-    validate:  [function(s) {s => !s || this.job == JOB_STUDENT}, 'Seul·e un·e étudiant·e peut avoir une école']
+    required: false
   },
   city: {
     type: AddressSchema,
