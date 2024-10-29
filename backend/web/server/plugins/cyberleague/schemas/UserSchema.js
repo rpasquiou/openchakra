@@ -26,6 +26,7 @@ const UserSchema = new Schema({
     type: String,
     set: v => v?.trim(),
     required: [true, 'Le nom de famille est obligatoire'],
+    index: true
   },
   email: {
     type: String,
