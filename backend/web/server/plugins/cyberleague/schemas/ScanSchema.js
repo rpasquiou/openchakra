@@ -15,6 +15,10 @@ const ScanSchema = new Schema({
     enum: Object.keys(SCAN_STATUSES),
     required: true
   },
+  url: {
+    type: String,
+    required: true
+  },
   protocole_rate: {
     type: Number,
     required: false
