@@ -116,7 +116,6 @@ const addSector = async () => {
   log('Add sector to companies without one')
 
   await Company.updateMany({sector: {$exists: false}}, {sector: SECTOR_AERONAUTICS})// if not exists
-
 }
 
 const databaseUpdate = async () => {
