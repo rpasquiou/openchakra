@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { NUTRISCORE } = require('../consts')
+const { NUTRISCORE, SCAN_STATUSES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -9,6 +9,11 @@ const ScanSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, `Le créateur du score est obligatoire`]
+  },
+  status: {
+    type: String,
+    enum: Object.keys(SCAN_STATUSES),
+    required: true
   },
   protocole_rate: {
     type: Number,
