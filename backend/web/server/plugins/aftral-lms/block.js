@@ -5,7 +5,7 @@ const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE } = require("./consts");
 const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -798,6 +798,16 @@ const getBlockNoteStr = async (userId, params, data) => {
   }
 }
 
+// A program in produciton mode must not have a sequence with no resource
+const ensureValidProgramProduction = async programId => {
+ const children=await getBlockChildren({blockId: programId})
+ const sequences=await Block.find({_id: {$in: children.map(c => c._id)}, type: BLOCK_TYPE_SEQUENCE}, {_id:1, name:1})
+ console.log(sequences.map(s => s._id))
+ return Promise.all(sequences.map(sequence => {
+  return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
+ }))
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
@@ -807,5 +817,5 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
-  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof,
+  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
 }
