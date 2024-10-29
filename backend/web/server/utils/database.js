@@ -479,6 +479,10 @@ const buildQuery = (model, id, fields, params) => {
   const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
+  // If id is required, fail if no result
+  if (!!id) {
+    query=query.orFail(new Error(`Can't find model '${model}' id ${id}`))
+  }
   return query
 }
 
@@ -1003,14 +1007,6 @@ const display = data => {
   return data
 }
 
-const ensureUniqueDataFound = (id, data, model) => {
-  if (id && lodash.isEmpty(data)) {
-    throw new NotFoundError(`Can't find model ${model} id ${id}`)
-  }
-  return data
-}
-
-
 /*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
  * example: 
  * let c = await loadfromdb({...})
@@ -1029,7 +1025,6 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
       return buildQuery(model, id, fields, params)
-        .then(data => ensureUniqueDataFound(id, data, model))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
