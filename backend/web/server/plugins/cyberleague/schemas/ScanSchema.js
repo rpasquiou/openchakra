@@ -12,20 +12,20 @@ const ScanSchema = new Schema({
   },
   protocole_rate: {
     type: Number,
-    required: [true, `Le score de protocole est obligatoire`]
+    required: false
   },
   key_exchange_rate: {
     type: Number,
-    required: [true, `Le score de clé de chiffrement est obligatoire`]
+    required: false
   },
   cipher_strength_rate: {
     type: Number,
-    required: [true, `Le score de puissance de chiffrement est obligatoire`]
+    required: false
   },
   nutriscore: {
     type: String,
     enum: Object.keys(NUTRISCORE),
-    required: [true,`Le nutriscore est obligatoire`]
+    required: false
   },
 }, {...schemaOptions})
 
