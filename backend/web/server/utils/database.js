@@ -11,6 +11,18 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 
+let preLogin=null
+
+const setpreLogin = fn => {
+  preLogin=fn
+}
+
+const callPreLogin = async p => {
+  if (preLogin) {
+    return preLogin(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -431,7 +443,7 @@ const buildSort = params => {
 }
 
 const buildQuery = (model, id, fields, params) => {
-  const modelAttributes = Object.fromEntries(getModelAttributes(model))
+  const modelAttributes = Object.keys(getModels()[model].attributes)
 
   let criterion = id ? {_id: id} : {}
   const filters=extractFilters(params)
@@ -441,12 +453,20 @@ const buildQuery = (model, id, fields, params) => {
   // Add filter fields
   fields=getRequiredFields({model, fields:lodash.uniq([...fields, ...Object.keys(filters), ...Object.keys(sorts)])})
 
-  const select=lodash.uniq(fields.map(f => f.split('.')[0]))
+  const selectedAttr=['_id', 'id', CREATED_AT_ATTRIBUTE, UPDATED_AT_ATTRIBUTE, 'type', '__t', ...lodash.uniq(fields.map(f => f.split('.')[0]))]
+  const firstLevelAttr = getFirstLevelFields(modelAttributes)
+  const rejectedAttr = lodash.difference(firstLevelAttr, selectedAttr)
+  const projection = {}
+
+  lodash.forEach(rejectedAttr, attr => {
+    projection[attr] = 0
+  })
+
   const currentFilter=getCurrentFilter(filters, model)
   const currentSort=getCurrentSort(sorts, model)
   criterion={...criterion, ...currentFilter}
   // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
-  let query = mongoose.connection.models[model].find(criterion, select)
+  let query = mongoose.connection.models[model].find(criterion, projection)
   query = query.collation(COLLATION)
   if (currentSort) {
     query=query.sort(currentSort)
@@ -1133,6 +1153,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData,
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin, 
 }
 

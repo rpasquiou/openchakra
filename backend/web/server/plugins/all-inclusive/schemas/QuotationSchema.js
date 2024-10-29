@@ -3,6 +3,7 @@ const { isPhoneOk } = require('../../../../utils/sms')
 const mongoose = require('mongoose')
 const lodash=require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -71,71 +72,71 @@ QuotationSchema.virtual('details', {
 })
 
 // TODO: must use this.mer instead of direct computation
-QuotationSchema.virtual('customer_total').get(function() {
+QuotationSchema.virtual('customer_total', DUMMY_REF).get(function() {
   return this.gross_total+this.mer_total
 })
 
-QuotationSchema.virtual('mer_ht').get(function() {
+QuotationSchema.virtual('mer_ht', DUMMY_REF).get(function() {
   // Mission without customer => handled by TIPI
   const mer_rate=this.mission?.job?.user?.qualified ? MER_RATE : 0
   return this.gross_ht*mer_rate
 })
 
-QuotationSchema.virtual('mer_vat').get(function() {
+QuotationSchema.virtual('mer_vat', DUMMY_REF).get(function() {
   return this.mer_ht*VAT_RATE
 })
 
-QuotationSchema.virtual('mer_total').get(function() {
+QuotationSchema.virtual('mer_total', DUMMY_REF).get(function() {
   return this.mer_ht+this.mer_vat
 })
 
-QuotationSchema.virtual('gross_total').get(function() {
+QuotationSchema.virtual('gross_total', DUMMY_REF).get(function() {
   return lodash.sumBy(this.details, 'total') || 0
 })
 
-QuotationSchema.virtual('aa_ht').get(function() {
+QuotationSchema.virtual('aa_ht', DUMMY_REF).get(function() {
   const aa=this.gross_ht*AA_RATE
   return aa
 })
 
-QuotationSchema.virtual('aa_vat').get(function() {
+QuotationSchema.virtual('aa_vat', DUMMY_REF).get(function() {
   const aa=this.aa_ht*VAT_RATE
   return aa
 })
 
-QuotationSchema.virtual('aa_total').get(function() {
+QuotationSchema.virtual('aa_total', DUMMY_REF).get(function() {
   const aa=this.aa_ht+this.aa_vat
   return aa
 })
 
-QuotationSchema.virtual('ti_vat').get(function() {
+QuotationSchema.virtual('ti_vat', DUMMY_REF).get(function() {
   const ti_total=this.aa_vat
   return ti_total
 })
 
-QuotationSchema.virtual('ti_total').get(function() {
+QuotationSchema.virtual('ti_total', DUMMY_REF).get(function() {
   return this.gross_ht-this.aa_total+this.gross_vat
 })
 
-QuotationSchema.virtual('gross_vat').get(function() {
+QuotationSchema.virtual('gross_vat', DUMMY_REF).get(function() {
   if (lodash.isEmpty(this.details)) {
     return 0
   }
   return lodash.sumBy(this.details, 'vat_total')
 })
 
-QuotationSchema.virtual('gross_ht').get(function() {
+QuotationSchema.virtual('gross_ht', DUMMY_REF).get(function() {
   if (lodash.isEmpty(this.details)) {
     return 0
   }
   return lodash.sumBy(this.details, 'ht_total')
 })
 
-QuotationSchema.virtual('customer_ht').get(function() {
+QuotationSchema.virtual('customer_ht', DUMMY_REF).get(function() {
   return this.gross_ht+this.mer_ht
 })
 
-QuotationSchema.virtual('customer_vat').get(function() {
+QuotationSchema.virtual('customer_vat', DUMMY_REF).get(function() {
   return this.gross_vat+this.mer_vat
 })
 

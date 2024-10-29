@@ -10,6 +10,9 @@ const StatisticSchema = new Schema({
     type: String,
     enum: Object.keys(ENOUGH_SCORES)
   },
+  score_number: {
+    type: Number
+  },
   securityIncidentManagement: {
     type: Number
   },

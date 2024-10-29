@@ -1,39 +1,51 @@
-const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS, FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES } = require("./consts")
+const { CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS, FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES, SOFT_SKILLS_ATTR } = require("./consts")
 
 const freelanceProfileCompletion = (user) => {
-  if (!user['freelance_missing_attributes'] || user['freelance_missing_attributes'].length === 0) return 1
-  const missing = user['freelance_missing_attributes'].map(attribute => attribute.trim())
+  const missing = user['freelance_missing_attributes'].split(` - `).map(attribute => attribute.trim().toLowerCase())
   let result = 0
   const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missing.includes(attr)).length
-  if (requiredMissing === 0) result += 40
-  else result += 5 * (FREELANCE_REQUIRED_ATTRIBUTES.length - requiredMissing)
-  let mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr])).length
-  mandatoryMissing += missing.includes('Soft Skills') ? 1 : 0
-  const mandatoryPenalty = Math.floor((60 / FREELANCE_MANDATORY_ATTRIBUTES.length) * mandatoryMissing)
+  if (requiredMissing > 0) {
+    return 0
+  }
+
+  result += 40
   
+  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[attr].toLowerCase())).length
+  const softSkillsMissing = SOFT_SKILLS_ATTR.filter(skillAttr => missing.includes(FREELANCE_OUTPUT_ATTRIBUTES[skillAttr].toLowerCase())).length
+  const totalMandatoryMissing = mandatoryMissing + softSkillsMissing
+  const mandatoryPenalty = Math.floor((60 / (FREELANCE_MANDATORY_ATTRIBUTES.length + SOFT_SKILLS_ATTR.length)) * totalMandatoryMissing)
+
   result += 60 - mandatoryPenalty
-  return result/100
+
+  if (!user['expertises'] || user['expertises'].length < 3) {
+    result -= 5
+  }
+
+  return result / 100
 }
 
 const freelanceMissingAttributes = (user) => {
   let missingAttr = []
   const allAttributes = [...FREELANCE_REQUIRED_ATTRIBUTES, ...FREELANCE_MANDATORY_ATTRIBUTES]
-  allAttributes.forEach((attr, index) => {
-    if (!user[attr]) {
+  allAttributes.forEach((attr) => {
+    if (!user[attr] || (Array.isArray(user[attr]) && user[attr].length === 0)) {
       const attributeString = `${FREELANCE_OUTPUT_ATTRIBUTES[attr]} `
       missingAttr = [...missingAttr, attributeString]
     }
   })
-  if (
-    (!user['gold_soft_skills'] || user['gold_soft_skills'].length !== CF_MAX_GOLD_SOFT_SKILLS) ||
-    (!user['silver_soft_skills'] || user['silver_soft_skills'].length !== CF_MAX_SILVER_SOFT_SKILLS) ||
-    (!user['bronze_soft_skills'] || user['bronze_soft_skills'].length !== CF_MAX_BRONZE_SOFT_SKILLS)
-  ) {
-    missingAttr = [...missingAttr, `${FREELANCE_OUTPUT_ATTRIBUTES['soft_skills']}`]
-  } else {
-    missingAttr[missingAttr.length - 1] = String(missingAttr[missingAttr.length - 1]).trim()
+  
+
+  if (!user['bronze_soft_skills'] || user['bronze_soft_skills'].length === 0) {
+    const skillString = 'soft skills'
+    missingAttr = [...missingAttr, skillString]
   }
-  return missingAttr
+
+
+  if (!user['expertises'] || user['expertises'].length < 3) {
+    missingAttr = [...missingAttr, 'au moins 3 compétences']
+  }
+  missingAttr = missingAttr.join(` - `)
+  return missingAttr.charAt(0).toUpperCase() + missingAttr.slice(1)
 }
 
 module.exports = { freelanceMissingAttributes, freelanceProfileCompletion }

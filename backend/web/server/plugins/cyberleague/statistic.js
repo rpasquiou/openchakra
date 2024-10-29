@@ -4,6 +4,7 @@ const Score = require("../../models/Score")
 const User = require("../../models/User")
 const Statistic = require("../../models/Statistic")
 const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES, COMPLETED_YES } = require("./consts")
+const { REGIONS } = require('../../../utils/consts')
 
 
 const regexTest = (field, text) => {
@@ -55,15 +56,25 @@ const increaseValueCount = (data, field, increaseValue) => {
   }
 }
 
-const computeBellwetherStatistics = async (filters) => {
-  //TODO take filters into account (company sector, region, size)
-  const companyFilter = {}
+const computeBellwetherStatistics = async (params) => {
+
+  //Build filters from params (company sector, region, size)
+  let filters = {}
+
+  lodash.forEach(params, (v,k)=> {
+    if (lodash.startsWith(k, 'filter.') && k != 'filter.region') {
+      filters[k.slice(7)] = v
+    }
+    if (k == 'filter.region') {
+      filters['adress.region'] = REGIONS[v]
+    }
+  })
 
   //Getting scores that will be used to do statistics
   let scores
 
-  if (Object.keys(companyFilter).length > 0) {    
-    const companies = await Company.find(companyFilter)
+  if (Object.keys(filters).length > 0) {    
+    const companies = await Company.find(filters)
 
     const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
 
@@ -112,11 +123,22 @@ const computeBellwetherStatistics = async (filters) => {
   //   admin: 0
   // }
 
+  res.score_number = scores.length
   res.enoughScores = scores.length < STAT_MIN_SCORES ? ENOUGH_SCORES_NO : ENOUGH_SCORES_YES
 
+
+  if (res.score_number == 0) {
+    res = new Statistic(res)
+    await res.validate()
+  
+    return [res]
+  }
   //if less answers than STAT_MIN_SCORES stats are not relevant
   // if (res.enoughScores == ENOUGH_SCORES_NO) {
-  //   return res
+    // res = new Statistic(res)
+    // await res.validate()
+  
+    // return [res]
   // }
 
   // /!\ /!\ /!\ scores.answers.question in [question, undefined] -> undefined means question is not bellwether
@@ -158,23 +180,27 @@ const computeBellwetherStatistics = async (filters) => {
   //Compute ratios for bellwether / benchmark
   fields.forEach((field) => {
 
-    //Adapt value of field that need to be in [0,10]
-    if (lodash.includes(BENCHMARK_FIELDS_10, field)) {
-      res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 10)
+    if (bellwetherData[field].count > 0) {    
+      //Adapt value of field that need to be in [0,10]
+      if (lodash.includes(BENCHMARK_FIELDS_10, field)) {
+        res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 10)
 
-    //Adapt value of field that need to be in [0,5]
-    } else if (lodash.includes(BENCHMARK_FIELDS_5, field)) {
-      res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 5)
+      //Adapt value of field that need to be in [0,5]
+      } else if (lodash.includes(BENCHMARK_FIELDS_5, field)) {
+        res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 5)
 
+      } else {
+        res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
+      }
     } else {
-      res[field] = Math.round(bellwetherData[field].value / bellwetherData[field].count * 100) /100
+      res[field] = 0
     }
   })
 
   res = new Statistic(res)
   await res.validate()
 
-  return res
+  return [res]
 }
 
 module.exports = {

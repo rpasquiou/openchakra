@@ -8,7 +8,7 @@ const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -25,6 +25,8 @@ const { usersCount, customersCount, freelancesCount, currentMissionsCount, comin
 const Statistic = require("../../models/Statistic");
 const Mission = require("../../models/Mission");
 const Application = require("../../models/Application");
+const { isEmailOk } = require("../../../utils/sms");
+const { BadRequestError } = require("../../utils/errors");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -188,6 +190,11 @@ FREELANCE_MODELS.forEach(model => {
       options: { ref: 'certification' }
     },
   })
+  declareVirtualField({model, field: 'expertises_count', instance: 'Number', requires: 'expertises'})
+    declareVirtualField({model, field: 'pinned_expertises_count', instance: 'Number', requires: 'pinned_expertises'})
+  declareVirtualField({model, field: 'gold_soft_skills_count', instance: 'Number', requires: 'gold_soft_skills'})
+  declareVirtualField({model, field: 'silver_soft_skills_count', instance: 'Number', requires: 'silver_soft_skills'})
+  declareVirtualField({model, field: 'bronze_soft_skills_count', instance: 'Number', requires: 'bronze_soft_skills'})
   declareVirtualField({model, field: 'trainings', instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',
@@ -304,6 +311,11 @@ caster: {
   instance: 'ObjectID',
   options: { ref: 'application' }
 },})
+declareVirtualField({model: 'announce', field: 'expertises_count', instance: 'Number', requires: 'expertises'})
+declareVirtualField({model: 'announce', field: 'pinned_expertises_count', instance: 'Number', requires: 'pinned_expertises'})
+declareVirtualField({model: 'announce', field: 'gold_soft_skills_count', instance: 'Number', requires: 'gold_soft_skills'})
+declareVirtualField({model: 'announce', field: 'silver_soft_skills_count', instance: 'Number', requires: 'silver_soft_skills'})
+declareVirtualField({model: 'announce', field: 'bronze_soft_skills_count', instance: 'Number', requires: 'bronze_soft_skills'})
 declareVirtualField({model: 'announce', field: 'received_applications_count', instance: 'Number'})
 declareEnumField({model: 'announce', field: 'experience', enumValues: EXPERIENCE})
 declareVirtualField({model: 'announce', field: 'average_daily_rate', instance: 'Number', requires:'duration,duration_unit,budget'})
@@ -455,6 +467,9 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     },
   })
   declareVirtualField({
+    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name,pinned_expertises,pinned_expertises.name'
+  })
+  declareVirtualField({
     model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports.mission.freelance.fullname',
     caster: {
       instance: 'ObjectID',
@@ -470,7 +485,10 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
   })
   declareVirtualField({model, field: 'customer_evaluations_count', instance:'Number'})
   declareVirtualField({model, field: 'freelance_evaluations_count', instance:'Number'})
-  declareVirtualField({model, field: 'freelance_profile_completion', requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), instance: 'Number'})
+  declareVirtualField({model, field: 'freelance_profile_completion', 
+    requires:['expertises', ...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'freelance_missing_attributes', 'mobility_city', 'mobility_city_distance'].join(','), 
+    instance: 'Number',
+  })
   declareVirtualField({
     model, field: 'freelance_missing_attributes', instance: 'Array', multiple: true, requires:[...FREELANCE_REQUIRED_ATTRIBUTES, ...SOFT_SKILLS_ATTR, ...FREELANCE_MANDATORY_ATTRIBUTES, 'mobility_city', 'mobility_city_distance'].join(','),
     caster: {
@@ -605,9 +623,9 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       return Conversation.findById(id)
         .then(async(conv) => {
           if(!conv){
-            const model = await getModel(id, ['mission','application','customerFreelance','user'])
+            const model = await getModel(id, ['mission','application','customerFreelance','user', 'admin'])
             let customerId, freelanceId, applicationId, partnerId
-            if(model == 'customerFreelance' || model == 'user') {
+            if(['admin','customerFreelance','user'].includes(model)) {
               partnerId = id
             }
             else if(model == 'mission') {
@@ -697,23 +715,30 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     params.receiver=await conversation.getPartner(user)
   }
   if (model == 'recommandation') {
+    if (!params.creator_email) {
+      throw new BadRequestError(`L'email est obligatoire`)
+    }
+    if (!isEmailOk(params.creator_email)) {
+      throw new BadRequestError(`L'email ${params.creator_email || 'vide'} est invalide`)
+    }
     skip_validation=true
     params.freelance=user
   }
   if (model == 'question' ) {
     skip_validation = true
-    params.announce = params.parent
-  }
-  //If no Id when looking for questions, it means we're looking for FAQ and not all announces' questions
-  if (model == 'question' && !id) {
-    params['filter.announce'] = null
+    if( params.parent ) {
+      params.announce = params.parent
+    }
+    else {
+      params['filter.announce'] = null
+    }
   }
   return Promise.resolve({model, params, user, skip_validation})
 }
 
 setPreCreateData(preCreate)
 
-const postCreate = async ({model, params, data}) => {
+const postCreate = async ({model, params, data, user}) => {
   if (data.role==ROLE_CUSTOMER) {
     await sendCustomerConfirmEmail({user: data})
   }
@@ -738,12 +763,27 @@ const postCreate = async ({model, params, data}) => {
       await Announce.findByIdAndUpdate(params.parent, {$addToSet: {languages: data._id}})
     }
   }
+  if (model=='contact') {
+    const admins=await User.find({role: ROLE_ADMIN})
+    const contact=data.toObject()
+    await Promise.all(admins.map(admin => sendNewContact2Admin({contact, admin})))
+  }
+  if (model=='recommandation') {
+    await sendAskRecommandation({
+      user, external_email: data.creator_email, external_firstname: data.creator_firstname, 
+      message: data.message, recommendation_id: data._id,
+    })
+  }
   return Promise.resolve(data)
 }
 
 setPostCreateData(postCreate)
 
 const prePutData = async ({model, id, params, user}) => {
+  // Check passwords
+  if (MODELS.includes(model) && 'password' in params) {
+    await validatePassword(params)
+  }
   // Skip validaaiton for these models. Will be validated on publish action
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
