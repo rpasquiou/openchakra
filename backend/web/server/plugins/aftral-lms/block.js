@@ -5,7 +5,7 @@ const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL } = require("./consts");
 const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -553,8 +553,18 @@ const ACCEPTS={
   sequence: ['resource'],
 }
 
-const acceptsChild= (pType, cType) => {
-  return ACCEPTS[pType]?.includes(cType)
+const acceptsChild= async (parent, child) => {
+  if (!ACCEPTS[parent.type]?.includes(child.type)) {
+    throw new Error(`${child.type_str} ne peut être ajouté à ${parent.type_str}`)
+  }
+  // Can't mix modules and chapters in a program
+  if (parent.type==BLOCK_TYPE_PROGRAM) {
+    const otherType=child.type==BLOCK_TYPE_CHAPTER ? BLOCK_TYPE_MODULE : BLOCK_TYPE_CHAPTER
+    const hasOtherType=await mongoose.models.block.exists({parent: parent._id, type: otherType})
+    if (hasOtherType) {
+      throw new Error(`${child.type_str} et ${BLOCK_TYPE_LABEL[otherType]} sont incompatibles dans un programme`)
+    }
+  }
 }
 
 const addChild = async ({parent, child, user}) => {
@@ -562,7 +572,7 @@ const addChild = async ({parent, child, user}) => {
   if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
-  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, {[BLOCK_TYPE]: 1})))
+  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id)))
   const [pType, cType]=[parent?.type, child?.type]
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
   if (!!parent.origin) {
@@ -571,7 +581,7 @@ const addChild = async ({parent, child, user}) => {
   if (!!child.origin) {
     throw new BadRequestError(`Le fils doit être un template`)
   }
-  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
+  await acceptsChild(parent, child)
   const createdChild = await cloneTree(child._id, parent._id)
   await mongoose.models.block.findByIdAndUpdate(parent, {last_updater: user})
 
@@ -798,6 +808,16 @@ const getBlockNoteStr = async (userId, params, data) => {
   }
 }
 
+// A program in produciton mode must not have a sequence with no resource
+const ensureValidProgramProduction = async programId => {
+ const children=await getBlockChildren({blockId: programId})
+ const sequences=await Block.find({_id: {$in: children.map(c => c._id)}, type: BLOCK_TYPE_SEQUENCE}, {_id:1, name:1})
+ console.log(sequences.map(s => s._id))
+ return Promise.all(sequences.map(sequence => {
+  return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
+ }))
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
@@ -807,5 +827,5 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
-  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof,
+  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
 }

@@ -3,7 +3,7 @@ const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT } = require('./consts')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR } = require('./consts')
 const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
@@ -158,14 +158,14 @@ addAction('forgotPassword', forgotPasswordAction)
 
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='clone') {
-    if (![ROLE_CONCEPTEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
+    if (![ROLE_CONCEPTEUR, ROLE_ADMINISTRATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
     const block=await Block.findById(dataId, {origin:1})
     if (!!block.origin) {
       throw new BadRequestError(`Seul un modèle peut être dupliqué`)
     }
   }
   if (action=='addChild') {
-    if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
+    if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
   const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
   if (actionFn) {
