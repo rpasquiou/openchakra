@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -22,7 +22,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -256,6 +256,16 @@ const preCreate = async ({model, params, user}) => {
       params.resource_type=foundResourceType
     }
     params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
+    // Set default code if missing
+    if (!params.code) {
+      const PREFIXES={
+        [RESOURCE_TYPE_LINK]: 'URL',
+        [RESOURCE_TYPE_VISIO]: 'CLV',
+      }
+      const prefix=PREFIXES[params.resource_type] || 'DIV'
+      const count = await mongoose.models.block.countDocuments({ code: new RegExp(`^${prefix}_`) })
+      params.code=`${prefix}_${String(count + 1).padStart(5, '0')}`
+    }
   }
   if (model=='post') {
     params.author=user
@@ -413,6 +423,10 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   }
   if(model == `message`) {
     params.conversation = params.parent
+  }
+
+  if (model=='program' && params.status==PROGRAM_STATUS_AVAILABLE) {
+    await ensureValidProgramProduction(id)
   }
   return {model, id, params, user, skip_validation}
 }
@@ -717,16 +731,6 @@ const postCreate = async ({model, params, data}) => {
     )
   }
 
-  if([`resource`, `block`].includes(model) && data.type == `resource` && !data.code)  {
-    let prefix
-    if (data.resource_type === RESOURCE_TYPE_LINK) {
-      prefix = 'URL'
-    } else {
-      prefix = 'DIV'
-    }
-    const count = await mongoose.models.block.countDocuments({ code: new RegExp(`^${prefix}_`) })
-    await mongoose.models.block.updateOne({_id:data._id}, {$set: {code: `${prefix}_${String(count + 1).padStart(5, '0')}`}})
-  }
   return data
 }
 
