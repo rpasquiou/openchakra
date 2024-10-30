@@ -11,6 +11,7 @@ import {
   CHECKBOX_TYPE,
   CONTAINER_TYPE,
   DATE_TYPE,
+  EXPANDABLE_TYPE,
   GROUP_TYPE,
   IMAGE_TYPE,
   INPUT_TYPE,
@@ -62,6 +63,9 @@ const isDynamicComponent = (components:IComponents, comp: IComponent): boolean =
   if (comp.type=='Tabs') {
     return false
   }
+  if (comp.type=='AccordionItem') {
+    return true
+  }
   if (['TabList', 'TabPanels'].includes(comp.type)) {
     const tabParent=getParentOfType(components, comp, 'Tabs')
     return tabParent ? tabParent.props.dataSource : false
@@ -106,6 +110,9 @@ const getDynamicType = (comp: IComponent) => {
   }
   if (UPLOAD_TYPE.includes(comp.type)) {
     return 'UploadFile'
+  }
+  if (EXPANDABLE_TYPE.includes(comp.type)) {
+    return 'Expandable'
   }
   if (GROUP_TYPE.includes(comp.type)) {
     return comp.type
@@ -287,7 +294,6 @@ const buildBlock = ({
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
             const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              console.log(att.enumValues)
               propsContent += ` enum='${encode(JSON.stringify(att.enumValues))}'`
             }
             if (att?.suggestions) {
