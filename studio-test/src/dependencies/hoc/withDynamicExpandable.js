@@ -1,17 +1,21 @@
 import React, {useState, useEffect} from 'react'
 
-const withDynamicAccordionItem = Component => {
+const withDynamicExpandable = Component => {
 
   const internal = ({children, ...props}) => {
 
     props.key=props.id
     const firstChild = React.Children.toArray(children)[0]
 
+    // PERF: Don't display all children if collapsed and has datasource
+    const displayAllChildren = (expanded) => {
+      return expanded || !props.dataSource
+    }
     return (
       <Component {...props}>
         {({isExpanded}) => (
           <>
-          {isExpanded ? children : firstChild}
+          {displayAllChildren(isExpanded) ? children : firstChild}
           </>
         )}
       </Component>
@@ -21,4 +25,4 @@ const withDynamicAccordionItem = Component => {
   return internal
 }
 
-export default withDynamicAccordionItem
+export default withDynamicExpandable
