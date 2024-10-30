@@ -334,11 +334,11 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
 }
 
 const getTemplate = async (id) => {
-  let block=await mongoose.models.block.findById(id, {origin:1, _liked_by:1, _disliked_by:1})
-  if (!block.origin) {
-    return block
+  const bl=await mongoose.models.block.findById(id)
+  if (!bl.origin && !bl._locked && !bl.parent) {
+    return bl
   }
-  return await getTemplate(block.origin)
+  return await mongoose.models.block.findOne({name: bl.name, origin: null, _locked: {$ne: true}, parent: null})
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
