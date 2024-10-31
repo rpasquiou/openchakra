@@ -349,9 +349,6 @@ UserSchema.virtual('scans', {
   ref: 'scan',
   localField: '_id',
   foreignField: 'creator',
-  options: {
-    match: {status: SCAN_STATUS_READY},
-  },
 })
 
 /* eslint-enable prefer-arrow-callback */
