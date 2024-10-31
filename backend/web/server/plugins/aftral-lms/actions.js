@@ -176,7 +176,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     //     throw new ForbiddenError(`Vous avez atteint le nombre limite de tentatives`)
     //   }
     //}
-    return actionFn({action, dataId, user})
+    const allowed=await actionFn({action, dataId, user})
+    if (!allowed) {
+      throw new BadRequestError(`Action ${action} interdite`)
+    }
   }
   if (action=='next') {
     await getNextResource(dataId, user)
