@@ -1,5 +1,6 @@
 import { Select } from '@chakra-ui/react'
 import React, { memo } from 'react'
+import ColorsControl from '~components/inspector/controls/ColorsControl'
 
 import FormControl from '~components/inspector/controls/FormControl'
 import useBreakpoints from '~hooks/useBreakpoints'
@@ -67,7 +68,10 @@ const FlexPanel = ({ bkpt = 'base' }: { bkpt?: string }) => {
         </Select>
       </FormControl>
 
-      <SwitchControl label={'Hide scrollbar'} name={'hidescrollbar'}/>
+      <SwitchControl label={'Scrollbar Styler'} name={'scrollbarstyler'}/>
+      <ColorsControl label="Scrollbar Track Color" name="scrollbarTrackColor" />
+      <ColorsControl label="Scrollbar Thumb Color" name="scrollbarThumbColor" />
+
       <SwitchControl label={'Use as a filter'} name={'isFilterComponent'}/>
     </>
   )
