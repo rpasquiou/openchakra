@@ -1,6 +1,6 @@
 const { default: axios } = require("axios")
 
-const startSslScan = async (url) => {
+const sslScan = async (url, isNewScan) => {
   const EMAIL=process.env?.SSLLABS_EMAIL
   if (!EMAIL) {
     throw new Error(`Pas de jeton de connexion pour le scan SslLabs`)
@@ -36,9 +36,18 @@ const startSslScan = async (url) => {
     throw new Error(`Service surchargé : veuillez réessayer dans quelques minutes`)
   }
 
-  //success
+  return res
+}
+
+const startSslScan = (url) => {
+  return sslScan(url, true)
+}
+
+const getSslScan = (url) => {
+  return sslScan(url,false)
 }
 
 module.exports = {
   startSslScan,
+  getSslScan,
 }
