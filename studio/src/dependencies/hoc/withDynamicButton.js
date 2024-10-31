@@ -40,7 +40,7 @@ const withDynamicButton = Component => {
     // let onClick = props.onClick ? lodash.debounce(props.onClick, 2000) : null
     let onClick=() => {}
 
-    const [actionAllowed, setActionAllowed]=useState(true)
+    const [actionAllowed, setActionAllowed]=useState(false)
 
     useEffect(()=> {
       if (['openPage'].includes(action)) {
