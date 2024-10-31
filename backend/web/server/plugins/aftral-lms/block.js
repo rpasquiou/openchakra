@@ -334,11 +334,11 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
 }
 
 const getTemplate = async (id) => {
-  let block=await mongoose.models.block.findById(id, {origin:1, _liked_by:1, _disliked_by:1})
-  if (!block.origin) {
-    return block
+  const bl=await mongoose.models.block.findById(id)
+  if (!bl.origin && !bl._locked && !bl.parent) {
+    return bl
   }
-  return await getTemplate(block.origin)
+  return await mongoose.models.block.findOne({name: bl.name, origin: null, _locked: {$ne: true}, parent: null})
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
@@ -696,7 +696,8 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     return blockStatus
   }
   const childrenStatus=await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)))
-  const allChildrenFinished=lodash(childrenStatus).uniq().isEqual([BLOCK_STATUS_FINISHED])
+  // Check finished for non-optional only
+  const allChildrenFinished=lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq().isEqual([BLOCK_STATUS_FINISHED])
 
   // Block finished if all children finished
   if (allChildrenFinished) {
@@ -740,7 +741,8 @@ const setScormData= async (userId, blockId, data) => {
   const lesson_status=scormData?.['cmi.core.lesson_status']
   // If a min note is defined on the resource, use it
   const hasNote=!!scormData?.['cmi.core.score.raw']
-  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
+  // #212 Validate if note is egal to success min
+  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) >= block.success_note_min
   const update={
     success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
     finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
