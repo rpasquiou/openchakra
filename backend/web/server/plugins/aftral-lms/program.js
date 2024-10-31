@@ -1,4 +1,5 @@
 const mime=require('mime-types')
+const lodash=require('lodash')
 const Program=require('../../models/Program')
 const { getResourcesProgress, getBlockResources } = require('./resources')
 const { fillForm2, getFormFields } = require('../../../utils/fillForm')
@@ -110,7 +111,12 @@ const getSessionCertificate = async (userId, params, data) => {
 const getEvalResources = async (userId, params, data, fields, actualLogged) => {
   const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, allResources: true})
 
-  params={...params, [`filter._id`]: {$in: resourceIds}}
+  params=lodash(params)
+    .omitBy((_, k) => ['filter', 'limit'].includes(k))
+    .mapKeys((_, k) => k.replace('.evaluation_resources', ''))
+    .value()
+  params={...params, [`filter._id`]: {$in: resourceIds}, ['filter.evaluation']: true}
+
   let resources = await loadFromDb({
     model: `resource`,
     user: actualLogged,
@@ -118,9 +124,6 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
     params: params,
   })
   
-  resources = resources.filter(r => !!r.evaluation
-  )
-
   return resources.map(r => new Resource(r))
 }
 
