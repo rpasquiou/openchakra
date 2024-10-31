@@ -697,7 +697,8 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
   }
   const childrenStatus=await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)))
   // Check finished for non-optional only
-  const allChildrenFinished=lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq().isEqual([BLOCK_STATUS_FINISHED])
+  const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
+  const allChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
 
   // Block finished if all children finished
   if (allChildrenFinished) {
