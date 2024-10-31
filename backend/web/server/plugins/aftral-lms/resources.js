@@ -47,9 +47,11 @@ const getBlockResourcesNew = async ({ blockId, userId, allResources, role }) => 
         const available = await Progress.exists({
           block: b._id,
           user: userId,
-          achievement_status: { $in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT] }
+          achievement_status: { $in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED] }
         });
-        if (!available) continue
+        if (!available) {
+          continue
+        }
       }
       res.push(b)
     } else {
