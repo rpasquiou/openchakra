@@ -27,7 +27,7 @@ const startSslScan = async (url) => {
   )
 
   //not error 429 check
-  if (res.status == 200) {
+  if (res.status == 429 || res.status == 529) {
     throw new Error(`Service surchargé : veuillez réessayer dans quelques minutes`)
   }
 
