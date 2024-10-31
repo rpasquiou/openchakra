@@ -36,6 +36,7 @@ const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const { startSslScan } = require('../sslLabs')
+require('./cron')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
