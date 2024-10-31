@@ -1,6 +1,11 @@
 const { default: axios } = require("axios")
 
 const startSslScan = async (url) => {
+  const EMAIL=process.env?.SSLLABS_EMAIL
+  if (!EMAIL) {
+    throw new Error(`Pas de jeton de connexion pour le scan SslLabs`)
+  }
+
   //url check
   try {
     new URL(url)

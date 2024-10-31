@@ -2,7 +2,7 @@ const { default: axios } = require("axios")
 
 describe(`score tests`, () => {
 
-  const EMAIL='cyber-team@visiativ.com'
+  const EMAIL=process.env?.SSLLABS_EMAIL
 
   beforeAll(async () => {
   })
