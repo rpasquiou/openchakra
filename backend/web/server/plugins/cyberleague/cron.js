@@ -8,7 +8,7 @@ cron.schedule('*/30 * * * * *', async () => {
   const inprogressScans = await Scan.find({status: SCAN_STATUS_INPROGRESS},['_id','url'])
   inprogressScans.forEach(async (scan) => {
     res = await getSslScan(scan.url)
-    if (res.status == SCAN_STATUS_READY) {
+    if (res.data.status == SCAN_STATUS_READY) {
       const scanRates = computeScanRates(res)
       await Scan.findByIdAndUpdate(scan._id, scanRates)
     }
