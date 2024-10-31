@@ -68,6 +68,7 @@ const FlexPanel = ({ bkpt = 'base' }: { bkpt?: string }) => {
         </Select>
       </FormControl>
 
+      <SwitchControl label={'Hide scrollbar'} name={'hidescrollbar'}/>
       <SwitchControl label={'Scrollbar Styler'} name={'scrollbarstyler'}/>
       <ColorsControl label="Scrollbar Track Color" name="scrollbarTrackColor" />
       <ColorsControl label="Scrollbar Thumb Color" name="scrollbarThumbColor" />
