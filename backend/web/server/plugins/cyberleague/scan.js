@@ -78,7 +78,7 @@ const computeScanRates = async (json) => {
   const protocole_rate = Math.round((bestProtocol+worstProtocol)/2)
   const cipher_strength_rate = Math.round((bestCipher+worstCipher)/2)
 
-  return {protocole_rate,cipher_strength_rate, key_exchange_rate: worstKey}
+  return {protocole_rate,cipher_strength_rate, key_exchange_rate: worstKey,nutriscore}
 }
 
 module.exports = {
