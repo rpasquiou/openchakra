@@ -1,4 +1,6 @@
 const { default: axios } = require("axios")
+const path = require('path')
+const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../../.env')})
 
 describe(`score tests`, () => {
 
