@@ -596,7 +596,7 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'scan') {
-    startSslScan(params.url)
+    await startSslScan(params.url)
     params.status = SCAN_STATUS_INPROGRESS
   }
 
