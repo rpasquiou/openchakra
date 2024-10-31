@@ -55,7 +55,7 @@ const updateWorst = (newValue, oldValue) =>  {
   return oldValue
 }
 
-const computeScanRates = async (scanId, json) => {
+const computeScanRates = async (json) => {
   const nutriscore = json.data.endpoints[0].grade
 
   const suites = json.data.endpoints[0].details.suites
