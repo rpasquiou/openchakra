@@ -741,7 +741,8 @@ const setScormData= async (userId, blockId, data) => {
   const lesson_status=scormData?.['cmi.core.lesson_status']
   // If a min note is defined on the resource, use it
   const hasNote=!!scormData?.['cmi.core.score.raw']
-  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
+  // #212 Validate if note is egal to success min
+  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) >= block.success_note_min
   const update={
     success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
     finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
