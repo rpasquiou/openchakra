@@ -10,6 +10,7 @@ const ScoreSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: [true, `Le créateur du score est obligatoire`],
+    index: true
   },
   answers: {
     type: [{
@@ -59,6 +60,7 @@ const ScoreSchema = new Schema({
     enum: Object.keys(COMPLETED),
     required: true,
     default: COMPLETED_NO,
+    index: true
   },
   _market: {
     type: Boolean,
