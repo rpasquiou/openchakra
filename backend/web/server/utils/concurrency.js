@@ -26,6 +26,15 @@ function runPromisesWithDelay(promises) {
   return processPromise(0)
 }
 
+const runPromiseUntilSuccess = async (promiseFactory, retries=3) => {
+  return promiseFactory()
+    .catch(err => {
+      if (retries==0) {
+        throw new Error(`Failed after max retries`)
+      }
+      return runPromiseUntilSuccess(promiseFactory, retries-1)
+    })
+}
 module.exports={
   delayPromise,
   runPromisesWithDelay
