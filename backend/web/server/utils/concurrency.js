@@ -26,16 +26,29 @@ function runPromisesWithDelay(promises) {
   return processPromise(0)
 }
 
-const runPromiseUntilSuccess = async (promiseFactory, retries=3) => {
-  return promiseFactory()
-    .catch(err => {
-      if (retries==0) {
-        throw new Error(`Failed after max retries`)
-      }
-      return runPromiseUntilSuccess(promiseFactory, retries-1)
-    })
+const runPromiseUntilSuccess = (promiseFn, maxAttempts = 3, delay = 1000) => {
+  return new Promise((resolve, reject) => {
+      let attempts = 0
+
+      const attempt = () => {
+          attempts++
+          promiseFn()
+              .then(resolve)
+              .catch((error) => {
+                  if (attempts >= maxAttempts) {
+                      reject(`Failed after ${maxAttempts} attempts: ${error}`)
+                  } else {
+                      setTimeout(attempt, delay)
+                  }
+              });
+      };
+
+      attempt()
+  })
 }
+
 module.exports={
   delayPromise,
-  runPromisesWithDelay
+  runPromisesWithDelay,
+  runPromiseUntilSuccess,
 }
