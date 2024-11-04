@@ -106,5 +106,5 @@ const computeScanRatesIfResults = async (id,url) => {
 }
 
 module.exports = {
-  computeScanRates,
+  computeScanRatesIfResults
 }
