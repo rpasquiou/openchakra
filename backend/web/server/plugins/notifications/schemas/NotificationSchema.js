@@ -8,6 +8,13 @@ const NotificationSchema = new Schema({
     type: String,
     required: [true, `Un texte est obligatoire pour une notification`]
   },
+  recipients: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }]
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
