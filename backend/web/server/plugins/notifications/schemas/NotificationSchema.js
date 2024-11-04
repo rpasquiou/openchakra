@@ -15,6 +15,13 @@ const NotificationSchema = new Schema({
       required: true
     }]
   },
+  seen_by_recipients: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }]
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
