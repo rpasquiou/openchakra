@@ -299,6 +299,12 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     }
   }
 
+  if (model === 'company' && !id && user.role==ROLE_RH) {
+    const company=await Company.findById(user.company._id).populate('children')
+    const ids=[company._id, ...company.children.map(c => c._id)]
+    params['filter._id']={$in: ids}
+  }
+
   if (model == 'loggedUser') {
     model = 'user'
     id = user?._id || 'INVALIDID'
@@ -337,16 +343,15 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
       return Promise.resolve({ model, fields, id, params, data: [] })
     }
-    let company = params['filter.company'] ? params['filter.company'] : undefined
+    let company = params['filter.company'] ? params['filter.company'] : params.company
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
-    id= params['filter.company']
-    if (user.role == ROLE_RH) {
-      company = user.company._id
+    if (!company && user.role==ROLE_RH) {
+      company=user.company
     }
     return computeStatistics({ fields, company, start_date, end_date, diet})
-      .then(stats => ({ model, fields, id, params, data: [stats] }))
+      .then(stats => ({ model, fields, params, data: [stats] }))
   }
 
   if (model=='billing') {
@@ -2126,7 +2131,8 @@ const ensureChallengePipsConsistency = () => {
 
 
 const computeStatistics = async ({ fields, company, start_date, end_date, diet }) => {
-  const companyFilter = company ? mongoose.Types.ObjectId(company) : { $ne: null };
+  const comp=await Company.findById(company).populate('children')
+  const companyFilter = comp ? {$in: [comp._id, ...comp.children.map(c => c._id)]} : { $ne: null };
   const result = {};
   result.company = company?.toString();
   const cache = {};
