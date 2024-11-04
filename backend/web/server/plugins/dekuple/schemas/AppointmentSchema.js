@@ -4,7 +4,7 @@ const {
   APPOINTMENT_OTHER, APPOINTMENT_TYPE, APPOINTMENT_NOTIF_DELAY,
   APPOINTMENT_STATUS_TO_COME, APPOINTMENT_STATUS_PAST,
 } = require('../consts')
-const {schemaOptions} = require('../../../utils/schemas')
+const {schemaOptions, callPreSave} = require('../../../utils/schemas')
 
 const Schema = mongoose.Schema
 
@@ -60,6 +60,10 @@ AppointmentSchema.methods.shouldNotify = function() {
   const notif_moment=moment().add(APPOINTMENT_NOTIF_DELAY, 'minutes').format(DMYHM_FMT)
   return moment(this.date).format(DMYHM_FMT)==notif_moment
 }
+
+AppointmentSchema.post('save', async function() {
+  return callPreSave('appointment', this)
+})
 
 
 module.exports = AppointmentSchema

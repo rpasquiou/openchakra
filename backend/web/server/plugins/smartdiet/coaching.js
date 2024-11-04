@@ -6,11 +6,14 @@ require("../../models/Appointment")
 const Company = require("../../models/Company")
 const Quizz = require("../../models/Quizz")
 const { COACHING_STATUS_NOT_STARTED, COACHING_STATUS_STARTED, COACHING_STATUS_FINISHED, COACHING_END_DELAY, COACHING_STATUS_DROPPED, 
-  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS
+  COACHING_STATUS_STOPPED, QUIZZ_TYPE_PROGRESS, AVAILABILITIES_RANGE_DAYS, ROLE_EXTERNAL_DIET
 } = require("./consts")
 const { getAvailabilities } = require('../agenda/smartagenda')
 const Availability = require('../../models/Availability')
 const Range = require('../../models/Range')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
+const User = require('../../models/User')
+const NodeCache = require('node-cache')
 
 let progressTemplate=null
 let assessmentTemplate=null
@@ -23,7 +26,7 @@ const updateCoachingStatus = async coaching_id => {
     coaching.status=COACHING_STATUS_NOT_STARTED
   }
   // Started it 1 appointment
-  if (coaching.status==COACHING_STATUS_NOT_STARTED && !!coaching._last_appointment) {
+  if (coaching._last_appointment) {
     coaching.status=COACHING_STATUS_STARTED
     // Set progress quizz
     if (!coaching.progress) {
@@ -68,11 +71,6 @@ const updateCoachingStatus = async coaching_id => {
     }
   }
 
-  if (coaching.status!=COACHING_STATUS_NOT_STARTED && !coaching.progress) {
-    console.error(`pb on coaching ${coaching._id}`)
-    throw new Error(`pb on coaching ${coaching._id}`)
-  }
-
   const res=coaching.save()
   return res
 }
@@ -80,9 +78,9 @@ const updateCoachingStatus = async coaching_id => {
 const getAvailableDiets = async (userId, params, data) => {
   console.log('Getting available diets for', userId, 'coaching', data._all_diets.length, 'company', data.user.company.name)
   let diets=data._all_diets
-  diets=diets.filter(d => !!d.smartagenda_id)
+  diets=diets.filter(d => !!parseInt(d.smartagenda_id))
   diets=diets.filter(d => d.diet_coaching_enabled)
-  diets=diets.filter(d => d.customer_companies?.map(c => c._id.toString()).includes(data.user?.company._id.toString()))
+  diets=diets.filter(d => d.customer_companies.map(c => c._id.toString()).includes(data.user.company._id.toString()))
   const hasAvailabilities = async diet_smartagenda_id => {
     const availabilities=await getAvailabilities({
       diet_id: diet_smartagenda_id, 
@@ -92,21 +90,46 @@ const getAvailableDiets = async (userId, params, data) => {
     })
     return !lodash.isEmpty(availabilities)
   }
-  diets=await Promise.all(diets.map(async diet => {
+  dietsAvail=await runPromisesWithDelay(diets.map(diet => async () => {
     const hasAvail=await hasAvailabilities(diet.smartagenda_id)
     return hasAvail ? diet : null
   }))
-  diets=diets.filter(d => !!d)
+  diets=dietsAvail.map(d => d.value).filter(d => !!d)
   return diets
 }
 
+const coachingAvailabilitiesCache=new NodeCache({stdTTL: 5*60})
+
 const getDietAvailabilities = async (userId, params, data) => {
-  const availabilities = await getAvailabilities({
-    diet_id: data.diet.smartagenda_id,
-    from: moment(),
-    to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
-    appointment_type: data.appointment_type.smartagenda_id
-  })
+  // If no diet, return availabilities for all diets of the company
+  let availabilities=[]
+  if (!data.diet) {
+    let diets=await User.find({
+      role: ROLE_EXTERNAL_DIET, smartagenda_id: {$exists: true}, smartagenda_id: {$ne: null},
+      diet_coaching_enabled: true, customer_companies: data.user.company,
+    })
+    console.log('diets:', diets.map(d => [d.email, d.smartagenda_id]))
+    console.log('appt type', data.appointment_type)
+    console.log('company', data.user.company.name)
+    await runPromisesWithDelay(diets.map(d => async () => {
+      const currentAvails= await getAvailabilities({
+        diet_id: d.smartagenda_id,
+        from: moment(),
+        to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+        appointment_type: data.appointment_type.smartagenda_id
+      })
+      availabilities=[...availabilities, ...currentAvails.map(a => ({...a, diet: d}))]
+    }))
+  }
+  else {
+    availabilities = await getAvailabilities({
+      diet_id: data.diet.smartagenda_id,
+      from: moment(),
+      to: moment().add(AVAILABILITIES_RANGE_DAYS, 'day'),
+      appointment_type: data.appointment_type.smartagenda_id
+    })
+  }
+  coachingAvailabilitiesCache.set(data._id.toString(), availabilities)
   const res = lodash(availabilities)
     .groupBy(avail => moment(avail.start_date).startOf('day'))
     .entries()
@@ -122,7 +145,7 @@ const getDietAvailabilities = async (userId, params, data) => {
 }
 
 const updateApptsOrder= async coachingId => {
-  console.log('updating appt order for coaching', coachingId)
+  // console.log('updating appt order for coaching', coachingId?._id)
   const appointments=await mongoose.models.appointment.find({coaching: coachingId}).sort({start_date:1})
   const promises=appointments.map((appointment, idx) => {
     const newOrder=idx+1
@@ -136,5 +159,5 @@ const updateApptsOrder= async coachingId => {
 
 
 module.exports={
-  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder, coachingAvailabilitiesCache,
 }
