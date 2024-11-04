@@ -369,6 +369,8 @@ const buildBlock = ({
         }
 
           if (propName === 'scrollbarstyler') {
+            //TODO
+            //HACK: scrollbarTrackColor and scrollbarThumbColor VOMIIIIIIII
             const scrollbarTrackColor = childComponent.props?.scrollbarTrackColor || ''
             const scrollbarThumbColor = childComponent.props?.scrollbarThumbColor || ''
             
