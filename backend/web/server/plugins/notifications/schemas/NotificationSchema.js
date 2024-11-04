@@ -22,6 +22,10 @@ const NotificationSchema = new Schema({
       required: true
     }]
   },
+  picture: {
+    type: String,
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
