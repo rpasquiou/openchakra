@@ -2,6 +2,18 @@ import React from 'react'
 import {IconButton} from '@chakra-ui/react'
 import { DownloadIcon } from '@chakra-ui/icons'
 import { imageSrcSetPaths } from '../utils/misc'
+import '../utils/scorm'
+
+/** TODO NGINX rewrite
+https://my-alfred-data-test.s3.eu-west-3.amazonaws.com/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
+
+==> 
+
+/SCORM/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
+
+*/
+
+const PATTERN = new RegExp(`${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}`);
 
 export const getExtension = (filename: string) =>
   filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename
@@ -77,7 +89,37 @@ export const mediaWrapper = ({
         onClick={() => downloadResource(src||undefined)}
       /></div>) || (null)
 
-  const ext = forceExt(src?.toLowerCase(), isIframe) || getExtension(src.toLowerCase())
+  const orgExt=getExtension(src.toLowerCase())
+  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+  // TODO: must handle actual src with LMS system
+  if (ext=='html') {
+    const parsedUrl = new URL(src)
+    // Embed youtube
+    if (/youtube.com/.test(parsedUrl.hostname)) {
+      const videoId=parsedUrl.searchParams.get('v')
+      src=`https://www.youtube.com/embed/${videoId}`
+    }
+    // Embed video
+    else if (/vimeo\.com/.test(parsedUrl.hostname) && !/player\.vimeo\.com/.test(parsedUrl.hostname)) {
+      const parts=parsedUrl.pathname.match(/[^/]+/g)
+      src=`https://player.vimeo.com/video/${parts[0]}?h=${parts[1]}`
+    }
+    else {//Certainly a SCORM
+      if (PATTERN.test(parsedUrl.hostname)) {
+        const scormId=parsedUrl.pathname
+        src=`/SCORM${scormId}`
+      }
+    }
+
+    // Preview for scorms for builders TODO really useful ?
+    // else {
+    //   // Replace the last part of the path with 'story.html'
+    //   const pathParts = parsedUrl.pathname.split('/')
+    //   pathParts[pathParts.length - 1] = 'story.html'
+    //   parsedUrl.pathname = pathParts.join('/')
+    //   src=parsedUrl.toString()
+    // }
+  }
 
   switch (ext) {
     case 'mp4':
@@ -111,13 +153,17 @@ export const mediaWrapper = ({
     case 'docx':
     case 'xls':
     case 'xlsx':
-      return (
+    case 'ppt':
+    case 'pptx':
+    case 'pps':
+    case 'ppsx':
+            return (
         <>
         <iframe
           title={src}
           src={`https://view.officeapps.live.com/op/embed.aspx?src=${src}`}
-          width={htmlWidth}
-          height={htmlHeight}
+          width={doc.width}
+          height={doc.height}
           frameBorder="0"
           allowFullScreen
         ></iframe>

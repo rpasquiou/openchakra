@@ -67,6 +67,7 @@ const FlexPanel = ({ bkpt = 'base' }: { bkpt?: string }) => {
         </Select>
       </FormControl>
 
+      <SwitchControl label={'Hide scrollbar'} name={'hidescrollbar'}/>
       <SwitchControl label={'Use as a filter'} name={'isFilterComponent'}/>
     </>
   )

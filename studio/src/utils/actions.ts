@@ -570,19 +570,35 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_start_survey: {
-    label: 'SM Start survey',
+    label: 'Start survey',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_start_survey_2: {
+    label: 'Start survey 2',
+    options: {},
+    next: ['openPage'],
+  },
+  smartdiet_start_survey_3: {
+    label: 'Start survey 3',
+    options: {},
+    next: ['openPage'],
+  },
+
+  previous_question: {
+    label: 'Previous question',
     options: {},
     next: ['openPage'],
   },
 
   smartdiet_next_question: {
-    label: 'SM Next question',
+    label: 'Next question',
     options: {},
     next: ['openPage'],
   },
 
   smartdiet_finish_survey: {
-    label: 'SM Finish survey',
+    label: 'Finish survey',
     options: {},
     next: ['openPage'],
   },
@@ -632,7 +648,7 @@ export const ACTIONS: IActions = {
   },
 
   smartdiet_read_content: {
-    label: 'SM Read content',
+    label: 'Read content',
     options: {},
     next: ['openPage'],
   },
@@ -733,6 +749,11 @@ export const ACTIONS: IActions = {
   },
   accept: {
     label: 'Accept',
+    options: {},
+    next: ['openPage'],
+  },
+  validate: {
+    label: 'Validate',
     options: {},
     next: ['openPage'],
   },

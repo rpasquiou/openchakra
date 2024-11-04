@@ -38,8 +38,10 @@ const PRICES_MAPPING={
 }
 
 const getAppointmentPrice = ({pricesList, appointment}) => {
-  const prices=lodash(pricesList).filter(p => moment(p.date).isBefore(appointment.start_date)).maxBy('date')
-  return prices?.[PRICES_MAPPING[appointment.type]]||undefined
+  if (appointment.type==APPOINTMENT_TYPE_NUTRITION) {
+    return 15
+  }
+  return appointment.offer[appointment.type==APPOINTMENT_TYPE_ASSESSMENT ? 'assessment_price' : 'followup_price'] || 0
 }
 
 // Computes blliing for the logged user
@@ -68,14 +70,24 @@ const computeBilling = async ({ user, diet, fields, params }) => {
 
 // diet : loggedUser, validDiet: diet id to filter on
 const computeDietBilling = async (diet, fields, params, validDiet) => {
-  console.log('params', params)
   const company = params['filter.company']
   const prices = await getPrices()
+
+  const dateFilter = {}
+  // Add conditions based on the presence of start_date and end_date
+  if (!!params['filter.start_date']) {
+    dateFilter.start_date = { $gte: params['filter.start_date']}
+  }
+  if (!!params['filter.end_date']) {
+    dateFilter.start_date = { ...dateFilter.start_date, $lte: params['filter.end_date'] }
+  }
+  
   const appointments = company ?
     await Appointment.aggregate([
       {
         $match:{
-          diet:diet
+          diet:diet,
+          ...dateFilter,
         }
       },
       {
@@ -87,6 +99,14 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
         }
       },
       {
+        $lookup:{
+          from:'coachings',
+          localField:'coaching',
+          foreignField:'_id',
+          as:'coaching'
+        }
+      },
+      {
         $unwind:'$user'
       },
       {
@@ -94,9 +114,37 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
           'user.company':mongoose.Types.ObjectId(company)
         }
       },
-    ])
-    : await Appointment.find({ diet }, { start_date: 1 })
-  const nutAdvices = company ?
+      {
+        $unwind: '$coaching' // Assuming one-to-one relationship with coaching
+      },
+      {
+        $lookup: {
+          from: 'offers', // The name of the offers collection
+          localField: 'coaching.offer', // Field in coaching that references offer
+          foreignField: '_id', // _id in offers collection
+          as: 'offer'
+        }
+      },
+      {
+        $unwind: '$offer' // Assuming one-to-one relationship with offer
+      },
+      {
+        $project: {
+          diet: 1,
+          user: 1,
+          // coaching: 1,
+          order: 1,
+          start_date:1 ,
+          // Select specific fields from the offer
+          // 'offer._id': 1,
+          'offer.assessment_price': 1,
+          'offer.followup_price': 1,
+          'offer.nutrition_price': 1,
+        }
+      }    ])
+    : await Appointment.find({ diet }).populate({path: 'coaching', populate: 'offer'})
+
+    const nutAdvices = company ?
     await NutritionAdvice.aggregate([
       {
         $match:{
@@ -139,22 +187,20 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
     months.reverse()
   }
 
+  const monthFormat='YYYY-MM'
+  const groupedAppts=lodash.groupBy(appointments, a => moment(a.start_date).format(monthFormat))
+  const groupNuts=lodash.groupBy(nutAdvices, n => moment(n.start_date).format(monthFormat))
+
   let data = []
   for (const month of months) {
-    const monthFilter = getMonthFilter({ attribute: 'start_date', month })
-    const appts = await Appointment.find({ ...monthFilter, validated: true, diet }, { appointment_type: 1, start_date: 1 })
-    const types = await Promise.all(appts.map(a => getAppointmentType({ appointmentType: a.appointment_type })))
-    let typedAppts = appts.map((a, idx) => ({ ...a.toObject(), type: types[idx] }))
-    const nutAdvices = await NutritionAdvice.find({ diet, ...monthFilter })
-    typedAppts = [
-      ...typedAppts,
-      ...nutAdvices.map(n => ({ ...n.toObject(), type: APPOINTMENT_TYPE_NUTRITION })),
-    ]
-    typedAppts = typedAppts.map(appt => ({ ...appt, price: getAppointmentPrice({ pricesList: prices, appointment: appt }) }))
+    const monthYear=month.format(monthFormat)
+    const appts = (groupedAppts[monthYear] ||[]).map(a => ({ offer: a.offer || a.coaching.offer, type: a.order==1 ? APPOINTMENT_TYPE_ASSESSMENT : APPOINTMENT_TYPE_FOLLOWUP }))
+    const nuts=(groupNuts[monthYear] || []).map(n => ({ ...n, type: APPOINTMENT_TYPE_NUTRITION }))
+    const typedAppts = ([...appts,...nuts]).map(appt => ({ type: appt.type, price: getAppointmentPrice({ pricesList: prices, appointment: appt }) }))
 
     const grouped = lodash.groupBy(typedAppts, 'type')
     const currentData = {
-      month: month.format('YYYY-MM'),
+      month: month.format(monthFormat),
       assessment_count: grouped[APPOINTMENT_TYPE_ASSESSMENT]?.length || 0,
       assessment_total: lodash(grouped[APPOINTMENT_TYPE_ASSESSMENT] || []).sumBy('price') || 0,
       followup_count: grouped[APPOINTMENT_TYPE_FOLLOWUP]?.length || 0,
@@ -227,7 +273,14 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
 }
 
 const computeAllDietBillings = async (fields, params) => {
-  const diets = await User.aggregate([
+  let start=0
+  let limit=1000000
+  if (params.limit) {
+    limit=parseInt(params.limit)+1
+    start=parseInt(params.page)*parseInt(params.limit) || 0
+  }
+
+  let diets = await User.aggregate([
     {
       $match: {
         role: ROLE_EXTERNAL_DIET,
@@ -247,9 +300,23 @@ const computeAllDietBillings = async (fields, params) => {
         'coachings.0': { $exists: true },
       },
     },
+    {
+      $sort: { lastname: 1}
+    },
+    {
+      $skip: start
+    },
+    {
+      $limit: limit
+    }
   ])
 
+
   let totalBillings = 0
+
+  // Remove limit && page for each diet request
+  const detailsParams=lodash.omitBy(params, (v, k) => /^limit/.test(k) || /^page/.test(k))
+
   const data = await Promise.all(
     diets.map(async (diet) => {
       const billings = {
@@ -262,7 +329,7 @@ const computeAllDietBillings = async (fields, params) => {
         nutrition_total: 0,
       }
 
-      const details = await computeDietBilling(diet._id, fields, params)
+      const details = await computeDietBilling(diet._id, fields, detailsParams)
       const monthlyBillings = details
 
       const dietDetails = {
