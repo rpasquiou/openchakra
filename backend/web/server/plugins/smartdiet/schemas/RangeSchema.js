@@ -8,7 +8,7 @@ const Schema = mongoose.Schema
 
 const RangeSchema = new Schema({
   // Diet
-  user: {
+  diet: {
     type: Schema.Types.ObjectId,
     ref: 'user',
     required: true,

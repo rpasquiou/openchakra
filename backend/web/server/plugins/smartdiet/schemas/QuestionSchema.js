@@ -44,6 +44,10 @@ const QuestionSchema = new Schema({
     type: String,
     required: false,
   },
+  subtitle_rarely: {
+    type: String,
+    required: false,
+  },
   subtitle_often: {
     type: String,
     required: false,

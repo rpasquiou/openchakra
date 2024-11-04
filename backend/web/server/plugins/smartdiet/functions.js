@@ -17,6 +17,8 @@ const {
   setPreprocessGet,
   simpleCloneModel,
   getDateFilter,
+  setPrePutData,
+  createSearchFilter,
 } = require('../../utils/database')
 const {
   sendDietPreRegister2Admin,
@@ -129,6 +131,13 @@ const {
   CALL_DIRECTION_OUT_CALL,
   SOURCE,
   AVAILABILITIES_RANGE_DAYS,
+  CALL_STATUS_CONVERTI_COA,
+  CALL_STATUS_CONVERTI_COA_CN,
+  CALL_STATUS_CONVERTI_CN,
+  LEAD_SEARCH_TEXT_FIELDS,
+  USER_SEARCH_TEXT_FIELDS,
+  CONTENT_VISIBILITY,
+  CONTENT_ARTICLE
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -146,10 +155,10 @@ const {
 
 const Category = require('../../models/Category')
 const { delayPromise, runPromisesWithDelay } = require('../../utils/concurrency')
-const {getSmartAgendaConfig} = require('../../../config/config')
+const {getSmartAgendaConfig, isDevelopment} = require('../../../config/config')
 const AppointmentType = require('../../models/AppointmentType')
 require('../../models/LogbookDay')
-const { importLeads } = require('./leads')
+const { importLeads, getCompanyLeads } = require('./leads')
 const Quizz = require('../../models/Quizz')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const {
@@ -199,7 +208,7 @@ const Conversation = require('../../models/Conversation')
 const UserQuizz = require('../../models/UserQuizz')
 const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
-const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities } = require('./coaching')
+const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities, coachingAvailabilitiesCache } = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
@@ -210,6 +219,10 @@ const Job = require('../../models/Job')
 const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
 const { historicize } = require('./history')
+const { validatePassword } = require('../../../utils/passwords')
+const { createAppointmentProgress } = require('./quizz')
+const { registerPreSave } = require('../../utils/schemas')
+const { crmUpsertAccount } = require('../../utils/crm')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -280,6 +293,18 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
       .then(tickets => ({ model, fields, id, data: tickets}))
   }
 
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
+  }
+
+  if (model === 'company' && !id && user.role==ROLE_RH) {
+    const company=await Company.findById(user.company._id).populate('children')
+    const ids=[company._id, ...company.children.map(c => c._id)]
+    params['filter._id']={$in: ids}
+  }
+
   if (model == 'loggedUser') {
     model = 'user'
     id = user?._id || 'INVALIDID'
@@ -318,16 +343,15 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
     if (![ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_RH].includes(user.role)) {
       return Promise.resolve({ model, fields, id, params, data: [] })
     }
-    let company = params['filter.company'] ? params['filter.company'] : undefined
+    let company = params['filter.company'] ? params['filter.company'] : params.company
     const diet = params['filter.diet'] ? params['filter.diet'] : undefined
     const start_date = params['filter.start_date'] ? params['filter.start_date'] : undefined
     const end_date = params['filter.end_date'] ? params['filter.end_date'] : undefined
-    id= params['filter.company']
-    if (user.role == ROLE_RH) {
-      company = user.company._id
+    if (!company && user.role==ROLE_RH) {
+      company=user.company
     }
     return computeStatistics({ fields, company, start_date, end_date, diet})
-      .then(stats => ({ model, fields, id, params, data: [stats] }))
+      .then(stats => ({ model, fields, params, data: [stats] }))
   }
 
   if (model=='billing') {
@@ -539,6 +563,8 @@ const preCreate = async ({ model, params, user }) => {
   }
   // Handle both nutrition advice & appointment
   if (['nutritionAdvice', 'appointment'].includes(model)) {
+    const loadedModel=await getModel(params.parent)
+
     const isAppointment = model == 'appointment'
     if (![ROLE_EXTERNAL_DIET, ROLE_CUSTOMER, ROLE_SUPPORT, ROLE_ADMIN, ROLE_SUPER_ADMIN].includes(user.role)) {
       throw new ForbiddenError(`Seuls les rôles patient, diet et support peuvent prendre un rendez-vous`)
@@ -546,75 +572,99 @@ const preCreate = async ({ model, params, user }) => {
     let customer_id, diet
     if (user.role != ROLE_CUSTOMER) {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
-      customer_id = params.parent
-      diet=user
+      // Appointment created by operator directly with a 1st appointment
+      if (loadedModel=='coaching') {
+        const availabilities=coachingAvailabilitiesCache.get(params.parent)||[]
+        const paramMoment=moment(params.start_date)
+        const avail=availabilities.find(a => Math.abs(moment(a.start_date).diff(paramMoment))<10)
+        if (!avail) {
+          throw new BadRequestError(`Ce rendez-vous n'est plus disponible`)
+        }
+        const coaching=await Coaching.findById(params.parent)
+        diet=avail.diet
+        customer_id=coaching.user._id
+        coaching.diet=avail.diet
+        await coaching.save()
+      }
+      else {
+        customer_id = params.parent
+        diet=user
+      }
     }
     else { //CUSTOMER
       customer_id = user._id
     }
-    return loadFromDb({
+    const [usr]=await loadFromDb({
       model: 'user', id: customer_id,
       fields: [
-        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 'latest_coachings.appointment_type',
-        'nutrition_advices', 'company.current_offer', 'company.reasons', 'phone', 'latest_coachings.diet',
+        'email', 'latest_coachings.appointments', 'latest_coachings.reasons', 'latest_coachings.remaining_credits', 
+        'latest_coachings.appointment_type', 
+        'nutrition_advices', 
+        'company.current_offer.nutrition_credit', 'spent_nutrition_credits',
+        'company.reasons', 'phone', 'latest_coachings.diet',
+        'latest_coachings.offer.nutrition_credit',
+        'company.current_offer.nutrition_credit',
       ],
       user,
     })
-      .then(([usr]) => {
-        // Phone is required for appintment
-        if (lodash.isEmpty(usr.phone)) {
-          throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
-        }
-        // If company has coaching reasons, check if the user coaching intersects at least one
-        const company_reasons=usr.company?.reasons
-        if (company_reasons?.length > 0) {
-          const user_reasons=usr.latest_coachings?.[0]?.reasons
-          if (!setIntersects(user_reasons, company_reasons)) {
-            throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
-          }
-        }
-        // Check remaining credits
-        const latest_coaching = usr.latest_coachings[0]
-        if (!latest_coaching && isAppointment) {
-          throw new ForbiddenError(`Aucun coaching en cours`)
-        }
+    // Phone is required for appintment
+    if (lodash.isEmpty(usr.phone)) {
+      throw new BadRequestError(`Le numéro de téléphone est obligatoire pour prendre rendez-vous`)
+    }
+    // If company has coaching reasons, check if the user coaching intersects at least one
+    const company_reasons=usr.company?.reasons
+    if (company_reasons?.length > 0) {
+      const user_reasons=usr.latest_coachings?.[0]?.reasons
+      if (!setIntersects(user_reasons, company_reasons)) {
+        throw new BadRequestError(`Vos motifs de consultation ne sont pas pris en charge par votre compagnie`)
+      }
+    }
+    // Check remaining credits
+    const latest_coaching = usr.latest_coachings[0]
+    if (!latest_coaching && isAppointment) {
+      throw new ForbiddenError(`Aucun coaching en cours`)
+    }
 
-        const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.nutrition_advices?.length
+    console.log('spent', usr.spent_nutrition_credits, 'credit', usr.comany?.current_offer?.nutrition_credit)
+    const remaining_nut=usr.company?.current_offer?.nutrition_credit-usr.spent_nutrition_credits
 
-        if ((isAppointment && latest_coaching.remaining_credits <= 0)
-          || (!isAppointment && !(remaining_nut > 0))) {
-          throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
-        }
-        // Check appointment to come
-        const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
-        if (nextAppt) {
-          throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
-        }
+    if ((isAppointment && latest_coaching.remaining_credits <= 0)
+      || (!isAppointment && !(remaining_nut > 0))) {
+      throw new ForbiddenError(`L'offre ne permet pas/plus de prendre un rendez-vous`)
+    }
+    // Check appointment to come
+    const nextAppt=isAppointment && latest_coaching.appointments.find(a => moment(a.end_date).isAfter(moment()))
+    if (nextAppt) {
+      throw new ForbiddenError(`Un rendez-vous est déjà prévu le ${moment(nextAppt.start_date).format('L à LT')}`)
+    }
 
-        if (user.role==ROLE_CUSTOMER) {
-          diet=latest_coaching.diet
+    if (user.role==ROLE_CUSTOMER) {
+      diet=latest_coaching.diet
+    }
+    
+    if (isAppointment) {
+      const start=moment(params.start_date)
+      if (latest_coaching?.diet?.smartagenda_id) {
+        const availabilities=await getAvailabilities({
+          // FIX May lead to incorrect diet's appintment if taken by a diet other than te coaching's one
+          // The selected diet should be the logged one (pb diet/operator)
+          diet_id: latest_coaching?.diet?.smartagenda_id, 
+          appointment_type: latest_coaching.appointment_type?.smartagenda_id,
+          from: moment(start).add(-1, 'day').startOf('day'),
+          to: moment(start).endOf('day'),
+        })
+        const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
+        if (!exists) {
+          throw new Error(`Ce créneau n'est plus disponible`)
         }
-        
-        if (isAppointment) {
-          const start=moment(params.start_date)
-          return getAvailabilities({
-            diet_id: diet.smartagenda_id, 
-            appointment_type: latest_coaching.appointment_type?.smartagenda_id,
-            from: moment(start).add(-1, 'day').startOf('day'),
-            to: moment(start).endOf('day'),
-          })
-            .then(availabilities => {
-              const exists=availabilities.some(a => Math.abs(start.diff(a.start_date, 'second'))<2)
-              if (!exists) {
-                throw new Error(`Ce créneau n'est plus disponible`)
-              }
-              return { model, params: { user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
-            })
-        }
-        else { // Nutrition advice
-          return { model, params: { patient_email: usr.email, diet, ...params } }
-        }
-      })
+      }
+      // Create progress quizz for appointment
+      const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
+      return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+    }
+    else { // Nutrition advice
+      return { model, params: { patient_email: usr.email, diet, ...params } }
+    }
   }
   return Promise.resolve({ model, params })
 }
@@ -648,8 +698,7 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
   // Validate appointment if this is a progress quizz answer
   if (model=='userQuizzQuestion') {
     const quizz=await UserQuizz.findOne({questions: id, type: QUIZZ_TYPE_PROGRESS})
-    const coaching=await Coaching.findOne({progress: quizz}).populate('latest_appointments')
-    const appt=coaching?.latest_appointments?.[0]
+    const appt=await Appointment.findOne({progress: quizz})
     if (appt) {
       appt.validated=true
       await appt.save().catch(console.error)
@@ -710,7 +759,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({
     model: m, field: '_all_events', instance: 'Array',
-    requires: 'dummy, _all_menus,_all_individual_challenges,collective_challenges,_all_webinars',
+    requires: 'dummy,_all_menus,_all_individual_challenges,collective_challenges,_all_webinars',
     multiple: true,
     caster: {
       instance: 'ObjectID',
@@ -1018,6 +1067,10 @@ declareVirtualField({
       options: { ref: 'pack'}
     },
   })
+  declareVirtualField({ model: m, field: 'search_text', instance: 'String', requires: USER_SEARCH_TEXT_FIELDS,
+    dbFilter: createSearchFilter({attributes: USER_SEARCH_TEXT_FIELDS}),
+  })
+
 })
 // End user/loggedUser
 
@@ -1054,6 +1107,12 @@ declareVirtualField({
     options: { ref: 'company' }
   },
 })
+declareVirtualField({model: 'company', field: 'contents', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'content' }
+  },
+})
 declareVirtualField({
   model: 'company', field: 'collective_challenges', instance: 'Array', multiple: true,
   caster: {
@@ -1075,14 +1134,7 @@ declareVirtualField({
     options: { ref: 'user' }
   },
 })
-declareVirtualField({
-  model: 'company', field: 'leads', instance: 'Array', multiple: true,
-  requires: 'code',
-  caster: {
-    instance: 'ObjectID',
-    options: { ref: 'lead' }
-  },
-})
+declareComputedField({model: 'company', field: 'leads', requires: 'code', getterFn: getCompanyLeads})
 declareVirtualField({model: 'company', field: 'current_offer', instance: 'offer'})
 
 
@@ -1098,6 +1150,8 @@ declareVirtualField({
 })
 declareVirtualField({ model: 'content', field: 'comments_count', instance: 'Number', requires: 'comments' })
 declareVirtualField({ model: 'content', field: 'search_text', instance: 'String', requires: 'name,contents' })
+declareEnumField({ model: 'content', field: 'visibility', enumValues: CONTENT_VISIBILITY })
+declareEnumField({ model: 'content', field: 'article_star', enumValues: CONTENT_ARTICLE })
 
 declareVirtualField({ model: 'dietComment', field: '_defined_notes', instance: 'Number', multiple: 'true' })
 
@@ -1125,9 +1179,6 @@ const getEventStatus = (userId, params, data) => {
           APPOINTMENT_CURRENT
     })
     .catch(console.error)
-  /**
-  console.log(data._id)
-  */
 }
 
 const EVENT_MODELS = ['event', 'collectiveChallenge', 'individualChallenge', 'menu', 'webinar']
@@ -1385,7 +1436,7 @@ declareVirtualField({
     options: { ref: 'userQuizz' }
   },
 })
-declareComputedField({model: 'coaching', field: 'diet_availabilities', requires:'diet,appointment_type', getterFn: getDietAvailabilities})
+declareComputedField({model: 'coaching', field: 'diet_availabilities', requires:'user.company,diet,appointment_type', getterFn: getDietAvailabilities})
 
 declareVirtualField({
   model: 'coaching', field: 'appointment_type', instance: 'appointmentType',
@@ -1687,6 +1738,9 @@ declareVirtualField({
     options: { ref: 'nutritionAdvice' }
   },
 })
+declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
+  dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
+})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
@@ -1963,10 +2017,8 @@ const postCreate = async ({ model, params, data, user }) => {
          * - if user is an operator, set coaching conversion status to TO_COME
          * - if any user and lead is coaching cancelled, set status to TO_COME
         */
-        const isOperator = user.role == ROLE_SUPPORT
-        const statusFilter = isOperator ? {} : { coaching_converted: COACHING_CONVERSION_CANCELLED }
         Lead.findOneAndUpdate(
-          { email: coaching.user.email, ...statusFilter },
+          { email: coaching.user.email},
           { coaching_converted: COACHING_CONVERSION_TO_COME },
           { new: true, runValidators: true }
         )
@@ -2023,6 +2075,21 @@ const postDelete = ({ model, data }) => {
 
 setPostDeleteData(postDelete)
 
+const prePut = async data => {
+  const {model, params}=data
+  if (model=='user' && !!params.password) {
+    await validatePassword(params)
+  }
+  if (model === 'company') {
+    if (params.registration_integrity === null) {
+      params.registration_integrity = false;
+    }
+  }
+  return data
+}
+
+setPrePutData(prePut)
+
 const ensureChallengePipsConsistency = () => {
   // Does every challenge have all pips ?
   return Promise.all([Pip.find({}, "_id"), CollectiveChallenge.find({}, "_id"),
@@ -2064,7 +2131,8 @@ const ensureChallengePipsConsistency = () => {
 
 
 const computeStatistics = async ({ fields, company, start_date, end_date, diet }) => {
-  const companyFilter = company ? mongoose.Types.ObjectId(company) : { $ne: null };
+  const comp=await Company.findById(company).populate('children')
+  const companyFilter = comp ? {$in: [comp._id, ...comp.children.map(c => c._id)]} : { $ne: null };
   const result = {};
   result.company = company?.toString();
   const cache = {};
@@ -2222,7 +2290,7 @@ const getRegisterCompany = props => {
   // No email : FUCK YOU
   if (!props.email) { return Promise.resolve({}) }
   const NO_COMPANY_NAME = 'NEVER'.repeat(10000)
-  const code_re = props.company_code ? new RegExp(`^${props.company_code.replace(/[\t ]/g, '')}$`, 'i') : NO_COMPANY_NAME
+  const code_re = props.company_code?.trim() || NO_COMPANY_NAME
   const mail_re = props.email
   const result = {}
   return Promise.all([Lead.findOne({ email: mail_re }), Company.findOne({ code: code_re })])
@@ -2274,7 +2342,7 @@ const getRegisterCompany = props => {
 setImportDataFunction({ model: 'lead', fn: importLeads })
 
 // Ensure all spoon gains are defined
-ensureSpoonGains = () => {
+const ensureSpoonGains = () => {
   return Object.keys(SPOON_SOURCE).map(source => {
     return SpoonGain.exists({ source })
       .then(exists => {
@@ -2296,12 +2364,21 @@ false && cron.schedule('0 0 * * * *', async () => {
 })
 
 // Synchronize diets & customer smartagenda accounts
-cron.schedule('0 */10 * * * *', () => {
+!isDevelopment() && cron.schedule('0 * * * * *', () => {
   console.log(`Smartagenda accounts sync`)
-  return User.find({ role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, smartagenda_id: {$exists: false}}).sort({creation_date:1}).limit(50)
+  // Scan accounts with no smùartagenda_id, latest first
+  return User.find(
+    { 
+      role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, 
+      $or: [
+        { smartagenda_id: { $exists: false } }, // Field does not exist
+        { smartagenda_id: null },               // Field is explicitly null
+        { smartagenda_id: '' }                  // Field is an empty string
+      ]
+    }).sort({update_date:1}).limit(50)
     .then(users => {
-      console.log(`Sync users % smartagenda`, users.map(u => [u.role, u.email, u.creation_date]))
-      return Promise.allSettled(users.map(user => {
+      console.log(`Sync ${users.length} users % smartagenda`)
+      return runPromisesWithDelay(users.map(user => () => {
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
           .then(id => {
@@ -2319,15 +2396,20 @@ cron.schedule('0 */10 * * * *', () => {
                   user.smartagenda_id = id
                   return user.save()
                 })
-                .catch(console.error)
-            }
-            else if (user.role == ROLE_EXTERNAL_DIET) {
-              user.smartagenda_id=null
-              return user.save()
             }
           })
-          .catch(err => console.log(`User ${user.email}/${user.role} error ${err}`))
       }))
+      .then(res => {
+        const results=lodash.groupBy(res, 'status')
+        if (!lodash.isEmpty(results.fulfilled)) {
+          console.log('Smartagenda sync result OK for', results.fulfilled.length, 'accounts')
+        }
+        if (!lodash.isEmpty(results.rejected)) {
+          console.error('Smartagenda sync errors', results.rejected.map(u => {
+            return u.reason.response?.statusText || u.reason
+          }))  
+        }
+      })
     })
 })
 
@@ -2365,15 +2447,14 @@ const agendaHookFn = async received => {
               throw new Error(`No coaching defined`)
             }
             const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
-            return Appointment.findOneAndUpdate(
-              { smartagenda_id: objId },
-              {
-                coaching: coaching, appointment_type, smartagenda_id: objId,
-                start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
-                user, diet,
-              },
-              { upsert: true, runValidators: true }
-            )
+            const progressQuizz = await createAppointmentProgress({coaching: coaching._id})
+            const appt=(await Appointment.findOne({ smartagenda_id: objId })) || new Appointment({})
+            Object.assign(appt, {
+              coaching: coaching, appointment_type, smartagenda_id: objId,
+              start_date: start_date_gmt, end_date: end_date_gmt, visio_url,
+              user, diet, progress: progressQuizz,progres: progressQuizz,
+            })
+            return appt.save()
           })
       })
       .then(console.log)
@@ -2426,6 +2507,30 @@ const mailjetHookFn = received => {
     .then(res => console.log(`Updated ${emails.length} leads open mail`))
 }
 
+const preSave = async (model, id, values, isNew) => {
+  if (model=='user') {
+    // Create only customers in CRM
+    const role=(await User.findById(id, {role:1}))?.role
+    if (role==ROLE_CUSTOMER) {
+      return crmUpsertAccount(id, values)
+    }
+  }
+  if (model=='coaching') {
+    const coaching=await Coaching.findById(id)
+    if (coaching.user) {
+      return crmUpsertAccount(coaching.user, values)    
+    }
+  }
+  if (model=='appointment') {
+    const appt=await Appointment.findById(id)
+    if (appt.user) {
+      return crmUpsertAccount(appt.user, values)    
+    }
+  }
+}
+
+registerPreSave(preSave)
+
 // Update workflows
 cron.schedule('0 0 8 * * *', async () => {
   updateWorkflows()
@@ -2434,7 +2539,7 @@ cron.schedule('0 0 8 * * *', async () => {
 })
 
 // Update coaching status
-cron.schedule('0 0 * * * *', async () => {
+false && cron.schedule('0 0 * * * *', async () => {
   console.log('Updating coaching status')
   return Coaching.find({}, {_id:1})
     .then(coachings => coachings.map(c => updateCoachingStatus(c._id)))
@@ -2507,12 +2612,11 @@ cron.schedule('0 0 8 * * 6', async () => {
  */
 cron.schedule('0 0 1 * * *', async () => {
   const checkLead = email => {
-    console.log(`Checking lead ${email} coaching conversion status`)
     return User.findOne({ email })
       .populate({ path: 'coachings', populate: 'appointments' })
-      .then(user => {
-        const appts = lodash(user?.coachings?.map(coaching => coaching.appointments)).flattenDeep().value()
-        if (appts.length == 1 && moment(appts[0].start_date).isSame(moment(), 'day')) {
+      .then(async user => {
+        const hasFirstAppointment = await Appointment.exists({user, order:1, start_date: {$lte: moment()}})
+        if (hasFirstAppointment) {
           return Lead.findOneAndUpdate({ email }, { coaching_converted: COACHING_CONVERSION_CONVERTED })
         }
         return Promise.resolve(false)
@@ -2521,7 +2625,6 @@ cron.schedule('0 0 1 * * *', async () => {
   }
   return Lead.find({ coaching_converted: COACHING_CONVERSION_TO_COME })
     .then(leads => Promise.all(leads.map(lead => checkLead(lead.email))))
-    .then(console.log)
     .catch(console.error)
 })
 
@@ -2542,11 +2645,12 @@ cron.schedule('0 0 10 * * *', async () => {
 })
 
 
-exports.ensureChallengePipsConsistency = ensureChallengePipsConsistency
-exports.logbooksConsistency = logbooksConsistency
-exports.getRegisterCompany = getRegisterCompany
-exports.agendaHookFn = agendaHookFn 
-exports.mailjetHookFn = mailjetHookFn
-exports.computeStatistics = computeStatistics
-exports.canPatientStartCoaching = canPatientStartCoaching
-exports.preProcessGetFORBIDDEN = preProcessGet
+module.exports = {
+  ensureChallengePipsConsistency,
+  logbooksConsistency,
+  getRegisterCompany,
+  agendaHookFn, mailjetHookFn,
+  computeStatistics,
+  canPatientStartCoaching,
+  preProcessGetFORBIDDEN: preProcessGet,
+}

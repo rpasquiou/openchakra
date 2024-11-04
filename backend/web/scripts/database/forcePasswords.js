@@ -1,21 +1,19 @@
 const mongoose = require('mongoose')
-const bcrypt=require('bcryptjs')
 const {MONGOOSE_OPTIONS} = require('../../server/utils/database')
-const PASSWD=bcrypt.hashSync('Password1;', 10)
+const PASSWD='Password1;Password1;'
 
 // import all of our models - they need to be imported only once
 const User = require('../../server/models/User')
+const { getDatabaseUri } = require('../../config/config')
 
-const updatePasswords= databaseName => {
-  return mongoose.connect(`mongodb://localhost/${databaseName}`, MONGOOSE_OPTIONS)
-    .then(() => User.updateMany({}, {password: PASSWD}))
-    .catch(console.error)
-    .finally(process.exit(0))
+const updatePasswords= async () => {
+  console.log('open')
+  await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
+  console.log('opened')
+  return User.updateMany({}, {password: PASSWD})
 }
 
-const databaseName=process.argv[2]?.trim()
-if (!databaseName) {
-  console.error(`Expected database name`)
-  process.exit(1)
-}
 updatePasswords()
+  .then(console.log)
+  .catch(console.error)
+  .finally(() => process.exit(0))

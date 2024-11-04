@@ -18,6 +18,11 @@ const InterestSchema = new Schema({
     type: String,
     required: false,
   },
+  migration_id: {
+    type: Number,
+    index: true,
+    required: false,
+  }
 }, schemaOptions)
 
 module.exports = InterestSchema
