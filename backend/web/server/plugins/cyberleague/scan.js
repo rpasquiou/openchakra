@@ -58,12 +58,10 @@ const updateWorst = (newValue, oldValue) =>  {
 const computeScanRates = async (data) => {
   const nutriscore = data.endpoints[0].grade
 
-  const suites = data.endpoints[0].details?.suites
+  const suites = data.endpoints[0]?.details?.suites
 
-  // SAU HACK FIXIT endpoints may not have suites
   if (!suites) {
-    console.error('Got no suites on endpoints', data.endpoints)
-    return
+    throw new Error(`No suites in scan results`)
   }
 
   let bestProtocol, worstProtocol, worstKey, bestCipher, worstCipher
