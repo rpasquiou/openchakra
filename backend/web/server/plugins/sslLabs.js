@@ -28,7 +28,7 @@ const sslScan = async (url, isNewScan) => {
 
   //scan
   const res=await axios.get(
-    `https://api.ssllabs.com/api/v4/analyze?host=${url}&all=on`, {
+    `https://api.ssllabs.com/api/v4/analyze?host=${url}&all=on${isNewScan ? `&startNew=on` : ``}`, {
     headers: {email: EMAIL}
     }
   )
