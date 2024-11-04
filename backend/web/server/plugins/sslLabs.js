@@ -7,8 +7,10 @@ const sslScan = async (url, isNewScan) => {
   }
 
   //url check
+  const regex = /http.*/
+  const completeUrl = regex.test(url) ? url : `https://${url}`
   try {
-    new URL(url)
+    new URL(completeUrl)
   } catch (e) {
     throw new Error(`L'url est invalide`)
   }
@@ -28,7 +30,7 @@ const sslScan = async (url, isNewScan) => {
 
   //scan
   const res=await axios.get(
-    `https://api.ssllabs.com/api/v4/analyze?host=${url}&all=on${isNewScan ? `&startNew=on` : ``}`, {
+    `https://api.ssllabs.com/api/v4/analyze?host=${completeUrl}&all=on${isNewScan ? `&startNew=on` : ``}`, {
     headers: {email: EMAIL}
     }
   )
