@@ -36,7 +36,9 @@ const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const { startSslScan } = require('../sslLabs')
-require('./cron')
+const Scan = require('../../models/Scan')
+const { runPromiseUntilSuccess } = require('../../utils/concurrency')
+const { computeScanRatesIfResults } = require('./scan')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -596,7 +598,10 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'scan') {
-    await startSslScan(params.url)
+    const existingScan = Scan.findOne({url: params.url, status: SCAN_STATUS_IN_PROGRESS})
+    if (!existingScan) {
+      await startSslScan(params.url)
+    }
     params.status = SCAN_STATUS_IN_PROGRESS
   }
 
@@ -623,6 +628,10 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == 'comment') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
+  }
+
+  if (model == 'scan') {
+    runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
   }
 
   return data
