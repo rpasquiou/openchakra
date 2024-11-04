@@ -38,7 +38,7 @@ const sslScan = async (url, isNewScan) => {
     throw new Error(`Service surchargé : veuillez réessayer dans quelques minutes`)
   }
 
-  return res
+  return res.data
 }
 
 const startSslScan = (url) => {

@@ -55,14 +55,14 @@ const updateWorst = (newValue, oldValue) =>  {
   return oldValue
 }
 
-const computeScanRates = async (json) => {
-  const nutriscore = json.data.endpoints[0].grade
+const computeScanRates = async (data) => {
+  const nutriscore = data.endpoints[0].grade
 
-  const suites = json.data.endpoints[0].details?.suites
+  const suites = data.endpoints[0].details?.suites
 
   // SAU HACK FIXIT endpoints may not have suites
   if (!suites) {
-    console.error('Got no suites on endpoints', json.data.endpoints)
+    console.error('Got no suites on endpoints', data.endpoints)
     return
   }
 

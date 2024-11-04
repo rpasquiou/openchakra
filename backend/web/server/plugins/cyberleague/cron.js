@@ -7,11 +7,11 @@ const { computeScanRates } = require('./scan')
 cron.schedule('*/30 * * * * *', async () => {
   const inprogressScans = await Scan.find({status: SCAN_STATUS_IN_PROGRESS},['_id','url'])
   inprogressScans.forEach(async (scan) => {
-    res = await getSslScan(scan.url)
-    if (res.data.status == SCAN_STATUS_READY) {
-      const scanRates = await computeScanRates(res)
+    data = await getSslScan(scan.url)
+    if (data.status == SCAN_STATUS_READY) {
+      const scanRates = await computeScanRates(data)
       await Scan.findByIdAndUpdate(scan._id, {...scanRates, status:SCAN_STATUS_READY})
-    } else if (res.data.status == SCAN_STATUS_ERROR) {
+    } else if (data.status == SCAN_STATUS_ERROR) {
       //handle error status
     }
   })
