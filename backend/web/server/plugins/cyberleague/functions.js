@@ -36,6 +36,7 @@ const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const { startSslScan } = require('../sslLabs')
+const Scan = require('../../models/Scan')
 require('./cron')
 
 //User declarations
@@ -596,7 +597,10 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'scan') {
-    await startSslScan(params.url)
+    const existingScan = Scan.findOne({url: params.url, status: SCAN_STATUS_IN_PROGRESS})
+    if (!existingScan) {
+      await startSslScan(params.url)
+    }
     params.status = SCAN_STATUS_IN_PROGRESS
   }
 
