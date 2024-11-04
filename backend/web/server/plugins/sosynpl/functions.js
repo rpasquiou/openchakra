@@ -61,6 +61,7 @@ MODELS.forEach(model => {
     declareVirtualField({model, field: 'received_suggestions_count', type: 'Number'})
   }
   declareVirtualField({model, field: 'password2', type: 'String'})
+  declareVirtualField({model, field: 'managed_accounts', instance: 'Array', multiple: true })
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
   declareVirtualField({model, field: 'shortname', type: 'String', requires: 'firstname,lastname'})
   declareEnumField({model, field: 'role', enumValues: ROLES})
