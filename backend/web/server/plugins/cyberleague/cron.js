@@ -11,8 +11,9 @@ cron.schedule('*/30 * * * * *', async () => {
     if (data.status == SCAN_STATUS_READY) {
       const scanRates = await computeScanRates(data)
       await Scan.findByIdAndUpdate(scan._id, {...scanRates, status:SCAN_STATUS_READY})
+
     } else if (data.status == SCAN_STATUS_ERROR) {
-      //handle error status
+      await Scan.deleteOne({_id: scan._id})
     }
   })
 })
