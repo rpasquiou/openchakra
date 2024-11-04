@@ -364,6 +364,10 @@ const buildBlock = ({
             if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
           }
 
+          if (propName === 'hidescrollbar') {
+              propsContent += ` css='::-webkit-scrollbar{display: none;}scrollbar-width: none;-ms-overflow-style: none;'`
+          }
+
           if (propName === 'subDataSource') {
             propsContent += ` subDataSourceId={'${propsValue}'}`
           }
@@ -1065,10 +1069,10 @@ const ${componentName} = () => {
 
   const getComponentValue = (compId, index) => {
     let value=componentsValues[compId]
-    if (!value) {
+    if (value===undefined) {
       value=componentsValues[\`\$\{compId\}\$\{index\}\`]
     }
-    if (!value) {
+    if (value===undefined) {
       value=getComponentDataValue(compId, index)
     }
     return value

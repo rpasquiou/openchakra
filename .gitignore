@@ -11,6 +11,8 @@
 # testing
 /coverage
 
+backend/web/.idea/
+backend/web/http-client/
 backend/web/mode_*.js
 backend/web/mode-*.js
 backend/web/fumoir*.json

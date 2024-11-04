@@ -11,6 +11,11 @@ const JoinReasonSchema = new Schema({
     unique: true,
     required: [true, 'Le nom est obligatoire'],
   },
+  migration_id: {
+    type: Number,
+    index: true,
+    required: false,
+  }
 }, schemaOptions
 )
 

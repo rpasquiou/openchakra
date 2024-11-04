@@ -1,12 +1,12 @@
-const { updateWorkflows } = require('./workflows')
-const { sendLeadOnboarding } = require('./mailing')
 const { bufferToString, guessDelimiter } = require('../../../utils/text')
-const { BadRequestError, NotFoundError } = require('../../utils/errors')
 const Company = require('../../models/Company')
+const User = require('../../models/User')
 const Lead = require('../../models/Lead')
 const { extractData, guessFileType } = require('../../../utils/import')
 const lodash=require('lodash')
-const { CALL_STATUS, CALL_STATUS_CALL_1, CALL_DIRECTION, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL } = require('./consts')
+const { ROLE_ADMIN, CALL_DIRECTION_IN_CALL, CALL_DIRECTION_OUT_CALL, CALL_STATUS_TO_CALL, ROLE_SUPER_ADMIN, ROLE_EXTERNAL_DIET } = require('./consts')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
+const { loadFromDb } = require('../../utils/database')
 
 const VALID_CALLS={'Entrant': CALL_DIRECTION_IN_CALL, 'Sortant': CALL_DIRECTION_OUT_CALL}
 const VALID_CONSENT={'Oui': true, 'Non': false}
@@ -19,11 +19,6 @@ const MAPPING={
   'Code entreprise': 'company_code',
   'Source': 'source',
   'Téléphone': 'phone',
-  'Statut': {
-    attribute: 'call_status', 
-    validate: v => !v || [CALL_STATUS.CALL_STATUS_TO_CALL, CALL_STATUS.CALL_STATUS_TO_RENEW].includes(v?.trim()),
-    convert: v => lodash.findKey(CALL_STATUS, label => label==v?.trim()),
-  },
   'Campagne': 'campain',
   'Appel entrant/sortant': {
     attribute: 'call_direction', 
@@ -41,7 +36,7 @@ const MAPPING={
 // TODO mandatory for in/out calls
 //const MANDATORY_COLUMNS=Object.keys(MAPPING)
 // TODO mandatory for simple leads
-const MANDATORY_COLUMNS=['Prénom', 'Nom', 'Email']
+const MANDATORY_COLUMNS=['Téléphone', 'Email']
 
 const VALID = () => true
 const IDENTITY = v => lodash.isEmpty(v) ? null : v
@@ -73,68 +68,74 @@ const mapData = (input, mapping)  => {
   }
 }
 
-const importLead = leadData => {
+const importLead = async (leadData, user) => {
   console.log(`Handling ${JSON.stringify(leadData)}`)
   const company_code_re=new RegExp(`^${leadData.company_code}$`, 'i')
-  return Company.exists({code: company_code_re})
-    .then(exists => {
-      // console.log('exists', exists)
-      if (!exists) {return Promise.reject(`Aucune compagnie avec le code ${leadData.company_code}`)}
-      return Lead.updateOne(
-        {email: leadData.email},
-        {...leadData},
-        {upsert: true, runValidators: true}
-      )
-    })
+  const companyExists=await Company.exists({code: company_code_re})
+  // console.log('exists', exists)
+  if (!companyExists) {
+    return Promise.reject(`Aucune compagnie avec le code ${leadData.company_code}`)
+  }
+  if (!leadData.email && !leadData.phone) {
+    return Promise.reject(`Un email ou un numéro de téléphone attendu`)
+  }
+  leadData=lodash.omitBy(leadData, v => lodash.isEmpty(v))
+  let criterion={}
+  if (!!leadData.phone) {
+    criterion.phone=leadData.phone
+  }
+  else {
+    criterion.email=leadData.email
+  }
+  return Lead.updateOne(
+    criterion,
+    {
+      $set: {...leadData},
+      $setOnInsert: {call_status: CALL_STATUS_TO_CALL},
+    },
+    {upsert: true, runValidators: true}
+  )
 }
 
-const importLeads= buffer => {
-  let leadsBefore=null
-  return guessFileType(buffer)
-    .then(type => {
-      const delim=guessDelimiter(bufferToString(buffer))
-      return Promise.all([Lead.find().lean(), extractData(buffer, {format: type, delimiter:delim})])
-    })
-    .then(([leads, data]) => {
-      leadsBefore=leads
-      console.log(`Import leads: got ${data.records.length}, columns ${data.headers.join('/')}`)
-      const missingColumns=lodash.difference(MANDATORY_COLUMNS, data.headers)
-      if (!lodash.isEmpty(missingColumns)) {
-        return [`Colonnes manquantes:${missingColumns.join(',')}`]
-      }
-      return Promise.allSettled(data.records.map(input => {
-        return mapData(input, MAPPING)
-          .then(mappedData => {
-            //console.log('mapped is', mappedData)
-            return importLead(mappedData)
-          })
-      }))
-    })
-    .then(result => {
-      console.log('*******', result)
-      return Lead.find()
-        .lean()
-        .then(leadsAfter => {
-          const newLeads=leadsAfter.filter(l => !leadsBefore.map(l => l.email).includes(l.email))
-          //return Promise.allSettled(newLeads.map(lead => sendLeadOnboarding({lead})))
-          updateWorkflows()
-        })
-        .then(res => {
-          return result.map((r, index) => {
-            if (!r.status) {return r}
-            const msg=r.status=='rejected' ? `Erreur:${r.reason}` :
-              r.value.upserted ? `Prospect ajouté`: `Prospect mis à jour`
-              return `Ligne ${index+2}: ${msg}`
-            })
-        })
-        .then(res => {
-          //console.log(`Import result:${res}`)
-          return res
-        })
-    })
-    .catch(console.error)
+const importLeads= async (buffer, user) => {
+  console.log(`Import leads, user is`, user)
+  const [type, delim]=await Promise.all([guessFileType(buffer), guessDelimiter(bufferToString(buffer))])
+  const data=await extractData(buffer, {format: type, delimiter:delim})
+  const missingColumns=lodash.intersection(MANDATORY_COLUMNS, data.headers)
+  if (lodash.isEmpty(missingColumns)) {
+    return [`Indiquez au moins une des colonnes ${MANDATORY_COLUMNS.join(', ')}`]
+  }
+  const result=await runPromisesWithDelay(data.records.map(input => async() => {
+    const mappedData=await mapData(input, MAPPING)
+    return importLead(mappedData, user)
+  }))
+  return result.map((r, index) => {
+    if (!r.status) {return r}
+    const msg=r.status=='rejected' ? `Erreur:${r.reason}` :
+      r.value.upserted ? `Prospect ajouté`: `Prospect mis à jour`
+      return `Ligne ${index+2}: ${msg}`
+  })
+}
+
+const getCompanyLeads = async (userId, params, data, fields) => {
+  const role=(await User.findById(userId))?.role
+
+  params=lodash(params)
+    .pickBy((_, k) => /^limit.leads/.test(k) || /^sort.leads/.test(k) || /^filter.leads/.test(k))
+    .mapKeys((_, k) => k.replace(/^limit.leads/, 'limit').replace(/^sort.leads/, 'sort').replace(/^filter.leads/, 'filter'))
+    .value()
+
+    // Filter lads from their company
+  params['filter.company_code']=data.code
+
+  // To call allowed for any diet, else only their leads
+  if (role==ROLE_EXTERNAL_DIET && params['filter.call_status']!=CALL_STATUS_TO_CALL) {
+    params['filter.operator']=userId
+  }    
+  return loadFromDb({model: 'lead', fields: [...fields, 'fullname', 'firstname', 'lastname'], user: userId, params})
+    .then(leads => leads.map(l => new Lead(l)))
 }
 
 module.exports={
-  importLeads
+  importLeads, getCompanyLeads,
 }

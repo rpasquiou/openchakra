@@ -8,7 +8,9 @@ try {
   GroupSchema.plugin(require('mongoose-lean-virtuals'))
 }
 catch(err) {
-  GroupSchema=null
+  if (err.code !== 'MODULE_NOT_FOUND') {
+    throw err
+  }
 }
 
 module.exports = GroupSchema ? mongoose.model('group', GroupSchema) : null

@@ -16,6 +16,7 @@ const {
   ROLE_EXTERNAL_DIET,
   ROLE_RH,
   STATUS_FAMILY,
+  USER_SEARCH_TEXT_FIELDS,
 } = require('../consts')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
@@ -32,7 +33,7 @@ const {
 const mongoose = require('mongoose')
 const moment=require('moment')
 const { ForbiddenError } = require('../../../utils/errors')
-const {schemaOptions} = require('../../../utils/schemas')
+const {schemaOptions, callPreSave} = require('../../../utils/schemas')
 const lodash=require('lodash')
 const bcrypt = require('bcryptjs')
 const IBANValidator = require('iban-validator-js')
@@ -60,7 +61,11 @@ const UserSchema = new Schema({
   phone: {
     type: String,
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
-    set: v => v?.replace(/^0/, '+33'),
+    set: v => {
+      if (!v) return v;
+      const formatted = v.replace(/^0/, '+33').replace(/(\+33)(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5 $6');
+      return formatted;
+    },
     required: false,
   },
   description: {
@@ -132,7 +137,7 @@ const UserSchema = new Schema({
   },
   gender: {
     type: String,
-    enum: Object.keys(GENDER),
+    enum: [null, ...Object.keys(GENDER)],
     set : v => v || undefined,
     required: false,
   },
@@ -285,7 +290,7 @@ const UserSchema = new Schema({
   diet_calls_enabled: {
     type: Boolean,
     validate: [
-      function(v) {return !v || this.role==ROLE_EXTERNAL_DIET},
+      function(v) {return !v || !this || this.role==ROLE_EXTERNAL_DIET},
       `Appels sortants autorisés aux diets uniquement`
     ],
     required: false,
@@ -358,8 +363,11 @@ const UserSchema = new Schema({
     required: false,
   },
   box_batch_code: {
-    type: Date,
+    type: String,
     required: false,
+  },
+  crm_id: {
+    type: Number,
   },
 }, {...schemaOptions})
 
@@ -602,7 +610,7 @@ UserSchema.virtual("pinned_contents", {
 });
 
 UserSchema.virtual("targets", DUMMY_REF).get(function() {
-  return computeTargets(this)
+  return [] //computeTargets(this)
 })
 
 UserSchema.virtual('offer', DUMMY_REF).get(function() {
@@ -764,7 +772,6 @@ UserSchema.virtual('spent_nutrition_credits', {
   options: {
     match: () => {
       const f=getYearFilter({attribute: 'start_date', year: moment()})
-      console.log(JSON.stringify(f))
       return f;
     },
   },
@@ -825,7 +832,13 @@ UserSchema.virtual('can_buy_pack', DUMMY_REF).get(function() {
   return true
 })
 
+UserSchema.virtual("search_text", DUMMY_REF).get(function() {
+  return USER_SEARCH_TEXT_FIELDS.map(f => this[f]||null).filter(v => !!v).join(' ')
+})
 
+UserSchema.post('save', async function() {
+  return callPreSave('user', this)
+})
 
 /* eslint-enable prefer-arrow-callback */
 
