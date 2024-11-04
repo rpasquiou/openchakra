@@ -13,7 +13,7 @@ const sslScan = async (url, isNewScan) => {
     throw new Error(`L'url est invalide`)
   }
 
-  //check that there is not already a scan INPROGRESS for this url and this user
+  //check that there is not already a scan IN_PROGRESS for this url and this user
 
   //availability check
   const info=await axios.get(
@@ -28,7 +28,7 @@ const sslScan = async (url, isNewScan) => {
 
   //scan
   const res=await axios.get(
-    `https://api.ssllabs.com/api/v4/analyze?host=${url}&all=on`, {
+    `https://api.ssllabs.com/api/v4/analyze?host=${url}&all=on${isNewScan ? `&startNew=on` : ``}`, {
     headers: {email: EMAIL}
     }
   )
@@ -38,7 +38,7 @@ const sslScan = async (url, isNewScan) => {
     throw new Error(`Service surchargé : veuillez réessayer dans quelques minutes`)
   }
 
-  return res
+  return res.data
 }
 
 const startSslScan = (url) => {

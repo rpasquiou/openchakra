@@ -1,5 +1,9 @@
 // Compute rates according to rating guide here : https://github.com/ssllabs/research/wiki/SSL-Server-Rating-Guide
 
+const Scan = require("../../models/Scan")
+const { getSslScan } = require("../sslLabs")
+const { SCAN_STATUS_READY, SCAN_STATUS_ERROR } = require("./consts")
+
 const PROTOCOL_RATES = {
   ['2']: 0,     //SSL 2.0
   ['768']: 80,  //SSL 3.0
@@ -55,15 +59,13 @@ const updateWorst = (newValue, oldValue) =>  {
   return oldValue
 }
 
-const computeScanRates = async (json) => {
-  const nutriscore = json.data.endpoints[0].grade
+const computeScanRates = async (data) => {
+  const nutriscore = data.endpoints[0].grade
 
-  const suites = json.data.endpoints[0].details?.suites
+  const suites = data.endpoints[0]?.details?.suites
 
-  // SAU HACK FIXIT endpoints may not have suites
   if (!suites) {
-    console.error('Got no suites on endpoints', json.data.endpoints)
-    return
+    throw new Error(`No suites in scan results`)
   }
 
   let bestProtocol, worstProtocol, worstKey, bestCipher, worstCipher
@@ -87,6 +89,22 @@ const computeScanRates = async (json) => {
   return {protocole_rate,cipher_strength_rate, key_exchange_rate: worstKey,nutriscore}
 }
 
+const computeScanRatesIfResults = async (id,url) => {
+  const data = await getSslScan(url)
+  if (data.status == SCAN_STATUS_READY) {
+    const scanRates = await computeScanRates(data)
+    await Scan.findByIdAndUpdate(id, {...scanRates, status:SCAN_STATUS_READY})
+    return
+
+  } else if (data.status == SCAN_STATUS_ERROR) {
+    await Scan.deleteOne({_id: id})
+    return
+
+  } else {
+    throw new Error(`Scan in progress`)
+  }
+}
+
 module.exports = {
-  computeScanRates,
+  computeScanRatesIfResults
 }
