@@ -336,10 +336,11 @@ export const ACTIONS = {
       })
   },
 
-  reset_soft_skills: () => {
+  reset_soft_skills: ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'reset_soft_skills',
+      value: value._id,
     }
     return axios.post(url, body)
       .then(res => ({
