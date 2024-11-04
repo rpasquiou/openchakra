@@ -2612,12 +2612,11 @@ cron.schedule('0 0 8 * * 6', async () => {
  */
 cron.schedule('0 0 1 * * *', async () => {
   const checkLead = email => {
-    console.log(`Checking lead ${email} coaching conversion status`)
     return User.findOne({ email })
       .populate({ path: 'coachings', populate: 'appointments' })
-      .then(user => {
-        const appts = lodash(user?.coachings?.map(coaching => coaching.appointments)).flattenDeep().value()
-        if (appts.length == 1 && moment(appts[0].start_date).isSame(moment(), 'day')) {
+      .then(async user => {
+        const hasFirstAppointment = await Appointment.exists({user, order:1, start_date: {$lte: moment()}})
+        if (hasFirstAppointment) {
           return Lead.findOneAndUpdate({ email }, { coaching_converted: COACHING_CONVERSION_CONVERTED })
         }
         return Promise.resolve(false)
@@ -2626,7 +2625,6 @@ cron.schedule('0 0 1 * * *', async () => {
   }
   return Lead.find({ coaching_converted: COACHING_CONVERSION_TO_COME })
     .then(leads => Promise.all(leads.map(lead => checkLead(lead.email))))
-    .then(console.log)
     .catch(console.error)
 })
 
