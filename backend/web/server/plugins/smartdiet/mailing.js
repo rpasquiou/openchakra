@@ -2,12 +2,10 @@ const {
   sendNotification,
   setNotificationsContents,
   setSmsContents,
-  setSmsContact
+  setSmsContact,
+  addValidationAllowedDomain
 } = require('../../utils/mailing')
-const {datetime_str} = require('../../../utils/dateutils')
-const moment=require('moment')
 const { formatDate, formatHour } = require('../../../utils/text')
-const { generateIcs } = require('../../../utils/ics')
 
 const SIB_IDS={
   // Firebase notifications
@@ -33,8 +31,8 @@ const SIB_IDS={
   // SMS
   APPOINTMENT_REMIND_TOMORROW: 200,
   // CUSTOMERS
-  FORGOT_PASSWORD: 4995801, // OK
-  LEAD_ONBOARDING: 4982108,
+  ACCOUNT_CREATED: 30, // OK
+  FORGOT_PASSWORD: 88, // OK
   /**
   SATISFY_SURVEY: 4996126,
   CONSULTATION_BOUGHT_OK: 4830569,
@@ -46,8 +44,8 @@ const SIB_IDS={
   MEASURES_REMAINER: 5010216,
   */
   // DIETS
-  DIET_PREREGISTER_2_DIET: 4852839,
-  DIET_PREREGISTER_2_ADMIN: 5034812,
+  DIET_PREREGISTER_2_DIET: 111,
+  DIET_PREREGISTER_2_ADMIN: 34,
   /**
   DIET_VALIDATED_2_DIET: 5027161,
   DIET_NOT_VALIDATED_TO_DIET: 5033315,
@@ -92,13 +90,27 @@ setNotificationsContents(NOTIFICATIONS_CONTENTS)
 
 setSmsContact('SmartDiet')
 
+addValidationAllowedDomain('smartdiet.fr')
+
+const sendAccountCreated = ({user, password}) => {
+  return sendNotification({
+    notification: SIB_IDS.ACCOUNT_CREATED,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      company: user.company?.name,
+      password: password,
+    },
+  })
+}
+
 const sendForgotPassword = ({user, password}) => {
   return sendNotification({
     notification: SIB_IDS.FORGOT_PASSWORD,
     destinee: user,
     params: {
-      FIRSTNAME: user.firstname,
-      PASSWORD: password,
+      firstname: user.firstname,
+      password: password,
     },
   })
 }
@@ -108,7 +120,7 @@ const sendDietPreRegister2Diet = ({user}) => {
     notification: SIB_IDS.DIET_PREREGISTER_2_DIET,
     destinee: user,
     params: {
-      FIRSTNAME: user.firstname,
+      firstname: user.firstname,
     },
   })
 }
@@ -118,19 +130,9 @@ const sendDietPreRegister2Admin = ({user, admin}) => {
     notification: SIB_IDS.DIET_PREREGISTER_2_ADMIN,
     destinee: admin,
     params: {
-      FIRSTNAME: user.firstname,
-      LASTNAME: user.lastname,
-    },
-  })
-}
-
-const sendLeadOnboarding = ({lead}) => {
-  return sendNotification({
-    notification: SIB_IDS.LEAD_ONBOARDING,
-    destinee: lead,
-    params: {
-      FIRSTNAME: lead.firstname,
-      CODEENTREPRISE: lead.company_code,
+      firstname: user.firstname,
+      lastname: user.lastname,
+      admin_firstname: admin.firstname,
     },
   })
 }
@@ -279,10 +281,10 @@ const sendAppointmentNotValidated = async ({destinee, appointment}) => {
 }
 
 module.exports = {
+  sendAccountCreated,
   sendForgotPassword,
   sendDietPreRegister2Diet,
   sendDietPreRegister2Admin,
-  sendLeadOnboarding,
   sendInactivity15, sendInactivity30, sendInactivity45,
   sendIndChallenge1, sendIndChallenge2, sendIndChallenge3, sendIndChallenge5,
   sendIndChallenge6,

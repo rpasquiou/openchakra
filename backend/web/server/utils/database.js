@@ -211,7 +211,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     enumValues=att.enumValues || att.caster?.enumValues
   }
   if (!lodash.isEmpty(att.options?.enum)) {
-    enumValues=att.options.enum?.filter(v => !!v)
+    enumValues=att.options.enum.filter(v => v !==null)
   }
   if (enumValues) {
     const enumObject=DECLARED_ENUMS[modelName]?.[att.path]
@@ -219,6 +219,10 @@ const getAttributeCaracteristics = (modelName, att) => {
       throw new Error(`${modelName}.${att.path}:no declared enum`)
     }
     const enumObjectKeys=Object.keys(enumObject)
+    // Allow null in enums if attribute is not required
+    if (!att.options?.required) {
+      enumObjectKeys.push(null)
+    }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
       throw new Error(`${modelName}.${att.path}:inconsistent enum:${JSON.stringify(enumValues)}/${JSON.stringify(enumObjectKeys)}`)
     }
@@ -475,6 +479,10 @@ const buildQuery = (model, id, fields, params) => {
   const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
+  // If id is required, fail if no result
+  if (!!id) {
+    query=query.orFail(new Error(`Can't find model '${model}' id ${id}`))
+  }
   return query
 }
 
@@ -715,7 +723,6 @@ const addComputedFields = (
         const compFields = COMPUTED_FIELDS_GETTERS[model] || {}
         const presentCompFields = lodash(originalFields).map(f => f.split('.')[0]).filter(v => !!v).uniq().value()
         const requiredCompFields = lodash.pick(compFields, presentCompFields)
-
         return Promise.all(
           Object.keys(requiredCompFields).map(f => {
             const displayFields=getRequiredSubFields(originalFields, f)
@@ -945,7 +952,7 @@ const removeData = dataId => {
 
 // Compares ObjecTID/string with ObjectId/string
 const idEqual = (id1, id2) => {
-  return JSON.stringify(id1)==JSON.stringify(id2)
+  return !!id1 && !!id2 && id1.toString()==id2.toString()
 }
 
 // Returns intersection betwenn two sets of _id
@@ -1000,14 +1007,6 @@ const display = data => {
   return data
 }
 
-const ensureUniqueDataFound = (id, data) => {
-  if (id && lodash.isEmpty(data)) {
-    throw new NotFoundError(`Can't find id ${id}`)
-  }
-  return data
-}
-
-
 /*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
  * example: 
  * let c = await loadfromdb({...})
@@ -1026,23 +1025,21 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
       return buildQuery(model, id, fields, params)
-        .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        //.then(data =>  retainRequiredFields({data, fields}))
+        .then(data =>  retainRequiredFields({data, fields}))
     })
-
 }
 
 const DATA_IMPORT_FN={}
 
 // Imports data for model. Delegated to plugins
-const importData=({model, data}) => {
+const importData=({model, data, user}) => {
   if (!DATA_IMPORT_FN[model]) {
     throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
   }
-  return DATA_IMPORT_FN[model](data)
+  return DATA_IMPORT_FN[model](data, user)
 }
 
 const setImportDataFunction = ({model, fn}) => {
@@ -1050,7 +1047,7 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import data function: expected model and function`)
   }
   if (!!DATA_IMPORT_FN[model]) {
-    throw new Error(`Import funciton already exists for model ${model}`)
+    throw new Error(`Import function already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
 }
@@ -1103,6 +1100,15 @@ const getYearFilter = ({attribute, year}) => {
   ]}
 }
 
+const createSearchFilter = ({attributes}) => {
+  return value => {
+    const re=new RegExp(value, 'i')
+    const filter=({$or:attributes.map(f => ({[f]: re}))})
+    console.log('CReated filter for value', value, filter)
+    return filter
+  }
+}
+
 module.exports = {
   hasRefs,
   MONGOOSE_OPTIONS,
@@ -1151,6 +1157,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, setpreLogin, callPreLogin, 
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter,
 }
 

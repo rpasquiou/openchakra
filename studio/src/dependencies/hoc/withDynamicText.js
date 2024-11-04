@@ -9,8 +9,15 @@ const withDynamicText = Component => {
     let value = lodash.get(props.dataSource, props.attribute)
     if (enums && !!value) {
       value=lodash.isArray(value) ? value : [value]
-      value=value.map(v => enums[v])
-      value=joinDelimiter({array: value})
+      const mappedValues=value.map(v => enums[v])
+      const undef=mappedValues.indexOf(undefined)
+      if (undef>-1) {
+        console.warn(`Constante ${value[undef]} introuvable parmi ${Object.keys(enums).join(',')}`)
+        return (<h1 style={{color: 'red'}}>#ENUM ERROR</h1>)
+      }
+      else {
+        value=joinDelimiter({array: mappedValues})
+      }
     }
     // Is it an address ??
     if (value?.city) {

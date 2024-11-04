@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const {getDataModel} = require('../../config/config')
 const User = require('./User')
-const { DISC_CUSTOMER, DISC_FREELANCE, DISC_ADMIN } = require('../plugins/sosynpl/consts')
+const { DISC_ADMIN } = require('../plugins/sosynpl/consts')
 
 let Admin=null
 
