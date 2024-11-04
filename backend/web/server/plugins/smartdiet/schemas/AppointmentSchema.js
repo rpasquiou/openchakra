@@ -46,6 +46,11 @@ const AppointmentSchema = new Schema({
     validate: [function(v) { return !this || moment(v).isAfter(this.start_date)}, 'La fin doit être postérieure au début'],
     required: [true, 'La date de fin est obligatoire'],
   },
+  progress: {
+    type: Schema.Types.ObjectId,
+    ref: 'userQuizz',
+    required: [true,`Le questionnaire progression est obligatoire`],
+  },
   appointment_type: {
     type: Schema.Types.ObjectId,
     index: true,
@@ -117,7 +122,7 @@ AppointmentSchema.virtual('status', DUMMY_REF).get(function() {
 })
 
 const updateAppointmentsOrder = hook => async(...params) => {
-  console.log(hook, 'appt changed', params.map(p => p._id))
+  // console.log(hook, 'appt changed', params.map(p => p._id))
   const appt=params[0]
   return updateApptsOrder(appt.coaching)
 }

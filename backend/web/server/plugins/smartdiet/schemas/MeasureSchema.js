@@ -26,6 +26,10 @@ const MeasureSchema = new Schema({
     type: Number,
     required: false,
   },
+  pelvis: {
+    type: Number,
+    required: false,
+  },
   arms: {
     type: Number,
     required: false,

@@ -46,7 +46,7 @@ const CompanySchema = new Schema(
     registration_integrity: {
       type: Boolean,
       default: false,
-      required: true,
+      required: false,
     },
     // Type prestation bilan
     assessment_appointment_type: {
@@ -103,6 +103,11 @@ const CompanySchema = new Schema(
       type: String,
       required: false,
     },
+    leads: [{
+      type: Schema.Types.ObjectId,
+      ref: 'lead',
+      required: false,
+    }],
   },
   schemaOptions,
 )
@@ -151,6 +156,12 @@ CompanySchema.virtual("groups", {
   foreignField: "companies", // is equal to foreignField
 });
 
+CompanySchema.virtual('contents', {
+  ref: 'content',
+  localField: '_id',
+  foreignField: 'companies',
+})
+
 CompanySchema.virtual('groups_count', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.groups?.length || 0
 })
@@ -198,12 +209,6 @@ CompanySchema.virtual("collective_challenges", {
   ref: "collectiveChallenge", // The Model to use
   localField: "_id", // Find in Model, where localField
   foreignField: "company", // is equal to foreignField
-});
-
-CompanySchema.virtual('leads', {
-  ref: 'lead', // The Model to use
-  localField: "code", // Find in Model, where localField
-  foreignField: "company_code", // is equal to foreignField
 });
 
 module.exports = CompanySchema

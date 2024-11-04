@@ -1,6 +1,6 @@
 const axios = require('axios')
 const crypto=require('crypto')
-const { sendForgotPassword, sendNewMessage } = require('./mailing')
+const { sendForgotPassword, sendNewMessage, sendAccountCreated } = require('./mailing')
 const {
   DAYS_BEFORE_IND_CHALL_ANSWER,
   PARTICULAR_COMPANY_NAME,
@@ -50,6 +50,7 @@ const { sendBufferToAWS } = require('../../middlewares/aws')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
 const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
+const { upsertAccount } = require('../agenda/smartagenda')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -95,11 +96,16 @@ addAction('smartdiet_shift_challenge', smartdietShiftChallenge)
 
 const defaultRegister = ACTIONS.register
 
-const register = props => {
+const register = async (props, user) => {
   // No compay => set the particular one
   if (!props.role) {
     props.role = ROLE_CUSTOMER
     console.log(`Setting role ${JSON.stringify(props.role)}`)
+  }
+  if (user?.role==ROLE_EXTERNAL_DIET && !props.password) {
+    const password=generatePassword()
+    props.password=password
+    props.password2=password
   }
   // Check company code
   if (!props.role || props.role == ROLE_CUSTOMER) {
@@ -112,6 +118,16 @@ const register = props => {
         return integrityProps
       })
       .then(extraProps => defaultRegister({ ...props, ...extraProps }))
+      .then(data => {
+        User.findById(data._id).populate('company')
+          .then(usr => {
+            sendAccountCreated({user: usr, password: props.password})
+            upsertAccount(lodash.pick(usr, ['email', 'firstname', 'lastname']))
+              .then(id => User.findByIdAndUpdate(data._id, {smartagenda_id: id}))
+              .catch(console.error)
+          })
+        return data
+      })
   }
   return defaultRegister({ ...props })
 }
@@ -375,6 +391,11 @@ const buyPack = async ({value}, sender) => {
 }
 addAction('smartdiet_buy_pack', buyPack)
 
+const validateAction = async ({value}, sender) => {
+  return Appointment.findByIdAndUpdate(value, {validated: true})
+}
+addAction('validate', validateAction)
+
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
@@ -444,6 +465,11 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     return true
   } 
 
+  if (action=='validate') {
+    if (!(await Appointment.exists({_id: dataId}))) {
+      throw new NotFoundError(`Rendez-vous ${value} introuvable`)
+    }
+  }
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
   return promise
     .then(modelName => {

@@ -479,6 +479,10 @@ const buildQuery = (model, id, fields, params) => {
   const populates=buildPopulates({modelName: model, fields:[...fields], filters, limits, params, sorts})
   // console.log(`Populates for ${model}/${fields} is ${JSON.stringify(populates,null,2)}`)
   query = query.populate(populates).sort(buildSort(params))
+  // If id is required, fail if no result
+  if (!!id) {
+    query=query.orFail(new Error(`Can't find model '${model}' id ${id}`))
+  }
   return query
 }
 
@@ -1003,14 +1007,6 @@ const display = data => {
   return data
 }
 
-const ensureUniqueDataFound = (id, data) => {
-  if (id && lodash.isEmpty(data)) {
-    throw new NotFoundError(`Can't find id ${id}`)
-  }
-  return data
-}
-
-
 /*TODO: retainRequiredFields doesn't keep the right attributes after formatting the object to match schema
  * example: 
  * let c = await loadfromdb({...})
@@ -1029,22 +1025,21 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
       // TODO UGLY but user_surveys_progress does not return if not leaned
       const localLean=LEAN_DATA || fields.some(f => /user_surveys_progress/.test(f)) || fields.some(f => /shopping_list/.test(f))
       return buildQuery(model, id, fields, params)
-        .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        //.then(data =>  retainRequiredFields({data, fields}))
+        .then(data =>  retainRequiredFields({data, fields}))
     })
 }
 
 const DATA_IMPORT_FN={}
 
 // Imports data for model. Delegated to plugins
-const importData=({model, data}) => {
+const importData=({model, data, user}) => {
   if (!DATA_IMPORT_FN[model]) {
     throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
   }
-  return DATA_IMPORT_FN[model](data)
+  return DATA_IMPORT_FN[model](data, user)
 }
 
 const setImportDataFunction = ({model, fn}) => {
@@ -1105,6 +1100,15 @@ const getYearFilter = ({attribute, year}) => {
   ]}
 }
 
+const createSearchFilter = ({attributes}) => {
+  return value => {
+    const re=new RegExp(value, 'i')
+    const filter=({$or:attributes.map(f => ({[f]: re}))})
+    console.log('CReated filter for value', value, filter)
+    return filter
+  }
+}
+
 module.exports = {
   hasRefs,
   MONGOOSE_OPTIONS,
@@ -1153,6 +1157,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, setpreLogin, callPreLogin, 
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter,
 }
 

@@ -378,14 +378,14 @@ router.get('/geoloc', async (req, res) => {
 })
 
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
-  return res.json(req.user)
+  return res.json(lodash.pick(req.user,['_id', 'role']))
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
   const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
-  return ACTIONS.register(body)
+  return ACTIONS.register(body, req.user)
     .then(result => res.json(result))
 })
 
@@ -469,7 +469,7 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
   const {model}=req.params
   const {file}=req
   console.log(`Import ${model}:${file.buffer.length} bytes`)
-  return importData({model, data:file.buffer})
+  return importData({model, data:file.buffer, user: req.user})
     .then(result => res.json(result))
 })
 

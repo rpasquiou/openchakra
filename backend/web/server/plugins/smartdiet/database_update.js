@@ -3,7 +3,7 @@ const mongoose=require('mongoose')
 const moment=require('moment')
 const { PHONE_REGEX, isPhoneOk } = require("../../../utils/sms")
 const User = require("../../models/User")
-const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, COACHING_STATUS_FINISHED } = require('./consts')
+const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_PROGRESS } = require('./consts')
 const Appointment = require('../../models/Appointment')
 const Company = require('../../models/Company')
 const CoachingLogbook = require('../../models/CoachingLogbook')
@@ -14,6 +14,9 @@ const { idEqual } = require('../../utils/database')
 const Offer = require('../../models/Offer')
 const Quizz = require('../../models/Quizz')
 const { updateApptsOrder } = require('./coaching')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
+const NodeCache = require('node-cache')
+const { copyProgressAnswers } = require('./quizz')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -223,6 +226,37 @@ const updateAppointmentsOrder = async () => {
   }
 }
 
+const setAppointmentsProgress = async () => {
+  const progressTemplate=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
+  const coachingProgress=new NodeCache()
+
+  // Cache coaching progress quizz
+  const getCoachingProgress = async coaching_id => {
+    const key=coaching_id.toString()
+    let progress=coachingProgress.get(key)
+    if (progress===undefined) {
+      const coaching=await Coaching.findById(coaching_id).populate({path: 'progress', populate: 'questions'})
+      progress=coaching.progress
+      coachingProgress.set(key, progress)
+    }
+    return progress
+  }
+
+  const appts=await Appointment.find({progress: null}).sort({coaching:1})
+  console.log('Appts with no progress', appts.length)
+  const res=await runPromisesWithDelay(appts.map((appt, idx) => async () => {
+    console.log(idx, '/', appts.length)
+    const progressUser = await progressTemplate.cloneAsUserQuizz()
+    const progress=await getCoachingProgress(appt.coaching)
+    if (progress) {
+      await copyProgressAnswers({sourceQuizz: progress, destinationQuizz: progressUser})
+    }
+    appt.progress=progressUser
+    return appt.save()
+  }))
+  console.error(res.filter(r => r.status=='rejected'))
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizePhones()
@@ -236,6 +270,7 @@ const databaseUpdate = async () => {
   //await setOffersOnCoachings() NOOOO
   await setCoachingAssQuizz()
   await updateAppointmentsOrder()
+  await setAppointmentsProgress()
 }
 
 module.exports=databaseUpdate
