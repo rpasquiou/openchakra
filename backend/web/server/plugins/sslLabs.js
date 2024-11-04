@@ -13,7 +13,7 @@ const sslScan = async (url, isNewScan) => {
     throw new Error(`L'url est invalide`)
   }
 
-  //check that there is not already a scan INPROGRESS for this url and this user
+  //check that there is not already a scan IN_PROGRESS for this url and this user
 
   //availability check
   const info=await axios.get(
