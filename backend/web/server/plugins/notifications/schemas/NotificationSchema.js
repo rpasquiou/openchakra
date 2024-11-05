@@ -41,7 +41,8 @@ const createNotificationSchema = (allowedTypes) => {
         type: Schema.Types.ObjectId,
         ref: 'user',
         required: true
-      }]
+      }],
+      default: []
     },
     picture: {
       type: String,
