@@ -55,4 +55,5 @@ module.exports = {
   setComputeUrl,
   setComputeMessage,
   addNotification,
+  getPendingNotifications,
 }
