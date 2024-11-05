@@ -15,7 +15,7 @@ const createNotificationSchema = (allowedTypes) => {
       type: String,
       required: [true, `Le type de l'id de la target est obligatoire`]
     },
-    _text: {
+    text: {
       type: String,
       required: [true, `Un texte est obligatoire pour une notification`]
     },

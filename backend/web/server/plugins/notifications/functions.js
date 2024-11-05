@@ -10,8 +10,8 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
-let computeMessage = (notif) => {
-  return notif._text
+let computeMessage = (text) => {
+  return text
 }
 
 const setComputeMessage = (fn) => {
@@ -31,15 +31,14 @@ const setAllowedTypes = types => {
 }
 
 const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
-  const url = computeUrl(targetId, targetType)
   const NotificationModel= Mongoose.models.notification
   return NotificationModel.create({
     recipents: users,
     _target: targetId,
     _target_type: targetType,
-    _text: text,
+    text: computeMessage(text),
     type: type,
-    url: url,
+    url: computeUrl(targetId, targetType),
     custom_props: customProps,
     picture
   })
