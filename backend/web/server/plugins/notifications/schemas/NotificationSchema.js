@@ -53,3 +53,7 @@ const createNotificationSchema = (allowedTypes) => {
 
   return NotificationSchema
 }
+
+module.exports = {
+  createNotificationSchema,
+}
