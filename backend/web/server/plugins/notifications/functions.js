@@ -62,4 +62,5 @@ module.exports = {
   setComputeMessage,
   addNotification,
   getPendingNotifications,
+  getPendingNotificationsCount
 }
