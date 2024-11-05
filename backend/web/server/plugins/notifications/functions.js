@@ -1,7 +1,7 @@
 const { Mongoose } = require("mongoose")
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
 
-let computeUrl = () => {
+let computeUrl = (targetId, targetType) => {
   return ``
 }
 
