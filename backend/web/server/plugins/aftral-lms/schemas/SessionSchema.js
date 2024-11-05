@@ -32,6 +32,11 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  // HACK Computed if I am the one
+  filtered_trainee: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  },
   // AFTRAL session id
   aftral_id: {
     type: String,
