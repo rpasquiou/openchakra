@@ -195,6 +195,7 @@ USER_MODELS.forEach(m => {
     },
   })
   declareComputedField({model: m, field: 'pending_notifications', getterFn: getPendingNotifications})
+  declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getPendingNotifications})
 })
 
 //Company declarations

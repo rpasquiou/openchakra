@@ -174,6 +174,9 @@ const UserSchema = new Schema({
       ref: 'notification'
     }]
   },
+  pending_notifications_count: {
+    type: Number
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
