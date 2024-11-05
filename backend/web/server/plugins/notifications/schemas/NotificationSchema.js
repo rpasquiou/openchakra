@@ -33,7 +33,8 @@ const createNotificationSchema = (allowedTypes) => {
         type: Schema.Types.ObjectId,
         ref: 'user',
         required: true
-      }]
+      }],
+      required: [true, `Une notification doit avoir des destinataires`]
     },
     seen_by_recipients: {
       type: [{
