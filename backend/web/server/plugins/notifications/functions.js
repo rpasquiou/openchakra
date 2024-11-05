@@ -31,7 +31,7 @@ const setAllowedTypes = types => {
 }
 
 const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
-  const NotificationModel= Mongoose.models.notification
+  const NotificationModel = Mongoose.models.notification
   return NotificationModel.create({
     recipents: users,
     _target: targetId,
