@@ -24,6 +24,10 @@ const createNotificationSchema = (allowedTypes) => {
       required: [true, `Le type de la notification est obligatoire`],
       enum: allowedTypes
     },
+    url: {
+      type: String,
+      required: [true, `L'url de la notification est obligatoire`]
+    },
     recipients: {
       type: [{
         type: Schema.Types.ObjectId,
