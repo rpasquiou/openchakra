@@ -21,4 +21,5 @@ const setAllowedTypes = types => {
 
 module.exports = {
   setAllowedTypes,
+  setComputeUrl,
 }
