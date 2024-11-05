@@ -4,6 +4,15 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const NotificationSchema = new Schema({
+  _target: {
+    type: Schema.Types.ObjectId,
+    refPath: '_target_type',
+    required: [true, `Il faut l'id de la cible de la notification`]
+  },
+  _target_type: {
+    type: String,
+    required: [true, `Le type de l'id de la target est obligatoire`]
+  },
   _text: {
     type: String,
     required: [true, `Un texte est obligatoire pour une notification`]
