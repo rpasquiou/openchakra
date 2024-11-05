@@ -76,7 +76,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'spent_time', getterFn: getBlockSpentTime})
   declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
-  declareComputedField({model, field: 'achievement_status', requries: 'type', getterFn: getBlockStatus})
+  declareComputedField({model, field: 'achievement_status', requires: 'type', getterFn: getBlockStatus})
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
