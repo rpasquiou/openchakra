@@ -76,12 +76,20 @@ addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
   const toUpdate=[id, ...(await getParentBlocks(id))]
-  await Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
-    {user, block: blockId},
-    {user, block: blockId, $inc: {spent_time: duration/1000}, achievement_status: BLOCK_STATUS_CURRENT},
-    {upsert: true, new: true}
-    )))
-  return onBlockAction(user, id)
+  await Promise.all(toUpdate.map(async blockId => {
+    // Increase spent time
+    await Progress.findOneAndUpdate(
+      {user, block: blockId},
+      {user, block: blockId, $inc: {spent_time: duration/1000}},
+      {upsert: true, new: true}
+    )
+    // Set status to current if not already finished
+    await Progress.findOneAndUpdate(
+      {user, block: blockId, achievement_status: {$ne: BLOCK_STATUS_FINISHED}},
+      {user, block: blockId, achievement_status: BLOCK_STATUS_CURRENT}
+    )
+  }))
+  return onBlockAction(user._id, id)
 }
 
 addAction('addSpentTime', addSpentTimeAction)
