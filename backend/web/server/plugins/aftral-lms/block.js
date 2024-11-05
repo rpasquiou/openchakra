@@ -830,7 +830,7 @@ const ensureValidProgramProduction = async programId => {
 
 const getFilteredTrainee = async (userId, params, data) => {
   if (data.trainees.some(t => idEqual(t._id, userId))) {
-    return [User.findById(userId)]
+    return [await User.findById(userId)]
   }
 }
 

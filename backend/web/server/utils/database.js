@@ -1083,7 +1083,7 @@ const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
   const filters=extractFilters(params)
   fields=lodash.uniq([...fields, ...Object.keys(filters)])
   return callPreprocessGet({model, fields, id, user, params})
-    .then(({model, fields, id, data, params}) => {
+    .then(({model, fields, id, data, user, params}) => {
       if (data) {
         return data
       }

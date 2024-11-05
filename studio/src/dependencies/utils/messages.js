@@ -9,4 +9,5 @@ export const MESSAGES={
   smartdiet_routine_challenge: 'Bravo !',
   smartdiet_set_company_code: 'Votre code entreprise a été pris en compte',
   addChild: 'Ajouté',
+  alle_finish_mission: 'Achèvement forcé avec succès',
 }
