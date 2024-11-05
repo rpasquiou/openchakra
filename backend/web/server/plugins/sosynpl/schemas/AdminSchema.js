@@ -18,7 +18,6 @@ AdminSchema.virtual('managed_accounts', {
     ref: 'customerFreelance',
     localField: '_id',
     foreignField: 'dedicated_admin',
-    justOne: false,
 })
 
 module.exports = AdminSchema
