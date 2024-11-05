@@ -36,7 +36,7 @@ const moveChildInParent= async (childId, up) => {
   }
   const brother=await Block.findOne({parent: child.parent, order: child.order+delta})
   if (!brother) {
-    throw new Error('No brother')
+    throw new Error(`No brother found in parent ${child.parent} with order ${child.order+delta}`)
   }
   child.order=newOrder
   brother.order=brother.order-delta
