@@ -1,5 +1,6 @@
 const { Mongoose } = require("mongoose")
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
+const { declareEnumField } = require("../../utils/database")
 
 let computeUrl = (targetId, targetType) => {
   return ``
@@ -24,6 +25,9 @@ const setAllowedTypes = types => {
   //build model
   NotificationSchema.plugin(require('mongoose-lean-virtuals'))
   Mongoose.model('notification', NotificationSchema)
+
+  //declarations
+  declareEnumField({model: 'notification', field: 'type', enumValues: types})
 }
 
 const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
