@@ -828,6 +828,12 @@ const ensureValidProgramProduction = async programId => {
  }))
 }
 
+const getFilteredTrainee = async (userId, params, data) => {
+  if (data.trainees.some(t => idEqual(t._id, userId))) {
+    return [User.findById(userId)]
+  }
+}
+
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
   cloneTree, LINKED_ATTRIBUTES, onBlockFinished, onBlockAction,
@@ -838,4 +844,5 @@ module.exports={
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
   getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
+  getFilteredTrainee,
 }
