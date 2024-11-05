@@ -147,7 +147,7 @@ const forceFinishResource = async ({value, dataId, trainee}, user) => {
     {user, block: value, achievement_status: BLOCK_STATUS_FINISHED},
     {upsert: true, new: true}
   )
-  await onBlockFinished(user, await Block.findById(value))
+  await onBlockFinished(user._id, value)
 }
 
 addAction('alle_finish_mission', forceFinishResource)

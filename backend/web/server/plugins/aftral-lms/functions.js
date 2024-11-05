@@ -22,7 +22,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -224,6 +224,7 @@ CONVERSATION_MODELS.forEach(model => {
 
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
+declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
 // Session end
 
 // Session start
@@ -506,6 +507,8 @@ const getFeeds = async (user, id) => {
 }
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+
+  // Update trainee connection
   if (['block', BLOCK_TYPE_SESSION].includes(model) && !!id && user?.role==ROLE_APPRENANT) {
     const block=await Block.findById(id)
     if (block.type==BLOCK_TYPE_SESSION) {
@@ -588,6 +591,15 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
+  // A session may be provided an id composed with a trainee also (for statistics)
+  if (model=='session' && !!id) {
+    if (id.includes('-')) {
+      const ids=id.split('-')
+      const models=await Promise.all(ids.map(id => getModel(id, ['session', 'user'])))
+      id=models[0]=='session' ? ids[0] : ids[1]
+      user=await User.findById(models[0]=='user' ? ids[0] : ids[1])
+    }
+  }
   if (model == `search`) {
     params[`filter.creator`] = user._id
     id=undefined

@@ -119,7 +119,7 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
 
   let resources = await loadFromDb({
     model: `resource`,
-    user: actualLogged,
+    user: userId,
     fields: [...fields, 'evaluation'],
     params: params,
   })
