@@ -26,6 +26,20 @@ const setAllowedTypes = types => {
   Mongoose.model('notification', NotificationSchema)
 }
 
+const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
+  const url = computeUrl(targetId, targetType)
+  const NotificationModel= Mongoose.models.notification
+  return NotificationModel.create({
+    recipents: users,
+    _target: targetId,
+    _target_type: targetType,
+    _text: text,
+    type: type,
+    url: url,
+    custom_props: customProps,
+    picture
+  })
+}
 
 module.exports = {
   setAllowedTypes,
