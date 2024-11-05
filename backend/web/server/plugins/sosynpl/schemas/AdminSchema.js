@@ -9,6 +9,10 @@ const AddressSchema = require('../../../models/AddressSchema')
 const Schema = mongoose.Schema
 
 const AdminSchema = new Schema({
+    default: {
+        type: Boolean,
+        default: false
+    }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

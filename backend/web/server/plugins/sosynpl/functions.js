@@ -1,4 +1,5 @@
 const User = require("../../models/User")
+const Admin = require("../../models/Admin")
 const Announce = require("../../models/Announce")
 const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
@@ -789,6 +790,14 @@ const prePutData = async ({model, id, params, user}) => {
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
   }
+
+  if (model === 'admin' && params.default) {
+    const defaultAdmins =  await Admin.exists({default: true, _id: {$ne: id}})
+    if (defaultAdmins) {
+      throw new Error(`Un admin par défaut existe déjà`)
+    }
+  }
+
   const targetUser = await User.findById(id, {availability:1})
   if(!!params.availability && params.availability!= targetUser.availability) {
     params.availability_last_update = moment()
