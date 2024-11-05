@@ -39,6 +39,7 @@ const { startSslScan } = require('../sslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
+const { getPendingNotifications } = require('../notifications/functions')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -193,6 +194,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'scan' }
     },
   })
+  declareComputedField({model: m, field: 'pending_notifications', getterFn: getPendingNotifications})
 })
 
 //Company declarations

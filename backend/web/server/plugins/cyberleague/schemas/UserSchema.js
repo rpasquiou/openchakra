@@ -168,6 +168,12 @@ const UserSchema = new Schema({
     type: String,
     required: false
   },
+  pending_notifications: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'notification'
+    }]
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
