@@ -44,6 +44,12 @@ const addNotification = ({users, targetId, targetType, text, type, customProps, 
   })
 }
 
+const getPendingNotifications = async function (userId, params, data) {
+  const NotificationModel = Mongoose.models.notification
+  const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}})
+  return notifs
+}
+
 module.exports = {
   setAllowedTypes,
   setComputeUrl,
