@@ -5,6 +5,7 @@ const Block = require('../../server/models/Block')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR } = require('../../server/plugins/aftral-lms/consts')
 const { getDatabaseUri } = require('../../config/config')
 const { runPromisesWithDelay } = require('../../server/utils/concurrency')
+require('../../server/plugins/aftral-lms/functions')
 const {addChildAction}=require('../../server/plugins/aftral-lms/actions')
 const User = require('../../server/models/User')
 
@@ -12,8 +13,7 @@ const getBlockName = block => {
   if (!block) {
     return null
   }
-  // return `${block.type} ${block.name} (${block._id})`
-  return `${block.type} ${block.name}`
+  return `${block._id} ${block.type} ${block.name}`
 }
 
 const getBlockHierarchyName = async block => {
@@ -25,8 +25,8 @@ const getBlockHierarchyName = async block => {
   return `${parentName}/${thisName}`
 }
 
-const countChildren = async id => {
-  return Block.countDocuments({parent: id})
+const getChildren = async id => {
+  return Block.find({parent: id}).sort({order:1})
 }
 
 const checkChildrenPropagation = async() => {
@@ -35,21 +35,36 @@ const checkChildrenPropagation = async() => {
   const grouped=lodash(blocks).groupBy(BLOCK_TYPE).mapValues(v => v.length)
   console.log(grouped.value())
   for (const block of blocks) {
-    const actual=await countChildren(block._id)
-    const expected=await countChildren(block.origin._id)
-    const msg=`Block ${await getBlockHierarchyName(block)} should have ${expected} children but has ${actual}`
+    const actuals=await getChildren(block._id)
+    const expected=await getChildren(block.origin._id)
+    const msg=`Block ${await getBlockHierarchyName(block)} should have\n${expected.map(e => ' -'+getBlockName(e)).join('\n')}\nbut has\n${actuals.map(e => ' -'+getBlockName(e)).join('\n')}`
     const msgexists=`Origine inconnue pour ${await getBlockName(block)}`
     const originExists=await Block.exists({_id: block.origin._id})
+    const childrenDiffer=actuals.map(c => c.name).join(',')!=expected.map(c => c.name).join(',')
     try {
       if (!originExists) {
         throw new Error(msgexists)
       }
-      if (actual!=expected) {
-        throw new Error(msg)
+      if (childrenDiffer) {
+        const actualNames = actuals.map(c => c.name)
+        const expectedNames = expected.map(c => c.name)
+        const justUnordered=lodash.isEqual(actualNames.sort(), expectedNames.sort())
+        const justExtra=lodash.intersection(actualNames, expectedNames).length==expected.length && lodash.difference(actualNames, expectedNames)
+        if (justUnordered) {
+          await Promise.all(actuals.map(async actual => {
+            console.log(` - Setting ${actual.name} order to ${actual.order}`)
+            const message = await Block.findOneAndUpdate({ parent: block._id, name: actual.name }, { order: actual.order })
+            return console.log(message)
+          }))
+        }
+        if (justExtra) {
+          await Block.remove({parent: block._id, name: {$in: justExtra}})
+        }
+        throw new Error((justUnordered? 'Just order problem:':justExtra? 'Just extra child': '')+msg)
       }
     }
     catch(err) {
-      console.log(err.message)
+      console.log(err.message+'\n')
     }
   }
   console.log('*'.repeat(10), 'END Checking children propagation')
@@ -71,60 +86,10 @@ const checkChildrenOrder = async() => {
   console.log('*'.repeat(10), 'END children order')
 }
 
-const fixModel = async () => {
-  console.log('*'.repeat(10), 'START fix model')
-  const parents=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}})
-    .populate({path: 'children', populate: 'origin'}).lean()
-  parents.forEach(p => {
-    console.log('Before', p.type, p.name, p.children.length)
-    if (p.children.some(c => !c.origin)) {
-      throw new Error(`${p.id}/${c._id} has no origin`)
-    }
-  })
-  const families=parents.map(p => ({type: p.type, id: p._id, name:p.name, children: p.children.map(c => c.origin._id)}))
-  const grouped=lodash.groupBy(families, 'type')
-  const types=['sequence', 'module', 'chapter', 'program']
-  // Remove all clones
-  await Block.remove({origin: {$ne: null}, _locked:false})
-
-  const designer=await User.findOne({role: ROLE_CONCEPTEUR})
-  const reAssociate = async blocks => {
-    return Promise.all(blocks.map(({id, children}) => {
-      console.log('Running', id, children)
-      if (children.length==0) {
-        return
-      }
-      return runPromisesWithDelay(children.map(child => async () => {
-        console.log('start', id, child)
-        const res=addChildAction({parent: id, child: child}, designer).catch(console.error)
-        console.log('end', id, child)
-        return res
-      }))
-      .then(res => {
-        const err=res.find(r => r.status=='rejected')
-        if (err) {
-          throw new Error(err.reason)
-        }
-      })
-    })
-  )}
-  await reAssociate(grouped.sequence)
-  await reAssociate(grouped.module)
-  await reAssociate(grouped.chapter)
-  await reAssociate(grouped.program)
-  const parentsAfter=await Block.find({_locked: false, parent: null, type: {$ne: 'resource'}})
-    .populate('children')
-  parentsAfter.forEach(p => {
-    console.log('After', p.type, p.name, p.children.length)
-  })
-  console.log('*'.repeat(10), 'END fix model')
-}
-
 const checkConsistency = async () => {
   await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
   await checkChildrenPropagation()
   await checkChildrenOrder()
-  await fixModel()
 }
 
 checkConsistency()
