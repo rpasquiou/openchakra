@@ -1,6 +1,14 @@
 const { Mongoose } = require("mongoose")
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
 
+let computeUrl = () => {
+  return ``
+}
+
+const setComputeUrl = (fn) => {
+  computeUrl = fn
+}
+
 const setAllowedTypes = types => {
   //build schema
   const NotificationSchema = createNotificationSchema(types)
