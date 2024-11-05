@@ -1,11 +1,13 @@
+const { Mongoose } = require("mongoose")
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
 
-let allowedTypes = null
-
 const setAllowedTypes = types => {
-  allowedTypes = types
-  const notificationSchema = createNotificationSchema(allowedTypes)
-  //créer modèle
+  //build schema
+  const NotificationSchema = createNotificationSchema(types)
+
+  //build model
+  NotificationSchema.plugin(require('mongoose-lean-virtuals'))
+  Mongoose.model('notification', NotificationSchema)
 }
 
 
