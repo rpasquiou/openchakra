@@ -13,7 +13,7 @@ const withDynamicInput = Component => {
     const isADate = !isNaN(Date.parse(keptValue)) && new Date(Date.parse(keptValue));
 
     if (isADate instanceof Date) {
-
+      //OPTIMIZE : better use moment to format
       const retainedDate = isADate.toLocaleString(undefined, {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit'})
         .split(/\s/)
       const transformedDate = `${retainedDate[0].split('/').reverse().join('-')}T${retainedDate[1]}`
@@ -26,6 +26,9 @@ const withDynamicInput = Component => {
       }
       if (props?.type === 'time') {
           keptValue = transformedDate.slice(11, 16)
+      }
+      if (props?.type === 'month') {
+        keptValue = transformedDate.slice(0, 7)
       }
     }
 
