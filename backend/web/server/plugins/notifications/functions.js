@@ -9,6 +9,14 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
+let computeMessage = (notif) => {
+  return notif._text
+}
+
+const setComputeMessage = (fn) => {
+  computeMessage = fn
+}
+
 const setAllowedTypes = types => {
   //build schema
   const NotificationSchema = createNotificationSchema(types)
