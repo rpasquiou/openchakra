@@ -1,7 +1,11 @@
+const { createNotificationSchema } = require("./schemas/NotificationSchema")
 
+let allowedTypes = null
 
-const setAllowedTypes = (fn) => {
-  return fn()
+const setAllowedTypes = types => {
+  allowedTypes = types
+  const notificationSchema = createNotificationSchema(allowedTypes)
+  //créer modèle
 }
 
 
