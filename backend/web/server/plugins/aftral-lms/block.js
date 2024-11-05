@@ -13,12 +13,11 @@ const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
-const { parseScormTime } = require("../../../utils/dateutils");
 const { sendBufferToAWS } = require("../../middlewares/aws");
-const { fillForm2, getFormFields } = require("../../../utils/fillForm");
+const { fillForm2 } = require("../../../utils/fillForm");
 const { formatDate, formatPercent } = require('../../../utils/text');
-const { isDevelopment } = require('../../../config/config');
 const Block = require('../../models/Block');
+const { ensureObjectIdOrString } = require('./utils');
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
@@ -89,7 +88,7 @@ const getParentBlocks = async blockId => {
 }
 
 const getBlockStatus = async (userId, params, data) => {
-  if (data.type=='session') {
+  if (data?.type=='session') {
     const finished=await mongoose.models.session.exists({_id: data._id, end_date: {$lt: moment()}})
     if (finished) {
       return BLOCK_STATUS_FINISHED
@@ -180,7 +179,7 @@ const loadChain = async blockId => {
 }
 
 const isFinished = async (user, block) => {
-  return Progress.exists({user, block, achievement_status: BLOCK_STATUS_FINISHED})
+  return Progress.exists({user: user._id, block: block._id, achievement_status: BLOCK_STATUS_FINISHED})
 }
 
 const checkAccessCondition = async (user, blockId) => {
@@ -200,33 +199,38 @@ const onBlockFinished = async (user, block) => {
   return updateSessionStatus(session._id, user._id)
 }
 
-const onBlockAction = async (user, block) => {
-  const bl=await mongoose.models.block.findById(block)
+const onBlockAction = async (userId, blockId) => {
+  await ensureObjectIdOrString(userId)
+  await ensureObjectIdOrString(blockId)
+  const bl=await mongoose.models.block.findById(blockId)
   // Homework priority on other rules
   if (bl.homework_mode) {
-    const homeworks=await Homework.find({trainee: user, resource: block}).sort({[CREATED_AT_ATTRIBUTE]: 1})
+    const homeworks=await Homework.find({trainee: userId, resource: blockId}).sort({[CREATED_AT_ATTRIBUTE]: 1})
     const latest_homework=homeworks.pop()
     if (!!latest_homework) {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
-      if (!(await isFinished(user, block))) {
-          await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-          return onBlockFinished(user, block)
+      if (!(await isFinished(userId, blockId))) {
+          await saveBlockStatus(userId, blockId, BLOCK_STATUS_FINISHED)
+          return onBlockFinished(userId, blockId)
         }
       }
       else {
-        await removeBlockStatus(user, block)
+        await removeBlockStatus(userId, blockId)
       }
     }
     return
   }
-  const progress=await Progress.findOne({user, block})
+  const progress=await Progress.findOne({user: userId, block: blockId})
   const rule=bl.achievement_rule
+  const prevStatus=progress.achievement_status
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
-  const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
-  await saveBlockStatus(user, block, status)
-  if (finished) {
-    onBlockFinished(user, block)
+  const newStatus=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
+  if (prevStatus != newStatus) {
+    await saveBlockStatus(userId, blockId, newStatus)
+    if (newStatus==BLOCK_STATUS_FINISHED) {
+      onBlockFinished(userId, blockId)
+    }
   }
 }
 
@@ -635,12 +639,15 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
     throw new Error(userId, blockId, status)
   }
-  await Progress.findOneAndUpdate(
+  ensureObjectIdOrString(userId)
+  ensureObjectIdOrString(blockId)
+  const before=await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
-  if (withChildren) {
+  const statusChanged=before?.achievement_status!==status
+  if (statusChanged && withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
       await Promise.all(children.map(child => saveBlockStatus(userId, child._id, status, withChildren)))
@@ -711,7 +718,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       const brother=block.children[lastFinished+1]
       await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
       // Next children are unavailable
-      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx], BLOCK_STATUS_UNAVAILABLE, true)))
+      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
     }
     return blockStatus
   }

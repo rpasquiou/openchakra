@@ -544,7 +544,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
         },
         {upsert: true},
       )
-      await onBlockAction(user, block)
+      await onBlockAction(user._id, block._id)
     }
   }
   if (model == 'contact') {
