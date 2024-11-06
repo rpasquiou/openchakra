@@ -121,8 +121,8 @@ const getCompanyLeads = async (userId, params, data, fields) => {
   const role=(await User.findById(userId))?.role
 
   params=lodash(params)
-    .pickBy((_, k) => /^limit.leads/.test(k) || /^sort.leads/.test(k) || /^filter.leads/.test(k))
-    .mapKeys((_, k) => k.replace(/^limit.leads/, 'limit').replace(/^sort.leads/, 'sort').replace(/^filter.leads/, 'filter'))
+    .pickBy((_, k) => /^limit.leads/.test(k) || /^sort.leads/.test(k) || /^filter.leads/.test(k) || /^page.leads/.test(k))
+    .mapKeys((_, k) => k.replace(/^limit.leads/, 'limit').replace(/^sort.leads/, 'sort').replace(/^filter.leads/, 'filter').replace(/^page.leads/, 'page'))
     .value()
 
     // Filter lads from their company
