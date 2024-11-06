@@ -567,7 +567,11 @@ const acceptsChild= async (parent, child) => {
   }
 }
 
-const addChild = async ({parent, child, user}) => {
+/**
+ * Only template can be added to template only
+ * Don't check that when propagating to origins
+ */
+const addChild = async ({parent, child, user, check=true}) => {
   // Allow ADMIN to add child for session import
   if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
@@ -575,10 +579,10 @@ const addChild = async ({parent, child, user}) => {
   [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id)))
   const [pType, cType]=[parent?.type, child?.type]
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
-  if (!!parent.origin) {
+  if (check && !!parent.origin) {
     throw new BadRequestError(`Le parent doit être un template`)
   }
-  if (!!child.origin) {
+  if (check && !!child.origin) {
     throw new BadRequestError(`Le fils doit être un template`)
   }
   await acceptsChild(parent, child)
@@ -587,7 +591,7 @@ const addChild = async ({parent, child, user}) => {
 
   // Now propagate to all origins
   const origins=await mongoose.models.block.find({origin: parent._id, _locked: false}, {_id:1})
-  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
+  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user, check: false})))
 }
 
 const lockSession = async blockId => {
