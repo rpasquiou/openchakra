@@ -274,7 +274,11 @@ addAction('deactivateAccount', deactivateAccount)
 
 const affectLead = ({ value }, user) => {
   return isActionAllowed({ action: 'smartdiet_affect_lead', dataId: value, user })
-    .then(ok => ok && Lead.findByIdAndUpdate(value,{ operator: user._id, call_status: CALL_STATUS_CALL_1}))
+    .then(ok => ok && Lead.findByIdAndUpdate(
+      value,{ 
+        $set: {operator: user._id, call_status: CALL_STATUS_CALL_1}, 
+        $push: {_call_status_history: {date: moment(), call_status: CALL_STATUS_CALL_1}}
+    }))
 }
 
 addAction('smartdiet_affect_lead', affectLead)

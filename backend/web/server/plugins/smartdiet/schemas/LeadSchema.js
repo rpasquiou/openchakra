@@ -66,6 +66,17 @@ const LeadSchema = new Schema({
     required: false,
     set: v => v || undefined,
   },
+  _call_status_history: [{
+    date: {
+      type: Date,
+      required: [true, `Le date est obligatoire pour l'historisation`],
+    },
+    call_status: {
+      type: String,
+      enum: Object.keys(CALL_STATUS),
+      required: [true, `Le status d'appel est obligatoire pour l'historisation`],
+    },
+  }],
   campain: {
     type: String,
     required: false,

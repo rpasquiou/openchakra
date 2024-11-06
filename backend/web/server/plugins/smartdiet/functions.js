@@ -218,7 +218,6 @@ const { upsertProduct } = require('../payment/stripe')
 const Job = require('../../models/Job')
 const kpi = require('./kpi')
 const { getNutAdviceCertificate, getAssessmentCertificate, getFinalCertificate } = require('./certificate')
-const { historicize } = require('./history')
 const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
 const { registerPreSave } = require('../../utils/schemas')
@@ -705,7 +704,14 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
     }
   }
   if (model=='lead') {
-    await historicize({source: id, modelName: 'lead', attribute: 'call_status', value:data.call_status})
+    const call_status=params.call_status
+    if (!!call_status) {
+      const lead=await Lead.findById(id)
+      const last_status=lead._call_status_history.pop()?.call_status
+      if (last_status!=call_status) {
+        await Lead.findByIdAndUpdate(id, {$push: {_call_status_history: {date:moment(), call_status}}})
+      }
+    }
   }
   return Promise.resolve(params)
 }
