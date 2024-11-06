@@ -39,7 +39,9 @@ const { startSslScan } = require('../sslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes } = require('../notifications/functions')
+
+setAllowedTypes(['Post'])
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
