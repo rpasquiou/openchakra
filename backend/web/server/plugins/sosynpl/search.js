@@ -129,7 +129,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
 const searchFreelances = async (userId, params, data, fields)  => {
   let filter = { ...params, 'filter.role': ROLE_FREELANCE }
 
-  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises']
+  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises', 'firstname', 'lastname']
 
   if (!lodash.isEmpty(data.work_modes)) {
     filter['filter.work_mode'] = { $in: data.work_modes }
