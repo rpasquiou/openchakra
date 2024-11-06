@@ -9,7 +9,7 @@ const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation, sendNewMessage } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -755,6 +755,22 @@ const postCreate = async ({model, params, data, user}) => {
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
   }
+
+  if(model === 'message') {
+    const receiver = await User.findById(data.receiver)
+    const sender_firstname = data.sender.firstname
+    const content = data.content
+
+    if (receiver && receiver.email) {
+      await sendNewMessage({
+        firstname: receiver.firstname,
+        external_email: receiver.email,
+        sender_firstname: sender_firstname,
+        content: content
+      })
+    }
+  }
+
   if (model=='software' && params.parent) {
     const parentModel=await getModel(params.parent)
     if (['customerFreelance', 'user'].includes(parentModel)) {

@@ -18,6 +18,7 @@ const SIB_IDS={
   FREELANCE_SEND_SUGGESTION: 31,
   CUSTOMER_SEND_APPLICATION: 39,
   NEW_CONTACT: 47,
+  NEW_MESSAGE: 48,
 }
 
 const SMS_CONTENTS={
@@ -123,6 +124,18 @@ const sendForgotPassword = async ({user, password}) => {
   })
 }
 
+const sendNewMessage = async ({firstname, external_email, sender_firstname, content}) => {
+  return sendNotification({
+    notification: SIB_IDS.NEW_MESSAGE,
+    destinee: {email: external_email},
+    params: {
+      firstname,
+      sender_firstname,
+      content,
+    }
+  })
+}
+
 // Send contact info to admins
 const sendAskRecommandation = async ({user, external_email, external_firstname, message, recommendation_id}) => {
   const recommendationTag=await getTagUrl('RECOMMENDATION')
@@ -154,5 +167,5 @@ const sendAccountSuspended = async ({user, suspend_reason}) => {
 
 module.exports = {
   sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendSuggestion2Freelance, sendApplication2Customer,
-  sendNewContact2Admin, sendForgotPassword, sendAskRecommandation, sendAccountSuspended, sendFreelanceValidated,
+  sendNewContact2Admin, sendForgotPassword, sendAskRecommandation, sendAccountSuspended, sendFreelanceValidated, sendNewMessage,
 }
