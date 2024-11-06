@@ -718,11 +718,11 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     params.quotation=params.quotation || params.parent
     return { model, params, user}
   }
-  if (['message'].includes(model)) {
+  if (model === 'message') {
     params.sender = user
     const conversation=await Conversation.findById(params.parent)
     params.conversation=conversation
-    params.receiver=await conversation.getPartner(user)
+    params.receiver= conversation.getPartner(user._id)
   }
   if (model == 'recommandation') {
     if (!params.creator_email) {
