@@ -573,14 +573,12 @@ const soSynplRegister = async props => {
 
   const defaultAdmin = await Admin.findOne({ default: true })
 
-  if (!defaultAdmin) {
-    throw new Error("L'administrateur par défaut n'a pas été désigné");
-  }
-
   const model=CustomerFreelance //props.role==ROLE_FREELANCE ? Freelance : Customer
   const modelName='customerFreelance' //props.role==ROLE_FREELANCE ? 'freelance' : 'customer'
 
-  props.dedicated_admin = [defaultAdmin._id]
+  if (defaultAdmin && defaultAdmin._id) {
+    props.dedicated_admin = [defaultAdmin._id]
+  }
 
   return User.exists({email: props.email})
     .then(exists => {
