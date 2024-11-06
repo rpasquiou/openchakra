@@ -1,8 +1,51 @@
 import React, { useState, useEffect } from 'react'
 import lodash from 'lodash'
-import {InputGroup, InputRightElement} from '@chakra-ui/react'
+import {Input, InputGroup, InputRightElement} from '@chakra-ui/react'
 import {AiOutlineEye, AiOutlineEyeInvisible} from 'react-icons/ai'
 import { ACTIONS } from '../utils/actions'
+import moment from 'moment'
+
+const CustomMonthInput = ({ value, onChange, ...props }) => {
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
+  console.log('Mode CustomMonthInput:', {
+    value,
+    isSafari,
+    props
+  })
+
+  const formatValue = (val) => {
+    if (!val) return ''
+    const formattedValue = moment(val).format('YYYY-MM')
+    console.log('Formatage:', { input: val, output: formattedValue })
+    return formattedValue
+  }
+
+  const handleChange = (e) => {
+    const newValue = e.target.value
+    console.log('Changement:', { oldValue: value, newValue })
+    if (onChange) {
+      onChange({
+        target: {
+          value: newValue
+        }
+      })
+    }
+  }
+
+  const inputProps = {
+    type: isSafari ? "text" : "month",
+    pattern: isSafari ? "[0-9]{4}-[0-9]{2}" : undefined,
+    placeholder: isSafari ? "YYYY-MM" : undefined,
+    value: formatValue(value),
+    onChange: handleChange,
+    ...props
+  }
+
+  console.log('Props finaux:', inputProps)
+
+  return <Input {...inputProps} />
+}
 
 const withDynamicInput = Component => {
 
@@ -27,8 +70,8 @@ const withDynamicInput = Component => {
       if (props?.type === 'time') {
           keptValue = transformedDate.slice(11, 16)
       }
-      if (props?.type === 'month') {
-        keptValue = transformedDate.slice(0, 7)
+      if (props.type === 'month') {
+        return <CustomMonthInput {...props} value={keptValue} />
       }
     }
 
