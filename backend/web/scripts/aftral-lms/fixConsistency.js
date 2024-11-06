@@ -4,10 +4,7 @@ const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const Block = require('../../server/models/Block')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR } = require('../../server/plugins/aftral-lms/consts')
 const { getDatabaseUri } = require('../../config/config')
-const { runPromisesWithDelay } = require('../../server/utils/concurrency')
 require('../../server/plugins/aftral-lms/functions')
-const {addChildAction}=require('../../server/plugins/aftral-lms/actions')
-const User = require('../../server/models/User')
 
 const getBlockName = block => {
   if (!block) {
@@ -37,12 +34,13 @@ const checkChildrenPropagation = async() => {
   for (const block of blocks) {
     const actuals=await getChildren(block._id)
     const expected=await getChildren(block.origin._id)
-    const msg=`Block ${await getBlockHierarchyName(block)} should have\n${expected.map(e => ' -'+getBlockName(e)).join('\n')}\nbut has\n${actuals.map(e => ' -'+getBlockName(e)).join('\n')}`
-    const msgexists=`Origine inconnue pour ${await getBlockName(block)}`
+    const msg=`Block ${await getBlockHierarchyName(block)} should have\n${expected.map(e => ' -'+getBlockName(e)+'('+e.order+')').join('\n')}\nbut has\n${actuals.map(e => ' -'+getBlockName(e)+' from '+e.origin).join('\n')}`
+    const msgexists=`Origine inconnue pour ${await getBlockName(block)}}`
     const originExists=await Block.exists({_id: block.origin._id})
     const childrenDiffer=actuals.map(c => c.name).join(',')!=expected.map(c => c.name).join(',')
     try {
       if (!originExists) {
+        await Block.deleteOne({_id: block._id})
         throw new Error(msgexists)
       }
       if (childrenDiffer) {
@@ -51,14 +49,13 @@ const checkChildrenPropagation = async() => {
         const justUnordered=lodash.isEqual(actualNames.sort(), expectedNames.sort())
         const justExtra=lodash.intersection(actualNames, expectedNames).length==expected.length && lodash.difference(actualNames, expectedNames)
         if (justUnordered) {
-          await Promise.all(actuals.map(async actual => {
-            console.log(` - Setting ${actual.name} order to ${actual.order}`)
-            const message = await Block.findOneAndUpdate({ parent: block._id, name: actual.name }, { order: actual.order })
-            return console.log(message)
+          await Promise.all(expected.map(async expected => {
+            console.log(` - Setting ${expected.name} order to ${expected.order}`)
+            await Block.findOneAndUpdate({ parent: block._id, origin: expected._id}, { order: expected.order })
           }))
         }
         if (justExtra) {
-          await Block.remove({parent: block._id, name: {$in: justExtra}})
+          await Block.deleteMany({parent: block._id, origin: {$nin: expected}})
         }
         throw new Error((justUnordered? 'Just order problem:':justExtra? 'Just extra child': '')+msg)
       }
@@ -80,7 +77,7 @@ const checkChildrenOrder = async() => {
     const orders=v.map(child => child.order-1)
     const expected=lodash.range(v.length)
     if (!lodash.isEqual(orders, expected)) {
-      console.log(`Incorrect children order for ${v[0].parent}:${orders}`)
+      console.log(`Incorrect children order for ${v[0].parent}:${orders}, expected ${expected}`)
     }
   })
   console.log('*'.repeat(10), 'END children order')
