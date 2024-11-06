@@ -565,13 +565,23 @@ declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', m
   }
 })
 
-const soSynplRegister = props => {
+const soSynplRegister = async props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
     throw new Error(`Le role ${props.role || 'vide'} est invalide pour l'inscription`)
   }
+
+  const defaultAdmin = await Admin.findOne({ default: true })
+
+  if (!defaultAdmin) {
+    throw new Error("L'administrateur par défaut n'a pas été désigné");
+  }
+
   const model=CustomerFreelance //props.role==ROLE_FREELANCE ? Freelance : Customer
   const modelName='customerFreelance' //props.role==ROLE_FREELANCE ? 'freelance' : 'customer'
+
+  props.dedicated_admin = [defaultAdmin._id]
+
   return User.exists({email: props.email})
     .then(exists => {
       if (exists) {
