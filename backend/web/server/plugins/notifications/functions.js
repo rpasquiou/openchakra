@@ -1,6 +1,7 @@
 const { Mongoose } = require("mongoose")
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
-const { declareEnumField } = require("../../utils/database")
+const { declareEnumField, declareVirtualField } = require("../../utils/database")
+const User = require("../../models/User")
 
 let computeUrl = (targetId, targetType) => {
   return ``
@@ -26,8 +27,40 @@ const setAllowedTypes = types => {
   NotificationSchema.plugin(require('mongoose-lean-virtuals'))
   Mongoose.model('notification', NotificationSchema)
 
-  //declarations
+  //Adding virtuals to userSchema
+  User.schema.virtual('pending_notifications_test_virtual', {
+    ref:'notification',
+    localField:'_id',
+    foreignField:'recipients',
+    options: {
+      match: {seen_by_recipients: {$nin: this._id}}
+    }
+  })
+
+  User.schema.virtual('pending_notifications_count_test_virtual', {
+    ref:'notification',
+    localField:'_id',
+    foreignField:'recipients',
+    options: {
+      match: {seen_by_recipients: {$nin: this._id}}
+    },
+    count: true
+  })
+
+  User.recompileSchema()
+
+  //user declarations
+  declareVirtualField({model: 'user', field: 'pending_notifications_test_virtual', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'notification' }
+    },
+  })
+  declareVirtualField({model: 'user', field: 'pending_notifications_count_test_virtual', instance: 'Number'})
+
+  //notification declarations
   declareEnumField({model: 'notification', field: 'type', enumValues: types})
+
 }
 
 const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
