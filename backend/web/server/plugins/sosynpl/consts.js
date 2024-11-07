@@ -424,9 +424,11 @@ const CF_MAX_SILVER_SOFT_SKILLS=2
 const CF_MAX_BRONZE_SOFT_SKILLS=3
 
 //Freelance profile completion
-const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'phone', 'email', 'position', 'experience', 'main_experience', 'work_duration', 'company_name', 'siren', 'legal_status', 'work_sector']
+const MIN_EXPERTISES = 3
+const MIN_PINNED_EXPERTISES = 3
+const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'phone', 'email', 'position', 'experience', 'main_experience', 'work_duration', 'company_name', 'siren', 'legal_status', 'work_sector', 'headquarter_address']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['headquarter_address', 'rate', 'description', 'work_mode', 'work_company_size', 'mobility', 'expertises', 'experiences', 'trainings']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['rate', 'description', 'work_mode', 'work_company_size', 'mobility', 'experiences', 'trainings', 'pinned_expertises', 'expertises']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
   firstname: 'prénom',
@@ -448,7 +450,8 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   work_mode: 'mode de travail',
   work_company_size: 'préférence de taille d\'entreprise',
   mobility: 'mobilité',
-  expertises: 'expertises',
+  expertises: `au moins ${MIN_EXPERTISES} compétences`,
+  pinned_expertises: `au moins ${MIN_PINNED_EXPERTISES} compétences mises en avant`,
   experiences: 'expériences',
   trainings: 'formations',
   gold_soft_skills: 'Soft skills gold',
@@ -490,6 +493,6 @@ module.exports={
   SEARCH_MODE, DEFAULT_SEARCH_RADIUS, DURATION_UNIT_DAYS, DURATION_FILTERS, DURATION_MONTH,SOURCE_RECOMMANDATION, EVALUATION_MIN, EVALUATION_MAX, DURATION_MONTH, CF_MAX_GOLD_SOFT_SKILLS, CF_MAX_SILVER_SOFT_SKILLS, CF_MAX_BRONZE_SOFT_SKILLS,
   COMPANY_SIZE_LESS_10,MISSION_STATUS_CLOSED,
   FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES,
-  CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES, REASON_OTHER, APPLICATION_VISIBILITY, APPLICATION_VISIBILITY_HIDDEN, APPLICATION_VISIBILITY_VISIBLE,
+  CUSTOMER_REQUIRED_ATTRIBUTES, CUSTOMER_OUTPUT_ATTRIBUTES, REASON_OTHER, APPLICATION_VISIBILITY, APPLICATION_VISIBILITY_HIDDEN, APPLICATION_VISIBILITY_VISIBLE, MIN_EXPERTISES, MIN_PINNED_EXPERTISES
 }
 
