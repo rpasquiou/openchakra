@@ -1,4 +1,4 @@
-const { Mongoose } = require("mongoose")
+const mongoose = require('mongoose')
 const { createNotificationSchema } = require("./schemas/NotificationSchema")
 const { declareEnumField, declareVirtualField } = require("../../utils/database")
 const User = require("../../models/User")
@@ -25,7 +25,7 @@ const setAllowedTypes = types => {
 
   //build model
   NotificationSchema.plugin(require('mongoose-lean-virtuals'))
-  Mongoose.model('notification', NotificationSchema)
+  mongoose.model('notification', NotificationSchema)
 
 //TODO mongoose : need at least mongoose 8.2.0 to use recompileSchema
 //   //Adding virtuals to userSchema
@@ -64,7 +64,7 @@ const setAllowedTypes = types => {
 }
 
 const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
-  const NotificationModel = Mongoose.models.notification
+  const NotificationModel = mongoose.models.notification
   return NotificationModel.create({
     recipents: users,
     _target: targetId,
@@ -78,13 +78,13 @@ const addNotification = ({users, targetId, targetType, text, type, customProps, 
 }
 
 const getPendingNotifications = async function (userId, params, data) {
-  const NotificationModel = Mongoose.models.notification
+  const NotificationModel = mongoose.models.notification
   const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}})
   return notifs
 }
 
 const getPendingNotificationsCount = async function (userId, params, data) {
-  const NotificationModel = Mongoose.models.notification
+  const NotificationModel = mongoose.models.notification
   const notifCount = await NotificationModel.countDocuments({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}})
   return notifCount
 }
