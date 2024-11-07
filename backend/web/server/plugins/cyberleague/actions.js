@@ -7,6 +7,7 @@ const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
+const { isValidateNotificationActionAllowed } = require('../notifications/actions')
 
 
 const deleteForbidden = async () => {
@@ -155,6 +156,11 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
       }
     }
   }
+
+  if (action == 'validate') {
+    await isValidateNotificationActionAllowed({dataId, user, ...rest})
+  }
+
   return true
 }
 
