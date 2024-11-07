@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -22,7 +22,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee} = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee, getTopParent} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -429,6 +429,20 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   if (model=='program' && params.status==PROGRAM_STATUS_AVAILABLE) {
     await ensureValidProgramProduction(id)
   }
+
+  // #230 Check only MSR inside program can be optional
+  if (!!params.optional && BLOCK_MODELS.includes(model)) {
+    const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+    const block=await mongoose.models.block.findById(id)
+    if (!(ALLOWED_OPTIONALS.includes(block.type))) {
+      throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+    }
+    const topParent=await getTopParent(id)
+    if (topParent.type!=BLOCK_TYPE_PROGRAM) {
+      throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+    }
+  }
+
   return {model, id, params, user, skip_validation}
 }
 

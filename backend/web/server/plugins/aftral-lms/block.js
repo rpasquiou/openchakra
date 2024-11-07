@@ -54,6 +54,15 @@ const ensureMongooseModel = data => {
   }
 }
 
+// Returns the top-level parent of this block
+const getTopParent = async blockId => {
+  const block=await mongoose.models.block.findById(blockId)
+  if (!block.parent) {
+    return blockId
+  }
+  return getTopParent(block.parent)
+}
+
 const getProgress = async (userId, blockId) => {
   return mongoose.models.progress.findOne({user: userId, block: blockId})
 }
@@ -854,5 +863,5 @@ module.exports={
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
   getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
-  getFilteredTrainee,
+  getFilteredTrainee, getTopParent,
 }
