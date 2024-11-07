@@ -108,4 +108,6 @@ module.exports = {
   addNotification,
   getPendingNotifications,
   getPendingNotificationsCount,
+  getNotifications,
+  getNotificationsCount,
 }
