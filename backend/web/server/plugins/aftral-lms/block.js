@@ -839,12 +839,28 @@ const getBlockNoteStr = async (userId, params, data) => {
 
 // A program in produciton mode must not have a sequence with no resource
 const ensureValidProgramProduction = async programId => {
- const children=await getBlockChildren({blockId: programId})
- const sequences=await mongoose.models.block.find({_id: {$in: children.map(c => c._id)}, type: BLOCK_TYPE_SEQUENCE}, {_id:1, name:1})
- console.log(sequences.map(s => s._id))
- return Promise.all(sequences.map(sequence => {
-  return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
- }))
+  const childrenId=await getBlockChildren({blockId: programId})
+  const children=await mongoose.models.block.find({_id: {$in: childrenId}})
+  const sequences=children.filter(c => c.type==BLOCK_TYPE_SEQUENCE)
+
+  // Forbid sequences with no resource
+  await Promise.all(sequences.map(sequence => {
+    return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
+  }))
+
+  // #231: Forbid mandatory blocks whose all children are optional
+  const forbidden=lodash(children)
+    .groupBy(c => c.parent._id?.toString())
+    .pickBy(v => !lodash.isEmpty(v) && v.every(subChild => !!subChild.optional))
+  if (!forbidden.isEmpty()) {
+    const msg=forbidden.keys().map(k => {
+      parent=children.find(c => idEqual(c._id, k))
+      return !parent.optional && `${BLOCK_TYPE_LABEL[parent.type]} "${parent.name}" doit être facultatif car tous ses enfants le sont`
+    }).filter(Boolean).join(', ')
+    if (!lodash.isEmpty(msg)) {
+      throw new BadRequestError(msg)
+    }
+  }
 }
 
 const getFilteredTrainee = async (userId, params, data) => {
