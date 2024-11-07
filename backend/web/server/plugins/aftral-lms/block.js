@@ -598,28 +598,33 @@ const addChild = async ({parent, child, user, check=true}) => {
 }
 
 const lockSession = async blockId => {
-  const toManage=[await mongoose.models.block.findById(blockId)]
+  const session = await mongoose.models.block.findById(blockId).populate('children').populate('trainees')
+  if (!session || session.type!=BLOCK_TYPE_SESSION) {
+    throw new Error(`${blockId} null or not session:${session?.type}/${session.name}`)
+  }
+  if (lodash.isEmpty(session.trainees)) {
+    throw new BadRequestError(`Démarrage session ${session.code} impossible: pas d'apprenant`)
+  }
+  if (lodash.isEmpty(session.children)) {
+    throw new BadRequestError(`Démarrage session ${session.code} impossible: pas de programme`)
+  }
+  console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
+  const trainees=session.trainees
+  const toManage=[session]
   while (toManage.length>0) {
     let block=toManage.pop()
+    console.log('Manage block', block._id, block.name)
+    // Set default block availability
+    await Promise.all(trainees.map(async t => {
+      if (!(await Progress.exists({block: block._id, user: t._id}))) {
+        console.log('Creating status for', t.email, block.type, block.name)
+        await saveBlockStatus(t._id, block._id, BLOCK_STATUS_TO_COME)
+      }
+    }))
     if (!block) {
       throw new Error('blcok numm')
     }
-    const children=await  mongoose.models.block.find({parent: block._id})
-    if (block.type=='session') {
-      if (lodash.isEmpty(block.trainees)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas d'apprenant`)
-      }
-      if (lodash.isEmpty(children)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas de programme`)
-      }
-    }
-    if (block._locked) {
-      // console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
-    }
-    if (block.type=='session') {
-      setSessionInitialStatus(block._id, block.trainees.map(t => t._id))
-    }
-
+    const children=await mongoose.models.block.find({parent: block._id})
     block._locked=true
     await block.save().catch(err => {
       err.message=`${block._id}:${err}`
@@ -627,6 +632,7 @@ const lockSession = async blockId => {
     })
     toManage.push(...children)
   }
+  setSessionInitialStatus(session._id, session.trainees.map(t => t._id))
 }
 
 const setSessionInitialStatus = async blockId => {
