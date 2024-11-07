@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const { createNotificationSchema } = require('./schemas/NotificationSchema')
 const { declareEnumField, declareVirtualField } = require('../../utils/database')
-//const User = require('../../models/User')
 
 let computeUrl = (targetId, targetType) => {
   return ``
@@ -29,6 +28,7 @@ const setAllowedTypes = types => {
 
 //TODO mongoose : need at least mongoose 8.2.0 to use recompileSchema
 //   //Adding virtuals to userSchema
+//   const User = mongoose.models.user
 //   User.schema.virtual('pending_notifications_test_virtual', {
 //     ref:'notification',
 //     localField:'_id',
