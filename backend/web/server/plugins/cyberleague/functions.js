@@ -520,7 +520,7 @@ const preCreate = async ({model, params, user}) => {
         throw new BadRequestError(`Seul un admin ou un partner peut créer une sous-ligue`)
       }
     } else {
-      const company =await Company.findById(user.company);
+      const company =await Company.findById(user.company)
       if (!lodash.some(company.administrators, (id) => idEqual(id, user._id) )) {
         throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-ligue`)
       }
@@ -544,12 +544,12 @@ const preCreate = async ({model, params, user}) => {
 
   if(model === 'post') {
     if (params.parent) {
-      const parentModel = await getModel(params.parent, ['group','user']);
+      const parentModel = await getModel(params.parent, ['group','user'])
       if (parentModel === 'group') {
-        params.group = params.parent;
+        params.group = params.parent
       } //if parent's model is user then it is a general feed post
     } else {
-      params.group = null;
+      params.group = null
     }
   }
 
@@ -672,10 +672,10 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     if (attribute == 'registered_users') {
       const gain = await Gain.findOne({source: COIN_SOURCE_PARTICIPATE})
       if (lodash.includes(value, user._id.toString())) {
-        console.log('registered');
+        //console.log('registered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
       } else {
-        console.log('unregistered');
+        //console.log('unregistered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
       }
     }
