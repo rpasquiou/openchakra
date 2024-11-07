@@ -48,7 +48,7 @@ const exportOutcalls = async () => {
     a.interests=a.interested_in?.map(i => i.name).join(',')
     const user=a.registered_user
     if (user) {
-      const appts=Appointment.find({user}).sort({[CREATED_AT_ATTRIBUTE]:1})
+      const appts=await Appointment.find({user}).sort({[CREATED_AT_ATTRIBUTE]:1})
       a.appt_date=appts.length>0 ? formatDateTimeShort(appts[0]) : undefined
     }
   }))
