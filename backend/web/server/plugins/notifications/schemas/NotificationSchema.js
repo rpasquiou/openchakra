@@ -48,7 +48,7 @@ const createNotificationSchema = (allowedTypes) => {
       type: String,
       required: false
     },
-    custom_props: {
+    custom_data: {
       type: String,
       required: false
     },

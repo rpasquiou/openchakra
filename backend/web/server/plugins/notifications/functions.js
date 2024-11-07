@@ -63,7 +63,7 @@ const setAllowedTypes = types => {
 
 }
 
-const addNotification = ({users, targetId, targetType, text, type, customProps, picture}) => {
+const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
   const NotificationModel = mongoose.models.notification
   return NotificationModel.create({
     recipents: users,
@@ -72,7 +72,7 @@ const addNotification = ({users, targetId, targetType, text, type, customProps, 
     text: computeMessage(text),
     type: type,
     url: computeUrl(targetId, targetType),
-    custom_props: customProps,
+    custom_data: customData,
     picture
   })
 }
