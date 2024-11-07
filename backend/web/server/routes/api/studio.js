@@ -215,10 +215,7 @@ router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymou
 
   return callAllowedAction({action, user, ...query})
     .then(() => res.json({allowed: true}))
-    .catch(err => {
-      console.error(err.message)
-      return res.json({allowed: false, message:err.message})
-    })
+    .catch(err => res.json({allowed: false, message:err.message}))
 })
 
 router.post('/file', (req, res) => {
