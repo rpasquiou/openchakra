@@ -58,7 +58,7 @@ const ensureMongooseModel = data => {
 const getTopParent = async blockId => {
   const block=await mongoose.models.block.findById(blockId)
   if (!block.parent) {
-    return blockId
+    return block
   }
   return getTopParent(block.parent)
 }
