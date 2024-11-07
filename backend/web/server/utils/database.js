@@ -260,6 +260,14 @@ const getSimpleModelAttributes = modelName => {
 const getReferencedModelAttributes = (modelName, level) => {
   const res = getBaseModelAttributes(modelName)
     .filter(att => att.instance == 'ObjectID')
+    // Check that refPath attributes are hidden (path ^_.*)
+    .map(att => {
+      if (!!att.options.refPath && !/^_/.test(att.path)) {
+        throw new Error(`${modelName}.${att.path}:refPath atribute must be hidden (i.e. start with _')`)
+      }
+      return att
+    })
+    .filter(att => !att.options.refPath)
     .map(att =>
       // getSimpleModelAttributes(att.options.ref).map(([attName, instance]) => [
       getModelAttributes(att.options.ref, level-1).map(([attName, instance]) => [
