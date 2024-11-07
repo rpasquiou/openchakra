@@ -1145,4 +1145,14 @@ return Promise.allSettled(imagePromises)
   refresh: async ({reload}) => {
     reload()
   },
+
+  sm_reset_assessment: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'sm_reset_assessment',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+  },
+
 }

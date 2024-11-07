@@ -757,6 +757,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  sm_reset_assessment: {
+    label: 'SM Reset assessment',
+    options: {},
+    next: [],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

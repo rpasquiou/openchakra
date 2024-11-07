@@ -51,6 +51,7 @@ const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
 const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
 const { upsertAccount } = require('../agenda/smartagenda')
+const Quizz = require('../../models/Quizz')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -400,6 +401,20 @@ const validateAction = async ({value}, sender) => {
 }
 addAction('validate', validateAction)
 
+const resetAssessment = async ({value}, sender) => {
+  console.log('Reset assessment quizz for coaching', value)
+  const coaching=await Coaching.findById(value)
+    .populate({path:'offer', populate: {path: 'assessment_quizz', populate: 'questions'}})
+  const clonedQuizz=await coaching.offer.assessment_quizz.cloneAsUserQuizz()
+  const prevQuizz=coaching.assessment_quizz
+  coaching.assessment_quizz=clonedQuizz._id  
+  await coaching.save()
+  if (prevQuizz) {
+    await Quizz.findByIdAndDelete(prevQuizz)
+  }
+}
+addAction('sm_reset_assessment', resetAssessment)
+
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions
   if (action == 'openPage' || action == 'previous') {
@@ -472,6 +487,13 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='validate') {
     if (!(await Appointment.exists({_id: dataId}))) {
       throw new NotFoundError(`Rendez-vous ${value} introuvable`)
+    }
+  }
+
+  if (action=='sm_reset_assessment') {
+    const coaching=await Coaching.findById(dataId).populate('offer').populate({path: 'appointments', })
+    if (!coaching?.offer?.assessment_quizz) {
+      throw new NotFoundError(`Bilan introuvable pour ce coaching`)
     }
   }
   const promise = dataId && dataId != "undefined" ? getModel(dataId) : Promise.resolve(null)
