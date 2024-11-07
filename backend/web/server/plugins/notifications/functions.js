@@ -89,6 +89,18 @@ const getPendingNotificationsCount = async function (userId, params, data) {
   return notifCount
 }
 
+const getNotifications = async function (userId, params, data) {
+  const NotificationModel = mongoose.models.notification
+  const notifs = await NotificationModel.find({recipients: {$in: data._id}})
+  return notifs
+}
+
+const getNotificationsCount = async function (userId, params, data) {
+  const NotificationModel = mongoose.models.notification
+  const notifCount = await NotificationModel.countDocuments({recipients: {$in: data._id}})
+  return notifCount
+}
+
 module.exports = {
   setAllowedTypes,
   setComputeUrl,
