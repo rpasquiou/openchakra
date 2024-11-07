@@ -2,6 +2,9 @@ const nominatim=require('nominatim-client')
 const lodash=require('lodash')
 
 const getLocationSuggestions = (value, type) => {
+  const suffixMatch = value.match(/\b(BIS|TER|QUATER|ANTE|A|B|C|D|E|F|G|H)\b/i)
+  const suffix = suffixMatch ? suffixMatch[0] : ''
+  const cleanValue = value.replace(/\b(BIS|TER|QUATER|ANTE|A|B|C|D|E|F|G|H)\b/i, '').trim()
   const cityOnly=type=='city'
   const client = nominatim.createClient({
     useragent: 'My Alfred',
@@ -9,10 +12,10 @@ const getLocationSuggestions = (value, type) => {
   })
   const query={dedupe:1, addressdetails: 1, countrycodes: 'fr'}
   if (cityOnly) {
-    query.city=value
+    query.city= cleanValue
   }
   else {
-    query.q=value
+    query.q= cleanValue
   }
   return client.search(query)
     .then(res => {
@@ -33,7 +36,10 @@ const getLocationSuggestions = (value, type) => {
       suggestions=lodash.uniqBy(suggestions, r => (cityOnly ? `${r.city},${r.postcode},${r.country}`: `${r.name},${r.city},${r.postcode},${r.country}`))
       const number=parseInt(value)
       if (!isNaN(number)) {
-        suggestions=suggestions.map(r => ({...r, address: `${number} ${r.address}`}))
+        suggestions=suggestions.map(r => ({
+          ...r, 
+          address: suffix ? `${number} ${suffix} ${r.address}` : `${number} ${r.address}`
+        }))
       }
       return suggestions
     })
