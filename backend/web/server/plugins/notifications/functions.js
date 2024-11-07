@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
-const { createNotificationSchema } = require("./schemas/NotificationSchema")
-const { declareEnumField, declareVirtualField } = require("../../utils/database")
-//const User = require("../../models/User")
+const { createNotificationSchema } = require('./schemas/NotificationSchema')
+const { declareEnumField, declareVirtualField } = require('../../utils/database')
+//const User = require('../../models/User')
 
 let computeUrl = (targetId, targetType) => {
   return ``
