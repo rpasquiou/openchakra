@@ -59,7 +59,7 @@ const setAllowedTypes = types => {
   // declareVirtualField({model: 'user', field: 'pending_notifications_count_test_virtual', instance: 'Number'})
 
   //notification declarations
-  declareEnumField({model: 'notification', field: 'type', enumValues: types})
+  declareEnumField({model: 'notification', field: 'type', enumValues: Object.keys(types)})
 
 }
 

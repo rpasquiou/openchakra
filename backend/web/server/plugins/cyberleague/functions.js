@@ -41,7 +41,7 @@ const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
 const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes } = require('../notifications/functions')
 
-setAllowedTypes(['Post'])
+setAllowedTypes({['POST']: 'POST'})
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
