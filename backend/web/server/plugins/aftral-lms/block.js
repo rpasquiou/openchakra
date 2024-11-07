@@ -752,7 +752,7 @@ const updateSessionStatus = async (sessionId, trainee) => {
 
 const setScormData= async (userId, blockId, data) => {
   await saveBlockScormData(userId, blockId, data)
-  const block=await Block.findById(blockId)
+  const block=await mongoose.models.block.findById(blockId)
   console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}, null, 2))
   const scormData=await getBlockScormData(userId, block)
   const lesson_status=scormData?.['cmi.core.lesson_status']
@@ -796,7 +796,7 @@ const getBlockNote = async (userId, params, data) => {
 }
 
 const setBlockNote = async ({ id, attribute, value, user }) => {
-  const bl=await Block.findById(id)
+  const bl=await mongoose.models.block.findById(id)
   if (!lodash.inRange(value, 0, bl.success_note_max+1)) {
     throw new BadRequestError(`La note doit être comprise ente 0 et ${bl.success_note_max}`)
   }
@@ -830,7 +830,7 @@ const getBlockNoteStr = async (userId, params, data) => {
 // A program in produciton mode must not have a sequence with no resource
 const ensureValidProgramProduction = async programId => {
  const children=await getBlockChildren({blockId: programId})
- const sequences=await Block.find({_id: {$in: children.map(c => c._id)}, type: BLOCK_TYPE_SEQUENCE}, {_id:1, name:1})
+ const sequences=await mongoose.models.block.find({_id: {$in: children.map(c => c._id)}, type: BLOCK_TYPE_SEQUENCE}, {_id:1, name:1})
  console.log(sequences.map(s => s._id))
  return Promise.all(sequences.map(sequence => {
   return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
