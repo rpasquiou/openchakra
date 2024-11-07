@@ -37,6 +37,7 @@ const exportOutcalls = async () => {
     .populate('operator')
     .populate('registered_user')
     .populate('interested_in')
+    .sort({[CREATED_AT_ATTRIBUTE]: 1})
     .lean({virtuals: true})
   await Promise.all(leads.map(async a => {
     a.injection_date=formatDateTimeShort(a[CREATED_AT_ATTRIBUTE])
