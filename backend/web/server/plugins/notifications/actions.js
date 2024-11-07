@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const { NotFoundError, ForbiddenError } = require('../../utils/errors');
-const { addAction } = require('../../utils/studio/actions');
-const { getModel } = require('../../utils/database');
+const mongoose = require('mongoose')
+const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const { addAction } = require('../../utils/studio/actions')
+const { getModel } = require('../../utils/database')
 
 
 const validateNotification = async ({value}, user) => {
