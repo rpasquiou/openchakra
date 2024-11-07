@@ -12,7 +12,7 @@ const { BadRequestError } = require('../../utils/errors')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 
 // HACK: use $sortArray in original when under mongo > 5.02
-const getBlockResources = async ({blockId, userId, allResources}) => {
+const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional}) => {
   if (!blockId) {
     console.error('blockId is required')
     throw new Error('blockId is required')
@@ -21,29 +21,35 @@ const getBlockResources = async ({blockId, userId, allResources}) => {
     console.error('userId is required')
     throw new Error('userId is required')
   }
-  if (lodash.isNil(allResources)) {
-    console.trace('allResources is required')
-    throw new Error('allResources is required')
+  if (lodash.isNil(includeUnavailable)) {
+    console.trace('includeUnavailable is required')
+    throw new Error('includeUnavailable is required')
   }
-  // return getBlockResourcesOriginal({blockId, userId, allResources})
-  return getBlockResourcesNew({blockId, userId, allResources})
+  if (lodash.isNil(includeOptional)) {
+    console.trace('includeOptional is required')
+    throw new Error('includeOptional is required')
+  }
+  return getBlockResourcesNew({blockId, userId, includeUnavailable, includeOptional})
 }
 
-const getBlockResourcesNew = async ({ blockId, userId, allResources, role }) => {
+const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, includeOptional, role }) => {
   if (!role) {
     role = (await User.findById(userId))?.role;
   }
 
   const blocks = await Block.find({ parent: blockId, masked: { $ne: true } })
-    .select({ _id: 1, type: 1, order: 1 })
+    .select({ _id: 1, type: 1, order: 1, optional: 1 })
     .sort({ order: 1 });
 
   let res = [];
 
   // Process each block, and ensure correct ordering of results
   for (const b of blocks) {
+    if (!!b.optional && !includeOptional) {
+      continue
+    }
     if (b.type == BLOCK_TYPE_RESOURCE) {
-      if (role == ROLE_APPRENANT && !allResources) {
+      if (role == ROLE_APPRENANT && !includeUnavailable) {
         const available = await Progress.exists({
           block: b._id,
           user: userId,
@@ -58,7 +64,8 @@ const getBlockResourcesNew = async ({ blockId, userId, allResources, role }) => 
       const subResources = await getBlockResourcesNew({
         blockId: b._id,
         userId,
-        allResources,
+        includeUnavailable,
+        includeOptional,
         role
       });
       res = [...res, ...subResources]
@@ -123,64 +130,11 @@ const getUserHomeworks = async (userId, params, data) => {
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
 const getFinishedResourcesData = async (userId, blockId) => {
-  const pipeline = [
-    { $match: { _id: mongoose.Types.ObjectId(blockId) } },
-    {
-      $graphLookup: {
-        from: 'blocks',
-        startWith: '$_id',
-        connectFromField: '_id',
-        connectToField: 'parent',
-        as: 'descendants',
-      }
-    },
-    {
-      $addFields: {
-        allBlocks: { $concatArrays: [['$_id'], '$descendants._id'] }
-      }
-    },
-    { $unwind: '$allBlocks' },
-    {
-      $lookup: {
-        from: 'blocks',
-        localField: 'allBlocks',
-        foreignField: '_id',
-        as: 'blockInfo'
-      }
-    },
-    { $unwind: '$blockInfo' },
-    { $match: { 'blockInfo.type': 'resource' } },
-    {
-      $lookup: {
-        from: 'progresses',
-        let: { blockId: '$blockInfo._id' },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$block', '$$blockId'] },
-                  { $eq: ['$user', mongoose.Types.ObjectId(userId)] },
-                  { $eq: ['$achievement_status', BLOCK_STATUS_FINISHED] }
-                ]
-              }
-            }
-          }
-        ],
-        as: 'statusInfo'
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        totalResources: { $sum: 1 },
-        finishedResources: { $sum: { $cond: [{ $gt: [{ $size: '$statusInfo' }, 0] }, 1, 0] } }
-      }
-    }
-  ];
 
-  const results = await Block.aggregate(pipeline).exec();
-  return results.length > 0 ? results[0] : { totalResources: 0, finishedResources: 0 };
+  const resources=await getBlockResources({blockId, userId, includeUnavailable: true, includeOptional: false})
+  const totalResources=resources.length
+  const finishedResources=await Progress.countDocuments({block: {$in: resources.map(r => r._id)}, user: userId, achievement_status: BLOCK_STATUS_FINISHED})
+  return {totalResources, finishedResources}
 };
 
 const getFinishedResourcesCount = async (userId, params, data) => {
@@ -223,7 +177,7 @@ const getResourceType = async url => {
 }
 
 const getResourcesCount = async (userId, params, data) => {
-  const subResourcesIds=await getBlockResources({blockId: data._id, userId, allResources: true})
+  const subResourcesIds=await getBlockResources({blockId: data._id, userId, includeUnavailable: true, includeOptional: true})
   return subResourcesIds.length
 }
 

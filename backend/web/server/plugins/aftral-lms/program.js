@@ -109,7 +109,7 @@ const getSessionCertificate = async (userId, params, data) => {
 }
 
 const getEvalResources = async (userId, params, data, fields, actualLogged) => {
-  const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, allResources: true})
+  const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, includeUnavailable: true, includeOptional: true})
 
   params=lodash(params)
     .omitBy((_, k) => ['filter', 'limit'].includes(k))

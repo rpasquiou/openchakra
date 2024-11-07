@@ -26,7 +26,7 @@ describe('Resource params', () => {
   it('must return comments on post', async() => {
     const user=await User.findOne({role: ROLE_CONCEPTEUR})
     const program=await Program.findOne({name: /TSDF01/}).select({name:1})
-    let resources=await getBlockResources({blockId: program._id, userId: user._id, allResources: true})
+    let resources=await getBlockResources({blockId: program._id, userId: user._id, includeUnavailable: true, includeOptional: true})
     resources=await Resource.find({_id: {$in: resources}}).select({homework_mode:1, name:1, _forced_attributes:1}).lean({virtuals: true})
     console.log(resources.filter(r => !lodash.isEmpty(r._forced_attributes)))
   })

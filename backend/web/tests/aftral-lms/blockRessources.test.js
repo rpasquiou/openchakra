@@ -52,7 +52,7 @@ describe('Block resources', () => {
   it('must return block resources in correct order', async()=> {
     const { chapter, user } = await ensureHierarchy()
     console.time('Get block resources', chapter, user)
-    const resources=await getBlockResources({blockId: chapter._id, userId: user._id, allResources: true})
+    const resources=await getBlockResources({blockId: chapter._id, userId: user._id, includeUnavailable: true, includeOptional: true})
     console.timeEnd('Get block resources')
     const orders=await Promise.all(resources.map(async r => {
       const res=await Resource.findById(r)
