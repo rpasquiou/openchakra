@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { NotFoundError, ForbiddenError } = require("../../utils/errors");
 
-const isValidateNotificationActionAllowed = async ({dataId, user, ...rest}) => {
+const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const NotificationModel = mongoose.models.notification
   //if notification model not defined
   if (!NotificationModel) {
@@ -40,5 +40,5 @@ const isValidateNotificationActionAllowed = async ({dataId, user, ...rest}) => {
 }
 
 module.exports = {
-  isValidateNotificationActionAllowed,
+  isValidateNotificationAllowed,
 }
