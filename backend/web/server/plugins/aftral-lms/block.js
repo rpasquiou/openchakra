@@ -202,6 +202,7 @@ const onBlockAction = async (userId, blockId) => {
   await ensureObjectIdOrString(userId)
   await ensureObjectIdOrString(blockId)
   const bl=await mongoose.models.block.findById(blockId)
+  // TODO : Finish if homework succeeded AND rule is "Success" or "Success or finished"
   // Homework priority on other rules
   if (bl.homework_mode) {
     const homeworks=await Homework.find({trainee: userId, resource: blockId}).sort({[CREATED_AT_ATTRIBUTE]: 1})
@@ -247,7 +248,7 @@ const getBlockSession = async blockId => {
 
 const getNextResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
@@ -257,7 +258,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
