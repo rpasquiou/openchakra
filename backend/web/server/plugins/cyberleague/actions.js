@@ -1,5 +1,5 @@
 const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
-const Score = require("../../models/Score")
+const Score = require('../../models/Score')
 const lodash = require('lodash')
 const { idEqual } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')

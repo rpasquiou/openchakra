@@ -1,13 +1,13 @@
-const { loadFromDb, idEqual } = require("../../utils/database")
+const { loadFromDb, idEqual } = require('../../utils/database')
 const lodash = require('lodash')
-const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1, ROLE_ADMIN, COMPLETED_YES, COMPLETED_NO} = require("./consts")
-const Score = require("../../models/Score")
-const Question = require("../../models/Question")
-const Answer = require("../../models/Answer")
-const User = require("../../models/User")
-const Triple = require("../../models/Triple")
-const CategoryRate = require("../../models/CategoryRate")
-const ChartData = require("../../models/ChartData")
+const { ANSWER_NOT_APPLICABLE, ANSWER_YES, SCORE_LEVEL_3, SCORE_LEVEL_2, SCORE_LEVEL_1, ROLE_ADMIN, COMPLETED_YES, COMPLETED_NO} = require('./consts')
+const Score = require('../../models/Score')
+const Question = require('../../models/Question')
+const Answer = require('../../models/Answer')
+const User = require('../../models/User')
+const Triple = require('../../models/Triple')
+const CategoryRate = require('../../models/CategoryRate')
+const ChartData = require('../../models/ChartData')
 
 const MARKET_VALUES={
   'MANAGEMENT DE LA SECURITE ET GOUVERNANCE': 0.67,

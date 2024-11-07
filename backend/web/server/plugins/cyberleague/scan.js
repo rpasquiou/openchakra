@@ -1,8 +1,8 @@
 // Compute rates according to rating guide here : https://github.com/ssllabs/research/wiki/SSL-Server-Rating-Guide
 
-const Scan = require("../../models/Scan")
-const { getSslScan } = require("../sslLabs")
-const { SCAN_STATUS_READY, SCAN_STATUS_ERROR } = require("./consts")
+const Scan = require('../../models/Scan')
+const { getSslScan } = require('../sslLabs')
+const { SCAN_STATUS_READY, SCAN_STATUS_ERROR } = require('./consts')
 
 const PROTOCOL_RATES = {
   ['2']: 0,     //SSL 2.0

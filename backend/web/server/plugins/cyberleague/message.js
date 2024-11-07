@@ -1,4 +1,4 @@
-const { idEqual } = require("../../utils/database")
+const { idEqual } = require('../../utils/database')
 
 const isMineForMessage = async (userId, params, data, fields)  => {
   const equal=idEqual(userId, data.sender?._id)

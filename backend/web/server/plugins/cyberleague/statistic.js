@@ -1,9 +1,9 @@
 const lodash = require('lodash')
-const Company = require("../../models/Company")
-const Score = require("../../models/Score")
-const User = require("../../models/User")
-const Statistic = require("../../models/Statistic")
-const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES, COMPLETED_YES } = require("./consts")
+const Company = require('../../models/Company')
+const Score = require('../../models/Score')
+const User = require('../../models/User')
+const Statistic = require('../../models/Statistic')
+const { STAT_MIN_SCORES, ANSWER_NO, ANSWER_YES, BENCHMARK_FIELDS_10, BENCHMARK_FIELDS_5, ENOUGH_SCORES_NO, ENOUGH_SCORES_YES, COMPLETED_YES } = require('./consts')
 const { REGIONS } = require('../../../utils/consts')
 
 
