@@ -776,7 +776,6 @@ const setScormData= async (userId, blockId, data) => {
   const update={
     success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
     finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
-    consult_full: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status),
   }
   await Progress.findOneAndUpdate(
     {block, user: userId},

@@ -559,7 +559,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block, user},
-        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, 
+        {block, user, consult: true, join_partial: true, download: true, 
           //if scorm, increment attempts count
           ...block.resource_type == RESOURCE_TYPE_SCORM ? {$inc: { attempts_count: 1 }} : {}
         },
