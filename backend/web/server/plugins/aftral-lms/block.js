@@ -215,7 +215,7 @@ const onBlockAction = async (userId, blockId) => {
   // Homework priority on other rules
   if (bl.homework_mode) {
     const homeworks=await Homework.find({trainee: userId, resource: blockId}).sort({[CREATED_AT_ATTRIBUTE]: 1})
-    const latest_homework=homeworks.pop()
+    const latest_homework=lodash.last(homeworks)
     if (!!latest_homework) {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
@@ -223,9 +223,6 @@ const onBlockAction = async (userId, blockId) => {
           await saveBlockStatus(userId, blockId, BLOCK_STATUS_FINISHED)
           return onBlockFinished(userId, blockId)
         }
-      }
-      else {
-        await removeBlockStatus(userId, blockId)
       }
     }
     return
