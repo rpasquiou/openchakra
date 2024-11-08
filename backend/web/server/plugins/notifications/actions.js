@@ -96,4 +96,5 @@ module.exports = {
   isValidateNotificationAllowed,
   addNotification,
   deleteUserNotification,
+  isDeleteUserNotificationAllowed,
 }
