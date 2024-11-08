@@ -936,18 +936,13 @@ const putAttribute = async (input_params) => {
 
 }
 
-const removeData = dataId => {
-  let model=null
-  return getModel(dataId)
-    .then(result => {
-      model=result
-      return mongoose.connection.models[model].findById(dataId)
-    })
-    .then(data => {
-      callPreDeleteData({model,data})
-      .then((data) =>{
-        return data ? data.delete() : null})
-          .then(d => callPostDeleteData({model, data:d}))
+const removeData = async ({id, user}) => {
+  let model= await getModel(id)
+  const oldData = await mongoose.models[model].findById(id)
+  return callPreDeleteData({model,data: oldData,user,id})
+    .then(async ({model,data,user,id, params}) => {
+      data && await data.delete()
+      await callPostDeleteData({model, data: oldData, user, id, params})
     })
 }
 
