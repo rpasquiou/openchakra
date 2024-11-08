@@ -944,28 +944,10 @@ const removeData = dataId => {
       return mongoose.connection.models[model].findById(dataId)
     })
     .then(data => {
-      // TODO: move in fumoir/functions
-      if (model=='booking') {
-        return Booking.findById(data._id).populate({path: 'orders', populate: 'items'})
-          .then(data => {
-            if ([FINISHED, CURRENT].includes(data.status)) {
-              throw new BadRequestError(`Une réservation terminée ou en cours ne peut être annulée`)
-            }
-            if (data.paid) {
-              throw new BadRequestError(`Une réservation payée ne peut être annulée`)
-            }
-            return data.delete()
-          })
-      }
-      if (model=='guest') {
-        return Promise.all([
-          UserSessionData.updateMany({}, {$pull: {guests: {guest: dataId}}}),
-          // TODO: update the bookings but the context is required
-        ])
-          .then(() => data.delete())
-      }
-      return data.delete()
-        .then(d => callPostDeleteData({model, data:d}))
+      callPreDeleteData({model,data})
+      .then((data) =>{
+        return data ? data.delete() : null})
+          .then(d => callPostDeleteData({model, data:d}))
     })
 }
 
