@@ -38,7 +38,7 @@ const isNotification = async (notifId) => {
   }
 
   const notif = await NotificationModel.findById(notifId, 'recipients seen_by_recipients _target _target_type')
-  //if no notif with dataId
+  //if no notif with notifId
   if (!notif) {
     throw new NotFoundError(`No notification found with id: ${notifId}`)
   }
@@ -46,7 +46,6 @@ const isNotification = async (notifId) => {
 }
 
 const isRecipient = (notif, user) => {
-  //if user not in recipients
   if (!(lodash.includes(notif.recipients,user._id))) {
     throw new ForbiddenError(`User ${user._id} is not a recipient of notification ${dataId} `)
   }
@@ -61,6 +60,7 @@ const deleteUserNotification = async (notifId, user) => {
 const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const notif = await isNotification(dataId)
 
+  //if user not in recipients
   isRecipient(notif, user)
 
   //if notif already seen by  user
