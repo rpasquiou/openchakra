@@ -7,7 +7,7 @@ const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
-const { isValidateNotificationAllowed } = require('../notifications/actions')
+const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
 
 
 const startSurvey = async (_, user) => {
@@ -149,12 +149,21 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
+  const model = getModel(dataId)
+
   if (action == 'validate') {
-    const model = getModel(dataId)
     if (model == 'notification') {
       await isValidateNotificationAllowed({dataId, user, ...rest})
     } else {
       throw new Error(`No validate action for model ${model}`)
+    }
+  }
+
+  if(action== 'delete') {
+    if (model == 'notification') {
+      await isDeleteUserNotificationAllowed({dataId, user, ...rest})
+    } else {
+      throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
   }
 
