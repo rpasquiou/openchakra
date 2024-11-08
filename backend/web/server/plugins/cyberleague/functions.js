@@ -41,6 +41,7 @@ const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
 const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes } = require('../notifications/functions')
+const { deleteUserNotification } = require('../notifications/actions')
 
 setAllowedTypes({['POST']: 'POST'})
 
@@ -701,14 +702,16 @@ const prePutData = async ({model, id, params, user}) => {
 
 setPrePutData(prePutData)
 
-const preDeleteData = async ({model, id, data, user, params}) => {
+const preDeleteData = async ({model, id, data, user}) => {
+  let data = null
   //deleteAction is forbidden except for notifications from notification plugin
   if (model == 'notification') {
-    
+    const notification = await deleteUserNotification(id,user)
+    data = notification.recipients ? null : notification
   } else {
     throw new ForbiddenError(`Pas de delete pour l'instant`)
   }
-  return {model, id, data, user, params}
+  return {model, id, data, user, params: null}
 }
 
 setPreDeleteData(preDeleteData)
