@@ -627,8 +627,8 @@ const lockSession = async blockId => {
     // Set default block availability
     await Promise.all(trainees.map(async t => {
       if (!(await Progress.exists({block: block._id, user: t._id}))) {
-        console.log('Creating status for', t.email, block.type, block.name)
-        await saveBlockStatus(t._id, block._id, BLOCK_STATUS_TO_COME)
+        const defaultStatus=block.access_condition ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
+        await saveBlockStatus(t._id, block._id, defaultStatus)
       }
     }))
     if (!block) {
@@ -712,9 +712,12 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (block.access_condition && block.order>1) {
       const prevBrother=await mongoose.models.block.find({parent: block.parent, order: block.order-1})
       const prevStatus=await locGetBlockStatus(prevBrother._id)
-      if (prevStatus==BLOCK_STATUS_FINISHED) {
-        return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
-        }
+      if (prevStatus==BLOCK_STATUS_FINISHED && blockStatus==BLOCK_STATUS_UNAVAILABLE) {
+        return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+      }
+      else {
+        return setBlockStatus(block._id, BLOCK_STATUS_UNAVAILABLE)
+      }
     }
     if (lodash.isNil(blockStatus)) {
       return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
