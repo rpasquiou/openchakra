@@ -38,12 +38,6 @@ const ProgressSchema = new Schema({
   finished: {
     type: Boolean,
   },
-  consult_partial: {
-    type: Boolean
-  },
-  consult_full: {
-    type: Boolean
-  },
   join_partial: {
     type: Boolean
   },
