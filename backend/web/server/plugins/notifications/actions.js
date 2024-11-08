@@ -30,25 +30,29 @@ const addNotification = ({users, targetId, targetType, text, type, customData, p
   })
 }
 
-//remove a user from a notification and returns the updated notification
-const deleteUserNotification = async (notifId, user) => {
-  const notif = await mongoose.models.notification.findByIdAndUpdate(notifId, {$pull: {recipents: user._id, seen_by_recipients: user_id}}, {returnDocument: 'after'})
-  return notif
-}
-
-
-const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
+const isNotification = async (notifId) => {
   const NotificationModel = mongoose.models.notification
   //if notification model not defined
   if (!NotificationModel) {
     throw new NotFoundError(`No notification model found`)
   }
 
-  const notif = NotificationModel.findById(dataId, 'recipients seen_by_recipients _target _target_type')
+  const notif = await NotificationModel.findById(notifId, 'recipients seen_by_recipients _target _target_type')
   //if no notif with dataId
   if (!notif) {
-    throw new NotFoundError(`No notification found with id: ${dataId}`)
+    throw new NotFoundError(`No notification found with id: ${notifId}`)
   }
+  return notif
+}
+
+//remove a user from a notification and returns the updated notification
+const deleteUserNotification = async (notifId, user) => {
+  const notif = await mongoose.models.notification.findByIdAndUpdate(notifId, {$pull: {recipents: user._id, seen_by_recipients: user_id}}, {returnDocument: 'after'})
+  return notif
+}
+
+const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
+  const notif = await isNotification(dataId)
 
   //if user not in recipients
   if (!(lodash.includes(notif.recipients,user._id))) {
