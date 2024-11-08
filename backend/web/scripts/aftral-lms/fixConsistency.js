@@ -5,6 +5,7 @@ const Block = require('../../server/models/Block')
 const { BLOCK_TYPE, ROLE_CONCEPTEUR } = require('../../server/plugins/aftral-lms/consts')
 const { getDatabaseUri } = require('../../config/config')
 require('../../server/plugins/aftral-lms/functions')
+require('../../server/plugins/aftral-lms/functions')
 
 const getBlockName = block => {
   if (!block) {
@@ -69,15 +70,15 @@ const checkChildrenPropagation = async() => {
 
 const checkChildrenOrder = async() => {
   console.log('*'.repeat(10), 'START children order')
-  const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).sort({parent:1, order:1}).lean()
+  const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).populate('origin').sort({parent:1, order:1}).lean()
   const grouped=lodash(blocks)
     .groupBy(b=>b.parent._id.toString())
     .omitBy(v => v.length<2)
-  grouped.values().forEach(v => {
-    const orders=v.map(child => child.order-1)
-    const expected=lodash.range(v.length)
+  grouped.values().forEach(async v => {
+    const orders=v.map(child => child.order)
+    const expected=lodash.range(1, v.length+1)
     if (!lodash.isEqual(orders, expected)) {
-      console.log(`Incorrect children order for ${v[0].parent}:${orders}, expected ${expected}`)
+      console.log(`Incorrect children order for ${v[0].parent}:${orders.map(o => [o, v.find(u => u.order==o)._id])}, expected ${expected}`)
     }
   })
   console.log('*'.repeat(10), 'END children order')
