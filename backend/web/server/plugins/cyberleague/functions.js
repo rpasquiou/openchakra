@@ -12,6 +12,7 @@ const {
   idEqual,
   loadFromDb,
   setPrePutData,
+  setPreDeleteData,
 } = require('../../utils/database')
 const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
@@ -700,6 +701,17 @@ const prePutData = async ({model, id, params, user}) => {
 
 setPrePutData(prePutData)
 
+const preDeleteData = async ({model, id, data, user, params}) => {
+  //deleteAction is forbidden except for notifications from notification plugin
+  if (model == 'notification') {
+    
+  } else {
+    throw new ForbiddenError(`Pas de delete pour l'instant`)
+  }
+  return {model, id, data, user, params}
+}
+
+setPreDeleteData(preDeleteData)
 
 module.exports = {
   ensureExpertiseCategories,

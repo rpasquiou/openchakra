@@ -10,14 +10,6 @@ const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed } = require('../notifications/actions')
 
 
-const deleteForbidden = async () => {
-  throw new ForbiddenError(`Pas de delete pour l'instant`)
-  
-}
-
-addAction('delete',deleteForbidden)
-
-
 const startSurvey = async (_, user) => {
   //console.log("params", params)
 
