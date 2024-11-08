@@ -78,4 +78,5 @@ const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
 module.exports = {
   isValidateNotificationAllowed,
   addNotification,
+  deleteUserNotification,
 }
