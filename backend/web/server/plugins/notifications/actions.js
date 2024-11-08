@@ -57,6 +57,15 @@ const deleteUserNotification = async (notifId, user) => {
   return notif
 }
 
+const isDeleteUserNotificationAllowed = async (dataId, user) => {
+  const notif = await isNotification(dataId)
+
+  //if user not in recipients
+  isRecipient(notif,user)
+
+  return true
+}
+
 const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const notif = await isNotification(dataId)
 
