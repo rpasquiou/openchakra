@@ -1,7 +1,7 @@
 const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
-const { idEqual } = require('../../utils/database')
+const { idEqual, getModel } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
@@ -158,7 +158,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   }
 
   if (action == 'validate') {
-    await isValidateNotificationAllowed({dataId, user, ...rest})
+    const model = getModel(dataId)
+    if (model == notification) {
+      await isValidateNotificationAllowed({dataId, user, ...rest})
+    } else {
+      throw new Error(`No validate action for model ${model}`)
+    }
   }
 
   return true
