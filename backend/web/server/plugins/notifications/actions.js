@@ -45,6 +45,13 @@ const isNotification = async (notifId) => {
   return notif
 }
 
+const isRecipient = (notif, user) => {
+  //if user not in recipients
+  if (!(lodash.includes(notif.recipients,user._id))) {
+    throw new ForbiddenError(`User ${user._id} is not a recipient of notification ${dataId} `)
+  }
+}
+
 //remove a user from a notification and returns the updated notification
 const deleteUserNotification = async (notifId, user) => {
   const notif = await mongoose.models.notification.findByIdAndUpdate(notifId, {$pull: {recipents: user._id, seen_by_recipients: user_id}}, {returnDocument: 'after'})
@@ -54,10 +61,7 @@ const deleteUserNotification = async (notifId, user) => {
 const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const notif = await isNotification(dataId)
 
-  //if user not in recipients
-  if (!(lodash.includes(notif.recipients,user._id))) {
-    throw new ForbiddenError(`User ${user._id} is not a recipient of notification ${dataId} `)
-  }
+  isRecipient(notif, user)
 
   //if notif already seen by  user
   if (lodash.includes(notif.seen_by_recipients,user._id)) {
