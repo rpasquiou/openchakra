@@ -40,7 +40,7 @@ const { startSslScan } = require('../sslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getNotifications, getNotificationsCount } = require('../notifications/functions')
 const { deleteUserNotification } = require('../notifications/actions')
 
 setAllowedTypes({['POST']: 'POST'})
@@ -198,8 +198,10 @@ USER_MODELS.forEach(m => {
       options: { ref: 'scan' }
     },
   })
-  declareComputedField({model: m, field: 'pending_notifications', getterFn: getPendingNotifications})
-  declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getPendingNotificationsCount})
+  declareComputedField({model: m, field: 'pending_notifications', getterFn: getNotifications})
+  declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getNotificationsCount})
+  declareComputedField({model: m, field: 'pending_unseen_notifications', getterFn: getPendingNotifications})
+  declareComputedField({model: m, field: 'pending_unseen_notifications_count', getterFn: getPendingNotificationsCount})
 })
 
 //Company declarations
