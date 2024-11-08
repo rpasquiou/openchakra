@@ -30,6 +30,13 @@ const addNotification = ({users, targetId, targetType, text, type, customData, p
   })
 }
 
+//remove a user from a notification and returns the updated notification
+const deleteUserNotification = async (notifId, user) => {
+  const notif = await mongoose.models.notification.findByIdAndUpdate(notifId, {$pull: {recipents: user._id, seen_by_recipients: user_id}}, {returnDocument: 'after'})
+  return notif
+}
+
+
 const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const NotificationModel = mongoose.models.notification
   //if notification model not defined
