@@ -811,6 +811,17 @@ const callPreprocessGet = data => {
   return preprocessGet(data)
 }
 
+// If preDeleteData returns a null attribute data, no delete is done by actual query
+let preDeleteData = data => Promise.resolve(data)
+
+const setPreDeleteData = fn => {
+  preDeleteData = fn
+}
+
+const callPreDeleteData = data => {
+  return preDeleteData(data)
+}
+
 // Pre create data, allows to insert extra fields, etc..
 let preCreateData = data => Promise.resolve(data)
 
@@ -1142,6 +1153,7 @@ module.exports = {
   callPreprocessGet,
   setPreCreateData,
   callPreCreateData,
+  setPreDeleteData,
   setPostCreateData,
   callPostCreateData,
   setPostPutData,
