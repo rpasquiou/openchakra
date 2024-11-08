@@ -801,7 +801,13 @@ export const ACTIONS: IActions = {
     label: 'Login SSO',
     options: {},
     next: [],
+  },
+  toggle_full_screen: {
+    label: 'Toggle full screen',
+    options: {},
+    next: [],
   }
+
 }
 
 export const allowsActions = (component: IComponent) => {
