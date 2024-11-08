@@ -37,6 +37,7 @@ const exportOutcalls = async () => {
     .populate('operator')
     .populate('registered_user')
     .populate('interested_in')
+    .sort({[CREATED_AT_ATTRIBUTE]: 1})
     .lean({virtuals: true})
   await Promise.all(leads.map(async a => {
     a.injection_date=formatDateTimeShort(a[CREATED_AT_ATTRIBUTE])
@@ -47,7 +48,7 @@ const exportOutcalls = async () => {
     a.interests=a.interested_in?.map(i => i.name).join(',')
     const user=a.registered_user
     if (user) {
-      const appts=Appointment.find({user}).sort({[CREATED_AT_ATTRIBUTE]:1})
+      const appts=await Appointment.find({user}).sort({[CREATED_AT_ATTRIBUTE]:1})
       a.appt_date=appts.length>0 ? formatDateTimeShort(appts[0]) : undefined
     }
   }))
