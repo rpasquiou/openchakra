@@ -149,7 +149,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
-  const model = getModel(dataId)
+  const model = await getModel(dataId)
 
   if (action == 'validate') {
     if (model == 'notification') {
