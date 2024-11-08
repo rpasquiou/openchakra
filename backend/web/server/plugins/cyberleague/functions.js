@@ -705,15 +705,15 @@ const prePutData = async ({model, id, params, user}) => {
 setPrePutData(prePutData)
 
 const preDeleteData = async ({model, id, data, user}) => {
-  let data = null
+  let returnedData = null
   //deleteAction is forbidden except for notifications from notification plugin
   if (model == 'notification') {
     const notification = await deleteUserNotification(id,user)
-    data = notification.recipients ? null : notification
+    returnedData = notification.recipients ? null : notification
   } else {
     throw new ForbiddenError(`Pas de delete pour l'instant`)
   }
-  return {model, id, data, user, params: null}
+  return {model, id, data: returnedData, user, params: null}
 }
 
 setPreDeleteData(preDeleteData)
