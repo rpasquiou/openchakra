@@ -704,6 +704,7 @@ const prePutData = async ({model, id, params, user}) => {
 
 setPrePutData(prePutData)
 
+
 const preDeleteData = async ({model, id, data, user}) => {
   let returnedData = null
   //deleteAction is forbidden except for notifications from notification plugin
@@ -717,6 +718,7 @@ const preDeleteData = async ({model, id, data, user}) => {
 }
 
 setPreDeleteData(preDeleteData)
+
 
 module.exports = {
   ensureExpertiseCategories,
