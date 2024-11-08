@@ -159,7 +159,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
 
   if (action == 'validate') {
     const model = getModel(dataId)
-    if (model == notification) {
+    if (model == 'notification') {
       await isValidateNotificationAllowed({dataId, user, ...rest})
     } else {
       throw new Error(`No validate action for model ${model}`)
