@@ -16,6 +16,19 @@ const validateNotification = async ({value}, user) => {
 addAction('validate',validateNotification)
 
 
+const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
+  const NotificationModel = mongoose.models.notification
+  return NotificationModel.create({
+    recipents: users,
+    _target: targetId,
+    _target_type: targetType,
+    text: computeMessage(text),
+    type: type,
+    url: computeUrl(targetId, targetType),
+    custom_data: customData,
+    picture
+  })
+}
 
 const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const NotificationModel = mongoose.models.notification
@@ -57,4 +70,5 @@ const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
 
 module.exports = {
   isValidateNotificationAllowed,
+  addNotification,
 }

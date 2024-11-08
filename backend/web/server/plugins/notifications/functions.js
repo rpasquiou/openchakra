@@ -63,20 +63,6 @@ const setAllowedTypes = types => {
 
 }
 
-const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
-  const NotificationModel = mongoose.models.notification
-  return NotificationModel.create({
-    recipents: users,
-    _target: targetId,
-    _target_type: targetType,
-    text: computeMessage(text),
-    type: type,
-    url: computeUrl(targetId, targetType),
-    custom_data: customData,
-    picture
-  })
-}
-
 const getPendingNotifications = async function (userId, params, data) {
   const NotificationModel = mongoose.models.notification
   const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}})
@@ -105,7 +91,6 @@ module.exports = {
   setAllowedTypes,
   setComputeUrl,
   setComputeMessage,
-  addNotification,
   getPendingNotifications,
   getPendingNotificationsCount,
   getNotifications,
