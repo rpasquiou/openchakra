@@ -274,7 +274,7 @@ const getAvailabilities = ({diet_id, from, to, appointment_type, remaining_calls
 
 // Synchronize appointment types every minute
 //!isDevelopment() && cron.schedule('0 * * * * *', () => {
-!config.isDevelopment() && cron.schedule('0 * * * * *', () => {
+!config.isDevelopment() && cron.schedule('0 0 * * * *', () => {
   console.log('Syncing appointment types from smartagenda')
   return Promise.all([getAppointmentTypes(), AppointmentType.find()])
     .then(([smartagenda_types, local_types]) => {
