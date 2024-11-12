@@ -10,7 +10,7 @@
 
 const axios = require('axios')
 const lodash = require('lodash')
-const { PDFDocument, StandardFonts } = require('pdf-lib')
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib')
 const fs = require('fs').promises
 const validator = require('validator')
 const { sendBufferToAWS } = require('../server/middlewares/aws')
@@ -347,8 +347,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
           }
         })
         if (lowestY) {currentY=lowestY}
-        if (!!currentY && currentY<MARGIN) {
-          console.log('Add page')
+        if (!!currentY && currentY<2*MARGIN) {
           currentPage = pdfDoc.addPage([currentPage.getWidth(), currentPage.getHeight()])
           currentY=currentPage.getHeight()-MARGIN
         }
@@ -371,6 +370,24 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
       dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
   })
   
+  const pagesCount = pdfDoc.getPages().length
+  const font2 = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  // Set page numbers at poage bottom
+  pdfDoc.getPages().map((page, idx) => {
+    const pageText=`Page ${idx+1}/${pagesCount}`
+    const textWidth = font2.widthOfTextAtSize(pageText, fontSize)
+    const textHeight = font2.heightAtSize(fontSize)
+    const x = (page.getWidth() - textWidth) / 2;
+    const y = textHeight
+    page.drawText(pageText, {
+      x: x,
+      y: y,
+      font: font2,
+      size: fontSize,
+      color: rgb(0, 0, 0),
+    });
+  })
   form.updateFieldAppearances(pdfFont)
   form.flatten()
   return pdfDoc

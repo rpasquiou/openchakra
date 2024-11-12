@@ -1,6 +1,7 @@
 const path = require("path")
 const os = require("os")
 const glob = require("glob")
+const lodash = require("lodash")
 const mongoose = require("mongoose")
 const { getFormFields, savePDFFile, fillForm2 } = require("../../utils/fillForm")
 const { getDatabaseUri } = require("../../config/config")
@@ -14,12 +15,20 @@ const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation
 
 describe('Misc text tests', () => {
 
-  it('Must extract markers', async () => {
+  it.only('Must extract markers', async () => {
     console.log(TEMPLATE_PDF_PATH)
     const fieldsDefinition=await getFormFields(TEMPLATE_PDF_PATH)
     console.log('Found fields', Object.keys(fieldsDefinition))
     const EXPECTED_FIELDS=['session_code', 'creation_date', 'end_date', 'level_1.resources_progress'].sort()
     expect(Object.keys(fieldsDefinition).sort()).toEqual(expect.arrayContaining(EXPECTED_FIELDS))
+
+    const levels=lodash.range(60).map(idx => ({
+        name: `Module ${idx+1}`, resources_progress: '15%', spent_time_str: '1h12',
+        level_2: [
+          {name: `Séquence ${idx+1}.1`},
+          {name: `Séquence ${idx+1}.2`},
+        ]
+    }))
     const data={
       location: 'Rouen',
       session_code: 'PSWAHJKDGHJK75',
@@ -31,28 +40,7 @@ describe('Misc text tests', () => {
       resources_progress: '20%',
       creation_date: '15/10/2024',
       achievement_status: 'En cours',
-      level_1: [{
-        name: 'Module 1', resources_progress: '15%', spent_time_str: '1h12',
-        level_2: [
-          {name: 'Séquence 1.1'},
-          {name: 'Séquence 1.2'},
-        ]
-      },
-      {
-        name: 'Module 2', resources_progress: '15%', spent_time_str: '15h13',
-        level_2: [
-          {name: 'Séquence 2.1'},
-          {name: 'Séquence 2.2'},
-        ]
-      },
-      {
-        name: 'Module 3', resources_progress: '15%', spent_time_str: '1h12',
-        level_2: [
-          {name: 'Séquence 3.1'},
-          {name: 'Séquence 3.2'},
-        ]
-      }
-    ],
+      level_1: levels,
     }
 
     // data.level_1=[]
@@ -62,7 +50,7 @@ describe('Misc text tests', () => {
     
   })
 
-  it.only('Must get certificates fields', async () => {
+  it('Must get certificates fields', async () => {
     await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
     const certificates=await Certification.find()
     await runPromisesWithDelay(certificates.map(certif => async () => {
