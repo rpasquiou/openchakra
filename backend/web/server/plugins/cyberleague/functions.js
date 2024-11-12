@@ -650,7 +650,6 @@ const postCreate = async ({ model, params, data, user }) => {
       })
     }
   }
-console.log('postCreate');
 
   if (model == 'scan') {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
