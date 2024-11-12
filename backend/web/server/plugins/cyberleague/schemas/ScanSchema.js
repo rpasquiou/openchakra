@@ -5,11 +5,6 @@ const { NUTRISCORE, SCAN_STATUSES } = require('../consts')
 const Schema = mongoose.Schema
 
 const ScanSchema = new Schema({
-  creator: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: [true, `Le créateur du score est obligatoire`]
-  },
   status: {
     type: String,
     enum: Object.keys(SCAN_STATUSES),
