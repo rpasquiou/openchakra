@@ -89,7 +89,9 @@ const getNotificationsCount = async function (userId, params, data) {
 
 module.exports = {
   setAllowedTypes,
+  computeUrl,
   setComputeUrl,
+  computeMessage,
   setComputeMessage,
   getPendingNotifications,
   getPendingNotificationsCount,
