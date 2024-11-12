@@ -264,6 +264,12 @@ declareVirtualField({model: 'company', field: 'affected_missions_count', instanc
 declareComputedField({model: 'company', field: 'sponsors', getterFn: getterStatus({field: 'statut', value: STATUT_SPONSOR})})
 declareComputedField({model: 'company', field: 'founders', getterFn: getterStatus({field: 'statut', value: STATUT_FOUNDER})})
 declareVirtualField({model: 'company', field: 'region', instance: 'String', enumValues: REGIONS})
+declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'mission' }
+  },
+})
 
 //Expertise declarations
 

@@ -211,6 +211,12 @@ CompanySchema.virtual('offers', {
   foreignField: 'company'
 })
 
+CompanySchema.virtual('candidates_missions', {
+  ref: 'mission',
+  localField: '_id',
+  foreignField: 'candidates'
+})
+
 CompanySchema.virtual('region', DUMMY_REF).get(function () {
   return null
 })
