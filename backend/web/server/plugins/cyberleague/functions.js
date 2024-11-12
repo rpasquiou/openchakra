@@ -167,6 +167,12 @@ USER_MODELS.forEach(m => {
       options: {ref: 'mission'}
     }
   })
+  declareVirtualField({model: m, field: 'published_public_missions', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'mission'}
+    }
+  })
   declareVirtualField({
     model: m,
     field: 'profil_completion',

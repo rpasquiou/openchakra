@@ -348,6 +348,15 @@ UserSchema.virtual('published_missions_count', {
   count: true
 })
 
+UserSchema.virtual('published_public_missions', {
+  ref:'mission',
+  localField:'_id',
+  foreignField:'creator',
+  options: {
+    match: {is_public: true}
+  }
+})
+
 UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
   const requiredCompletionFields = lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {
     return this[key]
