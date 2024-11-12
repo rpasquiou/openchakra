@@ -192,13 +192,6 @@ USER_MODELS.forEach(m => {
       options: { ref: 'event' }
     },
   })
-  declareVirtualField({
-    model: m, field: 'scans', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'scan' }
-    },
-  })
   declareComputedField({model: m, field: 'pending_notifications', getterFn: getNotifications})
   declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getNotificationsCount})
   declareComputedField({model: m, field: 'pending_unseen_notifications', getterFn: getPendingNotifications})
@@ -607,15 +600,21 @@ const preCreate = async ({model, params, user}) => {
     }
   }
 
+  let data = null
+
   if (model == 'scan') {
-    const existingScan = Scan.findOne({url: params.url, status: SCAN_STATUS_IN_PROGRESS})
+    const existingScan = await Scan.findOne({url: params.url, status: SCAN_STATUS_IN_PROGRESS})
     if (!existingScan) {
       await startSslScan(params.url)
+      params.status = SCAN_STATUS_IN_PROGRESS
+    } else {
+      //add existing scan to user
+      data = existingScan
+      await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
     }
-    params.status = SCAN_STATUS_IN_PROGRESS
   }
 
-  return Promise.resolve({model, params})
+  return Promise.resolve({model, params, data})
 }
 
 setPreCreateData(preCreate)
@@ -651,9 +650,12 @@ const postCreate = async ({ model, params, data, user }) => {
       })
     }
   }
+console.log('postCreate');
 
   if (model == 'scan') {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
+    //add scan to user
+    await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
   }
 
   return data
