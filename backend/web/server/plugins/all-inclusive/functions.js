@@ -769,8 +769,8 @@ cron.schedule('*/5 * * * * *', async() => {
   return Mission.findOne({payin_id: {$ne:null}, payin_achieved: null})
     .then(mission => paymentPlugin.getCheckout(mission.payin_id))
     .then(payment => {
-      if (payment.status=='expired'  || (payment.status=='complete' && payment.payment_status=='unpaid')) {
-        console.log(`Payment ${payment.id} failed`)
+      if (payment.status=='expired') {
+        console.log(`Payment ${payment.id} expired`)
         return Mission.findOneAndUpdate({payin_id: payment.id}, {$unset: {payin_id:true, payin_achieved:true}})
       }
       if (payment.status=='complete'  && (payment.payment_status=='paid' || payment.payment_status=='no_payment_required')) {
