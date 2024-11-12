@@ -1,6 +1,6 @@
 const lodash = require('lodash')
 const moment=require('moment')
-const { loadFromDb, idEqual } = require("../../utils/database")
+const { loadFromDb, idEqual } = require('../../utils/database')
 
 const compareCompanies = (company, expertises) => {
   return lodash.intersectionBy([expertises, company.expertise_set?.expertises], 

@@ -12,8 +12,9 @@ const {
   idEqual,
   loadFromDb,
   setPrePutData,
+  setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_POST } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -39,6 +40,11 @@ const { startSslScan } = require('../sslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getNotifications, getNotificationsCount } = require('../notifications/functions')
+const { deleteUserNotification, addNotification } = require('../notifications/actions')
+
+//Notification plugin setup
+setAllowedTypes(NOTIFICATION_TYPES)
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -193,6 +199,10 @@ USER_MODELS.forEach(m => {
       options: { ref: 'scan' }
     },
   })
+  declareComputedField({model: m, field: 'pending_notifications', getterFn: getNotifications})
+  declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getNotificationsCount})
+  declareComputedField({model: m, field: 'pending_unseen_notifications', getterFn: getPendingNotifications})
+  declareComputedField({model: m, field: 'pending_unseen_notifications_count', getterFn: getPendingNotificationsCount})
 })
 
 //Company declarations
@@ -515,7 +525,7 @@ const preCreate = async ({model, params, user}) => {
         throw new BadRequestError(`Seul un admin ou un partner peut créer une sous-ligue`)
       }
     } else {
-      const company =await Company.findById(user.company);
+      const company =await Company.findById(user.company)
       if (!lodash.some(company.administrators, (id) => idEqual(id, user._id) )) {
         throw new BadRequestError(`Il faut être admin de son entreprise pour créer une sous-ligue`)
       }
@@ -539,12 +549,12 @@ const preCreate = async ({model, params, user}) => {
 
   if(model === 'post') {
     if (params.parent) {
-      const parentModel = await getModel(params.parent, ['group','user']);
+      const parentModel = await getModel(params.parent, ['group','user'])
       if (parentModel === 'group') {
-        params.group = params.parent;
+        params.group = params.parent
       } //if parent's model is user then it is a general feed post
     } else {
-      params.group = null;
+      params.group = null
     }
   }
 
@@ -628,6 +638,18 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == 'comment') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
+
+    if (data.post) {
+      await addNotification({
+        users: [data.creator],
+        targetId: data._id,
+        targetType: NOTIFICATION_TYPE_POST,
+        text: 'text de notif',
+        type: NOTIFICATION_TYPE_POST,
+        customData: null,
+        picture: null
+      })
+    }
   }
 
   if (model == 'scan') {
@@ -667,10 +689,10 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     if (attribute == 'registered_users') {
       const gain = await Gain.findOne({source: COIN_SOURCE_PARTICIPATE})
       if (lodash.includes(value, user._id.toString())) {
-        console.log('registered');
+        //console.log('registered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
       } else {
-        console.log('unregistered');
+        //console.log('unregistered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
       }
     }
@@ -694,6 +716,21 @@ const prePutData = async ({model, id, params, user}) => {
 }
 
 setPrePutData(prePutData)
+
+
+const preDeleteData = async ({model, id, data, user}) => {
+  let returnedData = null
+  //deleteAction is forbidden except for notifications from notification plugin
+  if (model == 'notification') {
+    const notification = await deleteUserNotification(id,user)
+    returnedData = notification.recipients ? null : notification
+  } else {
+    throw new ForbiddenError(`Pas de delete pour l'instant`)
+  }
+  return {model, id, data: returnedData, user, params: null}
+}
+
+setPreDeleteData(preDeleteData)
 
 
 module.exports = {

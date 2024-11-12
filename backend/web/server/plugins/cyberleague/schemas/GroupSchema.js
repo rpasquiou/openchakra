@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
-const {schemaOptions} = require('../../../utils/schemas');
-const { DUMMY_REF } = require('../../../utils/database');
-const { GROUP_VISIBILITY, GROUP_VISIBILITY_PUBLIC } = require('../consts');
+const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
+const { GROUP_VISIBILITY, GROUP_VISIBILITY_PUBLIC } = require('../consts')
 
 const Schema = mongoose.Schema
 

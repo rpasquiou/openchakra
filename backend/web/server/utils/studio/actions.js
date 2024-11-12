@@ -77,8 +77,8 @@ let ACTIONS = {
     })
   },
 
-  delete: ({id}) => {
-    return removeData(id)
+  delete: ({id}, user) => {
+    return removeData({id,user})
   },
 
   addChild: ({parent, child}) => {

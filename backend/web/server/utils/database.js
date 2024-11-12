@@ -260,6 +260,14 @@ const getSimpleModelAttributes = modelName => {
 const getReferencedModelAttributes = (modelName, level) => {
   const res = getBaseModelAttributes(modelName)
     .filter(att => att.instance == 'ObjectID')
+    // Check that refPath attributes are hidden (path ^_.*)
+    .map(att => {
+      if (!!att.options.refPath && !/^_/.test(att.path)) {
+        throw new Error(`${modelName}.${att.path}:refPath atribute must be hidden (i.e. start with _')`)
+      }
+      return att
+    })
+    .filter(att => !att.options.refPath)
     .map(att =>
       // getSimpleModelAttributes(att.options.ref).map(([attName, instance]) => [
       getModelAttributes(att.options.ref, level-1).map(([attName, instance]) => [
@@ -803,6 +811,17 @@ const callPreprocessGet = data => {
   return preprocessGet(data)
 }
 
+// If preDeleteData returns a null attribute data, no delete is done by actual query
+let preDeleteData = data => Promise.resolve(data)
+
+const setPreDeleteData = fn => {
+  preDeleteData = fn
+}
+
+const callPreDeleteData = data => {
+  return preDeleteData(data)
+}
+
 // Pre create data, allows to insert extra fields, etc..
 let preCreateData = data => Promise.resolve(data)
 
@@ -917,36 +936,13 @@ const putAttribute = async (input_params) => {
 
 }
 
-const removeData = dataId => {
-  let model=null
-  return getModel(dataId)
-    .then(result => {
-      model=result
-      return mongoose.connection.models[model].findById(dataId)
-    })
-    .then(data => {
-      // TODO: move in fumoir/functions
-      if (model=='booking') {
-        return Booking.findById(data._id).populate({path: 'orders', populate: 'items'})
-          .then(data => {
-            if ([FINISHED, CURRENT].includes(data.status)) {
-              throw new BadRequestError(`Une réservation terminée ou en cours ne peut être annulée`)
-            }
-            if (data.paid) {
-              throw new BadRequestError(`Une réservation payée ne peut être annulée`)
-            }
-            return data.delete()
-          })
-      }
-      if (model=='guest') {
-        return Promise.all([
-          UserSessionData.updateMany({}, {$pull: {guests: {guest: dataId}}}),
-          // TODO: update the bookings but the context is required
-        ])
-          .then(() => data.delete())
-      }
-      return data.delete()
-        .then(d => callPostDeleteData({model, data:d}))
+const removeData = async ({id, user}) => {
+  let model= await getModel(id)
+  const oldData = await mongoose.models[model].findById(id)
+  return callPreDeleteData({model,data: oldData,user,id})
+    .then(async ({model,data,user,id, params}) => {
+      data && await data.delete()
+      await callPostDeleteData({model, data: oldData, user, id, params})
     })
 }
 
@@ -1134,6 +1130,7 @@ module.exports = {
   callPreprocessGet,
   setPreCreateData,
   callPreCreateData,
+  setPreDeleteData,
   setPostCreateData,
   callPostCreateData,
   setPostPutData,
