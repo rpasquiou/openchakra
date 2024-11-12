@@ -74,11 +74,11 @@ const computeBellwetherStatistics = async (params) => {
   let scores
 
   if (Object.keys(filters).length > 0) {    
-    const companies = await Company.find(filters)
+    const companies = await Company.find(filters,['_id'])
 
-    const users = await User.find({company: {$in: companies.map((c) => {return c._id})}})
+    const users = await User.find({company: {$in: companies.map((c) => {return c._id})}},['_id'])
 
-    scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}, completed: COMPLETED_YES}).populate([
+    scores = await Score.find({creator: {$in: users.map((u) => {return u._id})}, completed: COMPLETED_YES},['answers']).populate([
       {path: 'answers', populate: {path: 'question', $match: {is_bellwether: true}}}
     ])
 
