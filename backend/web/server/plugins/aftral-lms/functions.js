@@ -616,6 +616,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       const models=await Promise.all(ids.map(id => getModel(id, ['session', 'user'])))
       id=models[0]=='session' ? ids[0] : ids[1]
       user=await User.findById(models[0]=='user' ? ids[0] : ids[1])
+      // Skip filtering trainee sessions
+      params.manager=true
     }
   }
   if (model == `search`) {
@@ -637,8 +639,9 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
 setPreprocessGet(preprocessGet)
 
-const filterDataUser = async ({model, data, id, user}) => {
-  if (model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+const filterDataUser = async ({model, data, id, user, params}) => {
+  // If a manager is loading, don't filter sessions
+  if (!params.manager && model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
     data=data.filter(d => moment().isBetween(d.start_date, d.end_date))
   }
   if (model=='feed' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
