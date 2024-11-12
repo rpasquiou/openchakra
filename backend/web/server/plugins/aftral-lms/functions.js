@@ -610,7 +610,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   }
 
   // A session may be provided an id composed with a trainee also (for statistics)
-  if (model=='session' && !!id) {
+  if (typeof(id)=='string' && id.includes('-')) {
     if (id.includes('-')) {
       const ids=id.split('-')
       const models=await Promise.all(ids.map(id => getModel(id, ['session', 'user'])))
