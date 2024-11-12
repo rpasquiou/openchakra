@@ -149,9 +149,8 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
-  const model = await getModel(dataId)
-
   if (action == 'validate') {
+    const model = await getModel(dataId)
     if (model == 'notification') {
       await isValidateNotificationAllowed({dataId, user, ...rest})
     } else {
@@ -160,6 +159,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   }
 
   if(action == 'delete') {
+    const model = await getModel(dataId)
     if (model == 'notification') {
       await isDeleteUserNotificationAllowed({dataId, user, ...rest})
     } else {
