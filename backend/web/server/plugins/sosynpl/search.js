@@ -163,9 +163,24 @@ const searchFreelances = async (userId, params, data, fields)  => {
 
   // Filtrer par distance après la recherche
   if (!lodash.isEmpty(data.city)) {
-    freelances = freelances.filter(freelances => {
-      const distance = computeDistanceKm(freelances.headquarter_address, data.city)
-      return !lodash.isNil(distance) && distance < (data.city_radius || DEFAULT_SEARCH_RADIUS)
+    freelances = freelances.filter((freelance) => {
+
+      const cityMatch = freelance.headquarter_address?.city?.toLowerCase() === data.city.city?.toLowerCase()
+      const regionMatch = freelance.headquarter_address?.region?.toLowerCase() === data.city.region?.toLowerCase()
+
+      const exactMatch = cityMatch && regionMatch
+
+      if (exactMatch) {
+        return true
+      }
+
+      if (data.city_radius) {
+        const distance = computeDistanceKm(freelance.headquarter_address, data.city)
+        const isInRadius = !lodash.isNil(distance) && distance < data.city_radius
+        return isInRadius
+      }
+
+      return false
     })
   }
 
