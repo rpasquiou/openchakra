@@ -214,9 +214,8 @@ const CustomerSchema = new Schema({
   },
   // RCS city
   registration_city: {
-    type: String,
-    set: v => v?.city || v || undefined,
-    required: false,
+    type: AddressSchema,
+    required: false
   },
   // HQ address
   // Délégation de pouvoir
