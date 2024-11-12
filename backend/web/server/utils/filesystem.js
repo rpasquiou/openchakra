@@ -99,11 +99,17 @@ const isScorm = async ({buffer}) => {
   if (!entry) { return false}
   const contents=entry.getData().toString('utf-8')
   const imsmanifest = xml2js(contents, { compact: true })
-  const scormVersion = imsmanifest?.manifest?._attributes?.version
-  const resources = imsmanifest?.manifest?.resources?.resource
-  const mainResource = (resources?.[0] || resources)._attributes?.href
+  // #221: Manage h5p scorms
+  const scormVersion = imsmanifest?.manifest?._attributes?.version || imsmanifest?.manifest?.metadata?.schemaversion?._text
+  // Funny: if resources contains only one resource, it is returned as object instead of array
+  let resources = imsmanifest?.manifest?.resources?.resource
+  const mainResource=(Array.isArray(resources) ? resources.find(r => r._attributes['adlcp:scormType']=='sco') : resources)._attributes.href
   // Sosynpl #183 scorm version may exist but be empty 
   if (scormVersion!==undefined && mainResource) {
+    // Check if declared entrypoint exists in zip entries
+    if (!zip.getEntries().find(e => e.entryName==mainResource)) {
+      throw new Error(`Invalid Scorm: declared ${mainResource} not found`)
+    }
     return ({version: scormVersion, entrypoint: mainResource, entries: zip.getEntries()})
   }
   return false
