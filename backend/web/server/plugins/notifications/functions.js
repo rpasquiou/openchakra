@@ -26,7 +26,7 @@ const setAllowedTypes = types => {
   NotificationSchema.plugin(require('mongoose-lean-virtuals'))
   mongoose.model('notification', NotificationSchema)
 
-//TODO mongoose : need at least mongoose 8.2.0 to use recompileSchema
+//TODO mongoose : need at least mongoose 8.2.0 to use recompileSchema, while we can't use it, virtuals are computed in project schema instead
 //   //Adding virtuals to userSchema
 //   const User = mongoose.models.user
 //   User.schema.virtual('pending_notifications_test_virtual', {
