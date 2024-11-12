@@ -252,7 +252,7 @@ declareVirtualField({ model: 'company', field: 'offers', instance: 'Array', mult
     options: { ref: 'offer' }
   },
 })
-declareVirtualField({model: 'company', field: 'missions_count', instance: 'Number'})
+declareVirtualField({model: 'company', field: 'affected_missions_count', instance: 'Number'})
 declareComputedField({model: 'company', field: 'sponsors', getterFn: getterStatus({field: 'statut', value: STATUT_SPONSOR})})
 declareComputedField({model: 'company', field: 'founders', getterFn: getterStatus({field: 'statut', value: STATUT_FOUNDER})})
 declareVirtualField({model: 'company', field: 'region', instance: 'String', enumValues: REGIONS})
