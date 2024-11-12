@@ -20,8 +20,9 @@ addAction('validate',validateNotification)
 
 const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
   const NotificationModel = mongoose.models.notification
+
   return NotificationModel.create({
-    recipents: users,
+    recipients: users,
     _target: targetId,
     _target_type: targetType,
     text: computeMessage(text),
