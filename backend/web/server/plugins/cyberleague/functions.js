@@ -196,6 +196,7 @@ USER_MODELS.forEach(m => {
   declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getNotificationsCount})
   declareComputedField({model: m, field: 'pending_unseen_notifications', getterFn: getPendingNotifications})
   declareComputedField({model: m, field: 'pending_unseen_notifications_count', getterFn: getPendingNotificationsCount})
+  declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
 })
 
 //Company declarations
@@ -339,10 +340,12 @@ declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBIL
 declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 
-// Enums Mission Schema
+// Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
 declareEnumField({model: 'mission', field: 'status', enumValues: STATUSES})
 declareEnumField({model: 'mission', field: 'region', enumValues: REGIONS})
+declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_public', instance: 'String', enumValues: MISSION_VISIBILITY})
+declareVirtualField({model: 'mission', field: 'candidates_count', instance: 'Number'})
 
 // ExpertiseSet declarations
 declareVirtualField({model: 'expertiseSet', field: 'display_categories', requires: 'expertises,categories', instance: 'Array', multiple: true})
@@ -394,9 +397,6 @@ declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'can
 //Offer declarations
 declareEnumField({model: 'offer', field: 'visibility', enumValues: OFFER_VISIBILITY})
 declareEnumField({model: 'offer', field: 'price_member_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
-
-//Mission declarations
-declareVirtualField({model: 'mission', field: 'visibility', requires: 'is_public', instance: 'String', enumValues: MISSION_VISIBILITY})
 
 //Statistic declarations
 declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_SCORES})

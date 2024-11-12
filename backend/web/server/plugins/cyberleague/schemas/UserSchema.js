@@ -341,6 +341,13 @@ UserSchema.virtual('published_missions', {
   foreignField:'creator',
 })
 
+UserSchema.virtual('published_missions_count', {
+  ref:'mission',
+  localField:'_id',
+  foreignField:'creator',
+  count: true
+})
+
 UserSchema.virtual('profil_completion', DUMMY_REF).get(function() {
   const requiredCompletionFields = lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {
     return this[key]

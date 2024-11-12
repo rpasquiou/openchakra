@@ -86,6 +86,14 @@ const MissionSchema = new Schema(
       type: Number,
       required: false
     },
+    candidates: {
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'company',
+        required: true
+      }],
+      default: []
+    },
   },
   schemaOptions
 )
@@ -96,6 +104,9 @@ MissionSchema.virtual('visibility', DUMMY_REF).get(function() {
   return this.is_public ? MISSION_VISIBILITY_PUBLIC : MISSION_VISIBILITY_PRIVATE
 })
 
+MissionSchema.virtual('candidates_count', DUMMY_REF).get(function() {
+  return this.candidates ? this.candidates.length : 0
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = MissionSchema
