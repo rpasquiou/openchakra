@@ -270,6 +270,7 @@ declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 
     options: { ref: 'mission' }
   },
 })
+declareVirtualField({model: 'company', field: 'candidates_missions_count', instance: 'Number'})
 
 //Expertise declarations
 
