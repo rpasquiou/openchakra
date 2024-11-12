@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_POST } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -41,7 +41,7 @@ const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
 const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getNotifications, getNotificationsCount } = require('../notifications/functions')
-const { deleteUserNotification } = require('../notifications/actions')
+const { deleteUserNotification, addNotification } = require('../notifications/actions')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -638,6 +638,18 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == 'comment') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
+
+    if (data.post) {
+      await addNotification({
+        users: [data.creator],
+        targetId: data._id,
+        targetType: NOTIFICATION_TYPE_POST,
+        text: 'text de notif',
+        type: NOTIFICATION_TYPE_POST,
+        customData: null,
+        picture: null
+      })
+    }
   }
 
   if (model == 'scan') {
