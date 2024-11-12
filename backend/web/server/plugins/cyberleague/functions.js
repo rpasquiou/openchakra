@@ -214,7 +214,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({model: 'company', field: 'pinned_by_count', instance: 'Number'})
-declareVirtualField({ model: 'company', field: 'missions', instance: 'Array', multiple: true,
+declareVirtualField({ model: 'company', field: 'affected_missions', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
     options: { ref: 'mission' }
