@@ -43,6 +43,7 @@ const { computeScanRatesIfResults } = require('./scan')
 const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getNotifications, getNotificationsCount } = require('../notifications/functions')
 const { deleteUserNotification } = require('../notifications/actions')
 
+//Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
 //User declarations
