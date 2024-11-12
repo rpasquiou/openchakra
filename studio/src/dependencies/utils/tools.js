@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { getComponent } from './values';
 var moment = require('moment')
 
 async function loadImage(url) {
@@ -12,9 +13,12 @@ async function loadImage(url) {
   });
 }
 
-async function generatePDF(targetId, fileName){
+async function generatePDF(targetId, fileName, level){
   if (targetId=='root'){targetId='__next'}
-  const input = document.getElementById(targetId);
+  const input = getComponent(targetId, level)
+  if (!input) {
+    return alert(`generatePDF: component ${targetId} not found`)
+  }
   const imgs= input.querySelectorAll('img')
   await Promise.all(Array.from(imgs).map(async (img) => {
     try {
