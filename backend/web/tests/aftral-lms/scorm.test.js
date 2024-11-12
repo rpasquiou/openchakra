@@ -1,18 +1,32 @@
+const mongoose=require('mongoose')
+const path=require('path')
 const fs=require('fs')
+const { getDatabaseUri } = require('../../config/config')
+const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { isScorm } = require('../../server/utils/filesystem')
+const { osName } = require('react-device-detect')
+
+const ROOT='/home/seb/Téléchargements/scorms'
 
 describe('Test scorm', () => {
 
-  it.only('must test scorm', async () => {
-    const buffer=fs.readFileSync('/home/seb/Téléchargements/INTRO-C1.zip')
-    const res=await isScorm({buffer})
-    expect(res.length).toBeGreaterThan(0)
-    const buffer2=fs.readFileSync('/home/seb/Téléchargements/feurst-db.zip')
-    const res2=await isScorm({buffer: buffer2})
-    expect(res2).toBeFalsy()
-    const buffer3=fs.readFileSync('/home/seb/Téléchargements/test.pdf')
-    const res3=await isScorm({buffer: buffer3})
-    expect(res3.length).toBeFalsy()
+  beforeAll(async () => {
+    await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
+  })
+
+  const files=fs.readdirSync(ROOT).map(f => path.join(ROOT, f))
+  console.log(files)
+
+  test.each(files)('Should load Scorms', async filepath => {
+    const contents=fs.readFileSync(filepath)
+    const res=await isScorm({buffer: contents})
+    console.log(res.version, res.entrypoint)
+    try {
+      expect(res).toBeTruthy()
+    }
+    catch(error) {
+      throw new Error(`${filepath} must be a Scorm`)
+    }
   })
 
 })
