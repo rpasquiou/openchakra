@@ -37,6 +37,10 @@ const GroupSchema = new Schema({
     required: true,
     default: false,
   },
+  visios: [{
+    type: Schema.Types.ObjectId,
+    ref: 'visio',
+  }],
 }, schemaOptions)
 
 GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){

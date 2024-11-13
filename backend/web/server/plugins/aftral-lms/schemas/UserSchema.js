@@ -68,6 +68,10 @@ const UserSchema = new Schema({
     required: false,
     index: true,
   },
+  visios: [{
+    type: Schema.Types.ObjectId,
+    ref: 'visio',
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
