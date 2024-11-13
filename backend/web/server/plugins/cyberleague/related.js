@@ -3,6 +3,7 @@ const moment=require('moment')
 const { loadFromDb, idEqual } = require('../../utils/database')
 const User = require('../../models/User')
 const Company = require('../../models/Company')
+const EventModel = require('../../models/Event')
 
 const compareCompanies = (company, expertises) => {
   return lodash.intersectionBy([expertises, company.expertise_set?.expertises], 
@@ -13,7 +14,11 @@ const getRelated = (model) => {
   if (model == 'event') {
     return async (userId, params, data) => {
       const events = await loadFromDb({model: `event`, fields: [`start_date`, `name`, `picture`, `end_date`,`company.name`, `expertise_set.expertises`]})
-      return lodash.orderBy(lodash.filter(events, (e) => !idEqual(data._id,e._id) && moment(e.start_date).isAfter(moment())), (e) => e.start_date).slice(0, 10)
+      return lodash.orderBy(
+        lodash.filter(events, (e) => !idEqual(data._id,e._id) && moment(e.start_date).isAfter(moment())),
+        (e) => e.start_date)
+          .slice(0, 10)
+          .map(e => {return new EventModel(e)})
      }
   }
 
@@ -21,7 +26,7 @@ const getRelated = (model) => {
    return async (userId, params, data) => {
     const companies = await loadFromDb({model: `company`, fields: [`expertise_set.expertises`, `name`, `picture`, `baseline`]})
     return lodash.orderBy(
-      lodash.filter(companies, (c) => !idEqual(data._id,c._id)), 
+      lodash.filter(companies, (c) => !idEqual(data._id,c._id)),
       (c) => compareCompanies(c, data.expertise_set?.expertises), `desc`)
         .slice(0, 10)
         .map(c => {return new Company(c)})
