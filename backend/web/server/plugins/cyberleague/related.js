@@ -2,6 +2,7 @@ const lodash = require('lodash')
 const moment=require('moment')
 const { loadFromDb, idEqual } = require('../../utils/database')
 const User = require('../../models/User')
+const Company = require('../../models/Company')
 
 const compareCompanies = (company, expertises) => {
   return lodash.intersectionBy([expertises, company.expertise_set?.expertises], 
@@ -19,7 +20,11 @@ const getRelated = (model) => {
   if (model == `company`) {
    return async (userId, params, data) => {
     const companies = await loadFromDb({model: `company`, fields: [`expertise_set.expertises`, `name`, `picture`, `baseline`]})
-    return lodash.orderBy(lodash.filter(companies, (c) => !idEqual(data._id,c._id)), (c) => compareCompanies(c, data.expertise_set?.expertises), `desc`).slice(0, 10)
+    return lodash.orderBy(
+      lodash.filter(companies, (c) => !idEqual(data._id,c._id)), 
+      (c) => compareCompanies(c, data.expertise_set?.expertises), `desc`)
+        .slice(0, 10)
+        .map(c => {return new Company(c)})
    }
   }
 
