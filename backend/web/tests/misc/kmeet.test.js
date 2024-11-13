@@ -1,8 +1,11 @@
 const axios = require('axios')
+const path=require('path')
+console.log(path.resolve(__dirname, '../../../.env'))
+require('dotenv').config({path: path.resolve(__dirname, '../../../../.env')})
 
 describe('KMeet tests', () => {
 
-  const TOKEN=`y9UbZ_Gj1viBxbFQ5OG67hJTsf6lG1Ey6wOEW_q89tegqj1nKlDHBywcmJXbAGI3RnWYB7LL6O26hszw`
+  const TOKEN=process.env.KMEET_APIKEY
 
   test('Must create a room', async() => {
     const headers= {
@@ -31,24 +34,24 @@ describe('KMeet tests', () => {
         state: 'NEEDS-ACTION',
     }],
     }
-    // await axios.get('https://calendar.infomaniak.com/api/pim/calendar', {headers: headers})
-    //   .then(res => console.log(JSON.stringify(res.data.data.calendars, null,2)))
-    //   .catch(err => console.error(err.response.data))
+    await axios.get('https://calendar.infomaniak.com/api/pim/calendar', {headers: headers})
+      .then(res => console.log(JSON.stringify(res.data.data.calendars, null,2)))
+      .catch(err => console.error(err.response.data))
     
-    // await axios.post('https://api.infomaniak.com/1/kmeet/rooms', body, {headers: headers})
-    //   .then(console.log)
-    //   .catch(err => console.error(JSON.stringify(err.response.data, null, 2)))
+    await axios.post('https://api.infomaniak.com/1/kmeet/rooms', body, {headers: headers})
+      .then(console.log)
+      .catch(err => console.error(JSON.stringify(err.response.data, null, 2)))
 
-    const ROOM_ID='155910'
+    // const ROOM_ID='155910'
 
     // await axios.get(`https://api.infomaniak.com/1/kmeet/rooms/${ROOM_ID}/settings`, {headers: headers})
     //   .then(res => console.log(JSON.stringify(res.data, null,2)))
     //   .catch(err => console.error(err.response.data))
 
-    await axios.delete(`https://api.infomaniak.com/1/kmeet/rooms/${ROOM_ID}`, {headers: headers})
-      .then(res => console.log(JSON.stringify(res.data, null,2)))
-      .catch(err => console.error(err.response.data))
+    // await axios.delete(`https://api.infomaniak.com/1/kmeet/rooms/${ROOM_ID}`, {headers: headers})
+    //   .then(res => console.log(JSON.stringify(res.data, null,2)))
+    //   .catch(err => console.error(err.response.data))
 
   })
 
-})
+  })
