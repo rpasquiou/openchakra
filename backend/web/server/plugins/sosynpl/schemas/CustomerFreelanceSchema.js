@@ -131,10 +131,14 @@ const CustomerFreelanceSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'sector',
     }],
-    validate: [
-      function(sectors) {return !isFreelance(this) || lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1)}, 
-      `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
-    ]
+    validate: [{
+      validator: function(sectors) {return !isFreelance(this) || lodash.inRange(sectors?.length, MIN_SECTORS, MAX_SECTORS+1)}, 
+      message: `Vous devez choisir de ${MIN_SECTORS} à ${MAX_SECTORS} secteurs d'activité` 
+    },
+    {
+      validator: function(sectors) { return !isFreelance(this) || !sectors.some(s => lodash.isNil(s))}, 
+      message: `Le secteur d'activité est obligatoire` 
+    }]
   },
   work_company_size: {
     type: [{
@@ -344,6 +348,7 @@ const CustomerFreelanceSchema = new Schema({
   },
   iban: {
     type: String,
+    set: v => v ? v.replace(/\s/g, '') : v,
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
@@ -371,14 +376,6 @@ const CustomerFreelanceSchema = new Schema({
   kbis: {
     type: String,
     required: false,
-  },
-  interested_by: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'freelance',
-      required: true
-    }],
-    default: [],
   },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 

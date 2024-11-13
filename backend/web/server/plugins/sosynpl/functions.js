@@ -1,14 +1,15 @@
 const User = require("../../models/User")
+const Admin = require("../../models/Admin")
 const Announce = require("../../models/Announce")
 const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES } = require("./consts")
+const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY } = require("./consts")
 const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
 const { validatePassword } = require("../../../utils/passwords")
-const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation } = require("./mailing")
+const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation, sendNewMessage } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
 const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
@@ -61,6 +62,7 @@ MODELS.forEach(model => {
     declareVirtualField({model, field: 'received_suggestions_count', type: 'Number'})
   }
   declareVirtualField({model, field: 'password2', type: 'String'})
+  declareVirtualField({model, field: 'managed_accounts', instance: 'Array', multiple: true, caster: { instance: 'ObjectID', options: { ref: 'customerFreelance' }}})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
   declareVirtualField({model, field: 'shortname', type: 'String', requires: 'firstname,lastname'})
   declareEnumField({model, field: 'role', enumValues: ROLES})
@@ -340,6 +342,7 @@ declareComputedField({model: 'announce', field: 'pinned', requires: 'pinned_by',
 
 /** Application start */
 declareEnumField({model: 'application', field: 'status', enumValues: APPLICATION_STATUS})
+declareEnumField({model: 'application', field: 'visibility_status', enumValues: APPLICATION_VISIBILITY})
 declareVirtualField({model: 'application', field: 'quotations', instance: 'Array', multiple: true,
   caster: {
     instance: 'ObjectID',
@@ -563,13 +566,21 @@ declareVirtualField({model: 'announce', field: 'questions', instance: 'Array', m
   }
 })
 
-const soSynplRegister = props => {
+const soSynplRegister = async props => {
   console.log(`Register with ${JSON.stringify(props)}`)
   if (![ROLE_CUSTOMER, ROLE_FREELANCE].includes(props.role)) {
     throw new Error(`Le role ${props.role || 'vide'} est invalide pour l'inscription`)
   }
+
+  const defaultAdmin = await Admin.findOne({ default: true })
+
   const model=CustomerFreelance //props.role==ROLE_FREELANCE ? Freelance : Customer
   const modelName='customerFreelance' //props.role==ROLE_FREELANCE ? 'freelance' : 'customer'
+
+  if (defaultAdmin && defaultAdmin._id) {
+    props.dedicated_admin = [defaultAdmin._id]
+  }
+
   return User.exists({email: props.email})
     .then(exists => {
       if (exists) {
@@ -708,11 +719,11 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     params.quotation=params.quotation || params.parent
     return { model, params, user}
   }
-  if (['message'].includes(model)) {
+  if (model === 'message') {
     params.sender = user
     const conversation=await Conversation.findById(params.parent)
     params.conversation=conversation
-    params.receiver=await conversation.getPartner(user)
+    params.receiver= conversation.getPartner(user._id)
   }
   if (model == 'recommandation') {
     if (!params.creator_email) {
@@ -745,6 +756,22 @@ const postCreate = async ({model, params, data, user}) => {
   if (data.role==ROLE_FREELANCE) {
     await sendFreelanceConfirmEmail({user: data})
   }
+
+  if(model === 'message') {
+    const receiver = await User.findById(data.receiver)
+    const sender_firstname = data.sender.firstname
+    const content = data.content
+
+    if (receiver && receiver.email) {
+      await sendNewMessage({
+        firstname: receiver.firstname,
+        external_email: receiver.email,
+        sender_firstname: sender_firstname,
+        content: content
+      })
+    }
+  }
+
   if (model=='software' && params.parent) {
     const parentModel=await getModel(params.parent)
     if (['customerFreelance', 'user'].includes(parentModel)) {
@@ -788,6 +815,14 @@ const prePutData = async ({model, id, params, user}) => {
   if (['announce', 'application', 'quotation'].includes(model)) {
     return {model, id, params, user, skip_validation: true}
   }
+
+  if (model === 'admin' && params.default) {
+    const defaultAdmins =  await Admin.exists({default: true, _id: {$ne: id}})
+    if (defaultAdmins) {
+      throw new Error(`Un admin par défaut existe déjà`)
+    }
+  }
+
   const targetUser = await User.findById(id, {availability:1})
   if(!!params.availability && params.availability!= targetUser.availability) {
     params.availability_last_update = moment()
