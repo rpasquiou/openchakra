@@ -4,6 +4,9 @@ const {THUMBNAILS_DIR} = require('../../../web/utils/consts')
 const fs=require('fs')
 const mime=require('mime-types')
 const path=require('path')
+const { isCompletionStatement } = require('@babel/types')
+const { isScorm, removeExtension } = require('../utils/filesystem')
+const { runPromisesWithDelay } = require('../utils/concurrency')
 
 const s3 = new S3({
   region: process.env.S3_REGION,
@@ -55,6 +58,28 @@ const imageSrcSetPaths = (originalSrc, withDimension=true) => {
   return srcSet
 }
 
+const uploadFile =  document => {
+  return new Promise(async (resolve, reject) => {
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: document.filename,
+      Body: document.buffer,
+      ContentType: document.mimetype,
+      // ACL: 'public-read', // What's this ACL ?
+    }
+
+    await new Upload({
+      client: s3,
+      params,
+      queueSize: 4,
+    }).done()
+      .then(res => resolve(res))
+      .catch(err => {
+        console.error(params.Key, err)
+        return reject(err)
+      })
+  })
+}
 exports.sendFileToAWS = async (fullpath, type) => {
   const filename=path.join(process.env.S3_PROD_ROOTPATH, type, path.basename(fullpath))
   const contents=fs.readFileSync(fullpath)
@@ -99,15 +124,32 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
   const upload=new Upload({client: s3,params})
   const res=await upload.done().catch(console.error)
 
-  console.log('res is', res)
-
   return res
 }
 
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
+  let documents=req.body.documents
+  const scorm=await isScorm({buffer: documents[0].buffer})
+  if (!!scorm) {
+    const directory=removeExtension(document.filename)
+    documents=scorm.entries.map(scormEntry => ({
+      filename: path.join(directory, scormEntry.entryName),
+      buffer: scormEntry.getData(),
+      mimetype: mime.lookup(scormEntry.entryName),
+    }))
+    const res=await runPromisesWithDelay(documents.map(d => () => uploadFile(d)))
+    const nok=res.filter(r => r.status!='fulfilled')
+    if (nok.length>0) {
+      throw new Error(JSON.stringify(nok))
+    }
+    const {entrypoint}=scorm
+    const epRegex=new RegExp(`/${entrypoint}$`)
+    req.body.result=res.map(r => r.value).filter(r => epRegex.test(r.Key))
+    return next()
+  }
 
-  const documentsToSend = req.body.documents.map(document => {
+  const documentsToSend = documents.map(document => {
 
     return new Promise(async(resolve, reject) => {
       const params = {

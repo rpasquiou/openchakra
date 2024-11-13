@@ -29,6 +29,9 @@ const ExperienceSchema = new Schema({
     type: String,
     required: [true, `La compagnie est obligatoire`],
   },
+  city: {
+    type: String,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

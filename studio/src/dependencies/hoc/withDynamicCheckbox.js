@@ -1,6 +1,6 @@
 import { ACTIONS } from '../utils/actions'
 
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import lodash from 'lodash'
 
 const withDynamicCheckbox = Component => {
@@ -13,9 +13,15 @@ const withDynamicCheckbox = Component => {
       return <Component {...props} value={value} insideGroup />
     }
 
+    useEffect(() => {
+      if (props.setComponentValue) {
+        props.setComponentValue(props.id, !!value)
+      }
+    }, [value])
+
     const onChange = ev => {
       setValue(!!ev.target.checked)
-      if (!noautosave) {
+      if (!noautosave && !!dataSource) {
         const action=contextAttribute ?
           ACTIONS.addToContext({value: dataSource._id, context, append: !!ev.target.checked, contextAttribute})
           :

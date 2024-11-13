@@ -6,6 +6,7 @@ const Schema = mongoose.Schema;
 const DiplomaSchema = new Schema({
   name: {
     type: String,
+    index: true,
     required: [true, 'Le nom du diplôme est obligatoire'],
   },
   date: {
@@ -23,6 +24,7 @@ const DiplomaSchema = new Schema({
   },
   migration_id: {
     type: Number,
+    index: true,
     required: false,
   },
 }, schemaOptions

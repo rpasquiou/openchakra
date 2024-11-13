@@ -6,6 +6,7 @@ const AddressPanel = () => {
   return (
     <>
       <SwitchControl name='isCityOnly' label='City only' />
+      <SwitchControl name='readOnly' label='Read only' />
     </>
   )
 }

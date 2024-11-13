@@ -26,7 +26,6 @@ const Lexical = ({
 
   // Editor changed : convert to HTML & send call onChange if defined
   const handleChange = (newContent) => {
-    console.log("************************************",newContent)
     setHtml(newContent);
     const event = { target: { value: newContent } };
     onChange(event);
@@ -38,7 +37,6 @@ const Lexical = ({
   };
 
   const props = { id, attribute, value: html, ...rest };
-  console.log(editorRef)
   return (
     <Flex {...props}>
       {isEditable 

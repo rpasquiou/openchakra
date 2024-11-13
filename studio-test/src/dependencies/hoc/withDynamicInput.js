@@ -27,6 +27,9 @@ const withDynamicInput = Component => {
       if (props?.type === 'time') {
           keptValue = transformedDate.slice(11, 16)
       }
+      if (props?.type === 'month') {
+        keptValue = transformedDate.slice(0, 7)
+      }
     }
 
     useEffect(() => {
@@ -96,13 +99,13 @@ const withDynamicInput = Component => {
         </InputGroup>
       )
       :
-      (<Component {...props} onChange={onChange} />)
+      (<Component {...props} setComponentValue={setComponentValue} onChange={onChange} />)
     }
 
     return displayEye ?
       withDisplayEye(Component)
       :
-      <Component {...props} dataSource={dataSource} onChange={onChange}/>
+      <Component {...props} dataSource={dataSource} setComponentValue={setComponentValue} onChange={onChange}/>
   }
 
   return Internal

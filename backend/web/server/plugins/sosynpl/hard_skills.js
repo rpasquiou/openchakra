@@ -10,7 +10,7 @@ const computeUserHardSkillsCategories = async (userId, params, data) => {
     .populate(['skills', {path: 'children', populate: ['children', 'skills']}])
   // Get user main job's skills
   const skills=data.main_job.job_file.hard_skills
-  console.log('user skills are', skills)
+
   // Keep only categories containing hard skills linked to the main job's jobfile
   const keep_category= (category) => {
     // Has skill: keep only if contains user skills

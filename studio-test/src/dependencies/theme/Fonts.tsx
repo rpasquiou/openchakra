@@ -142,6 +142,55 @@ const Fonts = () => (
         font-weight: normal;
         font-style: normal;
       }
+      @font-face {
+        font-family: 'handjet';
+        src: local('Handjet'), 
+            url('fonts/Handjet-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'handjet';
+        src: local('Handjet'), 
+            url('fonts/Handjet-Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Honk';
+        src: local('Honk'), 
+            url('fonts/Honk-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'minion pro';
+        src: local('Inter'), 
+            url('fonts/MinionPro-Regular.otf') format('opentype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'TitilliumWeb';
+        src: local('TitilliumWeb'), 
+            url('fonts/TitilliumWeb-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'TitilliumWeb';
+        src: local('TitilliumWeb'), 
+            url('fonts/TitilliumWeb-Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'TitilliumWeb';
+        src: local('TitilliumWeb'), 
+            url('fonts/TitilliumWeb-Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+      }
       `}
   />
 )
@@ -155,6 +204,9 @@ export const fontsName = [
   'inter-medium',
   'inter-semibold',
   'minion pro',
+  'handjet',
+  'honk',
+  'TitilliumWeb'
 ]
 
 export default Fonts

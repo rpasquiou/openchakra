@@ -17,7 +17,7 @@ const ChartDataset = (
     }
   ) => {
 
-    console.log(dataset)
+    console.log('dataset',dataset)
 
   const { setValueFromEvent } = useForm()
   const datasetLabel = ""

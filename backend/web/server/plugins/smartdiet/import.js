@@ -14,7 +14,7 @@ const {
   QUIZZ_QUESTION_TYPE_ENUM_SINGLE, QUIZZ_TYPE_PROGRESS, COACHING_QUESTION_STATUS, COACHING_QUESTION_STATUS_NOT_ADDRESSED, 
   COACHING_QUESTION_STATUS_NOT_ACQUIRED, COACHING_QUESTION_STATUS_IN_PROGRESS, COACHING_QUESTION_STATUS_ACQUIRED, 
   GENDER_MALE, GENDER_FEMALE, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_ASSESSMENT, DIET_REGISTRATION_STATUS_REFUSED, 
-  FOOD_DOCUMENT_TYPE_NUTRITION, GENDER, DIET_REGISTRATION_STATUS_VALID, DIET_REGISTRATION_STATUS_PENDING, COACHING_CONVERSION_CANCELLED 
+  FOOD_DOCUMENT_TYPE_NUTRITION, GENDER, DIET_REGISTRATION_STATUS_VALID, DIET_REGISTRATION_STATUS_PENDING, COACHING_CONVERSION_CANCELLED, CALL_STATUS_TO_CALL, CALL_STATUS_CALL_1, CALL_STATUS_CALL_2, CALL_STATUS_UNREACHABLE, CALL_STATUS_CONVERTI_COA, CALL_STATUS_NOT_INTERESTED, CALL_STATUS_RECALL, CALL_STATUS_CONVERTI_CN, CALL_STATUS_CONVERTI_COA_CN, CALL_STATUS_WRONG_NUMBER, CALL_DIRECTION_OUT_CALL 
 } = require('./consts')
 const { CREATED_AT_ATTRIBUTE, TEXT_TYPE } = require('../../../utils/consts')
 require('../../models/Key')
@@ -28,6 +28,8 @@ require('../../models/FoodDocument')
 require('../../models/NutritionAdvice')
 require('../../models/Network')
 require('../../models/Diploma')
+require('../../models/Lead')
+require('../../models/Job')
 const Quizz = require('../../models/Quizz')
 const Coaching = require('../../models/Coaching')
 const { idEqual } = require('../../utils/database')
@@ -45,6 +47,9 @@ const { isNewerThan } = require('../../utils/filesystem')
 const pairing =require('@progstream/cantor-pairing')
 const FoodDocument = require('../../models/FoodDocument')
 const Offer = require('../../models/Offer')
+require('../../models/JoinReason')
+require('../../models/DeclineReason')
+require('../../models/Interest')
 const DEFAULT_PASSWORD='DEFAULT'
 
 const ASS_PRESTATION_DURATION=45
@@ -117,46 +122,6 @@ const replaceInFile = (path, replaces) => {
   }
 }
 
-const fixAppointments = async directory => {
-  const INPUT=path.join(directory, 'smart_consultation.csv')
-  const MIS_INPUT=path.join(directory, 'smart_mis.csv')
-  const EO_INPUT=path.join(directory, 'smart_eo.csv')
-  const OUTPUT=path.join(directory, 'wapp_consultation.csv')
-
-  let records=await loadRecords(INPUT)
-
-  if (isNewerThan(OUTPUT, INPUT) && isNewerThan(OUTPUT, MIS_INPUT) && isNewerThan(OUTPUT, EO_INPUT)) {
-    console.log('no need to generate appts')
-    return 
-  }
-  console.log('Generating appts')
-  // Remove MIS appointments
-  console.log('records before MIS filter', records.length)
-  const mis=(await loadRecords(MIS_INPUT)).map(record => record.SDCONSULTID)
-  records=records.filter(r => !mis.includes(r.SDCONSULTID))
-  console.log('records after MIS filter', records.length)
-
-  // Remove EO appointments
-  console.log('records before EO filter', records.length)
-  const eo=(await loadRecords(EO_INPUT)).map(record => record.SDCONSULTID)
-  records=records.filter(r => !eo.includes(r.SDCONSULTID))
-  console.log('records after EO filter', records.length)
-  
-  const firstAppointments=lodash(records).groupBy('SDPROGRAMID')
-    .mapValues(consults => lodash.minBy(consults, c => moment(c.date)).SDCONSULTID)
-    .value()
-  const ASS_HEADER='assessment'
-  const keys=[...Object.keys(records[0]), ASS_HEADER]
-  const result=[keys.join(';')]
-  records.forEach(record => {
-    const line=keys.map(k => k==ASS_HEADER ? (firstAppointments[record.SDPROGRAMID]==record.SDCONSULTID ? "1" : "0"): record[k])
-    result.push(line.join(';'))
-  })
-
-  
-  fs.writeFileSync(OUTPUT, result.join('\n'))
-}
-
 const createCantorKey = (value1, value2) => {
   const values=[parseInt(value1), parseInt(value2)].sort()
   return pairing.pair(...values)
@@ -218,7 +183,7 @@ const generateMessages = async directory =>{
       && isNewerThan(MESSAGES_OUTPUT, THREADS)
       && isNewerThan(MESSAGES_OUTPUT, MESSAGES)
   ) {
-    // console.log('No need to generate', OUTPUT)
+    console.log('No need to generate', CONVERSATIONS_OUTPUT, 'or', MESSAGES_OUTPUT)
     return
   }
 
@@ -236,7 +201,8 @@ const generateMessages = async directory =>{
     .map((([SDTHREADID, [USER1, USER2]]) => ({SDTHREADID, USER1, USER2, CONVID: createCantorKey(USER1, USER2)})))
     .groupBy('CONVID')
     .mapValues(threads => ({...threads[0], SDTHREADID: undefined, SDTHREADIDS: threads.map(t => t.SDTHREADID)}))
-    
+  
+  console.log(conversations.value())
   const conversationKeys=['CONVID','USER1','USER2']
   saveRecords(CONVERSATIONS_OUTPUT, conversationKeys, conversations)
 
@@ -262,46 +228,6 @@ const generateMessages = async directory =>{
   const messagesKeys=['CONVID', 'SENDER', 'RECEIVER', 'message', 'datetime']
   saveRecords(MESSAGES_OUTPUT, messagesKeys, messages)
 }
-
-const generateProgress = async directory => {
-  const consulPath=path.join(directory, 'smart_consultation.csv')
-  const consultProgressPath = path.join(directory, 'smart_consultation_progress.csv')
-  const outputPath = path.join(directory, 'wapp_progress.csv')
-
-  if (isNewerThan(outputPath, consulPath) && isNewerThan(outputPath, consultProgressPath)) {
-    console.log('No need to generate', outputPath)
-    return
-  }
-  console.log('Generating', outputPath)
-
-  let consultations=await loadRecords(consulPath)
-  let progress=await loadRecords(consultProgressPath)
-
-  progress=lodash(progress)
-    .groupBy('CONSULTID')
-    .mapValues(criteria => Object.fromEntries(criteria.map(c => [c.SDCRITERIAID, c.status])))
-    .value()
-
-
-  consultations=lodash(consultations)
-    .groupBy('SDPROGRAMID')
-    .mapValues(consults => lodash.orderBy(consults, c => moment(c.date)))
-    .mapValues(consults => consults.map(c => progress[c.SDCONSULTID]).filter(v => !!v))
-    .pickBy(consults => consults.length>0)
-    .mapValues(criterions => lodash.assign({}, ...criterions))
-
-  // console.log(consultations.value())
-  let res=['SDPROGRAMID;SDCRITERIAID;status']
-  consultations.entries().value()
-    .forEach(([program, obj]) => {
-      Object.entries(obj).forEach(([crit, status])=> {
-        res.push(`${program};${crit};${status}`)
-      })
-    })
-  fs.writeFileSync(outputPath, res.join('\n'))
-  console.timeEnd('Progress')
-}
-
 
 const fixFoodDocuments = async directory => {
   const mappingRecords=await loadRecords(path.join(directory, 'mapping_fiche.csv'))
@@ -380,11 +306,9 @@ const generateFoodPrograms = async directory => {
 
 const fixFiles = async directory => {
   console.log('Fixing files')
-  await fixAppointments(directory)
   await fixQuizz(directory)
   await generateMessages(directory)
   await fixSpecs(directory)
-  await generateProgress(directory)
   console.warn('*'.repeat(40), 'HERE HAVE TO GENERATE QUIZZ JUST BEFORE IMPORT', '*'.repeat(40),)
   // await generateQuizz(directory)
   await generateFoodPrograms(directory)
@@ -392,7 +316,7 @@ const fixFiles = async directory => {
 }
 
 const computePseudo = record => {
-  const letters=[record.firstname?.slice(0, 1), record.lastname?.slice(0, 2)].filter(v => !!v)
+  const letters=[record.firstname?.trim()?.slice(0, 1), record.lastname?.trim()?.slice(0, 2)].filter(v => !!v)
   return letters.join('').toUpperCase() || 'FAK'
 }
 
@@ -459,6 +383,9 @@ const PATIENT_MAPPING={
   email: 'emailCanonical',
   firstname: ({record}) => record.firstname || 'inconnu',
   lastname: ({record}) => record.lastname || 'inconnu',
+  address: 'address',
+  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
+  city: 'city',
   dataTreatmentAccepted: () => true,
   cguAccepted: () => true,
   password: () => DEFAULT_PASSWORD,
@@ -477,8 +404,8 @@ const PATIENT_KEY='email'
 const PATIENT_MIGRATION_KEY='migration_id'
 
 const HEIGHT_MAPPING={
-  migration_id: 'patient_id',
-  _id: ({cache, record}) => cache('user', record.patient_id),
+  migration_id: 'SDPATIENTID',
+  _id: ({cache, record}) => cache('user', record.SDPATIENTID),
   height: 'height',
 }
 
@@ -487,9 +414,9 @@ const HEIGHT_MIGRATION_KEY='migration_id'
 
 const WEIGHT_MAPPING={
   // Weight from summary
-  migration_id: ({record}) => -record.patient_id,
+  migration_id: ({record}) => -record.SDPATIENTID,
   weight: 'weight',
-  user: ({cache, record}) => cache('user', record.patient_id),
+  user: ({cache, record}) => cache('user', record.SDPATIENTID),
   date: 'updated',
 }
 
@@ -505,33 +432,6 @@ const DIET_STATUS_MAPPING={
   3: DIET_REGISTRATION_STATUS_REFUSED,
   4: DIET_REGISTRATION_STATUS_VALID,
 }
-const DIET_MAPPING={
-  role: () => ROLE_EXTERNAL_DIET,
-  password: () => DEFAULT_PASSWORD,
-  firstname: 'firstname',
-  lastname: 'lastname',
-  email: 'email',
-  smartagenda_id: 'smartagendaid',
-  migration_id: 'SDID',
-  zip_code: ({record}) => record.cp?.length==4 ? record.cp+'0' : record.cp,
-  address: 'address',
-  phone: ({record}) => normalizePhone(record.phone),
-  adeli: 'adelinumber',
-  city: 'city',
-  siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
-  birthday: 'birthdate',
-  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record['created_at']),
-  registration_status: ({record}) => DIET_STATUS_MAPPING[+record.status],
-  diet_coaching_enabled: ({record}) => +record.hasteleconsultation==1,
-  diet_visio_enabled: ({record}) => +record.easewithconfs==1,
-  diet_site_enabled: ({record}) => +record.hasatelier==1,
-  diet_admin_comment: 'comments',
-  description: 'annonce',
-  picture: async ({record, picturesDirectory}) => {return await getS3FileForDiet(picturesDirectory, record.firstname, record.lastname, 'profil')},
-  rib: async ({record, ribDirectory}) => {return await getS3FileForDiet(ribDirectory, record.firstname, record.lastname, 'rib')},
-  source: () => 'import',
-}
-
 const companyOffersCache=new NodeCache()
 
 const getUserOffer = async (user, date) => {
@@ -542,15 +442,15 @@ const getUserOffer = async (user, date) => {
   const key=user.company._id.toString()
   let offers=companyOffersCache.get(key)
   if (!offers) {
-    offers=await Offer.find({company: user.company}).sort({validity_start: -1}).lean()
+    offers=await Offer.find({company: user.company})
+      .populate({path: 'assessment_quizz', populate: 'questions'})
+      .populate({path: 'impact_quizz', populate: 'questions'})
+      .sort({validity_start: -1})
     companyOffersCache.set(key, offers)
   }
   const offer=lodash.dropWhile(offers, o => moment(o.validity_start).isAfter(moment(date))).pop()
-  return offer?._id
+  return offer
 }
-
-const DIET_KEY='email'
-const DIET_MIGRATION_KEY='migration_id'
 
 const COACHING_MAPPING={
   [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record.orderdate),
@@ -567,22 +467,40 @@ const COACHING_MAPPING={
 const COACHING_KEY=['user', CREATED_AT_ATTRIBUTE]
 const COACHING_MIGRATION_KEY='migration_id'
 
-const APPOINTMENT_MAPPING= (assessment_id, followup_id) => ({
+// APPT status : 1 : new, 2: done, 3: paid
+
+const EXPORT_DATE=moment('2024-06-18')
+
+const APPOINTMENT_MAPPING= (assessment_id, followup_id, progressTemplate) => ({
   coaching: ({cache, record}) => cache('coaching', record.SDPROGRAMID),
   start_date: 'date',
   end_date: ({record}) => moment(record.date).add(45, 'minutes'),
   note: 'comments',
-  appointment_type: ({record}) => +record.assessment ? assessment_id : followup_id,
+  appointment_type: ({record}) => !!record.assessment ? assessment_id : followup_id,
   migration_id: 'SDCONSULTID',
   diet: async ({cache, record}) => {
-    let diet=cache('user', record.SDDIETID)
-    if (!diet) {
-      diet=(await Coaching.findById(cache('coaching', record.SDPROGRAMID), {diet:1}))?.diet
+    let diet=null
+    if (!!record.SDDIETID) {
+      diet=cache('user', record.SDDIETID)
     }
+    if (!diet) {
+      const coaching = await Coaching.findById(cache('coaching', record.SDPROGRAMID))
+      diet=coaching?.diet
+    }
+    if (!diet) { console.error('No diet found for', record.SDPROGRAMID)}
     return diet
   },
   user: async ({cache, record}) => (await Coaching.findById(cache('coaching', record.SDPROGRAMID), {user:1}))?.user,
-  validated: ({record}) => +record.status>1,
+  progress: async ({cache, record}) => {
+    let progress=await UserQuizz.findOne({migration_id: record.SDCONSULTID}, {_id:1})
+    if (!progress) {
+      progress=await progressTemplate.cloneAsUserQuizz().catch(console.error)
+      progress.migration_id=record.SDCONSULTID
+      await progress.save()
+    }
+    return progress._id
+  },
+  validated: ({record}) => +record.status>1 || EXPORT_DATE.isBefore(record.date),
 })
 
 
@@ -598,7 +516,8 @@ const MEASURE_MAPPING={
   thighs: ({record}) => lodash.mean([parseInt(record.leftthigh), parseInt(record.rightthigh)].filter(v => !!v)) || undefined,
   arms: () => undefined,
   weight: 'weight',
-  user: async ({cache, record}) => (await Appointment.findById(cache('appointment', record.SDCONSULTID), {user:1}))?.user,
+  user: async ({cache, record}) => 
+    (await Appointment.findById(cache('appointment', record.SDCONSULTID), {user:1}))?.user,
 }
 
 const MEASURE_MAPPING_KEY='migration_id'
@@ -724,6 +643,7 @@ const getGender = gender => +gender==1 ? GENDER_MALE : +gender==2 ? GENDER_FEMAL
 
 const NUTADVICE_MAPPING={
   migration_id: ({record}) => parseInt(`${record.SDDIETID}${moment(record.date).unix()}`),
+  [CREATED_AT_ATTRIBUTE]: 'date',
   start_date: 'date',
   diet: ({cache, record}) => cache('user', record.SDDIETID),
   patient_email: 'email',
@@ -785,15 +705,19 @@ const progressCb = step => (index, total)=> {
 }
 
 const updateImportedCoachingStatus = async () => {
-  const coachings=await Coaching.find({status: COACHING_STATUS_NOT_STARTED, migration_id: {$ne: null}}, {_id:1})
+  console.log('**** Update coaching status')
+  console.time('Update coaching status')
+  const coachings=await Coaching.find({migration_id: {$ne: null}}, {_id:1})
   const step=Math.floor(coachings.length/10)
   await runPromisesWithDelay(coachings.map((coaching, idx) => () => {
     if (idx%step==0) {
       console.log(idx, '/', coachings.length, '(', Math.ceil(idx/coachings.length*100),'%)')
     }
     return updateCoachingStatus(coaching._id)
-      .catch(err => console.error(`Coaching ${coaching._id}:${err}`))
+      //.catch(err => console.error(`Coaching ${coaching._id}:${err}`))
   }))
+  console.timeEnd('Update coaching status')
+  console.log('******************** Updated coaching status')
 }
 
 const updateDietCompanies = async () => {
@@ -849,15 +773,41 @@ const importPatients = async input_file => {
     )
 }
 
+const DIET_MAPPING={
+  role: () => ROLE_EXTERNAL_DIET,
+  password: () => DEFAULT_PASSWORD,
+  firstname: 'firstname',
+  lastname: 'lastname',
+  email: 'email',
+  address: 'address',
+  zip_code: ({record}) => (record.cp || '').trim().slice(-5).padStart(5, '0'),
+  city: 'city',
+  phone: ({record}) => normalizePhone(record.phone),
+  adeli: 'adelinumber',
+  siret: ({record}) => siret.isSIRET(record.siret)||siret.isSIREN(record.siret) ? record.siret : null,
+  birthday: 'birthdate',
+  [CREATED_AT_ATTRIBUTE]: ({record}) => moment(record['created_at']),
+  registration_status: ({record}) => DIET_STATUS_MAPPING[+record.status],
+  diet_coaching_enabled: ({record}) => +record.hasteleconsultation==1,
+  diet_visio_enabled: ({record}) => +record.easewithconfs==1,
+  diet_site_enabled: ({record}) => +record.hasatelier==1,
+  diet_admin_comment: 'comments',
+  description: 'annonce',
+  // picture: async ({record, picturesDirectory}) => {return await getS3FileForDiet(picturesDirectory, record.firstname, record.lastname, 'profil')},
+  // rib: async ({record, ribDirectory}) => {return await getS3FileForDiet(ribDirectory, record.firstname, record.lastname, 'rib')},
+  source: () => 'import',
+  migration_id: 'SDID',
+}
+
+const DIET_KEY='email'
+const DIET_MIGRATION_KEY='migration_id'
+
 const importDiets = async (input_file, pictures_directory, rib_directory) => {
-  // Deactivate password encryption
-  const schema=User.schema
-  schema.paths.password.setters=[]
   // End deactivate password encryption
   return loadRecords(input_file)
     .then(records =>  importData({
       model: 'user', data:records, mapping:DIET_MAPPING, identityKey: DIET_KEY, migrationKey: DIET_MIGRATION_KEY, 
-      picturesDirectory: pictures_directory, ribDirectory: rib_directory,
+      picturesDirectory: pictures_directory, ribDirectory: rib_directory, progressCb: progressCb()
     }))
 }
 
@@ -882,6 +832,12 @@ const ensureSurvey = coaching => {
 
 
 const importCoachings = async input_file => {
+  // Cache company offers
+  const companies=await Company.find()
+    .populate({path: 'offers', sort: {validity_start: -1}})
+    .lean()
+  companies.forEach(company => companyOffersCache.set(company._id.toString(), company.offers))
+  console.log(`Cached ${companies.length} companies`)
   return loadRecords(input_file)
     .then(records => {
       // Map SM patient to its SM coaching
@@ -893,10 +849,39 @@ const importCoachings = async input_file => {
     .then(coachings => Promise.all(coachings.map(ensureSurvey)))
 }
 
-const importAppointments = async input_file => {
-  let assessemntType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
-  if (!assessemntType) {
-    assessemntType=await AppointmentType.create({title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, 
+const removeEoAndMis = async (appts_path, mis_path, eo_path) => {
+  let records = await loadRecords(appts_path)
+  console.log('Generating appts')
+  // Remove MIS appointments
+  const mis = (await loadRecords(mis_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !mis.includes(r.SDCONSULTID))
+
+  // Remove EO appointments
+  const eo = (await loadRecords(eo_path)).map(record => record.SDCONSULTID)
+  records = records.filter(r => !eo.includes(r.SDCONSULTID))
+  return records
+}
+
+const fixAppointments = async (appts_path, eo_path, mis_path) => {
+  let records = await removeEoAndMis(appts_path, mis_path, eo_path)
+  
+  const firstAppointments=lodash(records).groupBy('SDPROGRAMID')
+    .mapValues(consults => lodash.minBy(consults, c => moment(c.date)).SDCONSULTID)
+    .value()
+  const ASS_HEADER='assessment'
+  records=records.map(r => ({
+    ...r,
+    assessment: firstAppointments[r.SDPROGRAMID]==r.SDCONSULTID ? true : false
+  }))
+  return records
+}
+
+
+const importAppointments = async (input_file, eos_path, mis_path) => {
+
+  let assessmentType=await AppointmentType.findOne({title: ASS_PRESTATION_NAME})
+  if (!assessmentType) {
+    assessmentType=await AppointmentType.create({title: ASS_PRESTATION_NAME, duration: ASS_PRESTATION_DURATION, 
       smartagenda_id: ASS_PRESTATION_SMARTAGENDA_ID})
   }
 
@@ -906,22 +891,22 @@ const importAppointments = async input_file => {
       smartagenda_id: FOLLOWUP_PRESTATION_SMARTAGENDA_ID})
   }
 
-  return loadRecords(input_file)
-    .then(records => {
-      const mapping=APPOINTMENT_MAPPING(assessemntType._id, followupType._id)
-      return importData({model: 'appointment', data:records, mapping, 
-        identityKey: APPOINTMENT_KEY, migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()})
-    })
+  const records=await fixAppointments(input_file, eos_path, mis_path)
+
+  const progressQuizz=await Quizz.findOne({ type: QUIZZ_TYPE_PROGRESS }).populate('questions')
+  const mapping=APPOINTMENT_MAPPING(assessmentType._id, followupType._id, progressQuizz)
+  return importData({
+    model: 'appointment', data:records, mapping, identityKey: APPOINTMENT_KEY, 
+    migrationKey: APPOINTMENT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
-const importMeasures = async input_file => {
-  return loadRecords(input_file)
-    .then(records => 
-    importData({
-      model: 'measure', data:records, mapping:MEASURE_MAPPING, identityKey: MEASURE_MAPPING_KEY, 
-      migrationKey: MEASURE_MAPPING_MIGRATION__KEY, progressCb: progressCb()
-    })
-  )
+const importMeasures = async (measures_path, mis_path, eo_path) => {
+  const records=await removeEoAndMis(measures_path, mis_path, eo_path)
+  return importData({
+    model: 'measure', data:records, mapping:MEASURE_MAPPING, identityKey: MEASURE_MAPPING_KEY, 
+    migrationKey: MEASURE_MAPPING_MIGRATION__KEY, progressCb: progressCb()
+  })
 }
 
 const importQuizz = async input_file => {
@@ -996,7 +981,7 @@ const importQuizzQuestionAnswer = async (answers_file, questions_file) => {
 )
 }
 
-const ORDERS=['FIRST', 'SECOND', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
+const ORDERS=['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth']
 
 const quizzAnswersCache=new NodeCache()
 
@@ -1115,34 +1100,28 @@ const getCriterionAnswer = async (criterion_id, status) => {
 }
 
 const importUserProgressQuizz = async (input_file) => {
-
-  const progressCache=new NodeCache()
-
-  const getProgress = async (coachingId) => {
-    let result=progressCache.get(coachingId)
-    if (!result) {
-      result=await UserQuizz.findOne({coaching: coachingId})
-        .populate('questions')
-      progressCache.set(coachingId, result.progress)
+  let records=(await loadRecords(input_file))
+  records=lodash.groupBy(records, 'CONSULTID')
+  console.log(Object.keys(records).length)
+  const res=await runPromisesWithDelay(Object.entries(records).map(([consultid, consultRecords], idx) => async () => {
+    if (idx%500==0) {
+      console.log(idx,'/', Object.keys(records).length)
     }
-    return result
-  }
-
-  return loadRecords(input_file)
-    .then(records => runPromisesWithDelay(records.map((record, idx) => async () => {
-      if (idx%500==0)  {
-        console.log(idx,'/', records.length)
-      }
-      const coachingId=cache('coaching', record.SDPROGRAMID)
-      const progress=await getProgress(coachingId)
+    const progress=await UserQuizz.findOne({migration_id: consultid}).populate({path: 'questions', select: 'migration_id' })
+    if (!progress) {
+      return console.error(`No progress found for consultation ${consultid}`)
+    }
+    return Promise.all(consultRecords.map(async record => {
       const question=progress.questions.find(q => q.migration_id==record.SDCRITERIAID)
-      const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
-      if (!question || !answer_id) {
-        throw new Error(`Question ${question}: answer ${answer_id}`)
+      if (!question) {
+        return console.error(`No question found for consultation ${consultid} criterion ${record.SDCRITERIAID}`)
       }
-      question.single_enum_answer=answer_id
-      return question.save().then(() => null)
-    })))
+      const answer_id=await getCriterionAnswer(record.SDCRITERIAID, record.status)
+      return UserQuizzQuestion.findByIdAndUpdate(question._id, {single_enum_answer: answer_id})
+    }))
+  }))
+  console.log(res.filter(r => r.status=='rejected').map(r => r.reason))
+  return res
 }
 
 const importUserObjectives = async input_file => {
@@ -1172,19 +1151,19 @@ const importUserObjectives = async input_file => {
 }
 
 const importUserAssessmentId = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'coaching', data:records, mapping:ASSESSMENT_MAPPING, 
-    identityKey: ASSESSMENT_KEY, migrationKey: ASSESSMENT_MIGRATION_KEY, progressCb: progressCb()}))
+  const records=await loadRecords(input_file)
+  return importData({
+    model: 'coaching', data:records, mapping:ASSESSMENT_MAPPING, 
+    identityKey: ASSESSMENT_KEY, migrationKey: ASSESSMENT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const importUserImpactId = async input_file => {
-  const contents=fs.readFileSync(input_file)
-  return Promise.all([guessFileType(contents), guessDelimiter(contents)])
-    .then(([format, delimiter]) => extractData(contents, {format, delimiter}))
-    .then(({records}) => importData({model: 'coaching', data:records, mapping:IMPACT_MAPPING, 
-    identityKey: IMPACT_KEY, migrationKey: IMPACT_MIGRATION_KEY, progressCb: progressCb()}))
+  const records=await loadRecords(input_file)
+  return importData({
+    model: 'coaching', data:records, mapping:IMPACT_MAPPING, 
+    identityKey: IMPACT_KEY, migrationKey: IMPACT_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const importConversations = async input_file => {
@@ -1234,7 +1213,7 @@ const importDietSpecs = async input_file => {
 const importPatientHeight = async input_file => {
   return loadRecords(input_file)
     .then(records => importData({model: 'user', data:records, mapping:HEIGHT_MAPPING, 
-    identityKey: HEIGHT_KEY, migrationKey: HEIGHT_MIGRATION_KEY, progressCb: progressCb()})
+    identityKey: HEIGHT_KEY, migrationKey: HEIGHT_MIGRATION_KEY, updateOnly: true, progressCb: progressCb()})
   )
 }
 
@@ -1366,19 +1345,21 @@ const importDiploma = async (input_file, diploma_directory) => {
 }
 
 const importOtherDiploma = async (input_file) => {
-  return loadRecords(input_file)
-    .then(records => importData({model: 'diploma', data:records, mapping: OTHER_DIPLOMA_MAPPING, 
-      identityKey: OTHER_DIPLOMA_KEY, migrationKey: OTHER_DIPLOMA_MIGRATION_KEY, progressCb: progressCb()}
-    )
-    .then(console.log)
-  )
+  let records=await loadRecords(input_file)
+  records=records.filter(r => !!r.othergrade)
+  return importData({
+    model: 'diploma', data:records, mapping: OTHER_DIPLOMA_MAPPING, 
+    identityKey: OTHER_DIPLOMA_KEY, migrationKey: OTHER_DIPLOMA_MIGRATION_KEY, progressCb: progressCb()
+  })
 }
 
 const FOODPROGRAM_MAPPING={
   migration_id: 'SDPROGRAMID',
   food_program: async ({record, programsDirectory}) => {
     const fullpath=path.join(programsDirectory, record.foodprogram)
+    console.log(`Sending`, fullpath)
     const s3File=await sendFileToAWS(fullpath, 'foodprogram')
+    console.log(`Sent`, fullpath)
     return s3File?.Location
   },
 }
@@ -1391,6 +1372,376 @@ const importFoodPrograms = async (input_file, programs_directory) => {
   .then(records => importData({model: 'coaching', data:records, mapping: FOODPROGRAM_MAPPING, 
     identityKey: FOODPROGRAM_KEY, migrationKey: FOODPROGRAM_MIGRATION_KEY, progressCb: progressCb(), programsDirectory: programs_directory})
   )
+}
+
+const TELEOP_MAPPING={
+  role: () => ROLE_EXTERNAL_DIET,
+  password: () => DEFAULT_PASSWORD,
+  firstname: 'username',
+  lastname: 'username',
+  email: 'email',
+  diet_calls_enabled: () => true,
+  registration_status: () => DIET_REGISTRATION_STATUS_ACTIVE,
+  source: () => 'import',
+  migration_id: 'OPERATORID',
+}
+
+const TELEOP_KEY='email'
+const TELEOP_MIGRATION_KEY='migration_id'
+
+const importOperators = async (input_file) => {
+  let records=await loadRecords(input_file)
+  return importData({
+    model: 'user', data:records, mapping:TELEOP_MAPPING, identityKey: TELEOP_KEY, 
+    migrationKey: TELEOP_MIGRATION_KEY, progressCb: progressCb()
+  })
+}
+
+const VALID_HEALTH=1
+const VALID_DIET=2
+const VALID_POINTS=3
+const VALID_OTHER=4
+
+const VALIDATION_REASON={
+  [VALID_HEALTH] : 'Santé',
+  [VALID_DIET] : 'Diet',
+  [VALID_POINTS] : 'Système de points',
+  [VALID_OTHER] : 'Autre'
+}
+
+const REFUSE_NO_NEED=1
+const REFUSE_ALREADY_PATIENT=2
+const REFUSE_OUT_TARGET=3
+const REFUSE_NOTIME=4
+const REFUSE_OTHER=6
+
+const REFUSE_REASON={
+  [REFUSE_NO_NEED]:`Pas besoin`,
+  [REFUSE_ALREADY_PATIENT]:`Déjà suivi`,
+  [REFUSE_OUT_TARGET]:`Hors cible`,
+  [REFUSE_NOTIME]:`Pas le temps`,
+  [REFUSE_OTHER]:`Autres`,
+}
+
+const CALL_STATUS_MAPPING={
+  0: CALL_STATUS_TO_CALL,
+  1: CALL_STATUS_CALL_1,
+  2: CALL_STATUS_CALL_2,
+  4 : CALL_STATUS_UNREACHABLE,
+  5: CALL_STATUS_RECALL,
+  6: CALL_STATUS_CONVERTI_CN,
+  7: CALL_STATUS_CONVERTI_COA_CN,
+  8: CALL_STATUS_NOT_INTERESTED,
+  9: CALL_STATUS_WRONG_NUMBER,
+}
+
+const INTEREST_SPORT=1
+const INTEREST_STRESS=2
+const INTEREST_TABAC=3
+const INTEREST_SOMMEIL=4
+const INTEREST_MCV=5
+
+const INTEREST={
+  [INTEREST_SPORT]:`Sport`,
+  [INTEREST_STRESS]:`Stress`,
+  [INTEREST_TABAC]:`Tabac`,
+  [INTEREST_SOMMEIL]:`Sommeil`,
+  [INTEREST_MCV]:`MCV`,
+}
+
+const JOB_ADMINISTRATIF=1
+const JOB_CONDUCTEUR_MOYENNE_DISTANCE=2
+const JOB_CONDUCTEUR_LONGUE_DISTANCE=3
+const JOB_MANUT=4
+const JOB_CFA=5
+const JOB_AUTRE=6
+const JOB_LONGUE_MALADIE=7
+const JOB_AGENT_IMMO=8
+const JOB_ADMIN_DE_BIENS=9
+const JOB_SYNDIC=10
+const JOB_SALARIE_TOURISME=11
+const JOB_SALARIE_FONCIER=12
+const JOB_RETRAITE=13
+const JOB_ACTIF=14
+// Hors cible if job is 8 and branch=0
+const JOB_HORS_CIBLE=100
+
+const LEAD_JOB={
+  [JOB_ADMINISTRATIF]:`Administratif`,
+  [JOB_CONDUCTEUR_MOYENNE_DISTANCE]:`Conducteur moyenne distance`,
+  [JOB_CONDUCTEUR_LONGUE_DISTANCE]:`Conducteur longue distance`,
+  [JOB_MANUT]:`Manutention/logistique/déménagement`,
+  [JOB_CFA]:`CFA`,
+  [JOB_AUTRE]:`Autre`,
+  [JOB_LONGUE_MALADIE]:`Longue maladie`,
+  [JOB_AGENT_IMMO]:`Agent immo`,
+  [JOB_ADMIN_DE_BIENS]:`Admin de biens`,
+  [JOB_SYNDIC]:`Syndic de copropriété`,
+  [JOB_SALARIE_TOURISME]:`Salarié en résidence de tourisme`,
+  [JOB_SALARIE_FONCIER]:`Salarié sociétés immo et foncières`,
+  [JOB_RETRAITE]:`Retraité`,
+  [JOB_ACTIF]:`Actif`,
+  [JOB_HORS_CIBLE]:`Hors cible`,
+}
+
+const SOURCE_FICHIER_DE_BASE=0
+const SOURCE_FORMULAIRE_DE_CONTACT=1
+const SOURCE_APPEL_ENTRANT=2
+const SOURCE_STAND=3
+const SOURCE_INTERVENTION=4
+const SOURCE_PARTENAIRE=5
+const SOURCE_FICHIERS_SPECIFIQUES=6
+
+const SOURCE={
+  [SOURCE_FICHIER_DE_BASE]:`Fichier de base (Mensuel)`,
+  [SOURCE_FORMULAIRE_DE_CONTACT]:`Formulaire de Contact`,
+  [SOURCE_APPEL_ENTRANT]:`Appel Entrant (ne provient donc pas d'un fichier)`,
+  [SOURCE_STAND]:`Stand`,
+  [SOURCE_INTERVENTION]:`Intervention`,
+  [SOURCE_PARTENAIRE]:`Partenaire (ex: medialane)`,
+  [SOURCE_FICHIERS_SPECIFIQUES]:`Fichiers Spécifiques`,
+}
+
+const COMPANY_ECR=0
+const COMPANY_IMMO=1
+
+const COMPANY={
+  [COMPANY_ECR]: 'TVBNUT',
+  [COMPANY_IMMO]: 'IPNUT',
+}
+
+const LEAD_MAPPING={
+  firstname: 'firstname',
+  lastname: 'lastname',
+  createdAt: 'created',
+  email: ({record}) => record.email?.trim(),
+  join_reason: ({record, cache}) => cache('joinReason', record.validationreason),
+  decline_reason: ({record, cache}) => cache('declineReason', record.rejectreason),
+  interested_in: ({record, cache}) => {
+    const interest=cache('interest', record.medialaneprogramtype)
+    return interest ? [interest]: []
+  },
+  operator: ({record, cache}) => cache('user', record.SDOPERATORID),
+  job: ({record, cache}) => {
+    let jobId=(+record.carceptjob)==8 && (+record.branch)==0 ? JOB_HORS_CIBLE : record.carceptjob
+    return cache('job', jobId)
+  },
+  comment: 'comments',
+  call_status: ({record}) => CALL_STATUS_MAPPING[record.status],
+  call_direction: () => CALL_DIRECTION_OUT_CALL,
+  phone: 'tel',
+  company_code: ({record}) => COMPANY[+record.branch],
+  source: ({record}) => SOURCE[record.listtype],
+  migration_id: 'SDPROSPECTID',
+}
+
+const importLeads = async (input_file) => {
+  const NAME_MAPPING={
+    name: 'name',
+    migration_id: 'migration_id',
+  }
+
+  // Ensure accept/decline reasons, interests, jobs
+  const joinData=Object.entries(VALIDATION_REASON).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'joinReason', data: joinData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const refuseData=Object.entries(REFUSE_REASON).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'declineReason', data: refuseData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const interestData=Object.entries(INTEREST).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'interest', data: interestData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const jobData=Object.entries(LEAD_JOB).map(([migration_id, name]) => ({name, migration_id: parseInt(migration_id)}))
+  await importData({model: 'job', data: jobData, mapping: NAME_MAPPING, identityKey: 'name', migrationKey: 'migration_id'})
+
+  const records=await loadRecords(input_file)
+  
+  return importData({
+    model: 'lead', data: records, mapping: LEAD_MAPPING, identityKey: 'email',
+    migrationKey: 'migration_id', progressCb: progressCb(500),
+  })
+}
+
+const C1_PROSPECT_ID_BASE=1000000
+
+const computeProspectC1Id = id => {
+  if (isNaN(parseInt(id))) {
+    throw new Error(`Invalid ID ${id}`)
+  }
+  return C1_PROSPECT_ID_BASE+parseInt(id)
+}
+
+const PROSPECT_C1_MAPPING= {
+  // role: () => ROLE_CUSTOMER,
+  dataTreatmentAccepted: () => true,
+  cguAccepted: () => true,
+  email: ({record}) => record.email?.trim() || `${record.SDPROSPECTID}@prospect.com`,
+  firstname: 'firstname',
+  lastname: 'lastname',
+  pseudo: ({record}) => computePseudo(record),
+  company: ({record}) => record.company?._id,
+  phone: 'tel',
+  password: () => DEFAULT_PASSWORD,
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_C1_COACHING_MAPPING = {
+  user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
+  offer: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    return getUserOffer(user, record.orderdate)?._id
+  },
+  assessment_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz.cloneAsUserQuizz()
+  },
+  impact_quizz: async ({cache, record}) => {
+    const user=await User.findById(cache('user', computeProspectC1Id(record.SDPROSPECTID)))
+    const offer=await getUserOffer(user, record.orderdate)
+    return offer.assessment_quizz?.cloneAsUserQuizz()
+  },
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
+  coaching: ({record, cache}) => cache('coaching', computeProspectC1Id(record.SDPROSPECTID)),
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  user: ({record, cache}) => cache('user', computeProspectC1Id(record.SDPROSPECTID)),
+  appointment_type: ({record, cache}) =>record.company?.assessment_appointment_type?._id,
+  start_date: 'rendezvous',
+  end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
+  progress: async () => {
+    const copy=await progress_quizz.cloneAsUserQuizz()
+    return copy._id
+  },
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+})
+
+const getProspectPatientUserId = record => {
+  return cache('user', record.SDPATIENTID)
+}
+
+const PROSPECT_PATIENT_C1_COACHING_MAPPING = {
+  user: async ({record}) => getProspectPatientUserId(record),
+  offer: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record))
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
+    }
+    return (await getUserOffer(user, record.rendezvous))?._id
+  },
+  assessment_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record), {company:1})
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+      return null
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
+    }
+    if (!offer.assessment_quizz) {
+      console.error('No ass quizz for offer', offer)
+      return null
+    }
+    return (await offer.assessment_quizz.cloneAsUserQuizz())?._id
+  },
+  impact_quizz: async ({record}) => {
+    const user=await User.findById(getProspectPatientUserId(record),  {company:1})
+    if (!user) {
+      console.warn(record.SDPROSPECTID, 'No user with SDPATIENTID', record.SDPATIENTID)
+    }
+    const offer=await getUserOffer(user, record.rendezvous)
+    if (!offer) {
+      console.warn(record.SDPROSPECTID, 'No offer for patient', record.SDPATIENTID)
+      return null
+    }
+    return (await offer.impact_quizz?.cloneAsUserQuizz())?._id
+  },
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+}
+
+const PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING = progress_quizz => ({
+  coaching: ({record, cache}) => cache('coaching', computeProspectC1Id(record.SDPROSPECTID)),
+  diet: ({record, cache}) => cache('user', record.SDDIETID),
+  user: ({record}) => getProspectPatientUserId(record),
+  appointment_type: ({record}) =>record.company?.assessment_appointment_type?._id,
+  start_date: 'rendezvous',
+  end_date: ({record}) => moment(record.rendezvous).add(record.company.assessment_appointment_type.duration, 'minutes'),
+  progress: async () => {
+    const copy=await progress_quizz.cloneAsUserQuizz()
+    return copy._id
+  },
+  migration_id: ({record}) => computeProspectC1Id(record.SDPROSPECTID),
+})
+
+const importProspectsC1 = async (input_file) => {
+  const records=await loadRecords(input_file)
+  const companies=await Company.find({}, {code:1}).populate('assessment_appointment_type')
+  const progressQuizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
+
+  const prospectsC1=records
+    .filter(r => !r.SDPATIENTID?.trim())
+    .filter(r => !!r.rendezvous?.trim())
+    .filter(r => parseInt(r.status)==7) // COACHING
+    .filter(r => !!r.SDDIETID?.trim())
+    .map(r => {
+      const company_code=COMPANY[r.branch]
+      const company=companies.find(c => c.code==company_code)
+      return {...r, company}
+    })
+
+  await importData({
+    model: 'user', data: prospectsC1, mapping: PROSPECT_C1_MAPPING, 
+    identityKey: 'email', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'coaching', data: prospectsC1, mapping: PROSPECT_C1_COACHING_MAPPING,
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'appointment', data: prospectsC1, mapping: PROSPECT_C1_APPOINTMENT_MAPPING(progressQuizz),
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+}
+
+const importPatientsNoCoachingC1 = async (input_file) => {
+  const records=await loadRecords(input_file)
+  const companies=await Company.find({}, {code:1}).populate('assessment_appointment_type')
+  const progressQuizz=await Quizz.findOne({type: QUIZZ_TYPE_PROGRESS}).populate('questions')
+
+  const emailsWithCoachings=(await Coaching.find().populate('user')).map(c => c.user.email)
+
+  const prospectsC1=records
+    .filter(r => !!r.SDPATIENTID?.trim())
+    .filter(r => !!r.rendezvous?.trim())
+    .filter(r => parseInt(r.status)==7) // COACHING
+    .filter(r => !!r.SDDIETID?.trim())
+    .filter(r => !emailsWithCoachings.includes(r.email))
+    .map(r => {
+      const company_code=COMPANY[r.branch]
+      const company=companies.find(c => c.code==company_code)
+      return {...r, company}
+    })
+  
+  console.log('Candidates are', prospectsC1.map(p => [p.SDPATIENTID, p.email]))
+
+  await importData({
+    model: 'coaching', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_COACHING_MAPPING,
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
+
+  await importData({
+    model: 'appointment', data: prospectsC1, mapping: PROSPECT_PATIENT_C1_APPOINTMENT_MAPPING(progressQuizz),
+    identityKey: 'migration_id', migrationKey: 'migration_id',
+  })
 }
 
 module.exports={
@@ -1427,5 +1778,11 @@ module.exports={
   fixFoodDocuments,
   generateQuizz,
   importFoodPrograms,
+  importLeads,
+  importOperators,
+  importProspectsC1,
+  importPatientsNoCoachingC1,
+  loadRecords,
 }
+
 

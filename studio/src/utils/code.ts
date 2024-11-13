@@ -364,6 +364,32 @@ const buildBlock = ({
             if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
           }
 
+          if (propName === 'hidescrollbar') {
+            propsContent += ` css='::-webkit-scrollbar{display: none;}scrollbar-width: none;-ms-overflow-style: none;'`
+        }
+
+          if (propName === 'scrollbarstyler') {
+            //TODO
+            //HACK: scrollbarTrackColor and scrollbarThumbColor VOMIIIIIIII
+            const scrollbarTrackColor = childComponent.props?.scrollbarTrackColor || ''
+            const scrollbarThumbColor = childComponent.props?.scrollbarThumbColor || ''
+            
+            propsContent += ` css='
+              ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+              }
+              ::-webkit-scrollbar-track {
+                background: ${scrollbarTrackColor};
+                border-radius: 10px;
+              }
+              ::-webkit-scrollbar-thumb {
+                background-color: ${scrollbarThumbColor};
+                border-radius: 10px;
+              }
+            '`
+          }
+
           if (propName === 'subDataSource') {
             propsContent += ` subDataSourceId={'${propsValue}'}`
           }
@@ -1065,10 +1091,10 @@ const ${componentName} = () => {
 
   const getComponentValue = (compId, index) => {
     let value=componentsValues[compId]
-    if (!value) {
+    if (value===undefined) {
       value=componentsValues[\`\$\{compId\}\$\{index\}\`]
     }
-    if (!value) {
+    if (value===undefined) {
       value=getComponentDataValue(compId, index)
     }
     return value

@@ -66,6 +66,7 @@ let ACTIONS = {
     if (parent && child && parent!=child) {
       return removeChildFromParent(parent, child)
     }
+    //FIXME removeData signature changed
     return removeData(child)
   },
 

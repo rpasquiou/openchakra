@@ -14,6 +14,7 @@ const {
   putToDb,
   retainRequiredFields,
   importData,
+  callPreLogin,
 } = require('../../utils/database')
 
 const path = require('path')
@@ -106,8 +107,9 @@ const PRODUCTION_ROOT = getProductionRoot()
 const PROJECT_CONTEXT_PATH = 'src/pages'
 
 
-const login = (email, password) => {
+const login = async (email, password) => {
   console.log(`Login with ${email} and ${password}`)
+  await callPreLogin({email})
   return User.findOne({email}).then(user => {
     if (!user) {
       console.error(`No user with email ${email}`)
@@ -133,7 +135,6 @@ const login = (email, password) => {
       console.error(`Deactived user ${email}`)
       throw new NotFoundError(`Ce compte est désactivé`)
     }
-    console.log(`Comparing ${password} and ${user.password}`)
     const matched=bcrypt.compareSync(password, user.password)
     if (!matched) {
       throw new NotFoundError(`Email ou mot de passe invalide`)
@@ -202,7 +203,7 @@ router.get('/action-allowed/:action', passport.authenticate(['cookie', 'anonymou
   // const msg=`allowing action ${action} ${JSON.stringify(query)}`
   // console.time(msg)
   return callAllowedAction({action, user, ...query})
-    .then(allowed => res.json({allowed}))
+    .then(allowed => res.json({allowed: true}))
     .catch(err => {
       console.error(err.message)
       return res.json({allowed: false, message:err.message})
@@ -377,14 +378,14 @@ router.get('/geoloc', async (req, res) => {
 })
 
 router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
-  return res.json(req.user)
+  return res.json(lodash.pick(req.user,['_id', 'role']))
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
   const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
-  return ACTIONS.register(body)
+  return ACTIONS.register(body, req.user)
     .then(result => res.json(result))
 })
 
@@ -414,6 +415,7 @@ router.get('/payment-hook', async (req, res) => {
     }
     return res.redirect(url)
   }
+
   return res.redirect('/')
   // Standard way
   return getWebHookToken()
@@ -464,27 +466,11 @@ router.get('/checkenv', (req, res) => {
   return res.json(missingVars)
 })
 
-router.post('/contact', (req, res) => {
-  const model = 'contact'
-  let params=req.body
-  const context= req.query.context
-
-  return callPreCreateData({model, params})
-    .then(({model, params}) => {
-      return mongoose.connection.models[model]
-        .create([params], {runValidators: true})
-        .then(([data]) => {
-          return callPostCreateData({model, params, data})
-        })
-        .then(data => res.json(data))
-    })
-})
-
 router.post('/import-data/:model', createMemoryMulter().single('file'), passport.authenticate('cookie', {session: false}), (req, res) => {
   const {model}=req.params
   const {file}=req
   console.log(`Import ${model}:${file.buffer.length} bytes`)
-  return importData({model, data:file.buffer})
+  return importData({model, data:file.buffer, user: req.user})
     .then(result => res.json(result))
 })
 
@@ -492,14 +478,11 @@ router.get('/form', passport.authenticate('cookie', {session: false}), (req, res
   console.log('Query is', req.query)
 })
 
-router.post('/:model', passport.authenticate('cookie', {session: false}), (req, res) => {
+router.post('/:model', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
   const model = req.params.model
   let params=lodash(req.body).mapValues(v => JSON.parse(v)).value()
   const context= req.query.context
   const user=req.user
-
-  params=model=='order' && context ? {...params, booking: context}:params
-  params=model=='booking' ? {...params, booking_user: user}:params
 
   if (!model) {
     return res.status(HTTP_CODES.BAD_REQUEST).json(`Model is required`)

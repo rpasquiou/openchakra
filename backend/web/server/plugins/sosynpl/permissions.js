@@ -8,7 +8,7 @@ const checkPermission = async ({verb, model, id, user}) => {
     if (model=='recommandation' && [VERB_GET, VERB_PUT].includes(verb) && !!id) {
       return
     }
-    if (model=='contact' && verb==VERB_POST) {
+    if (model=='contact' && [VERB_POST].includes(verb) && !!id) {
       return
     }
     throw new NotLoggedError('Unauthorized')
