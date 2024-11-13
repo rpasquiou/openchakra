@@ -39,6 +39,7 @@ const CustomerSchema = new Schema({
   },
   iban: {
     type: String,
+    set: v => v ? v.replace(/\s/g, '') : v,
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
@@ -213,9 +214,8 @@ const CustomerSchema = new Schema({
   },
   // RCS city
   registration_city: {
-    type: String,
-    set: v => v?.city || v || undefined,
-    required: false,
+    type: AddressSchema,
+    required: false
   },
   // HQ address
   // Délégation de pouvoir
@@ -269,6 +269,14 @@ const CustomerSchema = new Schema({
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone est invalide'],
     set: v => v?.replace(/^0/, '+33'),
     required: false
+  },
+  interested_by: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'customerFreelance',
+      required: false,
+    }],
+    default: [],
   }
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 

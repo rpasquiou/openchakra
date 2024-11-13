@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
 const {schemaOptions} = require('../../../utils/schemas')
-const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT, APPLICATION_REFUSE_REASON, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_ACCEPTED } = require('../consts')
+const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT, APPLICATION_REFUSE_REASON, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_ACCEPTED, APPLICATION_VISIBILITY, APPLICATION_VISIBILITY_HIDDEN } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -47,7 +47,12 @@ const ApplicationSchema = new Schema({
   },
   _counter: {
     type: Number,
-  }
+  },
+  visibility_status: {
+    type: String,
+    enum: Object.keys(APPLICATION_VISIBILITY),
+    default: APPLICATION_VISIBILITY_HIDDEN,
+  },
 }, schemaOptions)
 
 ApplicationSchema.virtual('quotations', {

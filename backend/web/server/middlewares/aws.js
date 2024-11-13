@@ -124,18 +124,12 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
   const upload=new Upload({client: s3,params})
   const res=await upload.done().catch(console.error)
 
-  console.log('res is', res)
-
   return res
 }
 
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
-  if (req.body.documents.length>1) {
-    throw new Error(`AWS today now one file max`)
-  }
-  let document=req.body.documents[0]
-  let documents=[document]
+  let documents=req.body.documents
   const scorm=await isScorm({buffer: documents[0].buffer})
   if (!!scorm) {
     const directory=removeExtension(document.filename)
