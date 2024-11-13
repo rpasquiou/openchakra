@@ -61,7 +61,7 @@ ConversationSchema.statics.getFromUsers = async function({user1, user2, applicat
   return conversation
 };
 
-ConversationSchema.methods.getPartner = async function(me) {
+ConversationSchema.methods.getPartner = function(me) {
   const partner=idEqual(this.users[0], me) ? this.users[1] : this.users[0]
   return partner
 }
