@@ -11,14 +11,14 @@ const Certification = require("../../server/models/Certification")
 const { runPromisesWithDelay } = require("../../server/utils/concurrency")
 
 const DATA_PATH=path.join(__dirname, '..', 'data', 'misc')
-const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation.pdf')
+// const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation.pdf')
+const TEMPLATE_PDF_PATH=path.join(DATA_PATH, 'template justificatif de formation avec pages.pdf')
 
 describe('Misc text tests', () => {
 
-  it.only('Must extract markers', async () => {
+  it.only('Must generate pdf', async () => {
     console.log(TEMPLATE_PDF_PATH)
     const fieldsDefinition=await getFormFields(TEMPLATE_PDF_PATH)
-    console.log('Found fields', Object.keys(fieldsDefinition))
     const EXPECTED_FIELDS=['session_code', 'creation_date', 'end_date', 'level_1.resources_progress'].sort()
     expect(Object.keys(fieldsDefinition).sort()).toEqual(expect.arrayContaining(EXPECTED_FIELDS))
 
@@ -47,7 +47,6 @@ describe('Misc text tests', () => {
     
     const generated=await fillForm2(TEMPLATE_PDF_PATH, data)
     await savePDFFile(generated, path.join(os.homedir(),  'generated.pdf'))
-    
   })
 
   it('Must get certificates fields', async () => {

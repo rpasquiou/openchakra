@@ -370,24 +370,28 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
       dup.addToPage(currentPage, {x: orgRect.x, y: currentY, width: orgRect.width, height: orgRect.height, borderWidth: 0})
   })
   
-  const pagesCount = pdfDoc.getPages().length
-  const font2 = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const addPageNumbers=!!res.page
 
-  // Set page numbers at poage bottom
-  pdfDoc.getPages().map((page, idx) => {
-    const pageText=`Page ${idx+1}/${pagesCount}`
-    const textWidth = font2.widthOfTextAtSize(pageText, fontSize)
-    const textHeight = font2.heightAtSize(fontSize)
-    const x = (page.getWidth() - textWidth) / 2;
-    const y = textHeight
-    page.drawText(pageText, {
-      x: x,
-      y: y,
-      font: font2,
-      size: fontSize,
-      color: rgb(0, 0, 0),
-    });
-  })
+  if (addPageNumbers) {
+    const pagesCount = pdfDoc.getPages().length
+    const font2 = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Set page numbers at poage bottom
+    pdfDoc.getPages().map((page, idx) => {
+      const pageText=`Page ${idx+1}/${pagesCount}`
+      const textWidth = font2.widthOfTextAtSize(pageText, fontSize)
+      const textHeight = font2.heightAtSize(fontSize)
+      const x = (page.getWidth() - textWidth) / 2;
+      const y = textHeight
+      page.drawText(pageText, {
+        x: x,
+        y: y,
+        font: font2,
+        size: fontSize,
+        color: rgb(0, 0, 0),
+      });
+    })
+  }
   form.updateFieldAppearances(pdfFont)
   form.flatten()
   return pdfDoc
