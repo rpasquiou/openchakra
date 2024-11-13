@@ -365,7 +365,29 @@ const buildBlock = ({
           }
 
           if (propName === 'hidescrollbar') {
-              propsContent += ` css='::-webkit-scrollbar{display: none;}scrollbar-width: none;-ms-overflow-style: none;'`
+            propsContent += ` css='::-webkit-scrollbar{display: none;}scrollbar-width: none;-ms-overflow-style: none;'`
+        }
+
+          if (propName === 'scrollbarstyler') {
+            //TODO
+            //HACK: scrollbarTrackColor and scrollbarThumbColor VOMIIIIIIII
+            const scrollbarTrackColor = childComponent.props?.scrollbarTrackColor || ''
+            const scrollbarThumbColor = childComponent.props?.scrollbarThumbColor || ''
+            
+            propsContent += ` css='
+              ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+              }
+              ::-webkit-scrollbar-track {
+                background: ${scrollbarTrackColor};
+                border-radius: 10px;
+              }
+              ::-webkit-scrollbar-thumb {
+                background-color: ${scrollbarThumbColor};
+                border-radius: 10px;
+              }
+            '`
           }
 
           if (propName === 'subDataSource') {

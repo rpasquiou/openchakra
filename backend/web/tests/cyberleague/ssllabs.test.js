@@ -1,8 +1,10 @@
 const { default: axios } = require("axios")
+const path = require('path')
+const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../../.env')})
 
 describe(`score tests`, () => {
 
-  const EMAIL='cyber-team@visiativ.com'
+  const EMAIL=process.env?.SSLLABS_EMAIL
 
   beforeAll(async () => {
   })
@@ -10,9 +12,20 @@ describe(`score tests`, () => {
   afterAll(async () => {
   })
 
-  it(`must connect to SLL Labs`, async () => {
+  it(`must initiate SLL Labs scan`, async () => {
     const res=await axios.get(
       'https://api.ssllabs.com/api/v4/analyze?host=smartdiet-validation.my-alfred.io&all=on', {
+      headers: {email: EMAIL}
+      }
+    )
+    console.log(res.data.endpoints[0].grade)
+    const det=res.data.endpoints[0].details.suites.map(s => [s.protocol, s.list.map(l => l)])
+    console.log(JSON.stringify(det, null, 2))
+  })
+
+  it(`must get SLL Labs info`, async () => {
+    const res=await axios.get(
+      'https://api.ssllabs.com/api/v4/info', {
       headers: {email: EMAIL}
       }
     )

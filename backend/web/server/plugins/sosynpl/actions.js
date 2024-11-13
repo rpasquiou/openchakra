@@ -226,9 +226,8 @@ const forgotPasswordAction= async ({context, parent, email}) => {
 }
 addAction('forgotPassword', forgotPasswordAction)
 
-const resetSoftSkills = async (_, user) => {
-  const ok = await isActionAllowed({action: 'reset_soft_skills', user})
-  if (!ok) { return false }
+const resetSoftSkills = async ({value, model}) => {
+  const foundModel = await getModel(value, mongoose[model])
 
   const update = {
     gold_soft_skills: [],
@@ -239,11 +238,7 @@ const resetSoftSkills = async (_, user) => {
     available_bronze_soft_skills: []
   }
 
-  return CustomerFreelance.findByIdAndUpdate(
-    user._id,
-    update,
-    {new: true, runValidators: true}
-  )
+  return mongoose.models[foundModel].findByIdAndUpdate(value, update, {new: true, runValidators: true})
 }
 
 addAction('reset_soft_skills', resetSoftSkills)
@@ -256,11 +251,6 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     return true
   }
   
-  if (action === 'reset_soft_skills') {
-    if (user.role !== ROLE_FREELANCE) {
-      throw new ForbiddenError('Seuls les freelances peuvent réinitialiser leurs soft skills')
-    }
-  }
   if (action=='create' && actionProps.model=='application') {
     const applicationExists=await Application.exists({announce: dataId, freelance: user._id})
     if (applicationExists) {

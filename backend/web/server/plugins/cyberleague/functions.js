@@ -13,7 +13,7 @@ const {
   loadFromDb,
   setPrePutData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -35,6 +35,10 @@ const { getRelated } = require('./related')
 const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
+const { startSslScan } = require('../sslLabs')
+const Scan = require('../../models/Scan')
+const { runPromiseUntilSuccess } = require('../../utils/concurrency')
+const { computeScanRatesIfResults } = require('./scan')
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -396,6 +400,7 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 
 //Scan declaration
 declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
+declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
 
 
 
@@ -592,6 +597,14 @@ const preCreate = async ({model, params, user}) => {
     }
   }
 
+  if (model == 'scan') {
+    const existingScan = Scan.findOne({url: params.url, status: SCAN_STATUS_IN_PROGRESS})
+    if (!existingScan) {
+      await startSslScan(params.url)
+    }
+    params.status = SCAN_STATUS_IN_PROGRESS
+  }
+
   return Promise.resolve({model, params})
 }
 
@@ -615,6 +628,10 @@ const postCreate = async ({ model, params, data, user }) => {
   if (model == 'comment') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
+  }
+
+  if (model == 'scan') {
+    runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
   }
 
   return data
