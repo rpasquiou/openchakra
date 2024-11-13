@@ -27,6 +27,9 @@ const withDynamicInput = Component => {
       if (props?.type === 'time') {
           keptValue = transformedDate.slice(11, 16)
       }
+      if (props?.type === 'month') {
+        keptValue = transformedDate.slice(0, 7)
+      }
     }
 
     useEffect(() => {
