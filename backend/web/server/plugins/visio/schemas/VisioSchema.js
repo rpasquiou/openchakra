@@ -6,25 +6,30 @@ const { DUMMY_REF } = require('../../../utils/database')
 const Schema = mongoose.Schema
 
 const VisioSchema = new Schema({
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: [true, `Le créateur est obligatoire`]
+  },
   start_date: {
     type: Date,
-    required: [true, `La date de début est obligatoire`]
+    required: false,
   },
   // Duraiton in minutes
   duration: {
     type: Number,
-    required: [true, `La durée en minutes est obnligatoire`]
+    required: false,
   },
   title: {
     type: 'String',
-    required: [true, `Le titres est obligatoire`]
+    required: [true, `Le titre est obligatoire`]
   },
   // Url not required because will be provided
   url: {
     type: String,
     required: false,
   },
-  room: {
+  _room: {
     type: String,
     required: false,
   },
