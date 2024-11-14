@@ -168,22 +168,22 @@ const UserSchema = new Schema({
     type: String,
     required: false
   },
-  pending_unseen_notifications: {
+  unseen_notifications: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'notification'
     }]
   },
-  pending_unseen_notifications_count: {
+  unseen_notifications_count: {
     type: Number
   },
-  pending_notifications: {
+  notifications: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'notification'
     }]
   },
-  pending_notifications_count: {
+  notifications_count: {
     type: Number
   },
   scans: {

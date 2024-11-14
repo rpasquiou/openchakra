@@ -198,10 +198,10 @@ USER_MODELS.forEach(m => {
       options: { ref: 'event' }
     },
   })
-  declareComputedField({model: m, field: 'pending_notifications', getterFn: getNotifications})
-  declareComputedField({model: m, field: 'pending_notifications_count', getterFn: getNotificationsCount})
-  declareComputedField({model: m, field: 'pending_unseen_notifications', getterFn: getPendingNotifications})
-  declareComputedField({model: m, field: 'pending_unseen_notifications_count', getterFn: getPendingNotificationsCount})
+  declareComputedField({model: m, field: 'notifications', getterFn: getNotifications})
+  declareComputedField({model: m, field: 'notifications_count', getterFn: getNotificationsCount})
+  declareComputedField({model: m, field: 'unseen_notifications', getterFn: getPendingNotifications})
+  declareComputedField({model: m, field: 'unseen_notifications_count', getterFn: getPendingNotificationsCount})
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
 })
