@@ -2,6 +2,7 @@ const moment=require('moment')
 const mongoose=require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
+const { VISIO_STATUS_UNDEFINED, VISIO_STATUS_TO_COME, VISIO_STATUS_FINISHED, VISIO_STATUS_CURRENT } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -50,6 +51,20 @@ VisioSchema.virtual('end_date', DUMMY_REF).get(function() {
     return moment(this.start_date).add(this.duration, 'minutes')
   }
 })
+
+VisioSchema.virtual('status', DUMMY_REF).get(function() {
+  if (!this.start_date && !this.duration) {
+    return VISIO_STATUS_UNDEFINED
+  }
+  if (moment().isBefore(this.start_date)) {
+    return VISIO_STATUS_TO_COME
+  }
+  if (moment().isAfter(this.end_date)) {
+    return VISIO_STATUS_FINISHED
+  }
+  return VISIO_STATUS_CURRENT
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = VisioSchema

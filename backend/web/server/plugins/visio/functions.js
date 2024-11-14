@@ -4,12 +4,15 @@ const mongoose=require('mongoose')
 const axios = require('axios')
 const moment = require('moment')
 const VisioSchema = require('./schemas/VisioSchema')
-const { declareVirtualField } = require('../../utils/database')
+const { declareVirtualField, declareEnumField, declareFieldDependencies } = require('../../utils/database')
+const { VISIO_STATUS } = require('./consts')
 
 mongoose.model('visio', VisioSchema)
 
 declareVirtualField({model: 'visio', field: 'end_date', instance: 'Date', requires: 'start_date,duration'})
-
+declareVirtualField({model: 'visio', field: 'status', instance: 'String', requires: 'end_date'})
+declareEnumField({model: 'visio', field: 'status', enumValues: VISIO_STATUS})
+  
 const KMEET_ROOT=`https://kmeet.infomaniak.com/`
 const KMEET_DATE_FORMAT=`YYYY-MM-DD HH:mm:ss`
 
