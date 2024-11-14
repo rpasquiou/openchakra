@@ -271,6 +271,7 @@ declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 
   },
 })
 declareVirtualField({model: 'company', field: 'candidates_missions_count', instance: 'Number'})
+declareVirtualField({model: 'company', field: 'is_partner', instance: 'String'})
 
 //Expertise declarations
 
@@ -539,11 +540,6 @@ const preCreate = async ({model, params, user}) => {
     }
     params.admin = user._id
     params.users = [user._id]
-  }
-
-
-  if (model== `company`) {
-    if (params.is_partner===undefined) { params.is_partner = user.role==ROLE_ADMIN}
   }
 
   if (['message'].includes(model)) {

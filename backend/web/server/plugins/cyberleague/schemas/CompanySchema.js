@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS } = require('../consts')
+const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -86,10 +86,6 @@ const CompanySchema = new Schema(
     },
     city: {
       type: AddressSchema,
-      required: true
-    },
-    is_partner: {
-      type: Boolean,
       required: true
     },
     perimeter: {
@@ -228,6 +224,10 @@ CompanySchema.virtual('candidates_missions_count', {
 
 CompanySchema.virtual('region', DUMMY_REF).get(function () {
   return null
+})
+
+CompanySchema.virtual('is_partner', DUMMY_REF).get(function() {
+  return STATUT_FOUNDER || STATUT_SPONSOR
 })
 
 /* eslint-enable prefer-arrow-callback */
