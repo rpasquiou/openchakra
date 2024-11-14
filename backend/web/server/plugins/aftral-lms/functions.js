@@ -55,6 +55,7 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
+const { getVisios } = require('./visio')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -150,6 +151,7 @@ USER_MODELS.forEach(model => {
       options: {ref: 'ticket'}},
   })
   declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
+  declareComputedField({model, field: `visios`, getterFn: getVisios})
 })
 
 // search start
@@ -200,6 +202,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
 
 // Group start
 declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
+declareComputedField({model: `group`, field: `visios`, getterFn: getVisios})
 // Group end
 
 // HelpDeskConversation start
@@ -337,6 +340,19 @@ const preCreate = async ({model, params, user}) => {
 
   if (model=='user') {
     params.plain_password=params.password
+  }
+
+  if (model=='visio') {
+    const ALLOWED_CREATORS=[ROLE_CONCEPTEUR, ROLE_FORMATEUR]
+    if (!(ALLOWED_CREATORS.includes(user.role))) {
+      throw new ForbiddenError(`Seuls ${ALLOWED_CREATORS.map(r => ROLES[r]).join(',')} peuvent créer une classe virtuelle`)
+    }
+    if (!params.parent) {
+      throw new BadRequestError(`Le parent de la visio (groupe, session, user) est obligatoire`)
+    }
+    const parentModel=await getModel(params.parent, ['group', 'user', 'session'])
+    params._owner=params.parent
+    params._owner_type=parentModel
   }
   return Promise.resolve({model, params})
 }
