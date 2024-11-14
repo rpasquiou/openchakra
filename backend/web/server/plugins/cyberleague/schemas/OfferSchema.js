@@ -43,7 +43,8 @@ const OfferSchema = new Schema({
   price_member_duration_unit: {
     type: String,
     enum: Object.keys(ESTIMATED_DURATION_UNITS),
-    required: false
+    required: false,
+    set: v || undefined,
   },
   visibility: {
     type: String,
