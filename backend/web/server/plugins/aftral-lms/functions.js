@@ -55,7 +55,7 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
-const { getVisios } = require('./visio')
+const { getVisiosDays } = require('./visio')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -151,7 +151,7 @@ USER_MODELS.forEach(model => {
       options: {ref: 'ticket'}},
   })
   declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
-  declareComputedField({model, field: `visios`, getterFn: getVisios})
+  declareComputedField({model, field: `visios`, getterFn: getVisiosDays})
 })
 
 // search start
@@ -202,7 +202,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
 
 // Group start
 declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
-declareComputedField({model: `group`, field: `visios`, getterFn: getVisios})
+declareComputedField({model: `group`, field: `visios`, getterFn: getVisiosDays})
 // Group end
 
 // HelpDeskConversation start

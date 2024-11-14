@@ -70,7 +70,7 @@ const UserSchema = new Schema({
   },
   visios: [{
     type: Schema.Types.ObjectId,
-    ref: 'visio',
+    ref: 'visioDay',
   }],
 }, schemaOptions)
 

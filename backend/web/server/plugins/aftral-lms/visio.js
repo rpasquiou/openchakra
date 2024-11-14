@@ -1,9 +1,9 @@
 const mongoose=require('mongoose')
 
-const getVisios = async () => {
+const getVisiosDays = async () => {
   return mongoose.models.visio.find()
 }
 
 module.exports={
-  getVisios
+  getVisiosDays
 }
