@@ -271,7 +271,7 @@ declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 
   },
 })
 declareVirtualField({model: 'company', field: 'candidates_missions_count', instance: 'Number'})
-declareVirtualField({model: 'company', field: 'is_partner', instance: 'String'})
+declareVirtualField({model: 'company', field: 'is_partner', instance: 'Boolean'})
 
 //Expertise declarations
 
