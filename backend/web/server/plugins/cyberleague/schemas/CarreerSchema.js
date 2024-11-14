@@ -57,12 +57,13 @@ const CarreerSchema = new Schema(
     pay: {
       type: String,
       enum: Object.keys(PAY),
+      set: v => v || undefined,
       required: false
     },
     status: {
       type: String,
       enum: Object.keys(STATUSES),
-      dafault: STATUS_ACTIVE
+      default: STATUS_ACTIVE
     },
   },
   schemaOptions
