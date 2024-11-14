@@ -40,7 +40,7 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getNotifications, getNotificationsCount } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 
 //Notification plugin setup
@@ -198,8 +198,8 @@ USER_MODELS.forEach(m => {
       options: { ref: 'event' }
     },
   })
-  declareComputedField({model: m, field: 'notifications', getterFn: getNotifications})
-  declareComputedField({model: m, field: 'notifications_count', getterFn: getNotificationsCount})
+  declareComputedField({model: m, field: 'seen_notifications', getterFn: getSeenNotifications})
+  declareComputedField({model: m, field: 'seen_notifications_count', getterFn: getSeenNotificationsCount})
   declareComputedField({model: m, field: 'unseen_notifications', getterFn: getPendingNotifications})
   declareComputedField({model: m, field: 'unseen_notifications_count', getterFn: getPendingNotificationsCount})
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})

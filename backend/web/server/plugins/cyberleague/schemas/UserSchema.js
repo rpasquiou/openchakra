@@ -177,13 +177,13 @@ const UserSchema = new Schema({
   unseen_notifications_count: {
     type: Number
   },
-  notifications: {
+  seen_notifications: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'notification'
     }]
   },
-  notifications_count: {
+  seen_notifications_count: {
     type: Number
   },
   scans: {

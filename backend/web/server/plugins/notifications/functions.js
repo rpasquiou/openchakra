@@ -75,15 +75,15 @@ const getPendingNotificationsCount = async function (userId, params, data) {
   return notifCount
 }
 
-const getNotifications = async function (userId, params, data) {
+const getSeenNotifications = async function (userId, params, data) {
   const NotificationModel = mongoose.models.notification
-  const notifs = await NotificationModel.find({recipients: {$in: data._id}})
+  const notifs = await NotificationModel.find({seen_by_recipients: {$in: data._id}})
   return notifs
 }
 
-const getNotificationsCount = async function (userId, params, data) {
+const getSeenNotificationsCount = async function (userId, params, data) {
   const NotificationModel = mongoose.models.notification
-  const notifCount = await NotificationModel.countDocuments({recipients: {$in: data._id}})
+  const notifCount = await NotificationModel.countDocuments({seen_by_recipients: {$in: data._id}})
   return notifCount
 }
 
@@ -95,6 +95,6 @@ module.exports = {
   setComputeMessage,
   getPendingNotifications,
   getPendingNotificationsCount,
-  getNotifications,
-  getNotificationsCount,
+  getSeenNotifications,
+  getSeenNotificationsCount,
 }
