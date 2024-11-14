@@ -1,43 +1,14 @@
 const lodash=require('lodash')
 const moment=require('moment')
-const NodeCache=require('node-cache')
 const { ForbiddenError } = require("../../utils/errors")
-const { ROLE_EXTERNAL_DIET, APPOINTMENT_TYPE, APPOINTMENT_TYPE_ASSESSMENT, APPOINTMENT_TYPE_FOLLOWUP, APPOINTMENT_TYPE_NUTRITION, ROLE_ADMIN, ROLE_SUPER_ADMIN } = require("./consts")
+const { ROLE_EXTERNAL_DIET, APPOINTMENT_TYPE_ASSESSMENT, APPOINTMENT_TYPE_FOLLOWUP, APPOINTMENT_TYPE_NUTRITION, ROLE_ADMIN, ROLE_SUPER_ADMIN } = require("./consts")
 const Appointment = require("../../models/Appointment")
 const Coaching = require("../../models/Coaching")
 const NutritionAdvice = require("../../models/NutritionAdvice")
-const PriceList = require("../../models/PriceList")
-const { getDateFilter, getMonthFilter } = require('../../utils/database')
-const Company = require('../../models/Company')
 const User = require('../../models/User')
 const mongoose = require('mongoose')
 
-// Keep app types for 30 seconds only to manage company changes
-const appTypes=new NodeCache({stdTTL: 60})
-
-const getAppointmentType = async ({appointmentType}) => {
-  const key=appointmentType.toString()
-  let result=appTypes.get(key)
-  if (result) {
-    return result
-  }
-  const assessment=await Company.exists({assessment_appointment_type: appointmentType})
-  result=assessment ? APPOINTMENT_TYPE_ASSESSMENT : APPOINTMENT_TYPE_FOLLOWUP
-  appTypes.set(key, result)
-  return result
-}
-
-const getPrices = async () => {
-  return await PriceList.find().sort({date: 1})
-}
-
-const PRICES_MAPPING={
-  [APPOINTMENT_TYPE_ASSESSMENT]: 'assessment',
-  [APPOINTMENT_TYPE_FOLLOWUP]: 'followup',
-  [APPOINTMENT_TYPE_NUTRITION]: 'nutrition',
-}
-
-const getAppointmentPrice = ({pricesList, appointment}) => {
+const getAppointmentPrice = ({appointment}) => {
   if (appointment.type==APPOINTMENT_TYPE_NUTRITION) {
     return 15
   }
@@ -71,7 +42,6 @@ const computeBilling = async ({ user, diet, fields, params }) => {
 // diet : loggedUser, validDiet: diet id to filter on
 const computeDietBilling = async (diet, fields, params, validDiet) => {
   const company = params['filter.company']
-  const prices = await getPrices()
 
   const dateFilter = {}
   // Add conditions based on the presence of start_date and end_date
@@ -87,6 +57,7 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
       {
         $match:{
           diet:diet,
+          validated: true,
           ...dateFilter,
         }
       },
@@ -142,7 +113,7 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
           'offer.nutrition_price': 1,
         }
       }    ])
-    : await Appointment.find({ diet }).populate({path: 'coaching', populate: 'offer'})
+    : await Appointment.find({ diet, validated: true }).populate({path: 'coaching', populate: 'offer'})
 
     const nutAdvices = company ?
     await NutritionAdvice.aggregate([
@@ -195,8 +166,17 @@ const computeDietBilling = async (diet, fields, params, validDiet) => {
   for (const month of months) {
     const monthYear=month.format(monthFormat)
     const appts = (groupedAppts[monthYear] ||[]).map(a => ({ offer: a.offer || a.coaching.offer, type: a.order==1 ? APPOINTMENT_TYPE_ASSESSMENT : APPOINTMENT_TYPE_FOLLOWUP }))
-    const nuts=(groupNuts[monthYear] || []).map(n => ({ ...n, type: APPOINTMENT_TYPE_NUTRITION }))
-    const typedAppts = ([...appts,...nuts]).map(appt => ({ type: appt.type, price: getAppointmentPrice({ pricesList: prices, appointment: appt }) }))
+    const nuts=(groupNuts[monthYear] || []).map(n => ({ type: APPOINTMENT_TYPE_NUTRITION }))
+    const typedAppts = [
+      ...appts.map(appt => ({
+        type: appt.type,
+        price: getAppointmentPrice({ appointment: appt  }),
+      })),
+      ...nuts.map(nut => ({
+        type: APPOINTMENT_TYPE_NUTRITION,
+        price: 15,
+      })),
+    ]
 
     const grouped = lodash.groupBy(typedAppts, 'type')
     const currentData = {
