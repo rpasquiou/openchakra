@@ -57,7 +57,7 @@ const CarreerSchema = new Schema(
     pay: {
       type: String,
       enum: Object.keys(PAY),
-      set: v || undefined,
+      set: v => v || undefined,
       required: false
     },
     status: {

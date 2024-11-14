@@ -98,7 +98,7 @@ const UserSchema = new Schema({
     type: String,
     enum: Object.keys(JOBS),
     required: false,
-    set: v || undefined,
+    set: v => v || undefined,
   },
   school: {
     type: Schema.Types.ObjectId,

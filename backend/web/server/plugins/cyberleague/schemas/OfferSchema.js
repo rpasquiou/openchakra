@@ -45,7 +45,7 @@ const OfferSchema = new Schema({
     type: String,
     enum: Object.keys(ESTIMATED_DURATION_UNITS),
     required: false,
-    set: v || undefined,
+    set: v => v || undefined,
     validate: [function(value) {return !!value == !!this.price_duration}, `La durée estimée doit avoir à la fois une valeur et une unité`],
   },
   visibility: {

@@ -130,7 +130,7 @@ const CompanySchema = new Schema(
       type: String,
       enum: Object.keys(LOOKING_FOR_MISSION),
       required: false,
-      set: v || undefined,
+      set: v => v || undefined,
     },
     expertise_set: {
       type: Schema.Types.ObjectId,
@@ -146,7 +146,7 @@ const CompanySchema = new Schema(
       type: String,
       enum: Object.keys(STATUTS),
       required: false,
-      set: v || undefined,
+      set: v => v || undefined,
     },
     sponsor: {
       type: [{

@@ -48,7 +48,7 @@ const MissionSchema = new Schema(
     estimation_duration_unit: {
       type: String,
       enum: Object.keys(ESTIMATED_DURATION_UNITS),
-      set: v || undefined,
+      set: v => v || undefined,
       required: false,
       validate: [function(value) {return !!value == !!this.estimation_duration}, `La durée estimée doit avoir à la fois une valeur et une unité`],
     },
@@ -83,7 +83,7 @@ const MissionSchema = new Schema(
     region: {
       type: String,
       enum: Object.keys(REGIONS),
-      set: v || undefined,
+      set: v => v || undefined,
       required: false
     },
     budget: {
