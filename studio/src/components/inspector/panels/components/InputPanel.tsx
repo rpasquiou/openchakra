@@ -51,6 +51,7 @@ const InputPanel = () => {
           <option>datetime-local</option>
           <option>tel</option>
           <option>password</option>
+          <option>month</option>
         </Select>
       </FormControl>
 

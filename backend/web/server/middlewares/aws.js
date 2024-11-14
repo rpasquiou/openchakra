@@ -124,8 +124,6 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
   const upload=new Upload({client: s3,params})
   const res=await upload.done().catch(console.error)
 
-  console.log('res is', res)
-
   return res
 }
 
