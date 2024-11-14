@@ -436,7 +436,7 @@ UserSchema.virtual("spent", DUMMY_REF).get(function() {
   return lodash(this.missions)
       .filter(m => m.status==MISSION_STATUS_FINISHED)
       // TODO: finished mission should have a quotations
-      .sumBy(m => m.quotations[0]?.customer_total || 0)
+      .sumBy(m => m.quotations?.[0]?.customer_total || 0)
 })
 
 UserSchema.virtual("spent_to_come", DUMMY_REF).get(function() {
@@ -446,14 +446,14 @@ UserSchema.virtual("spent_to_come", DUMMY_REF).get(function() {
   return lodash(this.missions)
     .filter(m => [MISSION_STATUS_QUOT_ACCEPTED].includes(m.status))
     // TODO: finished mission should have a quotations
-    .sumBy(m => m.quotations[0]?.customer_total || 0)
+    .sumBy(m => m.quotations?.[0]?.customer_total || 0)
 })
 
 UserSchema.virtual("pending_bills", DUMMY_REF).get(function() {
   return lodash(this.missions)
     .filter(m => [MISSION_STATUS_BILL_SENT].includes(m.status))
     // TODO: finished mission should have a quotations
-    .sumBy(m => m.quotations[0]?.customer_total || 0)
+    .sumBy(m => m.quotations?.[0]?.customer_total || 0)
 })
 
 UserSchema.virtual("profile_shares_count", DUMMY_REF).get(function() {
