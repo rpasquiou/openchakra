@@ -342,7 +342,7 @@ USER_MODELS.forEach(m => {
     requires: 'role,missions.quotations.ti_total,missions.status,missions.quotations.ti_total,missions.status'})
   declareVirtualField({model: m, field: 'accepted_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
   declareVirtualField({model: m, field: 'pending_quotations_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
-  declareVirtualField({model: m, field: 'pending_bills_count', instance: 'Number', requires: 'role,missions.status,missions.status'})
+  declareVirtualField({model: m, field: 'pending_bills_count', instance: 'Number', requires: 'role,missions.status,missions.quotations'})
   declareVirtualField({model: m, field: 'spent', instance: 'Number',
     requires: 'role,missions.quotations.customer_total,missions.status,missions.quotations.customer_total,missions.status'})
   declareVirtualField({model: m, field: 'spent_to_come', instance: 'Number',
