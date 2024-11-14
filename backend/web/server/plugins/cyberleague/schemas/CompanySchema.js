@@ -227,7 +227,7 @@ CompanySchema.virtual('region', DUMMY_REF).get(function () {
 })
 
 CompanySchema.virtual('is_partner', DUMMY_REF).get(function() {
-  return STATUT_FOUNDER || STATUT_SPONSOR
+  return this.statut == STATUT_FOUNDER || this.statut == STATUT_SPONSOR
 })
 
 /* eslint-enable prefer-arrow-callback */
