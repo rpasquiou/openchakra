@@ -707,10 +707,15 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       return block.status
     }
     if (block.access_condition && block.order>1) {
-      const prevBrother=await mongoose.models.block.find({parent: block.parent, order: block.order-1})
+      const prevBrother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
       const prevStatus=await locGetBlockStatus(prevBrother._id)
-      if (prevStatus==BLOCK_STATUS_FINISHED && blockStatus==BLOCK_STATUS_UNAVAILABLE) {
-        return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+      if (!prevStatus) {
+        console.error(`Coudld not find status for brother`, prevBrother)
+      }
+      if (prevStatus==BLOCK_STATUS_FINISHED) {
+        if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
+          return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+        }
       }
       else {
         return setBlockStatus(block._id, BLOCK_STATUS_UNAVAILABLE)
