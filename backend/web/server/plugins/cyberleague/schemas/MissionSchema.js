@@ -50,7 +50,7 @@ const MissionSchema = new Schema(
       enum: Object.keys(ESTIMATED_DURATION_UNITS),
       set: v => v || undefined,
       required: false,
-      validate: [function(value) {return !!value == !!this.estimation_duration}, `La durée estimée doit avoir à la fois une valeur et une unité`],
+      validate: [function(value) {return !!value == !!this.estimated_duration}, `La durée estimée doit avoir à la fois une valeur et une unité`],
     },
     is_onsite: {
       type: Boolean,
