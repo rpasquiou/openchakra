@@ -289,7 +289,7 @@ declareComputedField({model: 'content', field: 'liked', getterFn: getterPinnedFn
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'Number'})
-declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'number' })
+declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'Number' })
 declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',
