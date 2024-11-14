@@ -223,7 +223,7 @@ CompanySchema.virtual('candidates_missions_count', {
 })
 
 CompanySchema.virtual('region', DUMMY_REF).get(function () {
-  return null
+  return this.city?.region
 })
 
 CompanySchema.virtual('is_partner', DUMMY_REF).get(function() {
