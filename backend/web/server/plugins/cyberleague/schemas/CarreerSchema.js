@@ -33,12 +33,12 @@ const CarreerSchema = new Schema(
     company_description: {
       type: String,
       validate: [value => value.length > 14, `La description de l'entreprise doit avoir plus de trois caractères`],
-      required: true
+      required: [true, `La description de l'entreprise est obligatoire`]
     },
     post_description: {
       type: String,
       validate: [value => value.length > 14, `La description du poste doit avoir plus de trois caractères`],
-      required: true
+      required: [true, `La description du poste est obligatoire`]
     },
     location: {
       type: AddressSchema,
@@ -47,12 +47,12 @@ const CarreerSchema = new Schema(
     profil_description: {
       type: String,
       validate: [value => value.length > 14, `La description du profil doit avoir plus de trois caractères`],
-      required: true
+      required: [true, `La description du profil est obligatoire`]
     },
     work_duration: {
       type: String,
       enum: Object.keys(WORK_DURATIONS),
-      required: true
+      required: [true, `La durée du travail est obligatoire`]
     },
     pay: {
       type: String,
