@@ -130,15 +130,16 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
   let documents=req.body.documents
-  const scorm=await isScorm({buffer: documents[0].buffer})
+  const document=documents[0]
+  const scorm=await isScorm({buffer: document.buffer})
   if (!!scorm) {
     const directory=removeExtension(document.filename)
-    documents=scorm.entries.map(scormEntry => ({
+    const docs=scorm.entries.map(scormEntry => ({
       filename: path.join(directory, scormEntry.entryName),
       buffer: scormEntry.getData(),
       mimetype: mime.lookup(scormEntry.entryName),
     }))
-    const res=await runPromisesWithDelay(documents.map(d => () => uploadFile(d)))
+    const res=await runPromisesWithDelay(docs.map(d => () => uploadFile(d)))
     const nok=res.filter(r => r.status!='fulfilled')
     if (nok.length>0) {
       throw new Error(JSON.stringify(nok))
