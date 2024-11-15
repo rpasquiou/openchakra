@@ -56,6 +56,7 @@ const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
 const { getVisiosDays } = require('./visio')
+const { createRoom } = require('../visio/functions')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -357,6 +358,12 @@ const preCreate = async ({model, params, user}) => {
       console.log(params.duration, typeof params.duration)
       params.end_date=moment(params.start_date).add(params.duration, 'minutes')
     }
+    if (!!params.start_date && !!params.duration && !!params.title) {
+      const {url, room}=await createRoom(params.start_date, params.duration, params.title)
+      params.url=url
+      params._room=room
+    }
+
   }
   return Promise.resolve({model, params})
 }
@@ -469,9 +476,14 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   }
 
   if (model=='visio') {
-    console.log(model, id, params)
     if (!!params.start_date && !!params.duration && !params.end_date) {
       params.end_date=moment(params.start_date).add(params.duration, 'minutes')
+    }
+    if (!!params.start_date && !!params.duration) {
+      const title=(await mongoose.models.visio.findById(id)).title
+      const {url, room}=await createRoom(params.start_date, params.duration, title)
+      params.url=url
+      params._room=room
     }
   }
   return {model, id, params, user, skip_validation}

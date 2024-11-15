@@ -12,13 +12,12 @@ const getVisiosDays = async (userId, params, data, fields, actualLogged) => {
     .mapKeys((_, f) => f.replace(VISIOS_FILTER2, ''))
     .value()
   params={'filter._owner': data._id}
-  const visios=await loadFromDb({model: 'visio', fields, user: userId, params})
+  const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
     .entries()
     .map(([day, visios]) => new mongoose.models.visioDay({day, visios:visios.map(v => new mongoose.models.visio(v))}))
     .value()
-  console.log(grouped.map(g => g.day))
   return grouped
 }
 
