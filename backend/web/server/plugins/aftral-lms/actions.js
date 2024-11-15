@@ -4,7 +4,7 @@ const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR } = require('./consts')
-const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
@@ -84,10 +84,11 @@ const addSpentTimeAction = async ({id, duration}, user) => {
       {upsert: true, new: true}
     )
     // Set status to current if not already finished
-    await Progress.findOneAndUpdate(
-      {user, block: blockId, achievement_status: {$ne: BLOCK_STATUS_FINISHED}},
-      {user, block: blockId, achievement_status: BLOCK_STATUS_CURRENT}
-    )
+    const currentStatus=await getBlockStatus(user._id, null, {_id: id})
+    // Set to current if not already finished
+    if (![BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(currentStatus)) {
+      await saveBlockStatus(user._id, id, BLOCK_STATUS_CURRENT)
+    }
   }))
   return onBlockAction(user._id, id)
 }
