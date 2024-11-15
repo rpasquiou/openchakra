@@ -40,7 +40,7 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -71,7 +71,22 @@ const computeUrl = ({type, targetId}) => {
 setComputeUrl(computeUrl)
 
 
-
+const computeMessage = ({type, user, params}) => {
+  switch (type) {
+    case NOTIFICATION_TYPE_MESSAGE:
+      return `${user.shortname} vous a envoyé un message`
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+      return `${user.shortname} a commenté une de vos publications`
+    case NOTIFICATION_TYPE_FEED_LIKE:
+      return `${user.shortname} a aimé une de vos publications`
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+      return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+      return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+  }
+  throw new Error(`Unknown notification type ${type} in computeMessage`)
+}
+setComputeMessage(computeMessage)
 
 
 
