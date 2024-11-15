@@ -22,6 +22,10 @@ const setComputeMessage = (fn) => {
   computeMessage = fn
 }
 
+const callComputeMessage = ({...params}) => {
+  return computeMessage(params)
+}
+
 const setAllowedTypes = types => {
   //build schema
   const NotificationSchema = createNotificationSchema(types)
@@ -102,4 +106,5 @@ module.exports = {
   getSeenNotifications,
   getSeenNotificationsCount,
   callComputeUrl,
+  callComputeMessage,
 }
