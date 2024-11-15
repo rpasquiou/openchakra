@@ -10,6 +10,10 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
+const callComputeUrl = ({...params}) => {
+  return computeUrl(params)
+}
+
 let computeMessage = (text) => {
   return text
 }
@@ -97,4 +101,5 @@ module.exports = {
   getPendingNotificationsCount,
   getSeenNotifications,
   getSeenNotificationsCount,
+  callComputeUrl,
 }
