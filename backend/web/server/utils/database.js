@@ -1086,7 +1086,7 @@ const ensureUniqueDataFound = (id, data) => {
   return data
 }
 
-const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
+const loadFromDb = ({model, fields, id, user, params={}, skipRetain=false}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
   fields=lodash.uniq([...fields, ...Object.keys(filters)])
@@ -1102,7 +1102,7 @@ const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        .then(data =>  skipRetain ? data : retainRequiredFields({data, fields}))
     })
 
 }
