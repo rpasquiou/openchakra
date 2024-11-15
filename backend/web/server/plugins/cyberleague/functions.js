@@ -40,7 +40,7 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -87,6 +87,9 @@ const computeMessage = ({type, user, params}) => {
   throw new Error(`Unknown notification type ${type} in computeMessage`)
 }
 setComputeMessage(computeMessage)
+
+
+
 
 
 
@@ -709,6 +712,19 @@ const postCreate = async ({ model, params, data, user }) => {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+  }
+
+  //Message notification
+  if (model == 'message') {
+    await addNotification({
+      users: [params.receiver],
+      targetId: user._id,
+      targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
+      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE}),
+      type: NOTIFICATION_TYPE_MESSAGE,
+      customData: null,
+      picture: user.picture
+    })
   }
 
   return data
