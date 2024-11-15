@@ -21,6 +21,10 @@ const VisioSchema = new Schema({
     type: Number,
     required: false,
   },
+  end_date: {
+    type: Date,
+    required: false,
+  },
   title: {
     type: 'String',
     required: [true, `Le titre est obligatoire`]
@@ -46,12 +50,6 @@ const VisioSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
-VisioSchema.virtual('end_date', DUMMY_REF).get(function() {
-  if (!this.start_date && !this.duration) {
-    return moment(this.start_date).add(this.duration, 'minutes')
-  }
-})
-
 VisioSchema.virtual('status', DUMMY_REF).get(function() {
   if (!this.start_date && !this.duration) {
     return VISIO_STATUS_UNDEFINED
@@ -63,6 +61,15 @@ VisioSchema.virtual('status', DUMMY_REF).get(function() {
     return VISIO_STATUS_FINISHED
   }
   return VISIO_STATUS_CURRENT
+})
+
+VisioSchema.pre('validate',function(next) {
+  console.log(this.start_date, this.duration, this.end_date)
+  const dateConsistent=(!!this.start_date==!!this.duration) && (!!this.duration==!!this.end_date) 
+  if (!dateConsistent) {
+    return next(new Error(`Dates et durée doivent fournies`))
+  }
+  return next()
 })
 
 /* eslint-enable prefer-arrow-callback */
