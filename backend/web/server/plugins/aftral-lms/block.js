@@ -225,7 +225,6 @@ const onBlockAction = async (userId, blockId) => {
         }
       }
     }
-    return
   }
   const progress=await Progress.findOne({user: userId, block: blockId})
   const rule=bl.achievement_rule
@@ -657,6 +656,12 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   }
   ensureObjectIdOrString(userId)
   ensureObjectIdOrString(blockId)
+
+  // Alert if optional block was set to UNAVAILABLE
+  const optional=(await mongoose.models.block.findById(blockId))?.optional
+  if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
+    return getBlockStatus(userId, null, {_id: blockId})
+  }
   const before=await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
@@ -710,7 +715,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       const prevBrother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
       const prevStatus=await locGetBlockStatus(prevBrother._id)
       if (!prevStatus) {
-        console.error(`Coudld not find status for brother`, prevBrother)
+        console.error(`Coudld not find status for brother`, prevBrother._id)
       }
       if (prevStatus==BLOCK_STATUS_FINISHED) {
         if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
@@ -737,6 +742,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
   }
   // If one child finished, next is available
   if (block.closed) {
+    console.log(block.type, block.name, 'is closed')
     const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
