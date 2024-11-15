@@ -74,7 +74,7 @@ setComputeUrl(computeUrl)
 const computeMessage = ({type, user, params}) => {
   switch (type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      return `${user.shortname} vous a envoyé un message`
+      return `${user.shortname} vous a envoyé un nouveau message`
     case NOTIFICATION_TYPE_FEED_COMMENT:
       return `${user.shortname} a commenté une de vos publications`
     case NOTIFICATION_TYPE_FEED_LIKE:
@@ -720,7 +720,7 @@ const postCreate = async ({ model, params, data, user }) => {
       users: [params.receiver],
       targetId: user._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE}),
+      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE,user}),
       type: NOTIFICATION_TYPE_MESSAGE,
       customData: null,
       picture: user.picture
