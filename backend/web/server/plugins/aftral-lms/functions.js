@@ -353,6 +353,10 @@ const preCreate = async ({model, params, user}) => {
     const parentModel=await getModel(params.parent, ['group', 'user', 'session'])
     params._owner=params.parent
     params._owner_type=parentModel
+    if (params.start_date && params.duration) {
+      console.log(params.duration, typeof params.duration)
+      params.end_date=moment(params.start_date).add(params.duration, 'minutes')
+    }
   }
   return Promise.resolve({model, params})
 }
@@ -464,6 +468,12 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
     }
   }
 
+  if (model=='visio') {
+    console.log(model, id, params)
+    if (!!params.start_date && !!params.duration && !params.end_date) {
+      params.end_date=moment(params.start_date).add(params.duration, 'minutes')
+    }
+  }
   return {model, id, params, user, skip_validation}
 }
 

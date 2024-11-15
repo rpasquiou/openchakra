@@ -5,15 +5,23 @@ const axios = require('axios')
 const moment = require('moment')
 const VisioSchema = require('./schemas/VisioSchema')
 const { declareVirtualField, declareEnumField, declareFieldDependencies } = require('../../utils/database')
-const { VISIO_STATUS } = require('./consts')
+const { VISIO_STATUS, VISIO_STATUS_TO_COME, VISIO_STATUS_UNDEFINED, VISIO_STATUS_CURRENT, VISIO_STATUS_FINISHED } = require('./consts')
 const VisioDaySchema = require('./schemas/VisioDaySchema')
 
 mongoose.model('visio', VisioSchema)
 mongoose.model('visioDay', VisioDaySchema)
 
-declareVirtualField({model: 'visio', field: 'end_date', instance: 'Date', requires: 'start_date,duration'})
-declareVirtualField({model: 'visio', field: 'status', instance: 'String', requires: 'start_date,end_date', enumValues: VISIO_STATUS})
-  
+const STATUS_FILTERS={
+  [VISIO_STATUS_UNDEFINED]: () => ({start_date: null, duration: null}),
+  [VISIO_STATUS_TO_COME]:  () => ({start_date: {$ne: null, $gt: moment().toDate()}}),
+  [VISIO_STATUS_CURRENT]:  () => ({start_date:{$ne: null, $lt: moment().toDate()}, end_date:{$ne: null, $gt: moment().toDate()}}),
+  [VISIO_STATUS_FINISHED]:  () => ({end_date: {$ne: null, $lt: moment().toDate()}}),
+}
+declareVirtualField({model: 'visio', field: 'status', instance: 'String', requires: 'start_date,end_date,duration', enumValues: VISIO_STATUS,
+  dbFilter: value => STATUS_FILTERS[value.source](),
+})
+declareFieldDependencies({model: 'visio', field: 'status', requires: 'start_date,end_date,duration'})
+
 const KMEET_ROOT=`https://kmeet.infomaniak.com/`
 const KMEET_DATE_FORMAT=`YYYY-MM-DD HH:mm:ss`
 
