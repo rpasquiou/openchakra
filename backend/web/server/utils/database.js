@@ -10,6 +10,7 @@ const {CURRENT, FINISHED} = require('../plugins/fumoir/consts')
 const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
+const { getDataModel } = require('../../config/config')
 
 let preLogin=null
 
@@ -616,7 +617,10 @@ function getSecondLevelFields(fields, f) {
 mongoose returns virtuals even if they are not present in select clause
 => keep only require fields in data hierarchy
 */
-const retainRequiredFields = ({data, fields}) => {
+const retainRequiredFields = async ({data, fields}) => {
+  if (['sosynpl', 'yelowi'].includes(getDataModel())) {
+    return data
+  }
   if (lodash.isArray(data)) {
     return data.map(d => retainRequiredFields({data: d, fields}))
   }

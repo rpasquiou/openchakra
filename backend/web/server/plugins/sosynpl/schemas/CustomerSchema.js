@@ -39,6 +39,7 @@ const CustomerSchema = new Schema({
   },
   iban: {
     type: String,
+    set: v => v ? v.replace(/\s/g, '') : v,
     validate: [v => !v || IBANValidator.isValid(v), v => `L'IBAN '${v.value}' est invalide`],
     required: false,
   },
@@ -213,9 +214,8 @@ const CustomerSchema = new Schema({
   },
   // RCS city
   registration_city: {
-    type: String,
-    set: v => v?.city || v || undefined,
-    required: false,
+    type: AddressSchema,
+    required: false
   },
   // HQ address
   // Délégation de pouvoir

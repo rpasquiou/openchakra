@@ -21,7 +21,7 @@ const withDynamicCheckbox = Component => {
 
     const onChange = ev => {
       setValue(!!ev.target.checked)
-      if (!noautosave) {
+      if (!noautosave && !!dataSource) {
         const action=contextAttribute ?
           ACTIONS.addToContext({value: dataSource._id, context, append: !!ev.target.checked, contextAttribute})
           :

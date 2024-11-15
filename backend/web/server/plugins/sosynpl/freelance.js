@@ -1,4 +1,4 @@
-const { FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES, SOFT_SKILLS_ATTR } = require("./consts")
+const { FREELANCE_REQUIRED_ATTRIBUTES, FREELANCE_MANDATORY_ATTRIBUTES, FREELANCE_OUTPUT_ATTRIBUTES, SOFT_SKILLS_ATTR, MIN_EXPERTISES, MIN_PINNED_EXPERTISES } = require("./consts")
 
 /**
  * Utility function that returns the list of missing attribute names
@@ -12,19 +12,23 @@ const getFreelanceMissingAttributesNames = (user) => {
 
   // -- Check each attribute
   allAttributes.forEach((attr) => {
-    if (!user[attr] || (Array.isArray(user[attr]) && user[attr].length === 0)) {
+    if (attr === 'pinned_expertises' && (!user[attr] || user[attr].length < MIN_PINNED_EXPERTISES)) {
+      missingAttributes.push(attr)
+    }
+    else if (attr === 'expertises' && (!user[attr] || user[attr].length < MIN_EXPERTISES)) {
+      missingAttributes.push(attr)
+    }
+    else if (!user[attr] || (Array.isArray(user[attr]) && user[attr].length === 0)) {
       missingAttributes.push(attr)
     }
   })
 
-  // -- Specifically check bronze soft skills
-  if (!user['bronze_soft_skills'] || user['bronze_soft_skills'].length === 0) {
-    missingAttributes.push('bronze_soft_skills')
-  }
-
-  // -- Check if there are at least 3 expertises
-  if (!user['expertises'] || user['expertises'].length < 3) {
-    missingAttributes.push('expertises')
+  // -- Check if any soft skills level is missing
+  const hasMissingSoftSkills = SOFT_SKILLS_ATTR.some(skillAttr => 
+    !user[skillAttr] || user[skillAttr].length === 0
+  )
+  if (hasMissingSoftSkills) {
+    missingAttributes.push('soft_skills')
   }
 
   return missingAttributes
@@ -40,7 +44,9 @@ const freelanceProfileCompletion = (user) => {
   let result = 0
 
   // -- Check required attributes
-  const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => missingAttributes.includes(attr)).length
+  const requiredMissing = FREELANCE_REQUIRED_ATTRIBUTES.filter(attr => 
+    missingAttributes.includes(attr)
+  ).length
 
   // -- If any required attribute is missing return 0
   if (requiredMissing > 0) {
@@ -51,21 +57,22 @@ const freelanceProfileCompletion = (user) => {
   result += 40
 
   // -- Calculate penalties for missing mandatory attributes
-  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => missingAttributes.includes(attr)).length
+  const mandatoryMissing = FREELANCE_MANDATORY_ATTRIBUTES.filter(attr => 
+    missingAttributes.includes(attr)
+  ).length
 
-  // -- Calculate penalties for missing soft skills
-  const softSkillMissing = SOFT_SKILLS_ATTR.filter(skillAttr => missingAttributes.includes(skillAttr)).length
+  // -- Check if soft skills are missing
+  const hasMissingSoftSkills = missingAttributes.includes('soft_skills')
 
-  // -- Calculate total penalty on the remaining 60%
-  const totalMandatoryPenalty = mandatoryMissing + softSkillMissing
-  const mandatoryPenalty = Math.floor((60 / (FREELANCE_MANDATORY_ATTRIBUTES.length + SOFT_SKILLS_ATTR.length)) * totalMandatoryPenalty)
+  // -- Calculate total number of potential mandatory items
+  const totalMandatoryItems = FREELANCE_MANDATORY_ATTRIBUTES.length + 1 // 1 for soft skills
+  
+  // -- Calculate penalty on the remaining 60%
+  const totalMissingItems = mandatoryMissing + (hasMissingSoftSkills ? 1 : 0)
+  const penaltyPerMissing = 60 / totalMandatoryItems
+  const totalPenalty = Math.floor(penaltyPerMissing * totalMissingItems)
 
-  result += 60 - mandatoryPenalty
-
-  // -- 5% penalty if less than expertises
-  if (missingAttributes.includes('expertises')) {
-    result -= 5
-  }
+  result += 60 - totalPenalty
 
   // -- Return result as a percentage
   return result / 100
@@ -82,8 +89,7 @@ const freelanceMissingAttributes = (user) => {
 
   // -- Convert attribute names to display labels
   const labels = missingAttributes.map(attr => {
-    if (attr === 'bronze_soft_skills') return 'soft skills'
-    if (attr === 'expertises') return 'au moins 3 compétences'
+    if (attr === 'soft_skills') return 'soft skills'
     return FREELANCE_OUTPUT_ATTRIBUTES[attr]
   })
 

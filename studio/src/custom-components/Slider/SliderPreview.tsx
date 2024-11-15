@@ -14,7 +14,7 @@ const SliderPreview: React.FC<IPreviewProps> = ({ component }) => {
   }
 
   // Preview middle value
-  const value=(props.min+props.max)/2
+  // const value=(props.min+props.max)/2
 
   return (
     <Box pos="relative" ref={drop(ref)} {...props}>

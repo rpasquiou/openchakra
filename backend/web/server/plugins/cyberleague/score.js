@@ -125,7 +125,7 @@ const createScore = async (creatorId, scoreLevel) => {
 
   const level_filtered = {min_level: {$in: acceptedLevels}}
 
-  const questions = await Question.find(level_filtered)
+  const questions = await Question.find(level_filtered, ['_id'])
 
   const answers=await Promise.all(questions.map(async q => {
     return Answer.create({question: q._id, total_questions: questions.length})
@@ -185,7 +185,7 @@ const updateMarketScore = async (_category_rates) => {
 }
 
 const getAnswerIndex = async (userId, params, data) => {
-  const score = await Score.findOne({answers: data._id})
+  const score = await Score.findOne({answers: data._id}, ['answers'])
   return 1+lodash.findIndex(score.answers, (a)=> idEqual(a, data._id))
 }
 

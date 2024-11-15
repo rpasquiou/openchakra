@@ -14,6 +14,9 @@ const AddressSchema=new Schema({
   country: {
     type: String,
   },
+  region: {
+    type: String,
+  },
   latitude: {
     type: Number,
   },

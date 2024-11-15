@@ -29,7 +29,12 @@ const Slider = React.forwardRef((props, ref) => {
     pb,
     p,
     borderRadius,
+    defaultValue,
+    value,
+    ...restProps
   } = props
+
+  const finalValue = value === "" ? defaultValue : value
 
   const chakraStyles = useStyleConfig("Slider", {
     baseStyle: {
@@ -60,10 +65,11 @@ const Slider = React.forwardRef((props, ref) => {
   return (
     <>
     { /* TODO ChakraSlider updates value only if this input range is here. Why ? */ }
-    <input type='range' {...props} onChange={undefined} ref={ref} style={{display:'none'}}/>
+    <input type='range' {...restProps} value={finalValue} onChange={undefined} ref={ref} style={{display:'none'}}/>
     <ChakraSlider
       ref={ref}
-      {...props}
+      {...restProps}
+      value={finalValue}
       onChange={chakraOnChange}
       __css={chakraStyles.container}
     >
@@ -79,6 +85,7 @@ const Slider = React.forwardRef((props, ref) => {
         bg={color}
         borderRadius="50%"
         overflow="hidden"
+        zIndex={0}
       />
     </ChakraSlider>
     </>
