@@ -69,6 +69,9 @@ VisioSchema.pre('validate',function(next) {
   if (!dateConsistent) {
     return next(new Error(`Dates et durée doivent fournies`))
   }
+  if (!!this.start_date && !!this.end_date && !!this.duration && !this.url) {
+    return next(new Error(`L'URL doit êre fournie`))
+  }
   return next()
 })
 
