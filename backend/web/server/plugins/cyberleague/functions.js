@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_POST } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -40,11 +40,58 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
+const { computeUrl: ComputeDomain } = require('../../../config/config')
+const { getTagUrl } = require('../../utils/mailing')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
+
+const computeUrl = ({type, targetId}) => {
+  let tagUrl
+  switch (type) {
+    case NOTIFICATION_TYPE_MESSAGE:
+      tagUrl = getTagUrl('NOTIFICATION_MESSAGE')
+      break
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+    case NOTIFICATION_TYPE_FEED_LIKE:
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+      tagUrl = getTagUrl('NOTIFICATION_POST')
+      break;
+  }
+
+  if (!tagUrl) {
+    throw new Error(`Unknown notification type ${type} in computeUrl`)
+  }
+
+  return `${ComputeDomain(tagUrl)}?id=${targetId}`
+}
+setComputeUrl(computeUrl)
+
+
+const computeMessage = ({type, user, params}) => {
+  switch (type) {
+    case NOTIFICATION_TYPE_MESSAGE:
+      return `${user.shortname} vous a envoyé un nouveau message`
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+      return `${user.shortname} a commenté une de vos publications`
+    case NOTIFICATION_TYPE_FEED_LIKE:
+      return `${user.shortname} a aimé une de vos publications`
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+      return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+      return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+  }
+  throw new Error(`Unknown notification type ${type} in computeMessage`)
+}
+setComputeMessage(computeMessage)
+
+
+
+
+
 
 //User declarations
 const USER_MODELS = ['user', 'loggedUser', 'admin', 'partner', 'member']
@@ -289,7 +336,7 @@ declareComputedField({model: 'content', field: 'liked', getterFn: getterPinnedFn
 
 //Post declarations
 declareVirtualField({model: 'post', field: 'comments_count', instance: 'Number'})
-declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'number' })
+declareVirtualField({model: 'post', field: 'likes_count', ROLE: 'Number' })
 declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',
@@ -648,23 +695,36 @@ const postCreate = async ({ model, params, data, user }) => {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
 
-    if (data.post) {
-      await addNotification({
-        users: [data.creator],
-        targetId: data._id,
-        targetType: NOTIFICATION_TYPE_POST,
-        text: 'text de notif',
-        type: NOTIFICATION_TYPE_POST,
-        customData: null,
-        picture: null
-      })
-    }
+    // if (data.post) {
+    //   await addNotification({
+    //     users: [data.creator],
+    //     targetId: data._id,
+    //     targetType: NOTIFICATION_TYPE_POST,
+    //     text: 'text de notif',
+    //     type: NOTIFICATION_TYPE_POST,
+    //     customData: null,
+    //     picture: null
+    //   })
+    // }
   }
 
   if (model == 'scan') {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+  }
+
+  //Message notification
+  if (model == 'message') {
+    await addNotification({
+      users: [params.receiver],
+      targetId: user._id,
+      targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
+      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE,user}),
+      type: NOTIFICATION_TYPE_MESSAGE,
+      customData: null,
+      picture: user.picture
+    })
   }
 
   return data

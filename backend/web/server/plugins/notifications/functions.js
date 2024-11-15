@@ -10,12 +10,20 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
+const callComputeUrl = ({...params}) => {
+  return computeUrl(params)
+}
+
 let computeMessage = (text) => {
   return text
 }
 
 const setComputeMessage = (fn) => {
   computeMessage = fn
+}
+
+const callComputeMessage = ({...params}) => {
+  return computeMessage(params)
 }
 
 const setAllowedTypes = types => {
@@ -97,4 +105,6 @@ module.exports = {
   getPendingNotificationsCount,
   getSeenNotifications,
   getSeenNotificationsCount,
+  callComputeUrl,
+  callComputeMessage,
 }
