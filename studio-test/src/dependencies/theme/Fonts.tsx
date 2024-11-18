@@ -191,6 +191,34 @@ const Fonts = () => (
         font-weight: bold;
         font-style: normal;
       }
+      @font-face {
+        font-family: 'PowerGrotesk';
+        src: local('PowerGrotesk'), 
+            url('fonts/PowerGrotesk-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Roboto';
+        src: local('Roboto'), 
+            url('fonts/Roboto-Regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Roboto';
+        src: local('Roboto'), 
+            url('fonts/Roboto-Bold.ttf') format('truetype');
+        font-weight: bold;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'Roboto';
+        src: local('Roboto'), 
+            url('fonts/Roboto-Italic.ttf') format('truetype');
+        font-weight: normal;
+        font-style: italic;
+      }
       `}
   />
 )
@@ -206,7 +234,9 @@ export const fontsName = [
   'minion pro',
   'handjet',
   'honk',
-  'TitilliumWeb'
+  'TitilliumWeb',
+  'PowerGrotesk',
+  'Roboto',
 ]
 
 export default Fonts
