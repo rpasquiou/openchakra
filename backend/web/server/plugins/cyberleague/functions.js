@@ -528,6 +528,14 @@ const ensureMarketScore = async () => {
 
 ensureMarketScore()
 
+
+const ensureOnlyOneTrue = ({model, id, field, filter}) => {
+  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: true, ...filter}, {[field]: false})
+}
+
+
+
+
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
     model='user'
@@ -739,6 +747,11 @@ const postCreate = async ({ model, params, data, user }) => {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+  }
+
+  if (model == 'advertising') {
+    //if is_current is true then other advertising of the same company must be false
+    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
   }
 
   //Message notification
