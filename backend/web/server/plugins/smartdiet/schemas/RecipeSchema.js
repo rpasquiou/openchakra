@@ -120,6 +120,14 @@ const RecipeSchema = new Schema({
   season: {
     type:String,
     enum: Object.keys(SEASON),
+  },
+  pins: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
+  pinned: {
+    type: Boolean,
+    default: false,
   }
 },
 {...schemaOptions, ...EVENT_DISCRIMINATOR}

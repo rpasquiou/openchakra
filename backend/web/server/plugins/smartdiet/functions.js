@@ -888,6 +888,14 @@ USER_MODELS.forEach(m => {
       options: { ref: 'content' }
     },
   })
+  declareVirtualField({
+    model: m, field: 'pinned_recipes', instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'recipe' }
+    },
+  })
 declareVirtualField({
     model: m, field: 'targets', instance: 'Array',
     requires: 'objective_targets,health_targets,activity_target,specificity_targets,home_target',
@@ -1837,7 +1845,7 @@ const getDataPinned = (userId, params, data) => {
 }
 
 const setDataPinned = ({ id, attribute, value, user }) => {
-  return getModel(id, ['message', 'content'])
+  return getModel(id, ['message', 'content', 'recipe'])
     .then(model => {
       if (value) {
         // Set liked
