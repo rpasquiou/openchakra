@@ -55,7 +55,7 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
-const { getGroupVisiosDays, getUserVisiosDays } = require('./visio')
+const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr } = require('./visio')
 const { createRoom } = require('../visio/functions')
 const { getGroupTrainees } = require('./group')
 require('../visio/functions')
@@ -240,6 +240,7 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 
 // Visio start
 declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
+declareComputedField({model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr})
 // Visio end
 
 const preCreate = async ({model, params, user}) => {
