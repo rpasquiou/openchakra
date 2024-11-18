@@ -89,6 +89,7 @@ const computeMessage = ({type, user, params}) => {
 }
 setComputeMessage(computeMessage)
 
+const NotificationModel = mongoose.models.notification
 
 
 
@@ -799,6 +800,9 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         }
       } else {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+
+        //delete notification for liked post
+        await NotificationModel.findOneAndDelete({_target_type: /.*LIKE.*/, targetId: id, picture: user.picture})
       }
     }
   }
