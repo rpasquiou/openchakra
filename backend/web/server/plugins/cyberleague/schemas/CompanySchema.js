@@ -230,6 +230,19 @@ CompanySchema.virtual('is_partner', DUMMY_REF).get(function() {
   return this.statut == STATUT_FOUNDER || this.statut == STATUT_SPONSOR
 })
 
+CompanySchema.virtual('advertisings', {
+  ref: 'advertising',
+  localField: '_id',
+  foreignField: 'company'
+})
+
+CompanySchema.virtual('advertisings_count', {
+  ref: 'advertising',
+  localField: '_id',
+  foreignField: 'company',
+  count: true
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CompanySchema

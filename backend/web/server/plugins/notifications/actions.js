@@ -2,8 +2,7 @@ const mongoose = require('mongoose')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { addAction } = require('../../utils/studio/actions')
 const { getModel } = require('../../utils/database')
-const { computeMessage } = require('./functions')
-const { computeUrl } = require('../../../config/config')
+const { callComputeUrl } = require('./functions')
 
 
 const validateNotification = async ({value}, user) => {
@@ -25,9 +24,9 @@ const addNotification = ({users, targetId, targetType, text, type, customData, p
     recipients: users,
     _target: targetId,
     _target_type: targetType,
-    text: computeMessage(text),
+    text: text,
     type: type,
-    url: computeUrl(targetId, targetType),
+    url: callComputeUrl(targetId, targetType),
     custom_data: customData,
     picture
   })

@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -321,6 +321,13 @@ declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 
 })
 declareVirtualField({model: 'company', field: 'candidates_missions_count', instance: 'Number'})
 declareVirtualField({model: 'company', field: 'is_partner', requires: 'statut', instance: 'Boolean'})
+declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'advertising' }
+  },
+})
+declareVirtualField({model: 'company', field: 'advertisings_count', instance: 'Number'})
 
 //Expertise declarations
 
@@ -469,6 +476,8 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
 declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
 
+//Advertising declarations
+declareVirtualField({model: 'advertising', field: 'current_advertising', requires: 'is_current', instance: 'String', enumValues: CURRENT_ADVERTISING})
 
 
 
@@ -518,6 +527,14 @@ const ensureMarketScore = async () => {
 }
 
 ensureMarketScore()
+
+
+const ensureOnlyOneTrue = ({model, id, field, filter}) => {
+  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: true, ...filter}, {[field]: false})
+}
+
+
+
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='loggedUser') {
@@ -730,6 +747,11 @@ const postCreate = async ({ model, params, data, user }) => {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+  }
+
+  if (model == 'advertising') {
+    //if is_current is true then other advertising of the same company must be false
+    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
   }
 
   //Message notification
