@@ -9,6 +9,10 @@ const AdvertisingSchema = new Schema({
     ref: 'company',
     required: [true, `L'entreprise créatrice de la publicité est obligatoire`]
   },
+  small_banner: {
+    type: String,
+    required: [true, `Les images sont obligatoires`]
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
