@@ -784,7 +784,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
             type: NOTIFICATION_TYPE_GROUP_LIKE,
-            customData: null,
+            customData: `${user._id}`,
             picture: user.picture
           })
         } else {
@@ -794,15 +794,15 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
             type: NOTIFICATION_TYPE_FEED_LIKE,
-            customData: null,
+            customData: `${user._id}`,
             picture: user.picture
           })
         }
       } else {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
-
+        
         //delete notification for liked post
-        await NotificationModel.findOneAndDelete({_target_type: /.*LIKE.*/, targetId: id, picture: user.picture})
+        await NotificationModel.deleteOne({type: {$in: [NOTIFICATION_TYPE_FEED_LIKE,NOTIFICATION_TYPE_GROUP_LIKE]} , _target: id, custom_data: `${user._id}`})
       }
     }
   }
