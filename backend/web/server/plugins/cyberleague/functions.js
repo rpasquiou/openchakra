@@ -751,7 +751,7 @@ const postCreate = async ({ model, params, data, user }) => {
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
   }
 
-  if (model == 'advertising') {
+  if (model == 'advertising' && data.is_current) {
     //if is_current is true then other advertising of the same company must be false
     await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
   }
