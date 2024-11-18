@@ -695,17 +695,33 @@ const postCreate = async ({ model, params, data, user }) => {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
 
-    // if (data.post) {
-    //   await addNotification({
-    //     users: [data.creator],
-    //     targetId: data._id,
-    //     targetType: NOTIFICATION_TYPE_POST,
-    //     text: 'text de notif',
-    //     type: NOTIFICATION_TYPE_POST,
-    //     customData: null,
-    //     picture: null
-    //   })
-    // }
+    if (data.post) {
+      if (params.parent) {
+        const parentModel = await getModel(params.parent, ['group','user'])
+        if (parentModel === 'group') {
+          params.groupName = params.parent.name
+          await addNotification({
+            users: [data.creator],
+            targetId: data._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
+            type: NOTIFICATION_TYPE_GROUP_COMMENT,
+            customData: null,
+            picture: user.picture
+          })
+        } else {//if parent's model is user then it is a general feed post
+          await addNotification({
+            users: [data.creator],
+            targetId: data._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
+            type: NOTIFICATION_TYPE_FEED_COMMENT,
+            customData: null,
+            picture: user.picture
+          })
+        }
+      }
+    }
   }
 
   if (model == 'scan') {
