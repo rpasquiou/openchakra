@@ -3,6 +3,7 @@ const mongoose=require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { DUMMY_REF } = require('../../../utils/database')
 const { VISIO_STATUS_UNDEFINED, VISIO_STATUS_TO_COME, VISIO_STATUS_FINISHED, VISIO_STATUS_CURRENT } = require('../consts')
+const { VISIO_TYPE_SESSION, VISIO_TYPE_GROUP, VISIO_TYPE_COACHING } = require('../../aftral-lms/consts')
 
 const Schema = mongoose.Schema
 
@@ -68,6 +69,15 @@ VisioSchema.virtual('status', DUMMY_REF).get(function() {
     return VISIO_STATUS_FINISHED
   }
   return VISIO_STATUS_CURRENT
+})
+
+VisioSchema.virtual('type', DUMMY_REF).get(function() {
+  const TYPES={
+    group: VISIO_TYPE_GROUP,
+    session: VISIO_TYPE_SESSION,
+    user: VISIO_TYPE_COACHING,
+  }
+  return TYPES[this._owner_type]
 })
 
 VisioSchema.pre('validate',function(next) {
