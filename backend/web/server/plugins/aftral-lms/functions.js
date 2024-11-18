@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -234,9 +234,13 @@ declareComputedField({model: 'session', field: 'conversations', getterFn: getSes
 declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
 // Session end
 
-// Session start
+// Homework start
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
-// Session end
+// Homework end
+
+// Visio start
+declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
+// Visio end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
