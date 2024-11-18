@@ -12,7 +12,11 @@ const AdvertisingSchema = new Schema({
   small_banner: {
     type: String,
     required: [true, `Les images sont obligatoires`]
-  }
+  },
+  large_banner: {
+    type: String,
+    required: [true, `Les images sont obligatoires`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
