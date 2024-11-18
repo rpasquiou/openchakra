@@ -609,6 +609,12 @@ UserSchema.virtual("pinned_contents", {
   foreignField: "pins" // is equal to foreignField
 });
 
+UserSchema.virtual('pinned_recipes', {
+  ref: 'recipe',
+  localField: '_id',
+  foreignField: 'pins',
+})
+
 UserSchema.virtual("targets", DUMMY_REF).get(function() {
   return [] //computeTargets(this)
 })

@@ -40,7 +40,8 @@ describe('Recipe Test', () => {
     })
 
     recipe = await Recipe.create({
-      name: 'Tarte aux pommes'
+      name: 'Tarte aux pommes',
+      pinned: false,
     })
 
     // Here, we're creating two comments for the recipe.
@@ -74,8 +75,6 @@ describe('Recipe Test', () => {
       fields: ['name', 'comments.text', 'comments.user.firstname']
     })
 
-    console.log('loadedRecipe:', JSON.stringify(loadedRecipe, null, 2))
-
     // We're checking that the retrieved recipe has the expected fields and values.
     expect(loadedRecipe[0].name).toBe('Tarte aux pommes')
     expect(loadedRecipe[0].comments).toBeDefined()
@@ -90,7 +89,39 @@ describe('Recipe Test', () => {
       id: comment1._id,
       fields: ['text', 'recipe.name']
     }) 
+  })
 
-    // console.log('loadedComment:', JSON.stringify(loadedComment, null, 2))
+  it('should pin a recipe', async () => {
+    let loadedRecipe = await loadFromDb({
+      model: 'recipe',
+      id: recipe._id,
+      fields: ['name', 'pinned', 'pins'],
+      user
+    })
+
+    await Recipe.findByIdAndUpdate(recipe._id, {
+      $push: { pins: user._id },
+      pinned: true
+    })
+
+    loadedRecipe = await loadFromDb({
+      model: 'recipe',
+      id: recipe._id,
+      fields: ['name', 'pins', 'pinned'],
+      user
+    })
+
+    await Recipe.findByIdAndUpdate(recipe._id, {
+      $pull: { pins: user._id },
+      pinned: false
+    })
+
+    loadedRecipe = await loadFromDb({
+      model: 'recipe',
+      id: recipe._id,
+      fields: ['name', 'pins', 'pinned'],
+      user
+    })
+    expect(loadedRecipe[0].pinned).toBe(false)
   })
 })
