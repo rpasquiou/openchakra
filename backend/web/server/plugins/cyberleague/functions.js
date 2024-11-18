@@ -321,6 +321,12 @@ declareVirtualField({ model: 'company', field: 'candidates_missions', instance: 
 })
 declareVirtualField({model: 'company', field: 'candidates_missions_count', instance: 'Number'})
 declareVirtualField({model: 'company', field: 'is_partner', requires: 'statut', instance: 'Boolean'})
+declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'advertising' }
+  },
+})
 
 //Expertise declarations
 
