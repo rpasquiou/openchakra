@@ -89,7 +89,6 @@ export const ACTIONS = {
 
   create: ({ value, context, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
-    console.log('component ids', componentsIds)
     const components=componentsIds.map(c => {
       const comp=getComponent(c, level)
       return comp
@@ -112,7 +111,7 @@ export const ACTIONS = {
     })
     'job,mission,quotation,group,parent,content,recipe,menu,pip,collectiveChallenge,quizzQuestion,userQuizzQuestion,user'.split(',').forEach(property => {
       if (props[property]) {
-        const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
+        const dataId=getComponent(props[property], level)?.getAttribute('_id')||getComponentValue(props[property], level)
         body[property]=dataId
       }
     })

@@ -52,7 +52,6 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       parent: ({ components }) =>
         components
-          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       content: ({ components }) =>
         components
