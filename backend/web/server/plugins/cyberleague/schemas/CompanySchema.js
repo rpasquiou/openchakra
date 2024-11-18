@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR } = require('../consts')
+const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR, CURRENT_CAMPAIGN_YES, CURRENT_CAMPAIGN_NO } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -246,6 +246,10 @@ CompanySchema.virtual('advertisings_count', {
   localField: '_id',
   foreignField: 'company',
   count: true
+})
+
+CompanySchema.virtual('current_campaign', DUMMY_REF).get(function () {
+  return this.is_current_campaign ? CURRENT_CAMPAIGN_YES : CURRENT_CAMPAIGN_NO
 })
 
 /* eslint-enable prefer-arrow-callback */
