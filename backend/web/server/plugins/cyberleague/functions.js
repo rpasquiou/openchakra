@@ -327,6 +327,7 @@ declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array'
     options: { ref: 'advertising' }
   },
 })
+declareVirtualField({model: 'company', field: 'advertisings_count', instance: 'Number'})
 
 //Expertise declarations
 

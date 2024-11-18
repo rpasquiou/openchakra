@@ -236,6 +236,13 @@ CompanySchema.virtual('advertisings', {
   foreignField: 'company'
 })
 
+CompanySchema.virtual('advertisings_count', {
+  ref: 'advertising',
+  localField: '_id',
+  foreignField: 'company',
+  count: true
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = CompanySchema
