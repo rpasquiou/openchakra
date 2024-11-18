@@ -44,6 +44,7 @@ const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, 
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
+const Post = require('../../models/Post')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -763,9 +764,38 @@ const postPutData = async ({model, id, user, attribute, value}) => {
 
   if (model == 'post') {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
+    const post = await Post.findById(id)
+    let group
+    if (post.group) {
+      group = await Group.findById(id)
+    }
     if (attribute == 'liked') {
       if (value) {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+        //add notif for liked post
+        if (group) {
+          const params = {}
+          params.groupName = group.name
+          await addNotification({
+            users: [post.creator],
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
+            type: NOTIFICATION_TYPE_GROUP_LIKE,
+            customData: null,
+            picture: user.picture
+          })
+        } else {
+          await addNotification({
+            users: [post.creator],
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
+            type: NOTIFICATION_TYPE_FEED_LIKE,
+            customData: null,
+            picture: user.picture
+          })
+        }
       } else {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
       }
