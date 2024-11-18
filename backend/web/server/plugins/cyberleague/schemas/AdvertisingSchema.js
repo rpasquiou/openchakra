@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { DUMMY_REF } = require('../../../utils/database')
+const { CURRENT_ADVERTISING_YES, CURRENT_ADVERTISING_NO } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -24,7 +26,9 @@ const AdvertisingSchema = new Schema({
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
-
+AdvertisingSchema.virtual('current_advertising', DUMMY_REF).get(function () {
+  return is_current ? CURRENT_ADVERTISING_YES : CURRENT_ADVERTISING_NO
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = AdvertisingSchema
