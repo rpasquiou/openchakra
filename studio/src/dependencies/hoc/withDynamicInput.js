@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import lodash from 'lodash'
+import moment from 'moment'
 import {InputGroup, InputRightElement} from '@chakra-ui/react'
 import {AiOutlineEye, AiOutlineEyeInvisible} from 'react-icons/ai'
 import { ACTIONS } from '../utils/actions'
+
+const durationToText = intValue => {
+  if (lodash.isNil(intValue)) {
+    return intValue
+  }
+  return moment(0).startOf('day').add(intValue, 'minutes').format('HH:mm')
+}
 
 const withDynamicInput = Component => {
 
@@ -27,6 +35,15 @@ const withDynamicInput = Component => {
       if (props?.type === 'time') {
           keptValue = transformedDate.slice(11, 16)
       }
+    }
+
+    // Duration: convert to time
+    if (props.type=='duration') {
+      console.log('ici là')
+      props.type='time'
+      console.log('keptvalue before', keptValue)
+      keptValue=durationToText(keptValue || 0)
+      console.log('keptvalue after', keptValue)
     }
 
     useEffect(() => {
