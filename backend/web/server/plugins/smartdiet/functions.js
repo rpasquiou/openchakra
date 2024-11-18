@@ -1253,6 +1253,17 @@ declareVirtualField({
 })
 declareEnumField({ model: 'recipe', field: 'season', enumValues: SEASON })
 declareVirtualField({ model: 'recipe', field: 'type', instance: 'String', requires: 'duration', enumValues: RECIPE_TYPE })
+declareVirtualField({
+  model: 'recipe',
+  field: 'comments',
+  instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'comment' }
+  },
+})
+declareVirtualField({ model: 'recipe', field: 'comments_count', instance: 'Number', requires: 'comments' })
 
 declareVirtualField({
   model: 'menu', field: 'recipes', instance: 'Array',

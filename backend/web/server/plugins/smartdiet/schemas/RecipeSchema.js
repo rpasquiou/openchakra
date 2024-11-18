@@ -135,4 +135,19 @@ RecipeSchema.virtual("type", {localField: 'tagada', foreignField: 'tagada'}).get
   return this.duration>0 ? RECIPE_TYPE_RECIPE : RECIPE_TYPE_FAMILY
 })
 
+RecipeSchema.virtual('comments', {
+  ref: "comment",
+  localField: "_id",
+  foreignField: "recipe",
+  match: {parent: null},
+})
+
+RecipeSchema.virtual('comments_count', {
+  ref: "comment",
+  localField: "_id",
+  foreignField: "recipe",
+  match: {parent: null},
+  count: true,
+})
+
 module.exports = RecipeSchema
