@@ -44,6 +44,7 @@ const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, 
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
+const Post = require('../../models/Post')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -88,6 +89,7 @@ const computeMessage = ({type, user, params}) => {
 }
 setComputeMessage(computeMessage)
 
+const NotificationModel = mongoose.models.notification
 
 
 
@@ -695,17 +697,33 @@ const postCreate = async ({ model, params, data, user }) => {
     const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain}})
 
-    // if (data.post) {
-    //   await addNotification({
-    //     users: [data.creator],
-    //     targetId: data._id,
-    //     targetType: NOTIFICATION_TYPE_POST,
-    //     text: 'text de notif',
-    //     type: NOTIFICATION_TYPE_POST,
-    //     customData: null,
-    //     picture: null
-    //   })
-    // }
+    if (data.post) {
+      if (params.parent) {
+        const parentModel = await getModel(params.parent, ['group','user'])
+        if (parentModel === 'group') {
+          params.groupName = params.parent.name
+          await addNotification({
+            users: [data.creator],
+            targetId: data._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
+            type: NOTIFICATION_TYPE_GROUP_COMMENT,
+            customData: null,
+            picture: user.picture
+          })
+        } else {//if parent's model is user then it is a general feed post
+          await addNotification({
+            users: [data.creator],
+            targetId: data._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
+            type: NOTIFICATION_TYPE_FEED_COMMENT,
+            customData: null,
+            picture: user.picture
+          })
+        }
+      }
+    }
   }
 
   if (model == 'scan') {
@@ -746,12 +764,45 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   }
 
   if (model == 'post') {
-    const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
     if (attribute == 'liked') {
+      const gain = await Gain.findOne({source: COIN_SOURCE_LIKE_COMMENT})
+      const post = await Post.findById(id)
+      let group
+      if (post.group) {
+        group = await Group.findById(id)
+      }
       if (value) {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+
+        //add notif for liked post
+        if (group) {
+          const params = {}
+          params.groupName = group.name
+          await addNotification({
+            users: [post.creator],
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
+            type: NOTIFICATION_TYPE_GROUP_LIKE,
+            customData: null,
+            picture: user.picture
+          })
+        } else {
+          await addNotification({
+            users: [post.creator],
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
+            type: NOTIFICATION_TYPE_FEED_LIKE,
+            customData: null,
+            picture: user.picture
+          })
+        }
       } else {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+
+        //delete notification for liked post
+        await NotificationModel.findOneAndDelete({_target_type: /.*LIKE.*/, targetId: id, picture: user.picture})
       }
     }
   }
