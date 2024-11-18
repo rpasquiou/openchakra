@@ -41,6 +41,10 @@ const GroupSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'visioDay',
   }],
+  trainees: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
 }, schemaOptions)
 
 GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){
