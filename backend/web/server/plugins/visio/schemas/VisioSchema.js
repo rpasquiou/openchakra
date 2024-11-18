@@ -37,6 +37,11 @@ const VisioSchema = new Schema({
     type: 'String',
     required: [true, `Le titre est obligatoire`]
   },
+  // Returns the visio type + the owner's name (group, session, trainee)
+  type_str: {
+    type: String,
+    required: false,
+  },
   // Url not required because will be provided
   url: {
     type: String,
