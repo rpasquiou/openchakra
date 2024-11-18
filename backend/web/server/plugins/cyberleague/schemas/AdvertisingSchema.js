@@ -17,6 +17,10 @@ const AdvertisingSchema = new Schema({
     type: String,
     required: [true, `Les images sont obligatoires`]
   },
+  is_current: {
+    type: Boolean,
+    required: [true, `Il est obligatoire de préciser si la publicité doit être active ou non`],
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
