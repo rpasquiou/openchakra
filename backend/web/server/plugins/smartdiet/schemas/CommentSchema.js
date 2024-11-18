@@ -26,6 +26,11 @@ const CommentSchema = new Schema(
       ref: 'content',
       required: false,
     },
+    recipe: {
+      type: Schema.Types.ObjectId,
+      ref: 'recipe',
+      required: false,
+    },
     // Parent comment (i.e a comment of a comment)
     parent: {
       type: Schema.Types.ObjectId,
