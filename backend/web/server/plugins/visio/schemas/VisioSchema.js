@@ -16,9 +16,16 @@ const VisioSchema = new Schema({
     type: Date,
     required: false,
   },
-  // Duraiton in minutes
+  // Duration in minutes: can be number of HH:mm
   duration: {
     type: Number,
+    set: function(v) {
+      if (typeof v=='string') {
+        v=v.split(':').map(l => parseInt(l))
+        v=v[0]*60+v[1]
+      }
+     return v
+    },
     required: false,
   },
   end_date: {
