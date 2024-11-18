@@ -45,6 +45,7 @@ const { deleteUserNotification, addNotification } = require('../notifications/ac
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
+const Advertising = require('../../models/Advertising')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -840,6 +841,12 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
       }
     }
+  }
+
+  if (model == 'advertising' && attribute == 'is_current') {
+    //if is_current is true then other advertising of the same company must be false
+    const ad = Advertising.findById(id)
+    await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
   }
 
   return {model, user, attribute, value}
