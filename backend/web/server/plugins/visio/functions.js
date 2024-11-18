@@ -50,7 +50,6 @@ const formatKmeetDate = date => {
 const getCalendarId = async () => {
   const headers=getHeaders()
   const calendars=(await axios.get('https://calendar.infomaniak.com/api/pim/calendar', {headers}))?.data?.data?.calendars
-  console.log(calendars)
   const calendar=calendars?.find(c => c.account_id!=null)
   if (!calendar) {
     throw new Error(`Kmeet: Main calendar not found`)
@@ -59,7 +58,6 @@ const getCalendarId = async () => {
 }
 
 const createRoom = async (start_date, duration, title) => {
-  console.log('here')
   if (!start_date) {
     throw new Error(`La date de début est obligatoire`)
   }
