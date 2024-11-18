@@ -57,6 +57,7 @@ const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
 const { getGroupVisiosDays, getUserVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
+const { getGroupTrainees } = require('./group')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -204,6 +205,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
 // Group start
 declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
 declareComputedField({model: `group`, field: `visios`, getterFn: getGroupVisiosDays})
+declareComputedField({model: `group`, field: `trainees`, requires: 'sessions.trainees.fullname', getterFn: getGroupTrainees})
 // Group end
 
 // HelpDeskConversation start
