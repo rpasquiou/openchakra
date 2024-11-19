@@ -262,6 +262,7 @@ USER_MODELS.forEach(m => {
   declareComputedField({model: m, field: 'unseen_notifications_count', getterFn: getPendingNotificationsCount})
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'scans_count', requires:'scans', instance: 'Number'})
 })
 
 //Company declarations

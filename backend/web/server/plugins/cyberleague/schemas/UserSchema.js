@@ -421,6 +421,10 @@ UserSchema.virtual('registered_events', {
   foreignField:'registered_users',
 })
 
+UserSchema.virtual('scans_count', DUMMY_REF).get(function() {
+  return this.scans ? this.scans.length : 0
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
