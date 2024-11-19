@@ -27,7 +27,7 @@ const AdvertisingSchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 AdvertisingSchema.virtual('current_advertising', DUMMY_REF).get(function () {
-  return is_current ? CURRENT_ADVERTISING_YES : CURRENT_ADVERTISING_NO
+  return this.is_current ? CURRENT_ADVERTISING_YES : CURRENT_ADVERTISING_NO
 })
 /* eslint-enable prefer-arrow-callback */
 
