@@ -381,7 +381,7 @@ export const colors = {
       '800': '#060609',
       '900': '#000000'
     },
-    'blanccassé': {
+    blanccasse: {
       '100': '#ffffff',
       '200': '#fcfdfc',
       '300': '#f9fbf8',
