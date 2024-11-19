@@ -26,7 +26,7 @@ const addNotification = ({users, targetId, targetType, text, type, customData, p
     _target_type: targetType,
     text: text,
     type: type,
-    url: callComputeUrl(targetId, targetType),
+    url: callComputeUrl({targetId, type}),
     custom_data: customData,
     picture
   })
