@@ -106,7 +106,12 @@ USER_MODELS.forEach(m => {
   declareVirtualField({ model: m, field: 'fullname', instance: 'String', requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'shortname', instance: 'String',requires:'firstname,lastname'})
   declareVirtualField({ model: m, field: 'pinned_by_count', instance: 'Number' })
-  declareVirtualField({model: m,field: 'companies',instance: 'Array',multiple: true,requires: 'company',})
+  declareVirtualField({model: m,field: 'admin_companies',instance: 'Array',multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'company'}
+    },
+  })
   declareVirtualField({
     model: m, field: 'pinned_users', instance: 'Array', multiple: true,
     caster: {
@@ -539,6 +544,8 @@ const ensureOnlyOneTrue = ({model, id, field, filter}) => {
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+  //console.log('model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
