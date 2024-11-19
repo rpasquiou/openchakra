@@ -17,6 +17,7 @@ const { sendBufferToAWS } = require("../../middlewares/aws");
 const { fillForm2 } = require("../../../utils/fillForm");
 const { formatDate, formatPercent } = require('../../../utils/text');
 const { ensureObjectIdOrString } = require('./utils');
+const { getSessionTraineeVisio } = require('./visio');
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
@@ -465,7 +466,7 @@ const getSessionProof = async (userId, params, data, fields, actualLogged) => {
 
     const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
 
-    const pdfData={
+    let pdfData={
       start_date: formatDate(session.start_date, true), end_date: formatDate(session.end_date, true), location: session.location,
       session_name: session.name, trainee_fullname: trainee.fullname, session_code: session.code,
       achievement_status: BLOCK_STATUS[session.achievement_status], creation_date: formatDate(moment(), true),
@@ -485,6 +486,13 @@ const getSessionProof = async (userId, params, data, fields, actualLogged) => {
           }))
         }))
       }))
+    }
+
+    const virtualClasses=await getSessionTraineeVisio(data._id, trainee._id)
+
+    // Add virtual classes
+    if (virtualClasses.length>0) {
+      pdfData.level_1=[...pdfData.level_1, {name:''}, {name: 'Classes virtuelles', level_2: virtualClasses}]
     }
     
     const pdfPath=path.join(ROOT, TEMPLATE_NAME)

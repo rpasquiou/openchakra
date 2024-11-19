@@ -6,6 +6,7 @@ const { ROLE_FORMATEUR, ROLE_APPRENANT, VISIO_TYPE } = require('./consts')
 const Group = require('../../models/Group')
 const User = require('../../models/User')
 const Session = require('../../models/Session')
+const { formatDuration } = require('../../../utils/text')
 
 const getGroupTrainees= async groupId => {
   const group=await mongoose.models.group.findById(groupId)
@@ -57,11 +58,12 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
   }
   const mySessions=await Session.find({trainees: userId}, {_id:1})
   const myGroups=await Group.find({sessions: {$in: mySessions}}, {_id:1})
-  _owner.push(...myGroups)
+  _owner.push(...myGroups, ...mySessions)
   params={'filter._owner': _owner}
   if (role==ROLE_FORMATEUR) {
     params['filter.creator']=userId
   }
+  console.log('params', params)
   const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
@@ -81,6 +83,18 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
   return `${type_str} (${v._owner.name || v._owner.fullname})`  
 }
 
+const getSessionTraineeVisio = async (session_id, user_id) => {
+  console.log('Getting sesison trainees', session_id, user_id)
+  const groups=(await Group.find({sessions: session_id})).map(g => g._id)
+  const ids=[user_id, session_id, ...groups]
+  const visios=await mongoose.models.visio.find({_owner: {$in: ids}})
+  console.log('Getting visios', visios)
+  const spentTimes=await mongoose.models.visioProgress.find({visio: {$in: visios}, user: user_id})
+    .populate('visio')
+  const result=spentTimes.map(s => ({name: s.visio.title, spent_time_str: formatDuration(s.spent_time)}))
+  return result
+}
+
 module.exports={
-  getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr,
+  getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionTraineeVisio,
 }

@@ -7,9 +7,11 @@ const VisioSchema = require('./schemas/VisioSchema')
 const { declareVirtualField, declareEnumField, declareFieldDependencies } = require('../../utils/database')
 const { VISIO_STATUS, VISIO_STATUS_TO_COME, VISIO_STATUS_UNDEFINED, VISIO_STATUS_CURRENT, VISIO_STATUS_FINISHED } = require('./consts')
 const VisioDaySchema = require('./schemas/VisioDaySchema')
+const VisioProgressSchema = require('./schemas/VisioProgressSchema')
 
 mongoose.model('visio', VisioSchema)
 mongoose.model('visioDay', VisioDaySchema)
+const VisioProgress=mongoose.model('visioProgress', VisioProgressSchema)
 
 const STATUS_FILTERS={
   [VISIO_STATUS_UNDEFINED]: () => ({start_date: null, duration: null}),
@@ -98,4 +100,18 @@ const createRoom = async (start_date, duration, title) => {
   })
 }
 
-module.exports={createRoom}
+/**
+ * Add spent time duration (milliseconds) to the visio "id" for user
+ */
+const addVisioSpentTime = async ({visio, user, duration}) => {
+  return VisioProgress.findOneAndUpdate(
+    {visio, user},
+    {visio, user, $inc: {spent_time: duration/1000}},
+    {upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true}
+  )
+  .catch(console.error)
+}
+
+module.exports={
+  createRoom, addVisioSpentTime,
+}
