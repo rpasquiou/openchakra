@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, CURRENT_CAMPAIGN } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, CURRENT_CAMPAIGN, EVENT_STATUSES } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -418,6 +418,7 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
 declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
+declareVirtualField({model: 'event', field: 'status', requires: 'start_date', instance: 'String', enumValues: EVENT_STATUSES})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
@@ -545,7 +546,7 @@ const ensureOnlyOneTrue = ({model, id, field, filter}) => {
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  //console.log('model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+  //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
 
   if (model=='loggedUser') {
     model='user'
@@ -790,6 +791,7 @@ setPostCreateData(postCreate)
 
 
 const postPutData = async ({model, id, user, attribute, value}) => {
+  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
     if (attribute == 'users') {
       await Group.updateOne({_id:id}, {$pull: {pending_users: value}})
@@ -876,6 +878,7 @@ setPostPutData(postPutData)
 
 
 const prePutData = async ({model, id, params, user}) => {
+  //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
     if (params.administrators) {
