@@ -856,8 +856,8 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
-  if (model == 'advertising' && attribute == 'is_current') {
-    //if is_current is true then other advertising of the same company must be false
+  if (model == 'advertising' && attribute == 'is_current' && value) {
+    //if is_current is true then other advertising of the same company must be at false
     const ad = Advertising.findById(id)
     await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
   }
