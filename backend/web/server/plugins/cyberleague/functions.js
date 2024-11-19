@@ -862,6 +862,11 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
   }
 
+  if (model == 'company' && attribute == 'is_current_campaign' && value) {
+    //if is_current_campaign is true then other company must be at false
+    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  }
+
   return {model, user, attribute, value}
 }
 
