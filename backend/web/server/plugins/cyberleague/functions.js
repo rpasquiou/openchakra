@@ -545,7 +545,7 @@ const ensureOnlyOneTrue = ({model, id, field, filter}) => {
 
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  //console.log('model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+  //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
 
   if (model=='loggedUser') {
     model='user'
@@ -793,6 +793,7 @@ setPostCreateData(postCreate)
 
 
 const postPutData = async ({model, id, user, attribute, value}) => {
+  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
     if (attribute == 'users') {
       await Group.updateOne({_id:id}, {$pull: {pending_users: value}})
@@ -879,6 +880,7 @@ setPostPutData(postPutData)
 
 
 const prePutData = async ({model, id, params, user}) => {
+  //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
     if (params.administrators) {
