@@ -763,6 +763,11 @@ const postCreate = async ({ model, params, data, user }) => {
     await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
   }
 
+  if (model == 'company' && data.is_current_campaign) {
+    //if is_current is true then other advertising of the same company must be false
+    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  }
+
   //Message notification
   if (model == 'message') {
     await addNotification({
