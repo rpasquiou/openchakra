@@ -81,6 +81,10 @@ const SessionSchema = new Schema({
       required: true,
     }
   }],
+  visios: [{
+    type: Schema.Types.ObjectId,
+    ref: 'visioDay',
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema
