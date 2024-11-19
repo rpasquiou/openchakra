@@ -726,28 +726,32 @@ const postCreate = async ({ model, params, data, user }) => {
 
     if (data.post) {
       if (params.parent) {
-        const parentModel = await getModel(params.parent, ['group','user'])
-        if (parentModel === 'group') {
-          params.groupName = params.parent.name
-          await addNotification({
-            users: [data.creator],
-            targetId: data._id,
-            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
-            type: NOTIFICATION_TYPE_GROUP_COMMENT,
-            customData: null,
-            picture: user.picture
-          })
-        } else {//if parent's model is user then it is a general feed post
-          await addNotification({
-            users: [data.creator],
-            targetId: data._id,
-            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
-            type: NOTIFICATION_TYPE_FEED_COMMENT,
-            customData: null,
-            picture: user.picture
-          })
+        const parentModel = await getModel(params.parent, ['post','content'])
+        if (parentModel === 'post') {
+          const post = await Post.findById(data.post)
+          //need to know if post is in a group or in global feed
+          if (post.group) {
+            params.groupName = params.parent.name
+            await addNotification({
+              users: [data.creator],
+              targetId: data._id,
+              targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
+              text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
+              type: NOTIFICATION_TYPE_GROUP_COMMENT,
+              customData: null,
+              picture: user.picture
+            })
+          } else {
+            await addNotification({
+              users: [data.creator],
+              targetId: data._id,
+              targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
+              text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
+              type: NOTIFICATION_TYPE_FEED_COMMENT,
+              customData: null,
+              picture: user.picture
+            })
+          }
         }
       }
     }
