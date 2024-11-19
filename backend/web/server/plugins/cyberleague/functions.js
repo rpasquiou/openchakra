@@ -764,7 +764,7 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'company' && data.is_current_campaign) {
-    //if is_current is true then other advertising of the same company must be false
+    //if is_current_campaign is true then other companies must be at false
     await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
   }
 
