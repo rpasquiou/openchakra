@@ -1,50 +1,38 @@
 const _ =require('lodash')
 const process=require('process')
+const chroma=require('chroma-js')
 
 let temp
 let result={}
+let name=null
+
+if (process.argv.length<=2) {
+    console.log(`Generates a palette for each provided color, from white to color to black`)
+    console.log(`Usage: ${process.argv.join(' ')} colorname1 colorhex1 ... colornameN colorhexN`)
+    process.exit(0)
+}
 process.argv.forEach(function (val, index, array) {
     if(index>1){
         if(index=='2'){
-            result.name=val
+            name=val
         }else if(index%2==1){
             temp=val
         }else{
             result[temp]=generateShades(val)
         }
     }
-    return result
   });
 
-function hexToRGB(hex) {
-    let r = parseInt(hex.slice(1, 3), 16)
-    let g = parseInt(hex.slice(3, 5), 16)
-    let b = parseInt(hex.slice(5, 7), 16)
-    return { r, g, b };
+function generateShades(middleColor) {
+    // Define the white and black anchors
+    const white = '#FFFFFF'
+    const black = '#000000'
+
+    // Generate a scale from white to the given color to black
+    const scale = chroma.scale([white, middleColor, black]).mode('lab').colors(9)
+    const obj=Object.fromEntries(scale.map((color, idx) => [(idx+1)*100, color]))
+    return obj
 }
 
-function RGBToHex(r, g, b) {
-    r = Math.max(0, Math.min(255, r))
-    g = Math.max(0, Math.min(255, g))
-    b = Math.max(0, Math.min(255, b))
-    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()
-}
-
-function generateShades(hexColor) {
-    const baseColor = hexToRGB(hexColor)
-    const shades={}
-    const factors = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
-    _.reverse(factors)
-    factors.map(factor => {
-        const r = Math.round(baseColor.r * factor)
-        const g = Math.round(baseColor.g * factor)
-        const b = Math.round(baseColor.b * factor)
-        const hue=1000 - factor*500
-        shades[hue]=RGBToHex(r,g,b)
-    });
-    return shades
-}
-
-console.log(result.name)
-delete result.name
+result={[name]: result}
 console.log(result)
