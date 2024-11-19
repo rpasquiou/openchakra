@@ -684,6 +684,10 @@ const preCreate = async ({model, params, user}) => {
     }
   }
 
+  if (model == 'advertising') {
+    params.company = params.parent
+  }
+
   let data = null
 
   if (model == 'scan') {
