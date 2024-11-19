@@ -764,7 +764,7 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'company' && data.is_current_campaign) {
-    //if is_current is true then other advertising of the same company must be false
+    //if is_current_campaign is true then other companies must be at false
     await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
   }
 
@@ -856,10 +856,15 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
-  if (model == 'advertising' && attribute == 'is_current') {
-    //if is_current is true then other advertising of the same company must be false
+  if (model == 'advertising' && attribute == 'is_current' && value) {
+    //if is_current is true then other advertising of the same company must be at false
     const ad = Advertising.findById(id)
     await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
+  }
+
+  if (model == 'company' && attribute == 'is_current_campaign' && value) {
+    //if is_current_campaign is true then other company must be at false
+    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
   }
 
   return {model, user, attribute, value}
