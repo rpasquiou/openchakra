@@ -12,6 +12,7 @@ const {
   RECIPE_TYPE_RECIPE,
   RECIPE_TYPE_FAMILY
 } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -128,7 +129,15 @@ const RecipeSchema = new Schema({
   pinned: {
     type: Boolean,
     default: false,
-  }
+  },
+  liked: {
+    type: Boolean,
+    default: false,
+  },
+  likes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }]
 },
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
@@ -156,6 +165,10 @@ RecipeSchema.virtual('comments_count', {
   foreignField: "recipe",
   match: {parent: null},
   count: true,
+})
+
+RecipeSchema.virtual('likes_count', DUMMY_REF).get(function() {
+  return this.likes?.length || 0
 })
 
 module.exports = RecipeSchema

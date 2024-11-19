@@ -1272,6 +1272,7 @@ declareVirtualField({
   },
 })
 declareVirtualField({ model: 'recipe', field: 'comments_count', instance: 'Number', requires: 'comments' })
+declareVirtualField({ model: 'recipe', field: 'likes_count', instance: 'Number', requires: 'likes' })
 
 declareVirtualField({
   model: 'menu', field: 'recipes', instance: 'Array',
@@ -1826,7 +1827,7 @@ const getDataLiked = (userId, params, data) => {
 }
 
 const setDataLiked = ({ id, attribute, value, user }) => {
-  return getModel(id, ['comment', 'message', 'content'])
+  return getModel(id, ['comment', 'message', 'content', 'recipe'])
     .then(model => {
       if (value) {
         // Set liked
@@ -1958,6 +1959,7 @@ declareComputedField({model: 'loggedUser', field: 'spoons_count', getterFn: getU
 declareComputedField({model: 'comment', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'message', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'content', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
+declareComputedField({model: 'recipe', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'message', field: 'pinned', getterFn: getDataPinned, setterFn: setDataPinned})
 declareComputedField({model: 'content', field: 'pinned', getterFn: getDataPinned, setterFn: setDataPinned})
 declareComputedField({model: 'group', field: 'pinned_messages', getterFn: getPinnedMessages})
