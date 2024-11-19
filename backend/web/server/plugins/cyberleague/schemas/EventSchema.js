@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
+const moment=require('moment')
 
 const Schema = mongoose.Schema
 
@@ -89,6 +90,10 @@ const EventSchema = new Schema({
 
 EventSchema.virtual('registered_users_count', DUMMY_REF).get(function() {
   return this.registered_users?.length
+})
+
+EventSchema.virtual('status', DUMMY_REF).get(function() {
+  return moment().isBefore(this.start_date) ? EVENT_STATUS_FUTUR : EVENT_STATUS_PAST
 })
 
 /* eslint-enable prefer-arrow-callback */
