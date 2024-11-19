@@ -50,17 +50,17 @@ const Advertising = require('../../models/Advertising')
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
-const computeUrl = ({type, targetId}) => {
+const computeUrl = async ({type, targetId}) => {
   let tagUrl
   switch (type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      tagUrl = getTagUrl('NOTIFICATION_MESSAGE')
+      tagUrl = await getTagUrl('NOTIFICATION_MESSAGE')
       break
     case NOTIFICATION_TYPE_FEED_COMMENT:
     case NOTIFICATION_TYPE_FEED_LIKE:
     case NOTIFICATION_TYPE_GROUP_COMMENT:
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      tagUrl = getTagUrl('NOTIFICATION_POST')
+      tagUrl = await getTagUrl('NOTIFICATION_POST')
       break;
   }
 
