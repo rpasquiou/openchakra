@@ -1,15 +1,17 @@
 const moment=require('moment')
+const mongoose=require('mongoose')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR } = require('./consts')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION } = require('./consts')
 const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
-const { setpreLogin } = require('../../utils/database')
+const { setpreLogin, getModel, idEqual } = require('../../utils/database')
 const { sendForgotPassword } = require('./mailing')
+const { addVisioSpentTime } = require('../visio/functions')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
@@ -75,22 +77,34 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  const toUpdate=[id, ...(await getParentBlocks(id))]
-  await Promise.all(toUpdate.map(async blockId => {
-    // Increase spent time
-    await Progress.findOneAndUpdate(
-      {user, block: blockId},
-      {user, block: blockId, $inc: {spent_time: duration/1000}},
-      {upsert: true, new: true}
-    )
-    // Set status to current if not already finished
-    const currentStatus=await getBlockStatus(user._id, null, {_id: id})
-    // Set to current if not already finished
-    if (![BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(currentStatus)) {
-      await saveBlockStatus(user._id, id, BLOCK_STATUS_CURRENT)
+  const model=await getModel(id)
+  if (model=='visio') {
+     await addVisioSpentTime({visio: id, user, duration: duration})
+     const visio=await mongoose.models.visio.findById(id)
+      .populate({path: '_owner', populate: 'sessions'})
+    if ([VISIO_TYPE_SESSION, VISIO_TYPE_GROUP].includes(visio.type)) {
+      let sessions=(visio._owner.sessions || [visio._owner]).filter(s => s.trainees.some(t => idEqual(t, user._id))).map(s => s._id)
+      await Progress.updateMany({block: {$in: sessions}, user: user._id}, {$inc: {spent_time: duration/1000}})
     }
-  }))
-  return onBlockAction(user._id, id)
+  }
+  if (model==BLOCK_TYPE_RESOURCE) {
+    const toUpdate=[id, ...(await getParentBlocks(id))]
+    await Promise.all(toUpdate.map(async blockId => {
+      // Increase spent time
+      await Progress.findOneAndUpdate(
+        {user, block: blockId},
+        {user, block: blockId, $inc: {spent_time: duration/1000}},
+        {upsert: true, new: true}
+      )
+      // Set status to current if not already finished
+      const currentStatus=await getBlockStatus(user._id, null, {_id: id})
+      // Set to current if not already finished
+      if (![BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(currentStatus)) {
+        await saveBlockStatus(user._id, id, BLOCK_STATUS_CURRENT)
+      }
+    }))
+    return onBlockAction(user._id, id)
+  }
 }
 
 addAction('addSpentTime', addSpentTimeAction)
