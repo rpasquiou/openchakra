@@ -27,6 +27,10 @@ const AdvertisingSchema = new Schema({
     type: String,
     required: [true, `L'url de redirection est obligatoire`]
   },
+  name: {
+    type: String,
+    required: [true, `Le nom de la publicité est obligatooire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
