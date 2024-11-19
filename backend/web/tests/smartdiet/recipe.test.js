@@ -124,4 +124,28 @@ describe('Recipe Test', () => {
     })
     expect(loadedRecipe[0].pinned).toBe(false)
   })
+
+  it('should like a recipe', async () => {
+    let loadedRecipe = await loadFromDb({
+      model: 'recipe',
+      id: recipe._id,
+      fields: ['name', 'liked', 'likes'],
+      user
+    })
+    expect(loadedRecipe[0].liked).toBeFalsy()
+    expect(loadedRecipe[0].likes).toHaveLength(0)
+  
+    await Recipe.findByIdAndUpdate(recipe._id, {
+      $addToSet: { likes: user._id }
+    })
+  
+    loadedRecipe = await loadFromDb({
+      model: 'recipe',
+      id: recipe._id,
+      fields: ['name', 'likes', 'liked'],
+      user
+    })
+    expect(loadedRecipe[0].liked).toBeTruthy()
+    expect(loadedRecipe[0].likes).toHaveLength(1)
+  })
 })
