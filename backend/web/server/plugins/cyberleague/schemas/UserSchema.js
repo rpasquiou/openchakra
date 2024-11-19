@@ -330,6 +330,13 @@ UserSchema.virtual('posts', {
   foreignField: 'creator',
 })
 
+UserSchema.virtual('posts_count', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'creator',
+  count: true,
+})
+
 UserSchema.virtual('comments', {
   ref: 'comment',
   localField: '_id',

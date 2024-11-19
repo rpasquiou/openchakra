@@ -186,6 +186,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'post' },
     },
   })
+  declareVirtualField({model: m, field: 'posts_count', instance: 'Number'})
   declareVirtualField({
     model: m,
     field: 'comments',
