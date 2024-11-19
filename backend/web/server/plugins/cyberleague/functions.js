@@ -203,6 +203,7 @@ USER_MODELS.forEach(m => {
       options: { ref: 'score' }
     },
   })
+  declareVirtualField({model: m, field: 'completed_scores_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'latest_score',instance: 'Array', multiple: true,
     caster: {
       instance: 'ObjectID',

@@ -304,6 +304,16 @@ UserSchema.virtual('completed_scores', {
   },
 })
 
+UserSchema.virtual('completed_scores_count', {
+  ref:'score',
+  localField:'_id',
+  foreignField:'creator',
+  options: {
+    match: {completed: COMPLETED_YES},
+  },
+  count: true,
+})
+
 UserSchema.virtual('latest_score', {
   ref: 'score',
   localField: '_id',
