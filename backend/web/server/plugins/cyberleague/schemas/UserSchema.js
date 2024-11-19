@@ -285,6 +285,10 @@ UserSchema.virtual('is_company_admin', DUMMY_REF).get(function() {
   return this.company?.administrators?.some(admin => idEqual(admin._id,this._id))
 })
 
+UserSchema.virtual('companies', DUMMY_REF).get(function() {
+  return this.company ? [this.company] : []
+})
+
 UserSchema.virtual('admin_companies', {
   ref: 'company',
   localField: '_id',
