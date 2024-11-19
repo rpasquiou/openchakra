@@ -10,7 +10,7 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
-const callComputeUrl = ({...params}) => {
+const callComputeUrl = async ({...params}) => {
   return computeUrl(params)
 }
 

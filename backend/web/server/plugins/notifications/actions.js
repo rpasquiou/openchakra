@@ -17,7 +17,7 @@ const validateNotification = async ({value}, user) => {
 addAction('validate',validateNotification)
 
 
-const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
+const addNotification = async ({users, targetId, targetType, text, type, customData, picture}) => {
   const NotificationModel = mongoose.models.notification
 
   return NotificationModel.create({
@@ -26,7 +26,7 @@ const addNotification = ({users, targetId, targetType, text, type, customData, p
     _target_type: targetType,
     text: text,
     type: type,
-    url: callComputeUrl({targetId, type}),
+    url: await callComputeUrl({targetId, type}),
     custom_data: customData,
     picture
   })

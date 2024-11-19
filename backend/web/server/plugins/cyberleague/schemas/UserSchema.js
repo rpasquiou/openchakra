@@ -194,7 +194,7 @@ const UserSchema = new Schema({
       required: true
     }],
     default: []
-  }
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
