@@ -12,6 +12,11 @@ const DocumentSchema = new Schema({
     type: String,
     required: [true, `le média est obligatoire`]
   },
+  company: {
+    type: Schema.Types.ObjectId,
+    ref: 'company',
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
