@@ -691,6 +691,13 @@ const preCreate = async ({model, params, user}) => {
     params.company = params.parent
   }
 
+  if (model == 'member') {
+    if (!params.company_sponsorship) {
+      const default_sponsor = await Company.findOne({is_default_sponsorship: true})
+      params.company_sponsorship = default_sponsor._id
+    }
+  }
+
   let data = null
 
   if (model == 'scan') {
