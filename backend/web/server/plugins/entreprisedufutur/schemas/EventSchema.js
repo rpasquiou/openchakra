@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
+const { isEmailOk } = require('../../../../utils/sms')
 
 const Schema = mongoose.Schema
 
@@ -82,6 +83,13 @@ const EventSchema = new Schema({
     type: String,
     required: [true, 'Le nom de l\'organisateur est obligatoire'],
   },
+  organizer_email: {
+    type: String,
+    required: [true, 'L\'email de l\'organisateur est obligatoire'],
+    set: v => v? v.toLowerCase().trim() : v,
+    index: true,
+    validate: [isEmailOk, v => `L'email '${v.value}' est invalide`],
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
