@@ -25,7 +25,7 @@ const EventSchema = new Schema({
   },
   picture: {
     type: String,
-    required: false,
+    required: [true, 'La picture est obligatoire'],
   },
   is_webinaire: {
     type: Boolean,
