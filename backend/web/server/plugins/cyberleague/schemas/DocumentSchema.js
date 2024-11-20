@@ -4,7 +4,10 @@ const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 
 const DocumentSchema = new Schema({
-  
+  title: {
+    type: String,
+    required: [true, `le titre est obligatoire`]
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
