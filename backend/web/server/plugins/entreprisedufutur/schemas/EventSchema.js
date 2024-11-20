@@ -3,6 +3,7 @@ const { schemaOptions } = require('../../../utils/schemas')
 const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -103,6 +104,10 @@ const EventSchema = new Schema({
   location_name: {
     type: String,
     required: [true, 'Le nom de la location est obligatoire'],
+  },
+  location_address: {
+    type: AddressSchema,
+    required: [true, 'L\'adresse de la location est obligatoire'],
   }
 }, schemaOptions)
 
