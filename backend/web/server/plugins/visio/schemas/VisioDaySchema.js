@@ -11,6 +11,10 @@ const VisioDaySchema = new Schema({
     type: Date,
     required: [true, `Le jour est obligatoire`]
   },
+  all_finished: {
+    type: Boolean,
+    required: [true, `Tous terminés ne peut être nul`],
+  },
   visios: [{
     type: Schema.Types.ObjectId,
     ref: 'visio',

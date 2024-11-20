@@ -7,6 +7,7 @@ const Group = require('../../models/Group')
 const User = require('../../models/User')
 const Session = require('../../models/Session')
 const { formatDuration } = require('../../../utils/text')
+const { VISIO_STATUS_FINISHED } = require('../visio/consts')
 
 const getGroupTrainees= async groupId => {
   const group=await mongoose.models.group.findById(groupId)
@@ -21,6 +22,7 @@ const getGroupVisiosDays = async (userId, params, data, fields, actualLogged) =>
   const VISIOS_FILTER = /visios\./
   const VISIOS_FILTER2 = /\.visios/
   fields=fields.filter(f => VISIOS_FILTER.test(f)).map(f => f.replace(VISIOS_FILTER, ''))
+  fields=[...fields, 'status']
   params=lodash(params)
     .pickBy((_, f) => VISIOS_FILTER2.test(f))
     .mapKeys((_, f) => f.replace(VISIOS_FILTER2, ''))
@@ -32,7 +34,11 @@ const getGroupVisiosDays = async (userId, params, data, fields, actualLogged) =>
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
     .entries()
-    .map(([day, visios]) => new mongoose.models.visioDay({day, visios:visios.map(v => new mongoose.models.visio(v))}))
+    .map(([day, visios]) => new mongoose.models.visioDay({
+      day, 
+      visios:visios.map(v => new mongoose.models.visio(v)),
+      all_finished: visios.every(v => v.status==VISIO_STATUS_FINISHED),
+    }))
     .value()
   return grouped
 }
@@ -47,6 +53,7 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
   const VISIOS_FILTER = /visios\./
   const VISIOS_FILTER2 = /\.visios/
   fields=fields.filter(f => VISIOS_FILTER.test(f)).map(f => f.replace(VISIOS_FILTER, ''))
+  fields=[...fields, 'status']
   params=lodash(params)
     .pickBy((_, f) => VISIOS_FILTER2.test(f))
     .mapKeys((_, f) => f.replace(VISIOS_FILTER2, ''))
@@ -68,7 +75,11 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
     .entries()
-    .map(([day, visios]) => new mongoose.models.visioDay({day, visios:visios.map(v => new mongoose.models.visio(v))}))
+    .map(([day, visios]) => new mongoose.models.visioDay({
+      day, 
+      visios:visios.map(v => new mongoose.models.visio(v)),
+      all_finished: visios.every(v => v.status==VISIO_STATUS_FINISHED)
+    }))
     .value()
   return grouped
 }
