@@ -8,6 +8,10 @@ const DocumentSchema = new Schema({
     type: String,
     required: [true, `le titre est obligatoire`]
   },
+  media: {
+    type: String,
+    required: [true, `le média est obligatoire`]
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
