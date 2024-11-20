@@ -78,6 +78,10 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  organizer_name: {
+    type: String,
+    required: [true, 'Le nom de l\'organisateur est obligatoire'],
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
