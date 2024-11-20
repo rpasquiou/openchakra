@@ -99,6 +99,10 @@ const EventSchema = new Schema({
   banner: {
     type: String,
     required: false
+  },
+  location_name: {
+    type: String,
+    required: [true, 'Le nom de la location est obligatoire'],
   }
 }, schemaOptions)
 
