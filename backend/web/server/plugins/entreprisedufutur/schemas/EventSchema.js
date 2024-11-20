@@ -26,11 +26,6 @@ const EventSchema = new Schema({
     type: String,
     required: false,
   },
-  company: {
-    type: Schema.Types.ObjectId,
-    ref: 'company',
-    required: [true, 'La compagnie est obligatoire'],
-  },
   is_webinaire: {
     type: Boolean,
     required: false
