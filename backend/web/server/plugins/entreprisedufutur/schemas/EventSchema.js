@@ -95,6 +95,10 @@ const EventSchema = new Schema({
     validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
     set: v => v?.replace(/^0/, '+33'),
     required: [true, 'Le numéro de téléphone de l\'organisateur est obligatoire'],
+  },
+  banner: {
+    type: String,
+    required: false
   }
 }, schemaOptions)
 
