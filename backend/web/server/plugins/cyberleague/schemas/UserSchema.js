@@ -330,6 +330,13 @@ UserSchema.virtual('posts', {
   foreignField: 'creator',
 })
 
+UserSchema.virtual('posts_count', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'creator',
+  count: true,
+})
+
 UserSchema.virtual('comments', {
   ref: 'comment',
   localField: '_id',
@@ -412,6 +419,10 @@ UserSchema.virtual('registered_events', {
   ref:'event',
   localField:'_id',
   foreignField:'registered_users',
+})
+
+UserSchema.virtual('scans_count', DUMMY_REF).get(function() {
+  return this.scans ? this.scans.length : 0
 })
 
 /* eslint-enable prefer-arrow-callback */
