@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
-const { isEmailOk } = require('../../../../utils/sms')
+const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 
 const Schema = mongoose.Schema
 
@@ -89,6 +89,12 @@ const EventSchema = new Schema({
     set: v => v? v.toLowerCase().trim() : v,
     index: true,
     validate: [isEmailOk, v => `L'email '${v.value}' est invalide`],
+  },
+  organizer_phone: {
+    type: String,
+    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
+    set: v => v?.replace(/^0/, '+33'),
+    required: [true, 'Le numéro de téléphone de l\'organisateur est obligatoire'],
   }
 }, schemaOptions)
 
