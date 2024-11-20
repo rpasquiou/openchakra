@@ -780,9 +780,14 @@ const postCreate = async ({ model, params, data, user }) => {
     await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
   }
 
-  if (model == 'company' && data.is_current_campaign) {
-    //if is_current_campaign is true then other companies must be at false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  if (model == 'company') {
+    if (data.is_current_campaign) {
+      //if is_current_campaign is true then other companies must be at false
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+    }
+    if (data.is_default_sponsor) {
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+    }
   }
 
   //Message notification
@@ -880,9 +885,14 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
   }
 
-  if (model == 'company' && attribute == 'is_current_campaign' && value) {
-    //if is_current_campaign is true then other company must be at false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  if (model == 'company' ) {
+    if (attribute == 'is_current_campaign' && value) {
+      //if is_current_campaign is true then other company must be at false
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+    }
+    if (attribute == 'is_default_sponsor' && value) {
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+    }
   }
 
   return {model, user, attribute, value}
