@@ -161,6 +161,11 @@ const CompanySchema = new Schema(
       required: [true, `Il est obligatoire de préciser si l'entreprise a ses publicités actives ou non`],
       default: false
     },
+    is_default_company: {
+      type: Boolean,
+      required: [true, `Il est obligatoire de préciser si l'entreprise a est sponsor par défaut ou non`],
+      default: false
+    },
   },
   schemaOptions,
 )
