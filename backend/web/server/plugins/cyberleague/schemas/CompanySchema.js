@@ -156,6 +156,11 @@ const CompanySchema = new Schema(
         ref: 'company'
       }]
     },
+    current_advertising:{
+      type: Schema.Types.ObjectId,
+      ref: 'advertising',
+      required: false
+    },
     is_current_campaign: {
       type: Boolean,
       required: [true, `Il est obligatoire de préciser si l'entreprise a ses publicités actives ou non`],
