@@ -397,20 +397,30 @@ router.get('/geoloc', async (req, res) => {
   return res.json(suggestions)
 })
 
-router.get('/current-user', 
-  passport.authenticate('cookie', { session: false }), 
+router.get(
+  '/current-user',
   (req, res, next) => {
-    console.log('After cookie authentication', req)
-    if (req.isAuthenticated()) {
-      // If already authenticated via cookie, skip SAML
-      return res.json(req.user);
-    }
-    // Fall back to SAML authentication
-    passport.authenticate('saml')(req, res, next);
+    passport.authenticate('cookie', { session: false }, (err, user) => {
+      console.log('After cookie authentication');
+      if (err) {
+        console.error('Cookie authentication error:', err);
+        return next(err);
+      }
+      if (user) {
+        req.user = user; // Attach the user to the request
+        return next(); // Continue to the next middleware
+      }
+      console.log('No user found via cookie, falling back to SAML');
+      // Continue to SAML authentication if no cookie-based user is found
+      passport.authenticate('saml')(req, res, next);
+    })(req, res, next);
   },
   (req, res) => {
-    console.log('I am authenticated')
-    // If SAML authentication succeeds, return the user
+    console.log('I am authenticated');
+    // If authenticated successfully via SAML or cookie, respond with user info
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
     return res.json(req.user);
   }
 )
