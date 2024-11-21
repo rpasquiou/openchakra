@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, CURRENT_CAMPAIGN, EVENT_STATUSES, DOCUMENT_TYPES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_ADVERTISING_YES } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -339,7 +339,6 @@ declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array'
   },
 })
 declareVirtualField({model: 'company', field: 'advertisings_count', instance: 'Number'})
-declareVirtualField({model: 'company', field: 'current_campaign', requires: 'is_current_campaign', instance: 'String', enumValues: CURRENT_CAMPAIGN})
 
 //Expertise declarations
 
@@ -792,10 +791,6 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == 'company') {
-    if (data.is_current_campaign) {
-      //if is_current_campaign is true then other companies must be at false
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
-    }
     if (data.is_default_sponsor) {
       await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
     }
@@ -897,10 +892,6 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   }
 
   if (model == 'company' ) {
-    if (attribute == 'is_current_campaign' && value) {
-      //if is_current_campaign is true then other company must be at false
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
-    }
     if (attribute == 'is_default_sponsor' && value) {
       await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
     }
