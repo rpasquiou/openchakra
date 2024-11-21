@@ -400,6 +400,7 @@ router.get('/geoloc', async (req, res) => {
 router.get('/current-user', 
   passport.authenticate('cookie', { session: false }), 
   (req, res, next) => {
+    console.log('After cookie authentication', req)
     if (req.isAuthenticated()) {
       // If already authenticated via cookie, skip SAML
       return res.json(req.user);
