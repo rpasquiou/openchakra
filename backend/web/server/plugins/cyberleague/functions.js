@@ -544,8 +544,8 @@ const ensureMarketScore = async () => {
 ensureMarketScore()
 
 
-const ensureOnlyOneTrue = ({model, id, field, filter}) => {
-  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: true, ...filter}, {[field]: false})
+const ensureOnlyOneTrue = ({model, id, field, filter, trueValue = true, falseValue = false}) => {
+  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: trueValue, ...filter}, {[field]: falseValue})
 }
 
 
