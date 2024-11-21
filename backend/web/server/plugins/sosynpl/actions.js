@@ -386,7 +386,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   if (action=='refuse') {
     const foundModel=await getModel(dataId, ['announceSuggestion', 'application', 'report'])
     if (foundModel=='application') {
-      return await canRefuseApplication(dataId)
+      await canRefuseApplication(dataId)
     }
     if (foundModel=='announceSuggestion') {
       const sugg=await AnnounceSuggestion.findById(dataId)
