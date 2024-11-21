@@ -19,7 +19,7 @@ const Metadata = ({
   metaGaTag?: string | null
 }) => {
 
-  const isProduction=process.env.MODE=='production'
+  const isProduction = process.env.MODE == 'production'
 
   return (
     <Head>
