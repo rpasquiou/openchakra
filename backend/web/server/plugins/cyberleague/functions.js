@@ -46,6 +46,7 @@ const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
 const Advertising = require('../../models/Advertising')
+const AdminDashboard = require('../../models/AdminDashboard')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -698,6 +699,13 @@ const preCreate = async ({model, params, user}) => {
     if (!params.company_sponsorship) {
       const default_sponsor = await Company.findOne({is_default_sponsor: true})
       params.company_sponsorship = default_sponsor._id
+    }
+  }
+
+  if (model == 'adminDashboard') {
+    const admin_dashboard = AdminDashboard.findOne({})
+    if (admin_dashboard) {
+      throw new ForbiddenError(`Il ne faut aps créer un second adminDashboard, il en existe déjà un en base`)
     }
   }
 
