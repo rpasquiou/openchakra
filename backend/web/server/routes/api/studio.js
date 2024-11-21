@@ -407,6 +407,7 @@ router.get(
         return next(err);
       }
       if (user) {
+        console.log('After cookie authentication, I have a user');
         req.user = user; // Attach the user to the request
         return next(); // Continue to the next middleware
       }
