@@ -17,6 +17,10 @@ const AdvertisingSchema = new Schema({
     type: String,
     required: [true, `Les images sont obligatoires`]
   },
+  is_current: {
+    type: Boolean,
+    //computed
+  },
   url: {
     type: String,
     required: [true, `L'url de redirection est obligatoire`]

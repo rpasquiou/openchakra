@@ -21,7 +21,7 @@ const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
-const { getContents, getterStatus } = require('./company')
+const { getContents, getterStatus, getterIsCurrentAdvertising, setterIscurrentAdvertising } = require('./company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
@@ -486,6 +486,9 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 //Scan declaration
 declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
 declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
+
+//Advertising declarations
+declareComputedField({model: 'advertising', field: 'is_current', getterFn: getterIsCurrentAdvertising, setterFn: setterIscurrentAdvertising})
 
 //Document declarations
 declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})
