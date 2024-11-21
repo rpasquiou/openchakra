@@ -7,7 +7,7 @@ const {
   setScormCallbackPost,
   setScormCallbackGet,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -21,13 +21,13 @@ require('../../models/Search')
 require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
-const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession} = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount} = require('./block')
+const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, getFinishedResourcesCount, getRessourceSession, getBlockChildren} = require('./resources')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee, getTopParent} = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
 const { isResourceMine } = require('./resources')
-const { getCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
+const { getSessionCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources } = require('./program')
 const { getPathsForBlock, getTemplateForBlock } = require('./cartography')
 const Program = require('../../models/Program')
 const Resource = require('../../models/Resource')
@@ -55,6 +55,10 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
+const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr } = require('./visio')
+const { createRoom } = require('../visio/functions')
+const { getGroupTrainees } = require('./group')
+require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
 
@@ -76,7 +80,7 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'spent_time', getterFn: getBlockSpentTime})
   declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
-  declareComputedField({model, field: 'achievement_status', requries: 'type', getterFn: getBlockStatus})
+  declareComputedField({model, field: 'achievement_status', requires: 'type', getterFn: getBlockStatus})
   declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
   declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
@@ -112,20 +116,17 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'finished_children_count', getterFn: getFinishedChildrenCount, type:`Number`})
   declareComputedField({model, field: 'tickets_count', getterFn: getBlockTicketsCount})
   declareEnumField({model, field: 'scale', enumValues: SCALE})
-  declareComputedField({model, field: 'note', requires: 'resource_type,homework_mode', getterFn: getBlockNote, setterFn: setBlockNote})
+  declareComputedField({model, field: 'note', requires: 'resource_type,homework_mode,type', getterFn: getBlockNote, setterFn: setBlockNote})
+  declareComputedField({model, field: 'note_str', requires: 'note,success_scale,success_note_max,type', getterFn: getBlockNoteStr})
   declareComputedField({model, field: 'evaluation_resources', getterFn: getEvalResources})
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
+  declareComputedField({model, field: 'proof', requires: 'trainees.fullname', getterFn: getSessionProof})
+  declareComputedField({model,  field: 'certificate', requires: 'type,trainees.fullname,children,end_date,location,code', getterFn: getSessionCertificate })
 })
 
 //Program start
 declareEnumField({model:'program', field: 'status', enumValues: PROGRAM_STATUS})
 declareEnumField({model: 'program', field: 'duration_unit', enumValues: DURATION_UNIT})
-declareComputedField({
-  model: 'program', 
-  field: 'certificate',
-  requires:PROGRAM_CERTIFICATE_ATTRIBUTES.join(','),
-  getterFn: getCertificate, 
-})
 //Program end
 
 declareComputedField({model: 'resource', field: 'mine', getterFn: isResourceMine})
@@ -152,6 +153,7 @@ USER_MODELS.forEach(model => {
       options: {ref: 'ticket'}},
   })
   declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
+  declareComputedField({model, field: `visios`, getterFn: getUserVisiosDays})
 })
 
 // search start
@@ -193,6 +195,7 @@ declareComputedField({model: 'post', field: 'liked', getterFn: isLiked, requires
  // Ticket start
 declareEnumField({model:'ticket', field: 'status', instance: 'String', enumValues: TICKET_STATUS})
 declareEnumField({model:'ticket', field: 'tag', instance: 'String', enumValues: TICKET_TAG})
+declareVirtualField({model:'ticket', field: 'number', instance: 'String', requires: '_number'})
  // Ticket end
 
  // Permission start
@@ -200,15 +203,9 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
  // Permission end
 
 // Group start
-declareVirtualField({model:`group`, field: `excluded_trainees`, instance: `Array`, requires: `trainees,available_trainees`, multiple: true,
-  caster: {
-    instance: `ObjectID`,
-    options: {ref: `user`}
-  }
-})
-declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: `trainees`})
-declareVirtualField({model: `group`, field: `available_trainees_count`, instance: `Number`, requires: `available_trainees`})
-declareVirtualField({model: `group`, field: `excluded_trainees_count`, instance: `Number`, requires: `trainees,available_trainees`})
+declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
+declareComputedField({model: `group`, field: `visios`, getterFn: getGroupVisiosDays})
+declareComputedField({model: `group`, field: `trainees`, requires: 'sessions.trainees.fullname', getterFn: getGroupTrainees})
 // Group end
 
 // HelpDeskConversation start
@@ -234,11 +231,17 @@ CONVERSATION_MODELS.forEach(model => {
 
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
+declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
 // Session end
 
-// Session start
+// Homework start
 declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
-// Session end
+// Homework end
+
+// Visio start
+declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
+declareComputedField({model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr})
+// Visio end
 
 const preCreate = async ({model, params, user}) => {
   params.creator=params.creator || user._id
@@ -250,6 +253,9 @@ const preCreate = async ({model, params, user}) => {
   if (model=='resource') {
     if (params.max_attempts && params.resource_type != RESOURCE_TYPE_SCORM) {
       throw new Error(`Vous ne pouvez pas mettre de nombre de tentatives maximum sur une ressource autre qu'un SCORM`)
+    }
+    if (!params.success_note_max && params.resource_type == RESOURCE_TYPE_SCORM) {
+      params.success_note_max=100
     }
     if (!params.url && !params.plain_url) {
       throw new Error(`Vous devez télécharger un fichier ou saisir une URL`)
@@ -263,13 +269,27 @@ const preCreate = async ({model, params, user}) => {
       params.resource_type=foundResourceType
     }
     params.achievement_rule=DEFAULT_ACHIEVEMENT_RULE[params.resource_type]
+    // Set default code if missing
+    if (!params.code) {
+      const PREFIXES={
+        [RESOURCE_TYPE_LINK]: 'URL',
+        [RESOURCE_TYPE_VISIO]: 'CLV',
+      }
+      const prefix=PREFIXES[params.resource_type] || 'DIV'
+      const count = await mongoose.models.block.countDocuments({ code: new RegExp(`^${prefix}_`) })
+      params.code=`${prefix}_${String(count + 1).padStart(5, '0')}`
+    }
   }
   if (model=='post') {
     params.author=user
     const parentId=params.parent
-    // If in a non visible group, forbid
-    const canPost=await Group.exists({_id: parentId, can_post_feed: true})
-    if (!canPost) {
+    // trainee, trainer & manager can not post on general feed
+    if (parentId==GENERAL_FEED_ID && [ROLE_APPRENANT, ROLE_FORMATEUR, ROLE_GESTIONNAIRE].includes(user.role)) {
+      throw new ForbiddenError(`Ce forum est verrouillé`)
+    }
+    // If in a non visible group or session, forbid
+    const canPost=(await Group.exists({_id: parentId, can_post_feed: true})) || (await Session.exists({_id: parentId, can_post_feed: true}))
+    if (!canPost && user.role==ROLE_APPRENANT) {
       throw new ForbiddenError(`Ce forum est verrouillé`)
     }
     const modelPromise=parentId==GENERAL_FEED_ID ? Promise.resolve(FEED_TYPE_GENERAL) :  getModel(parentId, [FEED_TYPE_GROUP, FEED_TYPE_SESSION])
@@ -329,6 +349,29 @@ const preCreate = async ({model, params, user}) => {
   if (model=='user') {
     params.plain_password=params.password
   }
+
+  if (model=='visio') {
+    const ALLOWED_CREATORS=[ROLE_CONCEPTEUR, ROLE_FORMATEUR]
+    if (!(ALLOWED_CREATORS.includes(user.role))) {
+      throw new ForbiddenError(`Seuls ${ALLOWED_CREATORS.map(r => ROLES[r]).join(',')} peuvent créer une classe virtuelle`)
+    }
+    if (!params.parent) {
+      throw new BadRequestError(`Le parent de la visio (groupe, session, user) est obligatoire`)
+    }
+    const parentModel=await getModel(params.parent, ['group', 'user', 'session'])
+    params._owner=params.parent
+    params._owner_type=parentModel
+    if (params.start_date && params.duration) {
+      console.log(params.duration, typeof params.duration)
+      params.end_date=moment(params.start_date).add(params.duration, 'minutes')
+    }
+    if (!!params.start_date && !!params.duration && !!params.title) {
+      const {url, room}=await createRoom(params.start_date, params.duration, params.title)
+      params.url=url
+      params._room=room
+    }
+
+  }
   return Promise.resolve({model, params})
 }
 
@@ -376,12 +419,6 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
       )}
   }
 
-  // if(model == `program`) {
-  //   const program = await Program.findById(id)
-  //   params.codes = program.codes
-  //   params.duration_unit = program.duration_unit
-  // }
-
   if (model == `group`){
     if(params.sessions) {
       const group = await Group.findById(id, {trainees: 1, sessions: 1, removed_trainees:1})
@@ -422,6 +459,39 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   }
   if(model == `message`) {
     params.conversation = params.parent
+  }
+
+  if (model=='program' && params.status==PROGRAM_STATUS_AVAILABLE) {
+    await ensureValidProgramProduction(id)
+  }
+
+  // #230 Check only MSR inside program can be optional
+  if (params.optional=='true' && BLOCK_MODELS.includes(model)) {
+    const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+    const block=await mongoose.models.block.findById(id)
+    if (!(ALLOWED_OPTIONALS.includes(block.type))) {
+      throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+    }
+    const topParent=await getTopParent(id)
+    if (topParent.type!=BLOCK_TYPE_PROGRAM) {
+      throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+    }
+    const wasOptional=await Block.exists({_id: id, optional: true})
+    if (!wasOptional) {
+      params.setChildrenOptional=true
+    }
+  }
+
+  if (model=='visio') {
+    if (!!params.start_date && !!params.duration && !params.end_date) {
+      params.end_date=moment(params.start_date).add(params.duration, 'minutes')
+    }
+    if (!!params.start_date && !!params.duration) {
+      const title=(await mongoose.models.visio.findById(id)).title
+      const {url, room}=await createRoom(params.start_date, params.duration, title)
+      params.url=url
+      params._room=room
+    }
   }
   return {model, id, params, user, skip_validation}
 }
@@ -489,7 +559,7 @@ const getFeed = async (id) => {
 const getFeeds = async (user, id) => {
   let ids=[]
   if (!id) {
-    const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]})).map(s => s._id)
+    const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}], visible_feed: true})).map(s => s._id)
     ids=[...sessionIds, GENERAL_FEED_ID]
     const groupIds=(await Group.find({sessions: {$in:sessionIds}, visible_feed: true})).map(s => s._id)
     ids=[...ids, ...groupIds]
@@ -501,6 +571,16 @@ const getFeeds = async (user, id) => {
 }
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+
+  // Update trainee connection
+  if (['block', BLOCK_TYPE_SESSION].includes(model) && !!id && user?.role==ROLE_APPRENANT) {
+    const block=await Block.findById(id)
+    if (block.type==BLOCK_TYPE_SESSION) {
+      if (!block._trainees_connections.find(tc => idEqual(tc.trainee, user._id))) {
+        await Session.findByIdAndUpdate(id, {$push: {_trainees_connections: {trainee: user._id, date: moment()}}})
+      }
+    }
+  }
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
@@ -510,11 +590,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (model=='resource') {
       fields=[...fields, 'creator']
     }
-    // Full list: only return template blocks not included in sessions
-    if (!id && model!='session' && user.role==ROLE_CONCEPTEUR) {
+
+    // Full list: only return template blocks not included in sessions for builder & helpdesk
+    if (!id && model!='session' && [ROLE_CONCEPTEUR, ROLE_HELPDESK, ROLE_ADMINISTRATEUR].includes(user.role)) {
       params['filter._locked']=false // No session data
       params['filter.origin']=null // Templates only
-      }
+    }
   }
 
   // If a student loads a resource, mark as CURRENT
@@ -524,13 +605,13 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     if (block._locked && user.role==ROLE_APPRENANT) {
       await Progress.findOneAndUpdate(
         {block, user},
-        {block, user, consult: true, consult_partial: true, join_partial: true, download: true, 
+        {block, user, consult: true, join_partial: true, download: true, 
           //if scorm, increment attempts count
           ...block.resource_type == RESOURCE_TYPE_SCORM ? {$inc: { attempts_count: 1 }} : {}
         },
         {upsert: true},
       )
-      await onBlockAction(user, block)
+      await onBlockAction(user._id, block._id)
     }
   }
   if (model == 'contact') {
@@ -558,8 +639,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     params['filter.user']=user
   }
 
+  // To filter current sessions in filterDataUser
   if (model=='session') {
     fields=lodash.uniq([...fields, 'start_date', 'end_date'])
+  }
+  if (model=='session' && !id) {
     if (user.role==ROLE_APPRENANT) {
       params['filter._locked']=true
       params['filter.trainees']=user._id
@@ -571,6 +655,17 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
+  // A session may be provided an id composed with a trainee also (for statistics)
+  if (typeof(id)=='string' && id.includes('-')) {
+    if (id.includes('-')) {
+      const ids=id.split('-')
+      const models=await Promise.all(ids.map(id => getModel(id, ['session', 'user'])))
+      id=models[0]=='session' ? ids[0] : ids[1]
+      user=await User.findById(models[0]=='user' ? ids[0] : ids[1])
+      // Skip filtering trainee sessions
+      params.manager=true
+    }
+  }
   if (model == `search`) {
     params[`filter.creator`] = user._id
     id=undefined
@@ -580,19 +675,19 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     params[`filter.user`] = user._id
   }
 
+  // To filter group containing sessions I belong to
   if (model=='group') {
-    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
-      const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
-      params['filter.sessions']={$in: sessions}
-    }
+    fields=lodash.uniq([...fields, 'sessions'])
   }
+  
   return Promise.resolve({model, fields, id, user, params})
 }
 
 setPreprocessGet(preprocessGet)
 
-const filterDataUser = async ({model, data, id, user}) => {
-  if (model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
+const filterDataUser = async ({model, data, id, user, params}) => {
+  // If a manager is loading, don't filter sessions
+  if (!params.manager && model=='session' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
     data=data.filter(d => moment().isBetween(d.start_date, d.end_date))
   }
   if (model=='feed' && [ROLE_APPRENANT, ROLE_FORMATEUR].includes(user.role)) {
@@ -602,15 +697,28 @@ const filterDataUser = async ({model, data, id, user}) => {
     })
     data=[]
   }
+  if (model=='group' && !id) {
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
+      const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})).map(s => s._id)
+      data=data.filter(group => group.sessions.some(gs => sessionIds.some(si => idEqual(gs._id, si._id))))
+    }
+  }
+
   return data
 }
 
 setFilterDataUser(filterDataUser)
 
 const postPutData = async ({model, id, attribute, params, data, user}) => {
+  // Propagate block attributes
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
     await propagateAttributes(id)
+  }
+  // Set children optional recursively
+  if (BLOCK_MODELS.includes(model) && !!params.setChildrenOptional) {
+    const children=await getBlockChildren({blockId: id})
+    await Block.updateMany({_id: {$in: children}}, {optional: true})
   }
   if (model=='homework') {
     await onBlockAction(data.trainee, data.resource)
@@ -709,16 +817,6 @@ const postCreate = async ({model, params, data}) => {
     )
   }
 
-  if([`resource`, `block`].includes(model) && data.type == `resource` && !data.code)  {
-    let prefix
-    if (data.resource_type === RESOURCE_TYPE_LINK) {
-      prefix = 'URL'
-    } else {
-      prefix = 'DIV'
-    }
-    const count = await mongoose.models.block.countDocuments({ code: new RegExp(`^${prefix}_`) })
-    await mongoose.models.block.updateOne({_id:data._id}, {$set: {code: `${prefix}_${String(count + 1).padStart(5, '0')}`}})
-  }
   return data
 }
 

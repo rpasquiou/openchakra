@@ -124,27 +124,22 @@ exports.sendBufferToAWS = async ({filename, buffer, type, mimeType}) => {
   const upload=new Upload({client: s3,params})
   const res=await upload.done().catch(console.error)
 
-  console.log('res is', res)
-
   return res
 }
 
 exports.sendFilesToAWS = async(req, res, next) => {
   if (!req.body.documents) { return next() }
-  if (req.body.documents.length>1) {
-    throw new Error(`AWS today now one file max`)
-  }
-  let document=req.body.documents[0]
-  let documents=[document]
-  const scorm=await isScorm({buffer: documents[0].buffer})
+  let documents=req.body.documents
+  const document=documents[0]
+  const scorm=await isScorm({buffer: document.buffer})
   if (!!scorm) {
     const directory=removeExtension(document.filename)
-    documents=scorm.entries.map(scormEntry => ({
+    const docs=scorm.entries.map(scormEntry => ({
       filename: path.join(directory, scormEntry.entryName),
       buffer: scormEntry.getData(),
       mimetype: mime.lookup(scormEntry.entryName),
     }))
-    const res=await runPromisesWithDelay(documents.map(d => () => uploadFile(d)))
+    const res=await runPromisesWithDelay(docs.map(d => () => uploadFile(d)))
     const nok=res.filter(r => r.status!='fulfilled')
     if (nok.length>0) {
       throw new Error(JSON.stringify(nok))

@@ -43,15 +43,9 @@ describe('Test models computations', () => {
   })
 
   it.only('Must update session status', async() => {
-    const session=await Session.findOne().populate('trainees')
-    // await Progress.deleteMany({})
-    let status=await Progress.distinct('achievement_status')
-    let count=await Progress.countDocuments()
-    console.log(status, count)
-    await updateSessionStatus(session._id)
-    status=await Progress.distinct('achievement_status')
-    count=await Progress.countDocuments()
-    console.log(status, count)
+    const sessions=await Session.find({aftral_id: {$ne: null}}).populate('trainees')
+    console.log('sessions', sessions.map(s => s.name))
+    await Promise.allSettled(sessions.map(session => updateSessionStatus(session._id))).catch(console.error)
 })
 
 })

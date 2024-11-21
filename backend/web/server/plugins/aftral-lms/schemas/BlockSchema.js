@@ -79,6 +79,12 @@ const BlockSchema = new Schema({
     default: false,
     required: [true, `L'état optionnel est obligatoire`],
   },
+  // For resources ; external tells must open in a new tab
+  external: {
+    type: Boolean,
+    default: false,
+    required: [true, `L'état 'externe'' est obligatoire`],
+  },
   origin: {
     type: Schema.Types.ObjectId,
     ref: 'block',
@@ -272,6 +278,12 @@ const BlockSchema = new Schema({
     required: false,
     default: null,
   },
+  // Computed
+  note_str: {
+    type: String,
+    required: false,
+    default: null,
+  },
   //  Scale is set by the trainer
   scale: {
     type: String,
@@ -345,7 +357,7 @@ BlockSchema.virtual('homework_limit_str', DUMMY_REF).get(function() {
 BlockSchema.pre('validate', async function(next) {
   // #36 Can't create two templates with same type and same name
   if (!this.origin && !!this.name && this.type!='session') {
-    const sameOne=await mongoose.models.block.findOne({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null, code: this.code})
+    const sameOne=await mongoose.models.block.findOne({_id: {$ne: this._id}, type: this.type, name: this.name, origin: null, code: this.code, _locked: {$ne: true}})
     if (sameOne) {
       return next(new Error(`Un modèle ${this.type} nommé "${this.name}" existe déjà ${this._id} ${sameOne._id}`))
     }

@@ -21,6 +21,7 @@ const SessionSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'user',
     }],
+    index: true,
     required: true,
     default: [],
   },
@@ -29,9 +30,15 @@ const SessionSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'user',
     }],
+    index: true,
     required: true,
     default: [],
   },
+  // HACK Computed if I am the one
+  filtered_trainee: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
   // AFTRAL session id
   aftral_id: {
     type: String,
@@ -45,6 +52,39 @@ const SessionSchema = new Schema({
     required: true,
     default: [],
   },
+  can_post_feed: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  visible_feed: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  proof: {
+    type: String,
+    required: false,
+  },
+  certificate: {
+    type: String,
+    required: false,
+  },
+  _trainees_connections: [{
+    trainee: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    }
+  }],
+  visios: [{
+    type: Schema.Types.ObjectId,
+    ref: 'visioDay',
+  }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 module.exports = SessionSchema

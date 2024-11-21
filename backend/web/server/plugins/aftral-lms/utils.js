@@ -28,6 +28,12 @@ const displayTree = async rootId => {
   console.groupEnd()
 }
 
+const ensureObjectIdOrString = data => {
+  if (!(['String', 'ObjectID'].includes(data?.constructor?.name))) {
+    console.trace(`Expecting string or ObjectID, got ${data}(${typeof data})`)
+    throw new Error(`Expecting string or ObjectID, got ${data}(${typeof data})`)
+  }
+}
 module.exports={
-  displayTree,
+  displayTree, ensureObjectIdOrString,
 }

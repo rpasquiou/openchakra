@@ -252,7 +252,7 @@ const getAttributeCaracteristics = (modelName, att) => {
     }
     const enumObjectKeys=Object.keys(enumObject)
     // Allow null in enums if attribute is not required
-    if (!att.options.required) {
+    if (!att.options?.required) {
       enumObjectKeys.push(null)
     }
     if (lodash.intersection(enumObjectKeys, enumValues).length!=enumValues.length) {
@@ -292,6 +292,14 @@ const getSimpleModelAttributes = modelName => {
 const getReferencedModelAttributes = (modelName, level) => {
   const res = getBaseModelAttributes(modelName)
     .filter(att => att.instance == 'ObjectID')
+    // Check that refPath attributes are hidden (path ^_.*)
+    .map(att => {
+      if (!!att.options.refPath && !/^_/.test(att.path)) {
+        throw new Error(`${modelName}.${att.path}:refPath atribute must be hidden (i.e. start with _')`)
+      }
+      return att
+    })
+    .filter(att => !att.options.refPath)
     .map(att =>
       // getSimpleModelAttributes(att.options.ref).map(([attName, instance]) => [
       getModelAttributes(att.options.ref, level-1).map(([attName, instance]) => [
@@ -771,6 +779,9 @@ const addComputedFields = async (
                 data[f] = res
                 return data
               })
+              .catch(err => {
+                console.error(`Compute ${model}.${f}:${err}`)
+              })
             }),
       )})
       .then(() => data)
@@ -1075,12 +1086,12 @@ const ensureUniqueDataFound = (id, data) => {
   return data
 }
 
-const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
+const loadFromDb = ({model, fields, id, user, params={}, skipRetain=false}) => {
   // Add filter fields to return them to client
   const filters=extractFilters(params)
   fields=lodash.uniq([...fields, ...Object.keys(filters)])
   return callPreprocessGet({model, fields, id, user, params})
-    .then(({model, fields, id, data, params}) => {
+    .then(({model, fields, id, data, user, params}) => {
       if (data) {
         return data
       }
@@ -1089,11 +1100,9 @@ const loadFromDb = ({model, fields, id, user, params={}, retain=true}) => {
       return buildQuery(model, id, fields, params)
         .then(data => ensureUniqueDataFound(id, data))
         .then(data => localLean ? lean({model, data}) : data)
-        .then(data => {console.time(`${model} compute`); return data})
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
-        .then(data => {console.timeEnd(`${model} compute`); return data})
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        .then(data =>  skipRetain ? data : retainRequiredFields({data, fields}))
     })
 
 }

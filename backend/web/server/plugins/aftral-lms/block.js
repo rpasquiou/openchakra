@@ -1,16 +1,25 @@
+const AdmZip = require('adm-zip')
+const mime=require('mime-types')
+const path=require('path')
 const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM } = require("./consts");
-const { getBlockResources } = require("./resources");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL } = require("./consts");
+const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
 const { BadRequestError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
-const { parseScormTime } = require("../../../utils/dateutils");
+const { sendBufferToAWS } = require("../../middlewares/aws");
+const { fillForm2 } = require("../../../utils/fillForm");
+const { formatDate, formatPercent } = require('../../../utils/text');
+const { ensureObjectIdOrString } = require('./utils');
+const { getSessionTraineeVisio } = require('./visio');
+const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
+const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
 const LINKED_ATTRIBUTES_CONVERSION={
   name: lodash.identity,
@@ -33,6 +42,7 @@ const LINKED_ATTRIBUTES_CONVERSION={
   note: lodash.identity,
   scale: lodash.identity,
   correction: lodash.identity,
+  external: v=>v || false,
 }
 
 const LINKED_ATTRIBUTES=Object.keys(LINKED_ATTRIBUTES_CONVERSION)
@@ -43,6 +53,15 @@ const ensureMongooseModel = data => {
   if (data.constructor.name != 'model') {
     throw new Error(`Expecting mongoose object:`, JSON.stringify(data));
   }
+}
+
+// Returns the top-level parent of this block
+const getTopParent = async blockId => {
+  const block=await mongoose.models.block.findById(blockId)
+  if (!block.parent) {
+    return block
+  }
+  return getTopParent(block.parent)
 }
 
 const getProgress = async (userId, blockId) => {
@@ -78,7 +97,7 @@ const getParentBlocks = async blockId => {
 }
 
 const getBlockStatus = async (userId, params, data) => {
-  if (data.type=='session') {
+  if (data?.type=='session') {
     const finished=await mongoose.models.session.exists({_id: data._id, end_date: {$lt: moment()}})
     if (finished) {
       return BLOCK_STATUS_FINISHED
@@ -169,7 +188,18 @@ const loadChain = async blockId => {
 }
 
 const isFinished = async (user, block) => {
-  return Progress.exists({user, block, achievement_status: BLOCK_STATUS_FINISHED})
+  return Progress.exists({user: user._id, block: block._id, achievement_status: BLOCK_STATUS_FINISHED})
+}
+
+const checkAccessCondition = async (user, blockId) => {
+  const bl=await mongoose.models.block.findById(blockId)
+  const brother=await mongoose.models.block.findOne({parent: bl.parent, order: bl.order+1, access_condition: true})
+  if (brother) {
+    const brotherState=await getBlockStatus(user, null, {_id: brother._id})
+    if (brotherState!=BLOCK_STATUS_FINISHED) {
+      await saveBlockStatus(user, brother._id, BLOCK_STATUS_TO_COME)
+    }
+  }
 }
 
 const onBlockFinished = async (user, block) => {
@@ -178,47 +208,35 @@ const onBlockFinished = async (user, block) => {
   return updateSessionStatus(session._id, user._id)
 }
 
-const onBlockAction = async (user, block) => {
-  const bl=await mongoose.models.block.findById(block)
-  // Is it a scorm ?
-  if (bl.resource_type==RESOURCE_TYPE_SCORM) {
-    const scormData=await getBlockScormData(user, block)
-    const scormSuccess=scormData?.['cmi.core.lesson_status']=='passed'
-    const scormMinNoteReached=!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) > block.success_note_min
-    if (scormSuccess || scormMinNoteReached)  {
-      if (!(await isFinished(user, block))) {
-        await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-        return onBlockFinished(user, block)
-      }
-    }
-    return
-  }
+const onBlockAction = async (userId, blockId) => {
+  await ensureObjectIdOrString(userId)
+  await ensureObjectIdOrString(blockId)
+  const bl=await mongoose.models.block.findById(blockId)
+  // TODO : Finish if homework succeeded AND rule is "Success" or "Success or finished"
   // Homework priority on other rules
   if (bl.homework_mode) {
-    const homeworks=await Homework.find({trainee: user, resource: block}).sort({[CREATED_AT_ATTRIBUTE]: 1})
-    const latest_homework=homeworks.pop()
+    const homeworks=await Homework.find({trainee: userId, resource: blockId}).sort({[CREATED_AT_ATTRIBUTE]: 1})
+    const latest_homework=lodash.last(homeworks)
     if (!!latest_homework) {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
-    if (!(await isFinished(user, block))) {
-          await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-          return onBlockFinished(user, block)
+      if (!(await isFinished(userId, blockId))) {
+          await saveBlockStatus(userId, blockId, BLOCK_STATUS_FINISHED)
+          return onBlockFinished(userId, blockId)
         }
       }
-      else {
-        await removeBlockStatus(user, block)
-      }
     }
-    return
   }
-  const progress=await Progress.findOne({user, block})
+  const progress=await Progress.findOne({user: userId, block: blockId})
   const rule=bl.achievement_rule
+  const prevStatus=progress.achievement_status
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
-  const status=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
-  await saveBlockStatus(user, block, status)
-  if (finished) {
-    console.log(`Block ${block} finished`)
-    onBlockFinished(user, block)
+  const newStatus=finished ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_CURRENT
+  if (prevStatus != newStatus) {
+    await saveBlockStatus(userId, blockId, newStatus)
+    if (newStatus==BLOCK_STATUS_FINISHED) {
+      onBlockFinished(userId, blockId)
+    }
   }
 }
 
@@ -236,7 +254,7 @@ const getBlockSession = async blockId => {
 
 const getNextResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
@@ -246,7 +264,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, allResources: false})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
@@ -326,11 +344,11 @@ const setBlockDisliked = async ({ id, attribute, value, user }) => {
 }
 
 const getTemplate = async (id) => {
-  let block=await mongoose.models.block.findById(id, {origin:1, _liked_by:1, _disliked_by:1})
-  if (!block.origin) {
-    return block
+  const bl=await mongoose.models.block.findById(id)
+  if (!bl.origin && !bl._locked && !bl.parent) {
+    return bl
   }
-  return await getTemplate(block.origin)
+  return await mongoose.models.block.findOne({name: bl.name, origin: null, _locked: {$ne: true}, parent: null})
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
@@ -371,7 +389,7 @@ const getBlockHomeworksMissing = async (userId, params, data) => {
 
 const getBlockTraineesCount = async (userId, params, data) => {
   const session = await mongoose.models.session.findById(data.session)
-  return session.trainees ? session.trainees.length : 0
+  return session?.trainees?.length || 0
 }
 
 const getBlockFinishedChildren = async (userId, params, data, fields) => {
@@ -423,6 +441,77 @@ const getSessionConversations = async (userId, params, data, fields) => {
   })
   res = res.map(r=> new SessionConversation(r))
   return res
+}
+
+const getSessionProof = async (userId, params, data, fields, actualLogged) => {
+  
+  const actualLoggedUser=await User.findById(actualLogged)
+  if (actualLoggedUser?.role==ROLE_APPRENANT) {
+    console.warn(`Session proof forbidden for trainee ${actualLoggedUser.email}`)
+    return null
+  }
+
+  const locations=await Promise.all(data.trainees.map(async trainee => {
+
+    const sessionFields=[
+      'name', 'start_date', 'end_date', 'code', 'location', 'achievement_status', 'order', 'spent_time_str', 'resources_progress', '_trainees_connections',
+      'children.order', 'children.name', 'children.resources_progress', 'children.spent_time_str', 
+      'children.children.order', 'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 
+      'children.children.children.order', 'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str',
+      'children.children.children.children.name', 'children.children.children.children.resources_progress', 'children.children.children.children.spent_time_str',
+      'children.children.children.children.children.name', 'children.children.children.children.children.resources_progress', 'children.children.children.children.children.spent_time_str',
+    ]
+
+    const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
+
+    const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
+
+    let pdfData={
+      start_date: formatDate(session.start_date, true), end_date: formatDate(session.end_date, true), location: session.location,
+      session_name: session.name, trainee_fullname: trainee.fullname, session_code: session.code,
+      achievement_status: BLOCK_STATUS[session.achievement_status], creation_date: formatDate(moment(), true),
+      spent_time_str: `Temps total du parcours : ${session.spent_time_str}`, resources_progress: formatPercent(session.resources_progress),
+      first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
+      level_1:session.children[0].children.map(c => ({
+        resources_progress: formatPercent(c.resources_progress),
+        name: c.name, spent_time_str: c.spent_time_str,
+        level_2: c.children.map(c2 => ({
+          name: c2.name, spent_time_str: c2.spent_time_str, order: c2.order.toString(),
+          level_3: c2.children.map(c3 => ({
+            name: c3.name, spent_time_str: c3.spent_time_str,
+            level_4: c3.children.map(c4 => ({
+              name: c4.name, spent_time_str: c4.spent_time_str
+            }))
+  
+          }))
+        }))
+      }))
+    }
+
+    const virtualClasses=await getSessionTraineeVisio(data._id, trainee._id)
+
+    // Add virtual classes
+    if (virtualClasses.length>0) {
+      pdfData.level_1=[...pdfData.level_1, {name:''}, {name: 'Classes virtuelles', level_2: virtualClasses}]
+    }
+    
+    const pdfPath=path.join(ROOT, TEMPLATE_NAME)
+    const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
+    const buffer=await pdf.save()
+    const filename=`${data.code}-${trainee.fullname}.pdf`
+    const  {Location}=await sendBufferToAWS({filename, buffer, type: 'proof', mimeType: mime.lookup(filename)}).catch(console.error)
+    return {filename: filename, buffer, locaiton: Location}
+  }))
+
+  // Generate a zip
+  const zip=new AdmZip()
+  locations.map(({filename, buffer}) => {
+    zip.addFile(filename, buffer)
+  })
+  const buffer=zip.toBuffer()
+  const filename=`Justificatifs-${data.code}.zip`
+  const {Location}=await sendBufferToAWS({filename, buffer, type: 'certificates', mimeType: mime.lookup(filename)}).catch(console.error)
+  return Location
 }
 
 const propagateAttributes=async (blockId, attributes=null) => {
@@ -481,56 +570,75 @@ const ACCEPTS={
   sequence: ['resource'],
 }
 
-const acceptsChild= (pType, cType) => {
-  return ACCEPTS[pType]?.includes(cType)
+const acceptsChild= async (parent, child) => {
+  if (!ACCEPTS[parent.type]?.includes(child.type)) {
+    throw new Error(`${child.type_str} ne peut être ajouté à ${parent.type_str}`)
+  }
+  // Can't mix modules and chapters in a program
+  if (parent.type==BLOCK_TYPE_PROGRAM) {
+    const otherType=child.type==BLOCK_TYPE_CHAPTER ? BLOCK_TYPE_MODULE : BLOCK_TYPE_CHAPTER
+    const hasOtherType=await mongoose.models.block.exists({parent: parent._id, type: otherType})
+    if (hasOtherType) {
+      throw new Error(`${child.type_str} et ${BLOCK_TYPE_LABEL[otherType]} sont incompatibles dans un programme`)
+    }
+  }
 }
 
-const addChild = async ({parent, child, user}) => {
+/**
+ * Only template can be added to template only
+ * Don't check that when propagating to origins
+ */
+const addChild = async ({parent, child, user, check=true}) => {
   // Allow ADMIN to add child for session import
   if (![ROLE_ADMINISTRATEUR, ROLE_CONCEPTEUR].includes(user.role)) {
     throw new ForbiddenError(`Forbidden for role ${ROLES[user.role]}`)
   }
-  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id, {[BLOCK_TYPE]: 1})))
+  [parent, child] = await Promise.all([parent, child].map(id => mongoose.models.block.findById(id)))
   const [pType, cType]=[parent?.type, child?.type]
   if (!pType || !cType) { throw new Error('program/module/sequence/ressource attendu')}
-  if (!!parent.origin) {
+  if (check && !!parent.origin) {
     throw new BadRequestError(`Le parent doit être un template`)
   }
-  if (!!child.origin) {
+  if (check && !!child.origin) {
     throw new BadRequestError(`Le fils doit être un template`)
   }
-  if (!acceptsChild(pType, cType)) { throw new Error(`${cType} ne peut être ajouté à ${pType}`)}
+  await acceptsChild(parent, child)
   const createdChild = await cloneTree(child._id, parent._id)
   await mongoose.models.block.findByIdAndUpdate(parent, {last_updater: user})
 
   // Now propagate to all origins
-  const origins=await mongoose.models.block.find({origin: parent._id}, {_id:1})
-  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user})))
+  const origins=await mongoose.models.block.find({origin: parent._id, _locked: false}, {_id:1})
+  await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user, check: false})))
 }
 
 const lockSession = async blockId => {
-  const toManage=[await mongoose.models.block.findById(blockId)]
+  const session = await mongoose.models.block.findById(blockId).populate('children').populate('trainees')
+  if (!session || session.type!=BLOCK_TYPE_SESSION) {
+    throw new Error(`${blockId} null or not session:${session?.type}/${session.name}`)
+  }
+  if (lodash.isEmpty(session.trainees)) {
+    throw new BadRequestError(`Démarrage session ${session.code} impossible: pas d'apprenant`)
+  }
+  if (lodash.isEmpty(session.children)) {
+    throw new BadRequestError(`Démarrage session ${session.code} impossible: pas de programme`)
+  }
+  console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
+  const trainees=session.trainees
+  const toManage=[session]
   while (toManage.length>0) {
     let block=toManage.pop()
+    console.log('Manage block', block._id, block.name)
+    // Set default block availability
+    await Promise.all(trainees.map(async t => {
+      if (!(await Progress.exists({block: block._id, user: t._id}))) {
+        const defaultStatus=block.access_condition ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
+        await saveBlockStatus(t._id, block._id, defaultStatus)
+      }
+    }))
     if (!block) {
       throw new Error('blcok numm')
     }
-    const children=await  mongoose.models.block.find({parent: block._id})
-    if (block.type=='session') {
-      if (lodash.isEmpty(block.trainees)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas d'apprenant`)
-      }
-      if (lodash.isEmpty(children)) {
-        throw new BadRequestError(`Démarrage session ${block.code} impossible: pas de programme`)
-      }
-    }
-    if (block._locked) {
-      // console.warn(`Session block`, block._id, block.type, `is already locked but next actions will be executed`)
-    }
-    if (block.type=='session') {
-      setSessionInitialStatus(block._id, block.trainees.map(t => t._id))
-    }
-
+    const children=await mongoose.models.block.find({parent: block._id})
     block._locked=true
     await block.save().catch(err => {
       err.message=`${block._id}:${err}`
@@ -538,6 +646,7 @@ const lockSession = async blockId => {
     })
     toManage.push(...children)
   }
+  setSessionInitialStatus(session._id, session.trainees.map(t => t._id))
 }
 
 const setSessionInitialStatus = async blockId => {
@@ -549,15 +658,30 @@ const hasParentMasked = async (blockId) => {
   return block.masked || (block.parent && hasParentMasked(block.parent))
 }
 
-const saveBlockStatus= async (userId, blockId, status) => {
+const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
     throw new Error(userId, blockId, status)
   }
-  await Progress.findOneAndUpdate(
+  ensureObjectIdOrString(userId)
+  ensureObjectIdOrString(blockId)
+
+  // Alert if optional block was set to UNAVAILABLE
+  const optional=(await mongoose.models.block.findById(blockId))?.optional
+  if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
+    return getBlockStatus(userId, null, {_id: blockId})
+  }
+  const before=await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
+  const statusChanged=before?.achievement_status!==status
+  if (statusChanged && withChildren) {
+    const children=await mongoose.models.block.find({ parent: blockId})
+    if (children.length>0) {
+      await Promise.all(children.map(child => saveBlockStatus(userId, child._id, status, withChildren)))
+    }
+  }
   return status
 }
 
@@ -565,12 +689,10 @@ const saveBlockScormData = async (userId, blockId, data) => {
   if (!userId || !blockId || !data) {
     throw new Error(userId, blockId, data)
   }
-  const set={block: blockId, user: userId, scorm_data: JSON.stringify(data)}
-  const spentTime=parseScormTime(data['cmi.core.session_time'])
-  if (spentTime) {
-    set.spent_time=spentTime
-  }
-  await Progress.findOneAndUpdate({block: blockId, user: userId},set,{upsert: true})
+  await Progress.findOneAndUpdate(
+    {block: blockId, user: userId},
+    {block: blockId, user: userId, scorm_data: JSON.stringify(data)},
+    {upsert: true})
 }
 
 const getBlockScormData = async (userId, blockId) => {
@@ -590,88 +712,58 @@ const removeBlockStatus= async (userId, blockId, status) => {
   return Progress.remove({block: blockId, user: userId})
 }
 
-const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus) => {
-
-  const block=await mongoose.models.block.findById(blockId).populate('children')
-
-  if (block.type === BLOCK_TYPE_RESOURCE) {
-    const isFinished = await isFinishedBlock(block)
-    const status = isFinished || block.optional ? BLOCK_STATUS_FINISHED : BLOCK_STATUS_TO_COME;
-    await setBlockStatus(block.id, status)
-    return status;
-  }
-
-  let allChildrenTerminated = true;
-  let availableChildFound = false;
-
-  // Traverse children
-  for (let i = 0; i < block.children.length; i++) {
-    const child = block.children[i]
-    const childState = await computeBlockStatus(child, isFinishedBlock, setBlockStatus)
-
-    if (childState !== BLOCK_STATUS_FINISHED) {
-      allChildrenTerminated = false;
+const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
+  const block = await mongoose.models.block.findById(blockId).populate('children')
+  const blockStatus=await locGetBlockStatus(blockId)
+  if (block.type==BLOCK_TYPE_RESOURCE) {
+    if (block.status==BLOCK_STATUS_FINISHED) {
+      return block.status
     }
-
-    // Closed
-    if (block.closed) {
-      if (childState !== BLOCK_STATUS_FINISHED) {
-        const status = BLOCK_STATUS_UNAVAILABLE;
-        await setBlockStatus(block.id, status)
-        return status
+    if (block.access_condition && block.order>1) {
+      const prevBrother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
+      const prevStatus=await locGetBlockStatus(prevBrother._id)
+      if (!prevStatus) {
+        console.error(`Coudld not find status for brother`, prevBrother._id)
       }
-    } else if (block.ordered) {
-      if (i === 0 || (await computeBlockStatus(block.children[i - 1], isFinishedBlock, setBlockStatus)) === BLOCK_STATUS_FINISHED) {
-        if (!availableChildFound) {
-          availableChildFound = true;
-          const status = BLOCK_STATUS_TO_COME;
-          await setBlockStatus(block.id, status)
-          return status;
+      if (prevStatus==BLOCK_STATUS_FINISHED) {
+        if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
+          return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
         }
       }
-    } else {
-      if (childState === BLOCK_STATUS_TO_COME && !availableChildFound) {
-        availableChildFound = true;
+      else {
+        return setBlockStatus(block._id, BLOCK_STATUS_UNAVAILABLE)
       }
     }
-  }
-
-  if (block.access_condition) {
-    for (let i = 0; i < block.children.length; i++) {
-      const child = block.children[i];
-      for (let j = 0; j < i; j++) {
-        const leftSiblingState = await computeBlockStatus(block.children[j], isFinishedBlock, setBlockStatus);
-        if (leftSiblingState !== BLOCK_STATUS_FINISHED) {
-          const status = BLOCK_STATUS_UNAVAILABLE;
-          await setBlockStatus(block.id, status)
-          return status;
-        }
-      }
-      const status = BLOCK_STATUS_TO_COME;
-      await setBlockStatus(block.id, status)
-      return status;
+    if (lodash.isNil(blockStatus)) {
+      return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
     }
+    return blockStatus
+  }
+  const childrenStatus=await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)))
+  // Check finished for non-optional only
+  const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
+  const allChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
+
+  // Block finished if all children finished
+  if (allChildrenFinished) {
+    return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
+  }
+  // If one child finished, next is available
+  if (block.closed) {
+    console.log(block.type, block.name, 'is closed')
+    const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
+    if (lastFinished<block.children.length-1) {
+      const brother=block.children[lastFinished+1]
+      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
+      // Next children are unavailable
+      await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
+    }
+    return blockStatus
   }
 
-  if (allChildrenTerminated) {
-    const status = BLOCK_STATUS_FINISHED;
-    await setBlockStatus(block.id, status)
-    return status;
-  }
-
-  // Si un enfant est disponible, le bloc est disponible
-  if (availableChildFound) {
-    const status = BLOCK_STATUS_TO_COME;
-    await setBlockStatus(block.id, status)
-    return status;
-  }
-
-  // Sinon, le bloc n'est pas disponible
-  const status = BLOCK_STATUS_UNAVAILABLE;
-  console.log(block.type, block.name, block.order, status)
-  await setBlockStatus(block.id, status)
-  return status;
-}
+  await Promise.all(block.children.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+  return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+};
 
 
 const updateSessionStatus = async (sessionId, trainee) => {
@@ -680,18 +772,39 @@ const updateSessionStatus = async (sessionId, trainee) => {
   const trainees=!!trainee ? [trainee] : session.trainees
   await Promise.all(trainees.map(async t => {
     const isFinishedBlock = async blockId => isFinished(t._id, blockId)
-    const setBlockStatus = (blockId, status) => saveBlockStatus(t._id, blockId, status)
-    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus)
+    const setBlockStatus = (blockId, status, withChildren) => saveBlockStatus(t._id, blockId, status, withChildren)
+    const locGetBlockStatus = (blockId) => getBlockStatus(t._id, null, {_id: blockId})
+    await computeBlockStatus(sessionId, isFinishedBlock, setBlockStatus, locGetBlockStatus)
   }))
   console.timeEnd('update session status')
 }
 
 const setScormData= async (userId, blockId, data) => {
   await saveBlockScormData(userId, blockId, data)
+  const block=await mongoose.models.block.findById(blockId)
+  console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}, null, 2))
+  const scormData=await getBlockScormData(userId, block)
+  const lesson_status=scormData?.['cmi.core.lesson_status']
+  // If a min note is defined on the resource, use it
+  const hasNote=!!scormData?.['cmi.core.score.raw']
+  // #212 Validate if note is egal to success min
+  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) >= block.success_note_min
+  const update={
+    success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
+    finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
+  }
+  await Progress.findOneAndUpdate(
+    {block, user: userId},
+    {block, user: userId, ...update},
+    {upsert: true},
+  )
   await onBlockAction(userId, blockId)
 }
 
 const getBlockNote = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return undefined
+  }
   const isTrainee=await User.exists({_id: userId, role: ROLE_APPRENANT})
   if (!isTrainee) {
     return undefined
@@ -711,7 +824,7 @@ const getBlockNote = async (userId, params, data) => {
 }
 
 const setBlockNote = async ({ id, attribute, value, user }) => {
-  const bl=await Block.findById(id)
+  const bl=await mongoose.models.block.findById(id)
   if (!lodash.inRange(value, 0, bl.success_note_max+1)) {
     throw new BadRequestError(`La note doit être comprise ente 0 et ${bl.success_note_max}`)
   }
@@ -723,6 +836,56 @@ const setBlockNote = async ({ id, attribute, value, user }) => {
   return pr.save()
 }
 
+const getBlockNoteStr = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return undefined
+  }
+  if (data.success_scale) {
+    let scaleStr=null
+    if (!!data.homework_mode) {
+      const homeworks=await Homework.find({resource: data._id, trainee: userId})
+      const scale=homeworks.find(h => !!h.scale)?.scale
+      scaleStr=SCALE[scale]
+    }
+    return scaleStr
+  }
+  const note=await getBlockNote(userId, params, data)
+  if (note) {
+    return `${note}/${data.success_note_max}`
+  }
+}
+
+// A program in produciton mode must not have a sequence with no resource
+const ensureValidProgramProduction = async programId => {
+  const childrenId=await getBlockChildren({blockId: programId})
+  const children=await mongoose.models.block.find({_id: {$in: childrenId}})
+  const sequences=children.filter(c => c.type==BLOCK_TYPE_SEQUENCE)
+
+  // Forbid sequences with no resource
+  await Promise.all(sequences.map(sequence => {
+    return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
+  }))
+
+  // #231: Forbid mandatory blocks whose all children are optional
+  const forbidden=lodash(children)
+    .groupBy(c => c.parent._id?.toString())
+    .pickBy(v => !lodash.isEmpty(v) && v.every(subChild => !!subChild.optional))
+  if (!forbidden.isEmpty()) {
+    const msg=forbidden.keys().map(k => {
+      parent=children.find(c => idEqual(c._id, k))
+      return !parent.optional && `${BLOCK_TYPE_LABEL[parent.type]} "${parent.name}" doit être facultatif car tous ses enfants le sont`
+    }).filter(Boolean).join(', ')
+    if (!lodash.isEmpty(msg)) {
+      throw new BadRequestError(msg)
+    }
+  }
+}
+
+const getFilteredTrainee = async (userId, params, data) => {
+  if (data.trainees.some(t => idEqual(t._id, userId))) {
+    return [await User.findById(userId)]
+  }
+}
 
 module.exports={
   getBlockStatus, getSessionBlocks, setParentSession, 
@@ -733,4 +896,6 @@ module.exports={
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
   updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
+  getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
+  getFilteredTrainee, getTopParent,
 }

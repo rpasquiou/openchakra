@@ -1,15 +1,17 @@
 const moment=require('moment')
+const mongoose=require('mongoose')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM } = require('./consts')
-const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction } = require('./block')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION } = require('./consts')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
-const { setpreLogin } = require('../../utils/database')
+const { setpreLogin, getModel, idEqual } = require('../../utils/database')
 const { sendForgotPassword } = require('./mailing')
+const { addVisioSpentTime } = require('../visio/functions')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
@@ -36,12 +38,12 @@ const moveChildInParent= async (childId, up) => {
   }
   const brother=await Block.findOne({parent: child.parent, order: child.order+delta})
   if (!brother) {
-    throw new Error('No brother')
+    throw new Error(`No brother found in parent ${child.parent} with order ${child.order+delta}`)
   }
   child.order=newOrder
   brother.order=brother.order-delta
   await Promise.all([child.save(), brother.save()])
-  const linkedBlocks=await Block.find({origin: childId})
+  const linkedBlocks=await Block.find({origin: childId, _locked: false})
   return Promise.all(linkedBlocks.map(block => moveChildInParent(block._id, up)))
 }
 
@@ -59,7 +61,7 @@ const removeChildAction = async ({parent, child}, user) => {
   await Block.findByIdAndUpdate(parent, {last_updater: user})
   await updateChildrenOrder(parent)
   // Propagate deletion
-  const linkedChildren=await Block.find({origin: child}).populate('parent')
+  const linkedChildren=await Block.find({origin: child, _locked: false}).populate('parent')
   await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))
 }
 addAction('removeChild', removeChildAction)
@@ -75,18 +77,34 @@ const levelDownAction = ({child}, user) => {
 addAction('levelDown', levelDownAction)
 
 const addSpentTimeAction = async ({id, duration}, user) => {
-  const resourceType=(await Block.findById(id))?.resource_type
-  // SCORM Spent time is updated through POSTED Scorm data
-  if (resourceType==RESOURCE_TYPE_SCORM) {
-    return
+  const model=await getModel(id)
+  if (model=='visio') {
+     await addVisioSpentTime({visio: id, user, duration: duration})
+     const visio=await mongoose.models.visio.findById(id)
+      .populate({path: '_owner', populate: 'sessions'})
+    if ([VISIO_TYPE_SESSION, VISIO_TYPE_GROUP].includes(visio.type)) {
+      let sessions=(visio._owner.sessions || [visio._owner]).filter(s => s.trainees.some(t => idEqual(t, user._id))).map(s => s._id)
+      await Progress.updateMany({block: {$in: sessions}, user: user._id}, {$inc: {spent_time: duration/1000}})
+    }
   }
-  const toUpdate=[id, ...(await getParentBlocks(id))]
-  await Promise.all(toUpdate.map(blockId => Progress.findOneAndUpdate(
-    {user, block: blockId},
-    {user, block: blockId, $inc: {spent_time: duration/1000}},
-    {upsert: true, new: true}
-    )))
-  return onBlockAction(user, id)
+  if (model==BLOCK_TYPE_RESOURCE) {
+    const toUpdate=[id, ...(await getParentBlocks(id))]
+    await Promise.all(toUpdate.map(async blockId => {
+      // Increase spent time
+      await Progress.findOneAndUpdate(
+        {user, block: blockId},
+        {user, block: blockId, $inc: {spent_time: duration/1000}},
+        {upsert: true, new: true}
+      )
+      // Set status to current if not already finished
+      const currentStatus=await getBlockStatus(user._id, null, {_id: id})
+      // Set to current if not already finished
+      if (![BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED].includes(currentStatus)) {
+        await saveBlockStatus(user._id, id, BLOCK_STATUS_CURRENT)
+      }
+    }))
+    return onBlockAction(user._id, id)
+  }
 }
 
 addAction('addSpentTime', addSpentTimeAction)
@@ -144,7 +162,7 @@ const forceFinishResource = async ({value, dataId, trainee}, user) => {
     {user, block: value, achievement_status: BLOCK_STATUS_FINISHED},
     {upsert: true, new: true}
   )
-  await onBlockFinished(user, await Block.findById(value))
+  await onBlockFinished(user._id, value)
 }
 
 addAction('alle_finish_mission', forceFinishResource)
@@ -163,14 +181,14 @@ addAction('forgotPassword', forgotPasswordAction)
 
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='clone') {
-    if (![ROLE_CONCEPTEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
+    if (![ROLE_CONCEPTEUR, ROLE_ADMINISTRATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
     const block=await Block.findById(dataId, {origin:1})
     if (!!block.origin) {
       throw new BadRequestError(`Seul un modèle peut être dupliqué`)
     }
   }
   if (action=='addChild') {
-    if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
+    if (![ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
   }
   const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
   if (actionFn) {
@@ -181,7 +199,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     //     throw new ForbiddenError(`Vous avez atteint le nombre limite de tentatives`)
     //   }
     //}
-    return actionFn({action, dataId, user})
+    const allowed=await actionFn({action, dataId, user})
+    if (!allowed) {
+      throw new BadRequestError(`Action ${action} interdite`)
+    }
   }
   if (action=='next') {
     await getNextResource(dataId, user)

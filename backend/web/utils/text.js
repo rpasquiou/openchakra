@@ -124,11 +124,11 @@ const splitRemaining = (pattern, delimiter) => {
 }
 
 const formatDateTime = datetime => {
-  return `le ${formatDate(datetime)} à ${formatTime(datetime)}`
+  return `le ${formatDate(datetime)} à ${formatHour(datetime)}`
 }
 
-const formatDate = datetime => {
-  return moment(datetime).format(`DD/MM/YY`)
+const formatDate = (datetime, fullYear) => {
+  return moment(datetime).format(fullYear ? `DD/MM/YYYY` : `DD/MM/YY`)
 }
 
 const formatHour = datetime => {
@@ -148,6 +148,11 @@ const getNearestWord = (word, words, limit=undefined) => {
   }
   return nearest
 }
+
+// Formats [0, 1.0] value
+const formatPercent = value => {
+  return lodash.isNil(value) ? value : `${parseInt(value*100)}%`
+} 
 
 const formatDuration = durationSeconds => {
   if (durationSeconds==0)  {
@@ -220,4 +225,5 @@ module.exports = {
   formatDuration,
   convertDuration,
   sortObject,
+  formatPercent,
 }

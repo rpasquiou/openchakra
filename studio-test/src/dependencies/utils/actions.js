@@ -89,7 +89,6 @@ export const ACTIONS = {
 
   create: ({ value, context, props, level, getComponentValue, fireClearComponents, getComponentAttribute }) => {
     const componentsIds=lodash(props).pickBy((v, k) => /^component_/.test(k) && !!v).values().value()
-    console.log('component ids', componentsIds)
     const components=componentsIds.map(c => {
       const comp=getComponent(c, level)
       return comp
@@ -112,7 +111,7 @@ export const ACTIONS = {
     })
     'job,mission,quotation,group,parent,content,recipe,menu,pip,collectiveChallenge,quizzQuestion,userQuizzQuestion,user'.split(',').forEach(property => {
       if (props[property]) {
-        const dataId=getComponent(props[property], level)?.getAttribute('_id')||null
+        const dataId=getComponent(props[property], level)?.getAttribute('_id')||getComponentValue(props[property], level)
         body[property]=dataId
       }
     })
@@ -509,7 +508,7 @@ return Promise.allSettled(imagePromises)
   },
   generatePDF: ({props, level, getComponentValue})=> {
     const prefix=getComponentValue(props.prefix, level)
-    return generatePDF(props.targetId, prefix)
+    return generatePDF(props.targetId, prefix, level)
   },
   deactivateAccount: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
@@ -1208,6 +1207,33 @@ return Promise.allSettled(imagePromises)
 
   login_sso: async ({value}) => {
     return window.location=`${API_ROOT}/login/sso`
+  },
+
+  toggle_full_screen: async ({value}) => {
+    if (!document.fullscreenElement) {
+      // Set fullscreen
+      const element = document.documentElement
+      if (element.requestFullscreen) {
+        element.requestFullscreen()
+      } else if (element.mozRequestFullScreen) { // Firefox
+        element.mozRequestFullScreen()
+      } else if (element.webkitRequestFullscreen) { // Chrome, Safari, Opera
+        element.webkitRequestFullscreen()
+      } else if (element.msRequestFullscreen) { // IE/Edge
+        element.msRequestFullscreen()
+      }
+    } else {
+      // Unset fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if (document.mozCancelFullScreen) { // Firefox
+        document.mozCancelFullScreen()
+      } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
+        document.webkitExitFullscreen()
+      } else if (document.msExitFullscreen) { // IE/Edge
+        document.msExitFullscreen()
+      }
+    }  
   },
 
 }

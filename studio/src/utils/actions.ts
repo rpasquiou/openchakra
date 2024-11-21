@@ -52,7 +52,6 @@ export const ACTIONS: IActions = {
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       parent: ({ components }) =>
         components
-          .filter(comp => comp.type == 'Flex')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       content: ({ components }) =>
         components
@@ -801,7 +800,13 @@ export const ACTIONS: IActions = {
     label: 'Login SSO',
     options: {},
     next: [],
+  },
+  toggle_full_screen: {
+    label: 'Toggle full screen',
+    options: {},
+    next: [],
   }
+
 }
 
 export const allowsActions = (component: IComponent) => {

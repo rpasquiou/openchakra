@@ -68,6 +68,10 @@ const UserSchema = new Schema({
     required: false,
     index: true,
   },
+  visios: [{
+    type: Schema.Types.ObjectId,
+    ref: 'visioDay',
+  }],
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
@@ -93,6 +97,19 @@ UserSchema.index(
   { email: 1},
   { unique: true, message: 'Email dupliqué' });
 
+  // Pre-validate hook to ensure unique email
+UserSchema.pre('validate', async function (next) {
+  const user = this
+  const existingUser = await mongoose.models.user.findOne({ email: user.email });
+  
+  if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+    user.invalidate('email', 'Email dupliqué');
+    next(new Error('Email dupliqué'));
+  } 
+  else {
+    next()
+  }
+})
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
