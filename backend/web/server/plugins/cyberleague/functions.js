@@ -705,7 +705,7 @@ const preCreate = async ({model, params, user}) => {
   if (model == 'adminDashboard') {
     const admin_dashboard = AdminDashboard.findOne({})
     if (admin_dashboard) {
-      throw new ForbiddenError(`Il ne faut aps créer un second adminDashboard, il en existe déjà un en base`)
+      throw new ForbiddenError(`Il ne faut pas créer un second adminDashboard, il en existe déjà un en base`)
     }
   }
 
