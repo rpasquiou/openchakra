@@ -24,7 +24,7 @@ const setterIscurrentAdvertising = async ({ id, attribute, value, user }) => {
     return Company.updateMany({current_advertising: id}, {current_advertising: null})
   } else {
     const ad = await Advertising.findById(id)
-    return Company.findByIdAndUpdate(ad._id, {current_advertising: id})
+    return Company.findByIdAndUpdate(ad.company, {current_advertising: id})
   }
 }
 
