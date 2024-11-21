@@ -14,7 +14,7 @@ const passport = require('passport')
 const glob = require('glob')
 const cors = require('cors')
 const autoIncrement = require('mongoose-auto-increment')
-const session = require('express-session')
+// const session = require('express-session')
 const {
   RANDOM_ID,
   checkConfig,
@@ -101,14 +101,14 @@ checkConfig()
     app.use(bodyParser.urlencoded({extended: true, limit: '5mb'}))
     app.use(bodyParser.json({limit: '5mb'}))
 
-    app.use(session({
-      secret: 'your-secret-key',
-      resave: false,
-      saveUninitialized: false
-    }))
+    // app.use(session({
+    //   secret: 'your-secret-key',
+    //   resave: false,
+    //   saveUninitialized: false
+    // }))
     // Passport middleware
     app.use(passport.initialize())
-    app.use(passport.session())
+    // app.use(passport.session())
 
     app.use(cookieParser())
     // Passport config
