@@ -537,6 +537,13 @@ const ensureGains = () => {
 
 ensureGains()
 
+//Ensure there is an adminDashboard
+const ensureAdminDashboard = () => {
+  return Promise.resolve(AdminDashboard.findOneAndUpdate({}, {}, {upsert: true}))
+}
+
+ensureAdminDashboard()
+
 //create score with market values
 const ensureMarketScore = async () => {
   const _category_rates = null
