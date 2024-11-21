@@ -493,7 +493,7 @@ declareComputedField({model: 'advertising', field: 'is_current', getterFn: gette
 //Document declarations
 declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})
 
-//Admin_Dashboard declaration
+//AdminDashboard declaration
 declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
 
 
