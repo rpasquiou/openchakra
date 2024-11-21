@@ -413,8 +413,15 @@ router.get(
       }
       console.log('No user found via cookie, falling back to SAML');
       // Continue to SAML authentication if no cookie-based user is found
-      passport.authenticate('saml')(req, res, next);
-    })(req, res, next);
+      passport.authenticate('saml', { session: false }, (err, user) => {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          return res.status(401).json({ error: 'Not authenticated' });
+        }
+        res.json(user); // Return the user info
+      })(req, res, next);    })(req, res, next);
   },
   (req, res) => {
     console.log('I am authenticated');
