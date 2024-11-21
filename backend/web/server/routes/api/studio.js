@@ -408,6 +408,7 @@ router.get('/current-user',
     passport.authenticate('saml')(req, res, next);
   },
   (req, res) => {
+    console.log('I am authenticated')
     // If SAML authentication succeeds, return the user
     return res.json(req.user);
   }
