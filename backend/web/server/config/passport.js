@@ -78,7 +78,7 @@ const SSOStrategy = new SamlStrategy(
       
       user=await User.create({
         email, firstname, lastname, role, password: 'PASSWD',
-      })
+      }).catch(console.error)
     }
     return done(null, user)
   }
