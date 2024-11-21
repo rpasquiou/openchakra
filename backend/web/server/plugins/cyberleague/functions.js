@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_ADVERTISING_YES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -45,7 +45,6 @@ const { deleteUserNotification, addNotification } = require('../notifications/ac
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
-const Advertising = require('../../models/Advertising')
 const AdminDashboard = require('../../models/AdminDashboard')
 
 //Notification plugin setup
@@ -488,9 +487,6 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
 declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
 
-//Advertising declarations
-declareVirtualField({model: 'advertising', field: 'current_advertising', requires: 'is_current', instance: 'String', enumValues: CURRENT_ADVERTISING})
-
 //Document declarations
 declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})
 
@@ -785,11 +781,6 @@ const postCreate = async ({ model, params, data, user }) => {
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
   }
 
-  if (model == 'advertising' && data.is_current) {
-    //if is_current is true then other advertising of the same company must be false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
-  }
-
   if (model == 'company') {
     if (data.is_default_sponsor) {
       await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
@@ -883,12 +874,6 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
       }
     }
-  }
-
-  if (model == 'advertising' && attribute == 'is_current' && value) {
-    //if is_current is true then other advertising of the same company must be at false
-    const ad = Advertising.findById(id)
-    await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
   }
 
   if (model == 'company' ) {
