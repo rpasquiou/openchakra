@@ -397,9 +397,21 @@ router.get('/geoloc', async (req, res) => {
   return res.json(suggestions)
 })
 
-router.get('/current-user', passport.authenticate('cookie', {session: false}), passport.authenticate('saml'),(req, res) => {
-  return res.json(req.user)
-})
+router.get('/current-user', 
+  passport.authenticate('cookie', { session: false }), 
+  (req, res, next) => {
+    if (req.isAuthenticated()) {
+      // If already authenticated via cookie, skip SAML
+      return res.json(req.user);
+    }
+    // Fall back to SAML authentication
+    passport.authenticate('saml')(req, res, next);
+  },
+  (req, res) => {
+    // If SAML authentication succeeds, return the user
+    return res.json(req.user);
+  }
+)
 
 router.post('/register', (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
