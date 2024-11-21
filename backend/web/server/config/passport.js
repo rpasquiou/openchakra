@@ -71,7 +71,10 @@ const SSOStrategy = new SamlStrategy(
     console.log('In SAML cb:got', profile)
     const email=getSamlAttribute(profile, 'emailaddress')
     const user=await User.findOne({email})
-    if (!user) {
+    if (user) {
+      console.log('I found a user', user)
+    }
+    else {
       const firstname=getSamlAttribute(profile, 'givenname')
       const lastname=getSamlAttribute(profile, 'surname')
       const role=getSamlAttribute(profile, 'jobtitle')=='FORMATEUR' ? 'FORMATEUR' : 'GESTIONNAIRE',
