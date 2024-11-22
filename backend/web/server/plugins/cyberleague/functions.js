@@ -14,14 +14,14 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, CURRENT_ADVERTISING, CURRENT_CAMPAIGN, EVENT_STATUSES } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
-const { getContents, getterStatus } = require('./company')
+const { getContents, getterStatus, getterIsCurrentAdvertising, setterIscurrentAdvertising, getterCurrentAdvertising, setterCurrentAdvertising, getterDocuments } = require('./company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
@@ -45,7 +45,7 @@ const { deleteUserNotification, addNotification } = require('../notifications/ac
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
-const Advertising = require('../../models/Advertising')
+const AdminDashboard = require('../../models/AdminDashboard')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -263,6 +263,22 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'scans_count', requires:'scans', instance: 'Number'})
+  declareVirtualField({
+    model: m, field: 'registered_past_events', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'event' }
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'registered_futur_events', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'event' }
+    },
+  })
+  declareVirtualField({model: m, field: 'registered_past_events_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'registered_futur_events_count', instance: 'Number'})
 })
 
 //Company declarations
@@ -338,7 +354,8 @@ declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array'
   },
 })
 declareVirtualField({model: 'company', field: 'advertisings_count', instance: 'Number'})
-declareVirtualField({model: 'company', field: 'current_campaign', requires: 'is_current_campaign', instance: 'String', enumValues: CURRENT_CAMPAIGN})
+declareEnumField({model: 'company', field: 'current_campaign_status', enumValues: CURRENT_CAMPAIGN_STATUSES})
+declareComputedField({model: 'company', field: 'documents', getterFn: getterDocuments})
 
 //Expertise declarations
 
@@ -489,7 +506,16 @@ declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
 declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
 
 //Advertising declarations
-declareVirtualField({model: 'advertising', field: 'current_advertising', requires: 'is_current', instance: 'String', enumValues: CURRENT_ADVERTISING})
+// declareComputedField({model: 'advertising', field: 'is_current', getterFn: getterIsCurrentAdvertising, setterFn: setterIscurrentAdvertising})
+// declareComputedField({model: 'advertising', field: 'current_advertising', enumValues: CURRENT_ADVERTISING, getterFn: getterCurrentAdvertising, setterFn: setterCurrentAdvertising})
+declareEnumField({model: 'advertising', field: 'current_advertising', enumValues: CURRENT_ADVERTISING})
+
+//Document declarations
+declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})
+
+//AdminDashboard declaration
+//declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
+
 
 
 
@@ -532,6 +558,13 @@ const ensureGains = () => {
 
 ensureGains()
 
+//Ensure there is an adminDashboard
+const ensureAdminDashboard = () => {
+  return Promise.resolve(AdminDashboard.findOneAndUpdate({}, {}, {upsert: true}))
+}
+
+ensureAdminDashboard()
+
 //create score with market values
 const ensureMarketScore = async () => {
   const _category_rates = null
@@ -541,8 +574,8 @@ const ensureMarketScore = async () => {
 ensureMarketScore()
 
 
-const ensureOnlyOneTrue = ({model, id, field, filter}) => {
-  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: true, ...filter}, {[field]: false})
+const ensureOnlyOneTrue = ({model, id, field, filter, trueValue = true, falseValue = false}) => {
+  return mongoose.models[model].updateMany({_id: {$ne: id}, [field]: trueValue, ...filter}, {[field]: falseValue})
 }
 
 
@@ -691,6 +724,20 @@ const preCreate = async ({model, params, user}) => {
     params.company = params.parent
   }
 
+  if (model == 'member') {
+    if (!params.company_sponsorship) {
+      const default_sponsor = await Company.findOne({is_default_sponsor: true})
+      params.company_sponsorship = default_sponsor._id
+    }
+  }
+
+  if (model == 'adminDashboard') {
+    const admin_dashboard = AdminDashboard.findOne({})
+    if (admin_dashboard) {
+      throw new ForbiddenError(`Il ne faut pas créer un second adminDashboard, il en existe déjà un en base`)
+    }
+  }
+
   let data = null
 
   if (model == 'scan') {
@@ -738,7 +785,7 @@ const postCreate = async ({ model, params, data, user }) => {
           if (post.group) {
             params.groupName = params.parent.name
             await addNotification({
-              users: [data.creator],
+              users: [post.creator],
               targetId: data._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
               text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
@@ -748,7 +795,7 @@ const postCreate = async ({ model, params, data, user }) => {
             })
           } else {
             await addNotification({
-              users: [data.creator],
+              users: [post.creator],
               targetId: data._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
               text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
@@ -768,14 +815,10 @@ const postCreate = async ({ model, params, data, user }) => {
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
   }
 
-  if (model == 'advertising' && data.is_current) {
-    //if is_current is true then other advertising of the same company must be false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current', filter: {company: data.company}})
-  }
-
-  if (model == 'company' && data.is_current_campaign) {
-    //if is_current_campaign is true then other companies must be at false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  if (model == 'company') {
+    if (data.is_default_sponsor) {
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+    }
   }
 
   //Message notification
@@ -867,15 +910,10 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
-  if (model == 'advertising' && attribute == 'is_current' && value) {
-    //if is_current is true then other advertising of the same company must be at false
-    const ad = Advertising.findById(id)
-    await ensureOnlyOneTrue({model, id, field: 'is_current', filter: {company: ad.company}})
-  }
-
-  if (model == 'company' && attribute == 'is_current_campaign' && value) {
-    //if is_current_campaign is true then other company must be at false
-    await ensureOnlyOneTrue({model, id: data._id, field: 'is_current_campaign', filter: {}})
+  if (model == 'company' ) {
+    if (attribute == 'is_default_sponsor' && value) {
+      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+    }
   }
 
   return {model, user, attribute, value}

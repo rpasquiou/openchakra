@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR, CURRENT_CAMPAIGN_YES, CURRENT_CAMPAIGN_NO } = require('../consts')
+const { SECTOR, COMPANY_SIZE, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR, CURRENT_CAMPAIGN_STATUSES, STATUT_MEMBER} = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -143,6 +143,7 @@ const CompanySchema = new Schema(
       enum: Object.keys(STATUTS),
       required: false,
       set: v => v || undefined,
+      default: STATUT_MEMBER
     },
     sponsor: {
       type: [{
@@ -156,10 +157,28 @@ const CompanySchema = new Schema(
         ref: 'company'
       }]
     },
-    is_current_campaign: {
+    // current_advertising:{
+    //   type: Schema.Types.ObjectId,
+    //   ref: 'advertising',
+    //   required: false
+    // },
+    is_default_sponsor: {
       type: Boolean,
-      required: [true, `Il est obligatoire de préciser si l'entreprise a ses publicités actives ou non`],
+      required: [true, `Il est obligatoire de préciser si l'entreprise a est sponsor par défaut ou non`],
       default: false
+    },
+    current_campaign_status: {
+      type: String,
+      enum: Object.keys(CURRENT_CAMPAIGN_STATUSES),
+      required: false
+    },
+    documents: {
+      //computed
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'document'
+      }],
+      default: []
     },
   },
   schemaOptions,
@@ -246,10 +265,6 @@ CompanySchema.virtual('advertisings_count', {
   localField: '_id',
   foreignField: 'company',
   count: true
-})
-
-CompanySchema.virtual('current_campaign', DUMMY_REF).get(function () {
-  return this.is_current_campaign ? CURRENT_CAMPAIGN_YES : CURRENT_CAMPAIGN_NO
 })
 
 /* eslint-enable prefer-arrow-callback */

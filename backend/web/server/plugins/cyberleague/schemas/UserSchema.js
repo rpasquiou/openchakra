@@ -421,6 +421,52 @@ UserSchema.virtual('registered_events', {
   foreignField:'registered_users',
 })
 
+UserSchema.virtual('registered_past_events', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$lt: Date.now()}}
+    }
+  },
+})
+
+UserSchema.virtual('registered_past_events_count', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$lt: Date.now()}}
+    }
+  },
+  count: true
+})
+
+UserSchema.virtual('registered_futur_events', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$gt: Date.now()}}
+    }
+  },
+})
+
+UserSchema.virtual('registered_futur_events_count', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$gt: Date.now()}}
+    }
+  },
+  count: true
+})
+
 UserSchema.virtual('scans_count', DUMMY_REF).get(function() {
   return this.scans ? this.scans.length : 0
 })
