@@ -28,6 +28,10 @@ setpreLogin(preLogin)
 const moveChildInParent= async (childId, up) => {
   const delta=up ? -1 : 1
   const child=await Block.findById(childId).populate({path: 'parent', populate: 'children_count'})
+  if (!child.parent) {
+    console.error('*'.repeat(50), `Child ${child} has no parent`)
+    return
+  }
   const childrenCount=child.parent.children_count
   const newOrder=child.order+delta
   if (newOrder<1) {
