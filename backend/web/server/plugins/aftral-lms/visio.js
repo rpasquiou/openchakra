@@ -29,7 +29,33 @@ const getGroupVisiosDays = async (userId, params, data, fields, actualLogged) =>
     .value()
   const trainees=await getGroupTrainees(data._id)
   params={'filter._owner': {$in: [data._id, ...trainees]}}
-  const role=(await User.findById(userId)).role
+  const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
+  const grouped=lodash(visios)
+    .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
+    .entries()
+    .map(([day, visios]) => new mongoose.models.visioDay({
+      day, 
+      visios:visios.map(v => new mongoose.models.visio(v)),
+      all_finished: visios.every(v => v.status==VISIO_STATUS_FINISHED),
+    }))
+    .value()
+  return grouped
+}
+
+/**
+ * Must return visios linked to the session (_owner==s)
+ */
+const getSessionVisiosDays = async (userId, params, data, fields, actualLogged) => {
+  const VISIOS_FILTER = /visios\./
+  const VISIOS_FILTER2 = /\.visios/
+  fields=fields.filter(f => VISIOS_FILTER.test(f)).map(f => f.replace(VISIOS_FILTER, ''))
+  fields=[...fields, 'status']
+  params=lodash(params)
+    .pickBy((_, f) => VISIOS_FILTER2.test(f))
+    .mapKeys((_, f) => f.replace(VISIOS_FILTER2, ''))
+    .value()
+  const trainees=data.trainees
+  params={'filter._owner': {$in: [data._id, ...trainees]}}
   const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
@@ -63,7 +89,8 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
   if (role==ROLE_APPRENANT) {
     _owner.push(userId)
   }
-  const mySessions=await Session.find({trainees: userId}, {_id:1})
+  const mySessions=await Session.find({$or: [{trainees: userId}, {trainers: userId}]}, {_id:1})
+  console.log('in sessions', mySessions)
   const myGroups=await Group.find({sessions: {$in: mySessions}}, {_id:1})
   _owner.push(...myGroups, ...mySessions)
   params={'filter._owner': _owner}
@@ -107,5 +134,5 @@ const getSessionTraineeVisio = async (session_id, user_id) => {
 }
 
 module.exports={
-  getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionTraineeVisio,
+  getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionTraineeVisio, getSessionVisiosDays,
 }

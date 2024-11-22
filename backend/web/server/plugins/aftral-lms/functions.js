@@ -55,7 +55,7 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
-const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr } = require('./visio')
+const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
 const { getGroupTrainees } = require('./group')
 require('../visio/functions')
@@ -232,6 +232,7 @@ CONVERSATION_MODELS.forEach(model => {
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
 declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
+declareComputedField({model: `session`, field: `visios`, getterFn: getSessionVisiosDays, requires: 'trainees'})
 // Session end
 
 // Homework start
