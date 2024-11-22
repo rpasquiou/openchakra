@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { CURRENT_ADVERTISING } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -17,13 +18,13 @@ const AdvertisingSchema = new Schema({
     type: String,
     required: [true, `Les images sont obligatoires`]
   },
-  is_current: {
-    type: Boolean,
-    //computed
-  },
+  // is_current: {
+  //   type: Boolean,
+  //   //computed
+  // },
   current_advertising: {
     type: String,
-    // enum: Object.keys(CURRENT_ADVERTISING)
+    enum: Object.keys(CURRENT_ADVERTISING)
   },
   url: {
     type: String,
