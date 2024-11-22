@@ -263,6 +263,22 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'scans_count', requires:'scans', instance: 'Number'})
+  declareVirtualField({
+    model: m, field: 'registered_past_events', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'event' }
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'registered_futur_events', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'event' }
+    },
+  })
+  declareVirtualField({model: m, field: 'registered_past_events_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'registered_futur_events_count', instance: 'Number'})
 })
 
 //Company declarations
