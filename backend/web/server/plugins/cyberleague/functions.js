@@ -769,7 +769,7 @@ const postCreate = async ({ model, params, data, user }) => {
           if (post.group) {
             params.groupName = params.parent.name
             await addNotification({
-              users: [data.creator],
+              users: [post.creator],
               targetId: data._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
               text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
@@ -779,7 +779,7 @@ const postCreate = async ({ model, params, data, user }) => {
             })
           } else {
             await addNotification({
-              users: [data.creator],
+              users: [post.creator],
               targetId: data._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
               text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
