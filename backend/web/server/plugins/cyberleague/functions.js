@@ -498,7 +498,7 @@ declareEnumField({model: 'advertising', field: 'current_advertising', enumValues
 declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})
 
 //AdminDashboard declaration
-declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
+//declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
 
 
 

@@ -14,9 +14,9 @@ const AdminDashboardSchema = new Schema({
 
 /* eslint-disable prefer-arrow-callback */
 
-AdminDashboardSchema.virtual('current_advertising', DUMMY_REF).get(function () {
-  return this.current_campaign.current_advertising
-})
+// AdminDashboardSchema.virtual('current_advertising', DUMMY_REF).get(function () {
+//   return this.current_campaign.current_advertising
+// })
 
 /* eslint-enable prefer-arrow-callback */
 
