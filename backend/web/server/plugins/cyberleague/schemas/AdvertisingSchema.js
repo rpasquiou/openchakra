@@ -21,6 +21,10 @@ const AdvertisingSchema = new Schema({
     type: Boolean,
     //computed
   },
+  current_advertising: {
+    type: String,
+    // enum: Object.keys(CURRENT_ADVERTISING)
+  },
   url: {
     type: String,
     required: [true, `L'url de redirection est obligatoire`]
