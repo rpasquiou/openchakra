@@ -21,7 +21,7 @@ const { BadRequestError, ForbiddenError } = require('../../utils/errors')
 const { getterPinnedFn, setterPinnedFn } = require('../../utils/pinned')
 const Group = require('../../models/Group')
 const { getterCountFn } = require('./count')
-const { getContents, getterStatus, getterIsCurrentAdvertising, setterIscurrentAdvertising, getterCurrentAdvertising, setterCurrentAdvertising } = require('./company')
+const { getContents, getterStatus, getterIsCurrentAdvertising, setterIscurrentAdvertising, getterCurrentAdvertising, setterCurrentAdvertising, getterDocuments } = require('./company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const QuestionCategory = require('../../models/QuestionCategory')
 const { isMineForMessage } = require('./message')
@@ -339,6 +339,7 @@ declareVirtualField({ model: 'company', field: 'advertisings', instance: 'Array'
 })
 declareVirtualField({model: 'company', field: 'advertisings_count', instance: 'Number'})
 declareEnumField({model: 'company', field: 'current_campaign_status', enumValues: CURRENT_CAMPAIGN_STATUSES})
+declareComputedField({model: 'company', field: 'documents', getterFn: getterDocuments})
 
 //Expertise declarations
 
@@ -498,6 +499,7 @@ declareVirtualField({model: 'document', field: 'type', requires: 'company', inst
 
 //AdminDashboard declaration
 declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
+
 
 
 

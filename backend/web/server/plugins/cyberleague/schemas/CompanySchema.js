@@ -170,7 +170,15 @@ const CompanySchema = new Schema(
       type: String,
       enum: Object.keys(CURRENT_CAMPAIGN_STATUSES),
       required: false
-    }
+    },
+    documents: {
+      //computed
+      type: [{
+        type: Schema.Types.ObjectId,
+        ref: 'document'
+      }],
+      default: []
+    },
   },
   schemaOptions,
 )

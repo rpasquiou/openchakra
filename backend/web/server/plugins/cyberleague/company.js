@@ -1,6 +1,7 @@
 const Company = require('../../models/Company')
 const Content = require('../../models/Content')
 const Advertising = require('../../models/Advertising')
+const Document = require('../../models/Document')
 const { CURRENT_ADVERTISING_NO, CURRENT_ADVERTISING_YES } = require('./consts')
 
 const getContents = async (userId, params, data) => {
@@ -43,6 +44,11 @@ const getterCurrentAdvertising = async (userId, params, data) => {
   return isCurrent ? CURRENT_ADVERTISING_YES : CURRENT_ADVERTISING_NO
 }
 
+const getterDocuments = async (userId, params, data) => {
+  const docs = await Document.find({$or: [{company: data._id}, {company: {$exists: false}}]})
+  return docs
+}
+
 
 module.exports = { 
   getContents,
@@ -51,4 +57,5 @@ module.exports = {
   setterIscurrentAdvertising,
   setterCurrentAdvertising,
   getterCurrentAdvertising,
+  getterDocuments,
  }
