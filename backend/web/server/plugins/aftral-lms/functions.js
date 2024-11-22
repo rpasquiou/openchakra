@@ -242,6 +242,7 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 // Visio start
 declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
 declareComputedField({model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr})
+declareVirtualField({model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean'})
 // Visio end
 
 const preCreate = async ({model, params, user}) => {
