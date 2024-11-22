@@ -490,9 +490,9 @@ declareEnumField({model: 'scan', field: 'nutriscore', enumValues: NUTRISCORE})
 declareEnumField({model: 'scan', field: 'status', enumValues: SCAN_STATUSES})
 
 //Advertising declarations
-declareComputedField({model: 'advertising', field: 'is_current', getterFn: getterIsCurrentAdvertising, setterFn: setterIscurrentAdvertising})
-declareComputedField({model: 'advertising', field: 'current_advertising', enumValues: CURRENT_ADVERTISING, getterFn: getterCurrentAdvertising, setterFn: setterCurrentAdvertising})
-
+// declareComputedField({model: 'advertising', field: 'is_current', getterFn: getterIsCurrentAdvertising, setterFn: setterIscurrentAdvertising})
+// declareComputedField({model: 'advertising', field: 'current_advertising', enumValues: CURRENT_ADVERTISING, getterFn: getterCurrentAdvertising, setterFn: setterCurrentAdvertising})
+declareEnumField({model: 'advertising', field: 'current_advertising', enumValues: CURRENT_ADVERTISING})
 
 //Document declarations
 declareVirtualField({model: 'document', field: 'type', requires: 'company', instance: 'String', enumValues: DOCUMENT_TYPES})

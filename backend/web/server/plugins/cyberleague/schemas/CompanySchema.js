@@ -156,11 +156,11 @@ const CompanySchema = new Schema(
         ref: 'company'
       }]
     },
-    current_advertising:{
-      type: Schema.Types.ObjectId,
-      ref: 'advertising',
-      required: false
-    },
+    // current_advertising:{
+    //   type: Schema.Types.ObjectId,
+    //   ref: 'advertising',
+    //   required: false
+    // },
     is_default_sponsor: {
       type: Boolean,
       required: [true, `Il est obligatoire de préciser si l'entreprise a est sponsor par défaut ou non`],
