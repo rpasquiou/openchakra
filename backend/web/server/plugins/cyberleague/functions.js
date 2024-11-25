@@ -106,6 +106,20 @@ const computeMessage = ({type, user, params}) => {
       return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
     case NOTIFICATION_TYPE_GROUP_LIKE:
       return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      return `Félicitation ! Votre demande derejoindre la ligue ${params.groupName} a été acceptée`
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      return `${user.fullname} a effectué un scan de surface`
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      return `${user.fullname} a effectué un diagnostique`
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      return `${user.fullname} a effectué une demande de mission`
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      return `${user.fullname} a répondu à votre offre d'emploi : ${params.jobTitle}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+      return `${user.shortname} souhaite rejoindre votre ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      return `${user.shortname} s'est inscrit à votre événement ${params.eventName}`
   }
   throw new Error(`Unknown notification type ${type} in computeMessage`)
 }
