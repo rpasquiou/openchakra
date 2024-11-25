@@ -1,4 +1,4 @@
-const { isPhoneOk } = require('../../../utils/sms')
+const { isPhoneOk, formatPhone } = require('../../../utils/sms')
 
 describe('Stripe tests', () => {
 
@@ -10,14 +10,16 @@ describe('Stripe tests', () => {
 
   const NUMBERS=[
     ['0675774324', true], ['0775774324', true], ['06 75 77 43 24', true],
-    ['+336 75 77 4 3 24', true], ['0875774324', false], ['+33875774324', false],
-    ['0235736009', false]
+    ['+336 75 77 4 3 24', true], ['875774324', true], ['+3387577432', false],
+    ['0235736009', true], ['6417565657', false], ['6417565657', true],
   ]
 
   test.each(NUMBERS) (
     "%p must be valid:%p",
     ((number, expected) => {
-      expect(isPhoneOk(number)).toEqual(expected)
+      const translated=formatPhone(number)
+      console.log('translated',number, 'to', translated)
+      return expect(isPhoneOk(translated, true)).toEqual(expected)
     })
   )
 
