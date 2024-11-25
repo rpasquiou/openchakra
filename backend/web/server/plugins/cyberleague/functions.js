@@ -929,7 +929,7 @@ const prePutData = async ({model, id, params, user}) => {
   //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
-    if (params.administrators) {
+    if (typeof(params.administrators) == String) {
       params.administrators = params.administrators.split(',')
     }
   }
