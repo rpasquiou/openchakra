@@ -852,6 +852,20 @@ const postCreate = async ({ model, params, data, user }) => {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+
+    //new scan notif
+    if (user.company_sponsorship) {
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: [sponsor.administrators],
+        targetId: data._id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
+        type: NOTIFICATION_TYPE_NEW_SCAN,
+        customData: null,
+        picture: user.picture
+      })
+    }
   }
 
   if (model == 'company') {
