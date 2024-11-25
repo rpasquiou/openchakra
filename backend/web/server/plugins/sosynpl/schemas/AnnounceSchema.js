@@ -203,10 +203,9 @@ const AnnounceSchema = new Schema({
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'software',
-      required: true,
     }],
-    validate: [softwares => softwares?.length>=MIN_SOFTWARES, `Vous devez choisir au moins ${MIN_SOFTWARES} logiciels(s)`],
-    required: [true, `Les logiciels sont obligatoires`],
+    required: false,
+    default: [],
   },
   accepted_application: {
     type: Schema.Types.ObjectId,
@@ -221,10 +220,9 @@ const AnnounceSchema = new Schema({
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'languageLevel',
-      required: true,
     }],
-    validate: [languages => languages?.length>=MIN_LANGUAGES, `Vous devez choisir au moins ${MIN_LANGUAGES} langue(s)`],
-    required: [true, `Les langues sont obligatoires`],
+    required: false,
+    default: [],
   },
   suggested_freelances: {
     type: [{
