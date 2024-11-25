@@ -2,6 +2,7 @@ import React from 'react'
 import lodash from 'lodash'
 import { getConditionalProperties } from '../utils/filters'
 import { formatAddress, joinDelimiter } from '../utils/misc'
+import { formatDisplay, isPhoneOk } from '../utils/phone'
 
 const withDynamicText = Component => {
   const internal = props => {
@@ -22,6 +23,10 @@ const withDynamicText = Component => {
     // Is it an address ??
     if (value?.city) {
       value=formatAddress(value)
+    }
+
+    if (isPhoneOk(value)) {
+      value=formatDisplay(value)
     }
     const conditionalProperties = getConditionalProperties(
       props,
