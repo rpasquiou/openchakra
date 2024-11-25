@@ -796,6 +796,7 @@ const preCreate = async ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const postCreate = async ({ model, params, data, user }) => {
+  //console.log('postCreate : model', model, 'data', data, 'user', user, 'params', params)
   if (model == `customerSuccess`) {
     await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
   }
