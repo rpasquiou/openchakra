@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const lodash = require('lodash')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
-const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_WORK_DAYS, ANNOUNCE_STATUS, DURATION_UNIT_DAYS, APPLICATION_STATUS_SENT, MOBILITY_REGIONS} = require('../consts')
+const {DURATION_UNIT, ANNOUNCE_MOBILITY, MOBILITY_NONE, COMMISSION, SS_PILAR, ANNOUNCE_STATUS_DRAFT, EXPERIENCE, ANNOUNCE_STATUS_ACTIVE, DURATION_UNIT_WORK_DAYS, ANNOUNCE_STATUS, DURATION_UNIT_DAYS, APPLICATION_STATUS_SENT, MOBILITY_REGIONS, APPLICATION_VISIBILITY_VISIBLE} = require('../consts')
 const {schemaOptions} = require('../../../utils/schemas')
 const AddressSchema = require('../../../models/AddressSchema')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -321,7 +321,10 @@ AnnounceSchema.virtual('received_applications', {
   foreignField: 'announce',
   localField: '_id',
   match: {
-    status: APPLICATION_STATUS_SENT,
+    $and: [
+      { status: APPLICATION_STATUS_SENT },
+      { visibility_status: APPLICATION_VISIBILITY_VISIBLE }
+    ]
   },
 })
 
