@@ -20,15 +20,14 @@ const fillSms = (pattern, values) => {
 
 const PHONE_REGEX=/^\+33[67]\d{8}$/
 const HOMEPHONE_REGEX=/^\+33[01234589]\d{8}$/
+const ALL_PHONES=/^\+33\d{9}$/
 
 const isPhoneOk = (value, acceptHomePhone=false) => {
   if (!value) {
     return false
   }
-  const corrected=value.replace(/\s*/g, '')?.replace(/\u00A0/g, '')
-  const mobileOk=PHONE_REGEX.test(corrected)
-  const homePhoneOk=HOMEPHONE_REGEX.test(corrected)
-  const res=mobileOk || (acceptHomePhone && homePhoneOk)
+  const phoneOk=(acceptHomePhone ? ALL_PHONES : PHONE_REGEX).test(value)
+  const res=phoneOk
   return res
 }
 
@@ -41,7 +40,10 @@ const formatPhone = number => {
   if (!number) {
     return number
   }
-  number=number.replace(/\s*/g, '')
+  number=number.replace(/\s*/g, '').replace(/\./g, '')
+    .replace(/^\+3307/, '+337')
+    .replace(/^\+3302/, '+332')
+    .replace(/^\+3309/, '+339')
   if (number.length==9) {
     number=`0${number}`
   }
@@ -60,4 +62,4 @@ const isEmailOk = value => {
   return Validator.isEmail(value)
 }
 
-module.exports = {fillSms, isPhoneOk, isEmailOk, isInternationalPhoneOK, PHONE_REGEX, formatPhone}
+module.exports = {fillSms, isPhoneOk, isEmailOk, isInternationalPhoneOK, PHONE_REGEX, HOMEPHONE_REGEX, formatPhone, ALL_PHONES}
