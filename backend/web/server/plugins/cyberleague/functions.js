@@ -787,6 +787,20 @@ const preCreate = async ({model, params, user}) => {
       //add existing scan to user
       data = existingScan
       await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+
+      //new scan notif
+      if (user.company_sponsorship) {
+        const sponsor = await Company.findById(user.company_sponsorship)
+        await addNotification({
+          users: [sponsor.administrators],
+          targetId: data._id,
+          targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
+          text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
+          type: NOTIFICATION_TYPE_NEW_SCAN,
+          customData: null,
+          picture: user.picture
+        })
+      }
     }
   }
 
