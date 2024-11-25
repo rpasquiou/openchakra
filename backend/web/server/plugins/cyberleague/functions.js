@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -279,6 +279,7 @@ USER_MODELS.forEach(m => {
   })
   declareVirtualField({model: m, field: 'registered_past_events_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'registered_futur_events_count', instance: 'Number'})
+  declareEnumField({model: m, field:'looking_for_opportunities', enumValues: LOOKING_FOR_OPPORTUNITIES_STATUS})
 })
 
 //Company declarations
@@ -438,7 +439,9 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
 declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
-declareVirtualField({model: 'event', field: 'status', requires: 'start_date', instance: 'String', enumValues: EVENT_STATUSES})
+declareVirtualField({model: 'event', field: 'status', requires: 'start_date', instance: 'String', enumValues: EVENT_STATUSES, 
+  dbFilter: value => {return RegExp(value).test(EVENT_STATUS_PAST) ? {start_date: {$lt: Date.now()}} : {start_date: {$gt: Date.now()}}}
+})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
@@ -714,7 +717,7 @@ const preCreate = async ({model, params, user}) => {
       params.company = params.parent
       params.is_public = true
     } else {
-      if (!params.companies[0] && !params.is_public) {
+      if (!params.companies?.[0] && !params.is_public) {
         throw new Error(`Merci de renseigner une entreprise ou de rendre la mission publique avant d'envoyer votre demande`)
       }
     }
@@ -844,7 +847,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
     if (attribute == 'users') {
-      await Group.updateOne({_id:id}, {$pull: {pending_users: value}})
+      await Group.updateOne({_id:id}, {$pullAll: {pending_users: {$in: value}}})
     }
   }
 
@@ -926,7 +929,7 @@ const prePutData = async ({model, id, params, user}) => {
   //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
-    if (params.administrators) {
+    if (typeof(params.administrators) == String) {
       params.administrators = params.administrators.split(',')
     }
   }

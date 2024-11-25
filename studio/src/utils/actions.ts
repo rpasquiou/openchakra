@@ -755,7 +755,7 @@ export const ACTIONS: IActions = {
   validate: {
     label: 'Validate',
     options: {},
-    next: ['openPage'],
+    next: ['openPage', 'openUrl'],
   },
 }
 

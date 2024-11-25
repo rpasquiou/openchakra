@@ -473,7 +473,7 @@ const buildQuery = (model, id, fields, params) => {
   const currentFilter=getCurrentFilter(filters, model)
   const currentSort=getCurrentSort(sorts, model)
   criterion={...criterion, ...currentFilter}
-  // console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'projection', select, 'limits', limits, 'sort', currentSort)
+  //console.log('Query', model, fields, ': filter', JSON.stringify(currentFilter, null,2), 'criterion', Object.keys(criterion), 'limits', limits, 'sort', currentSort)
   let query = mongoose.connection.models[model].find(criterion, projection)
   query = query.collation(COLLATION)
   if (currentSort) {
@@ -1024,7 +1024,7 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
         .then(data => localLean ? lean({model, data}) : data)
         .then(data => Promise.all(data.map(d => addComputedFields(fields,user?._id, params, d, model))))
         .then(data => callFilterDataUser({model, data, id, user, params}))
-        .then(data =>  retainRequiredFields({data, fields}))
+        .then(data => retainRequiredFields({data, fields}))
     })
 }
 
