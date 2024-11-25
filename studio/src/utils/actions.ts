@@ -710,7 +710,7 @@ export const ACTIONS: IActions = {
   validate_email: {
     label: 'Validate email',
     options: {},
-    next: ['openPage', 'openUrl'],
+    next: ['openPage'],
   },
 
   suspend_account: {
@@ -755,7 +755,7 @@ export const ACTIONS: IActions = {
   validate: {
     label: 'Validate',
     options: {},
-    next: ['openPage'],
+    next: ['openPage', 'openUrl'],
   },
 }
 
