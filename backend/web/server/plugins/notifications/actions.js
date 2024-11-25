@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const lodash = require('lodash')
 const { addAction } = require('../../utils/studio/actions')
 const { getModel } = require('../../utils/database')
 const { callComputeUrl } = require('./functions')
