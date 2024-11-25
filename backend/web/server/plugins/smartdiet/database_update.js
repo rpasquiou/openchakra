@@ -1,8 +1,9 @@
 const lodash=require('lodash')
 const mongoose=require('mongoose')
 const moment=require('moment')
-const { PHONE_REGEX, isPhoneOk } = require("../../../utils/sms")
+const { PHONE_REGEX, isPhoneOk, formatPhone } = require("../../../utils/sms")
 const User = require("../../models/User")
+const Lead = require("../../models/Lead")
 const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_PROGRESS } = require('./consts')
 const Appointment = require('../../models/Appointment')
 const Company = require('../../models/Company')
@@ -30,23 +31,31 @@ const normalizePhones = async () => {
 
   log('normalizing phone numbers')
   const normalizePhone = user => {
-    if (!isPhoneOk(user.phone)) {
-      error(`Clearing invalid phone`, user.phone, 'for', user.email, 'resetting')
-      user.phone=null
-      return user.save()
+    const changedPhone=formatPhone(user.phone)
+    if (!isPhoneOk(changedPhone, true)) {
+      error(`Invalid phone`, user.phone, 'for', user.email)
+      return null
     }
-    const modified=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
-    user.phone=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
-    if (modified!=user.phone) {
-      log(`Normalized for`, user.email, 'to', user.phone)
-      return user.save()
+    if (changedPhone!=user.phone) {
+      log(`Normalized for`, user.email, 'to', changedPhone)
+      return { 
+        updateOne: {
+          filter: {_id: user._id},
+          update: {$set: {phone: changedPhone}}
+        }
+      }
     }
   }
 
   // Normalize user phones
-  return User.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
-    .then(users => Promise.allSettled(users.map(u => normalizePhone(u))))
-    .then(res => res.some(r => r.status=='rejected') && log(JSON.stringify(lodash.groupBy(res, 'status').rejected)))
+  const users=await User.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
+  const userUpdates=users.map(u => normalizePhone(u)).filter(Boolean)
+  await Lead.bulkWrite(userUpdates).then(console.log)
+
+  // Normalize leads phones
+  const leads=await Lead.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
+  const leadUpdates=leads.map(u => normalizePhone(u)).filter(Boolean)
+  await Lead.bulkWrite(leadUpdates).then(console.log)
 }
 
 const renameHealthQuizzTypes = async () => {
