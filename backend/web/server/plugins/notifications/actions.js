@@ -9,10 +9,12 @@ const { callComputeUrl } = require('./functions')
 const validateNotification = async ({value}, user) => {
   //check if value is a notif id in case validate action is used elsewhere
   const model = await getModel(value)
+  let notif
   if (model == 'notification') {
     //add user to seen_by_recipients
-    await mongoose.models[model].findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
+    notif = await mongoose.models[model].findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
   }
+  return notif
 }
 
 addAction('validate',validateNotification)
