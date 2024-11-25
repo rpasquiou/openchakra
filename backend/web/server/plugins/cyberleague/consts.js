@@ -259,7 +259,7 @@ const STATUT_MEMBER = `STATUT_MEMBER`
 const STATUTS = {
   [STATUT_PARTNER]: `Partenaire`,
   [STATUT_SPONSOR]: `Sponsor`,
-  [STATUT_FOUNDER]: `Fondateur`,
+  [STATUT_FOUNDER]: `Ambassadeur`,
   [STATUT_MEMBER]: `Membre`
 }
 
