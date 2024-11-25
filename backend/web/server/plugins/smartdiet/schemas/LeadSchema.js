@@ -1,5 +1,5 @@
 const lodash=require('lodash')
-const { isEmailOk } = require('../../../../utils/sms')
+const { isEmailOk, formatPhone } = require('../../../../utils/sms')
 const { isPhoneOk } = require('../../../../utils/sms')
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
@@ -44,12 +44,8 @@ const LeadSchema = new Schema({
   },
   phone: {
     type: String,
-    validate: [value => !value || isPhoneOk(value), v => `Le numéro de téléphone '${v?.value}' doit commencer par 0 ou +33`],
-    set: v => {
-      if (!v) return v;
-      const formatted = v.replace(/^0/, '+33').replace(/(\+33)(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5 $6');
-      return formatted;
-    },
+    validate: [function(value) { return !value || isPhoneOk(value)}, 'Le numéro de téléphone doit commencer par 0 ou +33'],
+    set: v => formatPhone(v),
     required: false,
   },
   // Calls attributes
