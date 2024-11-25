@@ -1,7 +1,7 @@
 const lodash=require('lodash')
 const mongoose=require('mongoose')
 const moment=require('moment')
-const { PHONE_REGEX, isPhoneOk, formatPhone } = require("../../../utils/sms")
+const { PHONE_REGEX, isPhoneOk, formatPhone, ALL_PHONES } = require("../../../utils/sms")
 const User = require("../../models/User")
 const Lead = require("../../models/Lead")
 const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_PROGRESS } = require('./consts')
@@ -33,11 +33,9 @@ const normalizePhones = async () => {
   const normalizePhone = user => {
     const changedPhone=formatPhone(user.phone)
     if (!isPhoneOk(changedPhone, true)) {
-      error(`Invalid phone`, user.phone, 'for', user.email)
       return null
     }
     if (changedPhone!=user.phone) {
-      log(`Normalized for`, user.email, 'to', changedPhone)
       return { 
         updateOne: {
           filter: {_id: user._id},
@@ -47,15 +45,16 @@ const normalizePhones = async () => {
     }
   }
 
+  const PHONE_FILTER = { phone: { $regex: /./, $not: ALL_PHONES} }
   // Normalize user phones
-  const users=await User.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
+  const users=await User.find(PHONE_FILTER)
   const userUpdates=users.map(u => normalizePhone(u)).filter(Boolean)
-  await Lead.bulkWrite(userUpdates).then(console.log)
+  await User.bulkWrite(userUpdates).then(res => log(`Updated users ${users.length}:${JSON.stringify(res)}`))
 
   // Normalize leads phones
-  const leads=await Lead.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
+  const leads=await Lead.find(PHONE_FILTER)
   const leadUpdates=leads.map(u => normalizePhone(u)).filter(Boolean)
-  await Lead.bulkWrite(leadUpdates).then(console.log)
+  await Lead.bulkWrite(leadUpdates).then(res => log(`Updated leads ${leads.length}:${JSON.stringify(res)}`))
 }
 
 const renameHealthQuizzTypes = async () => {
