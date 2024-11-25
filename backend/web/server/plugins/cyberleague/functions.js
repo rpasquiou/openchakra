@@ -440,7 +440,7 @@ declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBIL
 declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 declareVirtualField({model: 'event', field: 'status', requires: 'start_date', instance: 'String', enumValues: EVENT_STATUSES, 
-  dbFilter: value => {return value == EVENT_STATUS_PAST ? {start_date: {$lt: Date.now()}} : {start_date: {$gt: Date.now()}} }
+  dbFilter: value => {return RegExp(value).test(EVENT_STATUS_PAST) ? {start_date: {$lt: Date.now()}} : {start_date: {$gt: Date.now()}}}
 })
 
 // Mission declaration
