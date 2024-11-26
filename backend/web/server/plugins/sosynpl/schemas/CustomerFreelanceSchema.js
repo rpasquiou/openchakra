@@ -114,6 +114,14 @@ const CustomerFreelanceSchema = new Schema({
     type: String,
     enum: Object.keys(WORK_MODE),
   },
+  work_mode_remote: {
+    type: Boolean,
+    required: false,
+  },
+  work_mode_site: {
+    type: Boolean,
+    required: false,
+  },
   // 1 minimum, 3 max
   work_duration: {
     type: [{
@@ -691,6 +699,12 @@ CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
   }
 
   return fields.join(' ')
+})
+
+CustomerFreelanceSchema.pre('save', function(next) {
+  this.work_mode_site = this.work_mode_site ?? false
+  this.work_mode_remote = this.work_mode_remote ?? false
+  next()
 })
 
 /* eslint-enable prefer-arrow-callback */
