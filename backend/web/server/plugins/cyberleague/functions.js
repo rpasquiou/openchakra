@@ -932,7 +932,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
     if (attribute == 'users') {
-      await Group.updateOne({_id:id}, {$pullAll: {pending_users: {$in: value}}})
+      const res = await Group.updateOne({_id:id}, {$pullAll: {pending_users: value}})
     }
   }
 
