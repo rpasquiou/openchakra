@@ -934,9 +934,9 @@ setPostCreateData(postCreate)
 const postPutData = async ({model, id, user, attribute, value}) => {
   //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
-    if (attribute == 'users') {
-      const group = await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
+    const group = await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
 
+    if (attribute == 'users') {
       if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
         const userId = lodash.intersectionWith([group.users, value], idEqual)
         //Notif league acceptation
@@ -951,6 +951,37 @@ const postPutData = async ({model, id, user, attribute, value}) => {
           customData: null,
           picture: group.picture
         })
+      }
+    }
+    if (attribute == 'pending_users') {
+      if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
+        const params = {}
+        params.groupName = group.name
+        const sponsor = await Company.findById(user.company_sponsorship)
+        //Notif league request
+        if (user.company_sponsorship) {
+          await addNotification({
+            users: sponsor.administrators,
+            targetId: user._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,user, params}),
+            type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,
+            customData: null,
+            picture: user.picture
+          })
+        }
+        const isGroupAdmin = !!lodash.find(sponsor.administrators,(v) => idEqual(group.admin, v))
+        if (!user.company_sponsorship || !isGroupAdmin) {
+          await addNotification({
+            users: [group.admin],
+            targetId: user._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,user, params}),
+            type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,
+            customData: null,
+            picture: user.picture
+          })
+        }
       }
     }
   }
