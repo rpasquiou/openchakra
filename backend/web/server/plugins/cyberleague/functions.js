@@ -46,6 +46,7 @@ const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
 const AdminDashboard = require('../../models/AdminDashboard')
+const Event = require('../../models/Event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -989,8 +990,11 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       if (lodash.includes(value, user._id.toString())) {
         //console.log('registered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
-
+        
         //Event notif
+        const event = await Event.findById(id)
+        const params = {}
+        params.eventName = event.name
         if (user.company_sponsorship) {
           const sponsor = await Company.findById(user.company_sponsorship)
           await addNotification({
@@ -1003,8 +1007,17 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             picture: user.picture
           })
         }
-        if (!user.company_sponsorship /*|| comppany sponsor != creator event*/) {
-          
+        if (!user.company_sponsorship || user.company_sponsorship != event.company) {
+          const admins = await Company.findById(event.company)
+          await addNotification({
+            users: [admins],
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,user, params}),
+            type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,
+            customData: null,
+            picture: user.picture
+          })
         }
       } else {
         //console.log('unregistered')
