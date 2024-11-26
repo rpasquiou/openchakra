@@ -797,7 +797,7 @@ const preCreate = async ({model, params, user}) => {
       if (user.company_sponsorship) {
         const sponsor = await Company.findById(user.company_sponsorship)
         await addNotification({
-          users: [sponsor.administrators],
+          users: sponsor.administrators,
           targetId: data._id,
           targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
           text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
@@ -876,7 +876,7 @@ const postCreate = async ({ model, params, data, user }) => {
     if (user.company_sponsorship) {
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
-        users: [sponsor.administrators],
+        users: sponsor.administrators,
         targetId: data._id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
         text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
@@ -911,7 +911,7 @@ const postCreate = async ({ model, params, data, user }) => {
     if (user.company_sponsorship) {
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
-        users: [sponsor.administrators],
+        users: sponsor.administrators,
         targetId: data._id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_MISSION],
         text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_MISSION,user}),
@@ -977,7 +977,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
             type: NOTIFICATION_TYPE_GROUP_LIKE,
-            customData: `${user._id}`,
+            customData: null,
             picture: user.picture
           })
         } else {
@@ -987,7 +987,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
             type: NOTIFICATION_TYPE_FEED_LIKE,
-            customData: `${user._id}`,
+            customData: null,
             picture: user.picture
           })
         }
@@ -1014,7 +1014,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         if (user.company_sponsorship) {
           const sponsor = await Company.findById(user.company_sponsorship)
           await addNotification({
-            users: [sponsor.administrators],
+            users: sponsor.administrators,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
             text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user, params}),
@@ -1026,7 +1026,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         if (!user.company_sponsorship || user.company_sponsorship != event.company) {
           const admins = await Company.findById(event.company)
           await addNotification({
-            users: [admins],
+            users: admins,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
             text: callComputeMessage({type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,user, params}),
@@ -1056,7 +1056,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       params.jobtitle = job.position
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
-        users: [sponsor.administrators],
+        users: sponsor.administrators,
         targetId: id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
         text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user,params}),
