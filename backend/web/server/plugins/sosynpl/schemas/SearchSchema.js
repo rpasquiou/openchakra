@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const moment = require('moment')
 const autoIncrement = require('mongoose-auto-increment')
 const {schemaOptions} = require('../../../utils/schemas')
-const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT, APPLICATION_REFUSE_REASON, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_ACCEPTED, WORK_MODE, WORK_DURATION, EXPERIENCE, SS_PILAR, SEARCH_MODE } = require('../consts')
+const { APPLICATION_STATUS, APPLICATION_STATUS_DRAFT, APPLICATION_REFUSE_REASON, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_ACCEPTED, WORK_DURATION, EXPERIENCE, SS_PILAR, SEARCH_MODE } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -26,11 +26,14 @@ const SearchSchema = new Schema({
     type: Number,
     required: false,
   },
-  work_modes: [{
-    type: String,
-    enum: Object.keys(WORK_MODE),
-    required: true,
-  }],
+  work_mode_site: {
+    type: Boolean,
+    required: false,
+  },
+  work_mode_remote: {
+    type: Boolean,
+    required: false,
+  },
   work_durations: [{
     type: String,
     enum: Object.keys(WORK_DURATION),

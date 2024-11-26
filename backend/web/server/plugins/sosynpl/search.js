@@ -4,7 +4,7 @@
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const Sector = require("../../models/Sector")
-const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_MODE, WORK_MODE_SITE, WORK_MODE_REMOTE, WORK_MODE_REMOTE_SITE, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
@@ -35,10 +35,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     return Object.keys(region)[0] || null
   }
 
-  const MAP_WORKMODE = {
-    0: WORK_MODE_SITE,
-    5: WORK_MODE_REMOTE,
-  }
+
 
   const durationDays = data.duration * DURATION_UNIT_DAYS[data.duration_unit]
   const workDuration =
@@ -47,7 +44,6 @@ const computeSuggestedFreelances = async (userId, params, data) => {
       : durationDays > 180
       ? WORK_DURATION_MORE_6_MONTH
       : WORK_DURATION__1_TO_6_MONTHS
-  const workMode = MAP_WORKMODE[data.homework_days] || WORK_MODE_REMOTE_SITE
 
   const POWERS = {
     main_job: 1,
@@ -56,7 +52,6 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     softwares: 1,
     languages: 1,
     main_experience: 1,
-    work_mode: 1,
     work_duration: 1,
     mobility: 1,
     freelance_profile_completion: 1,
@@ -80,7 +75,6 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     score += incrementScore(freelance.softwares && data.softwares.some(sw => String(freelance.softwares).includes(String(sw._id))), 'softwares')
     score += incrementScore(freelance.languages && data.languages.some(lang => String(freelance.languages).includes(String(lang._id))), 'languages')
     score += incrementScore(freelance.main_experience && data.experience.includes(freelance.main_experience), 'main_experience')
-    score += incrementScore(freelance.work_mode && freelance.work_mode === (data.homework_days === 5 ? WORK_MODE_REMOTE : workMode), 'work_mode')
     score += incrementScore(freelance.work_duration && freelance.work_duration.includes(workDuration), 'work_duration')
 
     if (data.city && data.city.zip_code) {
@@ -123,17 +117,23 @@ const computeSuggestedFreelances = async (userId, params, data) => {
     .slice(0, 5)
     .map(id => freelances.find(f => f._id.toString() === id))
 
-  return sortedFreelances
+  //return sortedFreelances
+  //HACK TODO V3
+  return []
 }
 
 const searchFreelances = async (userId, params, data, fields)  => {
   let filter = { ...params, 'filter.role': ROLE_FREELANCE }
 
-  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises', 'firstname', 'lastname', 'work_sector']
+  fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises', 'firstname', 'lastname', 'work_sector', 'work_mode_site', 'work_mode_remote']
 
-  if (!lodash.isEmpty(data.work_modes)) {
-    filter['filter.work_mode'] = { $in: data.work_modes }
+  if(!lodash.isNull(data.work_mode_site)) {
+    filter['filter.work_mode_site'] = data.work_mode_site
   }
+  if(!lodash.isNull(data.work_mode_remote)) {
+    filter['filter.work_mode_remote'] = data.work_mode_remote
+  }
+  
   if (!lodash.isEmpty(data.work_durations)) {
     filter['filter.work_duration'] = { $in: data.work_durations }
   }

@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_MODE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
+const {COMPANY_SIZE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
   MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR,
   CF_MAX_GOLD_SOFT_SKILLS,
   CF_MAX_SILVER_SOFT_SKILLS,
@@ -109,10 +109,6 @@ const CustomerFreelanceSchema = new Schema({
   motivation: {
     type: String,
     required: [function() {return isFreelance(this)}, `Saisisez les types de missions recherchées`],
-  },
-  work_mode: {
-    type: String,
-    enum: Object.keys(WORK_MODE),
   },
   work_mode_remote: {
     type: Boolean,
@@ -696,6 +692,14 @@ CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
 
   if (this.pinned_expertises) {
     fields = fields.concat(this.pinned_expertises.map(e => e.name))
+  }
+
+  if (this.work_mode_remote) {
+    fields.push(this.work_mode_remote)
+  }
+
+  if (this.work_mode_site) {
+    fields.push(this.work_mode_site)
   }
 
   return fields.join(' ')

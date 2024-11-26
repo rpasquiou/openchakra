@@ -4,7 +4,7 @@ const Announce = require("../../models/Announce")
 const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { WORK_MODE, SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY } = require("./consts")
+const { SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY } = require("./consts")
 const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -173,7 +173,6 @@ FREELANCE_MODELS.forEach(model => {
     },
   })
   declareVirtualField({model, field: 'search_visible', instance: 'Boolean'})
-  declareEnumField({model, field: 'work_mode', enumValues: WORK_MODE})
   declareEnumField({model, field: 'source', enumValues: SOURCE})
   declareEnumField({model, field: 'main_experience', enumValues: EXPERIENCE})
   declareEnumField({model, field: 'second_experience', enumValues: EXPERIENCE})
@@ -427,9 +426,8 @@ declareVirtualField({model: 'report', field: 'latest_quotations', instance: 'Arr
 /** Report end */
 
 /** Search start */
-const SEARCH_FIELDS='available,city,city_radius,experiences,expertises,max_daily_rate,min_daily_rate,pattern,pilars,sectors,work_durations,work_modes,mode'
+const SEARCH_FIELDS='available,city,city_radius,experiences,expertises,max_daily_rate,min_daily_rate,pattern,pilars,sectors,work_durations,work_mode_remote,work_mode_site,mode'
 declareEnumField({model: 'search', field: 'mode', instance: 'String', enumValues: SEARCH_MODE})
-declareEnumField({model: 'search', field: 'work_modes', instance: 'String', enumValues: WORK_MODE})
 declareEnumField({model: 'search', field: 'work_durations', instance: 'Array', enumValues: WORK_DURATION})
 declareEnumField({model: 'search', field: 'experiences', instance: 'String', enumValues: EXPERIENCE})
 declareEnumField({model: 'search', field: 'pilars', instance: 'String', enumValues: SS_PILAR})
@@ -470,7 +468,7 @@ CUSTOMERFREELANCEMODELS.forEach(model => {
     },
   })
   declareVirtualField({
-    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name,pinned_expertises,pinned_expertises.name'
+    model, field: 'search_field', instance: 'String', requires: 'position,main_job,main_job.name,second_job,second_job.name,third_job,third_job.name,expertises,expertises.name,pinned_expertises,pinned_expertises.name,work_mode_remote,work_mode_site'
   })
   declareVirtualField({
     model, field: 'customer_reports', instance: 'Array', multiple: true, requires:'customer_missions.reports.mission.freelance.fullname',
