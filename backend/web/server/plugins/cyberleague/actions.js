@@ -4,10 +4,11 @@ const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
-const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
+const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
+const { callComputeMessage } = require('../notifications/functions')
 
 
 const startSurvey = async (_, user) => {
@@ -82,6 +83,21 @@ const finishSurvey = async ({ value }, user) => {
       break;
   }
   await User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
+
+  //new scan notif
+  if (user.company_sponsorship) {
+    const sponsor = await Company.findById(user.company_sponsorship)
+    await addNotification({
+      users: [sponsor.administrators],
+      targetId: score._id,
+      targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_DIAG],
+      text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_DIAG,user}),
+      type: NOTIFICATION_TYPE_NEW_DIAG,
+      customData: null,
+      picture: user.picture
+    })
+  }
+
   return score
 }
 //TODO rename action to finish_survey

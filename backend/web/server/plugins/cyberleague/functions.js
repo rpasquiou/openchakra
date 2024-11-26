@@ -14,7 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS, NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, NOTIFICATION_TYPE_NEW_SCAN, NOTIFICATION_TYPE_NEW_DIAG, NOTIFICATION_TYPE_NEW_MISSION, NOTIFICATION_TYPE_JOB_ANSWER, NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST, NOTIFICATION_TYPE_EVENT_PARTICIPATION, NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION, GROUP_VISIBILITY_PRIVATE, NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST, STATUT_MEMBER, LEVEL_THRESHOLD_AMBASSADOR } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -46,6 +46,8 @@ const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
 const AdminDashboard = require('../../models/AdminDashboard')
+const Event = require('../../models/Event')
+const Carreer = require('../../models/Carreer')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -61,6 +63,29 @@ const computeUrl = async ({type, targetId}) => {
     case NOTIFICATION_TYPE_GROUP_COMMENT:
     case NOTIFICATION_TYPE_GROUP_LIKE:
       tagUrl = await getTagUrl('NOTIFICATION_POST')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      tagUrl = await getTagUrl('PRIVATE_LEAGUE')
+      break;
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      tagUrl = await getTagUrl('SCAN_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      tagUrl = await getTagUrl('DIAG_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      tagUrl = await getTagUrl('MISSION_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      tagUrl = await getTagUrl('JOB_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      tagUrl = await getTagUrl('LEAGUE_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      tagUrl = await getTagUrl('EVENT_DETAILS')
       break;
   }
 
@@ -85,6 +110,24 @@ const computeMessage = ({type, user, params}) => {
       return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
     case NOTIFICATION_TYPE_GROUP_LIKE:
       return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      return `Félicitation ! Votre demande derejoindre la ligue ${params.groupName} a été acceptée`
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      return `${user.fullname} a effectué un scan de surface`
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      return `${user.fullname} a effectué un diagnostique`
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      return `${user.fullname} a effectué une demande de mission`
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      return `${user.fullname} a répondu à votre offre d'emploi : ${params.jobTitle}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+      return `${user.shortname} souhaite rejoindre votre ligue ${params.groupName}`
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      return `${user.shortname} s'est inscrit à votre événement ${params.eventName}`
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return `${user.fullname} s'est inscrit à l'événement ${params.eventName}`
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      return `${user.fullname} souhaite rejoindre la ligue ${params.groupName}`
   }
   throw new Error(`Unknown notification type ${type} in computeMessage`)
 }
@@ -752,6 +795,40 @@ const preCreate = async ({model, params, user}) => {
       //add existing scan to user
       data = existingScan
       await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+
+      //new scan notif
+      if (user.company_sponsorship) {
+        const sponsor = await Company.findById(user.company_sponsorship)
+        await addNotification({
+          users: sponsor.administrators,
+          targetId: data._id,
+          targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
+          text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
+          type: NOTIFICATION_TYPE_NEW_SCAN,
+          customData: null,
+          picture: user.picture
+        })
+      }
+    }
+  }
+
+  if (model == 'event') {
+    if (!params.company) {
+      await getModel(params.parent, [`company`])
+      const parentCompany = await Company.findById(params.parent)
+
+      if (!idEqual(parentCompany._id, user.company)) {
+        throw new ForbiddenError(`Un événement ne peut être créé que pour sa propre entreprise`)
+      }
+
+      if (parentCompany.statut == STATUT_MEMBER || (!lodash.find(parentCompany.administrators,(v) => idEqual(user._id, v)) || user.tokens < LEVEL_THRESHOLD_AMBASSADOR)) {
+        throw new ForbiddenError(`Il faut être administrateur d'une entreprise partenaire ou influenceur pour pouvoir créer un événement`)
+      }
+      params.company = params.parent
+    } else {
+      if (user.role != ROLE_ADMIN) {
+        throw new ForbiddenError('Il faut être administrateur Cyberleague pour effecter cette opération')
+      }
     }
   }
 
@@ -761,13 +838,14 @@ const preCreate = async ({model, params, user}) => {
 setPreCreateData(preCreate)
 
 const postCreate = async ({ model, params, data, user }) => {
+  //console.log('postCreate : model', model, 'data', data, 'user', user, 'params', params)
   if (model == `customerSuccess`) {
     await Company.findByIdAndUpdate(params.parent, {$push: {customer_successes: data._id}})
   }
 
   if (model == `certification`) {
-    const model = await getModel(params.parent, [`company`,`user`])
-    await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+    const parentModel = await getModel(params.parent, [`company`,`user`])
+    await mongoose.models[parentModel].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
 
   if ([`user`,`content`,`company`,`group`,`event`].includes(model)) {
@@ -816,6 +894,20 @@ const postCreate = async ({ model, params, data, user }) => {
     runPromiseUntilSuccess(() => computeScanRatesIfResults(data._id,data.url),20, 30000)
     //add scan to user
     await User.findByIdAndUpdate(user._id,{$addToSet: {scans: data._id}})
+
+    //new scan notif
+    if (user.company_sponsorship) {
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: sponsor.administrators,
+        targetId: data._id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
+        type: NOTIFICATION_TYPE_NEW_SCAN,
+        customData: null,
+        picture: user.picture
+      })
+    }
   }
 
   if (model == 'company') {
@@ -837,6 +929,22 @@ const postCreate = async ({ model, params, data, user }) => {
     })
   }
 
+  if (model == 'mission') {
+    //new mission notif
+    if (user.company_sponsorship) {
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: sponsor.administrators,
+        targetId: data._id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_MISSION],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_MISSION,user}),
+        type: NOTIFICATION_TYPE_NEW_MISSION,
+        customData: null,
+        picture: user.picture
+      })
+    }
+  }
+
   return data
 }
 
@@ -846,8 +954,55 @@ setPostCreateData(postCreate)
 const postPutData = async ({model, id, user, attribute, value}) => {
   //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
+    const group = await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
+
     if (attribute == 'users') {
-      await Group.updateOne({_id:id}, {$pullAll: {pending_users: {$in: value}}})
+      if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
+        const userId = lodash.intersectionWith([group.users, value], idEqual)
+        //Notif league acceptation
+        const params = {}
+        params.groupName = group.name
+        await addNotification({
+          users: [userId],
+          targetId: group._id,
+          targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED],
+          text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, user, params}),
+          type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED,
+          customData: null,
+          picture: group.picture
+        })
+      }
+    }
+    if (attribute == 'pending_users') {
+      if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
+        const params = {}
+        params.groupName = group.name
+        const sponsor = await Company.findById(user.company_sponsorship)
+        //Notif league request
+        if (user.company_sponsorship) {
+          await addNotification({
+            users: sponsor.administrators,
+            targetId: user._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,user, params}),
+            type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,
+            customData: null,
+            picture: user.picture
+          })
+        }
+        const isGroupAdmin = !!lodash.find(sponsor.administrators,(v) => idEqual(group.admin, v))
+        if (!user.company_sponsorship || !isGroupAdmin) {
+          await addNotification({
+            users: [group.admin],
+            targetId: user._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,user, params}),
+            type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,
+            customData: null,
+            picture: user.picture
+          })
+        }
+      }
     }
   }
 
@@ -877,7 +1032,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
             type: NOTIFICATION_TYPE_GROUP_LIKE,
-            customData: `${user._id}`,
+            customData: null,
             picture: user.picture
           })
         } else {
@@ -887,7 +1042,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
             text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
             type: NOTIFICATION_TYPE_FEED_LIKE,
-            customData: `${user._id}`,
+            customData: null,
             picture: user.picture
           })
         }
@@ -906,6 +1061,35 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       if (lodash.includes(value, user._id.toString())) {
         //console.log('registered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+        
+        //Event notif
+        const event = await Event.findById(id)
+        const params = {}
+        params.eventName = event.name
+        if (user.company_sponsorship) {
+          const sponsor = await Company.findById(user.company_sponsorship)
+          await addNotification({
+            users: sponsor.administrators,
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user, params}),
+            type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,
+            customData: null,
+            picture: user.picture
+          })
+        }
+        if (!user.company_sponsorship || user.company_sponsorship != event.company) {
+          const admins = await Company.findById(event.company)
+          await addNotification({
+            users: admins,
+            targetId: id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,user, params}),
+            type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,
+            customData: null,
+            picture: user.picture
+          })
+        }
       } else {
         //console.log('unregistered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
@@ -916,6 +1100,25 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   if (model == 'company' ) {
     if (attribute == 'is_default_sponsor' && value) {
       await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+    }
+  }
+
+  if (model == 'carreer') {
+    //carreer sponsor candidates notif
+    if (attribute == 'candidates' && user.company_sponsorship && lodash.find(value,(v) => idEqual(user._id, v))) {
+      const job = Carreer.findById(id) 
+      const params = {}
+      params.jobtitle = job.position
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: sponsor.administrators,
+        targetId: id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user,params}),
+        type: NOTIFICATION_TYPE_JOB_ANSWER,
+        customData: null,
+        picture: user.picture
+      })
     }
   }
 

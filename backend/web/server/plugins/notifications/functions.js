@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { createNotificationSchema } = require('./schemas/NotificationSchema')
 const { declareEnumField, declareVirtualField } = require('../../utils/database')
+const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
 
 let computeUrl = (targetId, targetType) => {
   return ``
@@ -73,7 +74,7 @@ const setAllowedTypes = types => {
 
 const getPendingNotifications = async function (userId, params, data) {
   const NotificationModel = mongoose.models.notification
-  const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}})
+  const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}}).sort({[CREATED_AT_ATTRIBUTE]: -1})
   return notifs
 }
 
@@ -85,7 +86,7 @@ const getPendingNotificationsCount = async function (userId, params, data) {
 
 const getSeenNotifications = async function (userId, params, data) {
   const NotificationModel = mongoose.models.notification
-  const notifs = await NotificationModel.find({seen_by_recipients: {$in: data._id}})
+  const notifs = await NotificationModel.find({seen_by_recipients: {$in: data._id}}).sort({[CREATED_AT_ATTRIBUTE]: -1})
   return notifs
 }
 
