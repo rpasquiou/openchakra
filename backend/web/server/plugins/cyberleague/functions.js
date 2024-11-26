@@ -935,17 +935,18 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       const group = await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
 
       if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
+        const userId = lodash.intersectionWith([group.users, value], idEqual)
         //Notif league acceptation
         const params = {}
         params.groupName = group.name
         await addNotification({
-          users: [group.admin],
-          targetId: id,
+          users: [userId],
+          targetId: group._id,
           targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED],
           text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, user, params}),
           type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED,
           customData: null,
-          picture: group.banner
+          picture: group.picture
         })
       }
     }
