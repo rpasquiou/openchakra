@@ -312,8 +312,12 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'ticket'){
+    if (!([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role))) {
+      throw new ForbiddenError(`Vous ne pouvez pas créer de ticket`)
+    }
     params.user = user._id
     params.block = params.parent
+    params.session=(await getSession(user._id, null, {_id: params.block}, []))?._id
   }
 
   if (model == `group` && !!params.sessions && params.sessions.length >0){
