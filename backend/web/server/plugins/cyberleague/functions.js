@@ -911,7 +911,7 @@ const postCreate = async ({ model, params, data, user }) => {
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
         users: [sponsor.administrators],
-        targetId: user._id,
+        targetId: data._id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_MISSION],
         text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_MISSION,user}),
         type: NOTIFICATION_TYPE_NEW_MISSION,
@@ -999,7 +999,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
           const sponsor = await Company.findById(user.company_sponsorship)
           await addNotification({
             users: [sponsor.administrators],
-            targetId: user._id,
+            targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
             text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user}),
             type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,
@@ -1038,7 +1038,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
         users: [sponsor.administrators],
-        targetId: user._id,
+        targetId: id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
         text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user}),
         type: NOTIFICATION_TYPE_JOB_ANSWER,
