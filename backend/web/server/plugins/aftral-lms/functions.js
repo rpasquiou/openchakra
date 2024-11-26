@@ -317,7 +317,7 @@ const preCreate = async ({model, params, user}) => {
     }
     params.user = user._id
     params.block = params.parent
-    params.session=(await getSession(user._id, null, {_id: params.block}, []))?._id
+    params.session=params.session || (await getSession(user._id, null, {_id: params.block}, []))?._id
   }
 
   if (model == `group` && !!params.sessions && params.sessions.length >0){
