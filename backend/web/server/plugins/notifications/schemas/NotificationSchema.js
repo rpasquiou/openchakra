@@ -16,8 +16,8 @@ const createNotificationSchema = (allowedTypes) => {
       required: [true, `Le type de l'id de la target est obligatoire`]
     },
     text: {
+      //computed
       type: String,
-      required: [true, `Un texte est obligatoire pour une notification`]
     },
     type: {
       type: String,
@@ -25,8 +25,8 @@ const createNotificationSchema = (allowedTypes) => {
       enum: Object.keys(allowedTypes),
     },
     url: {
+      //computed
       type: String,
-      required: [true, `L'url de la notification est obligatoire`]
     },
     recipients: {
       type: [{
@@ -46,7 +46,6 @@ const createNotificationSchema = (allowedTypes) => {
     },
     picture: {
       type: String,
-      required: false
     },
     custom_data: {
       type: String,

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { createNotificationSchema } = require('./schemas/NotificationSchema')
-const { declareEnumField, declareVirtualField } = require('../../utils/database')
+const { declareEnumField, declareVirtualField, declareComputedField } = require('../../utils/database')
 const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
 
 let computeUrl = (targetId, targetType) => {
@@ -11,8 +11,8 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
-const callComputeUrl = async ({...params}) => {
-  return computeUrl(params)
+const callComputeUrl = async (...params) => {
+  return computeUrl(...params)
 }
 
 let computeMessage = (text) => {
@@ -23,8 +23,20 @@ const setComputeMessage = (fn) => {
   computeMessage = fn
 }
 
-const callComputeMessage = ({...params}) => {
-  return computeMessage(params)
+const callComputeMessage = (...params) => {
+  return computeMessage(...params)
+}
+
+let computePicture = (picture) => {
+  return picture
+}
+
+const setComputePicture = (fn) => {
+  computePicture = fn
+}
+
+const callComputePicture = (...params) => {
+  return computePicture(...params)
 }
 
 const setAllowedTypes = types => {
@@ -69,6 +81,9 @@ const setAllowedTypes = types => {
 
   //notification declarations
   declareEnumField({model: 'notification', field: 'type', enumValues: types})
+  declareComputedField({model: 'notification', field: 'url', getterFn: callComputeUrl})
+  declareComputedField({model: 'notification', field: 'message', getterFn: callComputeMessage})
+  declareComputedField({model: 'notification', field: 'picture', getterFn: callComputePicture})
 
 }
 
@@ -100,10 +115,12 @@ module.exports = {
   setAllowedTypes,
   setComputeUrl,
   setComputeMessage,
+  setComputePicture,
   getPendingNotifications,
   getPendingNotificationsCount,
   getSeenNotifications,
   getSeenNotificationsCount,
   callComputeUrl,
   callComputeMessage,
+  callComputePicture
 }
