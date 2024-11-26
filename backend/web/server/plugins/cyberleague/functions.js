@@ -999,6 +999,22 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
+  if (model == 'carreer') {
+    //carreer sponsor candidates notif
+    if (attribute == 'candidates' && user.company_sponsorship && lodash.find(value,(v) => idEqual(user._id, v))) {
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: [sponsor.administrators],
+        targetId: user._id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user}),
+        type: NOTIFICATION_TYPE_JOB_ANSWER,
+        customData: null,
+        picture: user.picture
+      })
+    }
+  }
+
   return {model, user, attribute, value}
 }
 
