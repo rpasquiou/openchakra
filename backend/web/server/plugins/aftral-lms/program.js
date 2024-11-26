@@ -6,7 +6,7 @@ const { fillForm2, getFormFields } = require('../../../utils/fillForm')
 const { loadFromDb, idEqual } = require('../../utils/database')
 const Resource = require('../../models/Resource')
 const { BLOCK_TYPE_SESSION, BLOCK_STATUS } = require('./consts')
-const { formatDateTime, formatPercent, formatDate } = require('../../../utils/text')
+const { formatDateTime, formatPercent, formatDate, formatDateEnglish } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
 const { isDevelopment } = require('../../../config/config')
@@ -70,13 +70,15 @@ const getSessionCertificate = async (userId, params, data) => {
 
     const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
 
+    const location=`${!!template.english ? 'Place : ': 'À '}${session.location}`
+    const start_date=!!template.english ? `Date : ${formatDateEnglish(session.start_date, true)}` : `Le ${formatDate(session.start_date, true)}`
+    const end_date=!!template.english ? `Date : ${formatDateEnglish(session.end_date, true)}` : `Le ${formatDate(session.end_date, true)}`
     const pdfData = {
       session_name: session.name, session_code: session.code,
       first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
       achievement_status:  BLOCK_STATUS[session.achievement_status],
       trainee_fullname: trainee.fullname,
-      start_date: 'Le '+formatDate(session.start_date, true), end_date: 'Le '+formatDate(session.end_date, true),
-      location: 'À '+session.location,
+      start_date, end_date, location,
       total_resources_progress: formatPercent(session.resources_progress),
       level_1:session.children.map(child => ({
         name: child.name, resources_progress: formatPercent(child.resources_progress), spent_time_str: child.spent_time_str, order: child.order,

@@ -8,6 +8,10 @@ const CertificationSchema = new Schema({
     type: String,
     required: [true, `Le nom est obligatoire`],
   },
+  english: {
+    type: Boolean,
+    required: false,
+  },
   url: {
     type: String,
     required: [true, `Le lien est obligatoire`],

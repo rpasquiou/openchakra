@@ -70,7 +70,7 @@ const checkChildrenPropagation = async() => {
 
 const checkChildrenOrder = async() => {
   console.log('*'.repeat(10), 'START children order')
-  const blocks=await Block.find({parent: {$ne:null}}, {parent:1, order:1}).populate('origin').sort({parent:1, order:1}).lean()
+  const blocks=await Block.find({parent: {$ne:null}}, {name:1, parent:1, order:1}).populate('origin').sort({parent:1, order:1}).lean()
   const grouped=lodash(blocks)
     .groupBy(b=>b.parent._id.toString())
     .omitBy(v => v.length<2)
@@ -78,7 +78,7 @@ const checkChildrenOrder = async() => {
     const orders=v.map(child => child.order)
     const expected=lodash.range(1, v.length+1)
     if (!lodash.isEqual(orders, expected)) {
-      console.log(`Incorrect children order for ${v[0].parent}:${orders.map(o => [o, v.find(u => u.order==o)._id])}, expected ${expected}`)
+      console.log(`Incorrect children order for ${v[0].parent}:${orders.map(o => [o, v.find(u => u.order==o).name])}, expected ${expected}`)
     }
   })
   console.log('*'.repeat(10), 'END children order')
