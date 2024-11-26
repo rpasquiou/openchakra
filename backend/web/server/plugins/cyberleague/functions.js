@@ -1001,7 +1001,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             users: [sponsor.administrators],
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user}),
+            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user, params}),
             type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,
             customData: null,
             picture: user.picture
