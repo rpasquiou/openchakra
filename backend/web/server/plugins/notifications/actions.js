@@ -3,7 +3,6 @@ const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const lodash = require('lodash')
 const { addAction } = require('../../utils/studio/actions')
 const { getModel, idEqual } = require('../../utils/database')
-const { callComputeUrl } = require('./functions')
 
 
 const validateNotification = async ({value}, user) => {
@@ -20,18 +19,15 @@ const validateNotification = async ({value}, user) => {
 addAction('validate',validateNotification)
 
 
-const addNotification = async ({users, targetId, targetType, text, type, customData, picture}) => {
+const addNotification = async ({users, targetId, targetType, type, customData}) => {
   const NotificationModel = mongoose.models.notification
 
   return NotificationModel.create({
     recipients: users,
     _target: targetId,
     _target_type: targetType,
-    text: text,
     type: type,
-    url: await callComputeUrl({targetId, type}),
     custom_data: customData,
-    picture
   })
 }
 

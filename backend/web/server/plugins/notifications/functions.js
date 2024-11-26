@@ -120,7 +120,4 @@ module.exports = {
   getPendingNotificationsCount,
   getSeenNotifications,
   getSeenNotificationsCount,
-  callComputeUrl,
-  callComputeMessage,
-  callComputePicture
 }
