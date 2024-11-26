@@ -927,7 +927,7 @@ setPostCreateData(postCreate)
 
 
 const postPutData = async ({model, id, user, attribute, value}) => {
-  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
+  console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
     if (attribute == 'users') {
       await Group.updateOne({_id:id}, {$pullAll: {pending_users: {$in: value}}})
@@ -989,6 +989,23 @@ const postPutData = async ({model, id, user, attribute, value}) => {
       if (lodash.includes(value, user._id.toString())) {
         //console.log('registered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
+
+        //Event notif
+        if (user.company_sponsorship) {
+          const sponsor = await Company.findById(user.company_sponsorship)
+          await addNotification({
+            users: [sponsor.administrators],
+            targetId: user._id,
+            targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
+            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user}),
+            type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,
+            customData: null,
+            picture: user.picture
+          })
+        }
+        if (!user.company_sponsorship /*|| comppany sponsor != creator event*/) {
+          
+        }
       } else {
         //console.log('unregistered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
