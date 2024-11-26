@@ -47,6 +47,7 @@ const { getTagUrl } = require('../../utils/mailing')
 const Post = require('../../models/Post')
 const AdminDashboard = require('../../models/AdminDashboard')
 const Event = require('../../models/Event')
+const Carreer = require('../../models/Carreer')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -1035,12 +1036,15 @@ const postPutData = async ({model, id, user, attribute, value}) => {
   if (model == 'carreer') {
     //carreer sponsor candidates notif
     if (attribute == 'candidates' && user.company_sponsorship && lodash.find(value,(v) => idEqual(user._id, v))) {
+      const job = Carreer.findById(id) 
+      const params = {}
+      params.jobtitle = job.position
       const sponsor = await Company.findById(user.company_sponsorship)
       await addNotification({
         users: [sponsor.administrators],
         targetId: id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
-        text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user}),
+        text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user,params}),
         type: NOTIFICATION_TYPE_JOB_ANSWER,
         customData: null,
         picture: user.picture
