@@ -208,7 +208,7 @@ const Conversation = require('../../models/Conversation')
 const UserQuizz = require('../../models/UserQuizz')
 const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
-const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities, coachingAvailabilitiesCache } = require('./coaching')
+const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities} = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
@@ -573,16 +573,16 @@ const preCreate = async ({ model, params, user }) => {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
       // Appointment created by operator directly with a 1st appointment
       if (loadedModel=='coaching') {
-        const availabilities=coachingAvailabilitiesCache.get(params.parent)||[]
-        const paramMoment=moment(params.start_date)
-        const avail=availabilities.find(a => Math.abs(moment(a.start_date).diff(paramMoment))<10)
-        if (!avail) {
-          throw new BadRequestError(`Ce rendez-vous n'est plus disponible`)
+        const coaching=await Coaching.findById(params.parent).populate('diet')
+        if (!coaching.diet) {
+          if (!params['diet.email']) { throw new BadRequestError(`Le/la diet doit être sélectionné(e)`) }
+          diet=(await User.findOne({role: ROLE_EXTERNAL_DIET, email: params['diet.email']}))?._id
+          if (!diet) {
+            throw new NotFoundError(`Diet ${diet.email} introuvable`)
+          }
         }
-        const coaching=await Coaching.findById(params.parent)
-        diet=avail.diet
         customer_id=coaching.user._id
-        coaching.diet=avail.diet
+        coaching.diet=diet
         await coaching.save()
       }
       else {
@@ -659,7 +659,8 @@ const preCreate = async ({ model, params, user }) => {
       }
       // Create progress quizz for appointment
       const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
-      return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+      const res= { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+      return res
     }
     else { // Nutrition advice
       return { model, params: { patient_email: usr.email, diet, ...params } }
