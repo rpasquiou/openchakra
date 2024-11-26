@@ -901,6 +901,22 @@ const postCreate = async ({ model, params, data, user }) => {
     })
   }
 
+  if (model == 'mission') {
+    //new mission notif
+    if (user.company_sponsorship) {
+      const sponsor = await Company.findById(user.company_sponsorship)
+      await addNotification({
+        users: [sponsor.administrators],
+        targetId: user._id,
+        targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_MISSION],
+        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_MISSION,user}),
+        type: NOTIFICATION_TYPE_NEW_MISSION,
+        customData: null,
+        picture: user.picture
+      })
+    }
+  }
+
   return data
 }
 
