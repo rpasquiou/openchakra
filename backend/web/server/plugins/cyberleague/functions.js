@@ -40,7 +40,7 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage, setComputePicture } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -52,9 +52,12 @@ const Carreer = require('../../models/Carreer')
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
-const computeUrl = async ({type, targetId}) => {
+const NotificationModel = mongoose.models.notification
+
+//notif url getterFn
+const computeUrl = async (userId, params, data) => {
   let tagUrl
-  switch (type) {
+  switch (data.type) {
     case NOTIFICATION_TYPE_MESSAGE:
       tagUrl = await getTagUrl('NOTIFICATION_MESSAGE')
       break
@@ -90,15 +93,16 @@ const computeUrl = async ({type, targetId}) => {
   }
 
   if (!tagUrl) {
-    throw new Error(`Unknown notification type ${type} in computeUrl`)
+    throw new Error(`Unknown notification type ${data.type} in computeUrl`)
   }
 
-  return `${ComputeDomain(tagUrl)}?id=${targetId}`
+  return `${ComputeDomain(tagUrl)}?id=${data._target}`
 }
 setComputeUrl(computeUrl)
 
 
-const computeMessage = ({type, user, params}) => {
+//notif message getterFn
+const computeMessage = (userId, params, data) => {
   switch (type) {
     case NOTIFICATION_TYPE_MESSAGE:
       return `${user.shortname} vous a envoyé un nouveau message`
@@ -133,7 +137,11 @@ const computeMessage = ({type, user, params}) => {
 }
 setComputeMessage(computeMessage)
 
-const NotificationModel = mongoose.models.notification
+//Notif picture getterFn
+const computePicture = async (userId, params, data) => {
+
+}
+setComputePicture(computePicture)
 
 
 
