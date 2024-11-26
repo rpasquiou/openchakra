@@ -824,8 +824,8 @@ const postCreate = async ({ model, params, data, user }) => {
   }
 
   if (model == `certification`) {
-    const model = await getModel(params.parent, [`company`,`user`])
-    await mongoose.models[model].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
+    const parentModel = await getModel(params.parent, [`company`,`user`])
+    await mongoose.models[parentModel].findByIdAndUpdate(params.parent, {$push: {certifications: data._id}})
   }
 
   if ([`user`,`content`,`company`,`group`,`event`].includes(model)) {
