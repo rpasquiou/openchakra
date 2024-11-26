@@ -18,7 +18,7 @@ const getFreelanceMissingAttributesNames = (user) => {
     else if (attr === 'expertises' && (!user[attr] || user[attr].length < MIN_EXPERTISES)) {
       missingAttributes.push(attr)
     }
-    else if (!user[attr] || (Array.isArray(user[attr]) && user[attr].length === 0)) {
+    else if (user[attr] === undefined || user[attr] === null || (Array.isArray(user[attr]) && user[attr].length === 0)) {
       missingAttributes.push(attr)
     }
   })
@@ -31,6 +31,9 @@ const getFreelanceMissingAttributesNames = (user) => {
     missingAttributes.push('soft_skills')
   }
 
+  if (user.work_mode_remote === undefined && user.work_mode_site === undefined) {
+    missingAttributes.push('work_mode_preference')
+  }
   return missingAttributes
 }
 
@@ -70,7 +73,7 @@ const freelanceProfileCompletion = (user) => {
   // -- Calculate penalty on the remaining 60%
   const totalMissingItems = mandatoryMissing + (hasMissingSoftSkills ? 1 : 0)
   const penaltyPerMissing = 60 / totalMandatoryItems
-  const totalPenalty = Math.floor(penaltyPerMissing * totalMissingItems)
+  const totalPenalty = Math.round(penaltyPerMissing * totalMissingItems)
 
   result += 60 - totalPenalty
 
@@ -90,11 +93,13 @@ const freelanceMissingAttributes = (user) => {
   // -- Convert attribute names to display labels
   const labels = missingAttributes.map(attr => {
     if (attr === 'soft_skills') return 'soft skills'
+    if (attr === 'work_mode_preference') return 'préférence de mode de travail'
     return FREELANCE_OUTPUT_ATTRIBUTES[attr]
   })
 
   // -- Join labels with dashes and capitalize first letter
-  const result = labels.join(' - ')
+  const uniqueLabels = [...new Set(labels)].filter(label => label && label.trim() !== '')
+  const result = uniqueLabels.join(' - ')
   return result.charAt(0).toUpperCase() + result.slice(1)
 }
 

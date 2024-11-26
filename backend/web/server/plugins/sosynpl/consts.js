@@ -428,7 +428,7 @@ const MIN_EXPERTISES = 3
 const MIN_PINNED_EXPERTISES = 3
 const FREELANCE_REQUIRED_ATTRIBUTES = ['firstname', 'lastname', 'main_job', 'phone', 'email', 'position', 'experience', 'main_experience', 'work_duration', 'company_name', 'siren', 'legal_status', 'work_sector', 'headquarter_address']
 const SOFT_SKILLS_ATTR = ['gold_soft_skills', 'silver_soft_skills', 'bronze_soft_skills']
-const FREELANCE_MANDATORY_ATTRIBUTES = ['rate', 'description', 'work_mode', 'work_company_size', 'mobility', 'experiences', 'trainings', 'pinned_expertises', 'expertises']
+const FREELANCE_MANDATORY_ATTRIBUTES = ['rate', 'description', 'work_company_size', 'mobility', 'experiences', 'trainings', 'pinned_expertises', 'expertises', 'work_mode_remote', 'work_mode_site']
 
 const FREELANCE_OUTPUT_ATTRIBUTES = {
   firstname: 'prénom',
@@ -447,7 +447,6 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   headquarter_address: 'adresse du siège de l\'entreprise',
   rate: 'tarif journalier',
   description: 'description',
-  work_mode: 'mode de travail',
   work_company_size: 'préférence de taille d\'entreprise',
   mobility: 'mobilité',
   expertises: `au moins ${MIN_EXPERTISES} compétences`,
@@ -457,6 +456,7 @@ const FREELANCE_OUTPUT_ATTRIBUTES = {
   gold_soft_skills: 'Soft skills gold',
   silver_soft_skills: 'Soft skills silver',
   bronze_soft_skills: 'Soft skills bronze',
+  work_mode_preference: 'préférence de mode de travail'
 }
 
 //Customer profile completion
