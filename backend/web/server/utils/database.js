@@ -11,6 +11,7 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 const {runPromisesWithDelay}=require('./concurrency')
+const { withMeasureTime } = require('./function_utilities')
 
 let scormCallbackPost=null
 
@@ -800,10 +801,10 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }
   if (getterFn) {
-    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn)
+    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, withMeasureTime(getterFn, model))
   }
   if (setterFn) {
-    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
+    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, withMeasureTime(setterFn, model))
   }
   if (rest.requires) {
     declareFieldDependencies({model, field, requires: rest.requires})

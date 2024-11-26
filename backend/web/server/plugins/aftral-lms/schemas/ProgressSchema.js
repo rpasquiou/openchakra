@@ -66,4 +66,6 @@ ProgressSchema.virtual('homeworks', {
   foreignField: 'resource',
 })
 
+ProgressSchema.index({ block: 1, user: 1 }, { unique: true })
+
 module.exports = ProgressSchema
