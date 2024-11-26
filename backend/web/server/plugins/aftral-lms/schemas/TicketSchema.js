@@ -51,6 +51,11 @@ const TicketSchema = new Schema({
   _number: {
     type: Number,
   },
+  session: {
+    type: Schema.Types.ObjectId,
+    ref: 'session',
+    required: [true, `La session est obligatoire`],
+  }
 }, {...schemaOptions})
 
 // Ensure autoincrement is initalized
