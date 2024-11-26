@@ -126,6 +126,8 @@ const computeMessage = ({type, user, params}) => {
       return `${user.shortname} s'est inscrit à votre événement ${params.eventName}`
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
       return `${user.fullname} s'est inscrit à l'événement ${params.eventName}`
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      return `${user.fullname} souhaite rejoindre la ligue ${params.groupName}`
   }
   throw new Error(`Unknown notification type ${type} in computeMessage`)
 }
