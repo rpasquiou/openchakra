@@ -309,7 +309,15 @@ const AnnounceSchema = new Schema({
   pinned: {
     type: Boolean,
     required: false,
-  }
+  },
+  work_mode_remote: {
+    type: Boolean,
+    required: false,
+  },
+  work_mode_site: {
+    type: Boolean,
+    required: false,
+  },
 }, schemaOptions)
 
 AnnounceSchema.virtual('total_budget', DUMMY_REF).get(function() {
@@ -413,6 +421,12 @@ AnnounceSchema.virtual('questions', {
   ref: 'question',
   localField: '_id',
   foreignField: 'announce',
+})
+
+AnnounceSchema.pre('save', function(next) {
+  this.work_mode_site = this.work_mode_site ?? false
+  this.work_mode_remote = this.work_mode_remote ?? false
+  next()
 })
 
 module.exports = AnnounceSchema
