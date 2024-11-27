@@ -18,7 +18,7 @@ const {
   STATUS_FAMILY,
   USER_SEARCH_TEXT_FIELDS,
 } = require('../consts')
-const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
+const { isEmailOk, isPhoneOk, formatPhone } = require('../../../../utils/sms')
 const { CREATED_AT_ATTRIBUTE, PURCHASE_STATUS_COMPLETE } = require('../../../../utils/consts')
 
 const siret = require('siret')
@@ -60,12 +60,8 @@ const UserSchema = new Schema({
   },
   phone: {
     type: String,
-    validate: [value => !value || isPhoneOk(value), 'Le numéro de téléphone doit commencer par 0 ou +33'],
-    set: v => {
-      if (!v) return v;
-      const formatted = v.replace(/^0/, '+33').replace(/(\+33)(\d)(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5 $6');
-      return formatted;
-    },
+    validate: [function(value) { return !value || isPhoneOk(value)}, 'Le numéro de téléphone doit commencer par 0 ou +33'],
+    set: v => formatPhone(v),
     required: false,
   },
   description: {
@@ -608,6 +604,12 @@ UserSchema.virtual("pinned_contents", {
   localField: "_id", // Find in Model, where localField
   foreignField: "pins" // is equal to foreignField
 });
+
+UserSchema.virtual('pinned_recipes', {
+  ref: 'recipe',
+  localField: '_id',
+  foreignField: 'pins',
+})
 
 UserSchema.virtual("targets", DUMMY_REF).get(function() {
   return [] //computeTargets(this)

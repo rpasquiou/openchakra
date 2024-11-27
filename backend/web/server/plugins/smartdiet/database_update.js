@@ -1,15 +1,18 @@
 const lodash=require('lodash')
 const mongoose=require('mongoose')
 const moment=require('moment')
-const { PHONE_REGEX, isPhoneOk } = require("../../../utils/sms")
+const { PHONE_REGEX, isPhoneOk, formatPhone, ALL_PHONES } = require("../../../utils/sms")
 const User = require("../../models/User")
+const Lead = require("../../models/Lead")
 const { QUIZZ_TYPE_ASSESSMENT, PARTICULAR_COMPANY_NAME, COACHING_STATUS_NOT_STARTED, QUIZZ_TYPE_PROGRESS } = require('./consts')
 const Appointment = require('../../models/Appointment')
+const AppointmentType = require('../../models/AppointmentType')
 const Company = require('../../models/Company')
 const CoachingLogbook = require('../../models/CoachingLogbook')
 const Coaching = require('../../models/Coaching')
 const Message = require('../../models/Message')
 const Conversation = require('../../models/Conversation')
+const NutritionAdvice = require('../../models/NutritionAdvice')
 const { idEqual } = require('../../utils/database')
 const Offer = require('../../models/Offer')
 const Quizz = require('../../models/Quizz')
@@ -30,23 +33,30 @@ const normalizePhones = async () => {
 
   log('normalizing phone numbers')
   const normalizePhone = user => {
-    if (!isPhoneOk(user.phone)) {
-      error(`Clearing invalid phone`, user.phone, 'for', user.email, 'resetting')
-      user.phone=null
-      return user.save()
+    const changedPhone=formatPhone(user.phone)
+    if (!isPhoneOk(changedPhone, true)) {
+      return null
     }
-    const modified=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
-    user.phone=user.phone.replace(/^0/, '+33').replace(/\s/g, '')
-    if (modified!=user.phone) {
-      log(`Normalized for`, user.email, 'to', user.phone)
-      return user.save()
+    if (changedPhone!=user.phone) {
+      return { 
+        updateOne: {
+          filter: {_id: user._id},
+          update: {$set: {phone: changedPhone}}
+        }
+      }
     }
   }
 
+  const PHONE_FILTER = { phone: { $regex: /./, $not: ALL_PHONES} }
   // Normalize user phones
-  return User.find({phone: {$ne:null, $not: {$regex: PHONE_REGEX}}})
-    .then(users => Promise.allSettled(users.map(u => normalizePhone(u))))
-    .then(res => res.some(r => r.status=='rejected') && log(JSON.stringify(lodash.groupBy(res, 'status').rejected)))
+  const users=await User.find(PHONE_FILTER)
+  const userUpdates=users.map(u => normalizePhone(u)).filter(Boolean)
+  await User.bulkWrite(userUpdates).then(res => log(`Updated users phones ${users.length}:${JSON.stringify(res)}`))
+
+  // Normalize leads phones
+  const leads=await Lead.find(PHONE_FILTER)
+  const leadUpdates=leads.map(u => normalizePhone(u)).filter(Boolean)
+  await Lead.bulkWrite(leadUpdates).then(res => log(`Updated leads phones ${leads.length}:${JSON.stringify(res)}`))
 }
 
 const renameHealthQuizzTypes = async () => {
@@ -199,14 +209,14 @@ const setOffersOnCoachings = () => {
         error('coaching without offer', coaching)
       }
       else {
-        console.log('saved coaching', coaching._id, 'offer', coaching.offer._id)
+        log('saved coaching', coaching._id, 'offer', coaching.offer._id)
         coaching.save()
       }
     })))
     // .then(() => {
     //   return Coaching.find({status: COACHING_STATUS_NOT_STARTED}, {_id:1})
     //     .then(coachings => {
-    //       console.log('Updating', coachings.length, 'coaching status')
+    //       log('Updating', coachings.length, 'coaching status')
     //       return runPromisesWithDelay(coachings.map(coaching => () => updateCoachingStatus(coaching._id)
     //         .catch(err => console.error(`Coaching ${coaching._id}:${err}`))))
     //       })
@@ -218,11 +228,11 @@ const updateAppointmentsOrder = async () => {
   if (apptsToUpdate) {
     const appts=await Appointment.find({order: null}, {coaching:1})
     const coachingIds=lodash.uniq(appts.map(app => app.coaching._id.toString()))
-    console.log('Update', coachingIds.length, 'coaching appointments orders')
+    log('Update', coachingIds.length, 'coaching appointments orders')
     return Promise.all(coachingIds.map(id => updateApptsOrder(id)))
   }
   else {
-    console.log('Update no coaching appointments orders')    
+    log('Update no coaching appointments orders')    
   }
 }
 
@@ -243,9 +253,9 @@ const setAppointmentsProgress = async () => {
   }
 
   const appts=await Appointment.find({progress: null}).sort({coaching:1})
-  console.log('Appts with no progress', appts.length)
+  log('Appts with no progress', appts.length)
   const res=await runPromisesWithDelay(appts.map((appt, idx) => async () => {
-    console.log(idx, '/', appts.length)
+    log(idx, '/', appts.length)
     const progressUser = await progressTemplate.cloneAsUserQuizz()
     const progress=await getCoachingProgress(appt.coaching)
     if (progress) {
@@ -255,6 +265,29 @@ const setAppointmentsProgress = async () => {
     return appt.save()
   }))
   console.error(res.filter(r => r.status=='rejected'))
+}
+
+const convertWrongAppointmentsNutAdvices = async () => {
+  const [apptsBefore, cnBefore]=[await Appointment.countDocuments(), await NutritionAdvice.countDocuments()]
+  log('Appts, cn before:', apptsBefore, cnBefore)
+  const appTypes=await AppointmentType.find().sort('title')
+  const cnApptTypes=appTypes.filter(a => a.is_nutrition)
+  const cnAppts=await Appointment.find({appointment_type: {$in: cnApptTypes}}).populate(['appointment_type', 'user'])
+  // Convert each appintment to nutritionadvice
+  log('Converting appts to nut advices:', JSON.stringify(cnAppts.map(c => c._id)))
+  const res=await Promise.all(cnAppts.map(async appt => {
+    const nutAdvice=new NutritionAdvice({
+      start_date: appt.start_date,
+      comment: `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
+      diet: appt.diet,
+      patient_email: appt.user.email,
+    })
+    await nutAdvice.save()
+    await appt.delete()
+  }))
+  .catch(console.error)
+  const [apptsafter, cnAfter]=[await Appointment.countDocuments(), await NutritionAdvice.countDocuments()]
+  log('Appts, cn after:', apptsafter, cnAfter)
 }
 
 const databaseUpdate = async () => {
@@ -271,6 +304,7 @@ const databaseUpdate = async () => {
   await setCoachingAssQuizz()
   await updateAppointmentsOrder()
   await setAppointmentsProgress()
+  await convertWrongAppointmentsNutAdvices()
 }
 
 module.exports=databaseUpdate

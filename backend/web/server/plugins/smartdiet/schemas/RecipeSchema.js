@@ -12,6 +12,7 @@ const {
   RECIPE_TYPE_RECIPE,
   RECIPE_TYPE_FAMILY
 } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -120,7 +121,23 @@ const RecipeSchema = new Schema({
   season: {
     type:String,
     enum: Object.keys(SEASON),
-  }
+  },
+  pins: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }],
+  pinned: {
+    type: Boolean,
+    default: false,
+  },
+  liked: {
+    type: Boolean,
+    default: false,
+  },
+  likes: [{
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+  }]
 },
 {...schemaOptions, ...EVENT_DISCRIMINATOR}
 )
@@ -133,6 +150,25 @@ RecipeSchema.virtual("ingredients", {
 
 RecipeSchema.virtual("type", {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return this.duration>0 ? RECIPE_TYPE_RECIPE : RECIPE_TYPE_FAMILY
+})
+
+RecipeSchema.virtual('comments', {
+  ref: "comment",
+  localField: "_id",
+  foreignField: "recipe",
+  match: {parent: null},
+})
+
+RecipeSchema.virtual('comments_count', {
+  ref: "comment",
+  localField: "_id",
+  foreignField: "recipe",
+  match: {parent: null},
+  count: true,
+})
+
+RecipeSchema.virtual('likes_count', DUMMY_REF).get(function() {
+  return this.likes?.length || 0
 })
 
 module.exports = RecipeSchema

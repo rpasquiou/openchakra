@@ -206,9 +206,6 @@ const withDynamicContainer = Component => {
       :
       null
     const key=(orgData || []).map(v => v?._id?.toString())
-    if (/LFBBCWAJ3VB59/.test(props.id)) {
-      console.log('Refresh', props.id)
-    }
     return (
       <Component {...lodash.omit(props, ['children'])} key={key}>
         {navigation}

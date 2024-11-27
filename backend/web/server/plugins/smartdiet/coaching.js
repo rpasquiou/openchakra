@@ -98,8 +98,6 @@ const getAvailableDiets = async (userId, params, data) => {
   return diets
 }
 
-const coachingAvailabilitiesCache=new NodeCache({stdTTL: 5*60})
-
 const getDietAvailabilities = async (userId, params, data) => {
   // If no diet, return availabilities for all diets of the company
   let availabilities=[]
@@ -129,7 +127,6 @@ const getDietAvailabilities = async (userId, params, data) => {
       appointment_type: data.appointment_type.smartagenda_id
     })
   }
-  coachingAvailabilitiesCache.set(data._id.toString(), availabilities)
   const res = lodash(availabilities)
     .groupBy(avail => moment(avail.start_date).startOf('day'))
     .entries()
@@ -137,10 +134,12 @@ const getDietAvailabilities = async (userId, params, data) => {
       date: moment(date),
       ranges: day_availabilities.map(day_availability => (new Range({
         start_date: moment(day_availability.start_date),
-        appointment_type: data.appointment_type,
+        diet: day_availability.diet,
+        appointment_type: data.appointment_type
       })))
     })))
     .value()
+  // console.log(JSON.stringify(res, null, 2))
   return res
 }
 
@@ -159,5 +158,5 @@ const updateApptsOrder= async coachingId => {
 
 
 module.exports={
-  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder, coachingAvailabilitiesCache,
+  updateCoachingStatus, getAvailableDiets, getDietAvailabilities, updateApptsOrder,
 }

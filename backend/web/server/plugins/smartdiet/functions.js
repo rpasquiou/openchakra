@@ -137,7 +137,8 @@ const {
   LEAD_SEARCH_TEXT_FIELDS,
   USER_SEARCH_TEXT_FIELDS,
   CONTENT_VISIBILITY,
-  CONTENT_ARTICLE
+  CONTENT_ARTICLE,
+  SOURCE_SMARTAGENDA
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -208,7 +209,7 @@ const Conversation = require('../../models/Conversation')
 const UserQuizz = require('../../models/UserQuizz')
 const { computeBilling } = require('./billing')
 const { isPhoneOk, PHONE_REGEX } = require('../../../utils/sms')
-const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities, coachingAvailabilitiesCache } = require('./coaching')
+const { updateCoachingStatus, getAvailableDiets, getDietAvailabilities} = require('./coaching')
 const { tokenize } = require('protobufjs')
 const LogbookDay = require('../../models/LogbookDay')
 const { createTicket, getTickets, createComment } = require('./ticketing')
@@ -222,6 +223,7 @@ const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
 const { registerPreSave } = require('../../utils/schemas')
 const { crmUpsertAccount } = require('../../utils/crm')
+const NutritionAdvice = require('../../models/NutritionAdvice')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -573,16 +575,16 @@ const preCreate = async ({ model, params, user }) => {
       if (!params.parent) { throw new BadRequestError(`Le patient doit être sélectionné`) }
       // Appointment created by operator directly with a 1st appointment
       if (loadedModel=='coaching') {
-        const availabilities=coachingAvailabilitiesCache.get(params.parent)||[]
-        const paramMoment=moment(params.start_date)
-        const avail=availabilities.find(a => Math.abs(moment(a.start_date).diff(paramMoment))<10)
-        if (!avail) {
-          throw new BadRequestError(`Ce rendez-vous n'est plus disponible`)
+        const coaching=await Coaching.findById(params.parent).populate('diet')
+        if (!coaching.diet) {
+          if (!params['diet.email']) { throw new BadRequestError(`Le/la diet doit être sélectionné(e)`) }
+          diet=(await User.findOne({role: ROLE_EXTERNAL_DIET, email: params['diet.email']}))?._id
+          if (!diet) {
+            throw new NotFoundError(`Diet ${diet.email} introuvable`)
+          }
         }
-        const coaching=await Coaching.findById(params.parent)
-        diet=avail.diet
         customer_id=coaching.user._id
-        coaching.diet=avail.diet
+        coaching.diet=diet
         await coaching.save()
       }
       else {
@@ -659,7 +661,8 @@ const preCreate = async ({ model, params, user }) => {
       }
       // Create progress quizz for appointment
       const progressUser = await createAppointmentProgress({coaching: latest_coaching._id})
-      return { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+      const res= { model, params: { progress: progressUser._id, user: customer_id, diet, coaching: latest_coaching._id, appointment_type: latest_coaching.appointment_type._id, ...params } }
+      return res
     }
     else { // Nutrition advice
       return { model, params: { patient_email: usr.email, diet, ...params } }
@@ -886,6 +889,14 @@ USER_MODELS.forEach(m => {
     caster: {
       instance: 'ObjectID',
       options: { ref: 'content' }
+    },
+  })
+  declareVirtualField({
+    model: m, field: 'pinned_recipes', instance: 'Array',
+    multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'recipe' }
     },
   })
 declareVirtualField({
@@ -1253,6 +1264,18 @@ declareVirtualField({
 })
 declareEnumField({ model: 'recipe', field: 'season', enumValues: SEASON })
 declareVirtualField({ model: 'recipe', field: 'type', instance: 'String', requires: 'duration', enumValues: RECIPE_TYPE })
+declareVirtualField({
+  model: 'recipe',
+  field: 'comments',
+  instance: 'Array',
+  multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'comment' }
+  },
+})
+declareVirtualField({ model: 'recipe', field: 'comments_count', instance: 'Number', requires: 'comments' })
+declareVirtualField({ model: 'recipe', field: 'likes_count', instance: 'Number', requires: 'likes' })
 
 declareVirtualField({
   model: 'menu', field: 'recipes', instance: 'Array',
@@ -1807,7 +1830,7 @@ const getDataLiked = (userId, params, data) => {
 }
 
 const setDataLiked = ({ id, attribute, value, user }) => {
-  return getModel(id, ['comment', 'message', 'content'])
+  return getModel(id, ['comment', 'message', 'content', 'recipe'])
     .then(model => {
       if (value) {
         // Set liked
@@ -1826,7 +1849,7 @@ const getDataPinned = (userId, params, data) => {
 }
 
 const setDataPinned = ({ id, attribute, value, user }) => {
-  return getModel(id, ['message', 'content'])
+  return getModel(id, ['message', 'content', 'recipe'])
     .then(model => {
       if (value) {
         // Set liked
@@ -1939,6 +1962,7 @@ declareComputedField({model: 'loggedUser', field: 'spoons_count', getterFn: getU
 declareComputedField({model: 'comment', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'message', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'content', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
+declareComputedField({model: 'recipe', field: 'liked', getterFn: getDataLiked, setterFn: setDataLiked})
 declareComputedField({model: 'message', field: 'pinned', getterFn: getDataPinned, setterFn: setDataPinned})
 declareComputedField({model: 'content', field: 'pinned', getterFn: getDataPinned, setterFn: setDataPinned})
 declareComputedField({model: 'group', field: 'pinned_messages', getterFn: getPinnedMessages})
@@ -1974,6 +1998,10 @@ declareComputedField({model: 'pack', field: 'has_discount', getterFn:
 declareVirtualField({model: 'pack', field: 'description', type: 'String', requires: 'payment_count'})
 
 /** Pack end */
+
+/** AppointmentType START */
+declareVirtualField({model: 'appointmentType', field: 'is_nutrition', type: 'Boolean', instance: 'Boolean', requires: 'title'})
+/** AppointmentType END  */
 
 const postCreate = async ({ model, params, data, user }) => {
   // Create company => duplicate offer
@@ -2058,9 +2086,22 @@ const postCreate = async ({ model, params, data, user }) => {
 
   // If operator created nutrition advice, set lead nutrition converted
   if (model == 'nutritionAdvice') {
-      return Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
-      .then(res => `Nutrition conversion:${res}`)
-      .catch(err => `Nutrition conversion:${err}`)
+      await Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
+        .then(res => `Nutrition conversion:${res}`)
+        .catch(err => `Nutrition conversion:${err}`)
+      const nutAdvice=await NutritionAdvice.findById(data._id)
+        .populate({path: '_user', populate: {path: 'company', populate: 'nutrition_advice_appointment_type'}}) 
+        .populate('diet')
+      if (!nutAdvice._user) {
+        return console.log(`Nutrition advice for a lead => can not create in agenda`)
+      }
+      const smartAppt=await createAppointment(nutAdvice.diet.smartagenda_id, nutAdvice._user.smartagenda_id, 
+        nutAdvice._user.company.nutrition_advice_appointment_type.smartagenda_id, moment(nutAdvice.start_date), 
+        moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
+      )
+      console.log('Created smart appt', smartAppt)
+      nutAdvice.smartagenda_id=smartAppt.id
+      return nutAdvice.save()
   }
 
 
@@ -2422,7 +2463,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 const agendaHookFn = async received => {
   // Check validity
   console.log(`Received hook ${JSON.stringify(received)}`)
-  const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet } } } = received
+  const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet, text } } } = received
   const AGENDA_NAME = getSmartAgendaConfig().SMARTAGENDA_URL_PART
   if ([HOOK_DELETE, HOOK_INSERT].includes(action) && AGENDA_NAME == senderSite && internet == "O") {
     return console.log(`Event coming for ourself: skipping`)
@@ -2431,13 +2472,13 @@ const agendaHookFn = async received => {
     throw new BadRequestError(`Received hook for model ${objClass} but only pdo_events is handled`)
   }
   if (action == HOOK_DELETE) {
-    console.log(`Deleting appointment smartagenda_id ${objId}`)
-    return Appointment.remove({ smartagenda_id: objId })
+    console.log(`Deleting appointment/CN smartagenda_id ${objId}`)
+    return Promise.all([Appointment.remove({ smartagenda_id: objId }), NutritionAdvice.remove({ smartagenda_id: objId })])
       .then(console.log)
       .catch(console.error)
   }
   if (action == HOOK_INSERT) {
-    console.log(`Inserting appointment smartagenda_id ${objId}`)
+    console.log(`Inserting appointment/CN smartagenda_id ${objId}`)
     return Promise.all([
       User.findOne({ smartagenda_id: equipe_id, role: ROLE_EXTERNAL_DIET }),
       User.findOne({ smartagenda_id: client_id, role: ROLE_CUSTOMER }),
@@ -2446,6 +2487,15 @@ const agendaHookFn = async received => {
       .then(async ([diet, user, appointment_type]) => {
         if (!(diet && user && appointment_type)) {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
+        }
+        if (appointment_type.is_nutrition) {
+          return NutritionAdvice.create({
+            start_date: start_date_gmt,
+            comment: text || `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
+            source: SOURCE_SMARTAGENDA,
+            diet,
+            patient_email: user.email,
+          })
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
           .then(async coaching => {
@@ -2467,20 +2517,21 @@ const agendaHookFn = async received => {
       .catch(console.error)
   }
   if (action == HOOK_UPDATE) {
-    console.log(`Updating appointment smartagenda_id ${objId}`)
+    console.log(`Updating appointment/CN smartagenda_id ${objId}`)
     return Promise.all([
       Appointment.findOne({ smartagenda_id: objId }),
+      NutritionAdvice.findOne({ smartagenda_id: objId }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(async ([appointment, appointment_type]) => {
-        if (!(appointment && appointment_type)) {
-          throw new Error(`Update appointment missing info:${!!appointment} ${!!appointment_type}`)
+      .then(async ([appointment, nutAdvice, appointment_type]) => {
+        if (!((appointment || nutAdvice) && appointment_type)) {
+          throw new Error(`Update appointment missing info:${!!appointment} ${!!nutAdvice} ${!!appointment_type}`)
         }
         const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
-        return Appointment.updateOne(
-          { smartagenda_id: objId },
-          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }
-        )
+        return Promise.all([
+          Appointment.updateOne({ smartagenda_id: objId },{ appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }),
+          NutritionAdvice.updateOne({ smartagenda_id: objId },{ start_date: start_date_gmt}),
+        ])
       })
       .then(console.log)
       .catch(console.error)

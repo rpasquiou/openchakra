@@ -481,7 +481,7 @@ const buildQuery = (model, id, fields, params) => {
   query = query.populate(populates).sort(buildSort(params))
   // If id is required, fail if no result
   if (!!id) {
-    query=query.orFail(new Error(`Can't find model '${model}' id ${id}`))
+    query=query.orFail(new Error(`Can't find ${model}/${id}`))
   }
   return query
 }
