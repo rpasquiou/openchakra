@@ -83,7 +83,10 @@ const NutritionAdviceSchema = new Schema({
   certificate: {
     type: String,
     required: false,
-  }
+  },
+  smartagenda_id: {
+    type: String,
+  },
 },
 {...schemaOptions}
 )
