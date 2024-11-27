@@ -416,6 +416,18 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
 
+UserSchema.virtual('is_profil_completed', DUMMY_REF).get(function() {
+  const requiredCompletionFields = lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {
+    return this[key]
+  }).filter((e) => !lodash.isNil(e))
+
+  const optionalCompletionFields = lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {
+    return this[key]
+  }).filter((e) => !lodash.isNil(e))
+
+  return !((31 + requiredCompletionFields.length * 15 + optionalCompletionFields.length * 3)<90)
+})
+
 UserSchema.virtual('registered_events', {
   ref:'event',
   localField:'_id',
