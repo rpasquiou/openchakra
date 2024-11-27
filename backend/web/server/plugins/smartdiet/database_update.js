@@ -271,9 +271,8 @@ const convertWrongAppointmentsNutAdvices = async () => {
   const [apptsBefore, cnBefore]=[await Appointment.countDocuments(), await NutritionAdvice.countDocuments()]
   log('Appts, cn before:', apptsBefore, cnBefore)
   const appTypes=await AppointmentType.find().sort('title')
-  const cn=appTypes.filter(a => (/cn/i.test(a.title) || /nutri/i.test(a.title)) && !/ne plus prendre/i.test(a.title) && !/bilan/i.test(a.title))
-  log(cn.map(c => c.title))
-  const cnAppts=await Appointment.find({appointment_type: {$in: cn}}).populate(['appointment_type', 'user'])
+  const cnApptTypes=appTypes.filter(a => a.is_nutrition)
+  const cnAppts=await Appointment.find({appointment_type: {$in: cnApptTypes}}).populate(['appointment_type', 'user'])
   // Convert each appintment to nutritionadvice
   log('Converting appts to nut advices:', JSON.stringify(cnAppts.map(c => c._id)))
   const res=await Promise.all(cnAppts.map(async appt => {

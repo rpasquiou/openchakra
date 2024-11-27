@@ -137,7 +137,8 @@ const {
   LEAD_SEARCH_TEXT_FIELDS,
   USER_SEARCH_TEXT_FIELDS,
   CONTENT_VISIBILITY,
-  CONTENT_ARTICLE
+  CONTENT_ARTICLE,
+  SOURCE_SMARTAGENDA
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -222,6 +223,7 @@ const { validatePassword } = require('../../../utils/passwords')
 const { createAppointmentProgress } = require('./quizz')
 const { registerPreSave } = require('../../utils/schemas')
 const { crmUpsertAccount } = require('../../utils/crm')
+const NutritionAdvice = require('../../models/NutritionAdvice')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -1997,6 +1999,10 @@ declareVirtualField({model: 'pack', field: 'description', type: 'String', requir
 
 /** Pack end */
 
+/** AppointmentType START */
+declareVirtualField({model: 'appointmentType', field: 'is_nutrition', type: 'Boolean', instance: 'Boolean', requires: 'title'})
+/** AppointmentType END  */
+
 const postCreate = async ({ model, params, data, user }) => {
   // Create company => duplicate offer
   if (model == 'company') {
@@ -2444,7 +2450,7 @@ false && cron.schedule('0 0 * * * *', async () => {
 const agendaHookFn = async received => {
   // Check validity
   console.log(`Received hook ${JSON.stringify(received)}`)
-  const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet } } } = received
+  const { senderSite, action, objId, objClass, data: { obj: { presta_id, equipe_id, client_id, start_date_gmt, end_date_gmt, internet, text } } } = received
   const AGENDA_NAME = getSmartAgendaConfig().SMARTAGENDA_URL_PART
   if ([HOOK_DELETE, HOOK_INSERT].includes(action) && AGENDA_NAME == senderSite && internet == "O") {
     return console.log(`Event coming for ourself: skipping`)
@@ -2468,6 +2474,15 @@ const agendaHookFn = async received => {
       .then(async ([diet, user, appointment_type]) => {
         if (!(diet && user && appointment_type)) {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
+        }
+        if (appointment_type.is_nutrition) {
+          return NutritionAdvice.create({
+            start_date: start_date_gmt,
+            comment: text || `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
+            source: SOURCE_SMARTAGENDA,
+            diet,
+            patient_email: user.email,
+          })
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
           .then(async coaching => {
