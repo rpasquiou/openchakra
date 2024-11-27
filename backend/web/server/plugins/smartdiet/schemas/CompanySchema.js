@@ -60,6 +60,12 @@ const CompanySchema = new Schema(
       ref: 'appointmentType',
       required: false,
     },
+    // Type prestation conseil nut
+    nutrition_advice_appointment_type: {
+      type: Schema.Types.ObjectId,
+      ref: 'appointmentType',
+      required: false,
+    },
     // Outbound call script
     script: {
       type: String,
