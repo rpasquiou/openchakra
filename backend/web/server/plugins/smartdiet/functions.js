@@ -2091,7 +2091,10 @@ const postCreate = async ({ model, params, data, user }) => {
         .catch(err => `Nutrition conversion:${err}`)
       const nutAdvice=await NutritionAdvice.findById(data._id)
         .populate({path: '_user', populate: {path: 'company', populate: 'nutrition_advice_appointment_type'}}) 
-        .ppoulate('diet')
+        .populate('diet')
+      if (!nutAdvice._user) {
+        return console.log(`Nutrition advice for a lead => can not create in agenda`)
+      }
       const smartAppt=await createAppointment(nutAdvice.diet.smartagenda_id, nutAdvice._user.smartagenda_id, 
         nutAdvice.user.company.nutrition_advice_appointment_type, nutAdvice.start_date, moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
       )
