@@ -2086,9 +2086,17 @@ const postCreate = async ({ model, params, data, user }) => {
 
   // If operator created nutrition advice, set lead nutrition converted
   if (model == 'nutritionAdvice') {
-      return Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
-      .then(res => `Nutrition conversion:${res}`)
-      .catch(err => `Nutrition conversion:${err}`)
+      await Lead.findOneAndUpdate({ email: data.patient_email }, { nutrition_converted: true })
+        .then(res => `Nutrition conversion:${res}`)
+        .catch(err => `Nutrition conversion:${err}`)
+      const nutAdvice=await NutritionAdvice.findById(data._id)
+        .populate({path: '_user', populate: {path: 'company', populate: 'nutrition_advice_appointment_type'}}) 
+        .ppoulate('diet')
+      const smartAppt=await createAppointment(nutAdvice.diet.smartagenda_id, nutAdvice._user.smartagenda_id, 
+        nutAdvice.user.company.nutrition_advice_appointment_type, nutAdvice.start_date, moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
+      )
+      nutAdvice.smartagenda_id=smartAppt.id
+      return nutAdvice.save()
   }
 
 
@@ -2459,13 +2467,13 @@ const agendaHookFn = async received => {
     throw new BadRequestError(`Received hook for model ${objClass} but only pdo_events is handled`)
   }
   if (action == HOOK_DELETE) {
-    console.log(`Deleting appointment smartagenda_id ${objId}`)
-    return Appointment.remove({ smartagenda_id: objId })
+    console.log(`Deleting appointment/CN smartagenda_id ${objId}`)
+    return Promise.all([Appointment.remove({ smartagenda_id: objId }), NutritionAdvice.remove({ smartagenda_id: objId })])
       .then(console.log)
       .catch(console.error)
   }
   if (action == HOOK_INSERT) {
-    console.log(`Inserting appointment smartagenda_id ${objId}`)
+    console.log(`Inserting appointment/CN smartagenda_id ${objId}`)
     return Promise.all([
       User.findOne({ smartagenda_id: equipe_id, role: ROLE_EXTERNAL_DIET }),
       User.findOne({ smartagenda_id: client_id, role: ROLE_CUSTOMER }),
@@ -2504,20 +2512,21 @@ const agendaHookFn = async received => {
       .catch(console.error)
   }
   if (action == HOOK_UPDATE) {
-    console.log(`Updating appointment smartagenda_id ${objId}`)
+    console.log(`Updating appointment/CN smartagenda_id ${objId}`)
     return Promise.all([
       Appointment.findOne({ smartagenda_id: objId }),
+      NutritionAdvice.findOne({ smartagenda_id: objId }),
       AppointmentType.findOne({ smartagenda_id: presta_id }),
     ])
-      .then(async ([appointment, appointment_type]) => {
-        if (!(appointment && appointment_type)) {
-          throw new Error(`Update appointment missing info:${!!appointment} ${!!appointment_type}`)
+      .then(async ([appointment, nutAdvice, appointment_type]) => {
+        if (!((appointment || nutAdvice) && appointment_type)) {
+          throw new Error(`Update appointment missing info:${!!appointment} ${!!nutAdvice} ${!!appointment_type}`)
         }
         const visio_url=await getAppointmentVisioLink(objId).catch(err => console.log('Can not get visio link for appointment', objId))
-        return Appointment.updateOne(
-          { smartagenda_id: objId },
-          { appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }
-        )
+        return Promise.all([
+          Appointment.updateOne({ smartagenda_id: objId },{ appointment_type, start_date: start_date_gmt, end_date: end_date_gmt, visio_url, }),
+          NutritionAdvice.updateOne({ smartagenda_id: objId },{ start_date: start_date_gmt}),
+        ])
       })
       .then(console.log)
       .catch(console.error)
