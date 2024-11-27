@@ -323,6 +323,14 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'registered_past_events_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'registered_futur_events_count', instance: 'Number'})
   declareEnumField({model: m, field:'looking_for_opportunities', enumValues: LOOKING_FOR_OPPORTUNITIES_STATUS})
+  declareVirtualField({
+    model: m,
+    field: 'is_profil_completed',
+    require: lodash.join(lodash.concat(
+      lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {return key}),
+      lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {return key})
+    ),`,`),
+    instance: 'Boolean'})
 })
 
 //Company declarations
