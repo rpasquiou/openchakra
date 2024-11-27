@@ -2096,8 +2096,10 @@ const postCreate = async ({ model, params, data, user }) => {
         return console.log(`Nutrition advice for a lead => can not create in agenda`)
       }
       const smartAppt=await createAppointment(nutAdvice.diet.smartagenda_id, nutAdvice._user.smartagenda_id, 
-        nutAdvice.user.company.nutrition_advice_appointment_type, nutAdvice.start_date, moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
+        nutAdvice._user.company.nutrition_advice_appointment_type.smartagenda_id, moment(nutAdvice.start_date), 
+        moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
       )
+      console.log('Created smart appt', smartAppt)
       nutAdvice.smartagenda_id=smartAppt.id
       return nutAdvice.save()
   }
