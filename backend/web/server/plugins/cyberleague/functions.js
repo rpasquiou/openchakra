@@ -825,10 +825,10 @@ const preCreate = async ({model, params, user}) => {
     params.company = params.parent
   }
 
-  if (model == 'member') {
+  if (model == 'user') {
     if (!params.company_sponsorship) {
       const default_sponsor = await Company.findOne({is_default_sponsor: true})
-      params.company_sponsorship = default_sponsor._id
+      params.company_sponsorship = default_sponsor ? default_sponsor._id : null
     }
   }
 
