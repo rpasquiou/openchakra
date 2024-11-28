@@ -1770,6 +1770,7 @@ declareVirtualField({
 declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
   dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
 })
+declareVirtualField({ model: 'lead', field: 'call_date', instance: 'Date', requires: `${CREATED_AT_ATTRIBUTE},_call_status_history`})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
@@ -2489,13 +2490,7 @@ const agendaHookFn = async received => {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
         }
         if (appointment_type.is_nutrition) {
-          return NutritionAdvice.create({
-            start_date: start_date_gmt,
-            comment: text || `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
-            source: SOURCE_SMARTAGENDA,
-            diet,
-            patient_email: user.email,
-          })
+          return console.log(`Appointment is nutrition advice, skipping`)
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
           .then(async coaching => {

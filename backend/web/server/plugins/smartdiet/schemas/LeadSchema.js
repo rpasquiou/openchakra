@@ -5,6 +5,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { CALL_STATUS, CALL_DIRECTION, COACHING_CONVERSION_STATUS, CALL_STATUS_TO_CALL, CALL_DIRECTION_OUT_CALL, LEAD_SEARCH_TEXT_FIELDS } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
+const { UPDATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
 const Schema = mongoose.Schema
 
@@ -176,6 +177,10 @@ LeadSchema.virtual("nutrition_advices", {
 
 LeadSchema.virtual("search_text", DUMMY_REF).get(function() {
   return LEAD_SEARCH_TEXT_FIELDS.map(f => this[f]||null).filter(v => !!v).join(' ')
+})
+
+LeadSchema.virtual('call_date', DUMMY_REF).get(function() {
+  return lodash.last(this._call_status_history)?.date || this[UPDATED_AT_ATTRIBUTE]
 })
 
 /* eslint-enable prefer-arrow-callback */
