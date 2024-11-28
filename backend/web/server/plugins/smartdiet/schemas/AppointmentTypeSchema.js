@@ -1,13 +1,6 @@
 const mongoose = require('mongoose')
-const moment=require('moment')
 const {schemaOptions} = require('../../../utils/schemas')
-const {idEqual}=require('../../../utils/database')
-const {
-  APPOINTMENT_CURRENT,
-  APPOINTMENT_PAST,
-  APPOINTMENT_TO_COME
-} = require('../consts')
-
+const {DUMMY_REF}=require('../../../utils/database')
 const Schema = mongoose.Schema
 
 const AppointmentTypeSchema = new Schema({
@@ -25,5 +18,11 @@ const AppointmentTypeSchema = new Schema({
     required: [true, `L'identifiant Smartagenda est obligatoire`],
   }
 }, schemaOptions)
+
+/* eslint-disable prefer-arrow-callback */
+AppointmentTypeSchema.virtual('is_nutrition', DUMMY_REF).get(function() {
+  return (/cn/i.test(this.title) || /nutri/i.test(this.title)) && !/ne plus prendre/i.test(this.title) && !/bilan/i.test(this.title) && !/suivi/i.test(this.title)
+})
+/* eslint-enable prefer-arrow-callback */
 
 module.exports = AppointmentTypeSchema

@@ -1997,6 +1997,10 @@ declareVirtualField({model: 'pack', field: 'description', type: 'String', requir
 
 /** Pack end */
 
+/** AppointmentType START */
+declareVirtualField({model: 'appointmentType', field: 'is_nutrition', type: 'Boolean', instance: 'Boolean', requires: 'title'})
+/** AppointmentType END  */
+
 const postCreate = async ({ model, params, data, user }) => {
   // Create company => duplicate offer
   if (model == 'company') {
@@ -2468,6 +2472,9 @@ const agendaHookFn = async received => {
       .then(async ([diet, user, appointment_type]) => {
         if (!(diet && user && appointment_type)) {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
+        }
+        if (appointment_type.is_nutrition) {
+          return console.log(`Appointment is nutrition advice, skipping`)
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
           .then(async coaching => {
