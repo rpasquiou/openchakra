@@ -15,7 +15,7 @@ const validateNotification = async ({value}, user) => {
     await NotificationModel.findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
     notif = await loadFromDb({model: 'notification',id: value, fields: ['url']})
     
-    notif = new NotificationModel(notif)
+    notif = new NotificationModel(notif[0])
   }
 
   return notif
