@@ -968,11 +968,12 @@ setPostCreateData(postCreate)
 
 
 const postPutData = async ({model, id, user, attribute, value}) => {
-  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
+  // console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
   if (model == `group`) {
-    const group = await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
+    const group = await Group.findById(id)
 
     if (attribute == 'users') {
+      await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
       if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
         const userId = lodash.intersectionWith([group.users, value], idEqual)
         //Notif league acceptation
