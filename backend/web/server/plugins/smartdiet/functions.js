@@ -2489,7 +2489,13 @@ const agendaHookFn = async received => {
           throw new BadRequestError(`Insert appointment missing info:diet ${equipe_id}=>${!!diet}, user ${client_id}=>${!!user} app type ${presta_id}=>${!!appointment_type}`)
         }
         if (appointment_type.is_nutrition) {
-          return console.log(`Appointment is nutrition advice, skipping`)
+          return NutritionAdvice.create({
+            start_date: start_date_gmt,
+            comment: text || `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
+            source: SOURCE_SMARTAGENDA,
+            diet,
+            patient_email: user.email,
+          })
         }
         return Coaching.findOne({ user }).sort({ [CREATED_AT_ATTRIBUTE]: -1 }).limit(1)
           .then(async coaching => {
