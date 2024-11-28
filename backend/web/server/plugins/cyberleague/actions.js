@@ -91,10 +91,8 @@ const finishSurvey = async ({ value }, user) => {
       users: [sponsor.administrators],
       targetId: score._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_DIAG],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_DIAG,user}),
       type: NOTIFICATION_TYPE_NEW_DIAG,
-      customData: null,
-      picture: user.picture
+      customData: JSON.stringify({customUserId: user._id}),
     })
   }
 

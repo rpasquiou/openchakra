@@ -45,6 +45,7 @@ const createNotificationSchema = (allowedTypes) => {
       default: []
     },
     picture: {
+      //computed
       type: String,
     },
     custom_data: {
