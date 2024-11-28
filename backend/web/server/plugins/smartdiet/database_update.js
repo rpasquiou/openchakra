@@ -267,29 +267,6 @@ const setAppointmentsProgress = async () => {
   console.error(res.filter(r => r.status=='rejected'))
 }
 
-const convertWrongAppointmentsNutAdvices = async () => {
-  const [apptsBefore, cnBefore]=[await Appointment.countDocuments(), await NutritionAdvice.countDocuments()]
-  log('Appts, cn before:', apptsBefore, cnBefore)
-  const appTypes=await AppointmentType.find().sort('title')
-  const cnApptTypes=appTypes.filter(a => a.is_nutrition)
-  const cnAppts=await Appointment.find({appointment_type: {$in: cnApptTypes}}).populate(['appointment_type', 'user'])
-  // Convert each appintment to nutritionadvice
-  log('Converting appts to nut advices:', JSON.stringify(cnAppts.map(c => c._id)))
-  const res=await Promise.all(cnAppts.map(async appt => {
-    const nutAdvice=new NutritionAdvice({
-      start_date: appt.start_date,
-      comment: `Imported from appt ${appt._id} #${appt.order} in coaching ${appt.coaching._id}`,
-      diet: appt.diet,
-      patient_email: appt.user.email,
-    })
-    await nutAdvice.save()
-    await appt.delete()
-  }))
-  .catch(console.error)
-  const [apptsafter, cnAfter]=[await Appointment.countDocuments(), await NutritionAdvice.countDocuments()]
-  log('Appts, cn after:', apptsafter, cnAfter)
-}
-
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizePhones()
@@ -304,7 +281,6 @@ const databaseUpdate = async () => {
   await setCoachingAssQuizz()
   await updateAppointmentsOrder()
   await setAppointmentsProgress()
-  await convertWrongAppointmentsNutAdvices()
 }
 
 module.exports=databaseUpdate
