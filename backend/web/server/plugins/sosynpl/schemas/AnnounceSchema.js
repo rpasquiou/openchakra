@@ -108,6 +108,10 @@ const AnnounceSchema = new Schema({
   mobility_days_per_month: {
     type: Number,
   },
+  cgu_accepted: {
+    type: Boolean,
+    required: false
+  },
   mobility_regions: {
     type: [{
       type: String,
