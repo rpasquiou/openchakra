@@ -1768,6 +1768,7 @@ declareVirtualField({
 declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
   dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
 })
+declareVirtualField({ model: 'lead', field: 'call_date', instance: 'Date', requires: `${CREATED_AT_ATTRIBUTE},_call_status_history`})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
