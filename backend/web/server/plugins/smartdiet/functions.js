@@ -1770,6 +1770,7 @@ declareVirtualField({
 declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
   dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
 })
+declareVirtualField({ model: 'lead', field: 'call_date', instance: 'Date', requires: `${CREATED_AT_ATTRIBUTE},_call_status_history`})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',
@@ -2099,7 +2100,6 @@ const postCreate = async ({ model, params, data, user }) => {
         nutAdvice._user.company.nutrition_advice_appointment_type.smartagenda_id, moment(nutAdvice.start_date), 
         moment(nutAdvice.start_date).add(nutAdvice.duration, 'minutes')
       )
-      console.log('Created smart appt', smartAppt)
       nutAdvice.smartagenda_id=smartAppt.id
       return nutAdvice.save()
   }
@@ -2115,7 +2115,7 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 const postDelete = ({ model, data }) => {
-  if (model == 'appointment') {
+  if (['appointment', 'nutritionAdvice'].includes(model)) {
     deleteAppointment(data.smartagenda_id)
   }
 }

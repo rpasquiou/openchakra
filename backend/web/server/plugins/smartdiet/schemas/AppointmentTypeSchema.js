@@ -1,8 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const {DUMMY_REF}=require('../../../utils/database')
-const AppointmentType = require('../../../models/AppointmentType')
-
 const Schema = mongoose.Schema
 
 const AppointmentTypeSchema = new Schema({
