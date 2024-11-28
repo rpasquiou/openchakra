@@ -12,7 +12,7 @@ const { validatePassword } = require("../../../utils/passwords")
 const { sendCustomerConfirmEmail, sendFreelanceConfirmEmail, sendNewContact2Admin, sendAskRecommandation, sendNewMessage } = require("./mailing")
 const { ROLE_ADMIN} = require("../smartdiet/consts")
 const { NATIONALITIES, PURCHASE_STATUS, LANGUAGE_LEVEL, REGIONS } = require("../../../utils/consts")
-const {computeUserHardSkillsCategories, computeHSCategoryProgress } = require("./hard_skills");
+const {computeUserHardSkillsCategories, computeHSCategoryProgress, computeAnnounceHardSkillsCategories } = require("./hard_skills");
 const SoftSkill = require("../../models/SoftSkill");
 const { computeAvailableGoldSoftSkills, computeAvailableSilverSoftSkills,computeAvailableBronzeSoftSkills } = require("./soft_skills");
 const { computeSuggestedFreelances, searchFreelances, countFreelances, searchAnnounces, countAnnounce, FREELANCE_SUGGESTION_REQUIRES } = require("./search");
@@ -301,6 +301,12 @@ declareEnumField({model: 'softSkill', field: 'value', enumValues: SOFT_SKILLS})
 /** Soft skills end */
 
 /** Announce start */
+declareComputedField({
+  model: 'announce', 
+  field: 'hard_skills_categories', 
+  requires: 'job.job_file.hard_skills',
+  getterFn: computeAnnounceHardSkillsCategories
+})
 declareVirtualField({model: 'announce', field: 'total_budget', instance: 'Number', requires: 'budget'})
 declareComputedField({model: 'announce', field: 'suggested_freelances', requires: [...FREELANCE_SUGGESTION_REQUIRES].join(','), getterFn: computeSuggestedFreelances})
 declareEnumField({model: 'announce', field: 'duration_unit', enumValues: DURATION_UNIT})

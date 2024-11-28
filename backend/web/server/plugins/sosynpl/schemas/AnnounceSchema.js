@@ -64,6 +64,10 @@ const AnnounceSchema = new Schema({
     enum: Object.keys(DURATION_UNIT),
     required: [true, `L'unité de durée est obligatoire`]
   },
+  hard_skills_categories: [{
+    type: Schema.Types.ObjectId,
+    ref: 'hardSkillCategory',
+  }],
   start_date: {
     type: Date,
     required: false,
