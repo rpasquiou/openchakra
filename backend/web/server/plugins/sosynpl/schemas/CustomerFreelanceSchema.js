@@ -705,9 +705,11 @@ CustomerFreelanceSchema.virtual('search_field', DUMMY_REF).get(function() {
   return fields.join(' ')
 })
 
-CustomerFreelanceSchema.pre('save', function(next) {
-  this.work_mode_site = this.work_mode_site ?? false
-  this.work_mode_remote = this.work_mode_remote ?? false
+CustomerFreelanceSchema.pre('save', function (next) {
+  if (!(lodash.isNil(this.work_mode_remote) && lodash.isNil(this.work_mode_site))) {
+    this.work_mode_remote = this.work_mode_remote || false
+    this.work_mode_site = this.work_mode_site || false
+  }
   next()
 })
 

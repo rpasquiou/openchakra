@@ -220,3 +220,6 @@ env.json
 # Firebase configuration files
 **/*firebase-adminsdk.json
 **/*google-services.json
+
+# REST-CLIENT
+/rest

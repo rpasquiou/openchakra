@@ -107,7 +107,6 @@ const AnnounceSchema = new Schema({
   },
   mobility_days_per_month: {
     type: Number,
-    required: [function() { return this.mobility!=MOBILITY_NONE}, `Le nombre de jours de déplacements par mois est obligatoire`],
   },
   mobility_regions: {
     type: [{
@@ -140,7 +139,6 @@ const AnnounceSchema = new Schema({
   
   budget: {
     type: Number,
-    required: [true, `Le budget est obligatoire`]
   },
   budget_hidden: {
     type: Boolean,
@@ -317,10 +315,12 @@ const AnnounceSchema = new Schema({
   work_mode_remote: {
     type: Boolean,
     required: false,
+    default: false,
   },
   work_mode_site: {
     type: Boolean,
     required: false,
+    default: false,
   },
 }, schemaOptions)
 
@@ -425,12 +425,6 @@ AnnounceSchema.virtual('questions', {
   ref: 'question',
   localField: '_id',
   foreignField: 'announce',
-})
-
-AnnounceSchema.pre('save', function(next) {
-  this.work_mode_site = this.work_mode_site ?? false
-  this.work_mode_remote = this.work_mode_remote ?? false
-  next()
 })
 
 module.exports = AnnounceSchema

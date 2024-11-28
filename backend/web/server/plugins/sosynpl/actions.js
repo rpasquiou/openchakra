@@ -297,13 +297,17 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     console.log('getting model for', dataId)
     const model=await getModel(dataId, ['announce', 'application'])
     if (model=='announce') {
-      const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status']})
+      const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status', 'work_mode_site', 'work_mode_remote']})
       if (!announces.length) {
         throw new NotFoundError(`Announce ${dataId} not found`)
       }
       const announce=announces[0]
       if (announce.status!=ANNOUNCE_STATUS_DRAFT) {
         throw new BadRequestError(`Announce ${dataId} must be in draft mode to publish`)
+      }
+
+      if (!announce.work_mode_site && !announce.work_mode_remote) {
+        throw new BadRequestError(`Vous devez choisir au moins un mode de travail`)
       }
     }
     if (model=='application') {
