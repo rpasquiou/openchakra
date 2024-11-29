@@ -1,9 +1,9 @@
 const mongoose = require('mongoose')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const lodash = require('lodash')
+const moment = require('moment')
 const { addAction } = require('../../utils/studio/actions')
-const { getModel, idEqual } = require('../../utils/database')
-const { callComputeUrl } = require('./functions')
+const { getModel, idEqual, loadFromDb } = require('../../utils/database')
 
 
 const validateNotification = async ({value}, user) => {
@@ -12,26 +12,29 @@ const validateNotification = async ({value}, user) => {
   let notif
   if (model == 'notification') {
     //add user to seen_by_recipients
-    notif = await mongoose.models[model].findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
+    const NotificationModel = mongoose.models.notification
+    await NotificationModel.findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
+    notif = await loadFromDb({model: 'notification',id: value, fields: ['url']})
+    
+    notif = new NotificationModel(notif[0])
   }
+
   return notif
 }
 
 addAction('validate',validateNotification)
 
 
-const addNotification = async ({users, targetId, targetType, text, type, customData, picture}) => {
+const addNotification = async ({users, targetId, targetType, type, customData}) => {
   const NotificationModel = mongoose.models.notification
 
   return NotificationModel.create({
     recipients: users,
     _target: targetId,
     _target_type: targetType,
-    text: text,
     type: type,
-    url: await callComputeUrl({targetId, type}),
+    date: moment(),
     custom_data: customData,
-    picture
   })
 }
 

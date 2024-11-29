@@ -8,7 +8,7 @@ const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINN
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
-const { callComputeMessage } = require('../notifications/functions')
+const Company = require('../../models/Company')
 
 
 const startSurvey = async (_, user) => {
@@ -88,13 +88,11 @@ const finishSurvey = async ({ value }, user) => {
   if (user.company_sponsorship) {
     const sponsor = await Company.findById(user.company_sponsorship)
     await addNotification({
-      users: [sponsor.administrators],
+      users: sponsor.administrators,
       targetId: score._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_DIAG],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_DIAG,user}),
       type: NOTIFICATION_TYPE_NEW_DIAG,
-      customData: null,
-      picture: user.picture
+      customData: JSON.stringify({customUserId: user._id}),
     })
   }
 

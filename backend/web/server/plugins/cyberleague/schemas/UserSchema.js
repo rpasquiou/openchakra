@@ -170,6 +170,10 @@ const UserSchema = new Schema({
     type: String,
     required: false
   },
+  is_anonymous: {
+    type: Boolean,
+    default: true
+  },
   unseen_notifications: {
     type: [{
       type: Schema.Types.ObjectId,

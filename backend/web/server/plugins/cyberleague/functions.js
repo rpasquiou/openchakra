@@ -40,7 +40,7 @@ const { startSslScan } = require('../SslLabs')
 const Scan = require('../../models/Scan')
 const { runPromiseUntilSuccess } = require('../../utils/concurrency')
 const { computeScanRatesIfResults } = require('./scan')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage, setComputePicture } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -52,9 +52,13 @@ const Carreer = require('../../models/Carreer')
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
-const computeUrl = async ({type, targetId}) => {
+const NotificationModel = mongoose.models.notification
+
+//notif url getterFn
+const computeUrl = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
   let tagUrl
-  switch (type) {
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
       tagUrl = await getTagUrl('NOTIFICATION_MESSAGE')
       break
@@ -90,28 +94,41 @@ const computeUrl = async ({type, targetId}) => {
   }
 
   if (!tagUrl) {
-    throw new Error(`Unknown notification type ${type} in computeUrl`)
+    throw new Error(`Unknown notification type ${dataLoaded.type} in computeUrl`)
   }
 
-  return `${ComputeDomain(tagUrl)}?id=${targetId}`
+  return `${ComputeDomain(tagUrl)}?id=${dataLoaded._target}`
 }
 setComputeUrl(computeUrl)
 
 
-const computeMessage = ({type, user, params}) => {
-  switch (type) {
+//notif message getterFn
+const computeMessage = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+
+  const {customUserId, customGroupId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user, group
+  if (customGroupId) {
+    group = await Group.findById(customGroupId)
+  }
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
+
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      return `${user.shortname} vous a envoyé un nouveau message`
+      return `${target.shortname} vous a envoyé un nouveau message` // target is a user
     case NOTIFICATION_TYPE_FEED_COMMENT:
       return `${user.shortname} a commenté une de vos publications`
     case NOTIFICATION_TYPE_FEED_LIKE:
       return `${user.shortname} a aimé une de vos publications`
     case NOTIFICATION_TYPE_GROUP_COMMENT:
-      return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a commenté une de vos publications sur la ligue ${group.name}`
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a aimé une de vos publications sur la ligue ${group.name}`
     case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
-      return `Félicitation ! Votre demande derejoindre la ligue ${params.groupName} a été acceptée`
+      return `Félicitation ! Votre demande de rejoindre la ligue ${target.name} a été acceptée` //target is a group
     case NOTIFICATION_TYPE_NEW_SCAN:
       return `${user.fullname} a effectué un scan de surface`
     case NOTIFICATION_TYPE_NEW_DIAG:
@@ -119,21 +136,51 @@ const computeMessage = ({type, user, params}) => {
     case NOTIFICATION_TYPE_NEW_MISSION:
       return `${user.fullname} a effectué une demande de mission`
     case NOTIFICATION_TYPE_JOB_ANSWER:
-      return `${user.fullname} a répondu à votre offre d'emploi : ${params.jobTitle}`
+      return `${user.fullname} a répondu à votre offre d'emploi : ${target.position}` //target is a carreer
     case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
-      return `${user.shortname} souhaite rejoindre votre ligue ${params.groupName}`
+      return `${target.shortname} souhaite rejoindre votre ligue ${group.name}` // target is a user
     case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
-      return `${user.shortname} s'est inscrit à votre événement ${params.eventName}`
+      return `${user.shortname} s'est inscrit à votre événement ${target.name}` // target is an event
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
-      return `${user.fullname} s'est inscrit à l'événement ${params.eventName}`
+      return `${user.fullname} s'est inscrit à l'événement ${target.name}` // target is an event
     case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
-      return `${user.fullname} souhaite rejoindre la ligue ${params.groupName}`
+      return `${target.fullname} souhaite rejoindre la ligue ${group.name}` // target is a user
   }
-  throw new Error(`Unknown notification type ${type} in computeMessage`)
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computeMessage`)
 }
 setComputeMessage(computeMessage)
 
-const NotificationModel = mongoose.models.notification
+//Notif picture getterFn
+const computePicture = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+  const {customUserId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
+
+  switch (dataLoaded.type) {
+    case NOTIFICATION_TYPE_MESSAGE: // target is user
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
+      return target.picture
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+    case NOTIFICATION_TYPE_FEED_LIKE:
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+    case NOTIFICATION_TYPE_NEW_SCAN:
+    case NOTIFICATION_TYPE_NEW_DIAG:
+    case NOTIFICATION_TYPE_NEW_MISSION:
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return user.picture
+  }
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
+}
+setComputePicture(computePicture)
 
 
 
@@ -651,16 +698,19 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
-  if (model == 'conversation' && id) {
-      if(idEqual(id, user._id)) {
-        throw new BadRequestError('Vous ne pouvez pas vous parler vous même')
-      }
-      else{
-        let conv = await Conversation.findOne({ users: {$all: [user._id, id]}})
+  if (model == 'conversation') {
+    if (id) {
+      if (idEqual(id, user._id)) {
+        throw new BadRequestError('Vous ne pouvez pas vous parler vous-même')
+      } else {
+        let conv = await Conversation.findOne({ users: { $all: [user._id, id] } })
         if (!conv) {
-          conv = await Conversation.create({ users : [user._id, id]})
+          conv = await Conversation.create({ users: [user._id, id] })
         }
-        return Promise.resolve({model, fields, id: conv._id, user, params})
+        return Promise.resolve({ model, fields, id: conv._id, user, params })
+      }
+    } else {
+      params['filter.users'] = user._id
     }
   }
 
@@ -778,10 +828,10 @@ const preCreate = async ({model, params, user}) => {
     params.company = params.parent
   }
 
-  if (model == 'member') {
+  if (model == 'user') {
     if (!params.company_sponsorship) {
       const default_sponsor = await Company.findOne({is_default_sponsor: true})
-      params.company_sponsorship = default_sponsor._id
+      params.company_sponsorship = default_sponsor ? default_sponsor._id : null
     }
   }
 
@@ -811,10 +861,8 @@ const preCreate = async ({model, params, user}) => {
           users: sponsor.administrators,
           targetId: data._id,
           targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
-          text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
           type: NOTIFICATION_TYPE_NEW_SCAN,
-          customData: null,
-          picture: user.picture
+          customData: JSON.stringify({customUserId: user._id}),
         })
       }
     }
@@ -872,25 +920,20 @@ const postCreate = async ({ model, params, data, user }) => {
           const post = await Post.findById(data.post)
           //need to know if post is in a group or in global feed
           if (post.group) {
-            params.groupName = params.parent.name
             await addNotification({
               users: [post.creator],
-              targetId: data._id,
+              targetId: post._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_COMMENT],
-              text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_COMMENT, user, params}),
               type: NOTIFICATION_TYPE_GROUP_COMMENT,
-              customData: null,
-              picture: user.picture
+              customData: JSON.stringify({customUserId: user._id, customGroupId: post.group}),
             })
           } else {
             await addNotification({
               users: [post.creator],
-              targetId: data._id,
+              targetId: post._id,
               targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_COMMENT],
-              text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_COMMENT, user}),
               type: NOTIFICATION_TYPE_FEED_COMMENT,
-              customData: null,
-              picture: user.picture
+              customData: JSON.stringify({customUserId: user._id}),
             })
           }
         }
@@ -910,10 +953,8 @@ const postCreate = async ({ model, params, data, user }) => {
         users: sponsor.administrators,
         targetId: data._id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_SCAN],
-        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_SCAN,user}),
         type: NOTIFICATION_TYPE_NEW_SCAN,
-        customData: null,
-        picture: user.picture
+        customData: JSON.stringify({customUserId: user._id}),
       })
     }
   }
@@ -930,10 +971,8 @@ const postCreate = async ({ model, params, data, user }) => {
       users: [params.receiver],
       targetId: user._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE,user}),
       type: NOTIFICATION_TYPE_MESSAGE,
       customData: null,
-      picture: user.picture
     })
   }
 
@@ -945,10 +984,8 @@ const postCreate = async ({ model, params, data, user }) => {
         users: sponsor.administrators,
         targetId: data._id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_MISSION],
-        text: callComputeMessage({type: NOTIFICATION_TYPE_NEW_MISSION,user}),
         type: NOTIFICATION_TYPE_NEW_MISSION,
-        customData: null,
-        picture: user.picture
+        customData: JSON.stringify({customUserId: user._id}),
       })
     }
   }
@@ -967,25 +1004,19 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     if (attribute == 'users') {
       await Group.findByIdAndUpdate(id, {$pullAll: {pending_users: value}})
       if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
-        const userId = lodash.intersectionWith([group.users, value], idEqual)
+        const userId = lodash.intersectionWith(group.pending_users, value, idEqual)
         //Notif league acceptation
-        const params = {}
-        params.groupName = group.name
         await addNotification({
-          users: [userId],
+          users: userId,
           targetId: group._id,
           targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED],
-          text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, user, params}),
           type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED,
           customData: null,
-          picture: group.picture
         })
       }
     }
     if (attribute == 'pending_users') {
       if (group.visibility == GROUP_VISIBILITY_PRIVATE) {
-        const params = {}
-        params.groupName = group.name
         const sponsor = await Company.findById(user.company_sponsorship)
         //Notif league request
         if (user.company_sponsorship) {
@@ -993,10 +1024,8 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             users: sponsor.administrators,
             targetId: user._id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,user, params}),
             type: NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customGroupId: group._id}),
           })
         }
         const isGroupAdmin = !!lodash.find(sponsor.administrators,(v) => idEqual(group.admin, v))
@@ -1005,10 +1034,8 @@ const postPutData = async ({model, id, user, attribute, value}) => {
             users: [group.admin],
             targetId: user._id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,user, params}),
             type: NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customGroupId: group._id}),
           })
         }
       }
@@ -1033,26 +1060,20 @@ const postPutData = async ({model, id, user, attribute, value}) => {
 
         //add notif for liked post
         if (group) {
-          const params = {}
-          params.groupName = group.name
           await addNotification({
             users: [post.creator],
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_GROUP_LIKE],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_GROUP_LIKE, user, params}),
             type: NOTIFICATION_TYPE_GROUP_LIKE,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customUserId: user._id, customGroupId: group._id}),
           })
         } else {
           await addNotification({
             users: [post.creator],
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_FEED_LIKE],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_FEED_LIKE, user}),
             type: NOTIFICATION_TYPE_FEED_LIKE,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customUserId: user._id}),
           })
         }
       } else {
@@ -1072,31 +1093,25 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens + gain.gain }})
         
         //Event notif
-        const event = await Event.findById(id)
-        const params = {}
-        params.eventName = event.name
         if (user.company_sponsorship) {
           const sponsor = await Company.findById(user.company_sponsorship)
           await addNotification({
             users: sponsor.administrators,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,user, params}),
             type: NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customUserId: user._id}),
           })
         }
+        const event = await Event.findById(id)
         if (!user.company_sponsorship || user.company_sponsorship != event.company) {
           const admins = await Company.findById(event.company)
           await addNotification({
             users: admins,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
-            text: callComputeMessage({type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,user, params}),
             type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,
-            customData: null,
-            picture: user.picture
+            customData: JSON.stringify({customUserId: user._id}),
           })
         }
       } else {
@@ -1123,10 +1138,8 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         users: sponsor.administrators,
         targetId: id,
         targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_JOB_ANSWER],
-        text: callComputeMessage({type: NOTIFICATION_TYPE_JOB_ANSWER,user,params}),
         type: NOTIFICATION_TYPE_JOB_ANSWER,
-        customData: null,
-        picture: user.picture
+        customData: JSON.stringify({customUserId: user._id}),
       })
     }
   }

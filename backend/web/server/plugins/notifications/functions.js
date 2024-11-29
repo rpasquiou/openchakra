@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const { createNotificationSchema } = require('./schemas/NotificationSchema')
-const { declareEnumField, declareVirtualField } = require('../../utils/database')
-const { CREATED_AT_ATTRIBUTE } = require('../../../utils/consts')
+const { declareEnumField, declareVirtualField, declareComputedField, loadFromDb } = require('../../utils/database')
 
 let computeUrl = (targetId, targetType) => {
   return ``
@@ -11,8 +10,8 @@ const setComputeUrl = (fn) => {
   computeUrl = fn
 }
 
-const callComputeUrl = async ({...params}) => {
-  return computeUrl(params)
+const callComputeUrl = async (...params) => {
+  return computeUrl(...params)
 }
 
 let computeMessage = (text) => {
@@ -23,8 +22,20 @@ const setComputeMessage = (fn) => {
   computeMessage = fn
 }
 
-const callComputeMessage = ({...params}) => {
-  return computeMessage(params)
+const callComputeMessage = async (...params) => {
+  return computeMessage(...params)
+}
+
+let computePicture = (picture) => {
+  return picture
+}
+
+const setComputePicture = (fn) => {
+  computePicture = fn
+}
+
+const callComputePicture = async (...params) => {
+  return computePicture(...params)
 }
 
 const setAllowedTypes = types => {
@@ -69,13 +80,26 @@ const setAllowedTypes = types => {
 
   //notification declarations
   declareEnumField({model: 'notification', field: 'type', enumValues: types})
+  declareComputedField({model: 'notification', field: 'url', getterFn: callComputeUrl})
+  declareComputedField({model: 'notification', field: 'text', getterFn: callComputeMessage})
+  declareComputedField({model: 'notification', field: 'picture', getterFn: callComputePicture})
 
 }
 
 const getPendingNotifications = async function (userId, params, data) {
+  //console.log('params',params);
+  //récupérer sort et limit pour le champ unseen_notifications
+
+  
+  const notifs = await loadFromDb({
+    model: 'notification',
+    fields: ['text', 'url','picture','_target','_target_type','date'],
+    user: userId,
+    params: {'filter.recipients':{$in: [data._id]}, 'filter.seen_by_recipients': {$nin: [data._id]}}
+  })
+  
   const NotificationModel = mongoose.models.notification
-  const notifs = await NotificationModel.find({recipients: {$in: data._id}, seen_by_recipients: {$nin: data._id}}).sort({[CREATED_AT_ATTRIBUTE]: -1})
-  return notifs
+  return notifs.map(n => new NotificationModel(n))
 }
 
 const getPendingNotificationsCount = async function (userId, params, data) {
@@ -85,9 +109,18 @@ const getPendingNotificationsCount = async function (userId, params, data) {
 }
 
 const getSeenNotifications = async function (userId, params, data) {
+  //récupérer sort et limit pour le champ unseen_notifications
+
+
+  const notifs = await loadFromDb({
+    model: 'notification',
+    fields: ['text', 'url','picture','_target','_target_type','date'],
+    user: userId,
+    params: {'filter.recipients':{$in: [data._id]}}
+  })
+  
   const NotificationModel = mongoose.models.notification
-  const notifs = await NotificationModel.find({seen_by_recipients: {$in: data._id}}).sort({[CREATED_AT_ATTRIBUTE]: -1})
-  return notifs
+  return notifs.map(n => new NotificationModel(n))
 }
 
 const getSeenNotificationsCount = async function (userId, params, data) {
@@ -100,10 +133,9 @@ module.exports = {
   setAllowedTypes,
   setComputeUrl,
   setComputeMessage,
+  setComputePicture,
   getPendingNotifications,
   getPendingNotificationsCount,
   getSeenNotifications,
   getSeenNotificationsCount,
-  callComputeUrl,
-  callComputeMessage,
 }
