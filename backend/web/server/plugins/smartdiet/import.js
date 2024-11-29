@@ -1783,6 +1783,7 @@ module.exports={
   importProspectsC1,
   importPatientsNoCoachingC1,
   loadRecords,
+  CALL_STATUS_MAPPING,
 }
 
 
