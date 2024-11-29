@@ -757,6 +757,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage', 'openUrl'],
   },
+  check_profil_completion: {
+    label: 'check_profil_completion',
+    options: {},
+    next: ['openPage'],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {
