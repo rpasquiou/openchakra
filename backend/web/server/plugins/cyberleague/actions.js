@@ -2,13 +2,21 @@ const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
-const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
 const Company = require('../../models/Company')
+
+
+const check_profil_completion = async ({ value }, user) => {
+  //action used for isActionAllowed
+  return value
+}
+//TODO rename action to next_question
+addAction('check_profil_completion', check_profil_completion)
 
 
 const startSurvey = async (_, user) => {
