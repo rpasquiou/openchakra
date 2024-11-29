@@ -190,6 +190,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
+  if (action == 'check_profil_completion') {
+    if (!user.is_profil_completed) {
+      throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
+    }
+  }
+
   return true
 }
 
