@@ -712,7 +712,11 @@ const postPutData = async ({ model, params, id, value, data, user }) => {
       const lead=await Lead.findById(id)
       const last_status=lead._call_status_history.pop()?.call_status
       if (last_status!=call_status) {
-        await Lead.findByIdAndUpdate(id, {$push: {_call_status_history: {date:moment(), call_status}}})
+        await Lead.findByIdAndUpdate(
+          id, 
+          {$set: {call_date: moment()}},
+          {$push: {_call_status_history: {date:moment(), call_status}}}
+        )
       }
     }
   }
@@ -1770,7 +1774,6 @@ declareVirtualField({
 declareVirtualField({ model: 'lead', field: 'search_text', instance: 'String', requires: LEAD_SEARCH_TEXT_FIELDS,
   dbFilter: createSearchFilter({attributes: LEAD_SEARCH_TEXT_FIELDS}),
 })
-declareVirtualField({ model: 'lead', field: 'call_date', instance: 'Date', requires: `${CREATED_AT_ATTRIBUTE},_call_status_history`})
 
 declareVirtualField({
   model: 'nutritionAdvice', field: 'end_date', instance: 'Date',

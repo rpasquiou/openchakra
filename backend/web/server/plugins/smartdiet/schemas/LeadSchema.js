@@ -139,6 +139,10 @@ const LeadSchema = new Schema({
     required: false,
     index: true,
   },
+  call_date: {
+    type: Date,
+    required: false,
+  }
 }, schemaOptions)
 
 LeadSchema.index(
@@ -178,11 +182,6 @@ LeadSchema.virtual("nutrition_advices", {
 LeadSchema.virtual("search_text", DUMMY_REF).get(function() {
   return LEAD_SEARCH_TEXT_FIELDS.map(f => this[f]||null).filter(v => !!v).join(' ')
 })
-
-LeadSchema.virtual('call_date', DUMMY_REF).get(function() {
-  return lodash.last(this._call_status_history)?.date || this[UPDATED_AT_ATTRIBUTE]
-})
-
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = LeadSchema

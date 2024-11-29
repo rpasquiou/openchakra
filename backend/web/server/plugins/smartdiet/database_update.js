@@ -20,6 +20,7 @@ const { updateApptsOrder } = require('./coaching')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const NodeCache = require('node-cache')
 const { copyProgressAnswers } = require('./quizz')
+const { UPDATED_AT_ATTRIBUTE } = require('../../../utils/consts')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -267,6 +268,33 @@ const setAppointmentsProgress = async () => {
   console.error(res.filter(r => r.status=='rejected'))
 }
 
+const setLeadCallDate = async () => {
+  return Lead.updateMany(
+    {}, // Update all documents
+    [
+      {
+        $set: {
+          call_date: {
+            $cond: {
+              if: { $gt: [{ $size: { $ifNull: ["$_call_status_history", []] } }, 0] },
+              then: {
+                $max: "$_call_status_history.date", // Newest date in _call_status_history
+              },
+              else: `$${UPDATED_AT_ATTRIBUTE}`, // Fallback to updated_at
+            },
+          },
+        },
+      },
+    ]
+  )
+    .then((result) => {
+      console.log(`Updated ${result.modifiedCount} leads successfully.`);
+    })
+    .catch((err) => {
+      console.error("Error updating leads:", err);
+    });
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await normalizePhones()
@@ -281,6 +309,7 @@ const databaseUpdate = async () => {
   await setCoachingAssQuizz()
   await updateAppointmentsOrder()
   await setAppointmentsProgress()
+  await setLeadCallDate()
 }
 
 module.exports=databaseUpdate
