@@ -8,7 +8,7 @@ const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINN
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
-const { callComputeMessage } = require('../notifications/functions')
+const Company = require('../../models/Company')
 
 
 const startSurvey = async (_, user) => {
