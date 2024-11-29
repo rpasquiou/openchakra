@@ -698,16 +698,19 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
-  if (model == 'conversation' && id) {
-      if(idEqual(id, user._id)) {
-        throw new BadRequestError('Vous ne pouvez pas vous parler vous même')
-      }
-      else{
-        let conv = await Conversation.findOne({ users: {$all: [user._id, id]}})
+  if (model == 'conversation') {
+    if (id) {
+      if (idEqual(id, user._id)) {
+        throw new BadRequestError('Vous ne pouvez pas vous parler vous-même')
+      } else {
+        let conv = await Conversation.findOne({ users: { $all: [user._id, id] } })
         if (!conv) {
-          conv = await Conversation.create({ users : [user._id, id]})
+          conv = await Conversation.create({ users: [user._id, id] })
         }
-        return Promise.resolve({model, fields, id: conv._id, user, params})
+        return Promise.resolve({ model, fields, id: conv._id, user, params })
+      }
+    } else {
+      params['filter.users'] = user._id
     }
   }
 
