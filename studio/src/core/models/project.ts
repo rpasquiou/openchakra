@@ -40,6 +40,7 @@ export type ProjectSettings = {
   metaImage: string
   gaTag: string
   consentId: string
+  headScript: string
 }
 
 export type PageSettings = {
@@ -138,6 +139,7 @@ const project = createModel({
       metaImage: '',
       gaTag: '',
       consentId: '',
+      headScript: '',
     }
 
   } as ProjectState,
@@ -169,6 +171,7 @@ const project = createModel({
           metaImage: '',
           gaTag: '',
           consentId: '',
+          headScript: '',
       }
 
       return {
