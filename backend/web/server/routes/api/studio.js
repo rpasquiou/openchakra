@@ -108,7 +108,7 @@ const PROJECT_CONTEXT_PATH = 'src/pages'
 
 
 const login = async (email, password) => {
-  console.log(`Login with ${email} and ${password}`)
+  console.log(`Login with ${email} and ${password.slice[0,3]}****`)
   await callPreLogin({email})
   return User.findOne({email}).then(user => {
     if (!user) {
