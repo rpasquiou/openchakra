@@ -88,7 +88,7 @@ const finishSurvey = async ({ value }, user) => {
   if (user.company_sponsorship) {
     const sponsor = await Company.findById(user.company_sponsorship)
     await addNotification({
-      users: [sponsor.administrators],
+      users: sponsor.administrators,
       targetId: score._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_DIAG],
       type: NOTIFICATION_TYPE_NEW_DIAG,
