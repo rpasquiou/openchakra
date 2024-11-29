@@ -93,7 +93,7 @@ const getPendingNotifications = async function (userId, params, data) {
   
   const notifs = await loadFromDb({
     model: 'notification',
-    fields: ['text', 'url','picture','_target','_target_type'],
+    fields: ['text', 'url','picture','_target','_target_type','date'],
     user: userId,
     params: {'filter.recipients':{$in: [data._id]}, 'filter.seen_by_recipients': {$nin: [data._id]}}
   })
@@ -114,7 +114,7 @@ const getSeenNotifications = async function (userId, params, data) {
 
   const notifs = await loadFromDb({
     model: 'notification',
-    fields: ['text', 'url','picture','_target','_target_type'],
+    fields: ['text', 'url','picture','_target','_target_type','date'],
     user: userId,
     params: {'filter.recipients':{$in: [data._id]}}
   })
