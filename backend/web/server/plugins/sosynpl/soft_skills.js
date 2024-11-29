@@ -165,12 +165,23 @@ const computeAvailableGoldSoftSkills =  async (userId, params, data) => {
   return SoftSkill.find()
 }
 
-const computeAvailableSilverSoftSkills =  async (userId, params, data) => {
- return await SoftSkill.find({_id: {$nin: data.gold_soft_skills}})
+const computeAvailableSilverSoftSkills = async (userId, params, data) => {
+  const goldSoftSkills = Array.isArray(data?.gold_soft_skills)
+    ? data.gold_soft_skills
+    : []
+  return await SoftSkill.find({ _id: { $nin: goldSoftSkills } })
 }
 
-const computeAvailableBronzeSoftSkills =  async (userId, params, data) => {
-  return await SoftSkill.find({_id: {$nin: [...data.gold_soft_skills, ...data.silver_soft_skills]}})
+const computeAvailableBronzeSoftSkills = async (userId, params, data) => {
+  const goldSoftSkills = Array.isArray(data?.gold_soft_skills)
+    ? data.gold_soft_skills
+    : []
+  const silverSoftSkills = Array.isArray(data?.silver_soft_skills)
+    ? data.silver_soft_skills
+    : []
+  return await SoftSkill.find({
+    _id: { $nin: [...goldSoftSkills, ...silverSoftSkills] },
+  })
 }
 
 const mapMedals = owner => {
