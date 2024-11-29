@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const lodash = require('lodash')
+const moment = require('moment')
 const { addAction } = require('../../utils/studio/actions')
 const { getModel, idEqual, loadFromDb } = require('../../utils/database')
 
@@ -32,6 +33,7 @@ const addNotification = async ({users, targetId, targetType, type, customData}) 
     _target: targetId,
     _target_type: targetType,
     type: type,
+    date: moment(),
     custom_data: customData,
   })
 }
