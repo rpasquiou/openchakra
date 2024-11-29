@@ -162,6 +162,7 @@ const computePicture = async (userId, params, data) => {
 
   switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE: // target is user
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
     case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
       return target.picture
     case NOTIFICATION_TYPE_FEED_COMMENT:
@@ -175,7 +176,6 @@ const computePicture = async (userId, params, data) => {
     case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
     case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
-    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
       return user.picture
   }
   throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
