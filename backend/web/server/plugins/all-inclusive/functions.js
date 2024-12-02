@@ -130,16 +130,18 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     const userIds=(await User.find({hidden: true})).map(u => u._id)
     params['filter.user']={$nin: userIds}
   }
-  if (model == 'jobUser' && params?.['filter.search_field']) {
+  if (model == 'jobUser' && (params?.['filter.search_field'] || params?.['filter.city'])) {
     if (id) {
       const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
       return { model, fields, id, data: [job], params }
     }
     fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
 
-    // Extract search parameters
-    const searchQuery = params?.['filter.search_field']
-    const city = params?.['filter.city']
+    // Extract and clean search parameters
+    const rawSearchQuery = params?.['filter.search_field']
+    const searchQuery = rawSearchQuery?.trim().replace(/\s+/g, ' ')
+    const rawSearchCity = params?.['filter.city']
+    const city = rawSearchCity?.trim().replace(/\s+/g, ' ')
 
     // Fetch all jobUsers with required fields
     let jobUsers = await search({
