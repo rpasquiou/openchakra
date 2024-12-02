@@ -378,7 +378,15 @@ USER_MODELS.forEach(m => {
       lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {return key}),
       lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {return key})
     ),`,`),
-    instance: 'Boolean'})
+    instance: 'Boolean'
+  })
+  declareVirtualField({model: m, field: 'conversations', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'conversation'}
+    }
+  })
+  declareVirtualField({model: m, field: 'conversations_count', instance: 'Number'})
 })
 
 //Company declarations
@@ -518,7 +526,6 @@ declareVirtualField({
     options: { ref: 'message' },
   },
 })
-
 declareComputedField({model: 'conversation', field: 'partner', requires: 'users', getterFn: getConversationPartner})
 
 //Message
@@ -698,6 +705,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     }
   }
 
+  let data
+
   if (model == 'conversation') {
     if (id) {
       if (idEqual(id, user._id)) {
@@ -710,11 +719,9 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
         return Promise.resolve({ model, fields, id: conv._id, user, params })
       }
     } else {
-      params['filter.users'] = user._id
+      data = {}
     }
   }
-
-  let data
 
   if (model == 'statistic') {
     data = await computeBellwetherStatistics(params)

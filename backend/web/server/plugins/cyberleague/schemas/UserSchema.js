@@ -488,6 +488,19 @@ UserSchema.virtual('scans_count', DUMMY_REF).get(function() {
   return this.scans ? this.scans.length : 0
 })
 
+UserSchema.virtual('conversations', {
+  ref: 'conversation',
+  localField: '_id',
+  foreignField: 'users'
+})
+
+UserSchema.virtual('conversations_count', {
+  ref: 'conversation',
+  localField: '_id',
+  foreignField: 'users',
+  count: true
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
