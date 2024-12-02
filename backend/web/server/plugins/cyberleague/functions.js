@@ -726,6 +726,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 setPreprocessGet(preprocessGet)
 
 const preCreate = async ({model, params, user}) => {
+  //console.log('preCreate : model', model, 'user', user, 'params', params)
   params.creator = params.creator || user._id
 
   if(model == `comment`) {
