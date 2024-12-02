@@ -15,6 +15,7 @@ const {
   retainRequiredFields,
   importData,
   callPreLogin,
+  callPreRegister,
 } = require('../../utils/database')
 
 const path = require('path')
@@ -381,17 +382,19 @@ router.get('/current-user', passport.authenticate('cookie', {session: false}), (
   return res.json(lodash.pick(req.user,['_id', 'role']))
 })
 
-router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), (req, res) => {
+router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session: false}), async (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
-  const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  let body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  body = await callPreRegister(body)
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body, req.user)
     .then(result => res.json(result))
 })
 
-router.post('/register-and-login', (req, res) => {
+router.post('/register-and-login', async (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
-  const body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  let body={register_ip: ip, ...lodash.mapValues(req.body, v => JSON.parse(v))}
+  body = await callPreRegister(body)
   console.log(`Registering & login on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body)
     .then(result => {
