@@ -13,7 +13,7 @@ const Company = require('../../models/Company')
 
 const check_profil_completion = async ({ value }, user) => {
   //action used for isActionAllowed
-  return value
+  return {_id: value}
 }
 //TODO rename action to next_question
 addAction('check_profil_completion', check_profil_completion)

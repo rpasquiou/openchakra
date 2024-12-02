@@ -1150,6 +1150,7 @@ return Promise.allSettled(imagePromises)
       value: value?._id,
     }
     return axios.post(url, body)
+      .then(res => ({value: res.data}))
   },
 
   refresh: async ({reload}) => {
