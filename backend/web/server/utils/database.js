@@ -724,8 +724,7 @@ const addComputedFields = (
       // Handle references => sub
       const refAttributes = getRefAttributes(model)
       return Promise.all(refAttributes.map(([attName, attParams]) => {
-        const requiredSubFields=getRequiredSubFields(fields, attName)
-
+        const requiredSubFields=getRequiredSubFields(originalFields, attName)
         const children = lodash.flatten([data[attName]]).filter(v => !!v)
         return Promise.all(
           children.map(child =>
