@@ -8,7 +8,15 @@ const User = require('../../models/User')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 
 const getContents = async (userId, params, data, fields) => {
-  const contents = await loadFromDb({model: 'content', user: userId, fields})
+  const contentsWithoutFields = await Content.find({creator: {$in: data.users.map(u => u._id)}})
+
+  const contents = await loadFromDb({
+    model: 'content',
+    user: userId,
+    fields,
+    params: {...params, 'filter._id':{$in: contentsWithoutFields.map(u => u._id)}}
+  })
+  
   return contents.map(c => new Content({
     ...c, 
     creator: new User(c.creator),
