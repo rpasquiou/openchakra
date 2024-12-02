@@ -52,6 +52,7 @@ const {
   OPP_PROGRESS,
   EMERGENCY,
   OPP_STATUS,
+  PROFILE_VISIBILITY,
 } = require('./consts')
 const {
   declareComputedField,
@@ -304,6 +305,7 @@ USER_MODELS.forEach(m => {
       instance: 'ObjectID',
       options: {ref: 'jobUser'}}
   })
+  declareEnumField({model: m, field: 'visibility', enumValues: PROFILE_VISIBILITY})
   declareEnumField({model: m, field: 'nationality', enumValues: NATIONALITIES})
   declareEnumField({model: m, field: 'company_status', enumValues: COMPANY_STATUS})
   declareEnumField({model: m, field: 'company_activity', enumValues: COMPANY_ACTIVITY})

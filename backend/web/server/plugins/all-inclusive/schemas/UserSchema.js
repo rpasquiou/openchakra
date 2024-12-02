@@ -18,7 +18,9 @@ const {
   ROLE_COMPANY_ADMIN,
   ROLE_COMPANY_BUYER,
   ROLE_TI,
-  UNACTIVE_REASON
+  UNACTIVE_REASON,
+  PROFILE_VISIBILITY,
+  PROFILE_VISIBLE
 } = require('../consts')
 
 const moment = require('moment')
@@ -122,6 +124,12 @@ const UserSchema = new Schema({
     type: String,
     enum: Object.keys(UNACTIVE_REASON),
     required: [function() { return !this.active}, 'Le raison de la désactivation est obligatoire'],
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(PROFILE_VISIBILITY),
+    default: PROFILE_VISIBLE,
+    required: [function() { return this.role==ROLE_TI}, 'La visibilité est obligatoire'],
   },
   hidden: {
     type: Boolean,
