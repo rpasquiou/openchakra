@@ -60,6 +60,14 @@ const MissionSchema = new Schema({
     type: String,
     required: false,
   },
+  document_2: {
+    type: String,
+    required: false,
+  },
+  document_3: {
+    type: String,
+    required: false,
+  },
   customer_location: {
     type: Boolean,
     default: false,
