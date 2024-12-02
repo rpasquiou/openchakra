@@ -715,6 +715,11 @@ const filterDataUser = async ({model, data, id, user, params}) => {
 setFilterDataUser(filterDataUser)
 
 const postPutData = async ({model, id, attribute, params, data, user}) => {
+  const sessionBlock=await Block.exists({_locked: true, _id: id})
+  // Don't propagate any data from session blocks
+  if (sessionBlock) {
+    return data
+  }
   // Propagate block attributes
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
