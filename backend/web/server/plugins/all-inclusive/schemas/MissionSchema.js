@@ -19,7 +19,9 @@ const {
   PAYMENT_STATUS,
   ROLE_COMPANY_BUYER,
   ROLE_TI,
-  TI_TIPS
+  TI_TIPS,
+  ROLE_ALLE_ADMIN,
+  ROLE_ALLE_SUPER_ADMIN
 } = require('../consts')
 const { capitalize } = require('../../../../utils/text')
 const mongoose = require("mongoose")
@@ -255,7 +257,13 @@ MissionSchema.methods.canAcceptQuotation = function(user) {
 
 // TODO: fsm
 MissionSchema.methods.canRefuseQuotation = function(user) {
-  return user.role==ROLE_COMPANY_BUYER && this.status==MISSION_STATUS_QUOT_SENT
+  const authorizedRoles = [
+    ROLE_COMPANY_BUYER,
+    ROLE_ALLE_ADMIN,
+    ROLE_ALLE_SUPER_ADMIN
+  ]
+
+  return authorizedRoles.includes(user.role) && this.status === MISSION_STATUS_QUOT_SENT
 }
 
 MissionSchema.methods.canShowQuotation = function(user) {
