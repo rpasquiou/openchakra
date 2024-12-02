@@ -224,6 +224,7 @@ const { createAppointmentProgress } = require('./quizz')
 const { registerPreSave } = require('../../utils/schemas')
 const { crmUpsertAccount } = require('../../utils/crm')
 const NutritionAdvice = require('../../models/NutritionAdvice')
+const ResetToken = require('../../models/ResetToken')
 
 
 const filterDataUser = async ({ model, data, id, user, params }) => {
@@ -421,6 +422,15 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
    }
   }
 
+  // Check ResetToken
+  if (model=='resetToken') {
+    const t=await ResetToken.findOne({token: id})
+    if (!t || moment().isAfter(t.valid_until)) {
+      console.warn(`Invalid token`, t)
+      return {data: []}
+    }
+    id=t._id
+  }
   return Promise.resolve({ model, fields, id, params })
 
 }

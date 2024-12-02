@@ -99,7 +99,7 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-const { checkPermission } = require('../../plugins/sosynpl/permissions')
+const { checkPermission } = require(`../../plugins/${getDataModel()}/permissions`)
 
 const router = express.Router()
 
