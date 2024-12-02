@@ -11,7 +11,7 @@ async function migrateVisibility() {
 
     const result = await mongoose.connection
       .collection('users')
-      .updateMany({ role: ROLE_TI }, { $set: { visibility: PROFILE_VISIBLE } })
+      .updateMany({ role: ROLE_TI, visibility: { $exists: false } }, { $set: { visibility: PROFILE_VISIBLE } })
 
     console.log(`✅ Updated documents: ${result.modifiedCount}`)
     console.log('✨ Migration completed successfully!')
