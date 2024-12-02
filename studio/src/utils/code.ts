@@ -900,7 +900,7 @@ export const generateCode = async (
 ) => {
   const { components, metaTitle, metaDescription, metaImageUrl } = pages[pageId]
   const { settings } = project
-  const {description, metaImage, name, url, favicon32, gaTag, consentId} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
+  const {description, metaImage, name, url, favicon32, gaTag, consentId, headScript} = Object.fromEntries(Object.entries(settings).map(([key, value]) => [key, isJsonString(value) ? JSON.parse(value) : value]))
 
   const loginPage=Object.values(pages).find(page => page.components?.root?.props?.tag=='LOGIN')!
   const loginUrl=loginPage ? '/'+getPageUrl(loginPage.pageId, pages) : ''
@@ -1018,6 +1018,18 @@ export const generateCode = async (
     `
   }
 
+  const generateHeadScript = () => {
+    if (!headScript) {
+      return ''
+    }
+    return `
+    <Helmet>
+      <script>
+      {${headScript}}
+      </script>
+    </Helmet>`
+  }
+
   let renderNullCode=''
   if(components.root.props.allowNotConnected=="false"){
     renderNullCode+= `if(!user){
@@ -1026,6 +1038,7 @@ export const generateCode = async (
   }
   const header=`/**\n* Generated from ${pageId} on ${moment().format('L LT')}\n*/`
   code = `${header}\nimport React, {useState, useEffect} from 'react';
+  import { Helmet } from 'react-helmet';
   import Filter from '../dependencies/custom-components/Filter/Filter';
   import {buildFilter} from '../dependencies/utils/filters'
   import omit from 'lodash/omit';
@@ -1059,7 +1072,7 @@ import {useRouter} from 'next/router'
 import { useUserContext } from '../dependencies/context/user'
 import { getComponentDataValue } from '../dependencies/utils/values'
 import withWappizy from '../dependencies/hoc/withWappizy'
-import { redirectExists } from '../dependencies/utils/misc'
+import { redirectExists, isClient } from '../dependencies/utils/misc'
 
 ${extraImports.join('\n')}
 ${wappComponentsDeclaration.join('\n')}
@@ -1068,6 +1081,20 @@ ${dynamics || ''}
 ${maskable || ''}
 ${componentsCodes}
 
+
+const HeaderScript = () => {
+  if (!isClient()) {
+    return null
+  }
+  return (
+    <Helmet>
+      <script>
+        ${headScript}
+      </script>
+    </Helmet>
+  )
+}
+  
 
 const ${componentName} = () => {
 
@@ -1128,6 +1155,7 @@ const ${componentName} = () => {
       metaGaTag={'${gaTag}'}
     />
     ${generateConsentBanner()}
+    ${headScript && `<HeaderScript />` }
     ${code}
     </>
 )};
