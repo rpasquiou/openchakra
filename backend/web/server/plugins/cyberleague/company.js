@@ -3,10 +3,17 @@ const Content = require('../../models/Content')
 const Advertising = require('../../models/Advertising')
 const Document = require('../../models/Document')
 const { CURRENT_ADVERTISING_NO, CURRENT_ADVERTISING_YES } = require('./consts')
+const { loadFromDb } = require('../../utils/database')
+const User = require('../../models/User')
+const ExpertiseSet = require('../../models/ExpertiseSet')
 
-const getContents = async (userId, params, data) => {
-  const contents = await Content.find({creator: data.users})
-  return contents
+const getContents = async (userId, params, data, fields) => {
+  const contents = await loadFromDb({model: 'content', user: userId, fields})
+  return contents.map(c => new Content({
+    ...c, 
+    creator: new User(c.creator),
+    expertise_set: new ExpertiseSet(c.expertise_set)
+  }))
 }
 
 const getterStatus = ({field, value}) => {
