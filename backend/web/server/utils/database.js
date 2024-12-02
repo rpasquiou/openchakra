@@ -23,6 +23,18 @@ const callPreLogin = async p => {
   }
 }
 
+let preRegister=null
+
+const setPreRegister = fn => {
+  preRegister=fn
+}
+
+const callPreRegister = async p => {
+  if (preRegister) {
+    return preRegister(p)
+  }
+}
+
 const LEAN_DATA=false
 
 const MONGOOSE_OPTIONS = {
@@ -1154,6 +1166,6 @@ module.exports = {
   extractFilters, getCurrentFilter, getSubFilters, extractLimits, getSubLimits,
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
-  setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter,
+  setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter, setPreRegister, callPreRegister,
 }
 
