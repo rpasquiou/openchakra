@@ -145,7 +145,7 @@ async function fillForm(sourceLink, data, font = StandardFonts.Helvetica, fontSi
       if (field) {
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
       } else {
-        console.log(`No data found for field ${fieldName}`)
+        // console.log(`No data found for field ${fieldName}`)
       }
     }
   }
@@ -316,7 +316,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
         setFieldValue(form, field, fieldValue, pdfFont, fontSize)
       }
       catch(err) {
-        console.warn(`No data found for field ${fieldName}`)
+        // console.warn(`No data found for field ${fieldName}`)
       }
     }
   })
@@ -342,7 +342,7 @@ const fillForm2 = async (sourceLink, data, font = StandardFonts.Helvetica, fontS
             lowestY=currentY-(orgRect.height*1.2)
           }
           catch(err) {
-            console.warn(`No data found for field level_${level}.${attr}`)
+            // console.warn(`No data found for field level_${level}.${attr}`)
             return
           }
         })

@@ -348,7 +348,7 @@ const getTemplate = async (id) => {
   if (!bl.origin && !bl._locked && !bl.parent) {
     return bl
   }
-  return await mongoose.models.block.findOne({name: bl.name, origin: null, _locked: {$ne: true}, parent: null})
+  return await mongoose.models.block.findOne({name: bl.name, type: bl.type, origin: null, _locked: {$ne: true}, parent: null})
 }
 
 const getAvailableCodes =  async (userId, params, data) => {
