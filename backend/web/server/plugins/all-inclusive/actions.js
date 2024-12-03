@@ -33,13 +33,14 @@ const {
   ROLE_ALLE_ADMIN,
   ROLE_ALLE_SUPER_ADMIN,
   ROLE_COMPANY_BUYER,
-  ROLE_TI
+  ROLE_TI,
+  ROLE_COMPANY_ADMIN
 } = require('./consts')
 const {
   generatePassword,
   validatePassword
 } = require('../../../utils/passwords')
-const { BadRequestError } = require('../../utils/errors')
+const { BadRequestError, NotFoundError } = require('../../utils/errors')
 const Quotation = require('../../models/Quotation')
 const moment = require('moment')
 const Mission = require('../../models/Mission')
@@ -350,7 +351,16 @@ const askRecommandationAction = ({value, email, message, page}, user) => {
 
 addAction('askRecommandation', askRecommandationAction)
 
-const isActionAllowed = ({action, dataId, user, ...rest}) => {
+const cloneMissionAction = async ({value}, user) => {
+  const ok = await isActionAllowed({action:'clone_mission', dataId: value, user})
+  if (!ok) { return false }
+  const cloned = await clone(value)
+  return cloned
+}
+
+addAction('clone_mission', cloneMissionAction)
+
+const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action=='alle_create_quotation') {
     return Mission.findById(dataId)
       .populate('quotations')
@@ -448,6 +458,26 @@ const isActionAllowed = ({action, dataId, user, ...rest}) => {
         .then(model => loadFromDb({model, fields:[childrenAttribute], id: dataId, user}))
         .then(data => data?.[0][childrenAttribute]?.length>0)
     }
+  }
+
+  if (action=='clone_mission') {
+    const exists = await Mission.exists({_id: dataId})
+    if (!exists) {
+      throw new NotFoundError(`Mission ${dataId} not found`)
+    }
+
+    const authorizedRoles = [
+      ROLE_COMPANY_BUYER,
+      ROLE_COMPANY_ADMIN,
+      ROLE_ALLE_ADMIN,
+      ROLE_ALLE_SUPER_ADMIN
+    ]
+
+    if (!authorizedRoles.includes(user.role)) {
+      throw new ForbiddenError(`Vous n'avez pas les droits pour dupliquer cette mission`)
+    }
+
+    return true
   }
 
   return Promise.resolve(true)
