@@ -46,6 +46,7 @@ const moment = require('moment')
 const Mission = require('../../models/Mission')
 const User = require('../../models/User')
 const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
+const { clone } = require('./mission')
 
 const alle_create_quotation = ({value}) => {
   return isActionAllowed({action:'alle_create_quotation', dataId:value?._id, user})
@@ -352,13 +353,13 @@ const askRecommandationAction = ({value, email, message, page}, user) => {
 addAction('askRecommandation', askRecommandationAction)
 
 const cloneMissionAction = async ({value}, user) => {
-  const ok = await isActionAllowed({action:'clone_mission', dataId: value, user})
+  const ok = await isActionAllowed({action:'clone', dataId: value, user})
   if (!ok) { return false }
   const cloned = await clone(value)
   return cloned
 }
 
-addAction('clone_mission', cloneMissionAction)
+addAction('clone', cloneMissionAction)
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action=='alle_create_quotation') {
@@ -460,7 +461,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
-  if (action=='clone_mission') {
+  if (action=='clone') {
     const exists = await Mission.exists({_id: dataId})
     if (!exists) {
       throw new NotFoundError(`Mission ${dataId} not found`)
