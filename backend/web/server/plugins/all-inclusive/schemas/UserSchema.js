@@ -135,17 +135,6 @@ const UserSchema = new Schema({
     default: function() { return this.role !== ROLE_TI},
     required: [true, 'La visibilité est obligatoire'],
   },
-  visibility: {
-    type: String,
-    enum: Object.keys(PROFILE_VISIBILITY),
-    default: PROFILE_VISIBLE,
-    required: [function() { return this.role==ROLE_TI}, 'La visibilité est obligatoire'],
-  },
-  hidden: {
-    type: Boolean,
-    default: function() { return this.role==ROLE_TI},
-    required: [true, `Le status masqué O/N est obligatoire`],
-  },
   // Agreed by AllE
   qualified: {
     type: Boolean,
