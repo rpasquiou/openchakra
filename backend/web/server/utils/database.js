@@ -751,7 +751,7 @@ const addComputedFields = async (
       // Handle references => sub
       const refAttributes = getRefAttributes(model)
       return runPromisesWithDelay(refAttributes.map(([attName, attParams]) => () => {
-        const requiredSubFields=getRequiredSubFields(fields, attName)
+        const requiredSubFields=getRequiredSubFields(originalFields, attName)
 
         const children = lodash.flatten([data[attName]]).filter(v => !!v)
         return Promise.all(
@@ -801,10 +801,11 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }
   if (getterFn) {
-    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, withMeasureTime(getterFn, model))
+    console.log('Computed', model, field)
+    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn, model)
   }
   if (setterFn) {
-    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, withMeasureTime(setterFn, model))
+    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn, model)
   }
   if (rest.requires) {
     declareFieldDependencies({model, field, requires: rest.requires})
