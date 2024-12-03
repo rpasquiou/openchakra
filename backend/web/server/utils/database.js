@@ -801,7 +801,6 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }
   if (getterFn) {
-    console.log('Computed', model, field)
     lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn, model)
   }
   if (setterFn) {
