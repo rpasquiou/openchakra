@@ -1,3 +1,5 @@
+const Block = require('../../models/Block')
+const User = require('../../models/User')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { loadFromDb } = require('../../utils/database')
 require('../../models/Chapter')
@@ -34,6 +36,13 @@ const ensureObjectIdOrString = data => {
     throw new Error(`Expecting string or ObjectID, got ${data}(${typeof data})`)
   }
 }
+
+const getCertificateName = async (sessionId, userId) => {
+  const trainee=await User.findById(userId)
+  const session=await Block.findById(sessionId)
+  return `${session.name}-certificat-${trainee.fullname}.pdf`
+}
+
 module.exports={
-  displayTree, ensureObjectIdOrString,
+  displayTree, ensureObjectIdOrString, getCertificateName,
 }
