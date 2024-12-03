@@ -1,5 +1,5 @@
 const Mission=require('../../models/Mission')
-const migrateVisibility = require('./migrations/2024_12_02_update_visbility_attribute_role_ti')
+const migrateVisibility = require('./migrations/2024_12_03_update_role_it_visible_attributes')
 
 const setTIOnMissions = async () => {
   const orphanMissions=(await Mission.find({ti: null}).populate('job')).filter(m => !!m.job?.user)
