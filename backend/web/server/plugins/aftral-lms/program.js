@@ -14,6 +14,8 @@ const { isDevelopment } = require('../../../config/config')
 const User = require('../../models/User')
 const { ForbiddenError } = require('../../utils/errors')
 const { getCertificateName } = require('./utils')
+const axios = require('axios')
+const Progress = require('../../models/Progress')
 
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
@@ -73,45 +75,64 @@ const getSessionCertificate = async (userId, params, data) => {
 
   const documents=await Promise.all(data.trainees.map(async trainee => {
 
-    const sessionFields=[
-      'name', 'start_date', 'end_date', 'resources_progress', 'location', 'code', 'achievement_status', '_trainees_connections', 'spent_time_str',
-      'children.name', 'children.resources_progress', 'children.spent_time_str', 'children.order',
-      'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 'children.children.order', 
-      'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str', 'children.children.children.order', 
-      
-    ]
-
-    const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
-
-    const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
-
-    const location=`${!!template.english ? 'Place : ': 'À '}${session.location}`
-    const start_date=!!template.english ? `Date : ${formatDateEnglish(session.start_date, true)}` : `Le ${formatDate(session.start_date, true)}`
-    const end_date=!!template.english ? `Date : ${formatDateEnglish(session.end_date, true)}` : `Le ${formatDate(session.end_date, true)}`
-    const pdfData = {
-      session_name: session.name, session_code: session.code,
-      first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
-      achievement_status:  BLOCK_STATUS[session.achievement_status],
-      trainee_fullname: trainee.fullname,
-      start_date, end_date, location,
-      total_resources_progress: formatPercent(session.resources_progress),
-      level_1:session.children.map(child => ({
-        name: child.name, resources_progress: formatPercent(child.resources_progress), spent_time_str: child.spent_time_str, order: child.order,
-        level_2:child.children.map(child2 => ({
-          name: child2.name, resources_progress: formatPercent(child2.resources_progress), spent_time_str: child2.spent_time_str, order: child2.order,
-          level_3:child2.children.map(child3 => ({
-            name: child3.name, resources_progress: formatPercent(child3.resources_progress), spent_time_str: child3.spent_time_str, order: child3.order,
-          }))
-          }))
-      }))
-    }
-  
-    const pdfPath=template.url
-    const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
-    const buffer=await pdf.save()
     const filename= await getCertificateName(data._id, trainee._id)
-    const {Location} = await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
-    return {location: Location,filename: filename, buffer}
+    let buffer=null
+    let location=(await Progress.findOne({block: data._id, user: trainee._id})).certificate_url
+    
+    console.log(data.name, trainee.email, location ? 'Certificat déjà généré' : 'Certificat non encore généré')
+    // Certificate was already generated ?
+    if (location) {
+      buffer=(await axios.get(location, {
+        responseType: 'arraybuffer',
+        headers: {
+          'Accept': 'application/pdf'
+        }})).data
+    }
+    else {
+      const sessionFields=[
+        'name', 'start_date', 'end_date', 'resources_progress', 'location', 'code', 'achievement_status', '_trainees_connections', 'spent_time_str',
+        'children.name', 'children.resources_progress', 'children.spent_time_str', 'children.order',
+        'children.children.name', 'children.children.resources_progress', 'children.children.spent_time_str', 'children.children.order', 
+        'children.children.children.name', 'children.children.children.resources_progress', 'children.children.children.spent_time_str', 'children.children.children.order', 
+        
+      ]
+
+      const [session]=await loadFromDb({model: 'session', id: data._id, fields: sessionFields, user: trainee._id})
+
+      const firstConnection=session._trainees_connections.find(tc => idEqual(tc.trainee._id, trainee.id))?.date
+
+      const sessionLocation=`${!!template.english ? 'Place : ': 'À '}${session.location}`
+      const start_date=!!template.english ? `Date : ${formatDateEnglish(session.start_date, true)}` : `Le ${formatDate(session.start_date, true)}`
+      const end_date=!!template.english ? `Date : ${formatDateEnglish(session.end_date, true)}` : `Le ${formatDate(session.end_date, true)}`
+      const pdfData = {
+        session_name: session.name, session_code: session.code,
+        first_connection: firstConnection ? formatDate(firstConnection, true) : undefined,
+        achievement_status:  BLOCK_STATUS[session.achievement_status],
+        trainee_fullname: trainee.fullname,
+        start_date, end_date, location: sessionLocation,
+        total_resources_progress: formatPercent(session.resources_progress),
+        level_1:session.children.map(child => ({
+          name: child.name, resources_progress: formatPercent(child.resources_progress), spent_time_str: child.spent_time_str, order: child.order,
+          level_2:child.children.map(child2 => ({
+            name: child2.name, resources_progress: formatPercent(child2.resources_progress), spent_time_str: child2.spent_time_str, order: child2.order,
+            level_3:child2.children.map(child3 => ({
+              name: child3.name, resources_progress: formatPercent(child3.resources_progress), spent_time_str: child3.spent_time_str, order: child3.order,
+            }))
+            }))
+        }))
+      }
+    
+      const pdfPath=template.url
+      const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
+      buffer=await pdf.save()
+      location = (await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}))?.Location
+      await Progress.findOneAndUpdate(
+        {block: data._id, user: trainee._id},
+        {block: data._id, user: trainee._id, certificate_url: location},
+        {upsert: true,}
+      )
+    }
+    return {location,filename, buffer}
   }))
 
   if (role==ROLE_APPRENANT) {
