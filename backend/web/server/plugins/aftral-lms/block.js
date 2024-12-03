@@ -622,35 +622,43 @@ const lockSession = async blockId => {
   if (lodash.isEmpty(session.children)) {
     throw new BadRequestError(`Démarrage session ${session.code} impossible: pas de programme`)
   }
+
   console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
   const trainees=session.trainees
+
+  const setAllTraineesStatus = (blockId, status, withChildren) => {
+    console.log('Setting', blockId, status, withChildren)
+    return Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
+  }
+
+  // lock all blocks
+  const allChildren=await getSessionBlocks(session)
+  await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
+
   const toManage=[session]
   while (toManage.length>0) {
     let block=toManage.pop()
-    console.log('Manage block', block._id, block.name)
-    // Set default block availability
-    await Promise.all(trainees.map(async t => {
-      if (!(await Progress.exists({block: block._id, user: t._id}))) {
-        const defaultStatus=block.access_condition ? BLOCK_STATUS_UNAVAILABLE : BLOCK_STATUS_TO_COME
-        await saveBlockStatus(t._id, block._id, defaultStatus)
-      }
-    }))
-    if (!block) {
-      throw new Error('blcok numm')
-    }
+    console.log('Manage block', block._id, block.type, block.name)
     const children=await mongoose.models.block.find({parent: block._id})
-    block._locked=true
-    await block.save().catch(err => {
-      err.message=`${block._id}:${err}`
-      throw err
-    })
-    toManage.push(...children)
+    if (!!block.closed) {
+      console.log('Block closed, 1st child available, other children unavailable')
+      await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
+      // 2nd and remaining children unavailable
+      console.log('setting', children.slice(1).map(c => c._id))
+      await Promise.all(children.slice(1).map(child => setAllTraineesStatus(child._id, BLOCK_STATUS_UNAVAILABLE, true))).catch(console.error)
+      toManage.push(children[0])
+    }
+    // Has access condition ?
+    else if (!!block.access_condition && block.order>1) {
+      console.log('Block has access condition orderr>1, setting it and children unavailable')
+      await setAllTraineesStatus(block._id, BLOCK_STATUS_UNAVAILABLE, true).catch(console.error)
+    }
+    else {
+      console.log('Setting available')
+      await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
+      toManage.push(...children)
+    }
   }
-  setSessionInitialStatus(session._id, session.trainees.map(t => t._id))
-}
-
-const setSessionInitialStatus = async blockId => {
-  return updateSessionStatus(blockId)
 }
 
 const hasParentMasked = async (blockId) => {
@@ -660,11 +668,20 @@ const hasParentMasked = async (blockId) => {
 
 const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
+    console.error('missing')
     throw new Error(userId, blockId, status)
   }
-  ensureObjectIdOrString(userId)
-  ensureObjectIdOrString(blockId)
 
+  try {
+    ensureObjectIdOrString(userId)
+    ensureObjectIdOrString(blockId)
+  }
+  catch(err) {
+    consle.error(err)
+    return
+  }
+
+  const bl=await mongoose.models.block.findById(blockId)
   // Alert if optional block was set to UNAVAILABLE
   const optional=(await mongoose.models.block.findById(blockId))?.optional
   if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
@@ -676,6 +693,7 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     {upsert: true}
   )
   const statusChanged=before?.achievement_status!==status
+  console.log('Setting', bl._id, bl.type, bl.name, 'to', status, 'changed', !!statusChanged)
   if (statusChanged && withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
@@ -894,7 +912,7 @@ module.exports={
   getSession, getBlockLiked, getBlockDisliked, setBlockLiked, setBlockDisliked,
   getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount,
   getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount,
-  updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, setSessionInitialStatus,
+  updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession,
   updateSessionStatus, saveBlockStatus, setScormData, getBlockNote, setBlockNote, getBlockScormData,getFinishedChildrenCount,
   getBlockNoteStr, computeBlockStatus, isFinished, getSessionProof, ensureValidProgramProduction,
   getFilteredTrainee, getTopParent,

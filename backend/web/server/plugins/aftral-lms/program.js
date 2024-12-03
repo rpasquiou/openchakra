@@ -77,7 +77,7 @@ const getSessionCertificate = async (userId, params, data) => {
 
     const filename= await getCertificateName(data._id, trainee._id)
     let buffer=null
-    let location=(await Progress.findOne({block: data._id, user: trainee._id})).certificate_url
+    let location=(await Progress.findOne({block: data._id, user: trainee._id}))?.certificate_url
     
     console.log(data.name, trainee.email, location ? 'Certificat déjà généré' : 'Certificat non encore généré')
     // Certificate was already generated ?
