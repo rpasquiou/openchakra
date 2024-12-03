@@ -11,6 +11,7 @@ const SIB_IDS={
   TRAINEE_REGISTER: 6,
   TRAINER_REGISTER: 7,
   ADMIN_IMPORT: 8,
+  CERTIFICATE: 10,
 }
 
 const NOTIFICATIONS_CONTENTS={
@@ -80,7 +81,26 @@ const sendForgotPassword = async ({user}) => {
   })
 }
 
+const sendCertificate = async ({user, session, attachment_name, attachment_url}) => {
+  return sendNotification({
+    notification: SIB_IDS.CERTIFICATE,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      program_name: session.name,
+      start_date: formatDate(session.start_date),
+      end_date: formatDate(session.end_date),
+      location: session.location,
+    },
+    attachment: {
+      name: attachment_name,
+      url: attachment_url,
+      type: 'application/pdf',
+    }
+  })
+}
+
 
 module.exports = {
-  sendImportError, sendInitTrainee, sendInitTrainer, sendForgotPassword,
+  sendImportError, sendInitTrainee, sendInitTrainer, sendForgotPassword, sendCertificate,
 }

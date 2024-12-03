@@ -85,6 +85,10 @@ VisioSchema.virtual('type', DUMMY_REF).get(function() {
   return TYPES[this._owner_type]
 })
 
+VisioSchema.virtual('active', DUMMY_REF).get(function() {
+  return !!this.start_date && !!this.end_date && moment().isBetween(moment(this.start_date).add(-10, 'minutes'), this.end_date)
+})
+
 VisioSchema.pre('validate',function(next) {
   console.log(this.start_date, this.duration, this.end_date)
   const dateConsistent=(!!this.start_date==!!this.duration) && (!!this.duration==!!this.end_date) 

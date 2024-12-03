@@ -6,8 +6,9 @@ const {
   setPostCreateData,
   setScormCallbackPost,
   setScormCallbackGet,
+  getDateFilter,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE, BLOCK_STATUS_FINISHED } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -58,6 +59,8 @@ const { session } = require('passport')
 const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
 const { getGroupTrainees } = require('./group')
+const { getCertificateName } = require('./utils')
+const { sendCertificate } = require('./mailing')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -242,6 +245,7 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 // Visio start
 declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
 declareComputedField({model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr})
+declareVirtualField({model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean'})
 // Visio end
 
 const preCreate = async ({model, params, user}) => {
@@ -715,6 +719,11 @@ const filterDataUser = async ({model, data, id, user, params}) => {
 setFilterDataUser(filterDataUser)
 
 const postPutData = async ({model, id, attribute, params, data, user}) => {
+  const sessionBlock=await Block.exists({_locked: true, _id: id})
+  // Don't propagate any data from session blocks
+  if (sessionBlock) {
+    return data
+  }
   // Propagate block attributes
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
@@ -855,6 +864,23 @@ const POLLING_FREQUENCY='0 */5 * * * *'
     console.error(`Polling error:${err}`)
   }
 }, null, true, 'Europe/Paris')
+
+// Send certifcates at session end
+!isDevelopment() && cron.schedule('0 0 4 * * *', async () => {
+  const yesterdayFilter=getDateFilter({attribute: 'end_date', day: moment().add(-1, 'day')})
+  const sessions=await Block.find({type: 'session', ...yesterdayFilter}).populate(['children', 'trainees'])
+  for (const session of sessions) {
+    console.log(`Session ${session.name} finished yesterday`)  
+    for (const trainee of session.trainees) {
+      const progress=await Progress.findOne({block: session._id, user: trainee._id, achievement_status: BLOCK_STATUS_FINISHED})
+      if (progress) {
+        const certif_name=await getCertificateName(session._id, trainee._id)
+        const certificate=await getSessionCertificate(trainee._id, null, session)
+        await sendCertificate({user: trainee, session, attachment_name: certif_name, attachment_url: certificate}).catch(console.error)
+      }
+    }
+  }
+})
 
 module.exports={
   preCreate, prePut, postCreate

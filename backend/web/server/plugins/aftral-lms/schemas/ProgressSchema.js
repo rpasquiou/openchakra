@@ -58,6 +58,11 @@ const ProgressSchema = new Schema({
   scorm_data: {
     type: String
   },
+  // Stores generated certificate for trainee/session
+  certificate_url: {
+    type: String,
+    required: false,
+  },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 ProgressSchema.virtual('homeworks', {
