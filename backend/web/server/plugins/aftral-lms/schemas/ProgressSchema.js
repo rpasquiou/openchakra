@@ -24,6 +24,9 @@ const ProgressSchema = new Schema({
   annotation: {
     type: String,
   },
+  finished_resources_count: {
+    type: Number,
+  },
   achievement_status: {
     type: String,
     enum: Object.keys(BLOCK_STATUS),
@@ -64,6 +67,8 @@ const ProgressSchema = new Schema({
     required: false,
   },
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+ProgressSchema.index({ block: 1, user: 1 }, {unique: true})
 
 ProgressSchema.virtual('homeworks', {
   ref: 'homework',

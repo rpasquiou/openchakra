@@ -1,5 +1,5 @@
 const NodeCache = require("node-cache")
-const moment=require('moment')
+const sha1=require('sha1')
 
 const withCache = fn => {
   const cache=new NodeCache({stdTTL: 30})
@@ -25,7 +25,7 @@ const withMeasureTime = (fn, prefix) => {
 
   const internal = async (...params) => {
     // const msg=`${prefix} ${fn.name} ${JSON.stringify(params)}`
-    const msg=`Measure time ${process.hrtime.bigint()} ${prefix} ${fn.name} ${JSON.stringify(params)} took`
+    const msg=`Measure time ${process.hrtime.bigint()} ${prefix} ${fn.name} ${sha1(JSON.stringify(params))} took`
     console.time(msg)
     const res=await fn(...params)
     console.timeEnd(msg)

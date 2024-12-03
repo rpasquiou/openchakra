@@ -84,8 +84,8 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({model, field: 'spent_time_str', getterFn: getBlockSpentTimeStr})
   declareEnumField({model, field: 'achievement_status', enumValues: BLOCK_STATUS})
   declareComputedField({model, field: 'achievement_status', requires: 'type', getterFn: getBlockStatus})
-  declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
-  declareComputedField({model, field: 'resources_progress', getterFn: getResourcesProgress})
+  // declareComputedField({model, field: 'finished_resources_count', getterFn: getFinishedResourcesCount})
+  declareComputedField({model, field: 'resources_progress', requires: 'finished_resources_count', getterFn: getResourcesProgress})
   declareComputedField({model, field: 'annotation', getterFn: getResourceAnnotation, setterFn: setResourceAnnotation})
   declareVirtualField({model, field: 'is_template', instance: 'Boolean'})
   declareVirtualField({model, field: 'search_text', instance: 'String', requires: 'code,name',

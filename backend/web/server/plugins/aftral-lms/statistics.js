@@ -24,7 +24,7 @@ const fillSession = async (session, trainee) => {
   fields=lodash.flatten(fields)
   fields= [...fields, 'evaluation_resources']
   return Promise.all(session.trainees.map(trainee => {
-    return loadFromDb({model: 'program', id: programId, fields, user: trainee})
+    return loadFromDb({model: 'program', id: programId, fields, user: trainee, skipRetain: true})
       .then(prog => {
         console.log('Load program for user', trainee._id)
         trainee.statistics=new Program(prog[0])
@@ -58,7 +58,7 @@ const computeStatistics = async ({fields, id, user, params}) => {
     }))
   }
   fields=[...fields, 'start_date', 'end_date', 'trainees']
-  const loaded=await loadFromDb({model: 'session', user, fields, ...sessionId})
+  const loaded=await loadFromDb({model: 'session', user, fields, skipRetain: true, ...sessionId})
   return Promise.resolve(loaded)
     .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
     .then(sessions => ([{_id: id, sessions}]))

@@ -10,26 +10,17 @@ const Block = require('../../models/Block')
 const User = require('../../models/User')
 const { BadRequestError } = require('../../utils/errors')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
+const { withMeasureTime } = require('../../utils/function_utilities')
 
 // HACK: use $sortArray in original when under mongo > 5.02
-const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional}) => {
-  if (!blockId) {
-    console.error('blockId is required')
-    throw new Error('blockId is required')
+const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional, ordered}) => {
+  if (!blockId ||!userId || lodash.isNil(includeUnavailable) || lodash.isNil(includeOptional)) {
+    const errorMsg=`blockId, userId, includeUnavailable, includeOptionalrequired, GOT ${[blockId, userId, includeUnavailable, includeOptional]}`
+    console.trace(errorMsg)
+    throw new Error(errorMsg)
   }
-  if (!userId) {
-    console.error('userId is required')
-    throw new Error('userId is required')
-  }
-  if (lodash.isNil(includeUnavailable)) {
-    console.trace('includeUnavailable is required')
-    throw new Error('includeUnavailable is required')
-  }
-  if (lodash.isNil(includeOptional)) {
-    console.trace('includeOptional is required')
-    throw new Error('includeOptional is required')
-  }
-  return getBlockResourcesNew({blockId, userId, includeUnavailable, includeOptional})
+  const res=await getBlockResourcesNew({blockId, userId, includeUnavailable, includeOptional})
+  return res
 }
 
 const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, includeOptional, role }) => {
@@ -50,12 +41,8 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
     }
     if (b.type == BLOCK_TYPE_RESOURCE) {
       if (role == ROLE_APPRENANT && !includeUnavailable) {
-        const available = await Progress.exists({
-          block: b._id,
-          user: userId,
-          achievement_status: { $in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED] }
-        });
-        if (!available) {
+        const unavailable = await Progress.exists({block: b._id,user: userId,achievement_status: BLOCK_STATUS_UNAVAILABLE})
+        if (unavailable) {
           continue
         }
       }
@@ -129,7 +116,7 @@ const getUserHomeworks = async (userId, params, data) => {
 }
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
-const getFinishedResourcesData = async (userId, blockId) => {
+const _getFinishedResourcesData = async (userId, blockId) => {
 
   const resources=await getBlockResources({blockId, userId, includeUnavailable: true, includeOptional: false})
   const totalResources=resources.length
@@ -138,13 +125,13 @@ const getFinishedResourcesData = async (userId, blockId) => {
 };
 
 const getFinishedResourcesCount = async (userId, params, data) => {
-  const { finishedResources } = await getFinishedResourcesData(userId, data._id)
+  const { finishedResources } = await _getFinishedResourcesData(userId, data._id)
   return finishedResources
 }
 
 const getResourcesProgress = async (userId, params, data) => {
-  const { finishedResources, totalResources } = await getFinishedResourcesData(userId, data._id)
-  return totalResources > 0 ? finishedResources / totalResources : 0
+  const { finishedResources, totalResources } = await _getFinishedResourcesData(userId, data._id)
+  return totalResources > 0 ?  finishedResources / totalResources : 0
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
