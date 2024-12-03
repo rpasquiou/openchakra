@@ -81,7 +81,7 @@ const sendForgotPassword = async ({user}) => {
   })
 }
 
-const sendCertificate = async ({user, session, attachment_name, attachment_url, attachment_type}) => {
+const sendCertificate = async ({user, session, attachment_name, attachment_url}) => {
   return sendNotification({
     notification: SIB_IDS.CERTIFICATE,
     destinee: user,
@@ -95,7 +95,7 @@ const sendCertificate = async ({user, session, attachment_name, attachment_url, 
     attachment: {
       name: attachment_name,
       url: attachment_url,
-      type: attachment_type,
+      type: 'application/pdf',
     }
   })
 }
