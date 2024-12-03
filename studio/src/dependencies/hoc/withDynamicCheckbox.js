@@ -13,12 +13,6 @@ const withDynamicCheckbox = Component => {
       return <Component {...props} value={value} insideGroup />
     }
 
-    useEffect(() => {
-      if (props.setComponentValue) {
-        props.setComponentValue(props.id, !!value)
-      }
-    }, [value])
-
     const onChange = ev => {
       setValue(!!ev.target.checked)
       if (!noautosave && !!dataSource) {
