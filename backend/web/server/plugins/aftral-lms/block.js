@@ -6,7 +6,7 @@ const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL } = require("./consts");
-const { getBlockResources, getBlockChildren } = require("./resources");
+const { getBlockResources, getBlockChildren, getResourcesCount } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
@@ -64,8 +64,8 @@ const getTopParent = async blockId => {
   return getTopParent(block.parent)
 }
 
-const getProgress = async (userId, blockId) => {
-  return mongoose.models.progress.findOne({user: userId, block: blockId})
+const getProgress = async (blockId, userId) => {
+  return mongoose.models.progress.findOne({block: blockId, user: userId})
 }
 
 const setParentSession = async (session_id) => {
@@ -103,7 +103,7 @@ const getBlockStatus = async (userId, params, data) => {
       return BLOCK_STATUS_FINISHED
     }
   }
-  return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
+  return (await getProgress(data._id, userId))?.achievement_status
 }
 
 const cloneTree = async (blockId, parentId) => {
@@ -227,7 +227,7 @@ const onBlockAction = async (userId, blockId) => {
       }
     }
   }
-  const progress=await Progress.findOne({user: userId, block: blockId})
+  const progress=await getProgress(blockId, userId)
   const rule=bl.achievement_rule
   const prevStatus=progress.achievement_status
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
@@ -254,7 +254,7 @@ const getBlockSession = async blockId => {
 
 const getNextResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true, ordered: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
@@ -264,7 +264,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true, ordered: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
@@ -676,6 +676,20 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     {upsert: true}
   )
   const statusChanged=before?.achievement_status!==status
+  
+  const type=(await mongoose.models.block.findById(blockId))?.type
+  if (statusChanged && status==BLOCK_STATUS_FINISHED && type==BLOCK_TYPE_RESOURCE) {
+    // Increment finished mandatory resources
+    const session=await getBlockSession(blockId)
+    const mandatory_resources=await getBlockResources({blockId: session._id, userId, includeUnavailable: true, includeOptional: false})
+    const isMandatory=!!mandatory_resources.find(r => idEqual(r._id, blockId))
+    console.log('Block', blockId,' was mandatory:', isMandatory)
+    const parents=await getParentBlocks(blockId)
+    console.log('INc for parents', parents)
+    await Progress.updateMany({user: userId, block: {$in: parents}}, {$inc: {finished_resources_count: 1}})
+     .then(console.log)
+     .catch(console.error)
+  }
   if (statusChanged && withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
@@ -699,7 +713,7 @@ const getBlockScormData = async (userId, blockId) => {
   if (!userId || !blockId) {
     throw new Error(userId, blockId)
   }
-  const pr=await Progress.findOne({block: blockId, user: userId})
+  const pr=await getProgress(blockId, userId)
   if (pr?.scorm_data) {
     return JSON.parse(pr.scorm_data)
   }
@@ -819,7 +833,7 @@ const getBlockNote = async (userId, params, data) => {
     return scormData?.['cmi.core.score.raw'] || undefined
   }
   else {
-    return (await getProgress({user: userId, block: data._id}))?.note || null
+    return (await getProgress(data._id, userId))?.note || null
   }
 }
 
@@ -831,7 +845,7 @@ const setBlockNote = async ({ id, attribute, value, user }) => {
   if (!!bl.homework_mode) {
     throw new BadRequestError(`La note doit être mise sur un devoir`)
   }
-  pr = await getProgress({user, id})
+  pr = await getProgress(id, user)
   pr.note=value
   return pr.save()
 }
