@@ -1,15 +1,19 @@
 const mime=require('mime-types')
+const moment=require('moment')
 const lodash=require('lodash')
 const Program=require('../../models/Program')
 const { getResourcesProgress, getBlockResources } = require('./resources')
 const { fillForm2, getFormFields } = require('../../../utils/fillForm')
 const { loadFromDb, idEqual } = require('../../utils/database')
 const Resource = require('../../models/Resource')
-const { BLOCK_TYPE_SESSION, BLOCK_STATUS } = require('./consts')
+const { BLOCK_TYPE_SESSION, BLOCK_STATUS, ROLE_APPRENANT } = require('./consts')
 const { formatDateTime, formatPercent, formatDate, formatDateEnglish } = require('../../../utils/text')
 const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
 const { isDevelopment } = require('../../../config/config')
+const User = require('../../models/User')
+const { ForbiddenError } = require('../../utils/errors')
+const { getCertificateName } = require('./utils')
 
 const PROGRAM_CERTIFICATE_ATTRIBUTES = [
   `name`,
@@ -39,6 +43,17 @@ async function getChapterData(userId, params, data) {
 
 // trainee_fullname,end_date,location
 const getSessionCertificate = async (userId, params, data) => {
+
+  if (moment().isBefore(data.end_date)) {
+    return null
+  }
+  const role=(await User.findById(userId)).role
+  if (role==ROLE_APPRENANT) {
+    if (!data.trainees.some(t => idEqual(t._id, userId))) {
+      throw new ForbiddenError(`Vous n'êtes pas enregistré sur cette session`)
+    }
+    data.trainees=data.trainees.filter(t => idEqual(t._id, userId))
+  }
 
   if (data.type!=BLOCK_TYPE_SESSION) {
     return null
@@ -94,12 +109,15 @@ const getSessionCertificate = async (userId, params, data) => {
     const pdfPath=template.url
     const pdf=await fillForm2(pdfPath, pdfData).catch(console.error)
     const buffer=await pdf.save()
-    const filename=`${data.code}-certif-${trainee.fullname}.pdf`
-    await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
-    return {filename: filename, buffer}
+    const filename= await getCertificateName(data._id, trainee._id)
+    const {Location} = await sendBufferToAWS({filename, buffer, type: 'certificate', mimeType: mime.lookup(filename)}).catch(console.error)
+    return {location: Location,filename: filename, buffer}
   }))
 
-  // Generate a zip
+  if (role==ROLE_APPRENANT) {
+    return documents[0].location
+  }
+  // Generate a zip 
   const zip=new AdmZip()
   documents.map(({filename, buffer}) => {
     zip.addFile(filename, buffer)
