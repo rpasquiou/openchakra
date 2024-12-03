@@ -128,7 +128,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   if (model=='jobUser' && !id) {
     // Must not return hidden users's  jobUsers 
-    const userIds=(await User.find({hidden: true})).map(u => u._id)
+    const userIds=(await User.find({
+      $or: [
+        { ti_visible: false },
+        { admin_visible: false }
+      ]
+    })).map(u => u._id)
     params['filter.user']={$nin: userIds}
   }
   if (model == 'jobUser' && (params?.['filter.search_field'] || params?.['filter.city'])) {
@@ -136,7 +141,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       const job = await JobUser.findById(id).populate('user').populate('activities').populate('skills')
       return { model, fields, id, data: [job], params }
     }
-    fields = lodash([...fields, 'user.hidden', 'user']).uniq().value()
+    fields = lodash([...fields, 'user.visible', 'user']).uniq().value()
 
     // Extract and clean search parameters
     const rawSearchQuery = params?.['filter.search_field']
@@ -153,7 +158,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       user: user,
     })
 
-    jobUsers = jobUsers.filter(j => !j.user.hidden)
+    jobUsers = jobUsers.filter(j => j.user.visible)
 
 
     if (city) {
@@ -316,6 +321,7 @@ USER_MODELS.forEach(m => {
       options: {ref: 'request'}}
   })
   declareVirtualField({model: m, field: 'qualified_str', instance: 'String'})
+  declareVirtualField({model: m, field: 'visible', instance: 'Boolean', requires: 'ti_visible,admin_visible'})
   declareVirtualField({model: m, field: 'visible_str', instance: 'String'})
   declareVirtualField({model: m, field: 'finished_missions_count', instance: 'Number', requires: 'missions'})
   declareVirtualField({model: m, field: 'missions', instance: 'Array', multiple: true,

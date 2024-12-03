@@ -125,6 +125,16 @@ const UserSchema = new Schema({
     enum: Object.keys(UNACTIVE_REASON),
     required: [function() { return !this.active}, 'Le raison de la désactivation est obligatoire'],
   },
+  ti_visible: {
+    type: Boolean,
+    default: true,
+    required: [function() { return this.role === ROLE_TI}, 'La visibilité est obligatoire'],
+  },
+  admin_visible: {
+    type: Boolean,
+    default: function() { return this.role !== ROLE_TI},
+    required: [true, 'La visibilité est obligatoire'],
+  },
   visibility: {
     type: String,
     enum: Object.keys(PROFILE_VISIBILITY),
@@ -365,8 +375,12 @@ UserSchema.virtual("qualified_str", DUMMY_REF).get(function() {
   return this.qualified ? 'qualifié' : 'à qualifier'
 });
 
+UserSchema.virtual('visible', DUMMY_REF).get(function() {
+  return this.ti_visible && this.admin_visible
+})
+
 UserSchema.virtual("visible_str", DUMMY_REF).get(function() {
-  return this.hidden ? 'masqué' : 'visible'
+  return this.visible ? 'visible' : 'masqué'
 });
 
 UserSchema.virtual("finished_missions_count", DUMMY_REF).get(function() {
