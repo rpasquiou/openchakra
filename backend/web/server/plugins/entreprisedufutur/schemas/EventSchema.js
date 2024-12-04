@@ -155,7 +155,12 @@ const EventSchema = new Schema({
     type: String,
     enum: Object.keys(BOOLEAN_ENUM),
     required: false
-  }
+  },
+  reservable_tickets: {
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
