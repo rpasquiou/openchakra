@@ -9,6 +9,11 @@ const UserTicketSchema = new Schema({
     ref: 'user',
     required: [true, `L'acheteur du ticket est obligatoire`]
   },
+  event_ticket: {
+    type: Schema.Types.ObjectId,
+    ref: 'eventTicket',
+    required: [true, `Le type de ticket est obligatoire`]
+  },
   url: {
     type: String,
     required: false
