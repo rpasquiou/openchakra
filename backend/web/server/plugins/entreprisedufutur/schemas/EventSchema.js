@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -151,6 +151,11 @@ const EventSchema = new Schema({
     ref: 'user',
     required: false
   },
+  star_event: {
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
+    required: false
+  }
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
