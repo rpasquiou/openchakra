@@ -188,14 +188,6 @@ const UserSchema = new Schema({
   seen_notifications_count: {
     type: Number
   },
-  scans: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'scan',
-      required: true
-    }],
-    default: []
-  }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
