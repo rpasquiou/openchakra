@@ -122,6 +122,14 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  waiting_list: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
