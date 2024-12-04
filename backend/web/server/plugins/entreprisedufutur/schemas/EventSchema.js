@@ -114,6 +114,14 @@ const EventSchema = new Schema({
     type: AddressSchema,
     required: true
   },
+  speakers: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
