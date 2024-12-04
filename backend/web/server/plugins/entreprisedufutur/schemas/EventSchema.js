@@ -109,7 +109,11 @@ const EventSchema = new Schema({
   location_address: {
     type: AddressSchema,
     required: [true, 'L\'adresse de la location est obligatoire'],
-  }
+  },
+  adress: {
+    type: AddressSchema,
+    required: true
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
