@@ -13,6 +13,10 @@ const UserTicketSchema = new Schema({
     type: String,
     required: false
   },
+  is_present: {
+    type: Boolean,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
