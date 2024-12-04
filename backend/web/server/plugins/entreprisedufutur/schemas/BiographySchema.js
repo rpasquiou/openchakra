@@ -13,6 +13,10 @@ const BiographySchema = new Schema({
     type: Date,
     required: false
   },
+  text: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
