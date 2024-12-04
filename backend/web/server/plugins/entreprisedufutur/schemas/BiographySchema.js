@@ -9,6 +9,10 @@ const BiographySchema = new Schema({
     ref: 'user',
     required: [true, `La cible de la biographie est obligatoire`]
   },
+  date: {
+    type: Date,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
