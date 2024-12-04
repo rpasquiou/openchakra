@@ -130,6 +130,10 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  tip: {
+    type: String,
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
