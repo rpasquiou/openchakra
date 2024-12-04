@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -169,6 +169,11 @@ const EventSchema = new Schema({
   tablemap_included: {
     type: String,
     enum: Object.keys(BOOLEAN_ENUM),
+    required: false
+  },
+  availability: {
+    type: String,
+    enum: Object.keys(EVENT_AVAILABILITIES),
     required: false
   },
 }, schemaOptions)
