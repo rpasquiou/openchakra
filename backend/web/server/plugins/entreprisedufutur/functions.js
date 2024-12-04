@@ -404,6 +404,7 @@ declareComputedField({model: 'event', field: 'related_events',  requires:'start_
 declareEnumField({model: 'event', field: 'star_event', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'reservable_tickets', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_ENUM})
+declareEnumField({model: 'event', field: 'tablemap_included', enumValues: BOOLEAN_ENUM})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
