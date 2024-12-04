@@ -1,15 +1,24 @@
 const DISCRIMINATOR_KEY = { discriminatorKey: 'type' }
-const DISC_PARTNER = 'partner'
+const DISC_EXPERT = 'expert'
 const DISC_MEMBER = 'member'
 const DISC_ADMIN = 'admin'
+const DISC_SUPERADMIN = 'superadmin'
+const DISC_LEADER = 'leader'
+const DISC_EXTERNAL_ADMIN = 'externaladmin'
 
 const ROLE_ADMIN = `ROLE_ADMIN`
-const ROLE_PARTNER = `ROLE_PARTNER`
+const ROLE_SUPERADMIN = `ROLE_SUPERADMIN`
+const ROLE_EXTERNAL_ADMIN = `ROLE_EXTERNAL_ADMIN`
+const ROLE_EXPERT = `ROLE_EXPERT`
+const ROLE_LEADER = `ROLE_LEADER`
 const ROLE_MEMBER = `ROLE_MEMBER`
 const ROLES = {
-  [ROLE_PARTNER]: `Partenaire`,
+  [ROLE_EXPERT]: `Expert`,
   [ROLE_MEMBER]: `Membre`,
-  [ROLE_ADMIN]: `Administrateur`
+  [ROLE_ADMIN]: `Administrateur`,
+  [ROLE_EXTERNAL_ADMIN]: `Administrateur externe`,
+  [ROLE_SUPERADMIN]: `Super administrateur`,
+  [ROLE_LEADER]: `Leader`
 }
 
 const BOOLEAN_ENUM_YES = `BOOLEAN_ENUM_YES`
