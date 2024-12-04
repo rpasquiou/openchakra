@@ -142,6 +142,10 @@ const EventSchema = new Schema({
     type: String,
     required: false
   },
+  short_description: {
+    type: String,
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
