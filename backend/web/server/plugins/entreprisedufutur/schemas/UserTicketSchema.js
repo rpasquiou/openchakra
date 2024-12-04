@@ -9,6 +9,10 @@ const UserTicketSchema = new Schema({
     ref: 'user',
     required: [true, `L'acheteur du ticket est obligatoire`]
   },
+  url: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
