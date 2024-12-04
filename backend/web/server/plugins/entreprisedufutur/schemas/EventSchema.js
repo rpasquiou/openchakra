@@ -146,6 +146,11 @@ const EventSchema = new Schema({
     type: String,
     required: false
   },
+  admin: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
