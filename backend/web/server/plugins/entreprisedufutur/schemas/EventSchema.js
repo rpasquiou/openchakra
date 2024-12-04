@@ -55,10 +55,6 @@ const EventSchema = new Schema({
     required: true,
     default: EVENT_VISIBILITY_PUBLIC,
   },
-  price: {
-    type: String,
-    required: false
-  },
   media_one: {
     type: String,
     required: false,
