@@ -403,6 +403,7 @@ declareVirtualField({model: 'event', field: 'registered_users_count', requires: 
 declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 declareEnumField({model: 'event', field: 'star_event', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'reservable_tickets', enumValues: BOOLEAN_ENUM})
+declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_ENUM})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})

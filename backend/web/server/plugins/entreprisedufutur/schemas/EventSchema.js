@@ -161,6 +161,11 @@ const EventSchema = new Schema({
     enum: Object.keys(BOOLEAN_ENUM),
     required: false
   },
+  meal_included: {
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
