@@ -8,6 +8,11 @@ const AddressSchema = require('../../../models/AddressSchema')
 const Schema = mongoose.Schema
 
 const EventSchema = new Schema({
+  creator: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: [true, `Le créateur de l'événement est obligatoire`]
+  },
   name: {
     type: String,
     required: [true, 'Le nom est obligatoire'],
