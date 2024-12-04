@@ -21,6 +21,10 @@ const BiographySchema = new Schema({
     type: String,
     required: false
   },
+  url: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
