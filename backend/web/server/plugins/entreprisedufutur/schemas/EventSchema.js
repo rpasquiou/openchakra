@@ -205,6 +205,12 @@ EventSchema.virtual('registered_users_count', DUMMY_REF).get(function() {
   return this.registered_users?.length
 })
 
+EventSchema.virtual('eventTickets', {
+  ref:'eventTicket',
+  localField:'_id',
+  foreignField:'event',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema
