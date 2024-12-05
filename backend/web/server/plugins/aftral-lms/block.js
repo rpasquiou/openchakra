@@ -18,6 +18,7 @@ const { fillForm2 } = require("../../../utils/fillForm");
 const { formatDate, formatPercent } = require('../../../utils/text');
 const { ensureObjectIdOrString } = require('./utils');
 const { getSessionTraineeVisio } = require('./visio');
+const { runPromisesWithDelay } = require('../../utils/concurrency');
 const ROOT = path.join(__dirname, `../../../static/assets/aftral_templates`)
 const TEMPLATE_NAME = 'template justificatif de formation.pdf'
 
@@ -685,7 +686,7 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     ensureObjectIdOrString(blockId)
   }
   catch(err) {
-    consle.error(err)
+    console.error(err)
     return
   }
 
@@ -739,7 +740,7 @@ const removeBlockStatus= async (userId, blockId, status) => {
 
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
   const block = await mongoose.models.block.findById(blockId).populate('children')
-  console.log('Computing status for', block._id, block.type, block.order, block.name)
+  console.log('Computing status for', block?.fullname)
   const blockStatus=await locGetBlockStatus(blockId)
   if (block.type==BLOCK_TYPE_RESOURCE) {
     if (block.status==BLOCK_STATUS_FINISHED) {
@@ -765,7 +766,12 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     }
     return blockStatus
   }
-  const childrenStatus=await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)))
+
+  let childrenStatus=[]
+  for (const child of block.children) {
+    const res=await computeBlockStatus(child._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
+    childrenStatus.push(res)
+  }
   // Check finished for non-optional only
   const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
   const allChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
@@ -787,10 +793,10 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     return blockStatus
   }
 
-  if (block.access_condition) {
+  if (!!block.access_condition) {
     if ([null, BLOCK_STATUS_UNAVAILABLE].includes(blockStatus)) {
       const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
-      const brotherStatus=brother ? await locGetBlockStatus(brother._id) : null
+      const brotherStatus=brother ? (await locGetBlockStatus(brother._id)) : null
       if (brotherStatus==BLOCK_STATUS_FINISHED) {
         const noAccesCondChildren=block.children.filter(c => !c.access_condition)
         await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))

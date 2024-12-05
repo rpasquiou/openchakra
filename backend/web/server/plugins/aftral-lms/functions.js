@@ -125,6 +125,8 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
   declareComputedField({model, field: 'proof', requires: 'trainees.fullname', getterFn: getSessionProof})
   declareComputedField({model,  field: 'certificate', requires: 'type,trainees.fullname,children,end_date,location,code', getterFn: getSessionCertificate })
+  declareVirtualField({model, field: 'fullname', type: 'String', requires: 'type,order,name,closed,access_condition'})
+  
 })
 
 //Program start
