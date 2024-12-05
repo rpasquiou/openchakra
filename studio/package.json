@@ -113,6 +113,7 @@
     "@types/react-dom": "^18.0.0",
     "@types/react-redux": "^7.1.7",
     "babel-jest": "^29.3.1",
+    "chroma-js": "^3.1.2",
     "copy-webpack-plugin": "^11.0.0",
     "eslint": "^8.23.0",
     "eslint-config-next": "12.2.5",
