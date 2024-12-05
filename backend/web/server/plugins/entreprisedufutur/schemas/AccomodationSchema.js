@@ -10,6 +10,10 @@ const AccomodationSchema = new Schema({
     enum: Object.keys(ACCOMODATION_TYPES),
     required: [true, `Le type d'équipement est obligatoire`]
   },
+  name: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
