@@ -688,7 +688,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   // To filter group containing sessions I belong to
   if (model=='group') {
-    fields=lodash.uniq([...fields, 'sessions'])
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
+      const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
+      params['filter.sessions']={$in: sessions}
+    }
   }
   
   return Promise.resolve({model, fields, id, user, params})
@@ -707,12 +710,6 @@ const filterDataUser = async ({model, data, id, user, params}) => {
       return session && moment().isBetween(session.start_date, session.end_date)
     })
     data=[]
-  }
-  if (model=='group' && !id) {
-    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
-      const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})).map(s => s._id)
-      data=data.filter(group => group.sessions.some(gs => sessionIds.some(si => idEqual(gs._id, si._id))))
-    }
   }
 
   return data
