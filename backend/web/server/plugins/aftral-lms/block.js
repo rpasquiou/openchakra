@@ -291,7 +291,7 @@ const getBlockLiked = async (userId, params, data) => {
   if(user.role == ROLE_CONCEPTEUR) {
     return template._liked_by.length > 0
   }
-  return template._liked_by.some(like => idEqual(like, userId))
+  return template?._liked_by.some(like => idEqual(like, userId))
 }
 
 const getBlockDisliked = async (userId, params, data) => {
@@ -300,7 +300,7 @@ const getBlockDisliked = async (userId, params, data) => {
   if(user.role == ROLE_CONCEPTEUR) {
     return template._disliked_by.length > 0
   }
-  return template._disliked_by.some(dislike => idEqual(dislike, userId))
+  return template?._disliked_by.some(dislike => idEqual(dislike, userId))
 }
 
 const setBlockLiked = async ({ id, attribute, value, user }) => {
@@ -787,14 +787,17 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     return blockStatus
   }
 
-  if (block.access_condition && !([null, BLOCK_STATUS_UNAVAILABLE].includes(blockStatus))) {
-    const brother=await mongoose.models.findOne({parent: block.parent, order: block.order-1})
-    const brotherStatus=brother ? await locGetBlockStatus(brother._id) : null
-    if (brotherStatus==BLOCK_STATUS_FINISHED) {
-      const noAccesCondChildren=block.children.filter(c => !c.access_condition)
-      await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
-      return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+  if (block.access_condition) {
+    if ([null, BLOCK_STATUS_UNAVAILABLE].includes(blockStatus)) {
+      const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
+      const brotherStatus=brother ? await locGetBlockStatus(brother._id) : null
+      if (brotherStatus==BLOCK_STATUS_FINISHED) {
+        const noAccesCondChildren=block.children.filter(c => !c.access_condition)
+        await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+        return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+      }
     }
+    return blockStatus
   }
   const noAccesCondChildren=block.children.filter(c => !c.access_condition)
   await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
