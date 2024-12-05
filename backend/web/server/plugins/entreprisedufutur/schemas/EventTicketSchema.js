@@ -22,6 +22,10 @@ const EventTicketSchema = new Schema({
     }],
     default: Object.keys(ROLES)
   },
+  media: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
