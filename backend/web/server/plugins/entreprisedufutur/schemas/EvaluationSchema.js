@@ -18,6 +18,11 @@ const EvaluationSchema = new Schema({
     type: Date,
     required: false
   },
+  global_rate: {
+    type: Number,
+    validate: [value => value <6 && value >0, `La note globale doit être entre 1 et 5`],
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
