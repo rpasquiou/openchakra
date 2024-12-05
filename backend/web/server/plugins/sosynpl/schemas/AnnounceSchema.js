@@ -431,4 +431,14 @@ AnnounceSchema.virtual('questions', {
   foreignField: 'announce',
 })
 
+AnnounceSchema.virtual('search_field', DUMMY_REF).get(function() {
+  let fields = [this.title]
+
+  if (this.expertises) {
+    fields = fields.concat(this.expertises.map(expertise => expertise.name))
+  }
+
+  return fields.join(' ')
+})
+
 module.exports = AnnounceSchema

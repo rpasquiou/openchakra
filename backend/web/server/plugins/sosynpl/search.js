@@ -4,7 +4,7 @@
 const lodash=require('lodash')
 const CustomerFreelance = require("../../models/CustomerFreelance")
 const Sector = require("../../models/Sector")
-const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS } = require("./consts")
+const { ROLE_FREELANCE, DEFAULT_SEARCH_RADIUS, AVAILABILITY_ON, ANNOUNCE_STATUS_ACTIVE, DURATION_FILTERS, WORK_DURATION_LESS_1_MONTH, WORK_DURATION_MORE_6_MONTH, WORK_DURATION__1_TO_6_MONTHS, MOBILITY_FRANCE, MOBILITY_NONE, DURATION_UNIT_DAYS, MOBILITY_CITY, MOBILITY_REGIONS, DURATION_UNIT_WORK_DAYS, DURATION_UNIT, ANNOUNCE_STATUS_PROVIDED } = require("./consts")
 const { computeDistanceKm } = require('../../../utils/functions')
 const Announce = require('../../models/Announce')
 const { REGIONS_FULL, SEARCH_FIELD_ATTRIBUTE } = require('../../../utils/consts')
@@ -222,41 +222,99 @@ const ANNOUNCE_TEXT_SEARCH_FIELDS=['description', 'expectation', 'company_descri
 
 const searchAnnounces = async (userId, params, data, fields)  => {
 
-  let filter={status: ANNOUNCE_STATUS_ACTIVE}
+  let filter = { ...params, 'filter.status': { $in: [ANNOUNCE_STATUS_ACTIVE, ANNOUNCE_STATUS_PROVIDED] } }
+
+  fields = [...fields, 'expertises', 'work_mode_site', 'work_mode_remote', 'title', 'experience', 'sectors', 'average_daily_rate']
+
+  if(!lodash.isNil(data.work_mode_site)) {
+    filter['filter.work_mode_site'] = data.work_mode_site
+  }
+  if(!lodash.isNil(data.work_mode_remote)) {
+    filter['filter.work_mode_remote'] = data.work_mode_remote
+  }
 
   if (!lodash.isEmpty(data.experiences)) {
-    filter.experience={$in: data.experiences}
-  }
-  
-  if (!lodash.isEmpty(data.sectors)) {
-    filter.sectors={$in: data.sectors}
-  }
-  
-  if (!lodash.isEmpty(data.expertises)) {
-    filter.expertises={$in: data.expertises}
+    filter['filter.experience'] = { $in: data.experiences }
   }
 
-  if (data.pattern?.trim()) {
-    let candidates = []
-    const regExp=new RegExp(data.pattern, 'i')
-    ANNOUNCE_TEXT_SEARCH_FIELDS.forEach(async(field) => { 
-      const newFilter = {...filter, ...{[field]:regExp}}
-      const cand = await processFilters(params, fields, data, newFilter, userId)
-      candidates = [...candidates, ...cand]
+  let announces = await search({
+    model: 'announce',
+    fields,
+    user: userId,
+    params: lodash.omitBy(filter, (_, k) => /^limit/.test(k)),
+    search_field: SEARCH_FIELD_ATTRIBUTE,
+    search_value: data.pattern || '',
+  })
+
+  if (!!data.min_daily_rate || !!data.max_daily_rate) {
+    const durationWorkDays = {}
+    Object.keys(DURATION_UNIT).forEach(unit => {
+      durationWorkDays[unit] = DURATION_UNIT_WORK_DAYS[unit] || 0
     })
-
-    return candidates
-  }
-
-  else {
-    return await processFilters(params, fields, data, filter, userId)
-  }
-
-
-  // if (!lodash.isEmpty(data.work_modes)) {
-  //   filter.work_mode={$in: data.work_modes}
-  // }
+    
+    announces = announces.filter(announce => {
+      if (!announce.duration || !announce.duration_unit || !announce.budget) return false
+      
+      const workDays = announce.duration * durationWorkDays[announce.duration_unit]
+      const dailyRate = announce.budget / workDays
   
+      if (data.min_daily_rate && dailyRate < data.min_daily_rate) return false
+      if (data.max_daily_rate && dailyRate > data.max_daily_rate) return false
+      
+      return true
+    })
+  }
+  
+
+  if (!lodash.isEmpty(data.work_durations)) {
+    announces = announces.filter(announce => {
+      const durationDays = announce.duration * DURATION_UNIT_DAYS[announce.duration_unit]
+      return data.work_durations.some(duration => DURATION_FILTERS[duration](durationDays))
+    })
+  }
+
+
+  if (!lodash.isEmpty(data.city)) {
+    announces = announces.filter((announce) => {
+
+      const cityMatch = announce.city?.city?.toLowerCase() === data.city.city?.toLowerCase()
+      const regionMatch = announce.city?.region?.toLowerCase() === data.city.region?.toLowerCase()
+
+      const exactMatch = cityMatch && regionMatch
+
+      if (exactMatch) {
+        return true
+      }
+
+      if (data.city_radius) {
+        const distance = computeDistanceKm(announce.city, data.city)
+        const isInRadius = !lodash.isNil(distance) && distance < data.city_radius
+        return isInRadius
+      }
+
+      return false
+    })
+  }
+
+  if (!lodash.isEmpty(data.expertises)) {
+    announces = announces.filter(announces => setIntersects(announces.expertises, data.expertises))
+  }
+
+  if (!lodash.isEmpty(data.sectors)) {
+    const allSectors=await Sector.findOne({name: /tou.*sect/i})
+    if (!data.sectors.some(s => idEqual(s._id, allSectors._id))) {
+      announces = announces.filter(f => {
+        return f.sectors.find(s => idEqual(s._id, allSectors._id))
+          || setIntersects(f.sectors, data.sectors)
+      })
+    }
+  }
+
+  if (!data.pattern?.trim() && !data.city) {
+    announces = announces.slice(0, MAX_RESULTS_NO_CRITERION)
+  }
+
+  return announces  
 }
 
 const processFilters = async (params, f, data, filter, userId) => {

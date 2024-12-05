@@ -332,6 +332,12 @@ declareEnumField({model: 'announce', field: 'mobility_regions', enumValues: REGI
 declareComputedField({model: 'announce', field: 'available_gold_soft_skills', getterFn: computeAvailableGoldSoftSkills})
 declareComputedField({model: 'announce', field: 'available_silver_soft_skills', requires: 'gold_soft_skills', getterFn: computeAvailableSilverSoftSkills})
 declareComputedField({model: 'announce', field: 'available_bronze_soft_skills', requires: 'gold_soft_skills,silver_soft_skills', getterFn: computeAvailableBronzeSoftSkills})
+declareVirtualField({
+  model: 'announce',
+  field: 'search_field',
+  instance: 'String',
+  requires: 'title,expertises,expertises.name'
+})
   // Declare virtuals for each pilar
   /*TODO:
   Codé avec le cul
