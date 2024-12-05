@@ -138,6 +138,14 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  accomodations: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'accomodation',
+      required: true,
+    }],
+    default: []
+  },
   tip: {
     type: String,
     required: false
