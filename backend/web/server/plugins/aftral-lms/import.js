@@ -25,7 +25,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { addChildAction } = require('./actions')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
-const { cloneTree, lockSession, setSessionInitialStatus } = require('./block')
+const { cloneTree, lockSession } = require('./block')
 const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
 const { sendInitTrainee, sendInitTrainer } = require('./mailing')
@@ -493,7 +493,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       await Program.findByIdAndUpdate(clonedProgram._id, { parent: session._id })
       await lockSession(session._id)
     }
-    await setSessionInitialStatus(session._id)
+
     // Mailing to new trainees
     const previousSession = previousSessions[session.aftral_id]
     const newTrainees = lodash.differenceBy(session.trainees, previousSession?.trainees || [], t => t.aftral_id || t)

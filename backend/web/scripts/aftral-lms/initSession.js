@@ -1,7 +1,6 @@
 const mongoose=require('mongoose')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 const { getDatabaseUri } = require('../../config/config')
-const { setSessionInitialStatus } = require('../../server/plugins/aftral-lms/block')
 const { getBlockChildren } = require('../../server/plugins/aftral-lms/resources')
 const Progress = require('../../server/models/Progress')
 const Session = require('../../server/models/Session')
@@ -22,7 +21,7 @@ const initSession = async sessionId => {
   }
   const children=await getBlockChildren({blockId: sessionId})
   await Promise.all(children.map(c => Progress.remove({block: c._id})))
-  return setSessionInitialStatus(sessionId)
+  return lockSession(sessionId)
 }
 
 const session=process.argv[2]
