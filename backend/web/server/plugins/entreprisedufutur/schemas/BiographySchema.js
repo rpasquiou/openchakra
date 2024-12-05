@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { BIOGRAPHY_STATUSES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -31,6 +32,11 @@ const BiographySchema = new Schema({
   },
   picture: {
     type: String,
+    required: false
+  },
+  status: {
+    type: String,
+    enum: Object.keys(BIOGRAPHY_STATUSES),
     required: false
   },
 }, {...schemaOptions})
