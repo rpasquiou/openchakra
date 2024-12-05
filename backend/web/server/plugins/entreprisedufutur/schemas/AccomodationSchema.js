@@ -23,6 +23,10 @@ const AccomodationSchema = new Schema({
     type: String,
     required: false
   },
+  description: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
