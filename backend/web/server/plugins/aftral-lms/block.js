@@ -691,6 +691,7 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   }
 
   const bl=await mongoose.models.block.findById(blockId)
+  console.trace('Setting', bl.fullname, 'tot status', status)
   // Alert if optional block was set to UNAVAILABLE
   const optional=(await mongoose.models.block.findById(blockId))?.optional
   if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
