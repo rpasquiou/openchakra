@@ -338,7 +338,7 @@ declareVirtualField({model: 'post', field: 'comments', instance: 'Array', multip
     instance: 'ObjectID',
     options: { ref: 'comment' }
   },})
-declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', '_liked_by'), setterFn: setterPinnedFn('post', '_liked_by'), requires:'_liked_by'})
+declareComputedField({model: 'post', field: 'liked', getterFn: getterPinnedFn('post', 'liked_by'), setterFn: setterPinnedFn('post', 'liked_by'), requires:'liked_by'})
 declareComputedField({ model: 'post', field: 'mine', requires: 'creator', getterFn: isMineForPost })
 
 

@@ -29,7 +29,7 @@ const PostSchema = new Schema({
     ref: 'group',
     required: false,
   },
-  _liked_by: {
+  liked_by: {
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
@@ -68,7 +68,7 @@ PostSchema.virtual('comments', {
 })
 
 PostSchema.virtual('likes_count', DUMMY_REF).get(function () {
-  return this._liked_by?.length || 0
+  return this.liked_by?.length || 0
 })
 
 /* eslint-enable prefer-arrow-callback */
