@@ -236,7 +236,7 @@ const VISIO_TYPE_SESSION=`VISIO_TYPE_SESSION`
 
 const VISIO_TYPE={
   [VISIO_TYPE_COACHING]:`Coaching`,
-  [VISIO_TYPE_GROUP]:`Séance de groupe`,
+  [VISIO_TYPE_GROUP]:``,
   [VISIO_TYPE_SESSION]:`Séance de session`,
 }
 
