@@ -27,6 +27,10 @@ const AccomodationSchema = new Schema({
     type: String,
     required: false
   },
+  discount_code: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
