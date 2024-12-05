@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ROLES } = require('../consts')
+const { ROLES, BOOLEAN_ENUM } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -46,6 +46,11 @@ const EventTicketSchema = new Schema({
     type: Number,
     required: false
   },
+  price_visibility: {
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
+    required: false
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

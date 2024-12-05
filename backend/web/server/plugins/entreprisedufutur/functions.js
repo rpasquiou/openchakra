@@ -459,6 +459,9 @@ declareVirtualField({model: 'carreer', field: 'candidates_count', requires: 'can
 //biography declarations
 declareEnumField({model: 'biography', field: 'status', enumValues:BIOGRAPHY_STATUSES})
 
+//EventTicket declarations
+declareEnumField({model: 'eventTicket', field: 'price_visibility', enumValues: BOOLEAN_ENUM})
+
 //UserTicket declarations
 declareEnumField({model: 'userTicket', field: 'status', enumValues: USERTICKET_STATUSES})
 
