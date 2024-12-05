@@ -387,7 +387,7 @@ const SESSION_MAPPING = admin => ({
   end_date: ({ record }) => record.DATE_FIN_SESSION && moment(record.DATE_FIN_SESSION, 'DD-MM-YYYY').endOf('day') || record.DATE_FIN_SESSION,
   name: async ({ record }) => {
     const code = await ProductCode.findOne({ code: record.CODE_PRODUIT })
-    const program = code ? await Program.findOne({ codes: code }) : null
+    const program = code ? await Program.findOne({ codes: code, _locked: false, origin:null }) : null
     if (!program) {
       throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
     }
