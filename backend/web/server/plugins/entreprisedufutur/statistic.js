@@ -66,7 +66,7 @@ const computeBellwetherStatistics = async (params) => {
       filters[k.slice(7)] = v
     }
     if (k == 'filter.region') {
-      filters['adress.region'] = REGIONS[v]
+      filters['city.region'] = REGIONS[v]
     }
   })
 
