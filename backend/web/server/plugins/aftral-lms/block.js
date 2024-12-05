@@ -530,7 +530,6 @@ const propagateAttributes=async (blockId, attributes=null) => {
   else {
     const forced=block._forced_attributes || []
     attributes=lodash.omit(attributes, forced)
-    // console.log('Setting', blockId, 'attributes', attributes)
     Object.assign(block, attributes)
     await block.save().catch(err => {
       console.error('Block', blockId, attributes, err)
@@ -627,7 +626,6 @@ const lockSession = async blockId => {
   const trainees=session.trainees
 
   const setAllTraineesStatus = (blockId, status, withChildren) => {
-    console.log('Setting', blockId, status, withChildren)
     return Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
   }
 
@@ -635,26 +633,36 @@ const lockSession = async blockId => {
   const allChildren=await getSessionBlocks(session)
   await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
 
+  const delta={
+    [BLOCK_TYPE_SESSION]:1,
+    [BLOCK_TYPE_PROGRAM]:2,
+    [BLOCK_TYPE_CHAPTER]:3,
+    [BLOCK_TYPE_MODULE]:4,
+    [BLOCK_TYPE_SEQUENCE]:5,
+    [BLOCK_TYPE_RESOURCE]:6,
+  }
   const toManage=[session]
   while (toManage.length>0) {
     let block=toManage.pop()
-    console.log('Manage block', block._id, block.type, block.name)
-    const children=await mongoose.models.block.find({parent: block._id})
+    const margin=' '.repeat(delta[block.type]*2)
+    console.log(margin, 'Manage block', block._id, block.type, block.order, block.name)
+    const children=await mongoose.models.block.find({parent: block._id}).sort({order:1})
     if (!!block.closed) {
-      console.log('Block closed, 1st child available, other children unavailable')
+      console.log(margin, 'Block closed, 1st child available, other children unavailable')
       await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
       // 2nd and remaining children unavailable
-      console.log('setting', children.slice(1).map(c => c._id))
+      console.log(margin, 'setting', children.slice(1).map(c => c._id))
       await Promise.all(children.slice(1).map(child => setAllTraineesStatus(child._id, BLOCK_STATUS_UNAVAILABLE, true))).catch(console.error)
+      console.log(margin, 'Pushing', children[0].type, children[0].order, children[0].name)
       toManage.push(children[0])
     }
     // Has access condition ?
     else if (!!block.access_condition && block.order>1) {
-      console.log('Block has access condition orderr>1, setting it and children unavailable')
+      console.log(margin, 'Block has access condition orderr>1, setting it and children unavailable')
       await setAllTraineesStatus(block._id, BLOCK_STATUS_UNAVAILABLE, true).catch(console.error)
     }
     else {
-      console.log('Setting available')
+      console.log(margin, 'Setting available')
       await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
       toManage.push(...children)
     }
@@ -693,7 +701,6 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     {upsert: true}
   )
   const statusChanged=before?.achievement_status!==status
-  console.log('Setting', bl._id, bl.type, bl.name, 'to', status, 'changed', !!statusChanged)
   if (statusChanged && withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
