@@ -9,6 +9,10 @@ const EvaluationSchema = new Schema({
     ref: 'user',
     required: [true, `Le créateur de l'avis est obligatoire`]
   },
+  date: {
+    type: Date,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
