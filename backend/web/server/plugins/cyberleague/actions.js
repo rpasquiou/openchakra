@@ -2,12 +2,21 @@ const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
-const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
-const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
+const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
+const Company = require('../../models/Company')
+
+
+const check_profil_completion = async ({ value }, user) => {
+  //action used for isActionAllowed
+  return {_id: value}
+}
+//TODO rename action to next_question
+addAction('check_profil_completion', check_profil_completion)
 
 
 const startSurvey = async (_, user) => {
@@ -82,6 +91,19 @@ const finishSurvey = async ({ value }, user) => {
       break;
   }
   await User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
+
+  //new scan notif
+  if (user.company_sponsorship) {
+    const sponsor = await Company.findById(user.company_sponsorship)
+    await addNotification({
+      users: sponsor.administrators,
+      targetId: score._id,
+      targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_NEW_DIAG],
+      type: NOTIFICATION_TYPE_NEW_DIAG,
+      customData: JSON.stringify({customUserId: user._id}),
+    })
+  }
+
   return score
 }
 //TODO rename action to finish_survey
@@ -165,6 +187,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
       await isDeleteUserNotificationAllowed({dataId, user, ...rest})
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
+    }
+  }
+
+  if (action == 'check_profil_completion') {
+    if (!user.is_profil_completed) {
+      throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
     }
   }
 

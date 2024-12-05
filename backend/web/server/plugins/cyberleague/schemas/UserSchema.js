@@ -4,7 +4,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS, LOOKING_FOR_OPPORTUNITIES_STATUS } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -118,7 +118,8 @@ const UserSchema = new Schema({
     required: false
   },
   looking_for_opportunities: {
-    type: Boolean,
+    type: String,
+    enum: Object.keys(LOOKING_FOR_OPPORTUNITIES_STATUS),
     required: false
   },
   certifications: {
@@ -169,6 +170,10 @@ const UserSchema = new Schema({
     type: String,
     required: false
   },
+  is_anonymous: {
+    type: Boolean,
+    default: true
+  },
   unseen_notifications: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -194,7 +199,7 @@ const UserSchema = new Schema({
       required: true
     }],
     default: []
-  }
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -289,6 +294,12 @@ UserSchema.virtual('companies', DUMMY_REF).get(function() {
   return this.company ? [this.company] : []
 })
 
+UserSchema.virtual('admin_companies', {
+  ref: 'company',
+  localField: '_id',
+  foreignField: 'administrators'
+})
+
 UserSchema.virtual('completed_scores', {
   ref:'score',
   localField:'_id',
@@ -296,6 +307,16 @@ UserSchema.virtual('completed_scores', {
   options: {
     match: {completed: COMPLETED_YES},
   },
+})
+
+UserSchema.virtual('completed_scores_count', {
+  ref:'score',
+  localField:'_id',
+  foreignField:'creator',
+  options: {
+    match: {completed: COMPLETED_YES},
+  },
+  count: true,
 })
 
 UserSchema.virtual('latest_score', {
@@ -312,6 +333,13 @@ UserSchema.virtual('posts', {
   ref: 'post',
   localField: '_id',
   foreignField: 'creator',
+})
+
+UserSchema.virtual('posts_count', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'creator',
+  count: true,
 })
 
 UserSchema.virtual('comments', {
@@ -392,10 +420,85 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
 
+UserSchema.virtual('is_profil_completed', DUMMY_REF).get(function() {
+  const requiredCompletionFields = lodash.map(REQUIRED_COMPLETION_FIELDS, (_,key) => {
+    return this[key]
+  }).filter((e) => !lodash.isNil(e))
+
+  const optionalCompletionFields = lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {
+    return this[key]
+  }).filter((e) => !lodash.isNil(e))
+
+  return !((31 + requiredCompletionFields.length * 15 + optionalCompletionFields.length * 3)<90)
+})
+
 UserSchema.virtual('registered_events', {
   ref:'event',
   localField:'_id',
   foreignField:'registered_users',
+})
+
+UserSchema.virtual('registered_past_events', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$lt: Date.now()}}
+    }
+  },
+})
+
+UserSchema.virtual('registered_past_events_count', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$lt: Date.now()}}
+    }
+  },
+  count: true
+})
+
+UserSchema.virtual('registered_futur_events', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$gt: Date.now()}}
+    }
+  },
+})
+
+UserSchema.virtual('registered_futur_events_count', {
+  ref:'event',
+  localField:'_id',
+  foreignField:'registered_users',
+  options: {
+    match: () => {
+      return {start_date: {$gt: Date.now()}}
+    }
+  },
+  count: true
+})
+
+UserSchema.virtual('scans_count', DUMMY_REF).get(function() {
+  return this.scans ? this.scans.length : 0
+})
+
+UserSchema.virtual('conversations', {
+  ref: 'conversation',
+  localField: '_id',
+  foreignField: 'users'
+})
+
+UserSchema.virtual('conversations_count', {
+  ref: 'conversation',
+  localField: '_id',
+  foreignField: 'users',
+  count: true
 })
 
 /* eslint-enable prefer-arrow-callback */

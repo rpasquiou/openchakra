@@ -26,6 +26,7 @@ const ProjectSettings = () => {
       metaImage,
       gaTag,
       consentId,
+      headScript,
     }
   } = useSelector(getFullComponents)
   
@@ -37,6 +38,7 @@ const ProjectSettings = () => {
     metaImage,
     gaTag,
     consentId,
+    headScript,
   })
 
 
@@ -91,6 +93,14 @@ const ProjectSettings = () => {
       tip: '(identifiant script consentement)',
       value: projectSettings.consentId
     },
+    // consent script id
+    headScript: {
+      label: 'Head script',
+      component: Textarea,
+      tip: '(script en-tête des pages)',
+      value: projectSettings.headScript,
+    },
+   
   }
 
 

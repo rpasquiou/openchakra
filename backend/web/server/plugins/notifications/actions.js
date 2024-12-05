@@ -1,35 +1,40 @@
 const mongoose = require('mongoose')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const lodash = require('lodash')
+const moment = require('moment')
 const { addAction } = require('../../utils/studio/actions')
-const { getModel } = require('../../utils/database')
-const { computeMessage } = require('./functions')
-const { computeUrl } = require('../../../config/config')
+const { getModel, idEqual, loadFromDb } = require('../../utils/database')
 
 
 const validateNotification = async ({value}, user) => {
   //check if value is a notif id in case validate action is used elsewhere
   const model = await getModel(value)
+  let notif
   if (model == 'notification') {
     //add user to seen_by_recipients
-    await mongoose.models[model].findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
+    const NotificationModel = mongoose.models.notification
+    await NotificationModel.findByIdAndUpdate(value,{$addToSet: {seen_by_recipients: user._id}})
+    notif = await loadFromDb({model: 'notification',id: value, fields: ['url']})
+    
+    notif = new NotificationModel(notif[0])
   }
+
+  return notif
 }
 
 addAction('validate',validateNotification)
 
 
-const addNotification = ({users, targetId, targetType, text, type, customData, picture}) => {
+const addNotification = async ({users, targetId, targetType, type, customData}) => {
   const NotificationModel = mongoose.models.notification
 
   return NotificationModel.create({
     recipients: users,
     _target: targetId,
     _target_type: targetType,
-    text: computeMessage(text),
     type: type,
-    url: computeUrl(targetId, targetType),
+    date: moment(),
     custom_data: customData,
-    picture
   })
 }
 
@@ -48,8 +53,8 @@ const isNotification = async (notifId) => {
   return notif
 }
 
-const isRecipient = (notif, user) => {
-  if (!(lodash.includes(notif.recipients,user._id))) {
+const isRecipient = (notif, user, dataId) => {
+  if (!(lodash.find(notif.recipients,(v) => idEqual(user._id, v)))) {
     throw new ForbiddenError(`User ${user._id} is not a recipient of notification ${dataId} `)
   }
 }
@@ -64,7 +69,7 @@ const isDeleteUserNotificationAllowed = async ({dataId, user}) => {
   const notif = await isNotification(dataId)
 
   //if user not in recipients
-  isRecipient(notif,user)
+  isRecipient(notif,user, dataId)
 
   return true
 }
@@ -73,7 +78,7 @@ const isValidateNotificationAllowed = async ({dataId, user, ...rest}) => {
   const notif = await isNotification(dataId)
 
   //if user not in recipients
-  isRecipient(notif, user)
+  isRecipient(notif, user, dataId)
 
   //if notif already seen by  user
   if (lodash.includes(notif.seen_by_recipients,user._id)) {

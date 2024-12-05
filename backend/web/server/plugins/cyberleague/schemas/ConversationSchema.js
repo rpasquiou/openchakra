@@ -22,7 +22,6 @@ const ConversationSchema = new Schema(
     partner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user',
-      default: null
     },
   },
   schemaOptions

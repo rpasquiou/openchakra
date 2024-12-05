@@ -755,6 +755,11 @@ export const ACTIONS: IActions = {
   validate: {
     label: 'Validate',
     options: {},
+    next: ['openPage', 'openUrl'],
+  },
+  check_profil_completion: {
+    label: 'check_profil_completion',
+    options: {},
     next: ['openPage'],
   },
 }

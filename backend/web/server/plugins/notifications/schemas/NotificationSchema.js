@@ -16,17 +16,21 @@ const createNotificationSchema = (allowedTypes) => {
       required: [true, `Le type de l'id de la target est obligatoire`]
     },
     text: {
+      //computed
       type: String,
-      required: [true, `Un texte est obligatoire pour une notification`]
     },
     type: {
       type: String,
       required: [true, `Le type de la notification est obligatoire`],
       enum: Object.keys(allowedTypes),
     },
+    date: {
+      type: Date,
+      required: [true, `La date de la notification est obligatoire`]
+    },
     url: {
+      //computed
       type: String,
-      required: [true, `L'url de la notification est obligatoire`]
     },
     recipients: {
       type: [{
@@ -45,8 +49,8 @@ const createNotificationSchema = (allowedTypes) => {
       default: []
     },
     picture: {
+      //computed
       type: String,
-      required: false
     },
     custom_data: {
       type: String,

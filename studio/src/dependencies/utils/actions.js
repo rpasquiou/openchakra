@@ -1143,6 +1143,16 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  check_profil_completion: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'check_profil_completion',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => ({value: res.data}))
+  },
+
   refresh: async ({reload}) => {
     reload()
   },
