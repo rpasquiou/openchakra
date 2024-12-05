@@ -130,6 +130,14 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  evaluations: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'evaluation',
+      required: true,
+    }],
+    default: []
+  },
   tip: {
     type: String,
     required: false
