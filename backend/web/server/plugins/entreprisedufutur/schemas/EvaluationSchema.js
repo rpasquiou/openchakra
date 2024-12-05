@@ -9,6 +9,11 @@ const EvaluationSchema = new Schema({
     ref: 'user',
     required: [true, `Le créateur de l'avis est obligatoire`]
   },
+  event: {
+    type: Schema.Types.ObjectId,
+    ref: 'event',
+    required: [true, `L'événement évalué est obligatoire`]
+  },
   date: {
     type: Date,
     required: false
