@@ -739,6 +739,7 @@ const removeBlockStatus= async (userId, blockId, status) => {
 
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
   const block = await mongoose.models.block.findById(blockId).populate('children')
+  console.log('Computing status for', block._id, block.type, block.order, block.name)
   const blockStatus=await locGetBlockStatus(blockId)
   if (block.type==BLOCK_TYPE_RESOURCE) {
     if (block.status==BLOCK_STATUS_FINISHED) {
@@ -774,7 +775,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
   }
   // If one child finished, next is available
-  if (block.closed) {
+  if (!!block.closed) {
     console.log(block.type, block.name, 'is closed')
     const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
     if (lastFinished<block.children.length-1) {
@@ -786,7 +787,17 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     return blockStatus
   }
 
-  await Promise.all(block.children.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+  if (block.access_condition && !([null, BLOCK_STATUS_UNAVAILABLE].includes(blockStatus))) {
+    const brother=await mongoose.models.findOne({parent: block.parent, order: block.order-1})
+    const brotherStatus=brother ? await locGetBlockStatus(brother._id) : null
+    if (brotherStatus==BLOCK_STATUS_FINISHED) {
+      const noAccesCondChildren=block.children.filter(c => !c.access_condition)
+      await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+      return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+    }
+  }
+  const noAccesCondChildren=block.children.filter(c => !c.access_condition)
+  await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
   return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
 };
 
