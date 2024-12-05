@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { ACCOMODATION_TYPES } = require('../consts')
+const AddressSchema = require('../../../models/AddressSchema')
 
 const Schema = mongoose.Schema
 
@@ -12,6 +13,10 @@ const AccomodationSchema = new Schema({
   },
   name: {
     type: String,
+    required: false
+  },
+  address: {
+    type: AddressSchema,
     required: false
   },
 }, {...schemaOptions})
