@@ -113,11 +113,12 @@ const withDynamicSelect = Component => {
       options?.filter(opt => internalValue.some(v => v==opt.key))
       :
       options?.find(opt => opt.key==internalValue)
+      // TODO : Manage property label <aucun>
       return (
         <Select {...props} onChange={onChange}
           value={selValue}
           isMulti={isMulti}
-          options={[{key: null, value: null, label: '<aucun>'}, ...options]} placeholder={null}
+          options={[{key: null, value: null}, ...options]} placeholder={null}
           chakraStyles={chakraStyles}
         />
       )
