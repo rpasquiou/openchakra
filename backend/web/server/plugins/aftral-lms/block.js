@@ -691,7 +691,6 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   }
 
   const bl=await mongoose.models.block.findById(blockId)
-  console.trace('Setting', bl.fullname, 'tot status', status)
   // Alert if optional block was set to UNAVAILABLE
   const optional=(await mongoose.models.block.findById(blockId))?.optional
   if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
@@ -755,14 +754,17 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       }
       if (prevStatus==BLOCK_STATUS_FINISHED) {
         if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
+          console.log(block?.fullname, 'brother is finished so i am available')
           return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
         }
       }
       else {
+        console.log(block?.fullname, 'has access condition and brother is not finished so i am available')
         return setBlockStatus(block._id, BLOCK_STATUS_UNAVAILABLE)
       }
     }
     if (lodash.isNil(blockStatus)) {
+      console.log(block?.fullname, 'has no status so settin available')
       return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
     }
     return blockStatus
@@ -770,7 +772,9 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
 
   let childrenStatus=[]
   for (const child of block.children) {
+    console.group()
     const res=await computeBlockStatus(child._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
+    console.groupEnd()
     childrenStatus.push(res)
   }
   // Check finished for non-optional only
@@ -779,6 +783,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
 
   // Block finished if all children finished
   if (allChildrenFinished) {
+    console.log(block?.fullname, 'is finished because all children are finished')
     return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
   }
   // If one child finished, next is available
@@ -787,9 +792,12 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
+      console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
       await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
       // Next children are unavailable
+      console.group()
       await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
+      console.groupEnd()
     }
     return blockStatus
   }
@@ -800,14 +808,24 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
       const brotherStatus=brother ? (await locGetBlockStatus(brother._id)) : null
       if (brotherStatus==BLOCK_STATUS_FINISHED) {
         const noAccesCondChildren=block.children.filter(c => !c.access_condition)
-        await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+        console.group(block?.fullname, 'has access condition, previous is finished so set available and all no cond children to available')
+        await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME, true) : null))
+        console.groupEnd()
         return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
       }
     }
     return blockStatus
   }
+
+  // If unavailable, don't change children
+  if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
+    return blockStatus
+  }
   const noAccesCondChildren=block.children.filter(c => !c.access_condition)
+  console.log(block.fullname, 'default set available')
+  console.group()
   await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+  console.groupEnd()
   return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
 };
 
