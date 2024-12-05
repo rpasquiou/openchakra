@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { USERTICKET_STATUSES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -21,6 +22,10 @@ const UserTicketSchema = new Schema({
   is_present: {
     type: Boolean,
     required: false
+  },
+  status: {
+    type: String,
+    enum: Object.keys(USERTICKET_STATUSES)
   },
 }, {...schemaOptions})
 
