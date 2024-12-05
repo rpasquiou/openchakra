@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
+const { ROLES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -12,6 +13,14 @@ const EventTicketSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'event',
     required: [true, `L'événement est obligatoire`]
+  },
+  _targeted_roles: {
+    type: [{
+      type: String,
+      enum: Object.keys(ROLES),
+      required: true,
+    }],
+    default: Object.keys(ROLES)
   },
 }, {...schemaOptions})
 
