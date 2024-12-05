@@ -110,7 +110,7 @@ const EventSchema = new Schema({
     type: AddressSchema,
     required: [true, 'L\'adresse de la location est obligatoire'],
   },
-  adress: {
+  address: {
     type: AddressSchema,
     required: true
   },
