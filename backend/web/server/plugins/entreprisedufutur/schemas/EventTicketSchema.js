@@ -30,6 +30,10 @@ const EventTicketSchema = new Schema({
     type: Number,
     required: false
   },
+  price: {
+    type: Number,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
