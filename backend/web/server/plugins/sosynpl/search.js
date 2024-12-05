@@ -127,10 +127,10 @@ const searchFreelances = async (userId, params, data, fields)  => {
 
   fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises', 'firstname', 'lastname', 'work_sector', 'work_mode_site', 'work_mode_remote']
 
-  if(!lodash.isNull(data.work_mode_site)) {
+  if(!lodash.isNil(data.work_mode_site)) {
     filter['filter.work_mode_site'] = data.work_mode_site
   }
-  if(!lodash.isNull(data.work_mode_remote)) {
+  if(!lodash.isNil(data.work_mode_remote)) {
     filter['filter.work_mode_remote'] = data.work_mode_remote
   }
   
