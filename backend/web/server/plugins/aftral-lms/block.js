@@ -793,7 +793,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
       console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
-      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
+      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
       // Next children are unavailable
       console.group()
       await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
