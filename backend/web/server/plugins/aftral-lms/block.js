@@ -5,7 +5,7 @@ const lodash = require("lodash");
 const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
-const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL } = require("./consts");
+const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL, BLOCK_STATUS_VALID } = require("./consts");
 const { getBlockResources, getBlockChildren } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
@@ -690,19 +690,15 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     return
   }
 
-  const bl=await mongoose.models.block.findById(blockId)
-  // Alert if optional block was set to UNAVAILABLE
-  const optional=(await mongoose.models.block.findById(blockId))?.optional
-  if (!!optional && status==BLOCK_STATUS_UNAVAILABLE) {
-    return getBlockStatus(userId, null, {_id: blockId})
-  }
+  console.log('Setting', blockId, 'to', status)
+
   const before=await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
   const statusChanged=before?.achievement_status!==status
-  if (statusChanged && withChildren) {
+  if (withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
       await Promise.all(children.map(child => saveBlockStatus(userId, child._id, status, withChildren)))
@@ -739,6 +735,9 @@ const removeBlockStatus= async (userId, blockId, status) => {
 }
 
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
+
+  const isValidOrFinished = status =>  [BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED].includes(status)
+
   const block = await mongoose.models.block.findById(blockId).populate('children')
   console.log('Computing status for', block?.fullname)
   const blockStatus=await locGetBlockStatus(blockId)
@@ -777,23 +776,36 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     console.groupEnd()
     childrenStatus.push(res)
   }
-  // Check finished for non-optional only
-  const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
-  const allChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
 
-  // Block finished if all children finished
+  // Check all finished => finished
+  const allChildrenStatus = lodash(childrenStatus).uniq();
+  const allChildrenFinished=allChildrenStatus.isEmpty() || allChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
   if (allChildrenFinished) {
     console.log(block?.fullname, 'is finished because all children are finished')
-    return setBlockStatus(block._id, BLOCK_STATUS_FINISHED)
+    await setBlockStatus(block._id, BLOCK_STATUS_FINISHED, true)
+    await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
+    return BLOCK_STATUS_FINISHED
   }
+  
+  // Check all mandatory finished or valid => valid
+  const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
+  const mandatoryChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.every(s => isValidOrFinished(s))
+  if (mandatoryChildrenFinished) {
+    console.log(block?.fullname, 'is valid because all mandatory children are finished')
+    await setBlockStatus(block._id, BLOCK_STATUS_VALID)
+    await Promise.all(block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
+    return BLOCK_STATUS_VALID
+  }
+
   // If one child finished, next is available
   if (!!block.closed) {
     console.log(block.type, block.name, 'is closed')
-    const lastFinished=lodash.findLastIndex(childrenStatus, s => s==BLOCK_STATUS_FINISHED)
+    const lastFinished=lodash.findLastIndex(childrenStatus, s => isValidOrFinished(s))
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
       console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
-      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME)
+      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
+      await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
       // Next children are unavailable
       console.group()
       await Promise.all(lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
@@ -824,7 +836,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
   const noAccesCondChildren=block.children.filter(c => !c.access_condition)
   console.log(block.fullname, 'default set available')
   console.group()
-  await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME) : null))
+  await Promise.all(noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME, true) : null))
   console.groupEnd()
   return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
 };
