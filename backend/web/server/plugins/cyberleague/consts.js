@@ -240,6 +240,7 @@ const COIN_SOURCE_LIKE_COMMENT = `COIN_SOURCE_LIKE_COMMENT`
 const COIN_SOURCE_BEGINNER_DIAG = `COIN_SOURCE_BEGINNER_DIAG`
 const COIN_SOURCE_MEDIUM_DIAG = `COIN_SOURCE_MEDIUM_DIAG`
 const COIN_SOURCE_EXPERT_DIAG = `COIN_SOURCE_EXPERT_DIAG`
+const COIN_SOURCE_SCAN = `COIN_SOURCE_SCAN`
 
 const COIN_SOURCES = {
   [COIN_SOURCE_WATCH] : `Consulter un contenu`,
@@ -248,7 +249,8 @@ const COIN_SOURCES = {
   [COIN_SOURCE_LIKE_COMMENT] : `Liker, commenter`,
   [COIN_SOURCE_BEGINNER_DIAG] : `Faire un diagnostic niveau débutant`,
   [COIN_SOURCE_MEDIUM_DIAG] : `Faire un diagnostic niveau intermédiaire`,
-  [COIN_SOURCE_EXPERT_DIAG] : `Faire un diagnostic niveau expert`
+  [COIN_SOURCE_EXPERT_DIAG] : `Faire un diagnostic niveau expert`,
+  [COIN_SOURCE_SCAN] : `Faire un scan`
 }
 
 const STATUT_PARTNER = `STATUT_PARTNER`
