@@ -193,6 +193,10 @@ const UserSchema = new Schema({
     required: true,
     default: false
   },
+  allergy: {
+    type: String,
+    required: false
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
