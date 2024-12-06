@@ -2,7 +2,7 @@
 
 const Scan = require('../../models/Scan')
 const { getSslScan } = require('../SslLabs')
-const { SCAN_STATUS_READY, SCAN_STATUS_ERROR } = require('./consts')
+const { SCAN_STATUS_READY, SCAN_STATUS_ERROR, COIN_SOURCE_SCAN } = require('./consts')
 
 const PROTOCOL_RATES = {
   ['2']: 0,     //SSL 2.0
@@ -94,6 +94,11 @@ const computeScanRatesIfResults = async (id,url) => {
   if (data.status == SCAN_STATUS_READY) {
     const scanRates = await computeScanRates(data)
     await Scan.findByIdAndUpdate(id, {...scanRates, status:SCAN_STATUS_READY})
+
+    //Token gain for scan action
+    gain = await Gain.findOne({source: COIN_SOURCE_SCAN})
+    await User.updateMany({scans: id}, {$inc: {tokens: gain.gain}})
+
     return
 
   } else if (data.status == SCAN_STATUS_ERROR) {
