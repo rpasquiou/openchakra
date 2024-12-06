@@ -197,6 +197,11 @@ const EventSchema = new Schema({
     enum: Object.keys(TIMEZONES),
     required: false
   },
+  tablemap: {
+    type: Schema.Types.ObjectId,
+    ref: 'tablemap',
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
