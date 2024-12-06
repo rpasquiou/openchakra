@@ -188,6 +188,11 @@ const UserSchema = new Schema({
   seen_notifications_count: {
     type: Number
   },
+  is_allergic: {
+    type: Boolean,
+    required: true,
+    default: false
+  },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
