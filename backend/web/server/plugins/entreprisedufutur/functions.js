@@ -486,6 +486,14 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 //Table declarations
 declareEnumField({model: 'table', field: 'partner_level', enumValues: PARTNER_LEVELS})
 
+//Tablemap declarations
+declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instance: 'Array',
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'table' }
+  }
+})
+
 
 
 // Ensure all expertise categories are defined
