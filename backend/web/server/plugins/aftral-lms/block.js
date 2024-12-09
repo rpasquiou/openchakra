@@ -675,6 +675,7 @@ const hasParentMasked = async (blockId) => {
   return block.masked || (block.parent && hasParentMasked(block.parent))
 }
 
+const ORDER=[BLOCK_STATUS_UNAVAILABLE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED]
 const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
     console.error('missing')
@@ -689,15 +690,23 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     console.error(err)
     return
   }
+  
+  const before=await Progress.findOne({block: blockId, user: userId})
 
-  // console.log('Setting', blockId, 'to', status)
+  const idxBefore=ORDER.indexOf(before?.achievement_status)
+  const idxAfter=ORDER.indexOf(status)
 
-  const before=await Progress.findOneAndUpdate(
+  // const bl=await mongoose.models.block.findById(blockId)
+  // console.trace('Setting', bl.fullname, 'from', before?.achievement_status, idxBefore, 'to', status, idxAfter)
+
+  if (idxAfter>idxBefore) {
+    await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
-  const statusChanged=before?.achievement_status!==status
+
+  }
   if (withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
@@ -789,7 +798,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (brother) {
       const brotherStatus=await locGetBlockStatus(brother._id)
       // console.log('My brother is', brother, 'its status is', brotherStatus)
-      if (brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID) {
+      if ((brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID)) {
         console.log(brother.fullname, 'was unavailable, setting to come')
         await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
         await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
@@ -801,7 +810,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
   // Check all mandatory finished or valid => valid
   const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
   const mandatoryChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.every(s => isValidOrFinished(s))
-  if (mandatoryChildrenFinished) {
+  if (mandatoryChildrenFinished && blockStatus!=BLOCK_STATUS_UNAVAILABLE) {
     // console.log(block?.fullname, 'is valid because all mandatory children are finished')
     await setBlockStatus(block._id, BLOCK_STATUS_VALID)
     await runPromisesWithDelay(() => block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
@@ -823,6 +832,9 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
       // console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
+      if (blockStatus==BLOCK_STATUS_TO_COME) {
+        return blockStatus
+      }
       await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
       await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
       // Next children are unavailable
