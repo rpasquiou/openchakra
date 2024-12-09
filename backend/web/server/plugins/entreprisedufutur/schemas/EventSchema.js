@@ -70,8 +70,11 @@ const EventSchema = new Schema({
   related_events: {
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'event'
-    }]
+      ref: 'event',
+      required: true
+    }],
+    required: false,
+    default: []
   },
   registered_users: {
     type: [{

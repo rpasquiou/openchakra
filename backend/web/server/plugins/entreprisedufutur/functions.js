@@ -396,7 +396,6 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
 declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
-declareComputedField({model: 'event', field: 'related_events',  requires:'start_date', getterFn: getRelated('event')})
 declareEnumField({model: 'event', field: 'star_event', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'reservable_tickets', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_ENUM})
@@ -544,7 +543,7 @@ const ensureMarketScore = async () => {
 ensureMarketScore()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+  console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
