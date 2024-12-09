@@ -40,6 +40,12 @@ const TableSchema = new Schema({
     validate: [function (value) {return value.length <= MAX_WISHES}, `Le nombre de voeux ne peut pas dépasser ${MAX_WISHES}`],
     default: []
   },
+  guest_number: {
+    type: Number,
+    required: true,
+    default: 0,
+    validate: [function (value) {return value => 0 && (value + this.staff_number <= this.capacity)}, `Le nombre de places pour le partenaire doit être compris entre 1 et la taille de la table`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
