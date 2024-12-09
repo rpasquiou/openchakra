@@ -3,6 +3,7 @@ import {IconButton} from '@chakra-ui/react'
 import { DownloadIcon } from '@chakra-ui/icons'
 import { imageSrcSetPaths } from '../utils/misc'
 import '../utils/scorm'
+import Visio from './Visio'
 
 /** TODO NGINX rewrite
 https://my-alfred-data-test.s3.eu-west-3.amazonaws.com/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
@@ -93,8 +94,14 @@ export const mediaWrapper = ({
       /></div>) || (null)
 
   const orgExt=getExtension(src.toLowerCase())
-  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+  let ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
+  let visioId=null
   // TODO: must handle actual src with LMS system
+
+  if (visio) {
+    ext='visio'
+    visioId= src.replace(/.*\//g, '')
+  }
   if (ext=='html') {
     const parsedUrl = new URL(src)
     // Embed youtube
@@ -198,6 +205,10 @@ export const mediaWrapper = ({
         <Comp />
         </>
 
+      )
+    case 'visio':
+      return (
+        <Visio room={visioId} />
       )
     default:
       const srcSet = imageSrcSetPaths(src)
