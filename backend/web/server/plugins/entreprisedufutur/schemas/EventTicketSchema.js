@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY } = require('../consts')
+const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY, USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -68,6 +68,17 @@ const EventTicketSchema = new Schema({
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
+
+EventTicketSchema.virtual('quantity_registered', {
+  ref:'userTicket',
+  localField:'_id',
+  foreignField:'event_ticket',
+  options: {
+    match: {completed: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}},
+  },
+  count: true,
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventTicketSchema
