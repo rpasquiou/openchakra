@@ -23,7 +23,7 @@ const TableSchema = new Schema({
     type: Number,
     required: true,
     default: 1,
-    validate: [function (value) {return value > 0 && value <= this.capacity}, `Le nombre de places pour le partenaire doit être compris entre 1 et la taille de la table`]
+    validate: [function (value) {return value > 0 && value + this.guest_number <= this.capacity}, `Le nombre de places pour le partenaire doit être compris entre 1 et la taille de la table`]
   },
   partner_level: {
     type: String,
