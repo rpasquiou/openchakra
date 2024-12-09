@@ -675,6 +675,7 @@ const hasParentMasked = async (blockId) => {
   return block.masked || (block.parent && hasParentMasked(block.parent))
 }
 
+const ORDER=[BLOCK_STATUS_UNAVAILABLE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED]
 const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
     console.error('missing')
@@ -690,15 +691,22 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     return
   }
   
-  // const bl=await mongoose.models.block.findById(blockId)
-  // console.trace('Setting', bl.fullname, 'to', status)
+  const before=await Progress.findOne({block: blockId, user: userId})
 
-  const before=await Progress.findOneAndUpdate(
+  const idxBefore=ORDER.indexOf(before?.achievement_status)
+  const idxAfter=ORDER.indexOf(status)
+
+  // const bl=await mongoose.models.block.findById(blockId)
+  // console.trace('Setting', bl.fullname, 'from', before?.achievement_status, idxBefore, 'to', status, idxAfter)
+
+  if (idxAfter>idxBefore) {
+    await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
     {block: blockId, user: userId, achievement_status: status},
     {upsert: true}
   )
-  const statusChanged=before?.achievement_status!==status
+
+  }
   if (withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
     if (children.length>0) {
@@ -790,7 +798,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (brother) {
       const brotherStatus=await locGetBlockStatus(brother._id)
       // console.log('My brother is', brother, 'its status is', brotherStatus)
-      if (brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID) {
+      if ((brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID)) {
         console.log(brother.fullname, 'was unavailable, setting to come')
         await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
         await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
