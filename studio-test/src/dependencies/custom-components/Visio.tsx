@@ -23,15 +23,19 @@ const Visio = ({room, ...props}) => {
     if (!user) {
       return console.warn(`No user for visio`)
     }
+
+    const isTrainee=!(/FORMATEUR/.test(user?.role))
+
     const domain = 'kmeet.infomaniak.com'; // Replace with your KMeet server domain if self-hosted
     const options = {
       roomName: room,
       parentNode: jitsiContainer.current,
       userInfo: {
-        displayName: user?.fullname,
-        email: user?.email,
+        displayName: user.fullname,
+        email: user.email,
       },
       configOverwrite: {         
+        disableModeratorIndicator: !!isTrainee,
         prejoinPageEnabled: false,		// Désactiver la page de pré-séance
         enableWelcomePage: false,		// Masquer la page d'accueil
         startWithVideoMuted: true,		// Démarrer avec la caméra désactivée
@@ -54,6 +58,9 @@ const Visio = ({room, ...props}) => {
         gravatar: {
             disabled: true,        // Désactiver les avatars générés automatiquement
         },
+        participantsPane: {
+          enabled: !isTrainee,
+        }
       },
     }
 
