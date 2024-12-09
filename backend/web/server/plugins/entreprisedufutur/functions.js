@@ -692,6 +692,13 @@ const preCreate = async ({model, params, user}) => {
     }
   }
 
+  if (model == 'eventTicket') {
+    if (!params.parent) {
+      throw new Error(`Il faut mettre l'événement du ticket en parent`)
+    }
+    params.event = params.parent
+  }
+
   let data = null
 
   return Promise.resolve({model, params, data})
