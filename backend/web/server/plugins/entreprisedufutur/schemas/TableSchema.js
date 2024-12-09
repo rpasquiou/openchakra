@@ -9,6 +9,10 @@ const TableSchema = new Schema({
     ref: 'tablemap',
     required: [true, `Le plan de table de la table est obligatoire`]
   },
+  capacity: {
+    type: Number,
+    required: [true, `Le nombre de places est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
