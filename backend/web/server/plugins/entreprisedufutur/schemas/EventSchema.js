@@ -194,6 +194,11 @@ const EventSchema = new Schema({
     ref: 'tablemap',
     required: false
   },
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: 'eventCategory',
+    required: false
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
