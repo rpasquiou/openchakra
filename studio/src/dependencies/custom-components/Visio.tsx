@@ -19,6 +19,12 @@ const Visio = ({room, ...props}) => {
   const jitsiContainer = useRef(null)
 
   useEffect(() => {
+    if (!room) {
+      return console.warn(`No room for visio`)
+    }
+    if (!user) {
+      return console.warn(`No user for visio`)
+    }
     const domain = 'kmeet.infomaniak.com'; // Replace with your KMeet server domain if self-hosted
     const options = {
       roomName: room,
