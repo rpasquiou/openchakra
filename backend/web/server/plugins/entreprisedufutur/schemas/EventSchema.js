@@ -104,15 +104,11 @@ const EventSchema = new Schema({
   },
   location_name: {
     type: String,
-    required: [true, 'Le nom de la location est obligatoire'],
+    required: [true, `Le nom du lieu est obligatoire`],
   },
   location_address: {
     type: AddressSchema,
-    required: [true, 'L\'adresse de la location est obligatoire'],
-  },
-  address: {
-    type: AddressSchema,
-    required: true
+    required: [true, `L'adresse du lieu est obligatoire`],
   },
   speakers: {
     type: [{
@@ -151,10 +147,6 @@ const EventSchema = new Schema({
     required: false
   },
   dress_code: {
-    type: String,
-    required: false
-  },
-  localisation_name: {
     type: String,
     required: false
   },
