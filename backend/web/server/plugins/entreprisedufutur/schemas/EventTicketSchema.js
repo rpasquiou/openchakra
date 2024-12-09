@@ -56,6 +56,10 @@ const EventTicketSchema = new Schema({
     required: true,
     default: false
   },
+  end_disponibility: {
+    type: Date,
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
