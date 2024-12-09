@@ -1018,18 +1018,6 @@ export const generateCode = async (
     `
   }
 
-  const generateHeadScript = () => {
-    if (!headScript) {
-      return ''
-    }
-    return `
-    <Helmet>
-      <script>
-      {${headScript}}
-      </script>
-    </Helmet>`
-  }
-
   let renderNullCode=''
   if(components.root.props.allowNotConnected=="false"){
     renderNullCode+= `if(!user){
@@ -1089,7 +1077,7 @@ const HeaderScript = () => {
   return (
     <Helmet>
       <script>
-        ${headScript}
+        ${headScript || ''}
       </script>
     </Helmet>
   )
@@ -1155,7 +1143,7 @@ const ${componentName} = () => {
       metaGaTag={'${gaTag}'}
     />
     ${generateConsentBanner()}
-    ${headScript && `<HeaderScript />` }
+    ${!!headScript?.trim() ? '<HeaderScript />' : ''}
     ${code}
     </>
 )};
