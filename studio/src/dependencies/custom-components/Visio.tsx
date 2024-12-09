@@ -1,6 +1,4 @@
-import { background } from '@chakra-ui/react';
 import React, { useEffect, useRef } from 'react'
-import {Helmet} from 'react-helmet'
 import { useUserContext } from '../context/user';
 
 const style=`
@@ -60,7 +58,6 @@ const Visio = ({room, ...props}) => {
     }
 
     let api
-
     if (window.JitsiMeetExternalAPI) {
       api = new window.JitsiMeetExternalAPI(domain, options);
     }
@@ -70,12 +67,7 @@ const Visio = ({room, ...props}) => {
   }, [room, user]);
 
   return (
-    <>
-      <Helmet>
-      <script src="https://meet.jit.si/external_api.js"></script>
-      </Helmet>
-      <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer} />
-    </>
+    <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer} />
   )
 }
 
