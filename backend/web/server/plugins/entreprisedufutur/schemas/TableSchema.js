@@ -46,6 +46,16 @@ const TableSchema = new Schema({
     default: 0,
     validate: [function (value) {return value => 0 && (value + this.staff_number <= this.capacity)}, `Le nombre de places pour le partenaire doit être compris entre 1 et la taille de la table`]
   },
+  guests: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }],
+    required: false,
+    validate: [function (value) {return value.length <= this.guest_number}, function () { return `Le nombre d'invité.e.s ne peut pas dépasser ${this.guest_number}`}],
+    default: []
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
