@@ -13,6 +13,11 @@ const TableSchema = new Schema({
     type: Number,
     required: [true, `Le nombre de places est obligatoire`]
   },
+  partner: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
