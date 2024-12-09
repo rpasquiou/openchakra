@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { PARTNER_LEVELS } = require('../consts')
+const { PARTNER_LEVELS, MAX_WISHES } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -29,6 +29,16 @@ const TableSchema = new Schema({
     type: String,
     enum: Object.keys(PARTNER_LEVELS),
     required: false
+  },
+  wishes: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }],
+    required: false,
+    validate: [function (value) {return value.length <= MAX_WISHES}, `Le nombre de voeux ne peut pas dépasser ${MAX_WISHES}`],
+    default: []
   },
 }, {...schemaOptions})
 
