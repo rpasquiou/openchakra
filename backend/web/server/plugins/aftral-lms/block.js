@@ -689,8 +689,9 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     console.error(err)
     return
   }
-
-  // console.log('Setting', blockId, 'to', status)
+  
+  // const bl=await mongoose.models.block.findById(blockId)
+  // console.trace('Setting', bl.fullname, 'to', status)
 
   const before=await Progress.findOneAndUpdate(
     {block: blockId, user: userId},
@@ -801,7 +802,7 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
   // Check all mandatory finished or valid => valid
   const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
   const mandatoryChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.every(s => isValidOrFinished(s))
-  if (mandatoryChildrenFinished) {
+  if (mandatoryChildrenFinished && blockStatus!=BLOCK_STATUS_UNAVAILABLE) {
     // console.log(block?.fullname, 'is valid because all mandatory children are finished')
     await setBlockStatus(block._id, BLOCK_STATUS_VALID)
     await runPromisesWithDelay(() => block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
@@ -823,6 +824,9 @@ const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locG
     if (lastFinished<block.children.length-1) {
       const brother=block.children[lastFinished+1]
       // console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
+      if (blockStatus==BLOCK_STATUS_TO_COME) {
+        return blockStatus
+      }
       await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
       await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
       // Next children are unavailable
