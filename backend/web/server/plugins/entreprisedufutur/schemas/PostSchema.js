@@ -24,9 +24,9 @@ const PostSchema = new Schema({
     type: String,
     required: false,
   },
-  group: {
+  event: {
     type: Schema.Types.ObjectId,
-    ref: 'group',
+    ref: 'event',
     required: false,
   },
   liked_by: {

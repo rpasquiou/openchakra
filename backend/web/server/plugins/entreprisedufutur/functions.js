@@ -548,12 +548,12 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     model='user'
     id = user?._id || 'INVALIDID'
   }
-  //if id is defined it is a get for a group, else it is for homepage posts
+  //if id is defined it is a get for an event, else it is for homepage posts
   if (model==`post`) {
     if (!id) {
-      params['filter.group'] = null
+      params['filter.event'] = null
     } else {
-      params.filter = {group: id}
+      params.filter = {event: id}
     }
   }
 
@@ -626,9 +626,9 @@ const preCreate = async ({model, params, user}) => {
 
   if(model === 'post') {
     if (params.parent) {
-      const parentModel = await getModel(params.parent, ['group','user'])
-      if (parentModel === 'group') {
-        params.group = params.parent
+      const parentModel = await getModel(params.parent, ['event','user'])
+      if (parentModel === 'event') {
+        params.event = params.parent
       } //if parent's model is user then it is a general feed post
     } else {
       params.group = null
