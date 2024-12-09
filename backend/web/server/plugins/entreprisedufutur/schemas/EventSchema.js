@@ -210,7 +210,7 @@ EventSchema.virtual('registered_users_count', DUMMY_REF).get(function() {
   return this.registered_users?.length
 })
 
-EventSchema.virtual('eventTickets', {
+EventSchema.virtual('event_tickets', {
   ref:'eventTicket',
   localField:'_id',
   foreignField:'event',

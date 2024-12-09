@@ -402,7 +402,7 @@ declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_EN
 declareEnumField({model: 'event', field: 'tablemap_included', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'availability', enumValues: EVENT_AVAILABILITIES})
 declareEnumField({model: 'event', field:'timezone', enumValues: TIMEZONES})
-declareVirtualField({model: 'event', field: 'eventTickets', multiple: true, instance: 'Array', 
+declareVirtualField({model: 'event', field: 'event_tickets', multiple: true, instance: 'Array', 
   caster: {
     instance: 'ObjectID',
     options: {ref: 'eventTicket'}
