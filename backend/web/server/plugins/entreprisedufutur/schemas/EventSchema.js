@@ -222,6 +222,13 @@ EventSchema.virtual('posts', {
   foreignField: 'event'
 })
 
+EventSchema.virtual('posts_count', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'event',
+  count: true,
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema

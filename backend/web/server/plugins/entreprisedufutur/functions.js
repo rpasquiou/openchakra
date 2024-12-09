@@ -413,6 +413,7 @@ declareVirtualField({model: 'event', field: 'posts', instance: 'Array', multiple
     instance: 'ObjectID',
     options: { ref: 'post' }
   },})
+declareVirtualField({model: 'event', field: 'posts_count', instance: 'Number'})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
