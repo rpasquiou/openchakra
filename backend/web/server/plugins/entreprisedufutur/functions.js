@@ -474,6 +474,7 @@ declareEnumField({model: 'biography', field: 'status', enumValues:BIOGRAPHY_STAT
 //EventTicket declarations
 declareEnumField({model: 'eventTicket', field: 'price_visibility', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'eventTicket', field: '_targeted_roles', multiple: true, enumValues: ROLES})
+declareEnumField({model: 'eventTicket', field: 'visibility', enumValues: EVENT_VISIBILITY})
 
 //UserTicket declarations
 declareEnumField({model: 'userTicket', field: 'status', enumValues: USERTICKET_STATUSES})

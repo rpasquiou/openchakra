@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ROLES, BOOLEAN_ENUM } = require('../consts')
+const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -58,6 +58,11 @@ const EventTicketSchema = new Schema({
   },
   end_disponibility: {
     type: Date,
+    required: false,
+  },
+  visibility: {
+    type: String,
+    enum: Object.keys(EVENT_VISIBILITY),
     required: false,
   },
 }, {...schemaOptions})
