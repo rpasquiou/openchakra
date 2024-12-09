@@ -66,6 +66,15 @@ const TableSchema = new Schema({
     validate: [function (value) {return value.length <= this.staff_number}, function () { return `Le nombre d'invité.e.s ne peut pas dépasser ${this.staff_number}`}],
     default: []
   },
+  assigned_users: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }],
+    required: false,
+    default: []
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
