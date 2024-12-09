@@ -19,7 +19,7 @@ const TableSchema = new Schema({
     ref: 'user',
     required: false
   },
-  partner_number: {
+  staff_number: {
     type: Number,
     required: true,
     default: 1,
