@@ -216,6 +216,12 @@ EventSchema.virtual('eventTickets', {
   foreignField:'event',
 })
 
+EventSchema.virtual('posts', {
+  ref: 'post',
+  localField: '_id',
+  foreignField: 'event'
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema
