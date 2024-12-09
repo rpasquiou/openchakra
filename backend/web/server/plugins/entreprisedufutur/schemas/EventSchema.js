@@ -202,6 +202,14 @@ const EventSchema = new Schema({
     ref: 'eventCategory',
     required: false
   },
+  attachments: {
+    type: [{
+      type: String,
+      required: true,
+    }],
+    required: false,
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
