@@ -15,7 +15,7 @@ const EventSchema = new Schema({
   },
   name: {
     type: String,
-    required: [true, 'Le nom est obligatoire'],
+    required: [true, `Le nom est obligatoire`],
   },
   description: {
     type: String,
