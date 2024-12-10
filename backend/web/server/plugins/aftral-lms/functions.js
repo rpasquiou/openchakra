@@ -159,6 +159,11 @@ USER_MODELS.forEach(model => {
   })
   declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
   declareComputedField({model, field: `visios`, getterFn: getUserVisiosDays})
+  declareVirtualField({model, field: 'sessions', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'session'}},
+  })
 })
 
 // search start
