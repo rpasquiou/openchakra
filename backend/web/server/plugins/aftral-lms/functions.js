@@ -238,6 +238,7 @@ CONVERSATION_MODELS.forEach(model => {
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
 declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
 declareComputedField({model: `session`, field: `visios`, getterFn: getSessionVisiosDays, requires: 'trainees'})
+declareVirtualField({model: `session`, field: `display_name`, instance: 'String', requires: 'session_product_code,code'})
 // Session end
 
 // Homework start
