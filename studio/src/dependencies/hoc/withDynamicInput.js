@@ -3,6 +3,7 @@ import lodash from 'lodash'
 import {InputGroup, InputRightElement} from '@chakra-ui/react'
 import {AiOutlineEye, AiOutlineEyeInvisible} from 'react-icons/ai'
 import { ACTIONS } from '../utils/actions'
+import MonthInput from '../custom-components/MonthPicker'
 
 const withDynamicInput = Component => {
 
@@ -65,6 +66,19 @@ const withDynamicInput = Component => {
     }
     if (displayEye) {
       props={...props, type:visibilityType}
+    }
+
+    if (props.type === 'month') {
+      return (
+        <MonthInput
+          {...props}
+          dataSource={dataSource}
+          setComponentValue={setComponentValue}
+          onChange={onChange}
+          value={internalDataValue}
+          readOnly={readOnly}
+        />
+      )
     }
 
     const withDisplayEye = Comp =>  {
