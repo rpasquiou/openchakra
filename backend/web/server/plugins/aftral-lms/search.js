@@ -12,7 +12,7 @@ const searchUsers = async (userId, params, data) => {
   const page=parseInt(params?.['page.users']) || undefined
   const orFilter = generateFilter({attributes: ['email', 'firstname', 'lastname'], pattern: data.pattern, or: true})
   const andFilter = generateFilter({attributes: ['email', 'firstname', 'lastname'], pattern: data.pattern, or: false})
-  let query=User.find(andFilter)
+  let query=User.find(andFilter).populate('sessions')
   if (page) {
     query=query.skip(page*limit)
   }
@@ -21,7 +21,7 @@ const searchUsers = async (userId, params, data) => {
   }
   let res=await query
   if (lodash.isEmpty(res)) {
-    query=User.find(orFilter)
+    query=User.find(orFilter).populate('sessions')
     if (page) {
       query=query.skip(page*limit)
     }
@@ -36,8 +36,8 @@ const searchUsers = async (userId, params, data) => {
 const searchBlocks = async (userId, params, data) => {
   const limit=parseInt(params?.['limit.blocks']) || undefined
   const page=parseInt(params?.['page.blocks']) || undefined
-  const orFilter = generateFilter({attributes: ['name', 'code'], pattern: data.pattern, or: true})
-  const andFilter = generateFilter({attributes: ['name', 'code'], pattern: data.pattern, or: false})
+  const orFilter = generateFilter({attributes: ['name', 'code', 'location'], pattern: data.pattern, or: true})
+  const andFilter = generateFilter({attributes: ['name', 'code', 'location'], pattern: data.pattern, or: false})
   let query=Block.find(andFilter).sort({type:1})
   if (page) {
     query=query.skip(page*limit)

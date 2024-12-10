@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const moment = require("moment")
 const bcrypt = require('bcryptjs')
 const { isEmailOk } = require("../../../../utils/sms")
 const { ROLES, ROLE_APPRENANT } = require("../consts")
@@ -91,6 +92,18 @@ UserSchema.virtual('tickets_count', {
   localField: '_id',
   foreignField: 'user',
   count: true,
+})
+
+UserSchema.virtual('sessions', {
+  ref: 'session',
+  localField: '_id',
+  foreignField: 'trainees',
+  options: {
+    match: () => ({
+      start_date: {$lt: Date.now()},
+      end_date: {$gte: Date.now()},
+    })
+  }
 })
 
 UserSchema.index(
