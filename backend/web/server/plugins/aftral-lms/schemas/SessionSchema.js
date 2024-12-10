@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
 const {BLOCK_DISCRIMINATOR}=require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const SessionSchema = new Schema({
   start_date: {
@@ -86,5 +87,11 @@ const SessionSchema = new Schema({
     ref: 'visioDay',
   }],
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
+
+/* eslint-disable prefer-arrow-callback */
+SessionSchema.virtual('display_name', DUMMY_REF).get(function() {
+  return `${this.code} (${this.session_product_code||''})`
+})
+/* eslint-enable prefer-arrow-callback */
 
 module.exports = SessionSchema
