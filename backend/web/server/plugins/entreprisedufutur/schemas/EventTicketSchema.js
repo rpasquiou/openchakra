@@ -79,7 +79,7 @@ EventTicketSchema.virtual('quantity_registered', {
   localField:'_id',
   foreignField:'event_ticket',
   options: {
-    match: {completed: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}},
+    match: {status: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}},
   },
   count: true,
 })
