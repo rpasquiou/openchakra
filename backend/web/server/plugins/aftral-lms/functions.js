@@ -58,7 +58,7 @@ const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
 const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
-const { getGroupTrainees } = require('./group')
+const { getGroupTrainees, getGroupTraineesCount } = require('./group')
 const { getCertificateName } = require('./utils')
 const { sendCertificate } = require('./mailing')
 require('../visio/functions')
@@ -208,7 +208,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
  // Permission end
 
 // Group start
-declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
+declareComputedField({model: `group`, field: `trainees_count`, instance: `Number`, getterFn: getGroupTraineesCount})
 declareComputedField({model: `group`, field: `visios`, getterFn: getGroupVisiosDays})
 declareComputedField({model: `group`, field: `trainees`, requires: 'sessions.trainees.fullname', getterFn: getGroupTrainees})
 // Group end
@@ -701,7 +701,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='group') {
     if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
       const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
-      params['filter.sessions']={$in: sessions}
+      params['filter.sessions']={$in: sessions.map(s => s._id)}
     }
   }
   

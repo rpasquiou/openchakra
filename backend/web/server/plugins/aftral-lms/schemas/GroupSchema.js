@@ -45,10 +45,9 @@ const GroupSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'user',
   }],
+  trainees_count: {
+    type: Number
+  }
 }, schemaOptions)
-
-GroupSchema.virtual('trainees_count', DUMMY_REF).get(function(){
-  return lodash.sum(this.sessions?.map(s => s.trainees?.length))
-})
 
 module.exports = GroupSchema
