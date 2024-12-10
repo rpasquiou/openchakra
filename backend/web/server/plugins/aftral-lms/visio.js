@@ -93,10 +93,14 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
   const myGroups=await Group.find({sessions: {$in: mySessions}}, {_id:1})
   _owner.push(...myGroups, ...mySessions)
   params={'filter._owner': _owner}
+  let visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   if (role==ROLE_FORMATEUR) {
-    params['filter.creator']=userId
+    params={
+      'filter.creator': userId,
+      'filter._id': {$nin:visios},
+    }
+    visios=[...visios, ...(await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true}))]
   }
-  const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
     .entries()
@@ -121,9 +125,12 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
   if (data.type=VISIO_TYPE_COACHING) {
     name==v._owner.name
   }
-    if (data.type=VISIO_TYPE_COACHING) {
+  if (data.type=VISIO_TYPE_COACHING) {
     if (idEqual(userId, v._owner._id)) {
       name=v.creator.fullname
+    }
+    else {
+      name=v._owner.fullname
     }
   }
   if (data.type==VISIO_TYPE_SESSION) {
