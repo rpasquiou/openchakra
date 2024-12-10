@@ -365,6 +365,11 @@ const UserSchema = new Schema({
   crm_id: {
     type: Number,
   },
+  reset_token: {
+    type: Schema.Types.ObjectId,
+    ref: 'resetToken',
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

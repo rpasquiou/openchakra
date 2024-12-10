@@ -1,6 +1,6 @@
 const axios = require('axios')
 const crypto=require('crypto')
-const { sendForgotPassword, sendNewMessage, sendAccountCreated } = require('./mailing')
+const { sendForgotPassword, sendNewMessage, sendAccountCreated, sendResetPassword } = require('./mailing')
 const {
   DAYS_BEFORE_IND_CHALL_ANSWER,
   PARTICULAR_COMPANY_NAME,
@@ -12,14 +12,15 @@ const {
   COACHING_STATUS_STOPPED,
   ROLE_EXTERNAL_DIET,
   ROLE_ADMIN,
-  ROLE_SUPER_ADMIN
+  ROLE_SUPER_ADMIN,
+  RESET_TOKEN_VALIDITY
 } = require('./consts')
 const {
   ensureChallengePipsConsistency,
   getRegisterCompany,
   canPatientStartCoaching
 } = require('./functions')
-const { generatePassword } = require('../../../utils/passwords')
+const { generatePassword, validatePassword } = require('../../../utils/passwords')
 const { importLeads } = require('./leads')
 const Content = require('../../models/Content')
 const Webinar = require('../../models/Webinar')
@@ -52,6 +53,7 @@ const Purchase = require('../../models/Purchase')
 const { PURCHASE_STATUS_NEW, API_ROOT, PURCHASE_STATUS_PENDING } = require('../../../utils/consts')
 const { upsertAccount } = require('../agenda/smartagenda')
 const Quizz = require('../../models/Quizz')
+const ResetToken = require('../../models/ResetToken')
 
 const smartdiet_join_group = ({ value, join }, user) => {
   return Group.findByIdAndUpdate(value, join ? { $addToSet: { users: user._id } } : { $pull: { users: user._id } })
@@ -245,16 +247,19 @@ const importModelData = ({ model, data }) => {
 }
 addAction('import_model_data', importModelData)
 
-const forgotPasswordAction = ({ context, parent, email }) => {
+const forgotPasswordAction = async ({ context, parent, email }) => {
   return User.findOne({ email })
-    .then(user => {
+    .then(async user => {
       if (!user) {
         throw new BadRequestError(`Aucun compte n'est associé à cet email`)
       }
-      const password = generatePassword()
-      user.password = password
+      if (user.reset_token) {
+        await ResetToken.findByIdAndDelete(user.reset_token)
+      }
+      const token = await ResetToken.create({})
+      user.reset_token = token
       return user.save()
-        .then(user => sendForgotPassword({ user, password }))
+        .then(user => sendResetPassword({ user, duration: RESET_TOKEN_VALIDITY, token: token.token}))
         .then(user => `Un email a été envoyé à l'adresse ${email}`)
     })
 }
@@ -415,6 +420,25 @@ const resetAssessment = async ({value}, sender) => {
   }
 }
 addAction('sm_reset_assessment', resetAssessment)
+
+const changePasswordAction = async ({value, password, password2}) => {
+  const token=await ResetToken.findById(value)
+  if (!token || moment().isAfter(token.valid_until)) {
+    console.warn(`Invalid token`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  const user=await User.findOne({reset_token: value})
+  if (!user) {
+    console.warn(`No user for`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  await validatePassword({password, password2})
+  user.password=password
+  const res=user.save()
+  await ResetToken.findByIdAndDelete(user.reset_token)
+  return res
+}
+addAction('changePassword', changePasswordAction)
 
 const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
   // Handle fast actions

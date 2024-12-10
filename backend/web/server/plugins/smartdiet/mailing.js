@@ -3,9 +3,12 @@ const {
   setNotificationsContents,
   setSmsContents,
   setSmsContact,
-  addValidationAllowedDomain
+  addValidationAllowedDomain,
+  getTagUrl
 } = require('../../utils/mailing')
 const { formatDate, formatHour } = require('../../../utils/text')
+const { RESET_TOKEN_VALIDITY } = require('./consts')
+const { computeUrl } = require('../../../config/config')
 
 const SIB_IDS={
   // Firebase notifications
@@ -33,6 +36,7 @@ const SIB_IDS={
   // CUSTOMERS
   ACCOUNT_CREATED: 30, // OK
   FORGOT_PASSWORD: 88, // OK
+  RESET_PASSWORD: 152, // OK
   /**
   SATISFY_SURVEY: 4996126,
   CONSULTATION_BOUGHT_OK: 4830569,
@@ -280,6 +284,19 @@ const sendAppointmentNotValidated = async ({destinee, appointment}) => {
   })
 }
 
+const sendResetPassword = async ({user, duration, token}) => {
+  const tagUrl=await getTagUrl('RESET_PASSWORD')
+  const resetPasswordUrl=`${computeUrl(tagUrl)}?id=${token}`
+  return sendNotification({
+    notification: SIB_IDS.RESET_PASSWORD,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      duration: RESET_TOKEN_VALIDITY,
+      reset_url: resetPasswordUrl,
+    },
+  })
+}
 module.exports = {
   sendAccountCreated,
   sendForgotPassword,
@@ -292,4 +309,5 @@ module.exports = {
   sendSaturday1, sendSaturday2, sendSaturday3, sendSaturday4,
   sendNewMessage,
   sendAppointmentRemindTomorrow, sendAppointmentNotValidated,
+  sendResetPassword,
 }

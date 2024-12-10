@@ -643,6 +643,8 @@ const PASSWORD_PATTERN_STR='15 caractères minimum dont une majuscule, une minus
 const LEAD_SEARCH_TEXT_FIELDS='firstname lastname email phone campain'.split(' ')
 const USER_SEARCH_TEXT_FIELDS='firstname lastname email phone'.split(' ')
 
+// Reset token validity in hours
+const RESET_TOKEN_VALIDITY=2
 
 module.exports={
   CONTENTS_TYPE,
@@ -744,4 +746,5 @@ module.exports={
   LEAD_SEARCH_TEXT_FIELDS, USER_SEARCH_TEXT_FIELDS,
   CONTENT_VISIBILITY, CONTENT_VISIBILITY_FOR_ALL, CONTENT_VISIBILITY_FOR_COMPANIES,
   CONTENT_ARTICLE, CONTENT_ARTICLE_STAR, CONTENT_ARTICLE_NO_STAR,
+  RESET_TOKEN_VALIDITY,
 }
