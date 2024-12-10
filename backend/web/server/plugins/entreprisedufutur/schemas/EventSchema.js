@@ -19,19 +19,19 @@ const EventSchema = new Schema({
   },
   description: {
     type: String,
-    required: [true, 'La description est obligatoire'],
+    required: [true, `La description est obligatoire`],
   },
   start_date: {
     type: Date,
-    required: [true, 'La date de début est obligatoire'],
+    required: [true, `La date de début est obligatoire`],
   },
   end_date: {
     type: Date,
-    required: [true, 'La date de fin est obligatoire'],
+    required: [true, `La date de fin est obligatoire`],
   },
   picture: {
     type: String,
-    required: [true, 'La picture est obligatoire'],
+    required: [true, `La picture est obligatoire`],
   },
   is_webinaire: {
     type: Boolean,
