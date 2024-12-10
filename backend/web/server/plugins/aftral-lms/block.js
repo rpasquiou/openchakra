@@ -663,7 +663,11 @@ const addChild = async ({parent, child, user, check=true}) => {
   await Promise.all(origins.map(origin => addChild({parent: origin._id, child: createdChild._id, user, check: false})))
 }
 
-const lockSession = async blockId => {
+/**
+ * Sets session inital status
+ * If trainee is provided, only his status will be created
+ */
+const lockSession = async (blockId, trainee) => {
   const session = await mongoose.models.block.findById(blockId).populate('children').populate('trainees')
   if (!session || session.type!=BLOCK_TYPE_SESSION) {
     throw new Error(`${blockId} null or not session:${session?.type}/${session.name}`)
@@ -676,9 +680,9 @@ const lockSession = async blockId => {
   }
 
   console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
-  const trainees=session.trainees
+  const trainees=trainee ? [trainee] : session.trainees
 
-  const setAllTraineesStatus = (blockId, status, withChildren) => {
+  const setTraineesStatus = (blockId, status, withChildren) => {
     return Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
   }
 
@@ -702,21 +706,21 @@ const lockSession = async blockId => {
     const children=await mongoose.models.block.find({parent: block._id}).sort({order:1})
     if (!!block.closed) {
       console.log(margin, 'Block closed, 1st child available, other children unavailable')
-      await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
+      await setTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
       // 2nd and remaining children unavailable
       console.log(margin, 'setting', children.slice(1).map(c => c._id))
-      await Promise.all(children.slice(1).map(child => setAllTraineesStatus(child._id, BLOCK_STATUS_UNAVAILABLE, true))).catch(console.error)
+      await Promise.all(children.slice(1).map(child => setTraineesStatus(child._id, BLOCK_STATUS_UNAVAILABLE, true))).catch(console.error)
       console.log(margin, 'Pushing', children[0].type, children[0].order, children[0].name)
       toManage.push(children[0])
     }
     // Has access condition ?
     else if (!!block.access_condition && block.order>1) {
       console.log(margin, 'Block has access condition orderr>1, setting it and children unavailable')
-      await setAllTraineesStatus(block._id, BLOCK_STATUS_UNAVAILABLE, true).catch(console.error)
+      await setTraineesStatus(block._id, BLOCK_STATUS_UNAVAILABLE, true).catch(console.error)
     }
     else {
       console.log(margin, 'Setting available')
-      await setAllTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
+      await setTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
       toManage.push(...children)
     }
   }
