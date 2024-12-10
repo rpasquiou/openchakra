@@ -8,6 +8,10 @@ const AttachmentSchema = new Schema({
     type: String,
     required: [true, `Le nom de la pièce jointe est obligatoire`]
   },
+  media: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
