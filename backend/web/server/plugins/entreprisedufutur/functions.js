@@ -501,6 +501,9 @@ declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instanc
   }
 })
 
+//Admin_dashboard declaration
+declareComputedField({model: 'admin_dashboard', field: 'event_count', getterFn: getterCountFn('event')})
+
 
 
 // Ensure all expertise categories are defined
