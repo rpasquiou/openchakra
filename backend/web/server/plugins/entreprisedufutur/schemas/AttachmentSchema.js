@@ -15,7 +15,7 @@ const AttachmentSchema = new Schema({
   },
   media: {
     type: String,
-    required: false
+    required: [true, `La pièce jointe est obligatoire`]
   },
 }, {...schemaOptions})
 
