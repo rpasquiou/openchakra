@@ -204,7 +204,8 @@ const EventSchema = new Schema({
   },
   attachments: {
     type: [{
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'attachment',
       required: true,
     }],
     required: false,
