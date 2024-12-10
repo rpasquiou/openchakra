@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1 } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -190,7 +190,8 @@ const EventSchema = new Schema({
   timezone: {
     type: String,
     enum: Object.keys(TIMEZONES),
-    required: false
+    required: false,
+    default: TIMEZONE_PLUS_1
   },
   tablemap: {
     type: Schema.Types.ObjectId,
