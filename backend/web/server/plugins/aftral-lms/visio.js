@@ -2,7 +2,7 @@ const mongoose=require('mongoose')
 const moment=require('moment')
 const lodash=require('lodash')
 const { loadFromDb, idEqual } = require('../../utils/database')
-const { ROLE_FORMATEUR, ROLE_APPRENANT, VISIO_TYPE, VISIO_TYPE_COACHING, VISIO_TYPE_SESSION } = require('./consts')
+const { ROLE_FORMATEUR, ROLE_APPRENANT, VISIO_TYPE_COACHING, VISIO_TYPE_SESSION, VISIO_TYPE_GROUP } = require('./consts')
 const Group = require('../../models/Group')
 const User = require('../../models/User')
 const Session = require('../../models/Session')
@@ -120,14 +120,14 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
   const v=await mongoose.models.visio.findById(data._id)
     .populate({path: '_owner', populate: 'fullname'})
     .populate('creator')
-  const type_str=VISIO_TYPE[data.type]
+
   let name
-  if (data.type=VISIO_TYPE_COACHING) {
-    name==v._owner.name
+  if (data.type==VISIO_TYPE_GROUP) {
+    name=v._owner.name
   }
-  if (data.type=VISIO_TYPE_COACHING) {
+  if (data.type==VISIO_TYPE_COACHING) {
     if (idEqual(userId, v._owner._id)) {
-      name=v.creator.fullname
+      name=`Coaching ${v.creator.fullname}`
     }
     else {
       name=v._owner.fullname
@@ -136,8 +136,7 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
   if (data.type==VISIO_TYPE_SESSION) {
     name=v._owner.code
   }
-  console.log(data, 'Visio owner is', v._owner)
-  return `${type_str} ${name}`  
+  return name
 }
 
 const getSessionTraineeVisio = async (session_id, user_id) => {
