@@ -8,6 +8,11 @@ const AttachmentSchema = new Schema({
     type: String,
     required: [true, `Le nom de la pièce jointe est obligatoire`]
   },
+  event: {
+    type: Schema.Types.ObjectId,
+    ref: 'event',
+    required: [true, `L'événement de la pièce jointe est obligatoire`]
+  },
   media: {
     type: String,
     required: false
