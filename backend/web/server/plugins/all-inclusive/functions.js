@@ -158,7 +158,8 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
       user: user,
     })
 
-    jobUsers = jobUsers.filter(j => j.user.visible)
+    // TODO: Check database for jobUser without user
+    jobUsers = jobUsers.filter(j => j.user?.visible)
 
 
     if (city) {
