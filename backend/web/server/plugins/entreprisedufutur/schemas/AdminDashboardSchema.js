@@ -9,6 +9,16 @@ const AdminDashboardSchema = new Schema({
     type: Number,
     required: false
   },
+  partner_list: {
+    //computed
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'company',
+      required: true
+    }],
+    default: [],
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

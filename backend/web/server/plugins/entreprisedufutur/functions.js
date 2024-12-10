@@ -40,6 +40,7 @@ const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, 
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
+const { getterPartnerList } = require('./admin_dashboard')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -503,6 +504,7 @@ declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instanc
 
 //Admin_dashboard declaration
 declareComputedField({model: 'admin_dashboard', field: 'event_count', getterFn: getterCountFn('event')})
+declareComputedField({model: 'admin_dashboard', field: 'partner_list', getterFn: getterPartnerList})
 
 
 
