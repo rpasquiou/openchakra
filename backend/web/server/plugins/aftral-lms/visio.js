@@ -2,7 +2,7 @@ const mongoose=require('mongoose')
 const moment=require('moment')
 const lodash=require('lodash')
 const { loadFromDb, idEqual } = require('../../utils/database')
-const { ROLE_FORMATEUR, ROLE_APPRENANT, VISIO_TYPE, VISIO_TYPE_COACHING } = require('./consts')
+const { ROLE_FORMATEUR, ROLE_APPRENANT, VISIO_TYPE, VISIO_TYPE_COACHING, VISIO_TYPE_SESSION } = require('./consts')
 const Group = require('../../models/Group')
 const User = require('../../models/User')
 const Session = require('../../models/Session')
@@ -90,14 +90,12 @@ const getUserVisiosDays = async (userId, params, data, fields, actualLogged) => 
     _owner.push(userId)
   }
   const mySessions=await Session.find({$or: [{trainees: userId}, {trainers: userId}]}, {_id:1})
-  console.log('in sessions', mySessions)
   const myGroups=await Group.find({sessions: {$in: mySessions}}, {_id:1})
   _owner.push(...myGroups, ...mySessions)
   params={'filter._owner': _owner}
   if (role==ROLE_FORMATEUR) {
     params['filter.creator']=userId
   }
-  console.log('params', params)
   const visios=await loadFromDb({model: 'visio', fields, user: userId, params, skipRetain: true})
   const grouped=lodash(visios)
     .groupBy(v => !!v.start_date ? moment(v.start_date).startOf('day') : null)
@@ -119,12 +117,19 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
     .populate({path: '_owner', populate: 'fullname'})
     .populate('creator')
   const type_str=VISIO_TYPE[data.type]
-  let name=`${v._owner.name || v._owner.fullname}`
+  let name
   if (data.type=VISIO_TYPE_COACHING) {
+    name==v._owner.name
+  }
+    if (data.type=VISIO_TYPE_COACHING) {
     if (idEqual(userId, v._owner._id)) {
       name=v.creator.fullname
     }
   }
+  if (data.type==VISIO_TYPE_SESSION) {
+    name=v._owner.code
+  }
+  console.log(data, 'Visio owner is', v._owner)
   return `${type_str} ${name}`  
 }
 
