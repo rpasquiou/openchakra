@@ -309,7 +309,7 @@ const databaseUpdate = async () => {
   await setCoachingAssQuizz()
   await updateAppointmentsOrder()
   await setAppointmentsProgress()
-  await setLeadCallDate()
+  //await setLeadCallDate()
 }
 
 module.exports=databaseUpdate
