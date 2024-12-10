@@ -6,7 +6,7 @@ const path=require('path')
 const file=require('file')
 const { splitRemaining, guessDelimiter } = require('../../../utils/text')
 const { importData, guessFileType, extractData } = require('../../../utils/import')
-const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK, isExternalTrainer, PROGRAM_STATUS_AVAILABLE, PROGRAM_STATUS } = require('./consts')
+const { RESOURCE_TYPE_EXCEL, RESOURCE_TYPE_PDF, RESOURCE_TYPE_PPT, RESOURCE_TYPE_VIDEO, RESOURCE_TYPE_WORD, ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLE_ADMINISTRATEUR, ROLE_APPRENANT, AVAILABLE_ACHIEVEMENT_RULES, RESOURCE_TYPE_SCORM, RESOURCE_TYPE_FOLDER, RESOURCE_TYPE_LINK, isExternalTrainer, PROGRAM_STATUS_AVAILABLE, PROGRAM_STATUS, BLOCK_TYPE_SESSION } = require('./consts')
 const { sendFileToAWS, sendFilesToAWS } = require('../../middlewares/aws')
 const User = require('../../models/User')
 const Program = require('../../models/Program')
@@ -30,6 +30,7 @@ const { isScorm } = require('../../utils/filesystem')
 const { getDataModel } = require('../../../config/config')
 const { sendInitTrainee, sendInitTrainer } = require('./mailing')
 const { generatePassword } = require('../../../utils/passwords')
+const Progress = require('../../models/Progress')
 require('../../models/Resource')
 
 const TRAINER_AFTRAL_ID='FORMATEUR_ID'
@@ -41,6 +42,8 @@ const getFileParams = async filename => {
   params.contents = fs.readFileSync(filename)
   params.type = await guessFileType(params.contents)
   if (params.type == TEXT_TYPE) {
+    params.contents=params.contents.toString().split('\n').filter(l => l?.trim().length>0).join('\n')
+    params.contents=Buffer.from(params.contents, 'utf-8')
     params.delimiter = await guessDelimiter(params.contents.toString())
   }
   params.date = fs.statSync(filename).mtimeMs
@@ -331,6 +334,9 @@ const importTrainers = async (filename) => {
   const previousTrainers = await getAftralTrainers()
   const records = await loadRecords(filename)
   const uniqueTrainers = lodash.uniqBy(records, TRAINER_AFTRAL_ID)
+  if (lodash.isEmpty(uniqueTrainers)) {
+    return []
+  }
   const res = await importData({
     model: 'user', data: uniqueTrainers,
     mapping: TRAINER_MAPPING,
@@ -378,6 +384,18 @@ const importTrainees = async (filename) => {
     identityKey: TRAINEE_KEY,
     migrationKey: TRAINEE_KEY,
   })
+  const importedTrainees=await User.find({role: ROLE_APPRENANT, aftral_id: {$exists: true, $in: uniqueTrainees.map(t => t[TRAINEE_AFTRAL_ID])}})
+  for (const trainee of importedTrainees) {
+    // Getting trainee sessions
+    const sessions=await Block.find({type: BLOCK_TYPE_SESSION, trainees: trainee._id})
+    for (const session of sessions) {
+      const hasProgress=await Progress.exists({user: trainee._id, block: session._id})
+      console.log(trainee.email, session.code, session.name, 'has progress', !!hasProgress)
+      if (!hasProgress) {
+        await lockSession(session._id, trainee)
+      }
+    }
+  }
   return [...res, ...importRes]
 }
 
