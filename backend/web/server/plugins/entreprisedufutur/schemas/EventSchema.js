@@ -158,9 +158,13 @@ const EventSchema = new Schema({
     required: false
   },
   admin: {
-    type: Schema.Types.ObjectId,
-    ref: 'user',
-    required: false
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true
+    }],
+    required: false,
+    default: []
   },
   star_event: {
     type: String,
