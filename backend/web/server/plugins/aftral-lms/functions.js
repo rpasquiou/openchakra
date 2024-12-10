@@ -58,7 +58,7 @@ const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
 const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
-const { getGroupTrainees } = require('./group')
+const { getGroupTrainees, getGroupTraineesCount } = require('./group')
 const { getCertificateName } = require('./utils')
 const { sendCertificate } = require('./mailing')
 require('../visio/functions')
@@ -208,7 +208,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
  // Permission end
 
 // Group start
-declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
+declareComputedField({model: `group`, field: `trainees_count`, instance: `Number`, getterFn: getGroupTraineesCount})
 declareComputedField({model: `group`, field: `visios`, getterFn: getGroupVisiosDays})
 declareComputedField({model: `group`, field: `trainees`, requires: 'sessions.trainees.fullname', getterFn: getGroupTrainees})
 // Group end
@@ -238,6 +238,7 @@ CONVERSATION_MODELS.forEach(model => {
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
 declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
 declareComputedField({model: `session`, field: `visios`, getterFn: getSessionVisiosDays, requires: 'trainees'})
+declareVirtualField({model: `session`, field: `display_name`, instance: 'String', requires: 'session_product_code,code'})
 // Session end
 
 // Homework start
@@ -477,19 +478,29 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   }
 
   // #230 Check only MSR inside program can be optional
-  if (params.optional=='true' && BLOCK_MODELS.includes(model)) {
-    const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+  if ('optional' in params && BLOCK_MODELS.includes(model)) {
     const block=await mongoose.models.block.findById(id)
-    if (!(ALLOWED_OPTIONALS.includes(block.type))) {
-      throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+    const optional=params.optional=='true' || params.optional===true
+    // Can not set mandatory if parent is optional
+    if (!optional) {
+      const optionalParent=await Block.exists({_id: block.parent, optional: true})
+      if (optionalParent) {
+        throw new BadRequestError(`${block.type_str} ${block.name} ne peut être obligatoire car son parent est facultatif`)
+      }
     }
-    const topParent=await getTopParent(id)
-    if (topParent.type!=BLOCK_TYPE_PROGRAM) {
-      throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+    if (optional) {
+      const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+      if (!(ALLOWED_OPTIONALS.includes(block.type))) {
+        throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+      }
+      const topParent=await getTopParent(id)
+      if (topParent.type!=BLOCK_TYPE_PROGRAM) {
+        throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+      }
     }
-    const wasOptional=await Block.exists({_id: id, optional: true})
-    if (!wasOptional) {
-      params.setChildrenOptional=true
+    const wasOptional=!!block.optional
+    if (wasOptional != optional) {
+      params.toggleOptional=true
     }
   }
 
@@ -690,7 +701,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model=='group') {
     if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
       const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
-      params['filter.sessions']={$in: sessions}
+      params['filter.sessions']={$in: sessions.map(s => s._id)}
     }
   }
   
@@ -729,9 +740,10 @@ const postPutData = async ({model, id, attribute, params, data, user}) => {
     await propagateAttributes(id)
   }
   // Set children optional recursively
-  if (BLOCK_MODELS.includes(model) && !!params.setChildrenOptional) {
+  if (BLOCK_MODELS.includes(model) && !!params.toggleOptional) {
+    const newOptional=await Block.exists({_id: id, optional: true})
     const children=await getBlockChildren({blockId: id})
-    await Block.updateMany({_id: {$in: children}}, {optional: true})
+    await Block.updateMany({_id: {$in: children}}, {optional: newOptional})
   }
   if (model=='homework') {
     await onBlockAction(data.trainee, data.resource)
