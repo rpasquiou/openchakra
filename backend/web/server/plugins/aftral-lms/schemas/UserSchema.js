@@ -98,12 +98,13 @@ UserSchema.virtual('sessions', {
   ref: 'session',
   localField: '_id',
   foreignField: 'trainees',
-  options: {
-    match: () => ({
-      start_date: {$lt: Date.now()},
-      end_date: {$gte: Date.now()},
-    })
-  }
+  // Finally show all sessions
+  // options: {
+  //   match: () => ({
+  //     start_date: {$lt: Date.now()},
+  //     end_date: {$gte: Date.now()},
+  //   })
+  // }
 })
 
 UserSchema.index(
