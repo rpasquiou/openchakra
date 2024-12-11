@@ -695,7 +695,7 @@ setPreprocessGet(preProcessGet)
 
 const preCreate = async ({model, params, user, skip_validation}) => {
   params.creator=user
-  if (['experience', 'communication', 'certification', 'training'].includes(model) && !params.user) {
+  if (['experience', 'communication', 'certification', 'training', 'question'].includes(model) && !params.user) {
     params.user=user
   }
   if (['software', 'languageLevel'].includes(model)) {
