@@ -53,6 +53,11 @@ const ApplicationSchema = new Schema({
     enum: Object.keys(APPLICATION_VISIBILITY),
     default: APPLICATION_VISIBILITY_HIDDEN,
   },
+  cgu_accepted: {
+    type: Boolean,
+    validate: [v => !!v, 'Vous devez accepter les CGU'],
+    required: [true, 'Vous devez accepter les CGU'],
+  },
 }, schemaOptions)
 
 ApplicationSchema.virtual('quotations', {
