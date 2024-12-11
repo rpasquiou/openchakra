@@ -113,16 +113,19 @@ addAction('smartdiet_read_content', readContent)
 
 
 const generateTables = async ({value, nb_seats, nb_tables}, user) => {
+
+  const nbRegex = new RegExp (`^[0-9]*$`)
+  
   if (!value) {
     throw new NotFoundError(`no tablemap id`)
   }
 
-  if (typeof nb_seats != 'number') {
-    throw new TypeError(`nb_seats is nor a number`)
+  if (!nbRegex.test(nb_seats)) {
+    throw new TypeError(`nb_seats is not a number`)
   }
 
-  if (typeof nb_tables != 'number') {
-    throw new TypeError(`nb_tables is nor a number`)
+  if (!nbRegex.test(nb_tables)) {
+    throw new TypeError(`nb_tables is not a number`)
   }
 
   for (let i = 0; i < nb_tables; i++) {
