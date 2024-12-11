@@ -119,26 +119,6 @@ const AnnounceSchema = new Schema({
     }],
     required: true,
     default: [],
-    validate: [
-      {
-        validator: function(value) {
-          if (this.mobility === MOBILITY_REGIONS) {
-            return value.length >= 1
-          }
-          return true
-        },
-        message: 'Le nombre de régions minimum est 1',
-      },
-      {
-        validator: function(value) {
-          if (this.mobility === MOBILITY_REGIONS) {
-            return value.length <= 3
-          }
-          return true
-        },
-        message: 'Le nombre de régions maximum est 3',
-      }
-    ]
   },
   
   budget: {
