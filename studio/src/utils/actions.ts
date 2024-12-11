@@ -762,6 +762,14 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  generate_tables: {
+    label: 'generate tables',
+    options: {
+      nb_tables: ({components}) => components.map(p => ({key: p.id, label: p.id})),
+      nb_seats: ({components}) => components.map(p => ({key: p.id, label: p.id})),
+    },
+    next: [],
+  },
 }
 
 export const allowsActions = (component: IComponent) => {

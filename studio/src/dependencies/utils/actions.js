@@ -1156,4 +1156,17 @@ return Promise.allSettled(imagePromises)
   refresh: async ({reload}) => {
     reload()
   },
+
+  generate_tables: ({value, props, level, getComponentValue}) => {
+    const nb_tables = getComponentValue(props.nb_tables, level)
+    const nb_seats = getComponentValue(props.nb_seats, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'generate_tables',
+      value: value?._id,
+      nb_seats,
+      nb_tables
+    }
+    return axios.post(url, body)
+  }
 }

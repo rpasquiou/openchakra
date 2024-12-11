@@ -8,6 +8,7 @@ const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINN
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
+const Table = require('../../models/Table')
 
 
 const startSurvey = async (_, user) => {
@@ -109,6 +110,27 @@ const readContent = async ({ value }, user) => {
 }
 //TODO rename action to read_content
 addAction('smartdiet_read_content', readContent)
+
+
+const generateTables = async ({value, nb_seats, nb_tables}, user) => {
+  if (!value) {
+    throw new NotFoundError(`no tablemap id`)
+  }
+
+  if (typeof nb_seats != 'number') {
+    throw new TypeError(`nb_seats is nor a number`)
+  }
+
+  if (typeof nb_tables != 'number') {
+    throw new TypeError(`nb_tables is nor a number`)
+  }
+
+  for (let i = 0; i < nb_tables; i++) {
+    await Table.create({tablemap: value, capacity: nb_seats})
+  }
+  return value
+}
+addAction('generate_tables', generateTables)
 
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
