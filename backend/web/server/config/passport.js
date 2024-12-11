@@ -5,28 +5,36 @@ const AnonymousStrategy = require('passport-anonymous').Strategy
 const BasicStrategy = require('passport-http').BasicStrategy
 const bcrypt = require('bcryptjs')
 const User = require('../models/User')
+const keys = require('./keys')
 
 // Requires connection
-const cookieStrategy=new CookieStrategy(
-  (token, done) => {
-    const user=jwt.decode(token)
+const cookieStrategy = new CookieStrategy((token, done) => {
+  try {
+    const user = jwt.verify(token, keys.JWT.secretOrKey)
     User.findById(user.id)
-      .then(user => {
+      .then((user) => {
         if (user) {
           return done(null, user)
         }
-        return done(null, false, {message: 'Vous devez être connecté'})
+        return done(null, false, { message: 'Vous devez être connecté' })
       })
-      .catch(err => console.error(err))
-  },
-)
+      .catch((err) => console.error(err))
+  } catch (err) {
+    return done(null, false, { message: 'Token expired or invalid' })
+  }
+})
 passport.use(cookieStrategy)
 
 // Allows non-connected (i.e. for unconnected search)
 passport.use(new AnonymousStrategy())
 
 const sendCookie = (user, res) => {
-  const token=jwt.sign({id: user.id}, 'secret')
+  const options = {}
+  if (keys.JWT.expiresIn) {
+    options.expiresIn = keys.JWT.expiresIn
+  }
+
+  const token = jwt.sign({ id: user.id }, keys.JWT.secretOrKey, options)
   return res.cookie('token', token, {
     httpOnly: false,
     secure: true,
