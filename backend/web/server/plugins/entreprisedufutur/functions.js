@@ -711,6 +711,13 @@ const preCreate = async ({model, params, user}) => {
     params.event = params.parent
   }
 
+  if (model == 'table') {
+    if (!params.parent) {
+      throw new Error(`Il faut mettre le plan de table en parent`)
+    }
+    params.tablemap = params.parent
+  }
+
   let data = null
 
   return Promise.resolve({model, params, data})
