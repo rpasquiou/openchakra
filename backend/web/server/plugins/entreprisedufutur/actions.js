@@ -9,6 +9,7 @@ const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
 const Table = require('../../models/Table')
+const Event = require('../../models/Event')
 
 
 const startSurvey = async (_, user) => {
@@ -128,8 +129,10 @@ const generateTables = async ({value, nb_seats, nb_tables}, user) => {
     throw new TypeError(`nb_tables is not a number`)
   }
 
+  const event = await Event.findById(value, ['tablemap'])
+
   for (let i = 0; i < nb_tables; i++) {
-    await Table.create({tablemap: value, capacity: nb_seats})
+    await Table.create({tablemap: event.tablemap, capacity: nb_seats})
   }
   return value
 }
