@@ -557,7 +557,7 @@ const ensureMarketScore = async () => {
 ensureMarketScore()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+  //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
