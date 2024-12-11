@@ -36,6 +36,7 @@ const { getRelated } = require('./related')
 const { getLooking } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
+const Tablemap = require('../../models/Tablemap')
 const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
@@ -769,6 +770,11 @@ const postCreate = async ({ model, params, data, user }) => {
       customData: null,
       picture: user.picture
     })
+  }
+
+  if (model == 'event' && data.tablemap_included) {
+    data.tablemap = await Tablemap.create({})
+    await data.save()
   }
 
   return data
