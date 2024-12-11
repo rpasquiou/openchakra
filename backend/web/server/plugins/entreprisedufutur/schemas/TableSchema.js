@@ -16,7 +16,7 @@ const TableSchema = new Schema({
   },
   partner: {
     type: Schema.Types.ObjectId,
-    ref: 'user',
+    ref: 'company',
     required: false
   },
   staff_number: {
