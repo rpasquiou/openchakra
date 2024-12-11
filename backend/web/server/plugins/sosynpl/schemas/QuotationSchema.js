@@ -58,6 +58,10 @@ const QuotationSchema = new Schema({
   },
   _counter: {
     type: Number,
+  },
+  billing_details: {
+    type: String,
+    required: false,
   }
 }, schemaOptions,
 )
