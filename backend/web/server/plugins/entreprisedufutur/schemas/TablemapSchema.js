@@ -9,10 +9,6 @@ const TablemapSchema = new Schema({
     ref: 'event',
     required: [true, `L'événement du plan de table est obligatoire`]
   },
-  table_number: {
-    type: Number,
-    required: false
-  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
