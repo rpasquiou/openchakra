@@ -313,7 +313,8 @@ const onBlockAction = async (userId, blockId) => {
   if (prevStatus != newStatus) {
     await saveBlockStatus(userId, blockId, newStatus)
     if (newStatus==BLOCK_STATUS_FINISHED) {
-      onBlockFinished(userId, blockId)
+      console.log('FInished', userId, blockId)
+      onBlockFinished(userId, bl)
     }
   }
 }
@@ -760,7 +761,7 @@ const ORDER=[BLOCK_STATUS_UNAVAILABLE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURREN
 
 const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
-    console.error('missing')
+    console.trace('missing', userId, blockId, status)
     throw new Error(userId, blockId, status)
   }
 
