@@ -1,20 +1,15 @@
 const mongoose=require('mongoose')
 const { MONGOOSE_OPTIONS } = require('../../server/utils/database')
 require('../../server/plugins/aftral-lms/functions')
-const { lockSession } = require('../../server/plugins/aftral-lms/block')
+const { lockSession, computeBlockStatus, updateSessionStatus } = require('../../server/plugins/aftral-lms/block')
 const { getDatabaseUri } = require('../../config/config')
 const Progress = require('../../server/models/Progress')
 const { getBlockChildren } = require('../../server/plugins/aftral-lms/resources')
 
-const lockTheSession = async sessionId => {
+const computeSessionStatus = async sessionId => {
   await mongoose.connect(getDatabaseUri(), MONGOOSE_OPTIONS)
   
-  const children = await getBlockChildren({ blockId: sessionId })
-  await Progress.remove({block: {$in: [sessionId, ...children]}})
-  await lockSession(sessionId)
-  const childrenCount=children.length
-  const progressCount=await Progress.countDocuments()
-  console.log(childrenCount, progressCount)
+  await updateSessionStatus(sessionId)
   }
 
 const sessionId=process.argv[2]
@@ -23,7 +18,7 @@ if (!sessionId) {
   process.exit(1)
 }
 
-lockTheSession(sessionId)
+computeSessionStatus(sessionId)
   .then(console.log)
   .catch(console.error)
   .finally(() => process.exit(0))

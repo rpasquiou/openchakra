@@ -13,7 +13,7 @@ const withDynamicText = Component => {
       const undef=mappedValues.indexOf(undefined)
       if (undef>-1) {
         console.warn(`Constante ${value[undef]} introuvable parmi ${Object.keys(enums).join(',')}`)
-        return (<h1 style={{color: 'red'}}>#ENUM ERROR</h1>)
+        return (<h1 style={{color: 'red'}}>#NO_ENUM_LABEL {value[undef]}</h1>)
       }
       else {
         value=joinDelimiter({array: mappedValues})

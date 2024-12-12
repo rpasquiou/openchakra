@@ -1,3 +1,4 @@
+const moment=require('moment')
 const { RESOURCE_TYPE_LINK, ACHIEVEMENT_RULE_CONSULT, ROLE_CONCEPTEUR, ROLE_APPRENANT } = require("../../server/plugins/aftral-lms/consts")
 
 const BaseUser={
@@ -33,6 +34,18 @@ const BaseSequence={
   name: 'Séquence test',
 }
 
+const BaseProgram={
+  name: 'Programme test',
+}
+
+const BaseSession={
+  name: 'Session test',
+  start_date: moment().add(-2, 'month'),
+  end_date: moment().add(2, 'month'),
+  code: 'TestCode'
+}
+
+
 module.exports={
-  BaseResource, BaseBuilder, BaseModule, BaseSequence, BaseTrainee,
+  BaseResource, BaseBuilder,BaseTrainee, BaseModule, BaseSequence, BaseTrainee, BaseProgram, BaseSession,
 }

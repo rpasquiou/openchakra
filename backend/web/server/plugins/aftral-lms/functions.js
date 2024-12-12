@@ -6,8 +6,9 @@ const {
   setPostCreateData,
   setScormCallbackPost,
   setScormCallbackGet,
+  getDateFilter,
 } = require('../../utils/database')
-const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE } = require('./consts')
+const { RESOURCE_TYPE, PROGRAM_STATUS, ROLES, MAX_POPULATE_DEPTH, BLOCK_STATUS, ROLE_CONCEPTEUR, ROLE_FORMATEUR,ROLE_APPRENANT, FEED_TYPE_GENERAL, FEED_TYPE_SESSION, FEED_TYPE_GROUP, FEED_TYPE, ACHIEVEMENT_RULE, SCALE, RESOURCE_TYPE_LINK, DEFAULT_ACHIEVEMENT_RULE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, TICKET_STATUS, TICKET_TAG, PERMISSIONS, ROLE_HELPDESK, RESOURCE_TYPE_SCORM, BLOCK_TYPE_SESSION, ROLE_ADMINISTRATEUR, ROLE_GESTIONNAIRE, PROGRAM_STATUS_AVAILABLE, RESOURCE_TYPE_VISIO, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_LABEL, BLOCK_TYPE_PROGRAM, VISIO_TYPE, BLOCK_STATUS_FINISHED } = require('./consts')
 const mongoose = require('mongoose')
 require('../../models/Resource')
 const Session = require('../../models/Session')
@@ -55,9 +56,11 @@ const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
 const {pollNewFiles}=require('./ftp')
 const { session } = require('passport')
-const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr } = require('./visio')
+const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
-const { getGroupTrainees } = require('./group')
+const { getGroupTrainees, getGroupTraineesCount } = require('./group')
+const { getCertificateName } = require('./utils')
+const { sendCertificate } = require('./mailing')
 require('../visio/functions')
 
 const GENERAL_FEED_ID='FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -122,6 +125,8 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'type_str', type: 'String', requires: 'type'})
   declareComputedField({model, field: 'proof', requires: 'trainees.fullname', getterFn: getSessionProof})
   declareComputedField({model,  field: 'certificate', requires: 'type,trainees.fullname,children,end_date,location,code', getterFn: getSessionCertificate })
+  declareVirtualField({model, field: 'fullname', type: 'String', requires: 'type,order,name,closed,access_condition'})
+  
 })
 
 //Program start
@@ -154,6 +159,11 @@ USER_MODELS.forEach(model => {
   })
   declareComputedField({model, field: `permissions`, requires:`permission_groups.permissions`, getterFn: getUserPermissions})
   declareComputedField({model, field: `visios`, getterFn: getUserVisiosDays})
+  declareVirtualField({model, field: 'sessions', instance: 'Array',
+    caster: {
+      instance: 'ObjectID',
+      options: {ref: 'session'}},
+  })
 })
 
 // search start
@@ -203,7 +213,7 @@ declareEnumField({model:'permission', field: 'value', instance: 'String', enumVa
  // Permission end
 
 // Group start
-declareVirtualField({model: `group`, field: `trainees_count`, instance: `Number`, requires: 'sessions'})
+declareComputedField({model: `group`, field: `trainees_count`, instance: `Number`, getterFn: getGroupTraineesCount})
 declareComputedField({model: `group`, field: `visios`, getterFn: getGroupVisiosDays})
 declareComputedField({model: `group`, field: `trainees`, requires: 'sessions.trainees.fullname', getterFn: getGroupTrainees})
 // Group end
@@ -232,6 +242,8 @@ CONVERSATION_MODELS.forEach(model => {
 // Session start
 declareComputedField({model: 'session', field: 'conversations', getterFn: getSessionConversations})
 declareComputedField({model: 'session', field: 'filtered_trainee', requires: 'trainees', getterFn: getFilteredTrainee})
+declareComputedField({model: `session`, field: `visios`, getterFn: getSessionVisiosDays, requires: 'trainees'})
+declareVirtualField({model: `session`, field: `display_name`, instance: 'String', requires: 'session_product_code,code'})
 // Session end
 
 // Homework start
@@ -241,6 +253,7 @@ declareEnumField({model: 'homework', field: 'scale', enumValues: SCALE})
 // Visio start
 declareVirtualField({model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String'})
 declareComputedField({model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr})
+declareVirtualField({model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean'})
 // Visio end
 
 const preCreate = async ({model, params, user}) => {
@@ -311,8 +324,12 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if (model == 'ticket'){
+    if (!([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role))) {
+      throw new ForbiddenError(`Vous ne pouvez pas créer de ticket`)
+    }
     params.user = user._id
     params.block = params.parent
+    params.session=params.session || (await getSession(user._id, null, {_id: params.block}, []))?._id
   }
 
   if (model == `group` && !!params.sessions && params.sessions.length >0){
@@ -466,19 +483,29 @@ const prePut = async ({model, id, params, user, skip_validation}) => {
   }
 
   // #230 Check only MSR inside program can be optional
-  if (params.optional=='true' && BLOCK_MODELS.includes(model)) {
-    const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+  if ('optional' in params && BLOCK_MODELS.includes(model)) {
     const block=await mongoose.models.block.findById(id)
-    if (!(ALLOWED_OPTIONALS.includes(block.type))) {
-      throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+    const optional=params.optional=='true' || params.optional===true
+    // Can not set mandatory if parent is optional
+    if (!optional) {
+      const optionalParent=await Block.exists({_id: block.parent, optional: true})
+      if (optionalParent) {
+        throw new BadRequestError(`${block.type_str} ${block.name} ne peut être obligatoire car son parent est facultatif`)
+      }
     }
-    const topParent=await getTopParent(id)
-    if (topParent.type!=BLOCK_TYPE_PROGRAM) {
-      throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+    if (optional) {
+      const ALLOWED_OPTIONALS=[BLOCK_TYPE_MODULE, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_RESOURCE]
+      if (!(ALLOWED_OPTIONALS.includes(block.type))) {
+        throw new BadRequestError(`Seuls ${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} peuvent être facultatifs`)
+      }
+      const topParent=await getTopParent(id)
+      if (topParent.type!=BLOCK_TYPE_PROGRAM) {
+        throw new BadRequestError(`${ALLOWED_OPTIONALS.map(t => BLOCK_TYPE_LABEL[t])} ne peuvent être facultatifs qu'au sein d'un programme`)
+      }
     }
-    const wasOptional=await Block.exists({_id: id, optional: true})
-    if (!wasOptional) {
-      params.setChildrenOptional=true
+    const wasOptional=!!block.optional
+    if (wasOptional != optional) {
+      params.toggleOptional=true
     }
   }
 
@@ -677,7 +704,10 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   // To filter group containing sessions I belong to
   if (model=='group') {
-    fields=lodash.uniq([...fields, 'sessions'])
+    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
+      const sessions=await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})
+      params['filter.sessions']={$in: sessions.map(s => s._id)}
+    }
   }
   
   return Promise.resolve({model, fields, id, user, params})
@@ -697,12 +727,6 @@ const filterDataUser = async ({model, data, id, user, params}) => {
     })
     data=[]
   }
-  if (model=='group' && !id) {
-    if ([ROLE_FORMATEUR, ROLE_APPRENANT].includes(user.role) && !id) {
-      const sessionIds=(await Session.find({$or: [{trainers: user._id}, {trainees: user._id}]}, {_id:1})).map(s => s._id)
-      data=data.filter(group => group.sessions.some(gs => sessionIds.some(si => idEqual(gs._id, si._id))))
-    }
-  }
 
   return data
 }
@@ -710,15 +734,21 @@ const filterDataUser = async ({model, data, id, user, params}) => {
 setFilterDataUser(filterDataUser)
 
 const postPutData = async ({model, id, attribute, params, data, user}) => {
+  const sessionBlock=await Block.exists({_locked: true, _id: id})
+  // Don't propagate any data from session blocks
+  if (sessionBlock) {
+    return data
+  }
   // Propagate block attributes
   if (BLOCK_MODELS.includes(model)) {
     await mongoose.models[model].findByIdAndUpdate(id, {$set: {last_updater: user}})
     await propagateAttributes(id)
   }
   // Set children optional recursively
-  if (BLOCK_MODELS.includes(model) && !!params.setChildrenOptional) {
+  if (BLOCK_MODELS.includes(model) && !!params.toggleOptional) {
+    const newOptional=await Block.exists({_id: id, optional: true})
     const children=await getBlockChildren({blockId: id})
-    await Block.updateMany({_id: {$in: children}}, {optional: true})
+    await Block.updateMany({_id: {$in: children}}, {optional: newOptional})
   }
   if (model=='homework') {
     await onBlockAction(data.trainee, data.resource)
@@ -850,6 +880,23 @@ const POLLING_FREQUENCY='0 */5 * * * *'
     console.error(`Polling error:${err}`)
   }
 }, null, true, 'Europe/Paris')
+
+// Send certifcates at session end
+!isDevelopment() && cron.schedule('0 0 4 * * *', async () => {
+  const yesterdayFilter=getDateFilter({attribute: 'end_date', day: moment().add(-1, 'day')})
+  const sessions=await Block.find({type: 'session', ...yesterdayFilter}).populate(['children', 'trainees'])
+  for (const session of sessions) {
+    console.log(`Session ${session.name} finished yesterday`)  
+    for (const trainee of session.trainees) {
+      const progress=await Progress.findOne({block: session._id, user: trainee._id, achievement_status: BLOCK_STATUS_FINISHED})
+      if (progress) {
+        const certif_name=await getCertificateName(session._id, trainee._id)
+        const certificate=await getSessionCertificate(trainee._id, null, session)
+        await sendCertificate({user: trainee, session, attachment_name: certif_name, attachment_url: certificate}).catch(console.error)
+      }
+    }
+  }
+})
 
 module.exports={
   preCreate, prePut, postCreate

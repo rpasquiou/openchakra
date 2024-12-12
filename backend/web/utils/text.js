@@ -131,6 +131,10 @@ const formatDate = (datetime, fullYear) => {
   return moment(datetime).format(fullYear ? `DD/MM/YYYY` : `DD/MM/YY`)
 }
 
+const formatDateEnglish = (datetime, fullYear) => {
+  return moment(datetime).format(fullYear ? `MM-DD-YYYY` : `MM-DD-YY`)
+}
+
 const formatHour = datetime => {
   return moment(datetime).format(`HH:mm`)
 }
@@ -226,4 +230,5 @@ module.exports = {
   convertDuration,
   sortObject,
   formatPercent,
+  formatDateEnglish,
 }

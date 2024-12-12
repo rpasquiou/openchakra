@@ -393,6 +393,10 @@ BlockSchema.virtual('type_str', DUMMY_REF).get(function() {
   return BLOCK_TYPE_LABEL[this.type]
 })
 
+BlockSchema.virtual('fullname', DUMMY_REF).get(function() {
+  return `${this._id} ${this.type} ${this.order} ${this.name} ${this.closed ? '(F)': '(O)'} ${this.access_condition ? '(CondAcces)': ''}`
+})
+
 // BlockSchema.index(
 //   { name: 1},
 //   { unique: true, message: 'Un bkoc de même nom existe déjà' });

@@ -93,6 +93,19 @@ UserSchema.virtual('tickets_count', {
   count: true,
 })
 
+UserSchema.virtual('sessions', {
+  ref: 'session',
+  localField: '_id',
+  foreignField: 'trainees',
+  // Finally show all sessions
+  // options: {
+  //   match: () => ({
+  //     start_date: {$lt: Date.now()},
+  //     end_date: {$gte: Date.now()},
+  //   })
+  // }
+})
+
 UserSchema.index(
   { email: 1},
   { unique: true, message: 'Email dupliqué' });

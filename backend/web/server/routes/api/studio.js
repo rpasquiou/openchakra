@@ -623,7 +623,7 @@ const loadFromRequest = (req, res) => {
   const params=lodash.omit({...req.query}, ['fields', 'id'])
   const user = req.user
 
-  const logMsg=`GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
+  const logMsg=`GET ${model}/${id} ${fields.length} fields ...${JSON.stringify(params)}`
   console.time(logMsg)
 
   return loadFromDb({model, fields, id, user, params})

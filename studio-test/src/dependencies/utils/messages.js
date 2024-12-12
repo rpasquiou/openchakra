@@ -10,4 +10,5 @@ export const MESSAGES={
   smartdiet_set_company_code: 'Votre code entreprise a été pris en compte',
   addChild: 'Ajouté',
   alle_finish_mission: 'Achèvement forcé avec succès',
+  delete: 'Suppression effectuée',
 }

@@ -8,7 +8,9 @@ class MyDocument extends Document {
 
     return (
       <Html lang="fr" dir="ltr">
-        <Head />         
+        <Head>         
+          <script src="https://meet.jit.si/external_api.js"></script>
+        </Head>
         <body>
           <Main/>
           <NextScript/>
