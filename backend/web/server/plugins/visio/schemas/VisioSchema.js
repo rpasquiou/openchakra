@@ -86,7 +86,7 @@ VisioSchema.virtual('type', DUMMY_REF).get(function() {
 })
 
 VisioSchema.virtual('active', DUMMY_REF).get(function() {
-  return !!this.start_date && !!this.end_date && moment().isBetween(moment(this.start_date).add(-10, 'minutes'), this.end_date)
+  return !!this.start_date && !!this.end_date && moment().isBetween(moment(this.start_date).add(-10, 'minutes'), moment(this.end_date).add(10, 'minutes'))
 })
 
 VisioSchema.pre('validate',function(next) {

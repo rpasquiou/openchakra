@@ -114,7 +114,7 @@ const addSpentTimeAction = async ({id, duration}, user) => {
 addAction('addSpentTime', addSpentTimeAction)
 
 const lockSessionAction = async ({value}, user) => {
-  return lockSession(value, user)
+  return lockSession(value)
 }
 addAction('lockSession', lockSessionAction)
 
