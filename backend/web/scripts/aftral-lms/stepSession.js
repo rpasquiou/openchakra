@@ -2,7 +2,7 @@ const mongoose=require('mongoose')
 const lodash=require('lodash')
 const { MONGOOSE_OPTIONS, loadFromDb } = require('../../server/utils/database')
 require('../../server/plugins/aftral-lms/functions')
-const { getBlockStatus, saveBlockStatus, updateSessionStatus } = require('../../server/plugins/aftral-lms/block')
+const { getBlockStatus, saveBlockStatus, updateSessionStatus, onBlockFinished } = require('../../server/plugins/aftral-lms/block')
 const { getDatabaseUri } = require('../../config/config')
 const { getBlockResources } = require('../../server/plugins/aftral-lms/resources')
 const Session = require('../../server/models/Session')
@@ -39,8 +39,7 @@ const stepSession = async (sessionId, count) => {
     }
     const nextResource=resources[idx]
     console.log('Next resource', nextResource.fullname, 'finishing it')
-    await saveBlockStatus(traineeId, nextResource._id, BLOCK_STATUS_FINISHED)
-    await updateSessionStatus(sessionId)
+    await onBlockFinished(traineeId, nextResource)
   }
 }
 
