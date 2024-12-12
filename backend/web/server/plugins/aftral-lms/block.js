@@ -203,10 +203,88 @@ const checkAccessCondition = async (user, blockId) => {
   }
 }
 
+const getNextBrother = async blockId => {
+  const block=await mongoose.models.block.findById(blockId)
+  if (block.type==BLOCK_TYPE_SESSION) {
+    return null
+  }
+  console.log('Looking for brother of', block.name, block.order)
+  const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order+1})
+  return brother
+}
+
+const getPreviousBrother = async blockId => {
+  const block=await mongoose.models.block.findById(blockId)
+  const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
+  return brother
+}
+
+const isParentClosed= async blockId => {
+  const block=await mongoose.models.block.findById(blockId).populate('parent')
+  const closed=!!block.parent?.closed
+  console.log('Block', block.parent?._id, 'closed:', closed)
+  return closed
+}
+
+const unlockBlock = async (trainee, blockId) => {
+  const status=await getBlockStatus(trainee, null, {_id: blockId})
+  if (status!=BLOCK_STATUS_UNAVAILABLE) {
+    return
+  }
+  console.log('Trying to unlock', blockId)
+  const block=await mongoose.models.block.findById(blockId)
+  const parentClosed=await isParentClosed(blockId)
+  console.log('Parent is closed:', parentClosed)
+  console.log('Access condition:', block.access_condition)
+  if (block.access_condition || parentClosed) {
+    const brother=await getPreviousBrother(block._id)
+    const prevStatus=brother ? await getBlockStatus(trainee, null, {_id: brother._id}) : null
+    if (!brother || ([BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED].includes(prevStatus))) {
+      await saveBlockStatus(trainee._id, blockId, BLOCK_STATUS_TO_COME)
+      const children=await mongoose.models.block.find({parent: blockId}).sort({order:1})
+      await runPromisesWithDelay(children.map(c => () => unlockBlock(trainee, c._id)))
+    }
+  }
+  else {
+    await saveBlockStatus(trainee._id, blockId, BLOCK_STATUS_TO_COME)
+    const children=await mongoose.models.block.find({parent: blockId}).sort({order:1})
+    await runPromisesWithDelay(children.map(c => () => unlockBlock(trainee, c._id)))
+}
+}
+
+const mayBeFinishedOrValid = async (user, blockId) => {
+  console.log('Checking if', blockId, 'is finished')
+  const children=await mongoose.models.block.find({parent: blockId})
+  console.log('Children are', children[0]?.type, children.map(c => c._id))
+  const allStatus=await Promise.all(children.map(c => getBlockStatus(user._id, null, {_id: c._id})))
+  console.log('Status are', allStatus)
+  if (allStatus.every(s => s==BLOCK_STATUS_FINISHED)) {
+    return onBlockFinished(user._id, blockId._id)
+  }
+  if (allStatus.every((s, idx) =>  !!children[idx].optional || s==BLOCK_STATUS_FINISHED)) {
+    return saveBlockStatus(user._id, blockId._id, BLOCK_STATUS_VALID)
+  }
+}
+
 const onBlockFinished = async (user, block) => {
-  await saveBlockStatus(user, block, BLOCK_STATUS_FINISHED)
-  const session=await getBlockSession(block)
-  return updateSessionStatus(session._id, user._id)
+  console.log('onblockfinished', block?._id)
+  await saveBlockStatus(user._id, block._id, BLOCK_STATUS_FINISHED)
+  const brother=await getNextBrother(block._id)
+  console.log('My brother is', brother?._id)
+  // If I'm finished, my brother may be available
+  if (brother) {
+    console.group()
+    console.log('Unlocking brother', brother._id)
+    await unlockBlock(user, brother._id)
+    console.groupEnd()
+  }
+  const parent=(await mongoose.models.block.findById(block._id, {parent:1})).parent
+  console.log('Checking if parent is availableor finished', parent)
+  if (parent) {
+    console.group()
+    await mayBeFinishedOrValid(user, parent)
+    console.groupEnd()
+  }
 }
 
 const onBlockAction = async (userId, blockId) => {
@@ -222,7 +300,6 @@ const onBlockAction = async (userId, blockId) => {
       if ((bl.success_scale && latest_homework.scale==SCALE_ACQUIRED)
       ||!bl.success_scale && latest_homework.note>=bl.success_note_min) {
       if (!(await isFinished(userId, blockId))) {
-          await saveBlockStatus(userId, blockId, BLOCK_STATUS_FINISHED)
           return onBlockFinished(userId, blockId)
         }
       }
@@ -236,7 +313,8 @@ const onBlockAction = async (userId, blockId) => {
   if (prevStatus != newStatus) {
     await saveBlockStatus(userId, blockId, newStatus)
     if (newStatus==BLOCK_STATUS_FINISHED) {
-      onBlockFinished(userId, blockId)
+      console.log('FInished', userId, blockId)
+      onBlockFinished(userId, bl)
     }
   }
 }
@@ -680,9 +758,10 @@ const hasParentMasked = async (blockId) => {
 }
 
 const ORDER=[BLOCK_STATUS_UNAVAILABLE, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED]
+
 const saveBlockStatus= async (userId, blockId, status, withChildren) => {
   if (!userId || !blockId || !status) {
-    console.error('missing')
+    console.trace('missing', userId, blockId, status)
     throw new Error(userId, blockId, status)
   }
 
@@ -740,140 +819,8 @@ const getBlockScormData = async (userId, blockId) => {
   }
 }
 
-const removeBlockStatus= async (userId, blockId, status) => {
-  if (!userId || !blockId) {
-    throw new Error(userId, blockId, status)
-  }
-  return Progress.remove({block: blockId, user: userId})
-}
-
 const computeBlockStatus = async (blockId, isFinishedBlock, setBlockStatus, locGetBlockStatus) => {
-
-  const isValidOrFinished = status =>  [BLOCK_STATUS_VALID, BLOCK_STATUS_FINISHED].includes(status)
-
-  const block = await mongoose.models.block.findById(blockId).populate('children')
-  // console.log('Computing status for', block?.fullname)
-  const blockStatus=await locGetBlockStatus(blockId)
-  if (block.type==BLOCK_TYPE_RESOURCE) {
-    if (block.status==BLOCK_STATUS_FINISHED) {
-      return block.status
-    }
-    if (block.access_condition && block.order>1) {
-      const prevBrother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
-      const prevStatus=await locGetBlockStatus(prevBrother._id)
-      if (!prevStatus) {
-        console.error(`Coudld not find status for brother`, prevBrother._id)
-      }
-      if (prevStatus==BLOCK_STATUS_FINISHED) {
-        if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
-          console.log(block?.fullname, 'brother is finished so i am available')
-          return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
-        }
-      }
-      else {
-        console.log(block?.fullname, 'has access condition and brother is not finished so i am available')
-        return setBlockStatus(block._id, BLOCK_STATUS_UNAVAILABLE)
-      }
-    }
-    if (lodash.isNil(blockStatus)) {
-      console.log(block?.fullname, 'has no status so settin available')
-      return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
-    }
-    return blockStatus
-  }
-
-  let childrenStatus=[]
-  for (const child of block.children) {
-    console.group()
-    const res=await computeBlockStatus(child._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-    console.groupEnd()
-    childrenStatus.push(res)
-  }
-
-  // Check all finished => finished
-  const allChildrenStatus = lodash(childrenStatus).uniq();
-  const allChildrenFinished=allChildrenStatus.isEmpty() || allChildrenStatus.isEqual([BLOCK_STATUS_FINISHED])
-  if (allChildrenFinished) {
-    // console.log(block?.fullname, 'is finished because all children are finished')
-    await setBlockStatus(block._id, BLOCK_STATUS_FINISHED, true)
-    // await runPromisesWithDelay(() => block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
-    // Also compute next brother
-    const brother=await mongoose.models.block.findOne({parent: block.parent, order: (block.order||1)+1})
-    if (brother) {
-      const brotherStatus=await locGetBlockStatus(brother._id)
-      // console.log('My brother is', brother, 'its status is', brotherStatus)
-      if ((brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID)) {
-        console.log(brother.fullname, 'was unavailable, setting to come')
-        await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
-        await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-      }
-    }
-    return BLOCK_STATUS_FINISHED
-  }
-  
-  // Check all mandatory finished or valid => valid
-  const mandatoryChildrenStatus = lodash(childrenStatus).filter((_, idx) => !block.children[idx].optional).uniq();
-  const mandatoryChildrenFinished=mandatoryChildrenStatus.isEmpty() || mandatoryChildrenStatus.every(s => isValidOrFinished(s))
-  if (mandatoryChildrenFinished && blockStatus!=BLOCK_STATUS_UNAVAILABLE) {
-    // console.log(block?.fullname, 'is valid because all mandatory children are finished')
-    await setBlockStatus(block._id, BLOCK_STATUS_VALID)
-    await runPromisesWithDelay(() => block.children.map(c => computeBlockStatus(c._id, isFinished, setBlockStatus, locGetBlockStatus)))
-    const brother=await mongoose.models.block.findOne({parent: block.parent, order: (block.order||1)+1})
-    if (brother) {
-      const brotherStatus=await locGetBlockStatus(brother._id)
-      if (brotherStatus==BLOCK_STATUS_UNAVAILABLE || brotherStatus==BLOCK_STATUS_VALID) {
-        await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
-        await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-      }
-    }
-    return BLOCK_STATUS_VALID
-  }
-
-  // If one child finished, next is available
-  if (!!block.closed) {
-    // console.log(block.type, block.name, 'is closed')
-    const lastFinished=lodash.findLastIndex(childrenStatus, s => isValidOrFinished(s))
-    if (lastFinished<block.children.length-1) {
-      const brother=block.children[lastFinished+1]
-      // console.log(block?.fullname, 'is closed, b1 is finished then b2 is set available and next ones unavailable')
-      if (blockStatus==BLOCK_STATUS_TO_COME) {
-        return blockStatus
-      }
-      await setBlockStatus(brother._id, BLOCK_STATUS_TO_COME, true)
-      await computeBlockStatus(brother._id, isFinishedBlock, setBlockStatus, locGetBlockStatus)
-      // Next children are unavailable
-      console.group()
-      await runPromisesWithDelay(() => lodash.range(lastFinished+2, block.children.length).map(idx => setBlockStatus(block.children[idx]._id, BLOCK_STATUS_UNAVAILABLE, true)))
-      console.groupEnd()
-    }
-    return blockStatus
-  }
-
-  if (!!block.access_condition) {
-    if ([null, BLOCK_STATUS_UNAVAILABLE].includes(blockStatus)) {
-      const brother=await mongoose.models.block.findOne({parent: block.parent, order: block.order-1})
-      const brotherStatus=brother ? (await locGetBlockStatus(brother._id)) : null
-      if (brotherStatus==BLOCK_STATUS_FINISHED) {
-        const noAccesCondChildren=block.children.filter(c => !c.access_condition)
-        // console.group(block?.fullname, 'has access condition, previous is finished so set available and all no cond children to available')
-        await runPromisesWithDelay(() => noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME, true) : null))
-        console.groupEnd()
-        return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
-      }
-    }
-    return blockStatus
-  }
-
-  // If unavailable, don't change children
-  if (blockStatus==BLOCK_STATUS_UNAVAILABLE) {
-    return blockStatus
-  }
-  const noAccesCondChildren=block.children.filter(c => !c.access_condition)
-  console.log(block.fullname, 'default set available')
-  console.group()
-  await runPromisesWithDelay(() => noAccesCondChildren.map((c,idx) => (!childrenStatus[idx] || childrenStatus[idx]==BLOCK_STATUS_UNAVAILABLE) ?  setBlockStatus(c._id, BLOCK_STATUS_TO_COME, true) : null))
-  console.groupEnd()
-  return setBlockStatus(block._id, BLOCK_STATUS_TO_COME)
+  return
 };
 
 
