@@ -178,8 +178,8 @@ router.post(
   "/auth-callback",
   bodyParser.urlencoded({ extended: false }),
   passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }),
-  function (req, res) {
-    res.redirect("/");
+  (req, res) => {
+    return sendCookie(req.user, res).json(req.user)
   }
 );
 
