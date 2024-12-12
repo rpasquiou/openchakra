@@ -24,6 +24,12 @@ const QuotationDetailSchema = new Schema({
     min: [0, 'Le taux de TVA doit être compris entre 0 et 1'],
     max: [1, 'Le taux de TVA doit être compris entre 0 et 1'],
     required: [true, `Le taux de TVA est obligatoire`],
+    get: function(value) { 
+      return value * 100
+    },
+    set: function(value) { 
+      return value / 100
+    }
   },
   price: {
     type: Number,
@@ -38,11 +44,11 @@ QuotationDetailSchema.virtual('ht_total', DUMMY_REF).get(function() {
 })
 
 QuotationDetailSchema.virtual('ttc_total', DUMMY_REF).get(function() {
-  return this.ht_total*(1+this.vat_rate)
+  return this.ht_total * (1 + (this.get('vat_rate', null, { getters: false }) || 0))
 })
 
 QuotationDetailSchema.virtual('vat_total', DUMMY_REF).get(function() {
-  return this.ht_total*this.vat_rate
+  return this.ht_total * (this.get('vat_rate', null, { getters: false }) || 0)
 })
 
 
