@@ -11,7 +11,7 @@ const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
-const { BadRequestError } = require("../../utils/errors");
+const { BadRequestError, ForbiddenError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const { sendBufferToAWS } = require("../../middlewares/aws");
 const { fillForm2 } = require("../../../utils/fillForm");
@@ -784,13 +784,13 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
 
   if (idxAfter>idxBefore) {
     await Progress.findOneAndUpdate(
-    {block: blockId, user: userId},
-    {block: blockId, user: userId, achievement_status: status},
-    {upsert: true}
-  )
-
+      {block: blockId, user: userId},
+      {block: blockId, user: userId, achievement_status: status},
+      {upsert: true}
+    )
   }
   
+  const statusChanged=idxBefore!=idxAfter
   const type=(await mongoose.models.block.findById(blockId))?.type
   if (statusChanged && status==BLOCK_STATUS_FINISHED && type==BLOCK_TYPE_RESOURCE) {
     // Increment finished mandatory resources
