@@ -717,7 +717,8 @@ const lockSession = async (blockId, trainee) => {
   // Set resources count on blocks
   await Promise.all([session, ...allChildren].map(async block => {
     const resourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
-    await mongoose.models.block.findByIdAndUpdate(block._id, {resources_count: resourcesCount})
+    const mandatoryResourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
+    await mongoose.models.block.findByIdAndUpdate(block._id, {resources_count: resourcesCount, mandatory_resources_count: mandatoryResourcesCount})
   }))
   await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
 

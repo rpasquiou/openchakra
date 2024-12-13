@@ -125,7 +125,7 @@ const _getFinishedResourcesData = async (userId, blockId) => {
 };
 
 // Returns MANDATORY finished resources
-const getFinishedMadatoryResourcesCount = async (userId, params, data) => {
+const getFinishedMandatoryResourcesCount = async (userId, params, data) => {
   const { finishedResources } = await _getFinishedResourcesData(userId, data._id)
   return finishedResources
 }
@@ -206,7 +206,7 @@ const getBlockChildren = async ({blockId}) => {
 }
 
 module.exports={
-  getFinishedMadatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getFinishedMandatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
   getBlockResources, getBlockChildren,
 }

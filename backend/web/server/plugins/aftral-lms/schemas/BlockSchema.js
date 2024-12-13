@@ -119,6 +119,10 @@ const BlockSchema = new Schema({
   resources_count: {
     type: Number,
   },
+  // All resources count, including optional
+  mandatory_resources_count: {
+    type: Number,
+  },
   // Mandatory finished resources (computed for the trainee)
   finished_resources_count: {
     type: Number,
