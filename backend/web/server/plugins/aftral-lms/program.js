@@ -12,21 +12,10 @@ const { sendBufferToAWS } = require('../../middlewares/aws')
 const AdmZip = require('adm-zip')
 const { isDevelopment } = require('../../../config/config')
 const User = require('../../models/User')
-const { ForbiddenError } = require('../../utils/errors')
+const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const { getCertificateName } = require('./utils')
 const axios = require('axios')
 const Progress = require('../../models/Progress')
-
-const PROGRAM_CERTIFICATE_ATTRIBUTES = [
-  `name`,
-  `_certificate`,
-  `parent`,
-  `children.name`,
-  `children.resources_progress`,
-  `children.children.name`,
-  `children.children.resources_progress`,
-  `parent.resources_progress`
-]
 
 async function getModulesData(userId, params, children) {
   return Promise.all(children.map(async child => ({
@@ -47,7 +36,7 @@ async function getChapterData(userId, params, data) {
 const getSessionCertificate = async (userId, params, data) => {
 
   if (moment().isBefore(data.end_date)) {
-    return null
+    throw new Error(`La session ${data.name} n'est pas terminée`)
   }
   const role=(await User.findById(userId)).role
   if (role==ROLE_APPRENANT) {
@@ -69,8 +58,7 @@ const getSessionCertificate = async (userId, params, data) => {
   }
 
   if (!template) {
-    console.error(`No template for session ${data._id}, program ${data.children[0].name}`)
-    return null
+    throw new NotFoundError(`Session ${data.name} : modèle de certificat non défini`)
   }
 
   const documents=await Promise.all(data.trainees.map(async trainee => {
@@ -169,5 +157,5 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
 }
 
 module.exports={
-  getSessionCertificate, PROGRAM_CERTIFICATE_ATTRIBUTES, getEvalResources
+  getSessionCertificate, getEvalResources
 }

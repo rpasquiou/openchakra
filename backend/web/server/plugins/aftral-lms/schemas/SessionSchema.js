@@ -63,14 +63,6 @@ const SessionSchema = new Schema({
     required: true,
     default: false,
   },
-  proof: {
-    type: String,
-    required: false,
-  },
-  certificate: {
-    type: String,
-    required: false,
-  },
   _trainees_connections: [{
     trainee: {
       type: Schema.Types.ObjectId,

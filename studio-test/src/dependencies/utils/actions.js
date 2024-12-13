@@ -1236,4 +1236,31 @@ return Promise.allSettled(imagePromises)
     }  
   },
 
+  get_proof: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'get_proof',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        console.log('Received', res.data)
+        return res.data
+      })
+  },
+
+  get_certificate: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'get_certificate',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => {
+        console.log('Received', res.data)
+        return res.data
+      })
+  },
+
+
 }
