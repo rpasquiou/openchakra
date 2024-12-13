@@ -161,12 +161,8 @@ const forceFinishResource = async ({value, dataId, trainee}, user) => {
     throw new ForbiddenError(`Déblocage non autorisé`)
   }
   user = await User.findById(trainee)
-  await Progress.findOneAndUpdate(
-    {user, block: value},
-    {user, block: value, achievement_status: BLOCK_STATUS_FINISHED},
-    {upsert: true, new: true}
-  )
-  await onBlockFinished(user._id, value)
+  const block=await Block.findById(value)
+  await onBlockFinished(user._id, block)
 }
 
 addAction('alle_finish_mission', forceFinishResource)
