@@ -171,6 +171,12 @@ const getAllResourcesCount = async (userId, params, data) => {
   return subResourcesIds.length
 }
 
+// All resources count, including optional
+const getMandatoryResourcesCount = async (userId, params, data) => {
+  const subResourcesIds=await getBlockResources({blockId: data._id, userId, includeUnavailable: true, includeOptional: false})
+  return subResourcesIds.length
+}
+
 const canPlay = async ({dataId, user }) => {
   return blockHasStatus({user, block: dataId, status: BLOCK_STATUS_TO_COME})
 }
@@ -208,5 +214,5 @@ const getBlockChildren = async ({blockId}) => {
 module.exports={
   getFinishedMandatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockChildren,
+  getBlockResources, getBlockChildren,getMandatoryResourcesCount,
 }
