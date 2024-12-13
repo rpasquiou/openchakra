@@ -1,6 +1,10 @@
 const lodash=require('lodash')
 const Ticket=require('../../models/Ticket')
 const Session=require('../../models/Session')
+const Block = require('../../models/Block')
+const { getAllResourcesCount } = require('./resources')
+const User = require('../../models/User')
+const { ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE } = require('./consts')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -10,7 +14,7 @@ const error = (...params) => {
   return console.error('DB Update', ...params)
 }
 
-
+// Set session attribute on tickets
 const setSessionOnTickets = async () => {
   log('set session on tickets')
   const ticketsCount=await Ticket.countDocuments()
@@ -24,14 +28,32 @@ const setSessionOnTickets = async () => {
       await ticket.save()
     }
     else {
-      error('Ticket', ticket, 'has more than one (', sessions.length, ') session, can not update')
+      error('Ticket', ticket._id, 'has more than one (', sessions.length, ') session, can not update')
     }
   }
+}
+
+// Set resources count on session blocks
+const setSessionResourcesCount = async () => {
+  log('Setting resources_count on session blocks')
+  const blocks=await Block.find({_locked: true, resources_count: null})
+  log(blocks.length, 'blocks with no resources_count')
+  await Promise.all(blocks.map(async block => {
+    if (block.type==BLOCK_TYPE_RESOURCE) {
+      block.resources_count=0
+    }
+    else {
+      block.resources_count=await getAllResourcesCount(null, null, {_id: block._id})
+    }
+    log(block.type, block.name, block.resources_count)
+    await block.save()
+  }))
 }
 
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await setSessionOnTickets()
+  await setSessionResourcesCount()
 }
 
 module.exports=databaseUpdate

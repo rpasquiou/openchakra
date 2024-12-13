@@ -115,12 +115,15 @@ const BlockSchema = new Schema({
   spent_time_str: {
     type: String,
   },
+  // All resources count, including optional
   resources_count: {
     type: Number,
   },
+  // Mandatory finished resources (computed for the trainee)
   finished_resources_count: {
     type: Number,
   },
+  // Mandatory resouces percent progress
   resources_progress: {
     type: Number,
   },

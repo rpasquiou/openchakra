@@ -6,7 +6,7 @@ const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL, BLOCK_STATUS_VALID } = require("./consts");
-const { getBlockResources, getBlockChildren, getResourcesCount } = require("./resources");
+const { getBlockResources, getBlockChildren, getAllResourcesCount } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
@@ -714,6 +714,11 @@ const lockSession = async (blockId, trainee) => {
 
   // lock all blocks
   const allChildren=await getSessionBlocks(session)
+  // Set resources count on blocks
+  await Promise.all([session, ...allChildren].map(async block => {
+    const resourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
+    await mongoose.models.block.findByIdAndUpdate(block._id, {resources_count: resourcesCount})
+  }))
   await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
 
   const delta={

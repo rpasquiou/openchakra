@@ -3,7 +3,7 @@ const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE, RESOURCE_TYPE_SCORM } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE, RESOURCE_TYPE_SCORM, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
@@ -14,7 +14,7 @@ const { withMeasureTime } = require('../../utils/function_utilities')
 
 // HACK: use $sortArray in original when under mongo > 5.02
 const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional, ordered}) => {
-  if (!blockId ||!userId || lodash.isNil(includeUnavailable) || lodash.isNil(includeOptional)) {
+  if (!blockId || (!includeUnavailable && !userId) || lodash.isNil(includeUnavailable) || lodash.isNil(includeOptional)) {
     const errorMsg=`blockId, userId, includeUnavailable, includeOptionalrequired, GOT ${[blockId, userId, includeUnavailable, includeOptional]}`
     console.trace(errorMsg)
     throw new Error(errorMsg)
@@ -124,11 +124,13 @@ const _getFinishedResourcesData = async (userId, blockId) => {
   return {totalResources, finishedResources}
 };
 
-const getFinishedResourcesCount = async (userId, params, data) => {
+// Returns MANDATORY finished resources
+const getFinishedMadatoryResourcesCount = async (userId, params, data) => {
   const { finishedResources } = await _getFinishedResourcesData(userId, data._id)
   return finishedResources
 }
 
+// Mandatory resouces percent progress
 const getResourcesProgress = async (userId, params, data) => {
   const { finishedResources, totalResources } = await _getFinishedResourcesData(userId, data._id)
   return totalResources > 0 ?  finishedResources / totalResources : 0
@@ -163,7 +165,8 @@ const getResourceType = async url => {
   return res[0]
 }
 
-const getResourcesCount = async (userId, params, data) => {
+// All resources count, including optional
+const getAllResourcesCount = async (userId, params, data) => {
   const subResourcesIds=await getBlockResources({blockId: data._id, userId, includeUnavailable: true, includeOptional: true})
   return subResourcesIds.length
 }
@@ -203,7 +206,7 @@ const getBlockChildren = async ({blockId}) => {
 }
 
 module.exports={
-  getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
+  getFinishedMadatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
   getBlockResources, getBlockChildren,
 }
