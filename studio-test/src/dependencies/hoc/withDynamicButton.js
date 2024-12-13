@@ -42,13 +42,30 @@ const withDynamicButton = Component => {
 
     const [actionAllowed, setActionAllowed]=useState(false)
 
-    useEffect(()=> {
+    useEffect(() => {
+      if (!!props.poll) {
+        const intervalId = setInterval(() => {
+          checkStatus()
+        }, 1000)
+    
+        return () => {
+          clearInterval(intervalId);
+          console.log('Interval cleared');
+        }
+      }
+    }, []);
+    const checkStatus = () => {
+      console.log('Check status')
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => setActionAllowed(res.data.allowed))
         .catch(err => console.error(err))
+    }
+
+    useEffect(()=> {
+      checkStatus()
     }, [action, value, visible])
 
     if (action) {
