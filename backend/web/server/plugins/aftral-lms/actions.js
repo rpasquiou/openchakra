@@ -2,16 +2,17 @@ const moment=require('moment')
 const mongoose=require('mongoose')
 const Block = require('../../models/Block')
 const Session = require('../../models/Session')
-const { ForbiddenError, BadRequestError } = require('../../utils/errors')
+const { ForbiddenError, BadRequestError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION } = require('./consts')
-const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus } = require('./block')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus, getSessionProof, getSessionBlocks } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
 const { setpreLogin, getModel, idEqual } = require('../../utils/database')
 const { sendForgotPassword } = require('./mailing')
 const { addVisioSpentTime } = require('../visio/functions')
+const { getSessionCertificate } = require('./program')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
@@ -179,6 +180,21 @@ const forgotPasswordAction = async ({email}) => {
 addAction('forgotPassword', forgotPasswordAction)
 
 
+const getSessionProofAction = async ({value}, user) => {
+  const session=await Session.findById(value).populate('trainees')
+  const proof=await getSessionProof(user, null, session, [], user)
+  return proof
+}
+addAction('get_proof', getSessionProofAction)
+
+const getSessionCertificateAction = async ({value}, user) => {
+  const session=await Session.findById(value).populate(['trainees', 'children'])
+  const certificate=await getSessionCertificate(user, null, session)
+  return certificate
+}
+addAction('get_certificate', getSessionCertificateAction)
+
+
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='clone') {
     if (![ROLE_CONCEPTEUR, ROLE_ADMINISTRATEUR].includes(user?.role)) { throw new ForbiddenError(`Action non autorisée`)}
@@ -192,13 +208,6 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   }
   const actionFn={'play': canPlay, 'resume': canResume, 'replay': canReplay}[action]
   if (actionFn) {
-    // const block = await Block.findById(dataId, {resource_type: 1, max_attempts: 1})
-    //if(block.max_attempts && block.resource_type == RESOURCE_TYPE_SCORM) {
-    //   const progress = await Progress.findOne({block: dataId, user}, {attempts_count: 1})
-    //   if (progress.attempts_count >= block.max_attempts) {
-    //     throw new ForbiddenError(`Vous avez atteint le nombre limite de tentatives`)
-    //   }
-    //}
     const allowed=await actionFn({action, dataId, user})
     if (!allowed) {
       throw new BadRequestError(`Action ${action} interdite`)
@@ -210,6 +219,21 @@ const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='previous') {
     await getPreviousResource(dataId, user)
   }
+  if (['get_proof', 'get_certificate'].includes(action)) {
+    const session=await Session.findById(dataId)
+    if (!session) {
+      throw new NotFoundError(`Session ${dataId} introuvable`)
+    }
+    if (action=='get_proof' && moment().isBefore(session.start_date)) {
+      throw new BadRequestError(`La session n'a pas commencé`)
+    }
+    if (action=='get_certificate' && moment().isBefore(session.end_date)) {
+      throw new BadRequestError(`La session n'est pas terminée`)
+    }
+  }
+  if (action=='get_certificate') {
+  }
+
   return true
 }
 
