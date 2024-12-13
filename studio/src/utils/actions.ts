@@ -805,7 +805,17 @@ export const ACTIONS: IActions = {
     label: 'Toggle full screen',
     options: {},
     next: [],
-  }
+  },
+  get_proof: {
+    label: 'Get proof URL',
+    options: {},
+    next: [],
+  },
+  get_certificate: {
+    label: 'Get certificate URL',
+    options: {},
+    next: [],
+  },
 
 }
 
