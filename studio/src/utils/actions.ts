@@ -809,12 +809,12 @@ export const ACTIONS: IActions = {
   get_proof: {
     label: 'Get proof URL',
     options: {},
-    next: [],
+    next: ['download'],
   },
   get_certificate: {
     label: 'Get certificate URL',
     options: {},
-    next: [],
+    next: ['download'],
   },
 
 }
