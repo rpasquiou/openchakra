@@ -155,6 +155,10 @@ const ActionsPanel: React.FC = () => {
           name='confirmationmessage'
           label='Show confirmation'
         />
+        <SwitchControl
+          name='poll'
+          label='Poll status'
+        />
 
         <ActionPanel
           id="action"
