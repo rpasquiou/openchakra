@@ -262,7 +262,28 @@ const mayBeFinishedOrValid = async (user, blockId) => {
     return onBlockFinished(user._id, blockId._id)
   }
   if (allStatus.every((s, idx) =>  !!children[idx].optional || s==BLOCK_STATUS_FINISHED)) {
-    return saveBlockStatus(user._id, blockId._id, BLOCK_STATUS_VALID)
+    return onBlockValid(user._id, blockId._id)
+  }
+}
+
+const onBlockValid = async (user, block) => {
+  console.log('onblockvalid', block?._id)
+  await saveBlockStatus(user._id, block._id, BLOCK_STATUS_VALID)
+  const brother=await getNextBrother(block._id)
+  console.log('My brother is', brother?._id)
+  // If I'm finished, my brother may be available
+  if (brother) {
+    console.group()
+    console.log('Unlocking brother', brother._id)
+    await unlockBlock(user, brother._id)
+    console.groupEnd()
+  }
+  const parent=(await mongoose.models.block.findById(block._id, {parent:1})).parent
+  console.log('Checking if parent is availableor finished', parent)
+  if (parent) {
+    console.group()
+    await mayBeFinishedOrValid(user, parent)
+    console.groupEnd()
   }
 }
 
