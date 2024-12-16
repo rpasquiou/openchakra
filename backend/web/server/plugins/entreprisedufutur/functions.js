@@ -667,6 +667,10 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Il est impossible de créer de nouvelles manières de gagner des jetons`)
   }
 
+  if (model == 'table') {
+    throw new ForbiddenError(`Une table doit être créée via l'action generate_tables`)
+  }
+
   if (model == 'carreer') {
     if (!user.company) {
       throw new BadRequestError(`Il faut faire partie d'une entreprise pour pouvoir créer un job`)
