@@ -297,8 +297,8 @@ export const ACTIONS = {
     return axios.post(url, body)
   },
 
-  back: () => {
-    window.history.back()
+  back: async () => {
+    return window.history.back()
   },
 
   register: async ({ value, props, dataSource, level, getComponentValue, getComponentAttribute }) => {
@@ -1022,6 +1022,11 @@ return Promise.allSettled(imagePromises)
     return axios.post(url, body)
   },
 
+  refresh: ({reload}) => {
+    reload()
+    return Promise.resolve(true)
+  },
+
   smartdiet_rabbit_appointment: ({value}) => {
     let url = `${API_ROOT}/action`
     const body = {
@@ -1141,6 +1146,33 @@ return Promise.allSettled(imagePromises)
       value: value?._id,
     }
     return axios.post(url, body)
+  },
+
+  toggle_full_screen: async ({value}) => {
+    if (!document.fullscreenElement) {
+      // Set fullscreen
+      const element = document.documentElement
+      if (element.requestFullscreen) {
+        element.requestFullscreen()
+      } else if (element.mozRequestFullScreen) { // Firefox
+        element.mozRequestFullScreen()
+      } else if (element.webkitRequestFullscreen) { // Chrome, Safari, Opera
+        element.webkitRequestFullscreen()
+      } else if (element.msRequestFullscreen) { // IE/Edge
+        element.msRequestFullscreen()
+      }
+    } else {
+      // Unset fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      } else if (document.mozCancelFullScreen) { // Firefox
+        document.mozCancelFullScreen()
+      } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
+        document.webkitExitFullscreen()
+      } else if (document.msExitFullscreen) { // IE/Edge
+        document.msExitFullscreen()
+      }
+    }  
   },
 
   check_profil_completion: async ({value}) => {

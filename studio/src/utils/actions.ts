@@ -747,6 +747,16 @@ export const ACTIONS: IActions = {
     },
     next: ['openPage'],
   },
+  reload: {
+    label: 'Reload',
+    options: {},
+    next: [],
+  },
+  back: {
+    label: 'Navigation back',
+    options: {},
+    next: [],
+  },
   accept: {
     label: 'Accept',
     options: {},
@@ -768,6 +778,11 @@ export const ACTIONS: IActions = {
       nb_tables: ({components}) => components.map(p => ({key: p.id, label: p.id})),
       nb_seats: ({components}) => components.map(p => ({key: p.id, label: p.id})),
     },
+    next: [],
+  },
+  toggle_full_screen: {
+    label: 'Toggle full screen',
+    options: {},
     next: [],
   },
 }
