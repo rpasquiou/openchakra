@@ -382,6 +382,9 @@ const getSession = async (userId, params, data, fields) => {
 }
 
 const getBlockLiked = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return false
+  }
   const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
   if (isTrainee) {
     return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _liked_by: userId})
@@ -390,6 +393,9 @@ const getBlockLiked = async (userId, params, data) => {
 }
 
 const getBlockDisliked = async (userId, params, data) => {
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return false
+  }
   const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
   if (isTrainee) {
     return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _disliked_by: userId})
