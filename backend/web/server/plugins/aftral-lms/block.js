@@ -386,61 +386,41 @@ const getSession = async (userId, params, data, fields) => {
 }
 
 const getBlockLiked = async (userId, params, data) => {
-  const user = await User.findById(userId, {role:1})
-  const template = await getTemplate(data._id)
-  if(user.role == ROLE_CONCEPTEUR) {
-    return template._liked_by.length > 0
+  const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
+  if (isTrainee) {
+    return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _liked_by: userId})
   }
-  return template?._liked_by.some(like => idEqual(like, userId))
+  return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, '_liked_by.0': {$exists: true}})
 }
 
 const getBlockDisliked = async (userId, params, data) => {
-  const user = await User.findById(userId, {role:1})
-  const template = await getTemplate(data._id)
-  if(user.role == ROLE_CONCEPTEUR) {
-    return template._disliked_by.length > 0
+  const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
+  if (isTrainee) {
+    return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _disliked_by: userId})
   }
-  return template?._disliked_by.some(dislike => idEqual(dislike, userId))
+  return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, '_disliked_by.0': {$exists: true}})
 }
 
 const setBlockLiked = async ({ id, attribute, value, user }) => {
   const template = await getTemplate(id)
   if(value) {
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {
-        $pull: {
-          _disliked_by: user._id
-        }, 
-        $addToSet: {
-          _liked_by: user._id
-        }
-      }
-    )
+    return mongoose.models.block.findByIdAndUpdate(template._id,{
+        $pull: {_disliked_by: user._id}, 
+        $addToSet: {_liked_by: user._id}
+      })
   }
-  else{
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {_liked_by: user._id}})
-  }
+  return mongoose.models['block'].findByIdAndUpdate(template._id,{$pull: {_liked_by: user._id}})
 }
 
 const setBlockDisliked = async ({ id, attribute, value, user }) => {
   const template = await getTemplate(id)
   if(value) {
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {
-        $pull: {
-          _liked_by: user._id
-        }, 
-        $addToSet: {
-          _disliked_by: user._id
-        }
-      }
-    )
+    return mongoose.models['block'].findByIdAndUpdate(template._id,{
+        $pull: {_liked_by: user._id}, 
+        $addToSet: {_disliked_by: user._id}
+      })
   }
-  else{
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {_disliked_by: user._id}})
-  }
+  return mongoose.models['block'].findByIdAndUpdate(template._id, {$pull: {_disliked_by: user._id}})
 }
 
 const getTemplate = async (id) => {

@@ -100,7 +100,7 @@ BLOCK_MODELS.forEach(model => {
   declareVirtualField({model, field: 'likes_count', instance: 'Number', requires:'_liked_by'})
   declareVirtualField({model, field: 'dislikes_count', instance: 'Number', requires:'_disliked_by'})
 
-  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'_liked_by,origin'})
+  declareComputedField({model, field: 'liked', getterFn: getBlockLiked, setterFn: setBlockLiked, requires:'name'})
   declareComputedField({model, field: 'disliked', getterFn: getBlockDisliked, setterFn: setBlockDisliked, requires:'_disliked_by,origin'})
   declareVirtualField({model, field: 'tickets', instance: 'Array',
     caster: {
