@@ -60,8 +60,9 @@ const setFinishedProgresses = async () => {
   log(progresses.length, 'progresses with no finished count')
   for (const progress of progresses) {
     const {finishedResources}=await getFinishedResourcesData(progress.user, progress.block)
-    console.log('Progress block', progress.block, 'user', progress.user, 'finished', finishedResources)
-    await Progress.findByIdAndUpdate(progress._id, {finished_resources_count: finishedResources})
+    console.log('Progress', progress._id, 'finished', finishedResources)
+    progress.finished_resources_count=finishedResources
+    await progress.save()
   }
 }
 
