@@ -86,7 +86,7 @@ const CompanySchema = new Schema(
     },
     city: {
       type: AddressSchema,
-      required: true
+      required: false
     },
     perimeter: {
       type: Number,
