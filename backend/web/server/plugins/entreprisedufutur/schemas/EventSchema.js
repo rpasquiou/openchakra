@@ -216,6 +216,15 @@ const EventSchema = new Schema({
     required: false,
     default: []
   },
+  partners: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'company',
+      required: true
+    }],
+    required: false,
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
