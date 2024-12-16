@@ -8,9 +8,6 @@ const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 const User = require('../../models/User')
-const { BadRequestError } = require('../../utils/errors')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
-const { withMeasureTime } = require('../../utils/function_utilities')
 
 let count=0
 // HACK: use $sortArray in original when under mongo > 5.02
@@ -100,7 +97,7 @@ const getBlockResourcesOriginal = async ({blockId, userId}) => {
 };
 
 const getProgress = async ({user, block}) => {
-  return Progress.findOne({user, block})
+  return Progress.findOne({block, user})
 }
 
 const blockHasStatus = async ({user, block, status}) => {
@@ -217,5 +214,5 @@ const getBlockChildren = async ({blockId}) => {
 module.exports={
   getFinishedMandatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockChildren,getMandatoryResourcesCount,getFinishedResourcesData,
+  getBlockResources, getBlockChildren,getMandatoryResourcesCount,getFinishedResourcesData, getProgress,
 }
