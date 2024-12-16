@@ -36,6 +36,19 @@ const withMeasureTime = (fn, prefix) => {
   return internal
 }
 
+const withTrace = (fn) => {
+
+  const internal = async (...params) => {
+    // const msg=`${prefix} ${fn.name} ${JSON.stringify(params)}`
+    const msg=`Calling ${process.hrtime.bigint()} ${fn.name}`
+    console.trace(msg)
+    return fn(...params)
+  }
+  internal.name=fn.name
+
+  return internal
+}
+
 module.exports={
-  withCache, withMeasureTime,
+  withCache, withMeasureTime, withTrace
 }
