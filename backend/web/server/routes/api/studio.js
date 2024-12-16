@@ -157,6 +157,20 @@ router.get('/roles', (req, res) => {
   return res.json(ROLES)
 })
 
+router.get('/login/sso',
+  passport.authenticate('saml', {})
+)
+
+router.post("/auth-callback",
+  passport.authenticate('oauth2', {
+    failureRedirect: '/login',
+    session: false, // If you don't want to use sessions
+  }),
+  function (req, res) {
+    return sendCookie(req.user, res).json(req.user)
+  }
+)
+ 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
   // filter image original file

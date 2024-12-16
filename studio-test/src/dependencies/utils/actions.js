@@ -1156,4 +1156,9 @@ return Promise.allSettled(imagePromises)
   refresh: async ({reload}) => {
     reload()
   },
+
+  login_sso: async ({value}) => {
+    return window.location=`${API_ROOT}/login/sso`
+  },
+
 }
