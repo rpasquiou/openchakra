@@ -33,7 +33,7 @@ const CompanySchema = new Schema(
     sector: {
       type: String,
       enum: Object.keys(SECTOR),
-      required: true,
+      required: false,
     },
     email: {
       type: String,
