@@ -729,8 +729,9 @@ const lockSession = async (blockId, trainee) => {
   console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
   const trainees=trainee ? [trainee] : session.trainees
 
-  const setTraineesStatus = (blockId, status, withChildren) => {
-    return Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
+  const setTraineesStatus = async (blockId, status, withChildren) => {
+    await Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
+    await Progress.updateMany({block: blockId, user: {$in: trainees.map(t => t._id)}}, {finished_resources_count: 0})
   }
 
   // lock all blocks
