@@ -26,6 +26,8 @@ const ProgressSchema = new Schema({
   },
   finished_resources_count: {
     type: Number,
+    default: 0,
+    requried: true,
   },
   achievement_status: {
     type: String,
