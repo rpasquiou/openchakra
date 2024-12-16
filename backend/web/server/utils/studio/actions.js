@@ -89,10 +89,6 @@ let ACTIONS = {
     return getNext(id, user, referrer)
   },
 
-  previous: ({id}) => {
-    return getPrevious(id)
-  },
-
   session: ({id}) => {
     return getSession(id)
   },
