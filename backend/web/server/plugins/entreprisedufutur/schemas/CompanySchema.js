@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const siret = require('siret')
 const { DUMMY_REF } = require('../../../utils/database')
-const { SECTOR, COMPANY_SIZES, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR, COMPANY_TURNOVERS } = require('../consts')
+const { SECTOR, COMPANY_SIZES, LOOKING_FOR_MISSION, STATUTS, STATUT_FOUNDER, STATUT_SPONSOR, COMPANY_TURNOVERS, STATUT_MEMBER } = require('../consts')
 const { isPhoneOk, isEmailOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
 
@@ -142,7 +142,7 @@ const CompanySchema = new Schema(
       type: String,
       enum: Object.keys(STATUTS),
       required: false,
-      set: v => v || undefined,
+      default: STATUT_MEMBER
     },
     sponsor: {
       type: [{
