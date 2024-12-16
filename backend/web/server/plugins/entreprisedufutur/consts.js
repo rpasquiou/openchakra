@@ -167,7 +167,7 @@ const JOBS = {
   [JOB_CSR_QSE_DIRECTOR]: `Directeur(trice) RSE/QSE`,
   [JOB_TECHNICAL_DIRECTOR]: `Directeur(trice) Technique`,
   [JOB_DIGITAL_TRANSFORMATION_DIRECTOR]: `Directeur(trice) Transformation Digitale`,
-  [JOB_CHARTERED_ACCOUNTANT]: `Expert comptable`,
+  [JOB_CHARTERED_ACCOUNTANT]: `Expert(e) Comptable`,
   [JOB_OPERATIONAL_FUNCTION]: `Fonction Opérationnelle`,
   [JOB_FOUNDER]: `Fondateur(trice) Communication`,
   [JOB_INDEPENDENT]: `Indépendant(e)`,
