@@ -141,7 +141,7 @@ const CompanySchema = new Schema(
     statut: {
       type: String,
       enum: Object.keys(STATUTS),
-      required: false,
+      required: true,
       default: STATUT_MEMBER
     },
     sponsor: {
