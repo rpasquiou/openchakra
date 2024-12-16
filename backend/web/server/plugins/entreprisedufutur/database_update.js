@@ -1,5 +1,5 @@
 const User = require('../../models/User')
-const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS, SECTOR_AERONAUTICS } = require('./consts')
+const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, JOB_COMMERCIAL_MANAGER, JOB_GENERAL_MANAGER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS } = require('./consts')
 const Company = require('../../models/Company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const Group = require('../../models/Group')
