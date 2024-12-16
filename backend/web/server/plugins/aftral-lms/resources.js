@@ -12,6 +12,7 @@ const { BadRequestError } = require('../../utils/errors')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const { withMeasureTime } = require('../../utils/function_utilities')
 
+let count=0
 // HACK: use $sortArray in original when under mongo > 5.02
 const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional, ordered}) => {
   if (!blockId || (!includeUnavailable && !userId) || lodash.isNil(includeUnavailable) || lodash.isNil(includeOptional)) {
@@ -36,17 +37,19 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
 
   // Process each block, and ensure correct ordering of results
   for (const b of blocks) {
+    // Don't include optionals: skip
     if (!!b.optional && !includeOptional) {
       continue
     }
-    if (b.type == BLOCK_TYPE_RESOURCE) {
-      if (role == ROLE_APPRENANT && !includeUnavailable) {
-        const unavailable = await Progress.exists({block: b._id,user: userId,achievement_status: BLOCK_STATUS_UNAVAILABLE})
-        if (unavailable) {
-          continue
-        }
+    // Don't include unavailable: skip
+    if (role == ROLE_APPRENANT && !includeUnavailable) {
+      const unavailable = await Progress.exists({block: b._id,user: userId,achievement_status: BLOCK_STATUS_UNAVAILABLE})
+      if (unavailable) {
+        continue
       }
-      res.push(b)
+      if (b.type==BLOCK_TYPE_RESOURCE) {
+        res.push(b)
+      }
     } else {
       const subResources = await getBlockResourcesNew({
         blockId: b._id,
