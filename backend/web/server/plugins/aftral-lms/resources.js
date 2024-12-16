@@ -47,10 +47,11 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
       if (unavailable) {
         continue
       }
-      if (b.type==BLOCK_TYPE_RESOURCE) {
-        res.push(b)
-      }
-    } else {
+    } 
+    if (b.type==BLOCK_TYPE_RESOURCE) {
+      res.push(b)
+    }
+    else {
       const subResources = await getBlockResourcesNew({
         blockId: b._id,
         userId,
