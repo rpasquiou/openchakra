@@ -116,8 +116,7 @@ const getUserHomeworks = async (userId, params, data) => {
 }
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
-const _getFinishedResourcesData = async (userId, blockId) => {
-
+const getFinishedResourcesData = async (userId, blockId) => {
   const resources=await getBlockResources({blockId, userId, includeUnavailable: true, includeOptional: false})
   const totalResources=resources.length
   const finishedResources=await Progress.countDocuments({block: {$in: resources.map(r => r._id)}, user: userId, achievement_status: BLOCK_STATUS_FINISHED})
@@ -126,14 +125,14 @@ const _getFinishedResourcesData = async (userId, blockId) => {
 
 // Returns MANDATORY finished resources
 const getFinishedMandatoryResourcesCount = async (userId, params, data) => {
-  const { finishedResources } = await _getFinishedResourcesData(userId, data._id)
-  return finishedResources
+  return (await Progress.find({user: userId, block: data._id}))?.finished_resources_count
 }
 
 // Mandatory resouces percent progress
 const getResourcesProgress = async (userId, params, data) => {
-  const { finishedResources, totalResources } = await _getFinishedResourcesData(userId, data._id)
-  return totalResources > 0 ?  finishedResources / totalResources : 0
+  const mandatoryFinished=(await Progress.findOne({user: userId, block: data._id}))?.finished_resources_count
+  const mandatoryTotal=data.mandatory_resources_count
+  return mandatoryTotal>0 ? mandatoryFinished /mandatoryTotal : 0
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
@@ -214,5 +213,5 @@ const getBlockChildren = async ({blockId}) => {
 module.exports={
   getFinishedMandatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
   getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockChildren,getMandatoryResourcesCount,
+  getBlockResources, getBlockChildren,getMandatoryResourcesCount,getFinishedResourcesData,
 }

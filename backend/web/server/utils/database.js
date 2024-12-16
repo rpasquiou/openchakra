@@ -11,7 +11,12 @@ const {BadRequestError, NotFoundError} = require('./errors')
 const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 const {runPromisesWithDelay}=require('./concurrency')
-const { withMeasureTime } = require('./function_utilities')
+
+// mongoose.set('debug', customLogger);
+
+function customLogger(coll, op, doc, proj) {
+  console.log(`Mongoose:${coll}.${op}(${JSON.stringify(doc)},${JSON.stringify(proj)})`);
+}
 
 let scormCallbackPost=null
 

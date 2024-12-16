@@ -2,9 +2,10 @@ const lodash=require('lodash')
 const Ticket=require('../../models/Ticket')
 const Session=require('../../models/Session')
 const Block = require('../../models/Block')
-const { getAllResourcesCount, getMandatoryResourcesCount } = require('./resources')
+const { getAllResourcesCount, getMandatoryResourcesCount, getFinishedResourcesData } = require('./resources')
 const User = require('../../models/User')
 const { ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE } = require('./consts')
+const Progress = require('../../models/Progress')
 
 const log = (...params) => {
   return console.log('DB Update', ...params)
@@ -52,10 +53,24 @@ const setSessionResourcesCount = async () => {
   }))
 }
 
+// Set finished reswources count on progresses
+const setFinishedProgresses = async () => {
+  log('Setting resources_count on session blocks')
+  const progresses=await Progress.find({finished_resources_count: null})
+  log(progresses.length, 'progresses with no finished count')
+  for (const progress of progresses) {
+    const {finishedResources}=await getFinishedResourcesData(progress.user, progress.block)
+    console.log(progress, finishedResources)
+    progress.finished_resources_count=finishedResources
+    await progress.save()
+  }
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   await setSessionOnTickets()
   await setSessionResourcesCount()
+  await setFinishedProgresses()
 }
 
 module.exports=databaseUpdate
