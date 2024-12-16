@@ -53,17 +53,17 @@ const SECTOR_SERVICES = `SECTOR_SERVICES`
 const SECTOR_TRANSPORT_LOGISTICS = `SECTOR_TRANSPORT_LOGISTICS`
 
 const SECTOR = {
-  [SECTOR_BANK_FINANCE] : `Aéronautique`,
-  [SECTOR_CONSTRUCTION] : `Automobile`,
-  [SECTOR_CONSULTING] : `Autres industries`,
-  [SECTOR_INDUSTRY] : `Biotechnologies`,
-  [SECTOR_INSTITUTIONAL] : `BTP & construction`,
-  [SECTOR_MEDIA] : `Bureau d'études`,
-  [SECTOR_DIGITAL] : `Chimie, cosmétique`,
-  [SECTOR_RETAIL_DISTRIBUTION] : `Commerce et distribution`,
-  [SECTOR_HEALTHCARE] : `Santé, Pharma`,
-  [SECTOR_SERVICES] : `Secteur public & collectivités`,
-  [SECTOR_TRANSPORT_LOGISTICS] : `Textile`,
+  [SECTOR_BANK_FINANCE] : `Banque / Finance`,
+  [SECTOR_CONSTRUCTION] : `BTP`,
+  [SECTOR_CONSULTING] : `Conseil`,
+  [SECTOR_INDUSTRY] : `Industrie`,
+  [SECTOR_INSTITUTIONAL] : `Institutionnel`,
+  [SECTOR_MEDIA] : `Média`,
+  [SECTOR_DIGITAL] : `Numérique`,
+  [SECTOR_RETAIL_DISTRIBUTION] : `Retail / Distribution`,
+  [SECTOR_HEALTHCARE] : `Santé`,
+  [SECTOR_SERVICES] : `Service`,
+  [SECTOR_TRANSPORT_LOGISTICS] : `Transport / Logistique`,
 }
 
 const EXPERTISE_CATEGORY_THREAT_ANALYSIS = `EXPERTISE_CATEGORY_THREAT_ANALYSIS`
