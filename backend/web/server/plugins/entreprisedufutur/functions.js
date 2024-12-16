@@ -249,6 +249,7 @@ USER_MODELS.forEach(m => {
   declareComputedField({model: m, field: 'unseen_notifications_count', getterFn: getPendingNotificationsCount})
   declareVirtualField({model: m, field: 'published_missions_count', instance: 'Number'})
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
+  declareEnumField({model: m, field:'is_allergic', enumValues: BOOLEAN_ENUM})
 })
 
 //Company declarations
