@@ -823,8 +823,8 @@ const preCreate = async ({model, params, user}) => {
 
   if (model == 'mission') {
     if (params.parent) {
-      params.company = params.parent
-      params.is_public = true
+      params.company = [params.parent]
+      params.is_public = false
     } else {
       if (!params.companies?.[0] && !params.is_public) {
         throw new Error(`Merci de renseigner une entreprise ou de rendre la mission publique avant d'envoyer votre demande`)
