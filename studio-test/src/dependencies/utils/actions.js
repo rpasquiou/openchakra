@@ -1200,5 +1200,16 @@ return Promise.allSettled(imagePromises)
       nb_tables
     }
     return axios.post(url, body)
-  }
+  },
+
+  generate_order: ({value, props, level, getComponentValue}) => {
+    const nb_tickets = getComponentValue(props.nb_tickets, level)
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'generate_order',
+      value: value?._id,
+      nb_tickets
+    }
+    return axios.post(url, body)
+  },
 }

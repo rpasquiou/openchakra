@@ -780,6 +780,13 @@ export const ACTIONS: IActions = {
     },
     next: [],
   },
+  generate_order: {
+    label: 'generate order',
+    options: {
+      nb_tickets: ({components}) => components.map(p => ({key: p.id, label: p.id})),
+    },
+    next: [],
+  },
   toggle_full_screen: {
     label: 'Toggle full screen',
     options: {},
