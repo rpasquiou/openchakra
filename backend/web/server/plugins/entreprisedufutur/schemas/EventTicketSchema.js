@@ -65,7 +65,7 @@ const EventTicketSchema = new Schema({
     enum: Object.keys(EVENT_VISIBILITY),
     required: false,
   },
-  is_remain_tickets_shown: {
+  is_remaining_tickets_shown: {
     type: Boolean,
     required: false,
     default: false
