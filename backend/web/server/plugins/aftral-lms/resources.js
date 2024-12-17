@@ -3,33 +3,22 @@ const path = require('path')
 const lodash=require('lodash')
 const Homework = require("../../models/Homework")
 const { idEqual } = require("../../utils/database")
-const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE, RESOURCE_TYPE_SCORM } = require('./consts')
+const { RESOURCE_TYPE_EXT, BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, ROLE_APPRENANT, BLOCK_TYPE_RESOURCE, RESOURCE_TYPE_SCORM, BLOCK_STATUS_UNAVAILABLE } = require('./consts')
 const Progress = require('../../models/Progress')
 const { formatDuration } = require('../../../utils/text')
 const Block = require('../../models/Block')
 const User = require('../../models/User')
-const { BadRequestError } = require('../../utils/errors')
-const { runPromisesWithDelay } = require('../../utils/concurrency')
 
+let count=0
 // HACK: use $sortArray in original when under mongo > 5.02
-const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional}) => {
-  if (!blockId) {
-    console.error('blockId is required')
-    throw new Error('blockId is required')
+const getBlockResources = async ({blockId, userId, includeUnavailable, includeOptional, ordered}) => {
+  if (!blockId || (!includeUnavailable && !userId) || lodash.isNil(includeUnavailable) || lodash.isNil(includeOptional)) {
+    const errorMsg=`blockId, userId, includeUnavailable, includeOptionalrequired, GOT ${[blockId, userId, includeUnavailable, includeOptional]}`
+    console.trace(errorMsg)
+    throw new Error(errorMsg)
   }
-  if (!userId) {
-    console.error('userId is required')
-    throw new Error('userId is required')
-  }
-  if (lodash.isNil(includeUnavailable)) {
-    console.trace('includeUnavailable is required')
-    throw new Error('includeUnavailable is required')
-  }
-  if (lodash.isNil(includeOptional)) {
-    console.trace('includeOptional is required')
-    throw new Error('includeOptional is required')
-  }
-  return getBlockResourcesNew({blockId, userId, includeUnavailable, includeOptional})
+  const res=await getBlockResourcesNew({blockId, userId, includeUnavailable, includeOptional})
+  return res
 }
 
 const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, includeOptional, role }) => {
@@ -45,22 +34,21 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
 
   // Process each block, and ensure correct ordering of results
   for (const b of blocks) {
+    // Don't include optionals: skip
     if (!!b.optional && !includeOptional) {
       continue
     }
-    if (b.type == BLOCK_TYPE_RESOURCE) {
-      if (role == ROLE_APPRENANT && !includeUnavailable) {
-        const available = await Progress.exists({
-          block: b._id,
-          user: userId,
-          achievement_status: { $in: [BLOCK_STATUS_TO_COME, BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED] }
-        });
-        if (!available) {
-          continue
-        }
+    // Don't include unavailable: skip
+    if (role == ROLE_APPRENANT && !includeUnavailable) {
+      const unavailable = await Progress.exists({block: b._id,user: userId,achievement_status: BLOCK_STATUS_UNAVAILABLE})
+      if (unavailable) {
+        continue
       }
+    } 
+    if (b.type==BLOCK_TYPE_RESOURCE) {
       res.push(b)
-    } else {
+    }
+    else {
       const subResources = await getBlockResourcesNew({
         blockId: b._id,
         userId,
@@ -109,7 +97,7 @@ const getBlockResourcesOriginal = async ({blockId, userId}) => {
 };
 
 const getProgress = async ({user, block}) => {
-  return Progress.findOne({user, block})
+  return Progress.findOne({block, user})
 }
 
 const blockHasStatus = async ({user, block, status}) => {
@@ -130,21 +118,22 @@ const getUserHomeworks = async (userId, params, data) => {
 
 // TODO: For trainees only : don't count masked blocks (i.e block.masked==true)
 const getFinishedResourcesData = async (userId, blockId) => {
-
   const resources=await getBlockResources({blockId, userId, includeUnavailable: true, includeOptional: false})
   const totalResources=resources.length
   const finishedResources=await Progress.countDocuments({block: {$in: resources.map(r => r._id)}, user: userId, achievement_status: BLOCK_STATUS_FINISHED})
   return {totalResources, finishedResources}
 };
 
-const getFinishedResourcesCount = async (userId, params, data) => {
-  const { finishedResources } = await getFinishedResourcesData(userId, data._id)
-  return finishedResources
+// Returns MANDATORY finished resources
+const getFinishedMandatoryResourcesCount = async (userId, params, data) => {
+  return (await Progress.find({user: userId, block: data._id}))?.finished_resources_count
 }
 
+// Mandatory resouces percent progress
 const getResourcesProgress = async (userId, params, data) => {
-  const { finishedResources, totalResources } = await getFinishedResourcesData(userId, data._id)
-  return totalResources > 0 ? finishedResources / totalResources : 0
+  const mandatoryFinished=(await Progress.findOne({user: userId, block: data._id}))?.finished_resources_count
+  const mandatoryTotal=data.mandatory_resources_count
+  return mandatoryTotal>0 ? mandatoryFinished /mandatoryTotal : 0
 }
 
 const getResourceAnnotation = async (userId, params, data) => {
@@ -176,8 +165,15 @@ const getResourceType = async url => {
   return res[0]
 }
 
-const getResourcesCount = async (userId, params, data) => {
+// All resources count, including optional
+const getAllResourcesCount = async (userId, params, data) => {
   const subResourcesIds=await getBlockResources({blockId: data._id, userId, includeUnavailable: true, includeOptional: true})
+  return subResourcesIds.length
+}
+
+// All resources count, including optional
+const getMandatoryResourcesCount = async (userId, params, data) => {
+  const subResourcesIds=await getBlockResources({blockId: data._id, userId, includeUnavailable: true, includeOptional: false})
   return subResourcesIds.length
 }
 
@@ -216,7 +212,7 @@ const getBlockChildren = async ({blockId}) => {
 }
 
 module.exports={
-  getFinishedResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
-  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getResourcesCount, canPlay, canReplay, canResume,
-  getBlockResources, getBlockChildren,
+  getFinishedMandatoryResourcesCount, isResourceMine, setResourceAnnotation, getResourceAnnotation, getResourcesProgress, getUserHomeworks, onSpentTimeChanged,
+  getResourceType, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, canPlay, canReplay, canResume,
+  getBlockResources, getBlockChildren,getMandatoryResourcesCount,getFinishedResourcesData, getProgress,
 }

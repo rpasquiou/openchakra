@@ -4,30 +4,23 @@ const { BLOCK_STATUS, RESOURCE_TYPE } = require("./consts")
 const { formatDuration } = require("../../../utils/text")
 const Program = require("../../models/Program")
 const User = require("../../models/User")
-const Session = require("../../models/Session")
-const { Fields } = require("@smithy/protocol-http")
 const Group = require("../../models/Group")
-const { ObjectId } = require("bson")
 
-const fillSession = async (session, trainee) => {
+const fillSession = async (session, trainee, f) => {
+  console.log('Filling for', trainee, f)
+  fields=lodash(f)
+    .filter(f => /^trainees.statistics\./.test(f))
+    .map(f => f.replace(/^trainees.statistics\./, ''))
+    .value()
   session.trainees = trainee ? [trainee] : session.trainees
   const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
-  const range = program.children[0].type == 'chapter' ? 5 : 4
-  // TODO get asked fields from front
-  let fields=lodash.range(range).map(childCount => 
-    ['name', 'resources_count', 'finished_resources_count', 'resources_progress', 'achievement_status', 'spent_time_str', 'type',
-    'success_note_max', 'note'
-  ]
-      .map(att => [...Array(childCount).fill('children'), att].join('.'))
-  )
-  fields=lodash.flatten(fields)
-  fields= [...fields, 'evaluation_resources']
   return Promise.all(session.trainees.map(trainee => {
-    return loadFromDb({model: 'program', id: programId, fields, user: trainee})
+    return loadFromDb({model: 'program', id: programId, fields, user: trainee, skipRetain: true})
       .then(prog => {
-        console.log('Load program for user', trainee._id)
+        console.log('Load program for user', trainee._id, fields)
         trainee.statistics=new Program(prog[0])
+        console.log(JSON.stringify(trainee.statistics, null, 2))
         return trainee
       })
   }))
@@ -58,9 +51,9 @@ const computeStatistics = async ({fields, id, user, params}) => {
     }))
   }
   fields=[...fields, 'start_date', 'end_date', 'trainees']
-  const loaded=await loadFromDb({model: 'session', user, fields, ...sessionId})
+  const loaded=await loadFromDb({model: 'session', user, fields, skipRetain: true, ...sessionId})
   return Promise.resolve(loaded)
-    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee))))
+    .then(sessions => Promise.all(sessions.map(s => fillSession(s, trainee, fields))))
     .then(sessions => ([{_id: id, sessions}]))
 }
   

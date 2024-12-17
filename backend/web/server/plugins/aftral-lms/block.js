@@ -6,12 +6,12 @@ const moment = require("moment");
 const mongoose=require('mongoose')
 const Progress = require("../../models/Progress")
 const { BLOCK_STATUS_CURRENT, BLOCK_STATUS_FINISHED, BLOCK_STATUS_TO_COME, BLOCK_STATUS_UNAVAILABLE, ACHIEVEMENT_RULE_CHECK, ROLE_CONCEPTEUR, ROLE_APPRENANT, ROLE_ADMINISTRATEUR, BLOCK_TYPE, BLOCK_TYPE_RESOURCE, BLOCK_TYPE_SESSION, SCALE_ACQUIRED, RESOURCE_TYPE_SCORM, SCALE, BLOCK_STATUS, SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED, BLOCK_TYPE_SEQUENCE, BLOCK_TYPE_PROGRAM, BLOCK_TYPE_CHAPTER, BLOCK_TYPE_MODULE, BLOCK_TYPE_LABEL, BLOCK_STATUS_VALID } = require("./consts");
-const { getBlockResources, getBlockChildren } = require("./resources");
+const { getBlockResources, getBlockChildren, getAllResourcesCount, getProgress } = require("./resources");
 const { idEqual, loadFromDb, getModel } = require("../../utils/database");
 const User = require("../../models/User");
 const SessionConversation = require("../../models/SessionConversation");
 const Homework = require("../../models/Homework");
-const { BadRequestError } = require("../../utils/errors");
+const { BadRequestError, ForbiddenError } = require("../../utils/errors");
 const { CREATED_AT_ATTRIBUTE } = require("../../../utils/consts");
 const { sendBufferToAWS } = require("../../middlewares/aws");
 const { fillForm2 } = require("../../../utils/fillForm");
@@ -65,10 +65,6 @@ const getTopParent = async blockId => {
   return getTopParent(block.parent)
 }
 
-const getProgress = async (userId, blockId) => {
-  return mongoose.models.progress.findOne({user: userId, block: blockId})
-}
-
 const setParentSession = async (session_id) => {
   const allBlocks=await getSessionBlocks(session_id)
   return mongoose.models.block.updateMany({_id: {$in: allBlocks}}, {session: session_id})
@@ -104,7 +100,7 @@ const getBlockStatus = async (userId, params, data) => {
       return BLOCK_STATUS_FINISHED
     }
   }
-  return (await Progress.findOne({ block: data._id, user: userId }))?.achievement_status
+  return (await getProgress({user: userId, block: data._id}))?.achievement_status
 }
 
 const cloneTree = async (blockId, parentId) => {
@@ -326,7 +322,7 @@ const onBlockAction = async (userId, blockId) => {
       }
     }
   }
-  const progress=await Progress.findOne({user: userId, block: blockId})
+  const progress=await getProgress({block: blockId, user: userId})
   const rule=bl.achievement_rule
   const prevStatus=progress.achievement_status
   const finished=ACHIEVEMENT_RULE_CHECK[rule](progress)
@@ -354,7 +350,7 @@ const getBlockSession = async blockId => {
 
 const getNextResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true, ordered: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if ((idx+1)>=resources.length) {
     throw new Error('Pas de ressource suivante')
@@ -364,7 +360,7 @@ const getNextResource= async (blockId, user) => {
 
 const getPreviousResource= async (blockId, user) => {
   const session=await getBlockSession(blockId, user)
-  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true})
+  const resources=await getBlockResources({blockId: session, userId: user, includeUnavailable: false, includeOptional: true, ordered: true})
   const idx=resources.findIndex(r => idEqual(r._id, blockId))
   if (idx==0) {
     throw new Error('Pas de ressource précédente')
@@ -386,61 +382,47 @@ const getSession = async (userId, params, data, fields) => {
 }
 
 const getBlockLiked = async (userId, params, data) => {
-  const user = await User.findById(userId, {role:1})
-  const template = await getTemplate(data._id)
-  if(user.role == ROLE_CONCEPTEUR) {
-    return template._liked_by.length > 0
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return false
   }
-  return template?._liked_by.some(like => idEqual(like, userId))
+  const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
+  if (isTrainee) {
+    return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _liked_by: userId})
+  }
+  return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, '_liked_by.0': {$exists: true}})
 }
 
 const getBlockDisliked = async (userId, params, data) => {
-  const user = await User.findById(userId, {role:1})
-  const template = await getTemplate(data._id)
-  if(user.role == ROLE_CONCEPTEUR) {
-    return template._disliked_by.length > 0
+  if (data.type!=BLOCK_TYPE_RESOURCE) {
+    return false
   }
-  return template?._disliked_by.some(dislike => idEqual(dislike, userId))
+  const isTrainee = await User.exists({_id: userId, role:ROLE_APPRENANT})
+  if (isTrainee) {
+    return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, _disliked_by: userId})
+  }
+  return mongoose.models.block.exists({name: data.name, origin: null, _locked: false, '_disliked_by.0': {$exists: true}})
 }
 
 const setBlockLiked = async ({ id, attribute, value, user }) => {
   const template = await getTemplate(id)
   if(value) {
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {
-        $pull: {
-          _disliked_by: user._id
-        }, 
-        $addToSet: {
-          _liked_by: user._id
-        }
-      }
-    )
+    return mongoose.models.block.findByIdAndUpdate(template._id,{
+        $pull: {_disliked_by: user._id}, 
+        $addToSet: {_liked_by: user._id}
+      })
   }
-  else{
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {_liked_by: user._id}})
-  }
+  return mongoose.models['block'].findByIdAndUpdate(template._id,{$pull: {_liked_by: user._id}})
 }
 
 const setBlockDisliked = async ({ id, attribute, value, user }) => {
   const template = await getTemplate(id)
   if(value) {
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {
-        $pull: {
-          _liked_by: user._id
-        }, 
-        $addToSet: {
-          _disliked_by: user._id
-        }
-      }
-    )
+    return mongoose.models['block'].findByIdAndUpdate(template._id,{
+        $pull: {_liked_by: user._id}, 
+        $addToSet: {_disliked_by: user._id}
+      })
   }
-  else{
-    return mongoose.models['block'].findByIdAndUpdate(template._id,
-      {$pull: {_disliked_by: user._id}})
-  }
+  return mongoose.models['block'].findByIdAndUpdate(template._id, {$pull: {_disliked_by: user._id}})
 }
 
 const getTemplate = async (id) => {
@@ -729,13 +711,20 @@ const lockSession = async (blockId, trainee) => {
   console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
   const trainees=trainee ? [trainee] : session.trainees
 
-  const setTraineesStatus = (blockId, status, withChildren) => {
-    return Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
+  const setTraineesStatus = async (blockId, status, withChildren) => {
+    await Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
+    await Progress.updateMany({block: blockId, user: {$in: trainees.map(t => t._id)}}, {finished_resources_count: 0})
   }
 
   // lock all blocks
   const allChildren=await getSessionBlocks(session)
-  await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
+  // Set resources count on blocks
+  await Promise.all([session, ...allChildren].map(async block => {
+    const resourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
+    const mandatoryResourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
+    await mongoose.models.block.findByIdAndUpdate(block._id, {resources_count: resourcesCount, mandatory_resources_count: mandatoryResourcesCount})
+  }))
+  await mongoose.models.block.updateMany({_id: {$in: [session, ...allChildren]}}, {_locked: true})
 
   const delta={
     [BLOCK_TYPE_SESSION]:1,
@@ -805,11 +794,23 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
 
   if (idxAfter>idxBefore) {
     await Progress.findOneAndUpdate(
-    {block: blockId, user: userId},
-    {block: blockId, user: userId, achievement_status: status},
-    {upsert: true}
-  )
-
+      {block: blockId, user: userId},
+      {block: blockId, user: userId, achievement_status: status},
+      {upsert: true}
+    )
+  }
+  
+  const statusChanged=idxBefore!=idxAfter
+  const type=(await mongoose.models.block.findById(blockId))?.type
+  if (statusChanged && status==BLOCK_STATUS_FINISHED && type==BLOCK_TYPE_RESOURCE) {
+    // Increment finished mandatory resources
+    const session=await getBlockSession(blockId)
+    const mandatory_resources=await getBlockResources({blockId: session._id, userId, includeUnavailable: true, includeOptional: false})
+    const isMandatory=!!mandatory_resources.find(r => idEqual(r._id, blockId))
+    const parents=await getParentBlocks(blockId)
+    await Progress.updateMany({user: userId, block: {$in: parents}}, {$inc: {finished_resources_count: 1}})
+     .then(console.log)
+     .catch(console.error)
   }
   if (withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
@@ -834,7 +835,7 @@ const getBlockScormData = async (userId, blockId) => {
   if (!userId || !blockId) {
     throw new Error(userId, blockId)
   }
-  const pr=await Progress.findOne({block: blockId, user: userId})
+  const pr=await getProgress({block: blockId, user:userId})
   if (pr?.scorm_data) {
     return JSON.parse(pr.scorm_data)
   }
@@ -898,7 +899,7 @@ const getBlockNote = async (userId, params, data) => {
     return scormData?.['cmi.core.score.raw'] || undefined
   }
   else {
-    return (await getProgress({user: userId, block: data._id}))?.note || null
+    return (await getProgress({block: data._id, user: userId}))?.note || null
   }
 }
 
@@ -910,7 +911,7 @@ const setBlockNote = async ({ id, attribute, value, user }) => {
   if (!!bl.homework_mode) {
     throw new BadRequestError(`La note doit être mise sur un devoir`)
   }
-  pr = await getProgress({user, id})
+  pr = await getProgress({block: id, user})
   pr.note=value
   return pr.save()
 }

@@ -12,6 +12,12 @@ const NodeCache=require('node-cache')
 const AddressSchema = require('../models/AddressSchema')
 const {runPromisesWithDelay}=require('./concurrency')
 
+// mongoose.set('debug', customLogger);
+
+function customLogger(coll, op, doc, proj) {
+  console.log(`Mongoose:${coll}.${op}(${JSON.stringify(doc)},${JSON.stringify(proj)})`);
+}
+
 let scormCallbackPost=null
 
 const setScormCallbackPost = fn => {
@@ -750,7 +756,7 @@ const addComputedFields = async (
       // Handle references => sub
       const refAttributes = getRefAttributes(model)
       return runPromisesWithDelay(refAttributes.map(([attName, attParams]) => () => {
-        const requiredSubFields=getRequiredSubFields(fields, attName)
+        const requiredSubFields=getRequiredSubFields(originalFields, attName)
 
         const children = lodash.flatten([data[attName]]).filter(v => !!v)
         return Promise.all(
@@ -800,10 +806,10 @@ const declareComputedField = ({model, field, getterFn, setterFn, ...rest}) => {
     throw new Error(`Virtual ${model}.${field} can not be computed because data are not leaned, declare it as plain attribute`)
   }
   if (getterFn) {
-    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn)
+    lodash.set(COMPUTED_FIELDS_GETTERS, `${model}.${field}`, getterFn, model)
   }
   if (setterFn) {
-    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn)
+    lodash.set(COMPUTED_FIELDS_SETTERS, `${model}.${field}`, setterFn, model)
   }
   if (rest.requires) {
     declareFieldDependencies({model, field, requires: rest.requires})

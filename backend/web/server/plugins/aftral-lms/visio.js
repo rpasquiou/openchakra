@@ -140,7 +140,6 @@ const getVisioTypeStr = async (userId, params, data, fields, actualLogged) => {
 }
 
 const getSessionTraineeVisio = async (session_id, user_id) => {
-  console.log('Getting sesison trainees', session_id, user_id)
   const groups=(await Group.find({sessions: session_id})).map(g => g._id)
   const ids=[user_id, session_id, ...groups]
   const visios=await mongoose.models.visio.find({_owner: {$in: ids}})
