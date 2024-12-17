@@ -4,12 +4,15 @@ const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
 const Table = require('../../models/Table')
 const Event = require('../../models/Event')
+const EventTicket = require('../../models/EventTicket')
+const OrderTicket = require('../../models/OrderTicket')
+const Order = require('../../models/Order')
 
 
 const startSurvey = async (_, user) => {
@@ -140,6 +143,34 @@ const generateTables = async ({value, nb_seats, nb_tables}, user) => {
   return value
 }
 addAction('generate_tables', generateTables)
+
+
+const generateOrder = async ({value,nb_tickets}, user) => {
+
+  if (!value) {
+    throw new NotFoundError(`no eventTicket id`)
+  }
+
+  if (!testNumber(nb_tickets)) {
+    throw new TypeError(`nb_tickets is not a number`)
+  }
+
+  const order = await Order.create({eventTicket: value, status: ORDER_STATUS_IN_PROGRESS})
+
+  const eventTicket = await EventTicket.findById(value, ['remaining_tickets'])
+  const remaining_tickets = eventTicket.remaining_tickets
+
+  for (let i = 0; i < nb_tickets; i++) {
+    const status = i<remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
+    if (i == 1) {
+      await OrderTicket.create({order: order._id, status, firstname: user.firstname, latname: user.lastname, email: user.email})
+    } else {
+      await OrderTicket.create({order: order._id, status})
+    }
+  }
+  return value
+}
+addAction('generate_order', generateOrder)
 
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
