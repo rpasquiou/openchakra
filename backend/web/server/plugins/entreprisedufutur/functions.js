@@ -687,6 +687,10 @@ const preCreate = async ({model, params, user}) => {
     throw new ForbiddenError(`Une table doit être créée via l'action generate_tables`)
   }
 
+  if (model == 'order') {
+    throw new ForbiddenError(`Une commande doit être créée via l'action generate_order`)
+  }
+
   if (model == 'carreer') {
     if (!user.company) {
       throw new BadRequestError(`Il faut faire partie d'une entreprise pour pouvoir créer un job`)
