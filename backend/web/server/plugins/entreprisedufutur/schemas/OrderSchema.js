@@ -25,6 +25,13 @@ OrderSchema.virtual('order_tickets', {
   foreignField: 'order'
 })
 
+OrderSchema.virtual('order_tickets_count', {
+  ref: 'orderTicket',
+  localField: '_id',
+  foreignField: 'order',
+  count: true
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = OrderSchema

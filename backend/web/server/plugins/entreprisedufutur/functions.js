@@ -518,6 +518,7 @@ declareVirtualField({model: 'order', field: 'order_tickets', multiple: true, ins
     options: { ref: 'orderTicket' }
   }
 })
+declareVirtualField({model: 'order', field: 'order_tickets_count', instance: 'Number'})
 
 //OrderTicket declarations
 declareEnumField({model: 'orderTicket', field: 'status', enumValues: USERTICKET_STATUSES})
