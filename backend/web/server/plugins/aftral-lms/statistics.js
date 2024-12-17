@@ -7,17 +7,20 @@ const User = require("../../models/User")
 const Group = require("../../models/Group")
 
 const fillSession = async (session, trainee, f) => {
+  console.log('Filling for', trainee, f)
   fields=lodash(f)
     .filter(f => /^trainees.statistics\./.test(f))
     .map(f => f.replace(/^trainees.statistics\./, ''))
+    .value()
   session.trainees = trainee ? [trainee] : session.trainees
   const program = await Program.findOne({parent: session._id}).populate('children')
   const programId = program._id
   return Promise.all(session.trainees.map(trainee => {
     return loadFromDb({model: 'program', id: programId, fields, user: trainee, skipRetain: true})
       .then(prog => {
-        console.log('Load program for user', trainee._id)
+        console.log('Load program for user', trainee._id, fields)
         trainee.statistics=new Program(prog[0])
+        console.log(JSON.stringify(trainee.statistics, null, 2))
         return trainee
       })
   }))
