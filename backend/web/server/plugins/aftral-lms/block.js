@@ -713,7 +713,7 @@ const lockSession = async (blockId, trainee) => {
 
   const setTraineesStatus = async (blockId, status, withChildren) => {
     await Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
-    await Progress.updateMany({block: blockId, user: {$in: trainees.map(t => t._id)}}, {finished_resources_count: 0})
+    await Progress.updateMany({block: blockId, user: {$in: trainees.map(t => t._id)}}, {finished_resources_count: 0, scorm_data: null})
   }
 
   // lock all blocks
@@ -864,11 +864,12 @@ const setScormData= async (userId, blockId, data) => {
   const block=await mongoose.models.block.findById(blockId)
   console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}, null, 2))
   const scormData=await getBlockScormData(userId, block)
-  const lesson_status=scormData?.['cmi.core.lesson_status']
+  const lesson_status=scormData?.['cmi.core.lesson_status'] || scormData?.['cmi.success_status']
   // If a min note is defined on the resource, use it
-  const hasNote=!!scormData?.['cmi.core.score.raw']
+  const note=scormData?.['cmi.core.score.raw'] || scormData?.['cmi.score.raw']
+  const hasNote=!!note
   // #212 Validate if note is egal to success min
-  const scormMinNoteReached=!!block.success_note_min && parseInt(scormData?.['cmi.core.score.raw']) >= block.success_note_min
+  const scormMinNoteReached=!!block.success_note_min && parseInt(note) >= block.success_note_min
   const update={
     success: lesson_status==SCORM_STATUS_PASSED || scormMinNoteReached,
     finished: [SCORM_STATUS_PASSED, SCORM_STATUS_FAILED, SCORM_STATUS_COMPLETED].includes(lesson_status) || hasNote,
