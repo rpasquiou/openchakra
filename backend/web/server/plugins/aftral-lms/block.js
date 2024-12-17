@@ -897,7 +897,7 @@ const getBlockNote = async (userId, params, data) => {
   }
   else if (data.resource_type==RESOURCE_TYPE_SCORM) {
     const scormData=await getBlockScormData(userId, data._id)
-    return scormData?.['cmi.core.score.raw'] || undefined
+    return scormData?.['cmi.core.score.raw'] ||  scormData?.['cmi.score.raw'] || undefined
   }
   else {
     return (await getProgress({block: data._id, user: userId}))?.note || null
