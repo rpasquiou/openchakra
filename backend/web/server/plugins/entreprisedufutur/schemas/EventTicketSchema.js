@@ -14,7 +14,7 @@ const EventTicketSchema = new Schema({
     ref: 'event',
     required: [true, `L'événement est obligatoire`]
   },
-  _targeted_roles: {
+  targeted_roles: {
     type: [{
       type: String,
       enum: Object.keys(ROLES),
