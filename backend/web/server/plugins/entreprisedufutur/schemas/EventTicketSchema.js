@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY, USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -82,6 +83,10 @@ EventTicketSchema.virtual('quantity_registered', {
     match: {status: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}},
   },
   count: true,
+})
+
+EventTicketSchema.virtual('remaining_tickets', DUMMY_REF).get(function () {
+  return this.quantity ? this.quantity-this.quantity_registered : undefined
 })
 
 /* eslint-enable prefer-arrow-callback */
