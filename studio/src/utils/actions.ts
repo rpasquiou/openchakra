@@ -95,7 +95,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage', 'previous'],
+    next: ['openPage', 'previous','back'],
   },
   login: {
     label: 'Login',
@@ -227,7 +227,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage', 'previous','smartdiet_start_survey'],
+    next: ['openPage', 'previous','smartdiet_start_survey','back'],
   },
   // Mettre un warning si les composants ne sont pas dans le même flex
   registerToEvent: {
