@@ -512,6 +512,12 @@ declareComputedField({model: 'admin_dashboard', field: 'partner_list', getterFn:
 
 //Order declarations
 declareEnumField({model: 'order', field:'status', enumValues: ORDER_STATUSES})
+declareVirtualField({model: 'order', field: 'order_tickets', multiple: true, instance: 'Array',
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'orderTicket' }
+  }
+})
 
 //OrderTicket declarations
 declareEnumField({model: 'orderTicket', field: 'status', enumValues: USERTICKET_STATUSES})

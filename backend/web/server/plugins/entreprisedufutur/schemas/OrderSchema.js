@@ -18,6 +18,13 @@ const OrderSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
+
+OrderSchema.virtual('order_tickets', {
+  ref: 'orderTicket',
+  localField: '_id',
+  foreignField: 'order'
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = OrderSchema
