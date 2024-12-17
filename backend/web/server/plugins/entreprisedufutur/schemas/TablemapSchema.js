@@ -15,6 +15,13 @@ TablemapSchema.virtual('tables', {
   foreignField:'tablemap',
 })
 
+TablemapSchema.virtual('tables_count', {
+  ref:'table',
+  localField:'_id',
+  foreignField:'tablemap',
+  count: true
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports= TablemapSchema

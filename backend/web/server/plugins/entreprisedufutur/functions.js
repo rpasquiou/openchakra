@@ -504,6 +504,7 @@ declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instanc
     options: { ref: 'table' }
   }
 })
+declareVirtualField({model: 'tablemap', field: 'tables_count', instance: 'Number'})
 
 //Admin_dashboard declaration
 declareComputedField({model: 'admin_dashboard', field: 'event_count', getterFn: getterCountFn('event')})
