@@ -14,6 +14,11 @@ const OrderTicketSchema = new Schema({
     set: v => v?.trim(),
     required: false,
   },
+  lastname: {
+    type: String,
+    set: v => v?.trim(),
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
