@@ -19,6 +19,7 @@ export class LMSAPI {
       axios.get(`${API_ROOT}/scorm/`+resourceId)
         .then(res => {
           this.data=res.data
+          console.log('Got SCORM initial data', this.data)
         })
     }
 
@@ -134,7 +135,7 @@ export class LMSAPI {
     // Other version
     Initialize(){
       this.initialized = true
-      console.trace('Initialize called')
+      console.log('Initialize called')
       this.addLMSInfo(`Initialize`)
       return "true"
     }

@@ -882,12 +882,18 @@ setScormCallbackPost(scormCalbackPost)
 
 const scormCalbackGet = async ({ user, resource }) => {
   let loadedData = await getBlockScormData(user, resource)
-  const data = {
+  loadedData = {
     'cmi.core.student_name': user.fullname,
+    'cmi.core.learner_name': user.fullname,
     'cmi.core.student_id': user._id.toString(),
+    'cmi.core.learner_id': user._id.toString(),
+    'cmi.student_name': user.fullname,
+    'cmi.learner_name': user.fullname,
+    'cmi.student_id': user._id.toString(),
+    'cmi.learner_id': user._id.toString(),
     ...loadedData,
   }
-  return data
+  return loadedData
 }
 
 setScormCallbackGet(scormCalbackGet)
