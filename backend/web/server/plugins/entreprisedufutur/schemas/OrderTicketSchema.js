@@ -9,9 +9,10 @@ const OrderTicketSchema = new Schema({
     ref: 'order',
     required: [true, `La commande du ticket est obligatoire`]
   },
-  name: {
+  firstname: {
     type: String,
-    required: false
+    set: v => v?.trim(),
+    required: false,
   },
 }, schemaOptions)
 
