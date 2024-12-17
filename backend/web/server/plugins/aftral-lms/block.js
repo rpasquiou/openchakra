@@ -724,7 +724,7 @@ const lockSession = async (blockId, trainee) => {
     const mandatoryResourcesCount=await getAllResourcesCount(null, null, {_id: block._id})
     await mongoose.models.block.findByIdAndUpdate(block._id, {resources_count: resourcesCount, mandatory_resources_count: mandatoryResourcesCount})
   }))
-  await mongoose.models.block.updateMany({_id: {$in: allChildren}}, {_locked: true})
+  await mongoose.models.block.updateMany({_id: {$in: [session, ...allChildren]}}, {_locked: true})
 
   const delta={
     [BLOCK_TYPE_SESSION]:1,
