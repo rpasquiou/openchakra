@@ -1212,4 +1212,13 @@ return Promise.allSettled(imagePromises)
     }
     return axios.post(url, body)
   },
+
+  validate_order: ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'validate_order',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+  },
 }

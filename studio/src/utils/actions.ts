@@ -787,6 +787,11 @@ export const ACTIONS: IActions = {
     },
     next: [],
   },
+  validate_order: {
+    label: 'validate order',
+    options: {},
+    next: [],
+  },
   toggle_full_screen: {
     label: 'Toggle full screen',
     options: {},
