@@ -30,7 +30,7 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
-
+const session = require("express-session")
 // Backend private
 require('./models/PageTag_')
 
@@ -98,6 +98,14 @@ checkConfig()
     app.use(bodyParser.urlencoded({extended: true}))
     app.use(bodyParser.json())
 
+    // session middleware
+    app.use(
+      session({
+        secret: "secret_test",
+        resave: false,
+        saveUninitialized: true,
+      })
+    );
     // Passport middleware
     app.use(passport.initialize())
 

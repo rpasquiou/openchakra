@@ -102,7 +102,7 @@ const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
 let checkPermission=null
 try {
-  checkPermission = require(`../../plugins/${getDataModel()}/permissions`)
+  checkPermission = require(`../../plugins/${getDataModel()}/permissions`)?.checkPermission
 }
 catch(err) {
   if (err.code=='MODULE_NOT_FOUND') {
@@ -169,16 +169,14 @@ router.get('/roles', (req, res) => {
 })
 
 router.get('/login/sso',
-  passport.authenticate('oauth2', {scope: ["openid", "email", "profile"]})
+  passport.authenticate("azuread-openidconnect")
 )
 
-router.get("/auth-callback",
-  passport.authenticate('oauth2', {
-    failureRedirect: '/login',
-    session: false, // If you don't want to use sessions
-  }),
-  function (req, res) {
-    return sendCookie(req.user, res).json(req.user)
+router.get(
+  "/auth-callback",
+  passport.authenticate("azuread-openidconnect"),
+  (req, res) => {
+    return sendCookie(req.user, res).redirect('/')
   }
 )
 

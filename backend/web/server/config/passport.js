@@ -5,8 +5,7 @@ const AnonymousStrategy = require('passport-anonymous').Strategy
 const BasicStrategy = require('passport-http').BasicStrategy
 const bcrypt = require('bcryptjs')
 const User = require('../models/User')
-const OAuth2Strategy = require('passport-oauth2');
-const axios = require('axios')
+const OIDCStrategy = require("passport-azure-ad").OIDCStrategy;
 
 // Requires connection
 const cookieStrategy=new CookieStrategy(
@@ -49,50 +48,47 @@ passport.use(new BasicStrategy(
     }
 ))
 
-console.log('SSO client ID', process.env.SSO_CLIENTID)
-console.log('SSO metadata', process.env.SSO_METADATA_URL)
-console.log('SSO callback', process.env.SSO_CALLBACK_URL)
-
-
-const getAzureAttribute = (azureAnswer, attribute) => {
- const azureAttribute=`http://schemas.xmlsoap.org/ws/2005/05/identity/claims/${attribute}`
- return azureAnswer[azureAttribute]
-}
-
 const initAzureSSO = async () => {
 
-  const {data: metadata}=await axios.get(process.env.SSO_METADATA_URL)
-  console.log(metadata)
-  const SSOStrategy = new OAuth2Strategy(
+  console.log('Azure SSO client ID', process.env.SSO_CLIENTID)
+  console.log('Azure SSO metadata', process.env.SSO_METADATA_URL)
+  console.log('Azure SSO callback', process.env.SSO_CALLBACK_URL)
+  
+    const SSOStrategy = new OIDCStrategy(
     {
-      authorizationURL: metadata.authorization_endpoint,
-      tokenURL: metadata.token_endpoint,
+      identityMetadata: process.env.SSO_METADATA_URL,
       clientID: process.env.SSO_CLIENTID,
+      responseType: "code",
+      responseMode: "query",
+      redirectUrl: process.env.SSO_CALLBACK_URL,
       clientSecret: process.env.SSO_CLIENT_SECRET,
-      callbackURL: process.env.SSO_CALLBACK_URL,
-      scope: ['openid'],
+      validateIssuer: true,
+      passReqToCallback: false,
+      scope: ["openid", "profile", "email"],
     },
-    async (accessToken, refreshToken, profile, done) => {
-      // The callback receives the tokens and can fetch user info or save session
-      console.log('Access Token:', accessToken);
-      console.log('Refresh Token:', refreshToken);
-      console.log('In SSO cb:got', profile)
-      const email=getAzureAttribute(profile, 'emailaddress')
+    async (iss, sub, profile, accessToken, refreshToken, done) => {
+      // The user profile returned by Azure AD
+      if (!profile) {
+        return done(new Error("No profile found"));
+      }
+      const rawProfile=profile._json
+      const email=rawProfile.email
       const user=await User.findOne({email})
       if (user) {
-        console.log('I found a user', user)
+        return done(null, user)
       }
-      else {
-        const firstname=getAzureAttribute(profile, 'givenname')
-        const lastname=getAzureAttribute(profile, 'surname')
-        const role=getAzureAttribute(profile, 'jobtitle')=='FORMATEUR' ? 'FORMATEUR' : 'GESTIONNAIRE',
-        
-        user=await User.create({
-          email, firstname, lastname, role, password: 'PASSWD',
-        })
-        console.log('I created a user', user)
+      const firstname=rawProfile.firstname
+      const lastname=rawProfile.lastname
+      // TODO Discriminate role
+      const role='ROLE_MEMBER'
+    
+      try {
+        user=await User.create({email, firstname, lastname, role, password: 'PASSWD'})
+        return done(null, user)
       }
-      return done(null, user)
+      catch(err) {
+        return done(err)
+      }
     }
   )
 
