@@ -1,10 +1,10 @@
 const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
-const { idEqual, getModel } = require('../../utils/database')
+const { idEqual, getModel, loadFromDb } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST, ORDER_STATUS_VALIDATED } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
@@ -13,6 +13,7 @@ const Event = require('../../models/Event')
 const EventTicket = require('../../models/EventTicket')
 const OrderTicket = require('../../models/OrderTicket')
 const Order = require('../../models/Order')
+const UserTicket = require('../../models/UserTicket')
 
 
 const startSurvey = async (_, user) => {
@@ -171,6 +172,60 @@ const generateOrder = async ({value,nb_tickets}, user) => {
   return value
 }
 addAction('generate_order', generateOrder)
+
+
+const validateOrder = async ({value}, user) => {
+
+  if (!value) {
+    throw new NotFoundError(`no command id`)
+  }
+
+  const [order] = await loadFromDb({
+    model: 'order',
+    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket'],
+    id: value,
+  })
+
+  const knownUserTickets = await order.order_tickets.filter(async (t) => {
+    const user = await User.findOne({email:t.email})
+    return !!user
+  })
+
+  const unknownUserTickets = lodash.differenceWith(
+    order.order_tickets,
+    knownUserTickets,
+    (o,k) =>{
+      return idEqual(o._id,k._id)
+    }
+  )
+
+  //TODO déplacer dans isActionAllowed
+  knownUserTickets.forEach(orderTicket => {
+    // le user n'a pas déjà un ticket
+  })
+
+  unknownUserTickets.foreach(orderTicket => {
+    //TODO popup validation de création de user
+    //création de user
+  })
+
+  //UserTicket creations
+  const eventTicket = await EventTicket.findById(order.event_ticket, ['remaining_tickets'])
+  const remaining_tickets = eventTicket.remaining_tickets
+
+  order.order_tickets.map(async (orderTicket,index) => {
+    const user = await User.findOne({email:orderTicket.email})
+    //synchro ???
+    const status = index < remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
+    await UserTicket.create({event_ticket: order.event_ticket, user: user._id, status: status})
+  })
+
+  //order status update
+  await Order.findByIdAndUpdate(order._id, {status: ORDER_STATUS_VALIDATED})
+
+  return value
+}
+addAction('validate_order', validateOrder)
 
 
 const isActionAllowed = async ({action, dataId, user, ...rest}) => {
