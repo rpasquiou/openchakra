@@ -17,7 +17,7 @@ const {
   callPreLogin,
   callPreRegister,
 } = require('../../utils/database')
-
+const axios=require('axios')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -100,7 +100,18 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-const { checkPermission } = require('../../plugins/sosynpl/permissions')
+let checkPermission=null
+try {
+  checkPermission = require(`../../plugins/${getDataModel()}/permissions`)
+}
+catch(err) {
+  if (err.code=='MODULE_NOT_FOUND') {
+    console.warn(`No permission plugin for ${getDataModel()}`)
+  }
+  else {
+    throw err
+  }
+}
 
 const router = express.Router()
 
@@ -158,10 +169,10 @@ router.get('/roles', (req, res) => {
 })
 
 router.get('/login/sso',
-  passport.authenticate('saml', {})
+  passport.authenticate('oauth2', {scope: ["openid", "email", "profile"]})
 )
 
-router.post("/auth-callback",
+router.get("/auth-callback",
   passport.authenticate('oauth2', {
     failureRedirect: '/login',
     session: false, // If you don't want to use sessions
@@ -170,7 +181,7 @@ router.post("/auth-callback",
     return sendCookie(req.user, res).json(req.user)
   }
 )
- 
+
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
   // filter image original file

@@ -6,6 +6,7 @@ const BasicStrategy = require('passport-http').BasicStrategy
 const bcrypt = require('bcryptjs')
 const User = require('../models/User')
 const OAuth2Strategy = require('passport-oauth2');
+const axios = require('axios')
 
 // Requires connection
 const cookieStrategy=new CookieStrategy(
@@ -49,7 +50,7 @@ passport.use(new BasicStrategy(
 ))
 
 console.log('SSO client ID', process.env.SSO_CLIENTID)
-console.log('SSO issuer', process.env.SSO_ENTRYPOINT)
+console.log('SSO metadata', process.env.SSO_METADATA_URL)
 console.log('SSO callback', process.env.SSO_CALLBACK_URL)
 
 
@@ -58,43 +59,47 @@ const getAzureAttribute = (azureAnswer, attribute) => {
  return azureAnswer[azureAttribute]
 }
 
+const initAzureSSO = async () => {
 
-const SSOStrategy = new OAuth2Strategy(
-  {
-    authorizationURL: `${process.env.SSO_ENTRYPOINT.replace('/v2.0/.well-known/openid-configuration','')}/oauth2/v2.0/authorize`,
-    tokenURL: `${process.env.SSO_ENTRYPOINT.replace('/v2.0/.well-known/openid-configuration','')}/oauth2/v2.0/token`,
-    clientID: process.env.SSO_CLIENTID,
-    clientSecret: process.env.SSO_CLIENT_SECRET,
-    callbackURL: process.env.SSO_CALLBACK_URL,
-    scope: ['openid'],
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    // The callback receives the tokens and can fetch user info or save session
-    console.log('Access Token:', accessToken);
-    console.log('Refresh Token:', refreshToken);
-    console.log('In SSO cb:got', profile)
-    const email=getAzureAttribute(profile, 'emailaddress')
-    const user=await User.findOne({email})
-    if (user) {
-      console.log('I found a user', user)
+  const {data: metadata}=await axios.get(process.env.SSO_METADATA_URL)
+  console.log(metadata)
+  const SSOStrategy = new OAuth2Strategy(
+    {
+      authorizationURL: metadata.authorization_endpoint,
+      tokenURL: metadata.token_endpoint,
+      clientID: process.env.SSO_CLIENTID,
+      clientSecret: process.env.SSO_CLIENT_SECRET,
+      callbackURL: process.env.SSO_CALLBACK_URL,
+      scope: ['openid'],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      // The callback receives the tokens and can fetch user info or save session
+      console.log('Access Token:', accessToken);
+      console.log('Refresh Token:', refreshToken);
+      console.log('In SSO cb:got', profile)
+      const email=getAzureAttribute(profile, 'emailaddress')
+      const user=await User.findOne({email})
+      if (user) {
+        console.log('I found a user', user)
+      }
+      else {
+        const firstname=getAzureAttribute(profile, 'givenname')
+        const lastname=getAzureAttribute(profile, 'surname')
+        const role=getAzureAttribute(profile, 'jobtitle')=='FORMATEUR' ? 'FORMATEUR' : 'GESTIONNAIRE',
+        
+        user=await User.create({
+          email, firstname, lastname, role, password: 'PASSWD',
+        })
+        console.log('I created a user', user)
+      }
+      return done(null, user)
     }
-    else {
-      const firstname=getAzureAttribute(profile, 'givenname')
-      const lastname=getAzureAttribute(profile, 'surname')
-      const role=getAzureAttribute(profile, 'jobtitle')=='FORMATEUR' ? 'FORMATEUR' : 'GESTIONNAIRE',
-      
-      user=await User.create({
-        email, firstname, lastname, role, password: 'PASSWD',
-      })
-      console.log('I created a user', user)
-    }
-  return done(null, { accessToken, refreshToken })
-  return done(null, user)
- }
-)
+  )
 
+  passport.use(SSOStrategy)
+}
 
-passport.use(SSOStrategy)
+initAzureSSO()
 
 passport.serializeUser(function(user, done) {
   done(null, user._id);
