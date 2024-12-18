@@ -174,7 +174,7 @@ router.get('/login/sso',
 
 router.get(
   "/auth-callback",
-  passport.authenticate("azuread-openidconnect"),
+  passport.authenticate("azuread-openidconnect", {failureRedirect: "/"}),
   (req, res) => {
     return sendCookie(req.user, res).redirect('/')
   }
