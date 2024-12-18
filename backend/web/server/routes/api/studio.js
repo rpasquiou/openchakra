@@ -17,7 +17,7 @@ const {
   callPreLogin,
   callPreRegister,
 } = require('../../utils/database')
-
+const axios=require('axios')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -100,7 +100,18 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-const { checkPermission } = require('../../plugins/sosynpl/permissions')
+let checkPermission=null
+try {
+  checkPermission = require(`../../plugins/${getDataModel()}/permissions`)?.checkPermission
+}
+catch(err) {
+  if (err.code=='MODULE_NOT_FOUND') {
+    console.warn(`No permission plugin for ${getDataModel()}`)
+  }
+  else {
+    throw err
+  }
+}
 
 const router = express.Router()
 
@@ -156,6 +167,18 @@ router.get('/roles', (req, res) => {
   console.log()
   return res.json(ROLES)
 })
+
+router.get('/login/sso',
+  passport.authenticate("azuread-openidconnect")
+)
+
+router.get(
+  "/auth-callback",
+  passport.authenticate("azuread-openidconnect", {failureRedirect: "/"}),
+  (req, res) => {
+    return sendCookie(req.user, res).redirect('/')
+  }
+)
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
