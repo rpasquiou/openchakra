@@ -47,7 +47,8 @@ const EventTicketSchema = new Schema({
   quantity_max_per_user: {
     type: Number,
     required: true,
-    default: 1
+    default: 1,
+    validate: [v => v>0,`Le nombre maximum de billet par personne doit être d'au moins 1`]
   },
   price_visibility: {
     type: String,
