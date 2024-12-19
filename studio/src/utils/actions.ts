@@ -785,7 +785,7 @@ export const ACTIONS: IActions = {
     options: {
       nb_tickets: ({components}) => components.map(p => ({key: p.id, label: p.id})),
     },
-    next: [],
+    next: ['openPage'],
   },
   validate_order: {
     label: 'validate order',
