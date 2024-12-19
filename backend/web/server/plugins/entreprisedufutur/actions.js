@@ -208,9 +208,9 @@ const validateOrder = async ({value}, user) => {
     }
   )
 
+  //New user creation from emails
   unknownUserTickets.foreach(orderTicket => {
-    //TODO popup validation de création de user
-    //création de user
+    
   })
 
   //UserTicket creations
