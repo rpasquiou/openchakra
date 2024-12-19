@@ -73,7 +73,7 @@ const initAzureSSO = async () => {
       }
       const rawProfile=profile._json
       const email=rawProfile.email
-      const user=await User.findOne({email})
+      let user=await User.findOne({email})
       if (user) {
         return done(null, user)
       }
