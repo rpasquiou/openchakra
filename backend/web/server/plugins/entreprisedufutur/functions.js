@@ -482,7 +482,6 @@ declareEnumField({model: 'eventTicket', field: 'targeted_roles', multiple: true,
 declareEnumField({model: 'eventTicket', field: 'visibility', enumValues: EVENT_VISIBILITY})
 declareVirtualField({model: 'eventTicket', field: 'quantity_registered', instance: 'Number'})
 declareVirtualField({model:'eventTicket', field: 'remaining_tickets', instance: 'Number', requires: 'quantity,quantity_registered'})
-declareVirtualField({model: 'eventTicket', field: 'buy_quantity', multiple: true, instance: 'Array', requires: 'quantity_max_per_user'})
 
 //UserTicket declarations
 declareEnumField({model: 'userTicket', field: 'status', enumValues: USERTICKET_STATUSES})
