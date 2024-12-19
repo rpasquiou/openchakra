@@ -150,7 +150,7 @@ const generateOrder = async ({value,nb_tickets}, user) => {
     throw new NotFoundError(`no eventTicket id`)
   }
 
-  const model = getModel(value)
+  const model = await getModel(value)
   if (model != 'eventTicket') {
     throw new TypeError(`value type is ${model} instead of eventTicket`)
   }
@@ -159,7 +159,7 @@ const generateOrder = async ({value,nb_tickets}, user) => {
     throw new TypeError(`nb_tickets is not a number`)
   }
 
-  const order = await Order.create({eventTicket: value, status: ORDER_STATUS_IN_PROGRESS})
+  const order = await Order.create({event_ticket: value, status: ORDER_STATUS_IN_PROGRESS})
 
   const eventTicket = await EventTicket.findById(value, ['remaining_tickets'])
   const remaining_tickets = eventTicket.remaining_tickets
