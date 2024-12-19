@@ -21,7 +21,7 @@ const Visio = ({ room, ...props }) => {
       roomName: room,
       parentNode: jitsiContainer.current,
       userInfo: {
-        displayName: user.fullname,
+        displayName: `${user.fullname}(${isTrainer? 'T':'A'})`,
         email: user.email,
       },
       configOverwrite: {
@@ -69,12 +69,11 @@ const Visio = ({ room, ...props }) => {
         localApi.addListener('videoConferenceJoined', async () => {
           const { rooms } = await localApi.getRoomsInfo();
           const mainRoom = rooms.find((room) => room.isMainRoom);
-          console.log(JSON.stringify(mainRoom, null, 2))
-          if (mainRoom?.participants.length === 1) {
+          if (!mainRoom?.participants.find(p => /\(T\)$/.test(p.displayName))) {
             console.log('Only trainee in the room, leaving...');
             localApi.dispose();
             setApi(null);
-            setTimeout(() => setToggle(!toggle), 3000)
+            setTimeout(() => setToggle(!toggle), 1000)
           }
         });
       }
@@ -93,7 +92,7 @@ const Visio = ({ room, ...props }) => {
     <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer}>
       {!api && !leaving && <p>En attente de connexion du formateur...</p>}
     </div>
-  );
+  )
 };
 
 export default Visio;
