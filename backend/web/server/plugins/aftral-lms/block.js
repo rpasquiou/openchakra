@@ -932,7 +932,7 @@ const getBlockNoteStr = async (userId, params, data) => {
   }
   const note=await getBlockNote(userId, params, data)
   if (note) {
-    return `${note}/${data.success_note_max}`
+    return `${Math.round(note) || 0}/${data.success_note_max}`
   }
 }
 
