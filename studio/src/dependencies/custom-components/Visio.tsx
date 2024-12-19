@@ -1,32 +1,22 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react';
 import { useUserContext } from '../context/user';
 
-const style=`
-#meet-container {
-  width: 80%;
-  height: 80%;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  overflow: hidden;
-}`
-// TODO: DIsplay "Source needed" in Studio only
-const Visio = ({room, ...props}) => {
-  
-  const {user}=useUserContext()
-
+const Visio = ({ room, ...props }) => {
+  const { user } = useUserContext();
   const jitsiContainer = useRef(null)
+  const [api, setApi] = useState(null)
+  const [toggle, setToggle] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
-    if (!room) {
-      return console.warn(`No room for visio`)
-    }
-    if (!user) {
-      return console.warn(`No user for visio`)
+    if (!room || !user) {
+      console.warn(`Missing required data: room=${room}, user=${!!user}`);
+      return;
     }
 
-    const isTrainee=!(/FORMATEUR/.test(user?.role))
+    const isTrainer = /FORMATEUR/.test(user.role);
 
-    const domain = 'kmeet.infomaniak.com'; // Replace with your KMeet server domain if self-hosted
+    const domain = 'kmeet.infomaniak.com'; // Your Jitsi server
     const options = {
       roomName: room,
       parentNode: jitsiContainer.current,
@@ -34,48 +24,75 @@ const Visio = ({room, ...props}) => {
         displayName: user.fullname,
         email: user.email,
       },
-      configOverwrite: {         
-        disableModeratorIndicator: !!isTrainee,
-        prejoinPageEnabled: false,		// Désactiver la page de pré-séance
-        enableWelcomePage: false,		// Masquer la page d'accueil
-        startWithVideoMuted: false,		// Démarrer avec la caméra sactivée
-        startWithAudioMuted: false,		// Démarrer avec le micro sactivé
-        disableInviteFunctions: true,		// Désactiver les invitations
-        showBranding: false,  			// Désactive le branding (logo, liens, etc.)
+      configOverwrite: {
+        disableModeratorIndicator: !isTrainer,
+        prejoinPageEnabled: false,
+        enableWelcomePage: false,
+        startWithVideoMuted: false,
+        startWithAudioMuted: false,
+        disableInviteFunctions: true,
+        showBranding: false,
         toolbarButtons: [
           'microphone', 'camera', 'chat', 'raisehand', 'whiteboard', 'tileview', 'desktop',
-          'settings', 'audioonly', 'filmstrip',
-          'hangup', 'select-background', 'security', 'participants-pane', 'noisesuppression',
+          'settings', 'audioonly', 'filmstrip', 'hangup', 'select-background', 'security',
+          'participants-pane', 'noisesuppression',
         ],
-
         deeplinking: {
-            disabled: true,
-            hideLogo: true,
+          disabled: true,
         },
-        
-        disableProfile: true,      // Désactiver les profils utilisateurs dans menu paramètre
-        readOnlyName: true,        // Empêche la modification du nom de l'utilisateur
+        disableProfile: true,
+        readOnlyName: true,
         gravatar: {
-            disabled: true,        // Désactiver les avatars générés automatiquement
+          disabled: true,
         },
         participantsPane: {
-          enabled: !isTrainee,
-        }
+          enabled: isTrainer,
+        },
       },
-    }
+    };
 
-    let api
+    let localApi;
+
     if (window.JitsiMeetExternalAPI) {
-      api = new window.JitsiMeetExternalAPI(domain, options);
+      localApi = new window.JitsiMeetExternalAPI(domain, options);
+      setApi(localApi);
+
+      localApi.addListener('videoConferenceLeft', () => {
+        console.log('Leaving room')
+        localApi.dispose()
+        setApi(null)
+        setLeaving(true)
+        window.close()
+      });
+
+      if (!isTrainer) {
+        localApi.addListener('videoConferenceJoined', async () => {
+          const { rooms } = await localApi.getRoomsInfo();
+          const mainRoom = rooms.find((room) => room.isMainRoom);
+          if (mainRoom?.participants.length === 1) {
+            console.log('Only trainee in the room, leaving...');
+            localApi.dispose();
+            setApi(null);
+            setTimeout(() => setToggle(!toggle), 3000)
+          }
+        });
+      }
     }
 
-    // Handle cleanup when component unmounts
-    return () => api?.dispose();
-  }, [room, user]);
+    // Cleanup function
+    return () => {
+      if (localApi) {
+        console.log('Disposing Jitsi API');
+        localApi.dispose();
+      }
+    };
+  }, [room, user, toggle]);
 
   return (
-    <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer} />
-  )
-}
+    <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer}>
+      {!api && !leaving && <p>Loading Visio... Please wait</p>}
+    </div>
+  );
+};
 
-export default Visio
+export default Visio;
