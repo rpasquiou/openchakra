@@ -90,7 +90,7 @@ EventTicketSchema.virtual('remaining_tickets', DUMMY_REF).get(function () {
 })
 
 EventTicketSchema.virtual('buy_quantity',DUMMY_REF).get(function () {
-  const res = new Array(quantity_max_per_user)
+  const res = new Array(this.quantity_max_per_user)
   return res.map((_,i) => i+1)
 })
 
