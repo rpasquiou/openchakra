@@ -69,6 +69,7 @@ const Visio = ({ room, ...props }) => {
         localApi.addListener('videoConferenceJoined', async () => {
           const { rooms } = await localApi.getRoomsInfo();
           const mainRoom = rooms.find((room) => room.isMainRoom);
+          console.log(JSON.stringify(mainRoom, null, 2))
           if (mainRoom?.participants.length === 1) {
             console.log('Only trainee in the room, leaving...');
             localApi.dispose();
@@ -90,7 +91,7 @@ const Visio = ({ room, ...props }) => {
 
   return (
     <div style={{ height: '100vh', width: '100%' }} ref={jitsiContainer}>
-      {!api && !leaving && <p>Loading Visio... Please wait</p>}
+      {!api && !leaving && <p>En attente de connexion du formateur...</p>}
     </div>
   );
 };
