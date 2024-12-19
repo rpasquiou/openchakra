@@ -807,10 +807,13 @@ const saveBlockStatus= async (userId, blockId, status, withChildren) => {
     const session=await getBlockSession(blockId)
     const mandatory_resources=await getBlockResources({blockId: session._id, userId, includeUnavailable: true, includeOptional: false})
     const isMandatory=!!mandatory_resources.find(r => idEqual(r._id, blockId))
-    const parents=await getParentBlocks(blockId)
-    await Progress.updateMany({user: userId, block: {$in: parents}}, {$inc: {finished_resources_count: 1}})
-     .then(console.log)
-     .catch(console.error)
+    // #279: Increment progress for mandatory resources only
+    if (isMandatory) {
+      const parents=await getParentBlocks(blockId)
+      await Progress.updateMany({user: userId, block: {$in: parents}}, {$inc: {finished_resources_count: 1}})
+      .then(console.log)
+      .catch(console.error)
+    }
   }
   if (withChildren) {
     const children=await mongoose.models.block.find({ parent: blockId})
