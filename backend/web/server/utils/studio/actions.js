@@ -1,4 +1,4 @@
-const { callPostCreateData } = require('../database')
+const { callPostCreateData, callPreCreateData } = require('../database')
 
 const {
   getModel,
@@ -111,9 +111,12 @@ let ACTIONS = {
     return Post.create({contents, media, author: sender})
   },
 
-  register: props => {
+  register: async (props, user) => {
+    const {model,params} = await callPreCreateData({model: 'user', params: props, user})
+    const userModel = mongoose.models[model]
+    props = params
     console.log(`Register with ${JSON.stringify(props)}`)
-    return User.exists({email: props.email})
+    return userModel.exists({email: props.email})
       .then(exists => {
         if (exists) {
           return Promise.reject(`Un compte avec le mail ${props.email} existe déjà`)
@@ -135,9 +138,9 @@ let ACTIONS = {
         return promise
           .then(()=> {
             console.log(`DB create with ${JSON.stringify(props)}`)
-            return User.create({...props})
+            return userModel.create({...props})
           })
-          .then(user => callPostCreateData({model: 'user', data:user}))
+          .then(user => callPostCreateData({model, data:user}))
     })
   },
 
