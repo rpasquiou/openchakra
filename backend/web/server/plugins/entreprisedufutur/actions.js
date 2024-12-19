@@ -159,9 +159,13 @@ const generateOrder = async ({value,nb_tickets}, user) => {
     throw new TypeError(`nb_tickets is not a number`)
   }
 
+  const eventTicket = await EventTicket.findById(value, ['remaining_tickets', 'quantity_max_per_user'])
+  if (nb_tickets> eventTicket.quantity_max_per_user) {
+    throw new ForbiddenError(`Le nombre de tickets ne peut pas dépasser ${eventTicket.quantity_max_per_user}`)
+  }
+
   const order = await Order.create({event_ticket: value, status: ORDER_STATUS_IN_PROGRESS})
 
-  const eventTicket = await EventTicket.findById(value, ['remaining_tickets'])
   const remaining_tickets = eventTicket.remaining_tickets
 
   for (let i = 0; i < nb_tickets; i++) {
