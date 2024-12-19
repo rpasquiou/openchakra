@@ -1,6 +1,6 @@
 const User = require("../../models/User")
 
-const getterUnknownEmails = async (userId, params, data) => {
+const getUnknownEmails = async (userId, params, data) => {
   const [order] = await loadFromDb({
     model: 'order',
     fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket'],
@@ -14,5 +14,5 @@ const getterUnknownEmails = async (userId, params, data) => {
 }
 
 module.exports = {
-  getterUnknownEmails,
+  getUnknownEmails,
 }

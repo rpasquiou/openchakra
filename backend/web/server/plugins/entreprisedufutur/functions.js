@@ -42,7 +42,7 @@ const { deleteUserNotification, addNotification } = require('../notifications/ac
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
-const { getterUnknownEmails } = require('./order')
+const { getUnknownEmails } = require('./order')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -522,7 +522,7 @@ declareVirtualField({model: 'order', field: 'order_tickets', multiple: true, ins
   }
 })
 declareVirtualField({model: 'order', field: 'order_tickets_count', instance: 'Number'})
-declareComputedField({model: 'order', field: 'unknown_emails', getterFn: getterUnknownEmails})
+declareComputedField({model: 'order', field: 'unknown_emails', getterFn: getUnknownEmails})
 
 //OrderTicket declarations
 declareEnumField({model: 'orderTicket', field: 'status', enumValues: USERTICKET_STATUSES})
