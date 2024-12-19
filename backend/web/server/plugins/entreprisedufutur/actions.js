@@ -150,6 +150,11 @@ const generateOrder = async ({value,nb_tickets}, user) => {
     throw new NotFoundError(`no eventTicket id`)
   }
 
+  const model = getModel(value)
+  if (model != 'eventTicket') {
+    throw new TypeError(`value type is ${model} instead of eventTicket`)
+  }
+
   if (!testNumber(nb_tickets)) {
     throw new TypeError(`nb_tickets is not a number`)
   }
