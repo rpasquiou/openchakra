@@ -1211,6 +1211,7 @@ return Promise.allSettled(imagePromises)
       nb_tickets
     }
     return axios.post(url, body)
+      .then(res => ({value: res.data}))
   },
 
   validate_order: ({value}) => {
@@ -1220,5 +1221,6 @@ return Promise.allSettled(imagePromises)
       value: value?._id,
     }
     return axios.post(url, body)
+      .then(res => ({value: res.data}))
   },
 }

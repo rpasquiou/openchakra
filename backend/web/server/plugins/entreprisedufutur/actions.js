@@ -176,7 +176,7 @@ const generateOrder = async ({value,nb_tickets}, user) => {
       await OrderTicket.create({order: order._id, status})
     }
   }
-  return order._id
+  return order
 }
 addAction('generate_order', generateOrder)
 
@@ -242,7 +242,7 @@ const validateOrder = async ({value}, user) => {
   //order status update
   await Order.findByIdAndUpdate(order._id, {status: ORDER_STATUS_VALIDATED})
 
-  return value
+  return order
 }
 addAction('validate_order', validateOrder)
 
