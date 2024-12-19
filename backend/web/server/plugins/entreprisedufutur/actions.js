@@ -176,7 +176,7 @@ const generateOrder = async ({value,nb_tickets}, user) => {
       await OrderTicket.create({order: order._id, status})
     }
   }
-  return value
+  return order._id
 }
 addAction('generate_order', generateOrder)
 
