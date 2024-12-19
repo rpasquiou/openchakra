@@ -15,11 +15,10 @@ const OrderTicket = require('../../models/OrderTicket')
 const Order = require('../../models/Order')
 const UserTicket = require('../../models/UserTicket')
 
-
+//TODO take scoreLevel into account
 const startSurvey = async (_, user) => {
   //console.log("params", params)
 
-  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
   const level = SCORE_LEVEL_1
 
   const score = await createScore(user._id, level)
@@ -33,7 +32,6 @@ addAction('smartdiet_start_survey', startSurvey)
 const startSurvey2 = async (_, user) => {
   //console.log("params", params)
 
-  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
   const level = SCORE_LEVEL_2
 
   const score = await createScore(user._id, level)
@@ -47,7 +45,6 @@ addAction('smartdiet_start_survey_2', startSurvey2)
 const startSurvey3 = async (_, user) => {
   //console.log("params", params)
 
-  //TODO récupérer le niveau du score : en attendant tous les scores sont niveau 1
   const level = SCORE_LEVEL_3
 
   const score = await createScore(user._id, level)
