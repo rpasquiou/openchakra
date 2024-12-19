@@ -38,8 +38,8 @@ const Visio = ({room, ...props}) => {
         disableModeratorIndicator: !!isTrainee,
         prejoinPageEnabled: false,		// Désactiver la page de pré-séance
         enableWelcomePage: false,		// Masquer la page d'accueil
-        startWithVideoMuted: true,		// Démarrer avec la caméra désactivée
-        startWithAudioMuted: true,		// Démarrer avec le micro désactivé
+        startWithVideoMuted: false,		// Démarrer avec la caméra sactivée
+        startWithAudioMuted: false,		// Démarrer avec le micro sactivé
         disableInviteFunctions: true,		// Désactiver les invitations
         showBranding: false,  			// Désactive le branding (logo, liens, etc.)
         toolbarButtons: [
