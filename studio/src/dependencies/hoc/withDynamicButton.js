@@ -55,7 +55,6 @@ const withDynamicButton = Component => {
       }
     }, []);
     const checkStatus = () => {
-      console.log('Check status')
       if (['openPage'].includes(action)) {
         return setActionAllowed(true)
       }
