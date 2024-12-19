@@ -14,7 +14,15 @@ const OrderSchema = new Schema({
     type: String,
     enum:Object.keys(ORDER_STATUSES),
     required: [true, `Le statut de la commande est obligatoire`]
-  }
+  },
+  unknown_emails: {
+    //computed
+    type: [{
+      type: String,
+      required: true
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
