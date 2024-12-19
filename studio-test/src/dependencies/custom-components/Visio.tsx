@@ -24,6 +24,7 @@ const Visio = ({room, ...props}) => {
       return console.warn(`No user for visio`)
     }
 
+    console.log('Testing role', JSON.stringify(user))
     const isTrainee=!(/FORMATEUR/.test(user?.role))
 
     const domain = 'kmeet.infomaniak.com'; // Replace with your KMeet server domain if self-hosted
@@ -66,7 +67,15 @@ const Visio = ({room, ...props}) => {
 
     let api
     if (window.JitsiMeetExternalAPI) {
-      api = new window.JitsiMeetExternalAPI(domain, options);
+      api = new window.JitsiMeetExternalAPI(domain, options)
+      api.addListener("videoConferenceJoined", (event) => {
+        const localParticipantId = event.id;
+        alert(`Local participant ID ${localParticipantId}, trainee:${isTrainee}`)
+        if (!isTrainee) {
+          console.log('Grant momderation to me')
+          api.executeCommand('grantModerator', localParticipantId);
+        }
+      })
     }
 
     // Handle cleanup when component unmounts
