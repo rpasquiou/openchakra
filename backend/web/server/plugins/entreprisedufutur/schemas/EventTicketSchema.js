@@ -29,7 +29,8 @@ const EventTicketSchema = new Schema({
   },
   quantity: {
     type: Number,
-    required: false
+    required: true,
+    default: 10
   },
   price: {
     type: Number,
@@ -45,7 +46,8 @@ const EventTicketSchema = new Schema({
   },
   quantity_max_per_user: {
     type: Number,
-    required: false
+    required: true,
+    default: 1
   },
   price_visibility: {
     type: String,
