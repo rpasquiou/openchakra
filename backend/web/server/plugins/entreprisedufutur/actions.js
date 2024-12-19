@@ -191,6 +191,15 @@ const validateOrder = async ({value}, user) => {
     return !!user
   })
 
+  //Check that known users don't already have a ticket
+  knownUserTickets.forEach(async (orderTicket) => {
+    const user = await User.findOne({email:orderTicket.email})
+    const ticket = UserTicket.findOne({user: user._id, event_ticket: order.event_ticket})
+    if (!!ticket) {
+      throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
+    }
+  })
+
   const unknownUserTickets = lodash.differenceWith(
     order.order_tickets,
     knownUserTickets,
@@ -198,11 +207,6 @@ const validateOrder = async ({value}, user) => {
       return idEqual(o._id,k._id)
     }
   )
-
-  //TODO déplacer dans isActionAllowed
-  knownUserTickets.forEach(orderTicket => {
-    // le user n'a pas déjà un ticket
-  })
 
   unknownUserTickets.foreach(orderTicket => {
     //TODO popup validation de création de user
