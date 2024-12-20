@@ -23,7 +23,7 @@ require('../../models/Chapter') //Added chapter, it was removed somehow
 const { computeStatistics } = require('./statistics')
 const { searchUsers, searchBlocks } = require('./search')
 const { getUserHomeworks, getResourceType, getAchievementRules, getBlockSpentTime, getBlockSpentTimeStr, getAllResourcesCount, getFinishedMandatoryResourcesCount, getRessourceSession, getBlockChildren } = require('./resources')
-const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee, getTopParent } = require('./block')
+const { getBlockStatus, setParentSession, LINKED_ATTRIBUTES, onBlockAction, LINKED_ATTRIBUTES_CONVERSION, getSession, getAvailableCodes, getBlockHomeworks, getBlockHomeworksSubmitted, getBlockHomeworksMissing, getBlockTraineesCount, getBlockFinishedChildren, getSessionConversations, propagateAttributes, getBlockTicketsCount, setScormData, getBlockNote, setBlockNote, getBlockScormData, getFinishedChildrenCount, getBlockNoteStr, getSessionProof, ensureValidProgramProduction, getFilteredTrainee, getTopParent, lockSession } = require('./block')
 const { getResourcesProgress } = require('./resources')
 const { getResourceAnnotation } = require('./resources')
 const { setResourceAnnotation } = require('./resources')
@@ -61,6 +61,7 @@ const { createRoom } = require('../visio/functions')
 const { getGroupTrainees, getGroupTraineesCount } = require('./group')
 const { getCertificateName } = require('./utils')
 const { sendCertificate } = require('./mailing')
+const { runPromisesWithDelay } = require('../../utils/concurrency')
 require('../visio/functions')
 
 const GENERAL_FEED_ID = 'FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -925,6 +926,18 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
       }
     }
   }
+})
+
+// Check not initialized sessions
+!isDevelopment() && cron.schedule('0 */30 * * * *', async () => {
+  const progresses=await Progress.distinct('block')
+  const sessions=await Session.find({_id: {$nin: progresses}, 'trainees.0': {$exists: true}}, {_id:1})
+  console.log(`Sessions ${sessions.map(s => s._id)} (${sessions.length}) require locking`)
+  if (sessions.length==0) {
+    return
+  }
+  runPromisesWithDelay(sessions.map(session => async () => lockSession(session._id)))
+    .then(console.log)
 })
 
 module.exports = {

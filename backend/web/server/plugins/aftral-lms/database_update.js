@@ -56,13 +56,20 @@ const setSessionResourcesCount = async () => {
 // Set finished reswources count on progresses
 const setFinishedProgresses = async () => {
   log('Setting resources_count on session blocks')
+  const operations=[]
   const progresses=await Progress.find({finished_resources_count: null})
-  log(progresses.length, 'progresses with no finished count')
+  log(progresses.length)
   for (const progress of progresses) {
     const {finishedResources}=await getFinishedResourcesData(progress.user, progress.block)
-    console.log('Progress', progress._id, 'finished', finishedResources)
-    progress.finished_resources_count=finishedResources
-    await progress.save()
+    operations.push({updateOne: {
+      filter: {_id: progress._id},
+      update: {$set: {finished_resources_count: finishedResources}},
+    }})
+  }
+  if (operations.length>0) {
+    await Progress.bulkWrite(operations)
+    .then(res => console.log('Updated finished resources progress', res))
+    .then(err => console.error('Updated finished resources progress', err))
   }
 }
 
