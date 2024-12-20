@@ -189,7 +189,7 @@ const validateOrder = async ({value}, user) => {
 
   const [order] = await loadFromDb({
     model: 'order',
-    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets'],
+    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets', 'event_ticket.event'],
     id: value,
   })
 
@@ -200,56 +200,42 @@ const validateOrder = async ({value}, user) => {
     }
   })
 
-  const knownUserTickets = await order.order_tickets.filter(async (t) => {
-    const user = await User.findOne({email:t.email})
-    return !!user
-  })
 
-  //Check that known users don't already have a ticket
-  knownUserTickets.forEach(async (orderTicket) => {
-    const user = await User.findOne({email:orderTicket.email})
-    const ticket = UserTicket.findOne({user: user._id, event_ticket: order.event_ticket._id})
-    if (!!ticket) {
-      throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
+  await Promise.all(order.order_tickets.map(async (orderTicket) => {
+    const userF = await User.findOne({email:orderTicket.email})
+    if (!!userF) {//Check that known users don't already have a ticket
+      const ticket = UserTicket.findOne({user: userF._id, event_ticket: order.event_ticket._id})
+      if (!!ticket) {
+        throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
+      }
+    } else {//New user creation from emails
+      const password = generatePassword()
+      await ACTIONS.register({
+        firstname: orderTicket.firstname,
+        lastname: orderTicket.lastname,
+        email: orderTicket.email,
+        role: ROLE_MEMBER, password,
+        password2: password},
+        user
+      )
     }
-  })
-
-  const unknownUserTickets = lodash.differenceWith(
-    order.order_tickets,
-    knownUserTickets,
-    (o,k) =>{
-      return idEqual(o._id,k._id)
-    }
-  )
-
-  //New user creation from emails
-  unknownUserTickets.forEach(async (orderTicket) => {
-    const password = generatePassword()
-    await ACTIONS.register({
-      firstname: orderTicket.firstname,
-      lastname: orderTicket.lastname,
-      email: orderTicket.email,
-      role: ROLE_MEMBER, password,
-      password2: password},
-      user
-    )
-  })
+  }))
 
   //UserTicket creations
-  const eventTicket = await EventTicket.findById(order.event_ticket, ['remaining_tickets'])
-  const remaining_tickets = eventTicket.remaining_tickets
+  const remaining_tickets = order.event_ticket.remaining_tickets
 
-  order.order_tickets.map(async (orderTicket,index) => {
-    const user = await User.findOne({email:orderTicket.email})
-    //synchro ???
+  await Promise.all(order.order_tickets.map(async (orderTicket,index) => {
+    const userL = await User.findOne({email: orderTicket.email})
     const status = index < remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
-    await UserTicket.create({event_ticket: order.event_ticket, user: user._id, status: status})
-  })
-
+    return UserTicket.create({event_ticket: order.event_ticket.id, user: userL._id, status: status})
+  }))
+  
   //order status update
   await Order.findByIdAndUpdate(order._id, {status: ORDER_STATUS_VALIDATED})
 
-  return order
+  const event = await Event.findById(order.event_ticket.event._id)
+  
+  return event
 }
 addAction('validate_order', validateOrder)
 
