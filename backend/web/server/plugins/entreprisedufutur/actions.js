@@ -193,6 +193,13 @@ const validateOrder = async ({value}, user) => {
     id: value,
   })
 
+  const obj = lodash.countBy(order.order_tickets, (v)=> v.email)
+  lodash.map(obj, (v,k)=> {
+    if (v>1) {
+      throw new ForbiddenError(`Un seul email ne peut être utilisé pour plusieurs billets`)
+    }
+  })
+
   const knownUserTickets = await order.order_tickets.filter(async (t) => {
     const user = await User.findOne({email:t.email})
     return !!user
