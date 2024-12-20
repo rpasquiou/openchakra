@@ -599,7 +599,14 @@ const preCreate = async ({ model, params, user }) => {
       }
       else {
         customer_id = params.parent
-        diet=user
+        if (user.role==ROLE_EXTERNAL_DIET) {
+          diet=user
+        }
+        // Appt from admin
+        else {
+          const coaching=await Coaching.find({user: params.parent}).sort({[CREATED_AT_ATTRIBUTE]:-1}).limit(1)
+          diet=coaching[0]?.diet
+        } 
       }
     }
     else { //CUSTOMER
