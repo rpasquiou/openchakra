@@ -607,9 +607,10 @@ const getFeed = async (id) => {
 const getFeeds = async (user, id) => {
   let ids = []
   if (!id) {
-    const sessionIds = (await Session.find({ $or: [{ trainers: user._id }, { trainees: user._id }], visible_feed: true })).map(s => s._id)
+    const sessions=await Session.find({ $or: [{ trainers: user._id }, { trainees: user._id }]}).populate('trainers')
+    const sessionIds = sessions.filter(s => !!s.visible_feed).map(s => s._id)
     ids = [...sessionIds, GENERAL_FEED_ID]
-    const groupIds = (await Group.find({ sessions: { $in: sessionIds }, visible_feed: true })).map(s => s._id)
+    const groupIds = (await Group.find({ sessions: { $in: sessions }, visible_feed: true })).map(s => s._id)
     ids = [...ids, ...groupIds]
   }
   else {
