@@ -55,7 +55,7 @@ const setSessionResourcesCount = async () => {
 
 // Set finished reswources count on progresses
 const setFinishedProgresses = async () => {
-  log('Setting resources_count on session blocks')
+  log('Setting finished_resources_count on session blocks')
   const operations=[]
   const progresses=await Progress.find({finished_resources_count: null})
   log(progresses.length)
