@@ -68,6 +68,7 @@ const FlexPanel = ({ bkpt = 'base' }: { bkpt?: string }) => {
       </FormControl>
 
       <SwitchControl label={'Use as a filter'} name={'isFilterComponent'}/>
+      <SwitchControl label={'Use as popup'} name={'popup'}/>
     </>
   )
 }
