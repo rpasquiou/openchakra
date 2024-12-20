@@ -1,5 +1,6 @@
 const OrderTicket = require("../../models/OrderTicket")
 const User = require("../../models/User")
+const { loadFromDb } = require("../../utils/database")
 
 const getUnknownEmails = async (userId, params, data) => {
   const [order] = await loadFromDb({
