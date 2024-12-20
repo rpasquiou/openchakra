@@ -216,7 +216,7 @@ const validateOrder = async ({value}, user) => {
   )
 
   //New user creation from emails
-  unknownUserTickets.foreach(async (orderTicket) => {
+  unknownUserTickets.forEach(async (orderTicket) => {
     const password = generatePassword()
     await ACTIONS.register({
       firstname: orderTicket.firstname,
