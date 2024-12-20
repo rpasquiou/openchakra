@@ -189,7 +189,7 @@ const validateOrder = async ({value}, user) => {
 
   const [order] = await loadFromDb({
     model: 'order',
-    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket'],
+    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets'],
     id: value,
   })
 
@@ -201,7 +201,7 @@ const validateOrder = async ({value}, user) => {
   //Check that known users don't already have a ticket
   knownUserTickets.forEach(async (orderTicket) => {
     const user = await User.findOne({email:orderTicket.email})
-    const ticket = UserTicket.findOne({user: user._id, event_ticket: order.event_ticket})
+    const ticket = UserTicket.findOne({user: user._id, event_ticket: order.event_ticket._id})
     if (!!ticket) {
       throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
     }
