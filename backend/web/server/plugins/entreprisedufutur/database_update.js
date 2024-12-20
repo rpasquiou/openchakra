@@ -103,20 +103,20 @@ const normalizeCompanySize = async () => {
 
 // }
 
-// const addSector = async () => {
-//   log('Add sector to companies without one')
+const normalizeSector = async () => {
+  log('Normalize sector')
 
-//   await Company.updateMany({sector: {$exists: false}}, {sector: SECTOR_AERONAUTICS})// if not exists
-// }
+  return Company.updateMany({sector: {$nin: Object.keys(SECTOR)}}, {sector:SECTOR_CONSTRUCTION})
+}
 
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   // await normalizeRoles()
   // await updateCompanyAdmin()
   // await normalizeJobs()
-  // await normalizeCompanySize()
+  await normalizeCompanySize()
   // await addExpertiseSet()
-  // await addSector()
+  await normalizeSector()
 }
 
 module.exports=databaseUpdate
