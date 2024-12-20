@@ -929,7 +929,7 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
 })
 
 // Check not initialized sessions
-!isDevelopment() && cron.schedule('0 */30 * * * *', async () => {
+!isDevelopment() && cron.schedule('0 */10 * * * *', async () => {
   const progresses=await Progress.distinct('block')
   const sessions=await Session.find({_id: {$nin: progresses}, 'trainees.0': {$exists: true}}, {_id:1})
   console.log(`Sessions ${sessions.map(s => s._id)} (${sessions.length}) require locking`)
