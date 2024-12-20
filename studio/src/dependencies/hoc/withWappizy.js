@@ -60,6 +60,14 @@ const withWappizy = Component => {
       }, [children])
     }
 
+    if (!!props.popup) {
+      props.top=0
+      props.bottom=0
+      props.left=0
+      props.right=0
+      props.position="fixed"
+    }
+
     const all_props={...props, ...conditionalProperties, defaultIndex, key}
 
     return (

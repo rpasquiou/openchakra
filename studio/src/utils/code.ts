@@ -369,6 +369,33 @@ const buildBlock = ({
             if (propsValue) {propsContent += ` key={${propsValue.replace(/^comp-/, '')}${singleData? '': '[0]'}?._id}`}
           }
 
+          const hasPopup=childComponent.props?.popup===true || childComponent.props?.popup=='true'
+          if (propName === 'display' && hasPopup) {
+            return
+          }
+
+          if (propName === 'popup' && hasPopup) {
+            propsContent += ' display="none"'
+          }
+
+          if (['action', 'nextAction'].includes(propName) && val=='close_popup') {
+            let component=childComponent
+            while (component) {
+              if (component.props?.popup===true || component.props?.popup==='true') {
+                break
+              }
+              if (component.id=='root') {
+                break
+              }
+              component=components[component.parent]
+            }
+            if (component?.props.popup) {
+              propsContent += ` ${propName}Props='{"popup":"${component.id}"}' `
+            }
+            else {
+              throw new Error(`${childComponent.type} ${childComponent.id} parent popup not found`)
+            }
+          }
           if (propName === 'subDataSource') {
             propsContent += ` subDataSourceId={'${propsValue}'}`
           }

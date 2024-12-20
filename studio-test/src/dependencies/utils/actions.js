@@ -1262,5 +1262,14 @@ return Promise.allSettled(imagePromises)
       })
   },
 
+  open_popup: async ({props, level}) => {
+    const comp=getComponent(props.popup, level)
+    comp.style.display='flex'
+  },
+
+  close_popup: async ({props, id, level}) => {
+    const popup=getComponent(props.popup, level)
+    popup.style.display='none'
+  },
 
 }

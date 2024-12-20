@@ -117,7 +117,8 @@ export const ACTIONS: IActions = {
         { key: false, label: 'In same page' },
       ],
     },
-    required:['page']
+    required:['page'],
+    next: ['close_popup'],
   },
   levelUp: {
     label: 'Move item up',
@@ -815,6 +816,18 @@ export const ACTIONS: IActions = {
     label: 'Get certificate URL',
     options: {},
     next: ['download'],
+  },
+  close_popup: {
+    label: 'Close popup',
+    options: {},
+    next: [],
+  },
+  open_popup: {
+    label: 'Open popup',
+    options: {
+      popup: ({ components }) => components.filter(c => c.props?.popup===true || c.props?.popup=='true').map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
+    },
+    next: [],
   },
 
 }
