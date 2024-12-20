@@ -16,7 +16,7 @@ const getUnknownEmails = async (userId, params, data) => {
 }
 
 const getInputsValid = async (userId, params, data) => {
-  const res = await OrderTicket.exists({order: data._id, firstname: {$not: /[a-zA-Z]/}, lastname: {$not: /[a-zA-Z]/}, email: {$not: /[a-zA-Z]/}})
+  const res = await OrderTicket.exists({order: data._id,$or:[{firstname: {$not: /[a-zA-Z]/}}, {lastname: {$not: /[a-zA-Z]/}}, {email: {$not: /[a-zA-Z]/}}]})
   return !res
 }
 
