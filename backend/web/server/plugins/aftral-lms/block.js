@@ -744,7 +744,6 @@ const lockSession = async (blockId, trainee) => {
       console.log(margin, 'Block closed, 1st child available, other children unavailable')
       await setTraineesStatus(block._id, BLOCK_STATUS_TO_COME).catch(console.error)
       // 2nd and remaining children unavailable
-      console.log(margin, 'setting', children.slice(1).map(c => c._id))
       await Promise.all(children.slice(1).map(child => setTraineesStatus(child._id, BLOCK_STATUS_UNAVAILABLE, true))).catch(console.error)
       console.log(margin, 'Pushing', children[0].type, children[0].order, children[0].name)
       toManage.push(children[0])
