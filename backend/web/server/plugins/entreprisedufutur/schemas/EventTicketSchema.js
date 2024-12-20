@@ -89,7 +89,7 @@ EventTicketSchema.virtual('quantity_registered', {
 })
 
 EventTicketSchema.virtual('remaining_tickets', DUMMY_REF).get(function () {
-  return this.quantity ? this.quantity-this.quantity_registered : undefined
+  return this.quantity-(this.quantity_registered || 0)
 })
 
 /* eslint-enable prefer-arrow-callback */
