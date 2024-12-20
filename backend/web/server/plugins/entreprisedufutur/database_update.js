@@ -1,5 +1,5 @@
 const User = require('../../models/User')
-const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, COMPANY_SIZE_11_50, COMPANY_SIZE_1001_PLUS } = require('./consts')
+const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, COMPANY_SIZES, COMPANY_SIZE_100_249, SECTOR, SECTOR_CONSTRUCTION} = require('./consts')
 const Company = require('../../models/Company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const Group = require('../../models/Group')
@@ -50,20 +50,11 @@ const error = (...params) => {
 //   ))
 // }
 
-// const normalizeCompanySize = async () => {
-//   log(`Normalizing company sizes`)
+const normalizeCompanySize = async () => {
+  log(`Normalizing company sizes`)
 
-//   const MAPPING={
-//     COMPANY_SIZE_11_250: COMPANY_SIZE_11_50,
-//     COMPANY_SIZE_5001_PLUS: COMPANY_SIZE_1001_PLUS
-//   }
-
-//   await Company.updateMany({size: null}, {size:COMPANY_SIZE_11_50})
-
-//   return Promise.all(Object.entries(MAPPING).map(([oldSize, newSize]) => 
-//     Company.updateMany({size:oldSize},{size: newSize})
-//   ))
-// }
+  return Company.updateMany({size: {$nin: Object.keys(COMPANY_SIZES)}}, {size:COMPANY_SIZE_100_249})
+}
 
 // const addExpertiseSet = async () => {
 
