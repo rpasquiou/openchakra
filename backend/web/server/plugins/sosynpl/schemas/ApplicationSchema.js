@@ -58,6 +58,10 @@ const ApplicationSchema = new Schema({
     validate: [v => !!v, 'Vous devez accepter les CGU'],
     required: [true, 'Vous devez accepter les CGU'],
   },
+  annotation: {
+    type: String,
+    required: false,
+  }
 }, schemaOptions)
 
 ApplicationSchema.virtual('quotations', {

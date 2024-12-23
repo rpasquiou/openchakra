@@ -23,7 +23,9 @@ describe('ApplicationSchema', () => {
       why_me: 'I am the best fit for this job',
       sent_date: new Date(),
       status: APPLICATION_STATUS_DRAFT,
-      visibility_status: APPLICATION_VISIBILITY_VISIBLE
+      visibility_status: APPLICATION_VISIBILITY_VISIBLE,
+      cgu_accepted: true,
+      annotation: 'I have a lot of experience in this field'
     }
 
     const application = new Application(applicationData)
