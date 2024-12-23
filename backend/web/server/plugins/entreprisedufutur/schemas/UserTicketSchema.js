@@ -27,6 +27,11 @@ const UserTicketSchema = new Schema({
     type: String,
     enum: Object.keys(USERTICKET_STATUSES)
   },
+  buyer: {
+    type: Schema.Types.ObjectId,
+    ref: 'user',
+    required: [true, `L'acheteur du ticket est obligatoire`]
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
