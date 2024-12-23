@@ -61,6 +61,11 @@ MODELS.forEach(model => {
   if(!['admin','user'].includes(model)){
     declareVirtualField({model, field: 'received_suggestions_count', type: 'Number'})
   }
+  declareVirtualField({model, field: 'conversations', instance: 'Array', multiple: true, caster: {
+    instance: 'ObjectID',
+    options: { ref: 'conversation' }
+  }})
+  declareVirtualField({model, field: 'conversations_count', instance: 'Number'})
   declareVirtualField({model, field: 'password2', type: 'String'})
   declareVirtualField({model, field: 'managed_accounts', instance: 'Array', multiple: true, caster: { instance: 'ObjectID', options: { ref: 'customerFreelance' }}})
   declareVirtualField({model, field: 'fullname', type: 'String', requires: 'firstname,lastname'})
