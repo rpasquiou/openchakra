@@ -238,13 +238,6 @@ USER_MODELS.forEach(m => {
       lodash.map(OPTIONAL_COMPLETION_FIELDS, (_,key) => {return key})
     ),`,`)
   })
-  declareVirtualField({
-    model: m, field: 'registered_events', instance: 'Array', multiple: true,
-    caster: {
-      instance: 'ObjectID',
-      options: { ref: 'event' }
-    },
-  })
   declareComputedField({model: m, field: 'seen_notifications', getterFn: getSeenNotifications})
   declareComputedField({model: m, field: 'seen_notifications_count', getterFn: getSeenNotificationsCount})
   declareComputedField({model: m, field: 'unseen_notifications', getterFn: getPendingNotifications})

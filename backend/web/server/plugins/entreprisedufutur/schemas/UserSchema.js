@@ -405,12 +405,6 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
 
-UserSchema.virtual('registered_events', {
-  ref:'event',
-  localField:'_id',
-  foreignField:'registered_users',
-})
-
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
