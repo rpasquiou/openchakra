@@ -203,7 +203,12 @@ const UserSchema = new Schema({
     enum: Object.keys(USER_GENRES),
     required: false
   },
-  }, {...schemaOptions, ...DISCRIMINATOR_KEY})
+  is_comex_member: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+}, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
