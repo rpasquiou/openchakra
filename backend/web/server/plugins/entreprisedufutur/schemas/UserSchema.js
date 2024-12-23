@@ -4,7 +4,7 @@ const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const {schemaOptions} = require('../../../utils/schemas')
 const bcrypt = require('bcryptjs')
 const { DUMMY_REF, idEqual } = require('../../../utils/database')
-const { ROLES , JOBS, DISCRIMINATOR_KEY, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS, ROLE_MEMBER, BOOLEAN_ENUM_NO, BOOLEAN_ENUM, BOOLEAN_ENUM_YES } = require('../consts')
+const { ROLES , JOBS, DISCRIMINATOR_KEY, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS, ROLE_MEMBER, BOOLEAN_ENUM_NO, BOOLEAN_ENUM, BOOLEAN_ENUM_YES, USER_GENRES } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
 
@@ -197,6 +197,11 @@ const UserSchema = new Schema({
   allergy: {
     type: String,
     required: [function () {this.is_allergic == BOOLEAN_ENUM_YES},`Les allergies doivent être renseignées pour les personnes allergiques`],
+  },
+  genre: {
+    type: String,
+    enum: Object.keys(USER_GENRES),
+    required: false
   },
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
