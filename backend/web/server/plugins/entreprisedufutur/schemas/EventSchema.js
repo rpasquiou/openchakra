@@ -1,9 +1,10 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1 } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
+const moment=require('moment')
 
 const Schema = mongoose.Schema
 
@@ -250,6 +251,10 @@ EventSchema.virtual('posts_count', {
   localField: '_id',
   foreignField: 'event',
   count: true,
+})
+
+EventSchema.virtual('status', DUMMY_REF).get(function() {
+  return moment().isBefore(this.start_date) ? EVENT_STATUS_FUTUR : EVENT_STATUS_PAST
 })
 
 /* eslint-enable prefer-arrow-callback */
