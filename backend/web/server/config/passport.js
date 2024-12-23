@@ -83,7 +83,7 @@ const init = async () => {
           scope: ["openid", "profile", "email"],
         },
         (iss, sub, profile, accessToken, refreshToken, done) => {
-          return ssoProfileCallback(iss, sub, profile, accessToken, refreshToken)
+          return pluginFunctions.ssoProfileCallback(iss, sub, profile, accessToken, refreshToken)
             .then(user => done(null, user))
             .catch(done)
         }
