@@ -32,6 +32,11 @@ const UserTicketSchema = new Schema({
     ref: 'user',
     required: [true, `L'acheteur du ticket est obligatoire`]
   },
+  meal: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
