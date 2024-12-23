@@ -393,7 +393,7 @@ router.post('/login', (req, res) => {
     })
 })
 
-router.post('/logout', async (req, res) => {
+router.post('/logout', passport.authenticate("azuread-openidconnect"), async (req, res) => {
   req.logout()
   return res.redirect('/')
 })
