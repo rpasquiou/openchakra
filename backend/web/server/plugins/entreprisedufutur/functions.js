@@ -43,6 +43,7 @@ const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
+const AdminDashboard = require('../../models/AdminDashboard')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -576,6 +577,16 @@ const ensureMarketScore = async () => {
 }
 
 ensureMarketScore()
+
+const ensureAdminDashboard = async () => {
+  return AdminDashboard.findOneAndUpdate(
+    {}, 
+    {},
+    {upsert: true}
+  )
+}
+
+ensureAdminDashboard()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
   //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
