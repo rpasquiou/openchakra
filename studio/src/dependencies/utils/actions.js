@@ -348,7 +348,9 @@ export const ACTIONS = {
   },
 
   logout: async () => {
+    alert('Before logout')
     axios.post(`${API_ROOT}/logout`)
+    alert('After logout')
     clearToken()
     window.location='/'
   },
