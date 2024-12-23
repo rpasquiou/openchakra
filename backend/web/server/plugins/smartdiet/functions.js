@@ -2444,7 +2444,7 @@ false && cron.schedule('0 0 * * * *', async () => {
         { smartagenda_id: '-1' },
         { smartagenda_id: -1 },
       ]
-    }).sort({update_date:-1}).limit(50)
+    }).sort({update_date:1}).limit(50)
     .then(users => {
       console.log(`Sync ${users.length} users % smartagenda`)
       return runPromisesWithDelay(users.map(user => () => {
