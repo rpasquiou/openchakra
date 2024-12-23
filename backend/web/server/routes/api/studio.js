@@ -46,10 +46,12 @@ const {
 
 let agendaHookFn=null
 let mailjetHookFn=null
+let ssoLoginCallback=null
 try {
   require(`../../plugins/${getDataModel()}/functions`)
   agendaHookFn=require(`../../plugins/${getDataModel()}/functions`).agendaHookFn
   mailjetHookFn=require(`../../plugins/${getDataModel()}/functions`).mailjetHookFn
+  ssoLoginCallback=require(`../../plugins/${getDataModel()}/functions`).ssoLoginCallback
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
@@ -168,17 +170,20 @@ router.get('/roles', (req, res) => {
   return res.json(ROLES)
 })
 
-router.get('/login/sso',
-  passport.authenticate("azuread-openidconnect")
-)
+if (process.env.SSO_PLUGIN=='azure') {
+  router.get('/login/sso',
+    passport.authenticate("azuread-openidconnect")
+  )
 
-router.get(
-  "/auth-callback",
-  passport.authenticate("azuread-openidconnect", {failureRedirect: "/"}),
-  (req, res) => {
-    return sendCookie(req.user, res).redirect('/')
-  }
-)
+  router.get(
+    "/auth-callback",
+    passport.authenticate("azuread-openidconnect", {failureRedirect: "/"}),
+    async (req, res) => {
+      const redirect=await ssoLoginCallback(req.user)
+      return sendCookie(req.user, res).redirect(redirect)
+    }
+  )
+}
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result

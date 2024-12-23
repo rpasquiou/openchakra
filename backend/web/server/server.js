@@ -50,6 +50,7 @@ const withings = getDataModel()=='dekuple' ? require('./routes/api/withings') : 
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
 const { delayedPromise } = require('../utils/promise')
+const { init: passportInit } = require('./config/passport')
 let custom_router=null
 try {
   custom_router=require(`./plugins/${getDataModel()}/routes`).router
@@ -93,6 +94,7 @@ checkConfig()
     console.log(`MongoDB connecté: ${getDatabaseUri()}`)
     return nextApp.prepare()
   })
+  .then(() => passportInit())
   .then(() => {
     // Body parser middleware
     app.use(bodyParser.urlencoded({extended: true}))
@@ -110,10 +112,6 @@ checkConfig()
     app.use(passport.initialize())
 
     app.use(cookieParser())
-    // Passport config
-    /* eslint-disable global-require */
-    require('./config/passport')
-    /* eslint-enable global-require */
 
     // Context handling
     app.use((req, res, next) => {

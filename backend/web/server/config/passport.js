@@ -5,26 +5,107 @@ const AnonymousStrategy = require('passport-anonymous').Strategy
 const BasicStrategy = require('passport-http').BasicStrategy
 const bcrypt = require('bcryptjs')
 const User = require('../models/User')
+const { getDataModel } = require('../../config/config')
+let pluginFunctions=require(`../plugins/${getDataModel()}/functions`)
 const OIDCStrategy = require("passport-azure-ad").OIDCStrategy;
 
-// Requires connection
-const cookieStrategy=new CookieStrategy(
-  (token, done) => {
-    const user=jwt.decode(token)
-    User.findById(user.id)
+const init = async () => {
+  // Requires connection
+  const cookieStrategy=new CookieStrategy(
+    (token, done) => {
+      const user=jwt.decode(token)
+      User.findById(user.id)
+        .then(user => {
+          if (user) {
+            return done(null, user)
+          }
+          return done(null, false, {message: 'Vous devez être connecté'})
+        })
+        .catch(err => console.error(err))
+    },
+  )
+  passport.use(cookieStrategy)
+  
+  // Allows non-connected (i.e. for unconnected search)
+  passport.use(new AnonymousStrategy())
+  
+  passport.use(new BasicStrategy(
+    (username, password, done) => {
+      User.findOne({email: username})
       .then(user => {
-        if (user) {
+        if (user && bcrypt.compareSync(password, user.password)) {
           return done(null, user)
         }
         return done(null, false, {message: 'Vous devez être connecté'})
       })
       .catch(err => console.error(err))
-  },
-)
-passport.use(cookieStrategy)
+    }
+    ))
+    
+    if (!!process.env.SSO_PLUGIN) {
+      console.log(`SSO plugin : ${process.env.SSO_PLUGIN}`)
+    }
 
-// Allows non-connected (i.e. for unconnected search)
-passport.use(new AnonymousStrategy())
+    if (process.env.SSO_PLUGIN=='azure') {
+      
+      console.log('SSO starting azure configuration')
+      const initAzureSSO = async () => {
+        
+      const required=['SSO_CLIENTID', 'SSO_CLIENT_SECRET', 'SSO_METADATA_URL', 'SSO_CALLBACK_URL']
+
+      required.map(r => {
+        if (!process.env[r]) {
+          console.log(`Environment ${r} is missing`)
+          throw new Error(`Environment ${r} is missing`)
+        }
+      })
+
+      if (!pluginFunctions.ssoProfileCallback)     {
+        throw new Error('SSO: missing ssoProfileCallback')
+      }
+      if (!pluginFunctions.ssoLoginCallback)     {
+        throw new Error('SSO: missing ssoLoginCallback')
+      }
+      console.log('Azure SSO client ID', process.env.SSO_CLIENTID)
+      console.log('Azure SSO metadata', process.env.SSO_METADATA_URL)
+      console.log('Azure SSO callback', process.env.SSO_CALLBACK_URL)
+      
+        const SSOStrategy = new OIDCStrategy(
+        {
+          identityMetadata: process.env.SSO_METADATA_URL,
+          clientID: process.env.SSO_CLIENTID,
+          responseType: "code",
+          responseMode: "query",
+          redirectUrl: process.env.SSO_CALLBACK_URL,
+          clientSecret: process.env.SSO_CLIENT_SECRET,
+          validateIssuer: true,
+          passReqToCallback: false,
+          scope: ["openid", "profile", "email"],
+        },
+        (iss, sub, profile, accessToken, refreshToken, done) => {
+          return ssoProfileCallback(iss, sub, profile, accessToken, refreshToken)
+            .then(user => done(null, user))
+            .catch(done)
+        }
+      )
+
+      passport.use(SSOStrategy)
+    }
+
+    await initAzureSSO()
+  }
+
+  passport.serializeUser(function(user, done) {
+    done(null, user._id);
+  })
+
+  passport.deserializeUser(function(id, done) {
+    User.findById(id, function(err, user) {
+      done(err, user);
+    })
+  })
+
+}
 
 const sendCookie = (user, res) => {
   const token=jwt.sign({id: user.id}, 'secret')
@@ -35,76 +116,5 @@ const sendCookie = (user, res) => {
   })
 }
 
-passport.use(new BasicStrategy(
-  (username, password, done) => {
-    User.findOne({email: username})
-      .then(user => {
-        if (user && bcrypt.compareSync(password, user.password)) {
-          return done(null, user)
-        }
-        return done(null, false, {message: 'Vous devez être connecté'})
-      })
-      .catch(err => console.error(err))
-    }
-))
 
-const initAzureSSO = async () => {
-
-  console.log('Azure SSO client ID', process.env.SSO_CLIENTID)
-  console.log('Azure SSO metadata', process.env.SSO_METADATA_URL)
-  console.log('Azure SSO callback', process.env.SSO_CALLBACK_URL)
-  
-    const SSOStrategy = new OIDCStrategy(
-    {
-      identityMetadata: process.env.SSO_METADATA_URL,
-      clientID: process.env.SSO_CLIENTID,
-      responseType: "code",
-      responseMode: "query",
-      redirectUrl: process.env.SSO_CALLBACK_URL,
-      clientSecret: process.env.SSO_CLIENT_SECRET,
-      validateIssuer: true,
-      passReqToCallback: false,
-      scope: ["openid", "profile", "email"],
-    },
-    async (iss, sub, profile, accessToken, refreshToken, done) => {
-      // The user profile returned by Azure AD
-      if (!profile) {
-        return done(new Error("No profile found"));
-      }
-      const rawProfile=profile._json
-      const email=rawProfile.email
-      let user=await User.findOne({email})
-      if (user) {
-        return done(null, user)
-      }
-      const firstname=rawProfile.firstname
-      const lastname=rawProfile.lastname
-      // TODO Discriminate role
-      const role='ROLE_MEMBER'
-    
-      try {
-        user=await User.create({email, firstname, lastname, role, password: 'PASSWD'})
-        return done(null, user)
-      }
-      catch(err) {
-        return done(err)
-      }
-    }
-  )
-
-  passport.use(SSOStrategy)
-}
-
-initAzureSSO()
-
-passport.serializeUser(function(user, done) {
-  done(null, user._id);
-})
-
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function(err, user) {
-    done(err, user);
-  })
-})
-
-module.exports={sendCookie}
+module.exports={sendCookie, init}
