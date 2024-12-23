@@ -199,7 +199,7 @@ CompanySchema.virtual('affected_missions_count', {
 CompanySchema.virtual('events', {
   ref: 'event', // The Model to use
   localField: '_id', // Find in Model, where localField
-  foreignField: 'company', // is equal to foreignField
+  foreignField: 'partners', // is equal to foreignField
 })
 
 CompanySchema.virtual('pinned_by_count', DUMMY_REF).get(function () {
