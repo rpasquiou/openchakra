@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
+const { TARGET } = require('../consts')
 const Schema = mongoose.Schema
 
 const QuestionSchema = new Schema({
@@ -18,6 +19,11 @@ const QuestionSchema = new Schema({
   },
   tag: {
     type: String,
+    required: false,
+  },
+  target: {
+    type: String,
+    enum: Object.keys(TARGET),
     required: false,
   },
   announce: {
