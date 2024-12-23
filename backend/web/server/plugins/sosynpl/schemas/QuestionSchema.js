@@ -30,6 +30,10 @@ const QuestionSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'announce',
     required: false,
+  },
+  index: {
+    type: Number,
+    required: false,
   }
 }, { ...schemaOptions })
 
