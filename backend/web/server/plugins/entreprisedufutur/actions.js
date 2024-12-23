@@ -297,6 +297,13 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
+  if (action == 'generate_order') {
+    const dataIdModel = await getModel(dataId)
+    if (dataIdModel != 'eventTicket') {
+      throw new Error(`DataId is a ${dataIdModel} id instead of an eventTicket one`)
+    }
+  }
+
   return true
 }
 
