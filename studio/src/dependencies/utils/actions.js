@@ -347,10 +347,10 @@ export const ACTIONS = {
       }))
   },
 
-  logout: () => {
+  logout: async () => {
+    axios.post(`${API_ROOT}/logout`)
     clearToken()
     window.location='/'
-    return Promise.resolve()
   },
 
   // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-setup-webview

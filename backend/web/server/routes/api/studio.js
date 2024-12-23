@@ -393,6 +393,11 @@ router.post('/login', (req, res) => {
     })
 })
 
+router.post('/logout', async (req, res) => {
+  req.logout()
+  return res.redirect('/')
+})
+
 /** 
  * Returns geolocation suggestions for a query
  * Expect params 
