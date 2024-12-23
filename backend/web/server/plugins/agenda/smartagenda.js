@@ -32,7 +32,7 @@ const CONFIG={
     .update(config.getSmartAgendaConfig().SMARTAGENDA_PASSWORD).digest('hex'),
 }
 
-const MAX_RESULTS=1000
+const MAX_RESULTS=50
 
 const ALL_DATA=
 `pdo_type_indispo,pdo_client,pdo_agenda,pdo_groupe,pdo_type_rdv,pdo_events,pdo_events_ouverture,
@@ -115,18 +115,25 @@ const getAccounts = () => {
 }
 
 // Agenda: diet
-const getAgenda = ({email}) => {
+const getAgenda = async ({email}) => {
   if (!email) {
     throw new Error(`Mail is required`)
   }
-  let filters= {
+
+  // 1 - Search by email
+  let filter= {
     'filter[0][field]': 'mail',
-    'filter[0][comp]': 'LIKE',
-    'filter[0][value]': `%${email}%`,
+    'filter[0][comp]': '=',
+    'filter[0][value]': email,
   }
-  return getToken()
-    .then(token => axios.get(AGENDAS_URL, {params:{token, nbresults: MAX_RESULTS, ...filters}}))
-    .then(({data}) => data[0]?.id || null)
+  const token = await getToken()
+  let result = await axios.get(AGENDAS_URL, {params:{token, nbresults: MAX_RESULTS, ...filter}})
+  // 2 - Search by login
+  if (result.data.length==0) {
+    filter['filter[0][field]']='login'
+    result = await axios.get(AGENDAS_URL, {params:{token, nbresults: MAX_RESULTS, ...filter}})
+  }
+  return result.data[0]?.id || null
 }
 
 // Account: customer

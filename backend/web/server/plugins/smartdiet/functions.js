@@ -2438,21 +2438,24 @@ false && cron.schedule('0 0 * * * *', async () => {
     { 
       role: {$in: [ROLE_CUSTOMER, ROLE_EXTERNAL_DIET] }, 
       $or: [
-        { smartagenda_id: { $exists: false } }, // Field does not exist
-        { smartagenda_id: null },               // Field is explicitly null
-        { smartagenda_id: '' }                  // Field is an empty string
+        { smartagenda_id: { $exists: false } },
+        { smartagenda_id: null },
+        { smartagenda_id: '' },
+        { smartagenda_id: '-1' },
+        { smartagenda_id: -1 },
       ]
-    }).sort({update_date:1}).limit(50)
+    }).sort({update_date:-1}).limit(50)
     .then(users => {
       console.log(`Sync ${users.length} users % smartagenda`)
       return runPromisesWithDelay(users.map(user => () => {
+        console.log(`SYNCing ${user.email}/${user.role}`)
         const getFn = user.role == ROLE_EXTERNAL_DIET ? getAgenda : getAccount
         return getFn({ email: user.email })
           .then(id => {
-            if (id) {
+            if (id || user.role==ROLE_EXTERNAL_DIET) {
               console.log(`User ${user.email}/${user.role} found in smartagenda with id ${id}`)
-              user.smartagenda_id = id
-              return user.save()
+              user.smartagenda_id = id || -1
+              return user.save().catch(console.error)
             }
             // Create only customers, not allowed to create diets through API
             else if (user.role == ROLE_CUSTOMER) {
