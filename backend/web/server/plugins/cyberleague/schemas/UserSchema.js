@@ -200,6 +200,11 @@ const UserSchema = new Schema({
     }],
     default: []
   },
+  // Keep track of logins
+  last_login: {
+    type: Date,
+    required: false,
+  }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

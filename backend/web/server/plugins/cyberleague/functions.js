@@ -1218,7 +1218,12 @@ const ssoProfileCallback = async (iss, sub, profile, accessToken, refreshToken) 
 }
 
 const ssoLoginCallback = async user => {
-  return '/'
+  let redirectUrl='/'
+  if (!user.last_login) {
+    redirectUrl=await getTagUrl('PROFILE_COMPLETION')
+  }
+  await User.findByIdAndUpdate(user._id, {last_login: Date.now()})
+  return redirectUrl
 }
 
 module.exports = {
