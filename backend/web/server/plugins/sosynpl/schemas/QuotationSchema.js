@@ -62,6 +62,10 @@ const QuotationSchema = new Schema({
   billing_details: {
     type: String,
     required: false,
+  },
+  read: {
+    type: Boolean,
+    default: false,
   }
 }, schemaOptions,
 )
