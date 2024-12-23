@@ -208,7 +208,7 @@ const validateOrder = async ({value}, user) => {
       if (!!ticket) {
         throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
       }
-    } else {//New user creation from emails
+    } else {//New user creation from unknown emails
       const password = generatePassword()
       await ACTIONS.register({
         firstname: orderTicket.firstname,
