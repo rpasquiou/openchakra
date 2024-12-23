@@ -513,8 +513,8 @@ declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instanc
 declareVirtualField({model: 'tablemap', field: 'tables_count', instance: 'Number'})
 
 //Admin_dashboard declaration
-declareComputedField({model: 'admin_dashboard', field: 'event_count', getterFn: getterCountFn('event')})
-declareComputedField({model: 'admin_dashboard', field: 'partner_list', getterFn: getterPartnerList})
+declareComputedField({model: 'adminDashboard', field: 'event_count', getterFn: getterCountFn('event')})
+declareComputedField({model: 'adminDashboard', field: 'partner_list', getterFn: getterPartnerList})
 
 //Order declarations
 declareEnumField({model: 'order', field:'status', enumValues: ORDER_STATUSES})
