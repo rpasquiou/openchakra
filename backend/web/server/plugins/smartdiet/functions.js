@@ -2454,7 +2454,8 @@ false && cron.schedule('0 0 * * * *', async () => {
           .then(id => {
             if (id || user.role==ROLE_EXTERNAL_DIET) {
               console.log(`User ${user.email}/${user.role} found in smartagenda with id ${id}`)
-              user.smartagenda_id = id || -1
+              // If no id for diet, set to null to update the date
+              user.smartagenda_id = id || null
               return user.save().catch(console.error)
             }
             // Create only customers, not allowed to create diets through API
