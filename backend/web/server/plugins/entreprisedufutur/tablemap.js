@@ -1,7 +1,3 @@
-const generateTables = async (eventId) => {
-
-}
-
 const computeTableMap = async (eventId) => {
 
   //récupérer les tables
