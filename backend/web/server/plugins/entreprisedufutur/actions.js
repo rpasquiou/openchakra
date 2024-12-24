@@ -174,8 +174,8 @@ const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
 
   for (let i = 0; i < nb_tickets; i++) {
     const status = i<remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
-    if (i == 1) {
-      await OrderTicket.create({order: order._id, status, firstname: user.firstname, latname: user.lastname, email: user.email})
+    if (i == 0) {
+      await OrderTicket.create({order: order._id, status, firstname: user.firstname, lastname: user.lastname, email: user.email})
     } else {
       await OrderTicket.create({order: order._id, status})
     }
