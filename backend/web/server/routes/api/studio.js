@@ -179,7 +179,7 @@ router.post(
   bodyParser.urlencoded({ extended: false }),
   passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }),
   (req, res) => {
-    return sendCookie(req.user, res).json(req.user)
+    return sendCookie(req.user, res).redirect('/')
   }
 );
 
