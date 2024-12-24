@@ -1,3 +1,5 @@
+const path=require('path')
+myEnv = require('dotenv').config({ path: path.resolve(__dirname, '../../../../../.env') })
 const axios = require('axios');
 
 // Configuration
@@ -74,7 +76,7 @@ async function sendInvitation(user) {
 
 (async () => {
     try {
-      const data = await sendInvitation({email: 'sebastien.auvray@free.fr', firstname: 'Sébastien', lastname: 'Auvray'})
+      const data = await sendInvitation({email: 'solene.vanuxem@wappizy.com', firstname: 'Solène', lastname: 'Vanuxem'})
       console.log('Données récupérées :', data)
     } catch (err) {
       console.error('Erreur globale :', err.message)

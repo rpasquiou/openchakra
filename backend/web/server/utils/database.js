@@ -1044,6 +1044,7 @@ const DATA_IMPORT_FN={}
 // Imports data for model. Delegated to plugins
 const importData=({model, data, user}) => {
   if (!DATA_IMPORT_FN[model]) {
+    console.error(`No function to import ${model}`)
     throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
   }
   return DATA_IMPORT_FN[model](data, user)
