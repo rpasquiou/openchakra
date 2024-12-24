@@ -33,7 +33,7 @@ const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
-const { getLooking } = require('./user')
+const { getLooking, getEvents } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const Tablemap = require('../../models/Tablemap')
@@ -246,6 +246,7 @@ USER_MODELS.forEach(m => {
   declareVirtualField({model: m, field: 'published_public_missions_count', instance: 'Number'})
   declareEnumField({model: m, field:'is_allergic', enumValues: BOOLEAN_ENUM})
   declareEnumField({model: m, field: 'genre', enumValues:USER_GENRES})
+  declareComputedField({model:m, field: 'events', getterFn: getEvents})
 })
 
 //Company declarations

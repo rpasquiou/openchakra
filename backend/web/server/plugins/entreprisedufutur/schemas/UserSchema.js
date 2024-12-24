@@ -62,6 +62,7 @@ const UserSchema = new Schema({
     required: false,
   },
   events: {
+    //computed
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'event',
