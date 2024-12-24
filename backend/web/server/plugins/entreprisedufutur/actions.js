@@ -204,11 +204,12 @@ const validateOrder = async ({value}, user) => {
     }
   })
 
+  const event = await Event.findById(order.event_ticket.event._id)
 
   await Promise.all(order.order_tickets.map(async (orderTicket) => {
     const userF = await User.findOne({email:orderTicket.email})
     if (!!userF) {//Check that known users don't already have a ticket
-      const ticket = UserTicket.findOne({user: userF._id, event_ticket: order.event_ticket._id})
+      const ticket = UserTicket.findOne({user: userF._id, event_ticket: {$in: event.event_tickets}})
       if (!!ticket) {
         throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
       }
@@ -236,8 +237,6 @@ const validateOrder = async ({value}, user) => {
   
   //order status update
   await Order.findByIdAndUpdate(order._id, {status: ORDER_STATUS_VALIDATED})
-
-  const event = await Event.findById(order.event_ticket.event._id)
   
   return event
 }
