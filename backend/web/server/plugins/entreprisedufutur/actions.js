@@ -144,7 +144,9 @@ const generateTables = async ({value, nb_seats, nb_tables}, user) => {
 addAction('generate_tables', generateTables)
 
 
-const generateOrder = async ({value,nb_tickets}, user) => {
+const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
+
+  const nb_tickets = parseInt(nb_tickets_str)
 
   if (!value) {
     throw new NotFoundError(`no eventTicket id`)
