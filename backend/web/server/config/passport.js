@@ -56,7 +56,7 @@ console.log('SSO certificate', `${process.env.HOME}/.ssh/aftral.pem`)
 
 const getSamlAttribute = (samlAnswer, attribute) => {
   const samlAttribute=`http://schemas.xmlsoap.org/ws/2005/05/identity/claims/${attribute}`
-  return samlAnswer[samlAttribute]
+  return samlAnswer[samlAttribute] || samlAnswer[attribute]
 }
 
 const SSOStrategy = new SamlStrategy(
@@ -68,7 +68,7 @@ const SSOStrategy = new SamlStrategy(
     cert: fs.readFileSync(`${process.env.HOME}/.ssh/aftral.pem`, 'utf8'),
   },
   async (profile, done) => {
-    console.log('In SAML cb:got', profile)
+    console.log('In SAML cb:got', profile, getSamlAttribute(profile, 'jobtitle'))
     const email=getSamlAttribute(profile, 'emailaddress')
     const user=await User.findOne({email})
     if (user) {
@@ -91,12 +91,10 @@ const SSOStrategy = new SamlStrategy(
 passport.use(SSOStrategy)
 
 passport.serializeUser(function(user, done) {
-  console.log('serialize user', user)
   done(null, user._id);
 })
 
 passport.deserializeUser(function(id, done) {
-  console.log('deserialize user', id)
   User.findById(id, function(err, user) {
     done(err, user);
   })
