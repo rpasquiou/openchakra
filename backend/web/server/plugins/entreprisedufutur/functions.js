@@ -399,7 +399,6 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
-declareVirtualField({model: 'event', field: 'registered_users_count', requires: 'registered_users',instance: 'Number'})
 declareEnumField({model: 'event', field: 'star_event', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'reservable_tickets', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_ENUM})
@@ -422,7 +421,7 @@ declareVirtualField({model: 'event', field: 'status', requires: 'start_date', in
   dbFilter: value => {return RegExp(value).test(EVENT_STATUS_PAST) ? {start_date: {$lt: Date.now()}} : {start_date: {$gt: Date.now()}}}
 })
 declareComputedField({model: 'event', field: 'registered_users', getterFn: getRegistered})
-declareComputedField({model: 'event', field: 'registered_users_number', getterFn: getRegisteredNumber})
+declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getRegisteredNumber})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})

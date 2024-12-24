@@ -86,7 +86,7 @@ const EventSchema = new Schema({
     }],
     default: []
   },
-  registered_users_number: {
+  registered_users_count: {
     //computed
     type: Number,
   },
