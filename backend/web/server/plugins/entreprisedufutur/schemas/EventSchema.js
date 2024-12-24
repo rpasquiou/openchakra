@@ -86,6 +86,10 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  registered_users_number: {
+    //computed
+    type: Number,
+  },
   organizer_name: {
     type: String,
     required: [true, `Le nom de l'organisateur est obligatoire`],
@@ -230,10 +234,6 @@ const EventSchema = new Schema({
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
-
-EventSchema.virtual('registered_users_count', DUMMY_REF).get(function() {
-  return this.registered_users?.length
-})
 
 EventSchema.virtual('event_tickets', {
   ref:'eventTicket',
