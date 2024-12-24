@@ -232,7 +232,7 @@ const validateOrder = async ({value}, user) => {
   await Promise.all(order.order_tickets.map(async (orderTicket,index) => {
     const userL = await User.findOne({email: orderTicket.email})
     const status = index < remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
-    return UserTicket.create({event_ticket: order.event_ticket.id, user: userL._id, status: status})
+    return UserTicket.create({event_ticket: order.event_ticket.id, user: userL._id, status: status, buyer: user._id})
   }))
   
   //order status update
