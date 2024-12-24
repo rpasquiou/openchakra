@@ -1,3 +1,5 @@
+const bodyParser = require("body-parser")
+
 const { createMemoryMulter } = require('../../utils/filesystem')
 const {
   FUMOIR_MEMBER,
@@ -168,6 +170,18 @@ router.get('/scorm/:id', passport.authenticate('cookie', {session: false}), asyn
   return res.json(scormData)
 })
 
+router.get('/login/sso',
+  passport.authenticate('saml', {})
+)
+
+router.post(
+  "/auth-callback",
+  bodyParser.urlencoded({ extended: false }),
+  passport.authenticate("saml", { failureRedirect: "/", failureFlash: true }),
+  (req, res) => {
+    return sendCookie(req.user, res).redirect('/')
+  }
+);
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
@@ -383,9 +397,41 @@ router.get('/geoloc', async (req, res) => {
   return res.json(suggestions)
 })
 
-router.get('/current-user', passport.authenticate('cookie', {session: false}), (req, res) => {
-  return res.json(req.user)
-})
+router.get(
+  '/current-user',
+  (req, res, next) => {
+    passport.authenticate('cookie', { session: false }, (err, user) => {
+      console.log('After cookie authentication');
+      if (err) {
+        console.error('Cookie authentication error:', err);
+        return next(err);
+      }
+      if (user) {
+        console.log('After cookie authentication, I have a user');
+        req.user = user; // Attach the user to the request
+        return next(); // Continue to the next middleware
+      }
+      console.log('No user found via cookie, falling back to SAML');
+      // Continue to SAML authentication if no cookie-based user is found
+      passport.authenticate('saml', { session: false }, (err, user) => {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          return res.status(401).json({ error: 'Not authenticated' });
+        }
+        res.json(user); // Return the user info
+      })(req, res, next);    })(req, res, next);
+  },
+  (req, res) => {
+    console.log('I am authenticated');
+    // If authenticated successfully via SAML or cookie, respond with user info
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    return res.json(req.user);
+  }
+)
 
 router.post('/register', (req, res) => {
   const ip=req.headers['x-forwarded-for'] || req.socket.remoteAddress
