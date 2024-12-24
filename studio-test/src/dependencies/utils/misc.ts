@@ -108,6 +108,7 @@ export const formatAddress = addr => {
 }
 
 export const redirectExists = () =>{
+  // HACK: avoid white pages, fix redirect page in code generation
   return false
   const cookies=new Cookies()
   const redirect=cookies.get('redirect')

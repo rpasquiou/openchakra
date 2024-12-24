@@ -1206,7 +1206,7 @@ return Promise.allSettled(imagePromises)
   },
 
   login_sso: async ({value}) => {
-    alert('SSO in progress')
+    return window.location=`${API_ROOT}/login/sso`
   },
 
   toggle_full_screen: async ({value}) => {

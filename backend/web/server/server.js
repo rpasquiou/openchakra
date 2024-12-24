@@ -100,7 +100,6 @@ checkConfig()
     app.use(bodyParser.urlencoded({extended: true, limit: '5mb'}))
     app.use(bodyParser.json({limit: '5mb'}))
 
-    // Passport middleware
     app.use(passport.initialize())
 
     app.use(cookieParser())
