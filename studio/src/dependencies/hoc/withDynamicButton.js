@@ -46,7 +46,7 @@ const withDynamicButton = Component => {
       axios.get(`/myAlfred/api/studio/action-allowed/${action}?dataId=${value?._id}&actionProps=${JSON.stringify(actionProps)}`)
         .then(res => {
            setActionAllowed(res.data.allowed)
-           setActionMessage(res.data.message || 'Action autorisée')
+           setActionMessage(res.data.message || '')
 	})
         .catch(err => console.error(err))
     }, [action, value])
@@ -117,12 +117,13 @@ const withDynamicButton = Component => {
       if (props.hideIfForbidden && !actionAllowed) {
         return null
       }
+
       return (
         <>
       <Component disabled={!actionAllowed}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
-          title={{actionMessage}}
+          title={actionMessage}
         {...conditionalProperties}
         isLoading={insideAction}
         />

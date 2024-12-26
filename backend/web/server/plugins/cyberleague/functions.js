@@ -35,7 +35,7 @@ const Score = require('../../models/Score')
 const Gain = require('../../models/Gain')
 const { isMineForPost } = require('./post')
 const { getRelated } = require('./related')
-const { getLooking } = require('./user')
+const { getLooking, inviteUsers } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const { startSslScan } = require('../SslLabs')
@@ -1225,10 +1225,6 @@ const ssoLoginCallback = async user => {
   }
   await User.findByIdAndUpdate(user._id, {last_login: Date.now()})
   return redirectUrl
-}
-
-const inviteUsers = async (data, user) => {
-  console.log(data.toString())
 }
 
 setImportDataFunction({model: 'user', fn: inviteUsers})
