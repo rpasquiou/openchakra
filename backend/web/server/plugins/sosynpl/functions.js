@@ -26,6 +26,7 @@ const { usersCount, customersCount, freelancesCount, currentMissionsCount, comin
 const Statistic = require("../../models/Statistic");
 const Mission = require("../../models/Mission");
 const Application = require("../../models/Application");
+const Question = require("../../models/Question");
 const { isEmailOk } = require("../../../utils/sms");
 const { BadRequestError } = require("../../utils/errors");
 
@@ -753,13 +754,18 @@ const preCreate = async ({model, params, user, skip_validation}) => {
     skip_validation=true
     params.freelance=user
   }
-  if (model == 'question' ) {
-    skip_validation = true
-    if( params.parent ) {
+  
+  if (model == 'question') {
+    if (params.parent) {
       params.announce = params.parent
-    }
-    else {
+      const highestOrderQuestion = await Question.findOne()
+        .sort('-order')
+        .select('order')
+      
+      params.order = highestOrderQuestion ? (highestOrderQuestion.order + 1) : 1
+    } else {
       params['filter.announce'] = null
+      params.order = 1
     }
   }
   return Promise.resolve({model, params, user, skip_validation})

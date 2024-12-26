@@ -31,10 +31,28 @@ const QuestionSchema = new Schema({
     ref: 'announce',
     required: false,
   },
-  index: {
+  order: {
     type: Number,
-    required: false,
+    required: true,
   }
 }, { ...schemaOptions })
+
+
+QuestionSchema.pre('save', async function(next) {
+  if (!this.order) {
+    return next()
+  }
+
+  const existingQuestion = await this.constructor.exists({
+    order: this.order,
+    _id: { $ne: this._id }
+  })
+
+  if (existingQuestion) {
+    throw new BadRequestError(`Une question avec l'ordre ${this.order} existe déjà pour cette annonce`)
+  }
+
+  next()
+})
 
 module.exports = QuestionSchema
