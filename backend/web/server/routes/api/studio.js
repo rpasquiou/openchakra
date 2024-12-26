@@ -401,13 +401,11 @@ router.get(
   '/current-user',
   (req, res, next) => {
     passport.authenticate('cookie', { session: false }, (err, user) => {
-      console.log('After cookie authentication');
       if (err) {
         console.error('Cookie authentication error:', err);
         return next(err);
       }
       if (user) {
-        console.log('After cookie authentication, I have a user');
         req.user = user; // Attach the user to the request
         return next(); // Continue to the next middleware
       }
@@ -424,7 +422,6 @@ router.get(
       })(req, res, next);    })(req, res, next);
   },
   (req, res) => {
-    console.log('I am authenticated');
     // If authenticated successfully via SAML or cookie, respond with user info
     if (!req.user) {
       return res.status(401).json({ error: 'Not authenticated' });
