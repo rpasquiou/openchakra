@@ -35,7 +35,7 @@ async function getChapterData(userId, params, data) {
 // trainee_fullname,end_date,location
 const getSessionCertificate = async (userId, params, data) => {
 
-  if (moment().isBefore(data.end_date)) {
+  if (moment().endOf('day').isBefore(data.end_date)) {
     throw new Error(`La session ${data.name} n'est pas terminée`)
   }
   const role=(await User.findById(userId)).role

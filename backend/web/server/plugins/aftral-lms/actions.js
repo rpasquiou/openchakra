@@ -227,7 +227,7 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     if (action=='get_proof' && moment().isBefore(session.start_date)) {
       throw new BadRequestError(`La session n'a pas commencé`)
     }
-    if (action=='get_certificate' && moment().isBefore(session.end_date)) {
+    if (action=='get_certificate' && moment().endOf('day').isBefore(session.end_date)) {
       throw new BadRequestError(`La session n'est pas terminée`)
     }
   }

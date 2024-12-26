@@ -911,7 +911,7 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
   }
 }, null, true, 'Europe/Paris')
 
-// Send certifcates at session end
+// Send certificates the day after the session ends
 !isDevelopment() && cron.schedule('0 0 4 * * *', async () => {
   const yesterdayFilter = getDateFilter({ attribute: 'end_date', day: moment().add(-1, 'day') })
   const sessions = await Block.find({ type: 'session', ...yesterdayFilter }).populate(['children', 'trainees'])
