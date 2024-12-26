@@ -1207,13 +1207,15 @@ const ssoProfileCallback = async (iss, sub, profile, accessToken, refreshToken) 
   const email=rawProfile.email
   let user=await User.findOne({email})
   if (user) {
+    // User existed, update guid if required
+    await User.findByIdAndUpdate(user._id, {guid: rawProfile.guid})
     return user
   }
   const firstname=rawProfile.firstname
   const lastname=rawProfile.lastname
   // TODO Discriminate role
   const role='ROLE_MEMBER'
-  user=await User.create({email, firstname, lastname, role, password: 'PASSWD'})
+  user=await User.create({email, firstname, lastname, role, password: 'PASSWD', guid: rawProfile.guid})
   return user
 }
 
