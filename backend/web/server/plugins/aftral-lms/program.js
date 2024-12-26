@@ -141,8 +141,8 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
   const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, includeUnavailable: true, includeOptional: true})
 
   params=lodash(params)
-    .omitBy((_, k) => ['filter', 'limit'].includes(k))
-    .mapKeys((_, k) => k.replace('.evaluation_resources', ''))
+    .omitBy((_, k) => ['filter', 'limit'].includes(k) || !/evaluation_resources\./.test(k))
+    .mapKeys((_, k) => k.replace(/^(limit|sort).*\.evaluation_resources(.*)$/, '$1$2'))
     .value()
   params={...params, [`filter._id`]: {$in: resourceIds}, ['filter.evaluation']: true}
 
