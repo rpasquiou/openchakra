@@ -524,7 +524,7 @@ declareVirtualField({model: 'order', field: 'order_tickets', multiple: true, ins
   }
 })
 declareVirtualField({model: 'order', field: 'order_tickets_count', instance: 'Number'})
-declareComputedField({model: 'order', field: 'unknown_emails', getterFn: getUnknownEmails})
+declareComputedField({model: 'order', field: 'unknown_tickets', getterFn: getUnknownEmails})
 declareComputedField({model: 'order', field: 'are_inputs_valid', getterFn: getInputsValid})
 
 //OrderTicket declarations

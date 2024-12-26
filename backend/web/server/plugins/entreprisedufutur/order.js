@@ -12,7 +12,8 @@ const getUnknownEmails = async (userId, params, data) => {
       const exist = await User.exists({email:t.email})
       return !exist
     })
-  return unknownEmailTickets.map(ticket => ticket.email)
+  
+  return unknownEmailTickets.map(ticket => new OrderTicket(ticket))
 }
 
 const getInputsValid = async (userId, params, data) => {

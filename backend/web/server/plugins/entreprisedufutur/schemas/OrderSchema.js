@@ -15,10 +15,11 @@ const OrderSchema = new Schema({
     enum:Object.keys(ORDER_STATUSES),
     required: [true, `Le statut de la commande est obligatoire`]
   },
-  unknown_emails: {
+  unknown_tickets: {
     //computed
     type: [{
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: 'userTicket',
       required: true
     }],
     default: []
