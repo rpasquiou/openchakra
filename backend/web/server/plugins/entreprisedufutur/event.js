@@ -2,6 +2,7 @@ const UserTicket = require('../../models/UserTicket')
 const EventTicket = require('../../models/EventTicket')
 const User = require('../../models/User')
 const { USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED } = require('./consts')
+const { loadFromDb } = require('../../utils/database')
 
 const getRegistered = async function (userId, params, data,fields) {
   const eventTickets = await EventTicket.find({event: data._id})
