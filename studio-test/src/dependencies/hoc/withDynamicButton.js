@@ -9,6 +9,36 @@ import {
   getConditionalProperties,
 } from '../utils/filters'
 import {Error, Information} from '../utils/notifications'
+import {FileDown} from 'lucide-react'
+
+const API_ROOT = '/myAlfred/api/studio'
+
+const forceDownload = (data, filename) => {
+  var a = document.createElement('a')
+  a.download = filename
+  a.href = data
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
+const downloadResource = async url => {
+  if (!url) { return}
+  const response=await fetch(url,{
+    headers: new Headers({
+      'Origin': document.location.origin
+    }),
+    mode: 'cors'
+  })
+  const blob=await response.blob()
+  const blobUrl = window.URL.createObjectURL(blob)
+  const filename = response.headers
+    .get('Content-Disposition')
+    .split('filename=')[1]
+    .replace(/["']/g, '')
+  forceDownload(blobUrl, filename)
+}
+
 
 const withDynamicButton = Component => {
 
@@ -17,6 +47,7 @@ const withDynamicButton = Component => {
     const [errorMessage, setErrorMessage]=useState(null)
     const [infoMessage, setInfoMessage]=useState(null)
     const [insideAction, setInsideAction]=useState(false)
+    const [importTemplateAvailable, setImportTemplateAvailable]=useState(false)
 
     const router = useRouter()
     const query = new URLSearchParams(router?.asPath)
@@ -38,6 +69,14 @@ const withDynamicButton = Component => {
 
     const [actionAllowed, setActionAllowed]=useState(true)
     const [actionMessage, setActionMessage]=useState('')
+
+    useEffect(() => {
+      if (props.action=='import_model_data') {
+        axios.head(`${API_ROOT}/import-data/${actionProps.model}`)
+          .then(() => setImportTemplateAvailable(true))
+          .catch(() => setImportTemplateAvailable(false))
+      }
+    }, [props])
 
     useEffect(()=> {
       if (['openPage'].includes(action)) {
@@ -127,6 +166,11 @@ const withDynamicButton = Component => {
         {...conditionalProperties}
         isLoading={insideAction}
         />
+        {importTemplateAvailable && 
+          <FileDown 
+            onClick={() => downloadResource(`${API_ROOT}/import-data/${actionProps.model}`)}
+          />
+        }
       {errorMessage && <Error message={errorMessage} onClose={()=>setErrorMessage(null)}/>}
       {infoMessage && <Information message={infoMessage} onClose={()=>setInfoMessage(null)}/>}
       </>
