@@ -16,6 +16,7 @@ const {
   importData,
   callPreLogin,
   callPreRegister,
+  importDataTemplate,
 } = require('../../utils/database')
 const axios=require('axios')
 const path = require('path')
@@ -502,6 +503,15 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
   console.log(`Import ${model}:${file.buffer.length} bytes`)
   return importData({model, data:file.buffer, user: req.user})
     .then(result => res.json(result))
+})
+
+router.get('/import-data/:model', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  const {model}=req.params
+  console.log(`Import template for ${model}`)
+  const template=await importDataTemplate({model, user: req.user})
+  res.setHeader('Content-Type', template.mimeType)
+  res.setHeader('Content-Disposition', `attachment: filename="${template.filename}"`)
+  return res.send(template.data)
 })
 
 router.get('/form', passport.authenticate('cookie', {session: false}), (req, res) => {
