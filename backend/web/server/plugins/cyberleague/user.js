@@ -1,5 +1,5 @@
 const lodash = require('lodash')
-const { loadFromDb } = require('../../utils/database')
+const { loadFromDb, setImportDataFunction, setImportDataTemplateFunction } = require('../../utils/database')
 const { extractData } = require('../../../utils/import')
 const { BadRequestError, parseError } = require('../../utils/errors')
 const User = require('../../models/User')
@@ -28,6 +28,7 @@ const inviteUsers =  async (data, user) => {
     if (Object.values(record).every(l => !l.trim())) {
       return `Ligne vide`
     }
+    // TODO: check constraints (i.e. attributes can not be modified)
     await User.findOneAndUpdate(
       {email: record.email},
       {email: record.email, firstname: record.firstname, lastname: record.lastname},
@@ -50,4 +51,15 @@ const inviteUsers =  async (data, user) => {
   return result
 }
 
-module.exports = { getLooking, inviteUsers }
+const getUserImportTemplate = (model, user) => {
+  return {
+    mimeType: 'text/csv',
+    filename: 'Modèle invitations.csv',
+    data: [`firstname;lastname;email`,`Gérard;Moulins;unknown@unknown.com`].join('\n')
+  }
+}
+
+setImportDataFunction({model: 'user', fn: inviteUsers})
+setImportDataTemplateFunction({model: 'user', fn: getUserImportTemplate})
+
+module.exports = { getLooking }
