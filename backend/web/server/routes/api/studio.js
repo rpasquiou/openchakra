@@ -507,7 +507,6 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
 
 router.get('/import-data/:model', passport.authenticate('cookie', {session: false}), async (req, res) => {
   const {model}=req.params
-  console.log(`Import template for ${model}`)
   const template=await importDataTemplate({model, user: req.user})
   res.setHeader('Content-Type', template.mimeType)
   res.setHeader('Content-Disposition', `attachment: filename="${template.filename}"`)
