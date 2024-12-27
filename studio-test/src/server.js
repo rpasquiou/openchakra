@@ -3,6 +3,7 @@ const myEnv = require('dotenv').config({ path: path.resolve(__dirname, '../../.e
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
 const { createServer } = require('https')
+const request = require('request')
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const express = require('express');
 const prod = ['production', 'validation'].includes(process.env.MODE)
@@ -69,6 +70,14 @@ checkConfig()
   app.use(bodyParser.json())
 
   app.use(cors())
+
+  // Proxy for S3 files
+  app.get('/proxy', (req, res) => {
+    console.log('Proxying', req.query.url)
+    const url = req.query.url;
+    if (!url) return res.status(400).send('URL is required');
+    request(url).pipe(res);
+  })
 
   const rootPath = path.join(__dirname, '/..')
   glob.sync(`${rootPath}/server/api/*.js`).forEach(controllerPath => {
