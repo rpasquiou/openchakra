@@ -211,7 +211,7 @@ const validateOrder = async ({value}, user) => {
     if (!!userF) {//Check that known users don't already have a ticket
       const ticket = UserTicket.findOne({user: userF._id, event_ticket: {$in: event.event_tickets}})
       if (!!ticket) {
-        throw new ForbiddenError(`Un billet a déjà été pris pour cette événement avec l'email ${orderTicket.email}`)
+        throw new ForbiddenError(`Un billet a déjà été pris pour cet événement avec l'email ${orderTicket.email}`)
       }
     } else {//New user creation from unknown emails
       const password = generatePassword()
