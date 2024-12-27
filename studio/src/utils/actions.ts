@@ -797,6 +797,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  validate: {
+    label: 'Validate',
+    options: {},
+    next: ['openPage'],
+  },
   login_sso: {
     label: 'Login SSO',
     options: {},

@@ -1168,6 +1168,16 @@ return Promise.allSettled(imagePromises)
       .then(res => ({value: res.data}))
   },
 
+  validate: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'validate',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => ({value: res.data}))
+  },
+
   refuse: ({value, props, level, getComponentValue}) => {
     const reason = getComponentValue(props.reason, level)
     let url = `${API_ROOT}/action`
