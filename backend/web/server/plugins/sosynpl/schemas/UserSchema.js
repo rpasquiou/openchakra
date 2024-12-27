@@ -93,7 +93,7 @@ UserSchema.virtual('conversations_count', {
   foreignField: 'users',
   count: true
 })
-UserSchema.virtual('search_field', DUMMY_REF).get(function () {
+UserSchema.virtual('search_text', DUMMY_REF).get(function () {
   const attributes = ['firstname', 'lastname', 'email', 'company_name']
   const values = attributes.map(attr => this[attr])
   return values.join(' ')

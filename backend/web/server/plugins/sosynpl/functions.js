@@ -49,7 +49,7 @@ const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUs
 MODELS.forEach(model => {
   declareVirtualField({
     model, 
-    field: 'search_field',
+    field: 'search_text',
     instance: 'String',
     requires: 'firstname,lastname,email,company_name',
     dbFilter: value => {
