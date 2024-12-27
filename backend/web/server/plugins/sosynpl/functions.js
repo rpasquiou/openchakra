@@ -47,6 +47,22 @@ ensureSoftSkills()
 
 const MODELS=['loggedUser', 'user', 'customer', 'freelance', 'admin', 'genericUser', 'customerFreelance']
 MODELS.forEach(model => {
+  declareVirtualField({
+    model, 
+    field: 'search_field',
+    instance: 'String',
+    requires: 'firstname,lastname,email,company_name',
+    dbFilter: value => {
+      return {
+        $or: [
+          {firstname: new RegExp(value, 'i')},
+          {lastname: new RegExp(value, 'i')}, 
+          {email: new RegExp(value, 'i')},
+          {company_name: new RegExp(value, 'i')}
+        ]
+      }
+    }
+  })
   if(!['admin','customer'].includes(model)){ //['loggedUser', 'user', 'freelance', 'genericUser', 'customerFreelance']
     declareVirtualField({model, field: 'availability_update_days', type: 'Number'})
   }

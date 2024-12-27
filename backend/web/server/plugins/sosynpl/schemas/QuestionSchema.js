@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
 const { TARGET } = require('../consts')
+const { BadRequestError } = require('../../../utils/errors')
 const Schema = mongoose.Schema
 
 const QuestionSchema = new Schema({
