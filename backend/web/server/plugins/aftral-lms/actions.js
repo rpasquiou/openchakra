@@ -4,8 +4,8 @@ const Block = require('../../models/Block')
 const Session = require('../../models/Session')
 const { ForbiddenError, BadRequestError, NotFoundError } = require('../../utils/errors')
 const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
-const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION } = require('./consts')
-const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus, getSessionProof, getSessionBlocks } = require('./block')
+const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION, BLOCK_TYPE_PROGRAM } = require('./consts')
+const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus, getSessionProof, getSessionBlocks, ensureValidProgramProduction } = require('./block')
 const Progress = require('../../models/Progress')
 const { canPlay, canResume, canReplay } = require('./resources')
 const User = require('../../models/User')
@@ -194,6 +194,17 @@ const getSessionCertificateAction = async ({value}, user) => {
 }
 addAction('get_certificate', getSessionCertificateAction)
 
+/**
+  Validate action:
+  - program : ensure it can be toggle to produciton mode
+*/
+const validateAction = async ({value}, user) => {
+  const isProgram=await Block.exists({_id: value, type: BLOCK_TYPE_PROGRAM})
+  if (isProgram) {
+    return ensureValidProgramProduction(value)
+  }
+}
+addAction('validate', validateAction)
 
 const isActionAllowed = async ({ action, dataId, user }) => {
   if (action=='clone') {
