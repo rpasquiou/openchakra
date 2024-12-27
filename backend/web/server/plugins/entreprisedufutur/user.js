@@ -18,6 +18,10 @@ const getEvents = async function (userId, params, data,fields) {
   const userTickets = await UserTicket.find({user: data._id,status: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}})
   const eventTicketsIds = userTickets.map((ticket)=> {return ticket.event_ticket})
   const eventTickets = await EventTicket.find({_id: {$in: eventTicketsIds}})
+  params=lodash(params)
+    .pickBy((v, k) => /\.events/.test(k))
+    .mapKeys((v, k) => k.replace(/\.events/, ''))
+    .value()
   const events = await loadFromDb({
     model: 'event',
     user: userId,
