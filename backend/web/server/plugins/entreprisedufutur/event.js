@@ -33,8 +33,15 @@ const getReservableTickets = async function (userId, params, data,fields) {
     })
 }
 
+const getIsRegistered = async function (userId, params, data,fields) {
+  const users = await getRegistered(userId, params, data,fields)
+  const usersId = users.map (u => u._id)
+  return usersId.includes(userId)
+}
+
 module.exports = {
   getRegistered,
   getRegisteredNumber,
   getReservableTickets,
+  getIsRegistered,
 }
