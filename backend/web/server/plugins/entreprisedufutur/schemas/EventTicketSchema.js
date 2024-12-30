@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY, USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED } = require('../consts')
+const { ROLES, BOOLEAN_ENUM, EVENT_VISIBILITY, USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED, BOOLEAN_ENUM_NO } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
@@ -56,9 +56,10 @@ const EventTicketSchema = new Schema({
     required: false
   },
   is_template: {
-    type: Boolean,
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
     required: true,
-    default: false
+    default: BOOLEAN_ENUM_NO
   },
   end_disponibility: {
     type: Date,
