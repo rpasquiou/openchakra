@@ -1,10 +1,11 @@
 const User = require('../../models/User')
-const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, COMPANY_SIZES, COMPANY_SIZE_100_249, SECTOR, SECTOR_CONSTRUCTION} = require('./consts')
+const { ROLE_ADMIN, ROLE_MEMBER, ROLE_PARTNER, COMPANY_SIZES, COMPANY_SIZE_100_249, SECTOR, SECTOR_CONSTRUCTION, BOOLEAN_ENUM, BOOLEAN_ENUM_NO} = require('./consts')
 const Company = require('../../models/Company')
 const ExpertiseSet = require('../../models/ExpertiseSet')
 const Group = require('../../models/Group')
 const Content = require('../../models/Content')
 const Event = require('../../models/Event')
+const EventTicket = require('../../models/EventTicket')
 
 const log = (...params) => {
   return console.log(`DB Update`, ...params)
@@ -109,6 +110,12 @@ const normalizeSector = async () => {
   return Company.updateMany({sector: {$nin: Object.keys(SECTOR)}}, {sector:SECTOR_CONSTRUCTION})
 }
 
+const normalizeIsTemplate = async () => {
+  log('Normalize is_template')
+
+  return EventTicket.updateMany({is_template: {$nin: Object.keys(BOOLEAN_ENUM)}}, {is_template:BOOLEAN_ENUM_NO})
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   // await normalizeRoles()
@@ -117,6 +124,7 @@ const databaseUpdate = async () => {
   await normalizeCompanySize()
   // await addExpertiseSet()
   await normalizeSector()
+  await normalizeIsTemplate()
 }
 
 module.exports=databaseUpdate
