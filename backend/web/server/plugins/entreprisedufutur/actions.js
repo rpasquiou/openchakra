@@ -165,7 +165,7 @@ const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
   const boughtNumber = await UserTicket.countDocuments({buyer: user._id, event_ticket:value})
   const eventTicket = await EventTicket.findById(value, ['remaining_tickets', 'quantity_max_per_user','quantity','quantity_registered'])
   if (nb_tickets + boughtNumber> eventTicket.quantity_max_per_user) {
-    throw new ForbiddenError(`Le nombre de billets de cette catégorie achetés par une même personne ne peut pas dépasser ${eventTicket.quantity_max_per_user}, vous en avez acheté ${nb_tickets + boughtNumber}`)
+    throw new ForbiddenError(`Le nombre de billets de cette catégorie achetés par une même personne ne peut pas dépasser ${eventTicket.quantity_max_per_user}, vous en auriez acheté ${nb_tickets + boughtNumber} avec cette commande`)
   }
 
   const order = await Order.create({event_ticket: value, status: ORDER_STATUS_IN_PROGRESS})
