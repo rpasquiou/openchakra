@@ -25,7 +25,16 @@ const getRegisteredNumber = async function (userId, params, data,fields) {
   return userTickets.map(ticket=> ticket.user).length
 }
 
+const getReservableTickets = async function (userId, params, data,fields) {
+  const user = await User.findById(userId)
+  const eventTickets = await EventTicket.find({event: data._id})
+  return eventTickets.filter((t) => {
+      return t.targeted_roles.includes(user.role)
+    })
+}
+
 module.exports = {
   getRegistered,
   getRegisteredNumber,
+  getReservableTickets,
 }
