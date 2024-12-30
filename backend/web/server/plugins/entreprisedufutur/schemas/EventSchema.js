@@ -214,15 +214,6 @@ const EventSchema = new Schema({
     ref: 'eventCategory',
     required: false
   },
-  attachments: {
-    type: [{
-      type: Schema.Types.ObjectId,
-      ref: 'attachment',
-      required: true,
-    }],
-    required: false,
-    default: []
-  },
   partners: {
     type: [{
       type: Schema.Types.ObjectId,
@@ -271,6 +262,12 @@ EventSchema.virtual('posts_count', {
 
 EventSchema.virtual('status', DUMMY_REF).get(function() {
   return moment().isBefore(this.start_date) ? EVENT_STATUS_FUTUR : EVENT_STATUS_PAST
+})
+
+EventSchema.virtual('attachments', {
+  ref: 'attachment',
+  localField: '_id',
+  foreignField: 'event'
 })
 
 /* eslint-enable prefer-arrow-callback */

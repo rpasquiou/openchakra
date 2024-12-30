@@ -425,6 +425,12 @@ declareComputedField({model: 'event', field: 'registered_users_count', getterFn:
 declareComputedField({model: 'event', field: 'available_tickets', getterFn: getReservableTickets})
 declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
 declareComputedField({model: 'event', field: 'waiting_list', getterFn: getStatus('waiting')})
+declareVirtualField({model: 'event', field: 'attachments', multiple: true, instance: 'Array', 
+  caster: {
+    instance: 'ObjectID',
+    options: {ref: 'attachment'}
+  }
+})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
