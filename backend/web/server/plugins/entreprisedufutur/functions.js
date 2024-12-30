@@ -876,14 +876,18 @@ const prePutData = async ({model, id, params, user}) => {
   }
 
   if (model == 'user') {
-    if (params.company) {
-      const nameRegexp = new RegExp(`^${params.company}$`,'i')
+    if (params['company.name']) {
+      const nameRegexp = new RegExp(`^${params['company.name']}$`,'i')
       const company = await Company.findOneAndUpdate(
         {name: nameRegexp},
-        {name: nameRegexp},
-        {upsert: true}
+        {name: params['company.name']},
+        {upsert: true, returnDocument: 'after'}
       )
-      params.company = company._id
+
+      //TODO : fix that thing
+      const loadCompany = await Company.findOne({name: params['company.name']})
+
+      params.company = loadCompany._id
     }
   }
 
