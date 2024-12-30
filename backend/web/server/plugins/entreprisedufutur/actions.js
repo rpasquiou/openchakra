@@ -163,7 +163,7 @@ const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
 
   //loggedUser have bought less than quantity_max_per_user tickets
   const boughtNumber = await UserTicket.countDocuments({buyer: user._id, event_ticket:value})
-  const eventTicket = await EventTicket.findById(value, ['remaining_tickets', 'quantity_max_per_user'])
+  const eventTicket = await EventTicket.findById(value, ['remaining_tickets', 'quantity_max_per_user','quantity','quantity_registered'])
   if (nb_tickets + boughtNumber> eventTicket.quantity_max_per_user) {
     throw new ForbiddenError(`Le nombre de billets de cette catégorie achetés par une même personne ne peut pas dépasser ${eventTicket.quantity_max_per_user}, vous en avez acheté ${nb_tickets + boughtNumber}`)
   }
@@ -193,7 +193,7 @@ const validateOrder = async ({value}, user) => {
 
   const [order] = await loadFromDb({
     model: 'order',
-    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets', 'event_ticket.event'],
+    fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets', 'event_ticket.event','event_ticket.quantity','event_ticket.quantity_registered'],
     id: value,
   })
 
@@ -209,7 +209,7 @@ const validateOrder = async ({value}, user) => {
   await Promise.all(order.order_tickets.map(async (orderTicket) => {
     const userF = await User.findOne({email:orderTicket.email})
     if (!!userF) {//Check that known users don't already have a ticket
-      const ticket = UserTicket.findOne({user: userF._id, event_ticket: {$in: event.event_tickets}})
+      const ticket = await UserTicket.findOne({user: userF._id, event_ticket: {$in: event.event_tickets}})
       if (!!ticket) {
         throw new ForbiddenError(`Un billet a déjà été pris pour cet événement avec l'email ${orderTicket.email}`)
       }
