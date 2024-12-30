@@ -26,7 +26,7 @@ const getEvents = async function (userId, params, data,fields) {
     model: 'event',
     user: userId,
     fields,
-    params: {...params, 'filter._id':{$in: eventTickets.map(u => u._id)}}
+    params: {...params, 'filter._id':{$in: eventTickets.map(u => u.event)}}
   })
   return events.map((e)=> {return new Event(e)})
 }
