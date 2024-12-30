@@ -55,12 +55,6 @@ const EventTicketSchema = new Schema({
     enum: Object.keys(BOOLEAN_ENUM),
     required: false
   },
-  is_template: {
-    type: String,
-    enum: Object.keys(BOOLEAN_ENUM),
-    required: true,
-    default: BOOLEAN_ENUM_NO
-  },
   end_disponibility: {
     type: Date,
     required: false,
