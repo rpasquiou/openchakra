@@ -422,7 +422,7 @@ declareVirtualField({model: 'event', field: 'status', requires: 'start_date', in
 })
 declareComputedField({model: 'event', field: 'registered_users', getterFn: getStatus('registered')})
 declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getRegisteredNumber})
-declareComputedField({model: 'event', field: 'reservable_tickets', getterFn: getReservableTickets})
+declareComputedField({model: 'event', field: 'available_tickets', getterFn: getReservableTickets})
 declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
 declareComputedField({model: 'event', field: 'waiting_list', getterFn: getStatus('waiting')})
 

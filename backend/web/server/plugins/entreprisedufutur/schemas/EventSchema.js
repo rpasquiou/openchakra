@@ -232,7 +232,7 @@ const EventSchema = new Schema({
     required: false,
     default: []
   },
-  reservable_tickets: {
+  available_tickets: {
     //computed
     type: [{
       type: Schema.Types.ObjectId,
