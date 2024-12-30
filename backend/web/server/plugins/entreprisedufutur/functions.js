@@ -875,6 +875,18 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
+  if (model == 'user') {
+    if (params.company) {
+      const nameRegexp = new RegExp(`^${params.company}$`,'i')
+      const company = await Company.findOneAndUpdate(
+        {name: nameRegexp},
+        {name: nameRegexp},
+        {upsert: true}
+      )
+      params.company = company._id
+    }
+  }
+
   return {model, id, params, user}
 }
 
