@@ -236,7 +236,7 @@ const EventSchema = new Schema({
     //computed
     type: [{
       type: Schema.Types.ObjectId,
-      ref: 'eventTickets',
+      ref: 'eventTicket',
       required: true
     }],
     default: [],
