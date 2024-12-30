@@ -231,6 +231,15 @@ const EventSchema = new Schema({
     required: false,
     default: []
   },
+  reservable_tickets: {
+    //computed
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'eventTickets',
+      required: true
+    }],
+    default: [],
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
