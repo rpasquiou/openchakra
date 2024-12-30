@@ -240,6 +240,11 @@ const EventSchema = new Schema({
     }],
     default: [],
   },
+  is_registered: {
+    //computed
+    type: Boolean,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

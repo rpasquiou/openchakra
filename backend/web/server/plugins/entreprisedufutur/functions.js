@@ -44,7 +44,7 @@ const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
-const { getRegistered, getRegisteredNumber, getReservableTickets } = require('./event')
+const { getRegistered, getRegisteredNumber, getReservableTickets, getIsRegistered } = require('./event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -423,6 +423,7 @@ declareVirtualField({model: 'event', field: 'status', requires: 'start_date', in
 declareComputedField({model: 'event', field: 'registered_users', getterFn: getRegistered})
 declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getRegisteredNumber})
 declareComputedField({model: 'event', field: 'reservable_tickets', getterFn: getReservableTickets})
+declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
