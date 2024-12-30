@@ -75,6 +75,11 @@ const EventTicketSchema = new Schema({
     required: false,
     default: false
   },
+  template: {
+    type: String,
+    enum: Object.keys(BOOLEAN_ENUM),
+    required: false,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
