@@ -138,7 +138,8 @@ const {
   USER_SEARCH_TEXT_FIELDS,
   CONTENT_VISIBILITY,
   CONTENT_ARTICLE,
-  SOURCE_SMARTAGENDA
+  SOURCE_SMARTAGENDA,
+  ASSESSMENT_STATUS
 } = require('./consts')
 const {
   HOOK_DELETE,
@@ -1428,6 +1429,25 @@ declareVirtualField({
     instance: 'ObjectID',
     options: { ref: 'appointment' }
   },
+})
+declareEnumField({
+  model: 'coaching',
+  field: 'assessment_status',
+  enumValues: ASSESSMENT_STATUS,
+})
+declareVirtualField({
+  model: 'coaching',
+  field: 'assessment_status',
+  instance: 'String',
+  requires: 'assessment_quizz.questions,assessment_quizz.type',
+  enumValues: ASSESSMENT_STATUS,
+})
+
+declareVirtualField({
+  model: 'coaching',
+  field: 'assessment_progress',
+  instance: 'String',
+  requires: 'assessment_quizz.questions,assessment_quizz.type',
 })
 declareVirtualField({
   model: 'coaching', field: 'appointments_future', instance: 'Array', multiple: true,

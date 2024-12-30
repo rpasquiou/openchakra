@@ -9,7 +9,10 @@ const {
   COACHING_STATUS_FINISHED,
   COACHING_STATUS_STOPPED,
   SOURCE,
-  SOURCE_APPLICATION
+  SOURCE_APPLICATION,
+  QUIZZ_TYPE_ASSESSMENT,
+  ASSESSMENT_STATUS_VALIDATED,
+  ASSESSMENT_STATUS_IN_PROGRESS
 } = require('../consts')
 const moment = require('moment')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
@@ -278,6 +281,55 @@ CoachingSchema.virtual('in_progress', DUMMY_REF).get(function() {
 
 CoachingSchema.post('save', async function() {
   return callPreSave('coaching', this)
+})
+
+CoachingSchema.virtual('assessment_status', DUMMY_REF).get(function () {
+  if (!this.assessment_quizz) return null
+
+  if (this.assessment_quizz.type !== QUIZZ_TYPE_ASSESSMENT) return null
+
+  const questions = this.assessment_quizz.questions || []
+  const hasAnswer = (question) => {
+    return !!(
+      question.boolean_answer !== undefined ||
+      (question.scale_1_10_answer !== undefined && question.scale_1_10_answer !== null) ||
+      question.text_answer ||
+      question.document_answer ||
+      question.numeric_answer !== undefined ||
+      question.single_enum_answer ||
+      (question.qcm_answers && question.qcm_answers.length > 0)
+    )
+  }
+
+  const answeredQuestions = questions.filter(hasAnswer)
+
+  return answeredQuestions.length === questions.length
+    ? ASSESSMENT_STATUS_VALIDATED
+    : ASSESSMENT_STATUS_IN_PROGRESS
+})
+
+CoachingSchema.virtual('assessment_progress', DUMMY_REF).get(function () {
+  if (!this.assessment_quizz) return null
+
+  if (this.assessment_quizz.type !== QUIZZ_TYPE_ASSESSMENT) return null
+
+  const questions = this.assessment_quizz.questions || []
+  const hasAnswer = (question) => {
+    return !!(
+      question.boolean_answer !== undefined ||
+      (question.scale_1_10_answer !== undefined && question.scale_1_10_answer !== null) ||
+      question.text_answer ||
+      question.document_answer ||
+      question.numeric_answer !== undefined ||
+      question.single_enum_answer ||
+      (question.qcm_answers && question.qcm_answers.length > 0)
+    )
+  }
+
+  const answeredCount = questions.filter(hasAnswer).length
+  const totalCount = questions.length
+
+  return `${answeredCount} / ${totalCount}`
 })
 
 /* eslint-enable prefer-arrow-callback */
