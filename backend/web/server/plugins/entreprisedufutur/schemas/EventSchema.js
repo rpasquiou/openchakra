@@ -128,6 +128,7 @@ const EventSchema = new Schema({
     default: []
   },
   waiting_list: {
+    //computed
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'user',
