@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST, EVENT_TARGET } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -209,10 +209,27 @@ const EventSchema = new Schema({
     ref: 'tablemap',
     required: false
   },
-  category: {
-    type: Schema.Types.ObjectId,
-    ref: 'eventCategory',
+  is_free : {
+    type: Boolean,
+    default: false,
     required: false
+  },
+  target: {
+     type: String,
+     enum: Object.keys(EVENT_TARGET),
+     required: false
+  },
+  category: {
+    // type: Schema.Types.ObjectId,
+    // ref: 'eventCategory',
+    // required: false
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'eventCategory',
+      required: true
+    }],
+    required: false,
+    default: []
   },
   partners: {
     type: [{
