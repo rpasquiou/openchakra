@@ -44,7 +44,7 @@ const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
-const { getRegisteredNumber, getReservableTickets, getIsRegistered, getStatus } = require('./event')
+const { getRegisteredNumber, getReservableTickets, getIsRegistered, getStatus, getBookedTickets } = require('./event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -424,6 +424,7 @@ declareComputedField({model: 'event', field: 'registered_users', getterFn: getSt
 declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getRegisteredNumber})
 declareComputedField({model: 'event', field: 'available_tickets', getterFn: getReservableTickets})
 declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
+declareComputedField({model: 'event', field: 'booked_tickets', getterFn: getBookedTickets})
 declareComputedField({model: 'event', field: 'waiting_list', getterFn: getStatus('waiting')})
 declareVirtualField({model: 'event', field: 'attachments', multiple: true, instance: 'Array', 
   caster: {
