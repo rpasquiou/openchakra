@@ -13,7 +13,7 @@ const EventTicketSchema = new Schema({
   event: {
     type: Schema.Types.ObjectId,
     ref: 'event',
-    required: [function () {return !this.is_template}, `L'événement est obligatoire si le ticket n'est pas un template`]
+    required: false
   },
   targeted_roles: {
     type: [{
