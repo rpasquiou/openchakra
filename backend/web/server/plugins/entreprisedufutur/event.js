@@ -12,18 +12,25 @@ const getStatus = (status) => {
   if (status == 'waiting') {
     statusFilter = USERTICKET_STATUS_WAITING_LIST
   }
-  return async function (userId, params, data,fields) {
+  return async function (userId, params, data, fields) {
     const eventTickets = await EventTicket.find({event: data._id})
     const eventTicketIds = eventTickets.map(ticket => ticket._id)
     const userTickets = await UserTicket.find({event_ticket: {$in: eventTicketIds}, status: statusFilter})
+
+    const userIds = userTickets.map(ticket => ticket.user)
+
+    const requiredFields = ['firstname', 'lastname']
+    if (fields) {
+      requiredFields.push(...fields)
+    }
     
     const users = await loadFromDb({
       model: 'user',
       user: userId,
-      fields,
-      params: {...params,'filter._id':{$in: userTickets.map(u => u._id)}}
+      fields: requiredFields,
+      params: {...params, 'filter._id': {$in: userIds}}
     })
-    return users.map(u=> new User(u))
+    return users.map(u => new User(u))
   }
 }
 
