@@ -7,7 +7,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const storage = require('../../utils/storage')
 const { importTrainers, importSessions, importTrainees } = require('./import')
 const User = require('../../models/User')
-const { ROLE_ADMINISTRATEUR } = require('./consts')
+const { ROLE_ADMINISTRATEUR, BACKUP_DURATION } = require('./consts')
 const { sendImportError } = require('./mailing')
 
 const pollNewFiles = async () => {
@@ -54,6 +54,17 @@ const pollNewFiles = async () => {
   return res
 }
 
+const cleanBackupFiles = async () => {
+  const folder=getExchangeDirectory()
+  const limitMoment=moment().add(-BACKUP_DURATION, 'days')
+  const oldFiles=lodash(fs.readdirSync(folder))
+    .map(f => path.join(folder, f))
+    .filter(f => moment(fs.statSync(f).mtime).isBefore(limitMoment))
+    .value()
+  console.log('Removing', oldFiles, 'from backup')
+  oldFiles.forEach(filepath => fs.unlinkSync(filepath))
+}
+
 module.exports={
-  pollNewFiles,
+  pollNewFiles, cleanBackupFiles,
 }
