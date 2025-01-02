@@ -1,4 +1,5 @@
 const path=require('path')
+const fs=require('fs')
 const myEnv = require('dotenv').config({path: path.resolve(__dirname, '../../../.env')})
 const dotenvExpand = require('dotenv-expand')
 dotenvExpand.expand(myEnv)
@@ -317,7 +318,21 @@ const hideStoreDialog = () => {
 }
 
 const getExchangeDirectory = () => {
+  if (!process.env.EXCHANGE_DIRECTORY) {
+    throw new Error(`Missing EXCHANGE_DIRECTORY`)
+  }
   return process.env.EXCHANGE_DIRECTORY
+}
+
+const getBackupDirectory = () => {
+  const folder=process.env.BACKUP_DIRECTORY
+  if (!folder) {
+    throw new Error(`Missing BACKUP_DIRECTORY`)
+  }
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, {recursive: true})
+  }
+  return folder
 }
 
 /**
@@ -452,5 +467,5 @@ module.exports = {
   setMasterStatus,
   getSmartdietAPIConfig,
   computeUrl,
-  getExchangeDirectory,
+  getExchangeDirectory, getBackupDirectory,
 }
