@@ -59,7 +59,7 @@ const pollNewFiles = async () => {
 }
 
 const cleanBackupFiles = async () => {
-  const folder=getExchangeDirectory()
+  const folder=getBackupDirectory()
   const limitMoment=moment().add(-BACKUP_DURATION, 'days')
   const oldFiles=lodash(fs.readdirSync(folder))
     .map(f => path.join(folder, f))
