@@ -163,17 +163,20 @@ const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
 
   //loggedUser have bought less than quantity_max_per_user tickets
   const boughtNumber = await UserTicket.countDocuments({buyer: user._id, event_ticket:value})
-  const eventTicket = await EventTicket.findById(value, ['remaining_tickets', 'quantity_max_per_user','quantity','quantity_registered'])
+
+  const eventTicket = await EventTicket.findById(value)
+    .select(['remaining_tickets', 'quantity_max_per_user', 'quantity', 'quantity_registered'])
+    .populate('quantity_registered')
+
   if (nb_tickets + boughtNumber> eventTicket.quantity_max_per_user) {
     throw new ForbiddenError(`Le nombre de billets de cette catégorie achetés par une même personne ne peut pas dépasser ${eventTicket.quantity_max_per_user}, vous en auriez acheté ${nb_tickets + boughtNumber} avec cette commande`)
   }
 
+  const status = eventTicket.remaining_tickets > 0 ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
+
   const order = await Order.create({event_ticket: value, status: ORDER_STATUS_IN_PROGRESS})
 
-  const remaining_tickets = eventTicket.remaining_tickets
-
   for (let i = 0; i < nb_tickets; i++) {
-    const status = i<remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
     if (i == 0) {
       await OrderTicket.create({order: order._id, status, firstname: user.firstname, lastname: user.lastname, email: user.email})
     } else {
