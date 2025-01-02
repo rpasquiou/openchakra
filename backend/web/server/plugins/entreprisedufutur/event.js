@@ -46,8 +46,7 @@ const getReservableTickets = async function (userId, params, data, fields) {
   const eventTickets = await EventTicket.find({event: data._id}).populate('quantity_registered')
   
   return eventTickets.filter((t) => {
-    const remainingTickets = t.quantity - (t.quantity_registered || 0)
-    return t.targeted_roles.includes(user.role) && remainingTickets > 0
+    return t.targeted_roles.includes(user.role)
   })
 }
 
