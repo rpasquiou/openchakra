@@ -318,10 +318,14 @@ const hideStoreDialog = () => {
 }
 
 const getExchangeDirectory = () => {
-  if (!process.env.EXCHANGE_DIRECTORY) {
+  const folder=process.env.EXCHANGE_DIRECTORY
+  if (!folder) {
     throw new Error(`Missing EXCHANGE_DIRECTORY`)
   }
-  return process.env.EXCHANGE_DIRECTORY
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, {recursive: true})
+  }
+  return folder
 }
 
 const getBackupDirectory = () => {
