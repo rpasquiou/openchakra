@@ -2,13 +2,16 @@ const fs=require('fs')
 const path=require('path')
 const moment=require('moment')
 const lodash=require('lodash')
-const {getExchangeDirectory, isValidation} = require('../../../config/config')
+const {getExchangeDirectory, isValidation, getBackupDirectory} = require('../../../config/config')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
 const storage = require('../../utils/storage')
 const { importTrainers, importSessions, importTrainees } = require('./import')
 const User = require('../../models/User')
 const { ROLE_ADMINISTRATEUR, BACKUP_DURATION } = require('./consts')
 const { sendImportError } = require('./mailing')
+
+getExchangeDirectory()
+getBackupDirectory()
 
 const pollNewFiles = async () => {
   const store=storage.namespace('exchange')
@@ -34,9 +37,10 @@ const pollNewFiles = async () => {
     if (latestFile) {
       const fileTime=moment(fs.statSync(latestFile).mtime)
       console.log('Handling', latestFile, fileTime)
-      store.set(key, fs.statSync(latestFile).mtime)
-      const backupName=latestFile.replace(/\.csv$/, '')+fileTime.format('_YYMMDD_hhmmss')+'.csv'
+      const baseName=path.basename(latestFile)
+      const backupName=path.join(getBackupDirectory(), baseName.replace(/\.csv$/, '')+fileTime.format('_YYMMDD_HHmmss')+'.csv')
       fs.copyFileSync(latestFile, backupName)
+      store.set(key, fs.statSync(latestFile).mtime)
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
         .then(res => {
           console.log(res)
@@ -55,7 +59,7 @@ const pollNewFiles = async () => {
 }
 
 const cleanBackupFiles = async () => {
-  const folder=getExchangeDirectory()
+  const folder=getBackupDirectory()
   const limitMoment=moment().add(-BACKUP_DURATION, 'days')
   const oldFiles=lodash(fs.readdirSync(folder))
     .map(f => path.join(folder, f))
