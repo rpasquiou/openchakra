@@ -54,7 +54,7 @@ const Search = require('../../models/Search')
 const Conversation = require('../../models/Conversation')
 const cron = require('../../utils/cron')
 const { isDevelopment } = require('../../../config/config')
-const { pollNewFiles } = require('./ftp')
+const { pollNewFiles, cleanBackupFiles } = require('./ftp')
 const { session } = require('passport')
 const { getGroupVisiosDays, getUserVisiosDays, getVisioTypeStr, getSessionVisiosDays } = require('./visio')
 const { createRoom } = require('../visio/functions')
@@ -904,7 +904,8 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
 !isDevelopment() && cron.schedule(POLLING_FREQUENCY, async () => {
   try {
     console.log('Polling new files')
-    return await pollNewFiles().then(console.log)
+    await pollNewFiles().then(console.log)
+    await cleanBackupFiles()
   }
   catch (err) {
     console.error(`Polling error:${err}`)
