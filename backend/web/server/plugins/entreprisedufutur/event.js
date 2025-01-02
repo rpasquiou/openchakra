@@ -62,7 +62,7 @@ const getBookedTickets = async function (userId, params, data, fields) {
   
   const bookedTickets = await EventTicket.find({
     _id: {$in: userTickets.map(ut => ut.event_ticket)}
-  })
+  }).populate('event')
   
   return bookedTickets
 }
