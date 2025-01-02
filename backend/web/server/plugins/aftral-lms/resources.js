@@ -126,7 +126,7 @@ const getFinishedResourcesData = async (userId, blockId) => {
 
 // Returns MANDATORY finished resources
 const getFinishedMandatoryResourcesCount = async (userId, params, data) => {
-  return (await Progress.find({user: userId, block: data._id}))?.finished_resources_count
+  return (await getProgress({user: userId, block: data._id}))?.finished_resources_count
 }
 
 // Mandatory resouces percent progress
