@@ -10,9 +10,14 @@ const get_token = req => {
   if (!auth) {
     return null
   }
-  const data=auth.split(' ')[1]
-  const decoded = jwt.decode(data)
-  return decoded
+  const data = auth.split(' ')[1]
+  try {
+    const decoded = jwt.verify(data, keys.JWT.secretOrKey)
+    return decoded
+  } catch (err) {
+    console.log('Token verification failed:', err.message)
+    return null
+  }
 }
 
 const get_logged_id = req => {
@@ -53,7 +58,12 @@ const send_cookie = (user, res, logged_as=null) => {
     logged_as: logged_as,
   } // Create JWT payload
 
-  jwt.sign(payload, keys.JWT.secretOrKey, (err, token) => {
+  const options = {}
+  if (keys.JWT.expiresIn) {
+    options.expiresIn = keys.JWT.expiresIn
+  }
+
+  jwt.sign(payload, keys.JWT.secretOrKey, options, (err, token) => {
     if (err) {
       return console.error(`Token signing error:${err}`)
     }

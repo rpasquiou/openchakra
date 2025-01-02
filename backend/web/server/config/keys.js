@@ -5,7 +5,8 @@ const MONGODB = {
 };
 
 const JWT = {
-  secretOrKey: 'secret',
+  secretOrKey: process.env.JWT_SECRET_KEY || 'secret',
+  expiresIn: process.env.JWT_EXPIRES_IN || undefined
 };
 
 module.exports = {

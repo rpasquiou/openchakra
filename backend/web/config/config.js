@@ -238,6 +238,7 @@ const displayConfig = () => {
 \tDisplay chat:${mustDisplayChat()} ${mustDisplayChat() ? getChatURL() : ''}\n\
 \tSendInBlue actif:${ENABLE_MAILING}\n\
 \tSendInBlue templates:${getDataModel()}\n\
+\tToken duration:${process.env.JWT_EXPIRES_IN}\n\
 Payment plugin:${process.env.PAYMENT_PLUGIN}:${!!paymentPlugin} keys is ${process.env.STRIPE_PUBLIC_KEY?.slice(0, 20)}...${process.env.STRIPE_PUBLIC_KEY?.slice(-6)}\n\
 `)
 }
