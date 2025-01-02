@@ -626,6 +626,9 @@ const propagateAttributes=async (blockId, attributes=null) => {
 }
 
 const getBlockTicketsCount = async (userId, params, data) => {
+  // TODO : re implement getDependant function
+  return 0
+  /**
   const ids = [data._id]
   if(data.is_template) {
     const allDependants = await data.getDependants()
@@ -633,6 +636,7 @@ const getBlockTicketsCount = async (userId, params, data) => {
   }
   const count = await mongoose.models.ticket.countDocuments({block:{$in:ids}})
   return count
+  */
 }
 
 const updateChildrenOrder = async parentId => {
