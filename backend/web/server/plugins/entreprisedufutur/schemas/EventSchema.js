@@ -258,6 +258,15 @@ const EventSchema = new Schema({
     }],
     default: [],
   },
+  waiting_tickets: {
+    //computed
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'eventTicket',
+      required: true
+    }],
+    default: [],
+  },
   is_registered: {
     //computed
     type: Boolean,

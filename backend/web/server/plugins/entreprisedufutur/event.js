@@ -67,6 +67,23 @@ const getBookedTickets = async function (userId, params, data, fields) {
   return bookedTickets
 }
 
+const getWaitingTickets = async function (userId, params, data, fields) {
+  const eventTickets = await EventTicket.find({event: data._id})
+  const eventTicketIds = eventTickets.map(ticket => ticket._id)
+  
+  const userTickets = await UserTicket.find({
+    event_ticket: {$in: eventTicketIds},
+    user: userId,
+    status: USERTICKET_STATUS_WAITING_LIST
+  })
+  
+  const waitingTickets = await EventTicket.find({
+    _id: {$in: userTickets.map(ut => ut.event_ticket)}
+  }).populate('event')
+  
+  return waitingTickets
+}
+
 const getIsRegistered = async function (userId, params, data,fields) {
   const registeredUsers = await getStatus('registered')(userId, params, data, fields)
   return registeredUsers.some(user => user._id.toString() === userId.toString())
@@ -77,5 +94,6 @@ module.exports = {
   getRegisteredNumber,
   getReservableTickets,
   getIsRegistered,
-  getBookedTickets
+  getBookedTickets,
+  getWaitingTickets,
 }
