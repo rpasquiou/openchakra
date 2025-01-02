@@ -7,7 +7,7 @@ const { runPromisesWithDelay } = require('../../utils/concurrency')
 const storage = require('../../utils/storage')
 const { importTrainers, importSessions, importTrainees } = require('./import')
 const User = require('../../models/User')
-const { ROLE_ADMINISTRATEUR } = require('./consts')
+const { ROLE_ADMINISTRATEUR, BACKUP_DURATION } = require('./consts')
 const { sendImportError } = require('./mailing')
 
 const pollNewFiles = async () => {
@@ -17,9 +17,9 @@ const pollNewFiles = async () => {
     throw new Error(`EXCHANGE_DIRECTORY must be defined in .env`)
   }
 
-  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant.*\.csv$/, importTrainees, 'Import apprenant']
-  const TRAINERS_PARAMS=['latest-trainers-filedate', /Session_Formateur.*\.csv$/, importTrainers, 'Import formateurs']
-  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur.*\.csv$/, importSessions, 'Import sessions']
+  const TRAINEES_PARAMS=['latest-trainees-filedate', /Apprenant\.csv$/, importTrainees, 'Import apprenant']
+  const TRAINERS_PARAMS=['latest-trainers-filedate', /Session_Formateur\.csv$/, importTrainers, 'Import formateurs']
+  const SESSION_PARAMS=['latest-session-filedate', /Session_Formateur\.csv$/, importSessions, 'Import sessions']
 
   const STEPS=[TRAINERS_PARAMS, TRAINEES_PARAMS, SESSION_PARAMS]
   const allFiles=await fs.readdirSync(folder)
@@ -32,8 +32,11 @@ const pollNewFiles = async () => {
       .filter(f => filePattern.test(f) && fs.statSync(f).mtime > latest_date )
       .maxBy(f => fs.statSync(f).mtime)
     if (latestFile) {
-      console.log('Handling', latestFile, fs.statSync(latestFile).mtime.toString())
+      const fileTime=moment(fs.statSync(latestFile).mtime)
+      console.log('Handling', latestFile, fileTime)
       store.set(key, fs.statSync(latestFile).mtime)
+      const backupName=latestFile.replace(/\.csv$/, '')+fileTime.format('_YYMMDD_hhmmss')+'.csv'
+      fs.copyFileSync(latestFile, backupName)
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
         .then(res => {
           console.log(res)
@@ -51,6 +54,17 @@ const pollNewFiles = async () => {
   return res
 }
 
+const cleanBackupFiles = async () => {
+  const folder=getExchangeDirectory()
+  const limitMoment=moment().add(-BACKUP_DURATION, 'days')
+  const oldFiles=lodash(fs.readdirSync(folder))
+    .map(f => path.join(folder, f))
+    .filter(f => moment(fs.statSync(f).mtime).isBefore(limitMoment))
+    .value()
+  console.log('Removing', oldFiles, 'from backup')
+  oldFiles.forEach(filepath => fs.unlinkSync(filepath))
+}
+
 module.exports={
-  pollNewFiles,
+  pollNewFiles, cleanBackupFiles,
 }
