@@ -345,7 +345,7 @@ const importTrainers = async (filename) => {
   })
   // Mail new trainers
   const newTrainers = await User.find({ role: ROLE_FORMATEUR, aftral_id: { $ne: null, $nin: previousTrainers } })
-  console.log(`Sending init to trainers`, newTrainers.map(t => t.email))
+  console.log(`Sending init to trainers`, JSON.stringify(newTrainers.map(t => t.email)))
   await Promise.allSettled(newTrainers.map(trainer => sendInitTrainer({ trainer })))
   return res
 }
@@ -466,7 +466,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
       const sess_trainers = trainers.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
-      const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
+      const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID] && t.FLAG==1)
       return {
         [SESSION_AFTRAL_ID]: s[SESSION_AFTRAL_ID],
         CODE_PRODUIT: s.CODE_PRODUIT,
@@ -478,6 +478,11 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       }
     })
     .value()
+  const emptySessions=sessions.filter(s => s.TRAINEES.length==0)
+  if (emptySessions) {
+    console.log(`Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
+  }
+  sessions=sessions.filter(s => s.TRAINEES.length>0)
   const previousSessions = await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))
   const progressCb = (index, total) => index % 10 == 0 && console.log(index, '/', total)
   const oneAdmin = await User.findOne({ role: ROLE_ADMINISTRATEUR })
@@ -526,14 +531,13 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   const trainersResult=await Promise.allSettled(trainers.map(async t => {
     const session=await Block.findOne({type: 'session', code: t[SESSION_AFTRAL_ID]})
     if (!session) {
-      throw new Error(`Ajout formateur: session ${t[SESSION_AFTRAL_ID]} introuvable`)
+      throw new Error(`Ajout formateur ${t[TRAINER_AFTRAL_ID]}: session ${t[SESSION_AFTRAL_ID]} introuvable`)
     }
     const trainer=await User.findOne({[TRAINER_KEY]: t[TRAINER_AFTRAL_ID]})
     if (!trainer) {
-      throw new Error(`Ajout formateur: formateur ${t[TRAINER_KEY]} introuvable`)
+      throw new Error(`Ajout formateur ${t[TRAINER_AFTRAL_ID]} : formateur ${t[TRAINER_KEY]} introuvable`)
     }
-    console.log('HERE', session._id, trainer._id)
-    await Session.findByIdAndUpdate(session._id, {$addToSet: {trainers: trainer._id}}).then(console.log)
+    await Session.findByIdAndUpdate(session._id, {$addToSet: {trainers: trainer._id}})
   }))
 
   result = [...result, ...trainersResult]
