@@ -946,11 +946,12 @@ const getBlockNoteStr = async (userId, params, data) => {
 const ensureValidProgramProduction = async programId => {
   const childrenId=await getBlockChildren({blockId: programId})
   const children=await mongoose.models.block.find({_id: {$in: childrenId}})
-  const sequences=children.filter(c => c.type==BLOCK_TYPE_SEQUENCE)
+  const blocks=children.filter(c => c.type!=BLOCK_TYPE_RESOURCE)
 
   // Forbid sequences with no resource
-  await Promise.all(sequences.map(sequence => {
-    return mongoose.models.block.find({parent: sequence._id}).orFail(new Error(`Passage en production interdit: la séquence ${sequence.name} n'a pas de ressource`))
+  await Promise.all(blocks.map(block => {
+    const msg=`Passage en production interdit: ${BLOCK_TYPE_LABEL[block.type]} "${block.name}" est vide`
+    return mongoose.models.block.find({parent: block._id}).orFail(new Error(msg))
   }))
 
   // #231: Forbid mandatory blocks whose all children are optional
