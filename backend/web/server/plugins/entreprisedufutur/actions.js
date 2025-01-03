@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const { idEqual, getModel, loadFromDb } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST, ORDER_STATUS_VALIDATED, ROLE_MEMBER } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST, ORDER_STATUS_VALIDATED, ROLE_MEMBER, ROLE_ADMIN, ROLE_SUPERADMIN } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed } = require('../notifications/actions')
@@ -306,8 +306,37 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action == 'generate_order') {
     const dataIdModel = await getModel(dataId)
     if (dataIdModel != 'eventTicket') {
-      throw new Error(`DataId is a ${dataIdModel} id instead of an eventTicket one`)
+      throw new Error(
+        `DataId is a ${dataIdModel} id instead of an eventTicket one`
+      )
     }
+
+    if (user.role !== ROLE_ADMIN && user.role !== ROLE_SUPERADMIN) {
+      const eventTicket = await EventTicket.findById(dataId)
+        .select('event')
+        .populate({
+          path: 'event',
+          select: 'event_tickets',
+          populate: {
+            path: 'event_tickets',
+          },
+        })
+
+      const existingTicket = await UserTicket.findOne({
+        user: user._id,
+        status: {
+          $in: [USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST],
+        },
+        event_ticket: {
+          $in: eventTicket.event.event_tickets.map((ticket) => ticket._id),
+        },
+      })
+
+      if (existingTicket) {
+        throw new ForbiddenError('Vous avez déjà un billet pour cet événement')
+      }
+    }
+    return true
   }
 
   return true
