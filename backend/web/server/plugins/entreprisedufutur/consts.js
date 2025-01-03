@@ -171,7 +171,7 @@ const JOBS = {
   [JOB_DIGITAL_TRANSFORMATION_DIRECTOR]: `Directeur(trice) Transformation Digitale`,
   [JOB_CHARTERED_ACCOUNTANT]: `Expert(e) Comptable`,
   [JOB_OPERATIONAL_FUNCTION]: `Fonction Opérationnelle`,
-  [JOB_FOUNDER]: `Fondateur(trice) Communication`,
+  [JOB_FOUNDER]: `Fondateur(trice)`,
   [JOB_INDEPENDENT]: `Indépendant(e)`,
   [JOB_INSTITUTIONAL_REPRESENTATIVE]: `Institutionnel(le)`,
   [JOB_INVESTOR]: `Investisseur`,
