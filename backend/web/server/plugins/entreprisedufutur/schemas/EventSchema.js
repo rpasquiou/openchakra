@@ -305,6 +305,29 @@ EventSchema.virtual('attachments', {
   foreignField: 'event'
 })
 
+EventSchema.virtual('price_range', DUMMY_REF).get(function () {
+  if (!this.event_tickets?.length) {
+    return null
+  }
+
+  const prices = this.event_tickets
+    .map((ticket) => ticket.price)
+    .filter((price) => price != null)
+
+  if (!prices.length) {
+    return null
+  }
+
+  const minPrice = Math.min(...prices)
+  const maxPrice = Math.max(...prices)
+
+  if (minPrice === maxPrice) {
+    return `${minPrice}€`
+  }
+
+  return `${minPrice}€ à ${maxPrice}€`
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema

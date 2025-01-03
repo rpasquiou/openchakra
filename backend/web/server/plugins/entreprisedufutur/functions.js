@@ -412,6 +412,12 @@ declareVirtualField({model: 'event', field: 'event_tickets', multiple: true, ins
     options: {ref: 'eventTicket'}
   }
 })
+declareVirtualField({
+  model: 'event', 
+  field: 'price_range', 
+  instance: 'String',
+  requires: 'event_tickets.price'
+})
 declareVirtualField({model: 'event', field: 'posts', instance: 'Array', multiple: true, 
   caster: {
     instance: 'ObjectID',
