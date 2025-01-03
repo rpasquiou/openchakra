@@ -16,7 +16,7 @@ const QuotationDetailSchema = new Schema({
   },
   quantity: {
     type: Number,
-    required: [true, 'La quantité est obligatoire'],
+    default: 1,
   },
   vat_rate: {
     type: Number,
