@@ -11,4 +11,5 @@ export const MESSAGES={
   addChild: 'Ajouté',
   alle_finish_mission: 'Achèvement forcé avec succès',
   delete: 'Suppression effectuée',
+  validate: 'Validation réussie',
 }

@@ -95,7 +95,7 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage', 'previous'],
+    next: ['close_popup', 'openPage', 'previous'],
   },
   login: {
     label: 'Login',
@@ -105,7 +105,7 @@ export const ACTIONS: IActions = {
       password: ({ components }) =>
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   openPage: {
     label: 'Open page',
@@ -118,7 +118,7 @@ export const ACTIONS: IActions = {
       ],
     },
     required:['page'],
-    next: ['close_popup'],
+    next: ['close_popup', 'close_popup'],
   },
   levelUp: {
     label: 'Move item up',
@@ -133,14 +133,14 @@ export const ACTIONS: IActions = {
     options: {
       //data: ({components}) => components.map(p => ({key: p.id, label: p.id})),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   next: {
     label: 'Next',
     options: {
       //data: ({components}) => components.map(p => ({key: p.id, label: p.id})),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   delete: {
     label: 'Delete',
@@ -153,7 +153,7 @@ export const ACTIONS: IActions = {
     options: {
       //data: ({components}) => components.map(p => ({key: p.id, label: p.id})),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   addChild: {
     label: 'Add child',
@@ -233,19 +233,19 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage', 'previous','smartdiet_start_survey'],
+    next: ['close_popup', 'openPage', 'previous','smartdiet_start_survey'],
   },
   // Mettre un warning si les composants ne sont pas dans le même flex
   registerToEvent: {
     label: 'Register to event',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   // Mettre un warning si les composants ne sont pas dans le même flex
   unregisterFromEvent: {
     label: 'Unregister from event',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   // FUMOIR
   // Mettre un warning si les composants ne sont pas dans le même flex
@@ -276,7 +276,7 @@ export const ACTIONS: IActions = {
         .map(comp => ({ key: comp.id, label: `${comp.type}/${comp.id}` })),
       mode: () => [{ key: 'CASH', label: `Espèces` }, { key: 'CARD', label: `Carte bancaire` }],
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
     required: ['amount', 'mode']
   },
   // Register new User
@@ -293,7 +293,7 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   // Register new User
   registerAndLogin: {
@@ -309,7 +309,7 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   logout: {
     label: 'Logout',
@@ -331,13 +331,13 @@ export const ACTIONS: IActions = {
           .filter(c => c.type == 'Input')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
     required: ['email']
   },
   getCigarReview: {
     label: 'Get cigar review',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   changePassword: {
     label: 'Change password',
@@ -351,7 +351,7 @@ export const ACTIONS: IActions = {
           .filter(c => c.type == 'Input')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
     required: ['password', 'password2']
   },
   savePagePDF: {
@@ -390,7 +390,7 @@ export const ACTIONS: IActions = {
         components
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage', 'logout'],
+    next: ['close_popup', 'openPage', 'logout'],
   },
 
   createRecommandation: {
@@ -406,27 +406,27 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_create_quotation: {
     label: 'AE Create quotation',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_refuse_mission: {
     label: 'AE Refuse mission',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_cancel_mission: {
     label: 'AE Cancel mission',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_send_quotation: {
     label: 'Send quotation',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_accept_quotation: {
     label: 'AE Accept quotation',
@@ -434,28 +434,28 @@ export const ACTIONS: IActions = {
       paymentSuccess: ({ pages }) => pagesList({ pages }),
       paymentFailure: ({ pages }) => pagesList({ pages }),
     },
-    next: [],
+    next: ['close_popup', ],
   },
   alle_can_accept_quotation: {
     label: 'AE Can accept quotation',
     options: {
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_refuse_quotation: {
     label: 'AE Refuse quotation',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_show_quotation: {
     label: 'AE Display quotation',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_edit_quotation: {
     label: 'AE Modify quotation',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_finish_mission: {
     label: 'AE Finish mission',
@@ -463,62 +463,62 @@ export const ACTIONS: IActions = {
       trainee: ({ components }) =>
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_store_bill: {
     label: 'AE Put bill',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_accept_bill: {
     label: 'AE Accept bill',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_refuse_bill: {
     label: 'AE Refuse bill',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_leave_comment: {
     label: 'AE Leave comment',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_send_bill: {
     label: 'AE Send bill',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   smartdiet_join_group: {
     label: 'SM Join group',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   smartdiet_leave_group: {
     label: 'SM Leave group',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   smartdiet_skip_event: {
     label: 'SM Skip event',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   smartdiet_join_event: {
     label: 'SM Register event',
     options: {},
-    next: ['openPage', 'smartdiet_open_team_page'],
+    next: ['close_popup', 'openPage', 'smartdiet_open_team_page'],
   },
   smartdiet_pass_event: {
     label: 'SM Passed event',
     options: {},
-    next: ['openPage', 'openUrl'],
+    next: ['close_popup', 'openPage', 'openUrl'],
   },
   smartdiet_fail_event: {
     label: 'SM Failed event',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   alle_ask_contact: {
     label: 'AE Ask contact',
@@ -533,7 +533,7 @@ export const ACTIONS: IActions = {
         ]
       })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   payMission: {
     label: 'Pay mission',
@@ -548,7 +548,7 @@ export const ACTIONS: IActions = {
     options: {
       children: ({ attributes }) => Object.keys(attributes || {}).map(att => ({ key: att, label: att }))
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   askRecommandation: {
     label: 'Ask recommandation',
@@ -557,7 +557,7 @@ export const ACTIONS: IActions = {
       message: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       page: ({ pages }) => pagesList({ pages }),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
 
@@ -569,7 +569,7 @@ export const ACTIONS: IActions = {
           .filter(c => c.type == 'Input')
           .map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
     required: ['code']
   },
 
@@ -591,37 +591,37 @@ export const ACTIONS: IActions = {
   smartdiet_start_survey: {
     label: 'SM Start survey',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_next_question: {
     label: 'SM Next question',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_finish_survey: {
     label: 'SM Finish survey',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_join_team: {
     label: 'SM Join team',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_leave_team: {
     label: 'SM Leave team',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_find_team_member: {
     label: 'SM Find team member',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_open_team_page: {
@@ -629,31 +629,31 @@ export const ACTIONS: IActions = {
     options: {
       page: ({ pages }) => pagesList({ pages }),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_shift_challenge: {
     label: 'SM Shift challenge',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_routine_challenge: {
     label: 'SM Routine challenge',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_replay_event: {
     label: 'SM Replay webinar',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_read_content: {
     label: 'SM Read content',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_compute_shopping_list: {
@@ -668,7 +668,7 @@ export const ACTIONS: IActions = {
   smartdiet_start_quizz: {
     label: 'SM Start quizz',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   import_model_data: {
@@ -676,67 +676,67 @@ export const ACTIONS: IActions = {
     options: {
       model: ({ models }) => Object.values(models).map(m => ({ key: m.name, label: m.name })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_affect_lead: {
     label: 'SM Affect lead',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
 
   lockSession: {
     label: 'Lock session',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
 
   refresh: {
     label: 'Refresh',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
 
   play: {
     label: 'AFTRAL Play',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   resume: {
     label: 'AFTRAL Resume',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   replay: {
     label: 'AFTRAL Replay',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_rabbit_appointment: {
     label: 'SM appt. rabbit',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_download_assessment: {
     label: 'Download assessment',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   smartdiet_download_impact: {
     label: 'Download impact',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   validate_email: {
     label: 'Validate email',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
 
   suspend_account: {
@@ -744,44 +744,44 @@ export const ACTIONS: IActions = {
     options: {
       reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   activate_account: {
     label: 'Activate account',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   smartdiet_buy_pack: {
     label: 'SM Buy pack',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   publish: {
     label: 'Publish',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   clone: {
     label: 'Clone',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   refuse: {
     label: 'Refuse',
     options: {
       reason: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   reload: {
     label: 'Reload',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
   back: {
     label: 'Navigation back',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
   generateComplexId: {
     label: 'Generate complex id',
@@ -790,44 +790,49 @@ export const ACTIONS: IActions = {
       component2: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
       component3: ({ components }) => components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
   },
   get_template: {
     label: 'Get template',
     options: {},
-    next: ['openPage'],
+    next: ['close_popup', 'openPage'],
+  },
+  validate: {
+    label: 'Validate',
+    options: {},
+    next: ['close_popup', 'openPage'],
   },
   login_sso: {
     label: 'Login SSO',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
   toggle_full_screen: {
     label: 'Toggle full screen',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
   get_proof: {
     label: 'Get proof URL',
     options: {},
-    next: ['download'],
+    next: ['close_popup', 'download'],
   },
   get_certificate: {
     label: 'Get certificate URL',
     options: {},
-    next: ['download'],
+    next: ['close_popup', 'download'],
   },
   close_popup: {
     label: 'Close popup',
     options: {},
-    next: [],
+    next: ['close_popup', ],
   },
   open_popup: {
     label: 'Open popup',
     options: {
       popup: ({ components }) => components.filter(c => c.props?.popup===true || c.props?.popup=='true').map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: [],
+    next: ['close_popup', ],
   },
 
 }

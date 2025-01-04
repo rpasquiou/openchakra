@@ -35,7 +35,7 @@ async function getChapterData(userId, params, data) {
 // trainee_fullname,end_date,location
 const getSessionCertificate = async (userId, params, data) => {
 
-  if (moment().isBefore(data.end_date)) {
+  if (moment().endOf('day').isBefore(data.end_date)) {
     throw new Error(`La session ${data.name} n'est pas terminée`)
   }
   const role=(await User.findById(userId)).role
@@ -141,8 +141,8 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
   const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, includeUnavailable: true, includeOptional: true})
 
   params=lodash(params)
-    .omitBy((_, k) => ['filter', 'limit'].includes(k))
-    .mapKeys((_, k) => k.replace('.evaluation_resources', ''))
+    .omitBy((_, k) => ['filter', 'limit'].includes(k) || !/evaluation_resources\./.test(k))
+    .mapKeys((_, k) => k.replace(/^(limit|sort).*\.evaluation_resources(.*)$/, '$1$2'))
     .value()
   params={...params, [`filter._id`]: {$in: resourceIds}, ['filter.evaluation']: true}
 
