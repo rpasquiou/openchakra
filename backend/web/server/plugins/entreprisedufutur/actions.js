@@ -301,6 +301,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
       if (user.role != ROLE_ADMIN && user.role != ROLE_SUPERADMIN) {
         throw new ForbiddenError(`You must be an admin to delete ${model}`)
       }
+      if (model == 'eventTicket') {
+        const exist = await UserTicket.exists({event_ticket: dataId})
+        if (exist) {
+          throw new ForbiddenError(`You can't delete an event ticket because someone already bought one`)
+        }
+      }
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
