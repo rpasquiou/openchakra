@@ -652,7 +652,7 @@ const ROLE_MODEL_MAPPING={
 
 const preProcessGet = async ({ model, fields, id, user, params }) => {
   if (model === 'announce' && user.role === ROLE_CUSTOMER) {
-    params['filter.received_applications.visibility_status'] = APPLICATION_VISIBILITY_HIDDEN
+    params['filter.received_applications.visibility_status'] = APPLICATION_VISIBILITY_VISIBLE
     params['filter.received_applications.status'] = {
       $in: [
         APPLICATION_STATUS_ACCEPTED,
