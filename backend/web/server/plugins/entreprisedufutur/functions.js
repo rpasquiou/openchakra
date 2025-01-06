@@ -521,6 +521,7 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 
 //Table declarations
 declareEnumField({model: 'table', field: 'partner_level', enumValues: PARTNER_LEVELS})
+declareVirtualField({model: 'table', field: 'assigned_users_count', instance: 'Number'})
 
 //Tablemap declarations
 declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instance: 'Array',

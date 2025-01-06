@@ -1,6 +1,7 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const { PARTNER_LEVELS, MAX_WISHES } = require('../consts')
+const { DUMMY_REF } = require('../../../utils/database')
 
 const Schema = mongoose.Schema
 
@@ -78,6 +79,11 @@ const TableSchema = new Schema({
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
+
+TableSchema.virtual('assigned_users_count', DUMMY_REF).get(function() {
+  return this.assigned_users?.length || 0
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports= TableSchema
