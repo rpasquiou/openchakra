@@ -713,6 +713,12 @@ CustomerFreelanceSchema.pre('save', function (next) {
   next()
 })
 
+CustomerFreelanceSchema.virtual('asked_questions', {
+  ref: 'question',
+  localField: '_id',
+  foreignField: 'creator',
+})
+
 /* eslint-enable prefer-arrow-callback */
 
 
