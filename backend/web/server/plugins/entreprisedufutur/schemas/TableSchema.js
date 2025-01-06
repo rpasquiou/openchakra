@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const { PARTNER_LEVELS, MAX_WISHES } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
@@ -82,6 +83,11 @@ const TableSchema = new Schema({
 
 TableSchema.virtual('assigned_users_count', DUMMY_REF).get(function() {
   return this.assigned_users?.length || 0
+})
+
+TableSchema.virtual('allergies', DUMMY_REF).get(function() {
+  const users = lodash.concat(this.assigned_users || [], lodash.concat(this.staff || [], this.guests || []))
+  return users.filter(u => u.is_allergic).map(u => u.allergy)
 })
 
 /* eslint-enable prefer-arrow-callback */

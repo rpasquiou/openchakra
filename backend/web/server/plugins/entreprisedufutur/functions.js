@@ -522,6 +522,7 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 //Table declarations
 declareEnumField({model: 'table', field: 'partner_level', enumValues: PARTNER_LEVELS})
 declareVirtualField({model: 'table', field: 'assigned_users_count', instance: 'Number'})
+declareVirtualField({model: 'table', field: 'allergies', multiple: true, instance: 'Array', requires: 'guests.is_allergic, guests.allergy,staff.is_allergic,staff.allergy,assigned_users.is_allergic,assigned_users.allergy'})
 
 //Tablemap declarations
 declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instance: 'Array',
