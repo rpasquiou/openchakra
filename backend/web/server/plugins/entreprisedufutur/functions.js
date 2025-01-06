@@ -433,6 +433,7 @@ declareComputedField({model: 'event', field: 'available_tickets', getterFn: getR
 declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
 declareComputedField({model: 'event', field: 'booked_tickets', getterFn: getBookedTickets})
 declareComputedField({model: 'event', field: 'waiting_list', getterFn: getStatus('waiting')})
+declareComputedField({model: 'event', field: 'waiting_list_count', getterFn: getStatusNumber('waiting')})
 declareComputedField({model: 'event', field: 'waiting_tickets', getterFn: getWaitingTickets})
 declareVirtualField({model: 'event', field: 'attachments', multiple: true, instance: 'Array', 
   caster: {

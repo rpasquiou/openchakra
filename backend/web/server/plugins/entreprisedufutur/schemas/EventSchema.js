@@ -136,6 +136,10 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  waiting_list_count: {
+    //computed
+    type: Number,
+  },
   evaluations: {
     type: [{
       type: Schema.Types.ObjectId,
