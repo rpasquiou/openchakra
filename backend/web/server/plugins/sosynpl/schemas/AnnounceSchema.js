@@ -316,12 +316,6 @@ AnnounceSchema.virtual('received_applications', {
   ref: 'application',
   foreignField: 'announce',
   localField: '_id',
-  match: {
-    $and: [
-      { status: APPLICATION_STATUS_SENT },
-      { visibility_status: APPLICATION_VISIBILITY_VISIBLE }
-    ]
-  },
 })
 
 AnnounceSchema.virtual('received_applications_count', {

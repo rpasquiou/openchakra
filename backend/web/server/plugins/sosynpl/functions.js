@@ -4,7 +4,7 @@ const Announce = require("../../models/Announce")
 const Search = require("../../models/Search")
 const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
-const { SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY, TARGET } = require("./consts")
+const { SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY, TARGET, APPLICATION_VISIBILITY_VISIBLE, APPLICATION_VISIBILITY_HIDDEN, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_SENT, APPLICATION_STATUS_DRAFT } = require("./consts")
 const Freelance=require('../../models/Freelance')
 const CustomerFreelance=require('../../models/CustomerFreelance')
 const HardSkillCategory=require('../../models/HardSkillCategory')
@@ -651,6 +651,17 @@ const ROLE_MODEL_MAPPING={
 }
 
 const preProcessGet = async ({ model, fields, id, user, params }) => {
+  if (model === 'announce' && user.role === ROLE_CUSTOMER) {
+    params['filter.received_applications.visibility_status'] = APPLICATION_VISIBILITY_HIDDEN
+    params['filter.received_applications.status'] = {
+      $in: [
+        APPLICATION_STATUS_ACCEPTED,
+        APPLICATION_STATUS_REFUSED,
+        APPLICATION_STATUS_SENT,
+      ],
+    }
+  }
+
   if (model=='loggedUser') {
     const modelName=ROLE_MODEL_MAPPING[user.role]
     return({model: modelName, fields, id: user._id, user, params})
