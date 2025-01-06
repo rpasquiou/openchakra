@@ -43,17 +43,25 @@ const pollNewFiles = async () => {
       store.set(key, fs.statSync(latestFile).mtime)
       return importFn(latestFile, path.join(getExchangeDirectory(), 'Apprenant.csv'))
         .then(res => {
+          console.log(`FTP IMPORT: ${topicName} before merging error`)
           errors=[...errors, res.filter(r => r.status=='rejected').map(r => `${topicName}:${r.reason}`).filter(v => !lodash.isEmpty(v))]
+          console.log(`FTP IMPORT: ${topicName} after merging error`)
           return res
+        })
+        .catch(err => {
+          console.error(`FTP IMPORT: ${topicName} got import error ${err}`)
+          throw err
         })
     }
   }))
+  console.log(`FTP IMPORT: before sending all errors`)
   if (!lodash.isEmpty(errors.join('\n'))) {
     const admins=await User.find({role: ROLE_ADMINISTRATEUR})
     let message=isValidation() ? 'En validation:\n': ''
     message = message+errors.filter(v => !lodash.isEmpty(v)).join('\n')
     await Promise.all(admins.map(admin => sendImportError({admin, date: moment(), message: message})))
   }
+  console.log(`FTP IMPORT: after sending all errors`)
   return res
 }
 

@@ -490,15 +490,22 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   const progressCb = (index, total) => index % 10 == 0 && console.log(index, '/', total)
   const oneAdmin = await User.findOne({ role: ROLE_ADMINISTRATEUR })
   let importResult=[]
+  console.log(`FTP IMPORT: before session import`)
   if (sessions.length>0) {
-    importResult = await importData({
-      model: 'session', data: sessions,
-      mapping: SESSION_MAPPING(oneAdmin),
-      identityKey: SESSION_KEY,
-      migrationKey: SESSION_KEY,
-      progressCb
-    })
+    try {
+      importResult = await importData({
+        model: 'session', data: sessions,
+        mapping: SESSION_MAPPING(oneAdmin),
+        identityKey: SESSION_KEY,
+        migrationKey: SESSION_KEY,
+        progressCb
+      })
+    }
+    catch(err) {
+      console.error(`FTP IMPORT: session import error ${err}`)
+    }
   }
+  console.log(`FTP IMPORT: after session import`)
   result = [...importResult]
 
   // Set programs
