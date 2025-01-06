@@ -462,9 +462,11 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   let result = []
   const trainees = await loadRecords(traineesFilename)
   const trainers = await loadRecords(trainersFilename)
+  console.log('FTP IMPORT:All trainees:', JSON.stringify(trainees))
   let sessions = lodash(trainees)
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
+      console.log('FTP IMPORT:Mapping session', JSON.stringify(s))
       const sess_trainers = trainers.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
       const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID] && t.FLAG==1)
       return {
@@ -478,9 +480,10 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       }
     })
     .value()
+  console.log('FTP IMPORT:All sessions:', JSON.stringify(sessions))
   const emptySessions=sessions.filter(s => s.TRAINEES.length==0)
   if (emptySessions) {
-    console.log(`Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
+    console.log(`FTP IMPORT:Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
   }
   sessions=sessions.filter(s => s.TRAINEES.length>0)
   const previousSessions = await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))

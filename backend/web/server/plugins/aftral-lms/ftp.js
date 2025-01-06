@@ -29,14 +29,14 @@ const pollNewFiles = async () => {
   let errors=[]
   let res=await runPromisesWithDelay(STEPS.map(([key, filePattern, importFn, topicName]) => async () => {
     const latest_date=store.get(key) ? moment(store.get(key)) : null
-    console.log('Getting latest files after', latest_date)
+    console.log('FTP IMPORT:Getting latest files after', latest_date)
     const latestFile=lodash(allFiles)
       .map(f => path.join(folder, f))
       .filter(f => filePattern.test(f) && fs.statSync(f).mtime > latest_date )
       .maxBy(f => fs.statSync(f).mtime)
     if (latestFile) {
       const fileTime=moment(fs.statSync(latestFile).mtime)
-      console.log('Handling', latestFile, fileTime)
+      console.log('FTP IMPORT:Handling', latestFile, fileTime)
       const baseName=path.basename(latestFile)
       const backupName=path.join(getBackupDirectory(), baseName.replace(/\.csv$/, '')+fileTime.format('_YYMMDD_HHmmss')+'.csv')
       fs.copyFileSync(latestFile, backupName)

@@ -46,7 +46,7 @@ const searchBlocks = async (userId, params, data) => {
     query=query.limit(limit+1)
   }
   let res=await query
-  console.log('searched', andFilter, 'found', res.length)
+  console.log('searched', JSON.stringify(andFilter), 'found', res.length)
   if (lodash.isEmpty(res)) {
     query=Block.find(orFilter).sort({type:1})
     if (page) {
@@ -56,7 +56,7 @@ const searchBlocks = async (userId, params, data) => {
       query=query.limit(limit+1)
     }
     res=await query
-    console.log('searched', orFilter, 'found', res.length)
+    console.log('searched', JSON.stringify(orFilter), 'found', res.length)
   }
   return res
 }
