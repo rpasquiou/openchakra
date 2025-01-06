@@ -505,7 +505,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       console.error(`FTP IMPORT: session import error ${err}`)
     }
   }
-  console.log(`FTP IMPORT: after session import`)
+  console.log(`FTP IMPORT: after session import, res is ${JSON.stringify(importResult)}`)
   result = [...importResult]
 
   // Set programs
