@@ -31,13 +31,13 @@ const inviteUsers =  async (data, user) => {
       return `Ligne vide`
     }
     // TODO: check constraints (i.e. attributes can not be modified)
-    console.log('UPserting user', record)
     const userExists=await User.exists({email: record.email})
     const user=await User.findOneAndUpdate(
       {email: record.email},
       {email: record.email, firstname: record.firstname, lastname: record.lastname},
       {upsert: true, new: true, runValidators: true},
     )
+    console.log('Upserting user', record, user)
     // User did not exists => send visiativ invitation
     if (!userExists) {
       await createAccount(user)
