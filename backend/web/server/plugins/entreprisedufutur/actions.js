@@ -297,6 +297,10 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     const model = await getModel(dataId)
     if (model == 'notification') {
       await isDeleteUserNotificationAllowed({dataId, user, ...rest})
+    } else if (lodash.includes(['attachment','eventTicket','table'],model)) {
+      if (user.role != ROLE_ADMIN && user.role != ROLE_SUPERADMIN) {
+        throw new ForbiddenError(`You must be an admin to delete ${model}`)
+      }
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
