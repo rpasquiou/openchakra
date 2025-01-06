@@ -80,7 +80,7 @@ const EXPERIENCE_SENIOR=`EXPERIENCE_SENIOR`
 const EXPERIENCE_EXPERT=`EXPERIENCE_EXPERT`
 
 const EXPERIENCE={
-  [EXPERIENCE_JUNIOR]:`Junior: < 2 ans`,
+  [EXPERIENCE_JUNIOR]:`Junior : < 2 ans`,
   [EXPERIENCE_EXPERIMENTED]:`Expérimenté : 3-5 ans`,
   [EXPERIENCE_SENIOR]:`Senior : 6-9 ans`,
   [EXPERIENCE_EXPERT]:`Expert : 10 ans et plus`,
