@@ -700,9 +700,10 @@ const IS_SPEAKER = {
 }
 
 const ANONYMOUS_ALLOWED_MODELS = {
-  ['eventTicket']: [],
-  ['event']: [],
-  ['user']: []
+  ['eventTicket']: [], //all fields
+  ['event']: [], //all fields
+  ['user']: ['role', 'firstname', 'lastname', 'current_cursus','company.name','company.size', 'company.turnover','expertise_set.name'],
+  ['company']: ['status','name','size','turnover','type','members','address','region','expertise_set.categories','expertise_set.name']
 }
 
 module.exports = {
