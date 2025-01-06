@@ -43,7 +43,7 @@ const getRegisteredNumber = async function (userId, params, data,fields) {
 
 const getReservableTickets = async function (userId, params, data, fields) {
   const user = await User.findById(userId)
-  const eventTickets = await EventTicket.find({event: data._id}).populate('quantity_registered')
+  const eventTickets = await EventTicket.find({event: data._id})
   
   return eventTickets.filter((t) => {
     return t.targeted_roles.includes(user.role)
