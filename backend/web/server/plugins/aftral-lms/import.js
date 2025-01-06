@@ -407,10 +407,10 @@ const SESSION_MAPPING = admin => ({
     const code = await ProductCode.findOne({ code: record.CODE_PRODUIT })
     const program = code ? await Program.findOne({ codes: code, _locked: false, origin:null }) : null
     if (!program) {
-      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
+      return Promise.reject(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
     }
     if (program.status != PROGRAM_STATUS_AVAILABLE) {
-      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} est en mode ${PROGRAM_STATUS[program.status]}`)
+      Promise.reject(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} est en mode ${PROGRAM_STATUS[program.status]}`)
     }
     return program?.name
   },
@@ -418,7 +418,6 @@ const SESSION_MAPPING = admin => ({
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
   trainers: async ({ record }) => {
-    console.log(record.TRAINERS)
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainers')
     const previousTrainers = session?.trainers.map(t => t.aftral_id) || []
     const importTrainers = record.TRAINERS.map(t => ensureNumber(TRAINER_AFTRAL_ID, t[TRAINER_AFTRAL_ID]))
