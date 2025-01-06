@@ -138,12 +138,7 @@ const clone = async ({value}, user) => {
 addAction('clone', clone)
 
 
-// const getSession = ({id}, user) => {
-//   return getSession(user, null, {_id: id}, [])
-// }
-
 const getSessionAction = async ({id}, user) => {
-  console.log('getSession receives', id, user)
   return getSession(user._id, null, {_id: id}, [])
 }
   
