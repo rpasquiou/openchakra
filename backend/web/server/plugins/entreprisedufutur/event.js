@@ -2,7 +2,7 @@ const UserTicket = require('../../models/UserTicket')
 const EventTicket = require('../../models/EventTicket')
 const User = require('../../models/User')
 const { USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST } = require('./consts')
-const { loadFromDb } = require('../../utils/database')
+const { loadFromDb, idEqual } = require('../../utils/database')
 
 const getStatus = (status) => {
   let statusFilter = {}
@@ -86,7 +86,7 @@ const getWaitingTickets = async function (userId, params, data, fields) {
 
 const getIsRegistered = async function (userId, params, data,fields) {
   const registeredUsers = await getStatus('registered')(userId, params, data, fields)
-  return registeredUsers.some(user => user._id.toString() === userId.toString())
+  return registeredUsers.some(user => idEqual(user._id, userId))
 }
 
 module.exports = {
