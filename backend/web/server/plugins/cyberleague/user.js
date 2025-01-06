@@ -31,6 +31,7 @@ const inviteUsers =  async (data, user) => {
       return `Ligne vide`
     }
     // TODO: check constraints (i.e. attributes can not be modified)
+    console.log('UPserting user', record)
     const userExists=await User.exists({email: record.email})
     const user=await User.findOneAndUpdate(
       {email: record.email},
