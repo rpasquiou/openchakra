@@ -276,6 +276,14 @@ const EventSchema = new Schema({
     type: Boolean,
     required: false,
   },
+  allergies: {
+    //computed
+    type: [{
+      type: String,
+      required: true,
+    }],
+    default: []
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */

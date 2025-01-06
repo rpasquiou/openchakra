@@ -44,7 +44,7 @@ const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
-const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber } = require('./event')
+const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber, getAllergies } = require('./event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -441,6 +441,7 @@ declareVirtualField({model: 'event', field: 'attachments', multiple: true, insta
     options: {ref: 'attachment'}
   }
 })
+declareComputedField({model: 'event', field: 'allergies', getterFn: getAllergies})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})

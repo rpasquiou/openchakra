@@ -98,6 +98,11 @@ const getIsRegistered = async function (userId, params, data,fields) {
   return registeredUsers.some(user => idEqual(user._id, userId))
 }
 
+const getAllergies = async function (userId, params, data,fields) {
+  const registeredUsers = await getStatus('registered')(userId, params, data, fields)
+  return registeredUsers.filter(u => u.is_allergic).map(u => u.allergy)
+}
+
 module.exports = {
   getStatus,
   getStatusNumber,
@@ -105,4 +110,5 @@ module.exports = {
   getIsRegistered,
   getBookedTickets,
   getWaitingTickets,
+  getAllergies,
 }
