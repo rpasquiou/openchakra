@@ -321,7 +321,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
           },
         })
 
-      const existingTicket = await UserTicket.findOne({
+      const existingTicket = await UserTicket.exists({
         user: user._id,
         status: {
           $in: [USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST],
@@ -335,7 +335,6 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
         throw new ForbiddenError('Vous avez déjà un billet pour cet événement')
       }
     }
-    return true
   }
 
   return true
