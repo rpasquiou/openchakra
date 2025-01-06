@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST, EVENT_TARGET } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST, EVENT_TARGETS } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -220,7 +220,7 @@ const EventSchema = new Schema({
   },
   target: {
      type: String,
-     enum: Object.keys(EVENT_TARGET),
+     enum: Object.keys(EVENT_TARGETS),
      required: false
   },
   category: {
