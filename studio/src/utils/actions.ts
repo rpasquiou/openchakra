@@ -227,7 +227,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage', 'previous','smartdiet_start_survey','back'],
+    next: ['openPage', 'previous','smartdiet_start_survey','back','refresh'],
   },
   // Mettre un warning si les composants ne sont pas dans le même flex
   registerToEvent: {
