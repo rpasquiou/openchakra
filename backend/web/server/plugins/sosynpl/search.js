@@ -123,7 +123,7 @@ const computeSuggestedFreelances = async (userId, params, data) => {
 }
 
 const searchFreelances = async (userId, params, data, fields)  => {
-  let filter = { ...params, 'filter.role': ROLE_FREELANCE }
+  let filter = { ...params, 'filter.role': ROLE_FREELANCE, 'filter.picture_visible': true }
 
   fields = [...fields, 'freelance_profile_completion', 'freelance_missing_attributes', 'trainings', 'experiences', 'expertises', 'firstname', 'lastname', 'work_sector', 'work_mode_site', 'work_mode_remote']
 

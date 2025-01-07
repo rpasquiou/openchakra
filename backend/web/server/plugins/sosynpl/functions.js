@@ -884,6 +884,16 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
+  if (
+    model === 'customerFreelance' &&
+    params.hasOwnProperty('picture_visible') &&
+    user.role !== ROLE_ADMIN
+  ) {
+    throw new BadRequestError(
+      'Seul un administrateur peut modifier la visibilité de la photo'
+    )
+  }
+
   const targetUser = await User.findById(id, {availability:1})
   if(!!params.availability && params.availability!= targetUser.availability) {
     params.availability_last_update = moment()
