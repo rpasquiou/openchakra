@@ -402,7 +402,7 @@ const SESSION_MAPPING = admin => ({
   trainers: async ({ record }) => {
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainers')
     const previousTrainers = session?.trainers.map(t => t.aftral_id) || []
-    const importTrainers = record.TRAINERS.map(t => t[TRAINER_AFTRAL_ID])
+    const importTrainers = record.TRAINERS.map(t => t[TRAINER_AFTRAL_ID]).filter(id => !!id)
     const trainersIds = lodash.uniq([...previousTrainers, ...importTrainers])
     const trainers = await User.find({ aftral_id: { $in: trainersIds } })
     return trainers
@@ -447,13 +447,14 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   // Get previous sessions state
   let result = []
   const trainees = await loadRecords(traineesFilename)
-  const trainers = await loadRecords(trainersFilename)
+  let trainers = await loadRecords(trainersFilename)
+  trainers=trainers.filter(r => !!r[TRAINER_AFTRAL_ID])
   console.log('FTP IMPORT:import sessions All trainees:', JSON.stringify(trainees))
   let sessions = lodash(trainees)
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
       console.log('FTP IMPORT: import sessions Mapping session', JSON.stringify(s))
-      const sess_trainers = trainers.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
+      const sess_trainers = trainers.filter(t => !!(t[TRAINEE_AFTRAL_ID]?.trim()) && t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
       const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID] && t.FLAG==1)
       return {
         [SESSION_AFTRAL_ID]: s[SESSION_AFTRAL_ID],
