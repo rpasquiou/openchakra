@@ -297,7 +297,7 @@ const isActionAllowed = async ({ action, dataId, user, actionProps }) => {
     console.log('getting model for', dataId)
     const model=await getModel(dataId, ['announce', 'application'])
     if (model=='announce') {
-      const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status', 'work_mode_site', 'work_mode_remote', 'cgu_accepted']})
+      const announces=await loadFromDb({model: 'announce', id: dataId, fields: ['status', 'work_mode_site', 'work_mode_remote', 'cgu_accepted'], user})
       if (!announces.length) {
         throw new NotFoundError(`Announce ${dataId} not found`)
       }
