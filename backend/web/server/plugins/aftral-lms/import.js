@@ -308,19 +308,12 @@ const hasPassword = async email => {
   return !lodash.isEmpty(user?.password)
 }
 
-const ensureNumber = (att, value) => {
-  if (!parseInt(value)) {
-    throw new Error(`${att} ${value}: entier attendu`)
-  }
-  return value
-}
-
 const TRAINER_MAPPING = {
   email: 'EMAIL_FORMATEUR',
   firstname: 'PRENOM_FORMATEUR',
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
-  aftral_id: ({ record }) => ensureNumber(TRAINER_AFTRAL_ID, record[TRAINER_AFTRAL_ID]),
+  aftral_id: ({ record }) => record[TRAINER_AFTRAL_ID],
   // HACK: No SSO available so aftral trainers must get a password
   // password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
   // plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
@@ -355,7 +348,7 @@ const TRAINEE_MAPPING = {
   firstname: 'PRENOM_STAGIAIRE',
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
-  aftral_id: ({ record }) => ensureNumber(TRAINEE_AFTRAL_ID, record[TRAINEE_AFTRAL_ID]),
+  aftral_id: ({ record }) => record[TRAINEE_AFTRAL_ID],
   password: TRAINEE_AFTRAL_ID,
   plain_password: TRAINEE_AFTRAL_ID,
 }
@@ -420,7 +413,7 @@ const SESSION_MAPPING = admin => ({
   trainers: async ({ record }) => {
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainers')
     const previousTrainers = session?.trainers.map(t => t.aftral_id) || []
-    const importTrainers = record.TRAINERS.map(t => ensureNumber(TRAINER_AFTRAL_ID, t[TRAINER_AFTRAL_ID]))
+    const importTrainers = record.TRAINERS.map(t => parseInt(t[TRAINER_AFTRAL_ID]))
     const trainersIds = lodash.uniq([...previousTrainers, ...importTrainers])
     const trainers = await User.find({ aftral_id: { $in: trainersIds } })
     return trainers
