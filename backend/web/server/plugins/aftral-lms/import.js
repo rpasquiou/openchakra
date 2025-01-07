@@ -413,7 +413,7 @@ const SESSION_MAPPING = admin => ({
   trainers: async ({ record }) => {
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainers')
     const previousTrainers = session?.trainers.map(t => t.aftral_id) || []
-    const importTrainers = record.TRAINERS.map(t => parseInt(t[TRAINER_AFTRAL_ID]))
+    const importTrainers = record.TRAINERS.map(t => t[TRAINER_AFTRAL_ID])
     const trainersIds = lodash.uniq([...previousTrainers, ...importTrainers])
     const trainers = await User.find({ aftral_id: { $in: trainersIds } })
     return trainers
@@ -421,7 +421,7 @@ const SESSION_MAPPING = admin => ({
   trainees: async ({ record }) => {
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainees')
     const previousTrainees = session?.trainees.map(t => t.aftral_id) || []
-    const importTrainees = record.TRAINEES.map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
+    const importTrainees = record.TRAINEES.map(t => t[TRAINEE_AFTRAL_ID])
     let traineesIds = lodash.uniq([...previousTrainees, ...importTrainees])
     // Remove unregistered trainees
     const unregisterd = record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
