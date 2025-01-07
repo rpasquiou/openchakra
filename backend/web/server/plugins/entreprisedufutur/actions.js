@@ -197,6 +197,7 @@ const validateOrder = async ({value}, user) => {
     model: 'order',
     fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets', 'event_ticket.event','event_ticket.quantity','event_ticket.quantity_registered'],
     id: value,
+    user
   })
 
   const obj = lodash.countBy(order.order_tickets, (v)=> v.email)
