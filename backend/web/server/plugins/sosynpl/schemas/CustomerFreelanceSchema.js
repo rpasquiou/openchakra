@@ -186,6 +186,11 @@ const CustomerFreelanceSchema = new Schema({
     default: true,
     required: [function() {return isFreelance(this)}, `La visibilité Google est obligatoire`]
   },
+  admin_visible: {
+    type: Boolean,
+    default: false,
+    required: false
+  },
   hard_skills_categories: [{
     type: Schema.Types.ObjectId,
     ref: 'hardSkillCategory',
