@@ -674,6 +674,11 @@ const preProcessGet = async ({ model, fields, id, user, params }) => {
 
   if (model=='loggedUser') {
     const modelName=ROLE_MODEL_MAPPING[user.role]
+
+    if(user.role === ROLE_ADMIN && fields) {
+      fields = fields.filter(field => !field.startsWith('dedicated_admin'))
+    }
+
     return({model: modelName, fields, id: user._id, user, params})
   }
   if (['freelance', 'customer'].includes(model)) {
