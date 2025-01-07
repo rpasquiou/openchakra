@@ -619,7 +619,7 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
 
   //If anonymous user then intersect fields with authorized fields
   if (!user) {
-    fields = lodash.intersection(fields, ANONYMOUS_ALLOWED_MODELS.model)
+    fields = lodash.intersection(fields, ANONYMOUS_ALLOWED_MODELS[model])
   }
 
   if (model=='loggedUser') {
