@@ -55,7 +55,7 @@ const getReservableTickets = async function (userId, params, data, fields) {
   const eventTickets = await EventTicket.find({event: data._id})
   
   return eventTickets.filter((t) => {
-    return t.targeted_roles.includes(user.role)
+    return user ? t.targeted_roles.includes(user.role) : true
   })
 }
 
