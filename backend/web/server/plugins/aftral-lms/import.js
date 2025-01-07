@@ -348,7 +348,7 @@ const TRAINEE_MAPPING = {
   firstname: 'PRENOM_STAGIAIRE',
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
-  aftral_id: ({ record }) => record[TRAINEE_AFTRAL_ID],
+  aftral_id: ({ record }) => parseInt(record[TRAINEE_AFTRAL_ID]),
   password: TRAINEE_AFTRAL_ID,
   plain_password: TRAINEE_AFTRAL_ID,
 }
@@ -378,17 +378,6 @@ const importTrainees = async (filename) => {
     migrationKey: TRAINEE_KEY,
   })
   const importedTrainees=await User.find({role: ROLE_APPRENANT, aftral_id: {$exists: true, $in: uniqueTrainees.map(t => t[TRAINEE_AFTRAL_ID])}})
-  for (const trainee of importedTrainees) {
-    // Getting trainee sessions
-    const sessions=await Block.find({type: BLOCK_TYPE_SESSION, trainees: trainee._id})
-    for (const session of sessions) {
-      const hasProgress=await Progress.exists({user: trainee._id, block: session._id})
-      console.log(trainee.email, session.code, session.name, 'has progress', !!hasProgress)
-      if (!hasProgress) {
-        await lockSession(session._id, trainee)
-      }
-    }
-  }
   return [...res, ...importRes]
 }
 
@@ -421,12 +410,16 @@ const SESSION_MAPPING = admin => ({
   trainees: async ({ record }) => {
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainees')
     const previousTrainees = session?.trainees.map(t => t.aftral_id) || []
-    const importTrainees = record.TRAINEES.map(t => t[TRAINEE_AFTRAL_ID])
+    const importTrainees = record.TRAINEES.map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
     let traineesIds = lodash.uniq([...previousTrainees, ...importTrainees])
+    console.log('1 Trainees ids:', traineesIds)
     // Remove unregistered trainees
-    const unregisterd = record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
-    traineesIds = lodash.difference(traineesIds, unregisterd)
+    const unregistered = record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
+    console.log('Unregistered:', unregistered)
+    traineesIds = lodash.difference(traineesIds, unregistered).map(t => parseInt(t) || 0)
+    console.log('2 Trainees ids:', traineesIds)
     const trainees = await User.find({ aftral_id: { $in: traineesIds } })
+    console.log('3 traineees:', traineesIds)
     return trainees
   },
   location: 'NOM_CENTRE',
@@ -450,15 +443,16 @@ const getAftralTrainers = async () => {
 }
 
 const importSessions = async (trainersFilename, traineesFilename) => {
+  console.log('**** IMPORT SESSION')
   // Get previous sessions state
   let result = []
   const trainees = await loadRecords(traineesFilename)
   const trainers = await loadRecords(trainersFilename)
-  console.log('FTP IMPORT:All trainees:', JSON.stringify(trainees))
+  console.log('FTP IMPORT:import sessions All trainees:', JSON.stringify(trainees))
   let sessions = lodash(trainees)
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
-      console.log('FTP IMPORT:Mapping session', JSON.stringify(s))
+      console.log('FTP IMPORT: import sessions Mapping session', JSON.stringify(s))
       const sess_trainers = trainers.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
       const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID] && t.FLAG==1)
       return {
@@ -472,17 +466,17 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       }
     })
     .value()
-  console.log('FTP IMPORT:All sessions:', JSON.stringify(sessions))
+  console.log('FTP IMPORT:import sessions All sessions:', JSON.stringify(sessions))
   const emptySessions=sessions.filter(s => s.TRAINEES.length==0)
   if (emptySessions) {
-    console.log(`FTP IMPORT:Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
+    console.log(`FTP IMPORT:import sessions Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
   }
   sessions=sessions.filter(s => s.TRAINEES.length>0)
   const previousSessions = await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))
   const progressCb = (index, total) => index % 10 == 0 && console.log(index, '/', total)
   const oneAdmin = await User.findOne({ role: ROLE_ADMINISTRATEUR })
   let importResult=[]
-  console.log(`FTP IMPORT: before session import`)
+  console.log(`FTP IMPORT: import sessions before session import`)
   if (sessions.length>0) {
     try {
       importResult = await importData({
@@ -494,10 +488,10 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       })
     }
     catch(err) {
-      console.error(`FTP IMPORT: session import error ${err}`)
+      console.error(`FTP IMPORT: import sessions session import error ${err}`)
     }
   }
-  console.log(`FTP IMPORT: after session import, res is ${JSON.stringify(importResult)}`)
+  console.log(`FTP IMPORT: import sessions after session import, res is ${JSON.stringify(importResult)}`)
   result = [...importResult]
 
   // Set programs
@@ -522,6 +516,20 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     // Mailing to new trainees
     const previousSession = previousSessions[session.aftral_id]
     const newTrainees = lodash.differenceBy(session.trainees, previousSession?.trainees || [], t => t.aftral_id || t)
+
+    // Lock for new trainees
+    for (const trainee of newTrainees) {
+      // Getting trainee sessions
+      const sessions=await Block.find({type: BLOCK_TYPE_SESSION, trainees: trainee._id})
+      for (const session of sessions) {
+        const hasProgress=await Progress.exists({user: trainee._id, block: session._id})
+        console.log(trainee.email, session.code, session.name, 'has progress', !!hasProgress)
+        if (!hasProgress) {
+          await lockSession(session._id, trainee)
+        }
+      }
+    }
+  
     if (!lodash.isEmpty(newTrainees)) {
       console.log(`Sending session`, session.name, session.code, `init to trainees`, newTrainees.map(t => t.email))
       await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({ trainee, session })))
