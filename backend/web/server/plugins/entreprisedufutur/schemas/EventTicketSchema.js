@@ -34,7 +34,8 @@ const EventTicketSchema = new Schema({
   },
   price: {
     type: Number,
-    required: false
+    required: true,
+    default: 0
   },
   discounted_price: {
     type: Number,
