@@ -613,7 +613,7 @@ router.put('/:model/:id', passport.authenticate('cookie', {session: false}), (re
 })
 
 
-const loadFromRequest = (req, res) => {
+const loadFromRequest = async (req, res) => {
   const model = req.params.model
   let fields = req.query.fields?.split(',') || []
   const id = req.params.id
