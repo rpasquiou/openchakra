@@ -28,6 +28,7 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
 
   const blocks = await Block.find({ parent: blockId, masked: { $ne: true } })
     .select({ _id: 1, type: 1, order: 1, optional: 1 })
+    .lean({virtuals: false})
     .sort({ order: 1 });
 
   let res = [];
