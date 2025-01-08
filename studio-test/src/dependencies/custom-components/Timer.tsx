@@ -33,7 +33,7 @@ const Timer = ({
 
   // Brower code only
   if (typeof window!=='undefined') {
-    const RESSOURCE_SENDING_PERIOD = 5000
+    const RESSOURCE_SENDING_PERIOD = 10000
     // const TIME_BEFORE_LOGOUT = 10000
     // const [coords, setCoords] = useState({ x: 0, y: 0 });
     // const [lastCoords, setLastCoords] = useState({ x: 0, y: 0 });
