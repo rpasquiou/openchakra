@@ -1,6 +1,7 @@
 const { addAction, setAllowActionFn, ACTIONS } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
+const moment = require('moment')
 const ResetToken = require('../../models/ResetToken')
 const { sendForgotPassword, sendResetPassword } = require('./mailing')
 const { RESET_TOKEN_VALIDITY } = require('./consts')
