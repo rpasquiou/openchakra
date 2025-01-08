@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
+const moment = require('moment')
 const {
   declareEnumField,
   declareVirtualField,
@@ -616,13 +617,13 @@ const ensureAdminDashboard = async () => {
 ensureAdminDashboard()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
-  if (model=='resetToken') {
-    const t=await ResetToken.findOne({token: id})
+  if (model == 'resetToken') {
+    const t = await ResetToken.findOne({ token: id })
     if (!t || moment().isAfter(t.valid_until)) {
       console.warn(`Invalid token`, t)
-      return {data: []}
+      return { data: [] }
     }
-    id=t._id
+    id = t._id
   }
   //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
 
