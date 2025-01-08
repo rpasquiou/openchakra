@@ -116,6 +116,12 @@ const normalizeIsTemplate = async () => {
   return EventTicket.updateMany({is_template: {$nin: Object.keys(BOOLEAN_ENUM)}}, {is_template:BOOLEAN_ENUM_NO})
 }
 
+const normalizeEventTicketPrice = async () => {
+  log('Normalize eventticekts price')
+
+  return EventTicket.updateMany({price: null}, {price: 0})
+}
+
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
   // await normalizeRoles()
@@ -125,6 +131,7 @@ const databaseUpdate = async () => {
   // await addExpertiseSet()
   await normalizeSector()
   await normalizeIsTemplate()
+  await normalizeEventTicketPrice()
 }
 
 module.exports=databaseUpdate
