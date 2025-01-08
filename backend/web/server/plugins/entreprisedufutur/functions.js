@@ -622,6 +622,11 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
     fields = lodash.intersection(fields, ANONYMOUS_ALLOWED_MODELS[model])
   }
 
+  //If no limit, then it is a select component
+  if (!params.limit) {
+    params.limit = 30
+  }
+
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
