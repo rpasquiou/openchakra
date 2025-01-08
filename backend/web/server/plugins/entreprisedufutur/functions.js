@@ -941,7 +941,7 @@ const preDeleteData = async ({model, id, data, user}) => {
   if (model == 'notification') {
     const notification = await deleteUserNotification(id,user)
     returnedData = notification.recipients ? null : notification
-  } else {
+  } else if (!lodash.includes(['attachment','eventTicket','table'],model)) {
     throw new ForbiddenError(`Pas de delete pour l'instant`)
   }
   return {model, id, data: returnedData, user, params: null}
