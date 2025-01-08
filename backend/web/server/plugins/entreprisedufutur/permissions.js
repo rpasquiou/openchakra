@@ -5,7 +5,7 @@ const { ANONYMOUS_ALLOWED_MODELS } = require("./consts")
 const checkPermission = async ({verb, model, id, user}) => {
   console.log('Checking permission', verb, model, id, !!user)
   if (!user) {
-    if (Object.keys(ANONYMOUS_ALLOWED_MODELS).includes(model) && [VERB_GET].includes(verb)) {
+    if ((Object.keys(ANONYMOUS_ALLOWED_MODELS).includes(model) && [VERB_GET].includes(verb)) || model === 'resetToken' && [VERB_GET].includes(verb) && !!id) {
       return
     }
     throw new NotLoggedError('Unauthorized')
