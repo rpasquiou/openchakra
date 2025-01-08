@@ -308,19 +308,12 @@ const hasPassword = async email => {
   return !lodash.isEmpty(user?.password)
 }
 
-const ensureNumber = (att, value) => {
-  if (!parseInt(value)) {
-    throw new Error(`${att} ${value}: entier attendu`)
-  }
-  return value
-}
-
 const TRAINER_MAPPING = {
   email: 'EMAIL_FORMATEUR',
   firstname: 'PRENOM_FORMATEUR',
   lastname: 'NOM_FORMATEUR',
   role: () => ROLE_FORMATEUR,
-  aftral_id: ({ record }) => ensureNumber(TRAINER_AFTRAL_ID, record[TRAINER_AFTRAL_ID]),
+  aftral_id: ({ record }) => record[TRAINER_AFTRAL_ID],
   // HACK: No SSO available so aftral trainers must get a password
   // password: async ({record}) =>  (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
   // plain_password: async ({record}) => (await hasPassword(record.EMAIL_FORMATEUR)) ? undefined : isExternalTrainer(record.EMAIL_FORMATEUR) ? getPassword(record.EMAIL_FORMATEUR) : 'Password1;',
@@ -355,7 +348,7 @@ const TRAINEE_MAPPING = {
   firstname: 'PRENOM_STAGIAIRE',
   lastname: 'NOM_STAGIAIRE',
   email: 'EMAIL_STAGIAIRE',
-  aftral_id: ({ record }) => ensureNumber(TRAINEE_AFTRAL_ID, record[TRAINEE_AFTRAL_ID]),
+  aftral_id: ({ record }) => parseInt(record[TRAINEE_AFTRAL_ID]),
   password: TRAINEE_AFTRAL_ID,
   plain_password: TRAINEE_AFTRAL_ID,
 }
@@ -385,17 +378,6 @@ const importTrainees = async (filename) => {
     migrationKey: TRAINEE_KEY,
   })
   const importedTrainees=await User.find({role: ROLE_APPRENANT, aftral_id: {$exists: true, $in: uniqueTrainees.map(t => t[TRAINEE_AFTRAL_ID])}})
-  for (const trainee of importedTrainees) {
-    // Getting trainee sessions
-    const sessions=await Block.find({type: BLOCK_TYPE_SESSION, trainees: trainee._id})
-    for (const session of sessions) {
-      const hasProgress=await Progress.exists({user: trainee._id, block: session._id})
-      console.log(trainee.email, session.code, session.name, 'has progress', !!hasProgress)
-      if (!hasProgress) {
-        await lockSession(session._id, trainee)
-      }
-    }
-  }
   return [...res, ...importRes]
 }
 
@@ -407,10 +389,10 @@ const SESSION_MAPPING = admin => ({
     const code = await ProductCode.findOne({ code: record.CODE_PRODUIT })
     const program = code ? await Program.findOne({ codes: code, _locked: false, origin:null }) : null
     if (!program) {
-      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
+      return Promise.reject(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} introuvable`)
     }
     if (program.status != PROGRAM_STATUS_AVAILABLE) {
-      throw new Error(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} est en mode ${PROGRAM_STATUS[program.status]}`)
+      Promise.reject(`Session ${record[SESSION_AFTRAL_ID]} : programme de code ${record.CODE_PRODUIT} est en mode ${PROGRAM_STATUS[program.status]}`)
     }
     return program?.name
   },
@@ -418,10 +400,9 @@ const SESSION_MAPPING = admin => ({
   code: 'CODE_SESSION',
   aftral_id: SESSION_AFTRAL_ID,
   trainers: async ({ record }) => {
-    console.log(record.TRAINERS)
     const session = await Session.findOne({ aftral_id: record[SESSION_AFTRAL_ID] }).populate('trainers')
     const previousTrainers = session?.trainers.map(t => t.aftral_id) || []
-    const importTrainers = record.TRAINERS.map(t => ensureNumber(TRAINER_AFTRAL_ID, t[TRAINER_AFTRAL_ID]))
+    const importTrainers = record.TRAINERS.map(t => t[TRAINER_AFTRAL_ID]).filter(id => !!id)
     const trainersIds = lodash.uniq([...previousTrainers, ...importTrainers])
     const trainers = await User.find({ aftral_id: { $in: trainersIds } })
     return trainers
@@ -431,10 +412,14 @@ const SESSION_MAPPING = admin => ({
     const previousTrainees = session?.trainees.map(t => t.aftral_id) || []
     const importTrainees = record.TRAINEES.map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
     let traineesIds = lodash.uniq([...previousTrainees, ...importTrainees])
+    console.log('1 Trainees ids:', traineesIds)
     // Remove unregistered trainees
-    const unregisterd = record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
-    traineesIds = lodash.difference(traineesIds, unregisterd)
+    const unregistered = record.TRAINEES.filter(t => !parseInt(t.FLAG)).map(t => parseInt(t[TRAINEE_AFTRAL_ID]))
+    console.log('Unregistered:', unregistered)
+    traineesIds = lodash.difference(traineesIds, unregistered).map(t => parseInt(t) || 0)
+    console.log('2 Trainees ids:', traineesIds)
     const trainees = await User.find({ aftral_id: { $in: traineesIds } })
+    console.log('3 traineees:', traineesIds)
     return trainees
   },
   location: 'NOM_CENTRE',
@@ -458,14 +443,18 @@ const getAftralTrainers = async () => {
 }
 
 const importSessions = async (trainersFilename, traineesFilename) => {
+  console.log('**** IMPORT SESSION')
   // Get previous sessions state
   let result = []
   const trainees = await loadRecords(traineesFilename)
-  const trainers = await loadRecords(trainersFilename)
+  let trainers = await loadRecords(trainersFilename)
+  trainers=trainers.filter(r => !!r[TRAINER_AFTRAL_ID])
+  console.log('FTP IMPORT:import sessions All trainees:', JSON.stringify(trainees))
   let sessions = lodash(trainees)
     .uniqBy(SESSION_AFTRAL_ID)
     .map(s => {
-      const sess_trainers = trainers.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
+      console.log('FTP IMPORT: import sessions Mapping session', JSON.stringify(s))
+      const sess_trainers = trainers.filter(t => !!(t[TRAINEE_AFTRAL_ID]?.trim()) && t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID])
       const sess_trainees = trainees.filter(t => t[SESSION_AFTRAL_ID] == s[SESSION_AFTRAL_ID] && t.FLAG==1)
       return {
         [SESSION_AFTRAL_ID]: s[SESSION_AFTRAL_ID],
@@ -478,24 +467,32 @@ const importSessions = async (trainersFilename, traineesFilename) => {
       }
     })
     .value()
+  console.log('FTP IMPORT:import sessions All sessions:', JSON.stringify(sessions))
   const emptySessions=sessions.filter(s => s.TRAINEES.length==0)
   if (emptySessions) {
-    console.log(`Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
+    console.log(`FTP IMPORT:import sessions Empty sessions not imported:`, emptySessions.map(s => s[SESSION_AFTRAL_ID]))
   }
   sessions=sessions.filter(s => s.TRAINEES.length>0)
   const previousSessions = await getSessionsStates(sessions.map(s => s[SESSION_AFTRAL_ID]))
   const progressCb = (index, total) => index % 10 == 0 && console.log(index, '/', total)
   const oneAdmin = await User.findOne({ role: ROLE_ADMINISTRATEUR })
   let importResult=[]
+  console.log(`FTP IMPORT: import sessions before session import`)
   if (sessions.length>0) {
-    importResult = await importData({
-      model: 'session', data: sessions,
-      mapping: SESSION_MAPPING(oneAdmin),
-      identityKey: SESSION_KEY,
-      migrationKey: SESSION_KEY,
-      progressCb
-    })
+    try {
+      importResult = await importData({
+        model: 'session', data: sessions,
+        mapping: SESSION_MAPPING(oneAdmin),
+        identityKey: SESSION_KEY,
+        migrationKey: SESSION_KEY,
+        progressCb
+      })
+    }
+    catch(err) {
+      console.error(`FTP IMPORT: import sessions session import error ${err}`)
+    }
   }
+  console.log(`FTP IMPORT: import sessions after session import, res is ${JSON.stringify(importResult)}`)
   result = [...importResult]
 
   // Set programs
@@ -520,6 +517,20 @@ const importSessions = async (trainersFilename, traineesFilename) => {
     // Mailing to new trainees
     const previousSession = previousSessions[session.aftral_id]
     const newTrainees = lodash.differenceBy(session.trainees, previousSession?.trainees || [], t => t.aftral_id || t)
+
+    // Lock for new trainees
+    for (const trainee of newTrainees) {
+      // Getting trainee sessions
+      const sessions=await Block.find({type: BLOCK_TYPE_SESSION, trainees: trainee._id})
+      for (const session of sessions) {
+        const hasProgress=await Progress.exists({user: trainee._id, block: session._id})
+        console.log(trainee.email, session.code, session.name, 'has progress', !!hasProgress)
+        if (!hasProgress) {
+          await lockSession(session._id, trainee)
+        }
+      }
+    }
+  
     if (!lodash.isEmpty(newTrainees)) {
       console.log(`Sending session`, session.name, session.code, `init to trainees`, newTrainees.map(t => t.email))
       await Promise.allSettled(newTrainees.map(trainee => sendInitTrainee({ trainee, session })))
