@@ -120,7 +120,8 @@ const lockSessionAction = async ({value}, user) => {
 addAction('lockSession', lockSessionAction)
 
 const resourceAction = action => async ({value}, user) => {
-  return isActionAllowed({action, dataId: value, user}) && {_id: value}
+  await isActionAllowed({action, dataId: value, user})
+  return  {_id: value}
 }
 
 addAction('play', resourceAction('play'))
