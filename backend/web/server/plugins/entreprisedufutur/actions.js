@@ -1,6 +1,8 @@
 const { addAction, setAllowActionFn, ACTIONS } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
+const { sendForgotPassword, sendResetPassword } = require('./mailing')
+const { RESET_TOKEN_VALIDITY } = require('./consts')
 const { idEqual, getModel, loadFromDb } = require('../../utils/database')
 const { NotFoundError, ForbiddenError } = require('../../utils/errors')
 const { createScore } = require('./score')
@@ -14,7 +16,8 @@ const EventTicket = require('../../models/EventTicket')
 const OrderTicket = require('../../models/OrderTicket')
 const Order = require('../../models/Order')
 const UserTicket = require('../../models/UserTicket')
-const { generatePassword } = require('../../../utils/passwords')
+const ResetToken = ('../../models/ResetToken')
+const { generatePassword, validatePassword } = require('../../../utils/passwords')
 
 //TODO take scoreLevel into account
 const startSurvey = async (_, user) => {
@@ -54,6 +57,43 @@ const startSurvey3 = async (_, user) => {
 }
 //TODO remove once start_survey take scorelevel into account
 addAction('smartdiet_start_survey_3', startSurvey3)
+
+const forgotPasswordAction = async ({ context, parent, email }) => {
+  return User.findOne({ email })
+    .then(async user => {
+      if (!user) {
+        throw new BadRequestError(`Aucun compte n'est associé à cet email`)
+      }
+      if (user.reset_token) {
+        await ResetToken.findByIdAndDelete(user.reset_token)
+      }
+      const token = await ResetToken.create({})
+      user.reset_token = token
+      return user.save()
+        .then(user => sendResetPassword({ user, duration: RESET_TOKEN_VALIDITY, token: token.token}))
+        .then(user => `Un email a été envoyé à l'adresse ${email}`)
+    })
+}
+addAction('forgotPassword', forgotPasswordAction)
+
+const changePasswordAction = async ({value, password, password2}) => {
+  const token=await ResetToken.findById(value)
+  if (!token || moment().isAfter(token.valid_until)) {
+    console.warn(`Invalid token`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  const user=await User.findOne({reset_token: value})
+  if (!user) {
+    console.warn(`No user for`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  await validatePassword({password, password2})
+  user.password=password
+  const res=user.save()
+  await ResetToken.findByIdAndDelete(user.reset_token)
+  return res
+}
+addAction('changePassword', changePasswordAction)
 
 
 //value : _id of the answered question

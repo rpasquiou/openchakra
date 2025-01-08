@@ -44,6 +44,7 @@ const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
+const ResetToken = require('../../models/ResetToken')
 const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber, getAllergies } = require('./event')
 
 //Notification plugin setup
@@ -615,6 +616,14 @@ const ensureAdminDashboard = async () => {
 ensureAdminDashboard()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+  if (model=='resetToken') {
+    const t=await ResetToken.findOne({token: id})
+    if (!t || moment().isAfter(t.valid_until)) {
+      console.warn(`Invalid token`, t)
+      return {data: []}
+    }
+    id=t._id
+  }
   //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
 
   //If anonymous user then intersect fields with authorized fields

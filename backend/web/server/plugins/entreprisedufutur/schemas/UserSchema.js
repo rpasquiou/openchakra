@@ -209,6 +209,11 @@ const UserSchema = new Schema({
     required: true,
     default: false,
   },
+  reset_token: {
+    type: Schema.Types.ObjectId,
+    ref: 'resetToken',
+    required: false,
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

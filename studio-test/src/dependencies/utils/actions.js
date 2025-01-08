@@ -400,6 +400,7 @@ export const ACTIONS = {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'changePassword',
+      value: value._id,
       password,
       password2,
     }

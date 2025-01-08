@@ -100,15 +100,7 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-
-let checkPermission = null
-try{
-  checkPermission=require(`../../plugins/${getDataModel()}/permissions`).checkPermission
-}
-catch(err) {
-  if (err.code !== 'MODULE_NOT_FOUND') { throw err }
-  console.warn(`No checkPermission module for ${getDataModel()}`)
-}
+const { checkPermission } = require(`../../plugins/${getDataModel()}/permissions`)
 
 const router = express.Router()
 
