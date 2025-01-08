@@ -46,7 +46,7 @@ const withDynamicButton = Component => {
       if (!!props.poll) {
         const intervalId = setInterval(() => {
           checkStatus()
-        }, 1000)
+        }, 5000)
     
         return () => {
           clearInterval(intervalId);
