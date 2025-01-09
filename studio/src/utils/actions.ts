@@ -301,7 +301,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage'],
+    next: ['openPage','reload'],
   },
 
   reset_soft_skills: {
