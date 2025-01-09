@@ -117,7 +117,7 @@ const normalizeIsTemplate = async () => {
 }
 
 const normalizeEventTicketPrice = async () => {
-  log('Normalize eventticekts price')
+  log('Normalize eventtickets price')
 
   return EventTicket.updateMany({price: null}, {price: 0})
 }
