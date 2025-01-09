@@ -38,7 +38,7 @@ const { getLooking, getEvents } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const Tablemap = require('../../models/Tablemap')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -843,10 +843,8 @@ const postCreate = async ({ model, params, data, user }) => {
       users: [params.receiver],
       targetId: user._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE,user}),
       type: NOTIFICATION_TYPE_MESSAGE,
       customData: null,
-      picture: user.picture
     })
   }
 
