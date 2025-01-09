@@ -220,7 +220,7 @@ const EventSchema = new Schema({
   },
   target: {
     type: [{
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: 'target',
       required: true
     }],
