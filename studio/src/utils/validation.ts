@@ -61,6 +61,14 @@ const checkEmptyDataProvider = (comp: IComponent, icomponents: IComponents) => {
   }
 }
 
+const checkUnusedDataProvider = (comp: IComponent, icomponents: IComponents) => {
+  if (comp.type === 'DataProvider' || (comp.id == 'root' && !!comp.props.model)) {
+    if (!Object.values(icomponents).find(c => c.props?.dataSource==comp.id || c.props?.subDataSource==comp.id)) {
+      throw new Error(`DataProvider ${comp.id} is not used`)
+    }
+  }
+}
+
 const checkDispatcherManyChildren = (
   comp: IComponent,
   icomponents: IComponents,
@@ -143,6 +151,7 @@ export const validateComponent = (
   const warnings = lodash([
     checkEmptyDataProvider,
     checkAvailableDataProvider,
+    checkUnusedDataProvider,
     checkEmptyIcons,
     checkDispatcherManyChildren,
     checkEmptyDataAttribute,
@@ -170,6 +179,7 @@ export const validateComponents = (icomponents: IComponents): IWarning[] => {
   const warnings = lodash([
     checkEmptyDataProvider,
     checkAvailableDataProvider,
+    checkUnusedDataProvider,
     checkEmptyIcons,
     checkDispatcherManyChildren,
     checkEmptyDataAttribute,
