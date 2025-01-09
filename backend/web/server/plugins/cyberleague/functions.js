@@ -773,6 +773,10 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if(model === 'post') {
+    if (params.url) {
+      const regex = /http.*/
+      params.url = regex.test(params.url) ? params.url : `https://${params.url}`
+    }
     if (params.parent) {
       const parentModel = await getModel(params.parent, ['group','user'])
       if (parentModel === 'group') {
