@@ -105,7 +105,7 @@ export const ACTIONS: IActions = {
       password: ({ components }) =>
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['openPage','reload'],
   },
   openPage: {
     label: 'Open page',
