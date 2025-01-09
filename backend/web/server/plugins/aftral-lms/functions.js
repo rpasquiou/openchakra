@@ -129,7 +129,13 @@ BLOCK_MODELS.forEach(model => {
   declareComputedField({ model, field: 'evaluation_resources', getterFn: getEvalResources })
   declareVirtualField({ model, field: 'type_str', type: 'String', requires: 'type' })
   declareVirtualField({ model, field: 'fullname', type: 'String', requires: 'type,order,name,closed,access_condition' })
-
+  declareVirtualField({
+    model, field: 'progresses', instance: 'Array', multiple: true,
+    caster: {
+      instance: 'ObjectID',
+      options: { ref: 'progress' }
+    },
+  })
 })
 
 //Program start
