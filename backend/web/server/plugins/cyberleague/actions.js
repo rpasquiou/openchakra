@@ -11,12 +11,11 @@ const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotif
 const Company = require('../../models/Company')
 
 
-const check_profil_completion = async ({ value }, user) => {
+const checkProfilCompletion = async ({ value }, user) => {
   //action used for isActionAllowed
   return {_id: value}
 }
-//TODO rename action to next_question
-addAction('check_profil_completion', check_profil_completion)
+addAction('check_profil_completion', checkProfilCompletion)
 
 
 const startSurvey = async (_, user) => {
