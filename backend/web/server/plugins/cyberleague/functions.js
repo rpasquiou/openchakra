@@ -1171,6 +1171,13 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
+  if (model == 'post') {
+    if (params.url) {
+      const regex = /http.*/
+      params.url = regex.test(params.url) ? params.url : `https://${params.url}`
+    }
+  }
+
   return {model, id, params, user}
 }
 
