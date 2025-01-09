@@ -21,7 +21,6 @@ ProductCodeSchema.virtual('program', {
       origin: null, parent: null, _locked: false
     }
   },
-  justOne: true,
 })
 
 module.exports = ProductCodeSchema

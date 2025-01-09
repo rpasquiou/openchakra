@@ -284,7 +284,13 @@ declareVirtualField({ model: 'visio', field: 'active', requires: 'start_date,end
 // Visio end
 
 // ProductCode start
-declareVirtualField({ model: 'productCode', field: 'program', instance: 'program' })
+declareVirtualField({
+  model: 'productCode', field: 'program', instance: 'Array', multiple: true,
+  caster: {
+    instance: 'ObjectID',
+    options: { ref: 'program' }
+  },
+})
 // ProductCode end
 
 const preCreate = async ({ model, params, user }) => {
