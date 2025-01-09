@@ -437,9 +437,9 @@ const getAvailableCodes =  async (userId, params, data) => {
   if(data.type != 'program') {
     return []
   }
-  let otherPrograms=await mongoose.models.block.find({_id: {$ne: data._id}, type:'program'}).populate('codes')
-  const usedCodes=lodash(otherPrograms).map(p => p.codes).flatten().map(c => c.code).value()
-  let availableCodes=await mongoose.models.productCode.find({code: {$nin: usedCodes}})
+  let otherPrograms=await mongoose.models.block.find({_id: {$ne: data._id}, type:'program', origin: null, parent: null, _locked: false})
+  const usedCodes=lodash(otherPrograms).map(p => p.codes.map((c => c._id))).flatten().value()
+  let availableCodes=await mongoose.models.productCode.find({_id: {$nin: usedCodes}})
   return availableCodes
 }
 

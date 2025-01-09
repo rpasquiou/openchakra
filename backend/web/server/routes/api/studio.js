@@ -620,7 +620,9 @@ const loadFromRequest = async (req, res) => {
   const params=lodash.omit({...req.query}, ['fields', 'id'])
   const user = req.user
 
-  const logMsg=`GET ${model}/${id} ${fields.length} fields ...${JSON.stringify(params)}`
+  const referrer=req.headers.referer || 'No referrer'
+  const userId=req.user ? `User ${req.user._id}` : ''
+  const logMsg=`${userId} ${referrer} GET ${model}/${id} ${fields} ...${JSON.stringify(params)}`
   console.time(logMsg)
 
   return loadFromDb({model, fields, id, user, params})
