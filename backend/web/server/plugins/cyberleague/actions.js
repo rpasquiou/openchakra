@@ -17,6 +17,12 @@ const checkProfilCompletion = async ({ value }, user) => {
 }
 addAction('check_profil_completion', checkProfilCompletion)
 
+const checkAuthorizedConversation = async ({ value }, user) => {
+  //action used for isActionAllowed
+  return {_id: value}
+}
+addAction('check_authorized_conversation', checkAuthorizedConversation)
+
 
 const startSurvey = async (_, user) => {
   //console.log("params", params)
