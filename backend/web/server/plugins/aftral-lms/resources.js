@@ -26,16 +26,11 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
     role = (await User.findById(userId))?.role;
   }
 
-  let query = Block.find({ parent: blockId, masked: { $ne: true } })
+  const blocks = await Block.find({ parent: blockId, masked: { $ne: true } })
     .select({ _id: 1, type: 1, order: 1, optional: 1 })
-    .lean({ virtuals: false })
-    .sort({ order: 1 })
+    .lean({virtuals: false})
+    .sort({ order: 1 });
 
-  // Load unavailable progress
-  if (role == ROLE_APPRENANT && !includeUnavailable) {
-    query=query.populate({ path: 'progresses', match: { achievement_status: BLOCK_STATUS_UNAVAILABLE }, select: { _id: 1 } })
-  }
-  const blocks = await query
   let res = [];
 
   // Process each block, and ensure correct ordering of results
@@ -46,7 +41,7 @@ const getBlockResourcesNew = async ({ blockId, userId, includeUnavailable, inclu
     }
     // Don't include unavailable: skip
     if (role == ROLE_APPRENANT && !includeUnavailable) {
-      const unavailable =  b.progresses.length>0
+      const unavailable = await Progress.exists({block: b._id,user: userId,achievement_status: BLOCK_STATUS_UNAVAILABLE})
       if (unavailable) {
         continue
       }
