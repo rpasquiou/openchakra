@@ -14,6 +14,10 @@ const GainSchema = new Schema({
     type: String,
     required: [true, 'Le nom est obligatoire'],
   },
+  description: {
+    type: String,
+    required: false,
+  },
   gain: {
     type: Number,
     default: 0
