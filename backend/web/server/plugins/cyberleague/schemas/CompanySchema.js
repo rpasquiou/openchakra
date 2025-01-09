@@ -180,6 +180,10 @@ const CompanySchema = new Schema(
       }],
       default: []
     },
+    saleforce_id: {
+      type: String,
+      required: false
+    },
   },
   schemaOptions,
 )
