@@ -219,9 +219,13 @@ const EventSchema = new Schema({
     required: false
   },
   target: {
-     type: String,
-     enum: Object.keys(EVENT_TARGETS),
-     required: false
+    type: [{
+      type: String,
+      ref: 'target',
+      required: true
+    }],
+    required: false,
+    default: [],
   },
   category: {
     type: [{
