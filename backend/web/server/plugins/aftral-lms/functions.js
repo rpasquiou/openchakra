@@ -283,6 +283,10 @@ declareComputedField({ model: 'visio', field: 'type_str', requires: 'type', inst
 declareVirtualField({ model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean' })
 // Visio end
 
+// ProductCode start
+declareVirtualField({ model: 'productCode', field: 'program', instance: 'program' })
+// ProductCode end
+
 const preCreate = async ({ model, params, user }) => {
   params.creator = params.creator || user._id
   params.last_updater = user._id
