@@ -203,6 +203,7 @@ const buildBlock = ({
       }
       const dataProvider = components[childComponent.props.dataSource]
       const isDpValid=getValidDataProviders(components).find(dp => dp.id==childComponent.props.dataSource)
+      const rootDPExists=!!components.root.props.model
       const paramProvider = dataProvider?.id.replace(/comp-/, '')
       const subDataProvider = components[childComponent.props.subDataSource]
       const paramSubProvider = subDataProvider?.id.replace(/comp-/, '')
@@ -242,7 +243,7 @@ const buildBlock = ({
       // Set reload function
       propsContent += ` reload={reload} `
       // Provide page data context
-      if (dataProvider && isDpValid) {
+      if (dataProvider && isDpValid && rootDPExists) {
         if (singleDataPage) {
           propsContent += ` context={root?._id}`
         }
@@ -288,7 +289,6 @@ const buildBlock = ({
           if (((childComponent.props.dataSource && tp?.type) || childComponent.props.model) && childComponent.props?.attribute) {
             const att=models[tp?.type || childComponent.props.model].attributes[childComponent.props?.attribute]
             if (att?.enumValues && (childComponent.type!='RadioGroup' || lodash.isEmpty(childComponent.children))) {
-              console.log(att.enumValues)
               propsContent += ` enum='${encode(JSON.stringify(att.enumValues))}'`
             }
             if (att?.suggestions) {
