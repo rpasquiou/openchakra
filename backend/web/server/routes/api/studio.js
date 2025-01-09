@@ -16,8 +16,9 @@ const {
   importData,
   callPreLogin,
   callPreRegister,
+  importDataTemplate,
 } = require('../../utils/database')
-
+const axios=require('axios')
 const path = require('path')
 const zlib=require('zlib')
 const {promises: fs} = require('fs')
@@ -46,10 +47,12 @@ const {
 
 let agendaHookFn=null
 let mailjetHookFn=null
+let ssoLoginCallback=null
 try {
   require(`../../plugins/${getDataModel()}/functions`)
   agendaHookFn=require(`../../plugins/${getDataModel()}/functions`).agendaHookFn
   mailjetHookFn=require(`../../plugins/${getDataModel()}/functions`).mailjetHookFn
+  ssoLoginCallback=require(`../../plugins/${getDataModel()}/functions`).ssoLoginCallback
 }
 catch(err) {
   if (err.code !== 'MODULE_NOT_FOUND') { throw err }
@@ -100,7 +103,18 @@ const { getLocationSuggestions } = require('../../../utils/geo')
 const { TaggingDirective } = require('@aws-sdk/client-s3')
 const PageTag_ = require('../../models/PageTag_')
 const Purchase = require('../../models/Purchase')
-const { checkPermission } = require(`../../plugins/${getDataModel()}/permissions`)
+let checkPermission=null
+try {
+  checkPermission = require(`../../plugins/${getDataModel()}/permissions`)?.checkPermission
+}
+catch(err) {
+  if (err.code=='MODULE_NOT_FOUND') {
+    console.warn(`No permission plugin for ${getDataModel()}`)
+  }
+  else {
+    throw err
+  }
+}
 
 const router = express.Router()
 
@@ -156,6 +170,21 @@ router.get('/roles', (req, res) => {
   console.log()
   return res.json(ROLES)
 })
+
+if (process.env.SSO_PLUGIN=='azure') {
+  router.get('/login/sso',
+    passport.authenticate("azuread-openidconnect")
+  )
+
+  router.get(
+    "/auth-callback",
+    passport.authenticate("azuread-openidconnect", {failureRedirect: "/"}),
+    async (req, res) => {
+      const redirect=await ssoLoginCallback(req.user)
+      return sendCookie(req.user, res).redirect(redirect)
+    }
+  )
+}
 
 router.post('/s3uploadfile', createMemoryMulter().single('document'), resizeImage, sendFilesToAWS, (req, res) => {
   const srcFiles = req?.body?.result
@@ -474,6 +503,14 @@ router.post('/import-data/:model', createMemoryMulter().single('file'), passport
   console.log(`Import ${model}:${file.buffer.length} bytes`)
   return importData({model, data:file.buffer, user: req.user})
     .then(result => res.json(result))
+})
+
+router.get('/import-data/:model', passport.authenticate('cookie', {session: false}), async (req, res) => {
+  const {model}=req.params
+  const template=await importDataTemplate({model, user: req.user})
+  res.setHeader('Content-Type', template.mimeType)
+  res.setHeader('Content-Disposition', `attachment: filename="${template.filename}"`)
+  return res.send(template.data)
 })
 
 router.get('/form', passport.authenticate('cookie', {session: false}), (req, res) => {

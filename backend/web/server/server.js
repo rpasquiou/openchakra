@@ -30,7 +30,7 @@ const {
   setMasterStatus,
 } = require('../config/config')
 const {HTTP_CODES, parseError} = require('./utils/errors')
-
+const session = require("express-session")
 // Backend private
 require('./models/PageTag_')
 
@@ -50,6 +50,7 @@ const withings = getDataModel()=='dekuple' ? require('./routes/api/withings') : 
 const app = express()
 const {serverContextFromRequest} = require('./utils/serverContext')
 const { delayedPromise } = require('../utils/promise')
+const { init: passportInit } = require('./config/passport')
 let custom_router=null
 try {
   custom_router=require(`./plugins/${getDataModel()}/routes`).router
@@ -93,19 +94,24 @@ checkConfig()
     console.log(`MongoDB connecté: ${getDatabaseUri()}`)
     return nextApp.prepare()
   })
+  .then(() => passportInit())
   .then(() => {
     // Body parser middleware
     app.use(bodyParser.urlencoded({extended: true}))
     app.use(bodyParser.json())
 
+    // session middleware
+    app.use(
+      session({
+        secret: "secret_test",
+        resave: false,
+        saveUninitialized: true,
+      })
+    );
     // Passport middleware
     app.use(passport.initialize())
 
     app.use(cookieParser())
-    // Passport config
-    /* eslint-disable global-require */
-    require('./config/passport')
-    /* eslint-enable global-require */
 
     // Context handling
     app.use((req, res, next) => {

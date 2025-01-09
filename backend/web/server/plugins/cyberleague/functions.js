@@ -823,8 +823,8 @@ const preCreate = async ({model, params, user}) => {
 
   if (model == 'mission') {
     if (params.parent) {
-      params.company = params.parent
-      params.is_public = true
+      params.company = [params.parent]
+      params.is_public = false
     } else {
       if (!params.companies?.[0] && !params.is_public) {
         throw new Error(`Merci de renseigner une entreprise ou de rendre la mission publique avant d'envoyer votre demande`)
@@ -1198,7 +1198,39 @@ const preRegister = async (body) => {
 
 setPreRegister(preRegister)
 
+const ssoProfileCallback = async (iss, sub, profile, accessToken, refreshToken) => {
+  // The user profile returned by Azure AD
+  if (!profile) {
+    throw new Error("No profile found")
+  }
+  const rawProfile=profile._json
+  const email=rawProfile.email
+  let user=await User.findOne({email})
+  if (user) {
+    // User existed, update guid if required
+    await User.findByIdAndUpdate(user._id, {guid: rawProfile.guid})
+    return user
+  }
+  const firstname=rawProfile.firstname
+  const lastname=rawProfile.lastname
+  // TODO Discriminate role
+  const role='ROLE_MEMBER'
+  user=await User.create({email, firstname, lastname, role, password: 'PASSWD', guid: rawProfile.guid})
+  return user
+}
+
+const ssoLoginCallback = async user => {
+  let redirectUrl='/'
+  if (!user.last_login) {
+    redirectUrl=await getTagUrl('PROFILE_COMPLETION')
+  }
+  await User.findByIdAndUpdate(user._id, {last_login: Date.now()})
+  return redirectUrl
+}
+
 module.exports = {
   ensureExpertiseCategories,
   ensureQuestionCategories,
+  ssoProfileCallback,
+  ssoLoginCallback,
 }

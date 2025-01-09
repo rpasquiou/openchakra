@@ -772,6 +772,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  login_sso: {
+    label: 'Login SSO',
+    options: {},
+    next: [],
+  },
   generate_tables: {
     label: 'generate tables',
     options: {
