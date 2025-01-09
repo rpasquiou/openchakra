@@ -221,8 +221,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     }
   }
   if (action=='next') {
+    console.time('Next')
     await getNextResource(dataId, user)
-  }
+    console.timeEnd('Next')
+ }
   if (action=='previous') {
     await getPreviousResource(dataId, user)
   }
