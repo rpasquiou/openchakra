@@ -1,7 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
 const Schema = mongoose.Schema
-const {BLOCK_DISCRIMINATOR, PROGRAM_STATUS, PROGRAM_STATUS_DRAFT}=require('../consts')
 
 const ProductCodeSchema = new Schema({
   code: {
@@ -11,5 +10,18 @@ const ProductCodeSchema = new Schema({
     index: true,
   }
 }, {...schemaOptions})
+
+// Access to unique program if any using this product code
+ProductCodeSchema.virtual('program', {
+  ref: 'program',
+  localField: '_id',
+  foreignField: 'codes',
+  options: {
+    match: {
+      origin: null, parent: null, _locked: false
+    }
+  },
+  justOne: true,
+})
 
 module.exports = ProductCodeSchema
