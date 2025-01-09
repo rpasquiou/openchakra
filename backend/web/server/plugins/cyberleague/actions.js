@@ -4,7 +4,7 @@ const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG, ROLE_PARTNER } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
@@ -198,6 +198,22 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action == 'check_profil_completion') {
     if (!user.is_profil_completed) {
       throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
+    }
+  }
+
+  if (action == 'check_authorized_conversation') {
+    const model = await getModel(dataId)
+    if (model != 'user') {
+      throw new BadRequestError(`Vous ne pouvez parler qu'à un user`)
+    }
+    if (!user.is_profil_completed) {
+      throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
+    }
+    const receiver = await User.findById(dataId)
+    const receiverComp = receiver.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
+    const userComp = user.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
+    if (!idEqual(receiverComp, userComp)) {
+      throw new ForbiddenError(`Vous ne pouvez parler à quelqu'un qui n'a pas le même partenaire que vous`)
     }
   }
 
