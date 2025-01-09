@@ -207,6 +207,7 @@ const buildBlock = ({
       }
       const dataProvider = components[childComponent.props.dataSource]
       const isDpValid=getValidDataProviders(components).find(dp => dp.id==childComponent.props.dataSource)
+      const rootDPExists=!!components.root.props.model
       const paramProvider = dataProvider?.id.replace(/comp-/, '')
       const subDataProvider = components[childComponent.props.subDataSource]
       const paramSubProvider = subDataProvider?.id.replace(/comp-/, '')
@@ -248,7 +249,7 @@ const buildBlock = ({
       // Set reload function
       propsContent += ` reload={reload} `
       // Provide page data context
-      if (dataProvider && isDpValid) {
+      if (dataProvider && isDpValid && rootDPExists) {
         if (singleDataPage) {
           propsContent += ` context={root?._id}`
         }
