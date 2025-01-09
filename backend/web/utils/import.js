@@ -212,13 +212,16 @@ const importData = async ({model, data, mapping, identityKey, migrationKey, prog
   console.log(`Ready to insert ${model}, ${data.length} source records, identity key is ${identityKey}, migration key is ${migrationKey}`)
   const msg=`Inserted ${model}, ${data.length} source records`
   const mongoModel=mongoose.model(model)
-  return Promise.allSettled(data.map(async record => {
+  return runPromisesWithDelay(data.map(record => async () => {
+    console.log('Data import 1 before map', JSON.stringify(record))
     const mapped=await mapRecord({record, mapping, ...rest})
-    await upsertRecord({model: mongoModel, record: mapped, identityKey, migrationKey, updateOnly})
+    console.log('Data Import 2 before upsert', JSON.stringify(record), JSON.stringify(mapped))
+    const res=await upsertRecord({model: mongoModel, record: mapped, identityKey, migrationKey, updateOnly})
+    console.log('Data Import 3 after upsert', JSON.stringify(record), JSON.stringify(res))
   }))
   .finally(()=> {
     // delete mongoose.model(model)
-    saveCache()
+    // saveCache()
     console.timeEnd(msg)
   })
 }

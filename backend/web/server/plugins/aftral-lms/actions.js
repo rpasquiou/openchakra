@@ -120,7 +120,8 @@ const lockSessionAction = async ({value}, user) => {
 addAction('lockSession', lockSessionAction)
 
 const resourceAction = action => async ({value}, user) => {
-  return isActionAllowed({action, dataId: value, user}) && {_id: value}
+  await isActionAllowed({action, dataId: value, user})
+  return  {_id: value}
 }
 
 addAction('play', resourceAction('play'))
@@ -138,12 +139,7 @@ const clone = async ({value}, user) => {
 addAction('clone', clone)
 
 
-// const getSession = ({id}, user) => {
-//   return getSession(user, null, {_id: id}, [])
-// }
-
 const getSessionAction = async ({id}, user) => {
-  console.log('getSession receives', id, user)
   return getSession(user._id, null, {_id: id}, [])
 }
   
@@ -225,8 +221,10 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     }
   }
   if (action=='next') {
+    console.time('Next')
     await getNextResource(dataId, user)
-  }
+    console.timeEnd('Next')
+ }
   if (action=='previous') {
     await getPreviousResource(dataId, user)
   }

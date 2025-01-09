@@ -868,7 +868,7 @@ const updateSessionStatus = async (sessionId, trainee) => {
 const setScormData= async (userId, blockId, data) => {
   await saveBlockScormData(userId, blockId, data)
   const block=await mongoose.models.block.findById(blockId)
-  console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}, null, 2))
+  console.log(userId, blockId, 'Scorm got data', JSON.stringify({...data, scorm_data: undefined, suspend_data: undefined}))
   const scormData=await getBlockScormData(userId, block)
   const lesson_status=scormData?.['cmi.core.lesson_status'] || scormData?.['cmi.success_status']
   // If a min note is defined on the resource, use it

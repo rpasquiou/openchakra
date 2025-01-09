@@ -336,6 +336,12 @@ BlockSchema.virtual('children_count', {
   count: true,
 })
 
+BlockSchema.virtual('progresses', {
+  ref: 'progress',
+  localField: '_id',
+  foreignField: 'block',
+})
+
 BlockSchema.virtual('search_text', {localField: 'tagada', foreignField: 'tagada'}).get(function() {
   return `${this.name} ${this.code}`
 })
