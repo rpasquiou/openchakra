@@ -133,12 +133,12 @@ const databaseUpdate = async () => {
   // await normalizeRoles()
   // await updateCompanyAdmin()
   // await normalizeJobs()
-  await normalizeCompanySize()
+  // await normalizeCompanySize()
   // await addExpertiseSet()
-  await normalizeSector()
-  await normalizeIsTemplate()
-  await normalizeEventTicketPrice()
-  await normalizeEventTarget()
+  // await normalizeSector()
+  // await normalizeIsTemplate()
+  // await normalizeEventTicketPrice()
+  // await normalizeEventTarget()
 }
 
 module.exports=databaseUpdate
