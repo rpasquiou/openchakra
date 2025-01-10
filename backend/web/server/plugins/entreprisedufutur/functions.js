@@ -735,7 +735,6 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model == 'conversation') {
     if (id) {
       if(idEqual(id, user._id)) {
-        console.log(user._id, id)
         id=undefined
       }
       else{
