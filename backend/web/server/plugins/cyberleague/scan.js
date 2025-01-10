@@ -1,6 +1,8 @@
 // Compute rates according to rating guide here : https://github.com/ssllabs/research/wiki/SSL-Server-Rating-Guide
 
 const Scan = require('../../models/Scan')
+const User = require('../../models/User')
+const Gain = require('../../models/Gain')
 const { getSslScan } = require('../SslLabs')
 const { SCAN_STATUS_READY, SCAN_STATUS_ERROR, COIN_SOURCE_SCAN } = require('./consts')
 
@@ -96,7 +98,8 @@ const computeScanRatesIfResults = async (id,url) => {
     await Scan.findByIdAndUpdate(id, {...scanRates, status:SCAN_STATUS_READY})
 
     //Token gain for scan action
-    gain = await Gain.findOne({source: COIN_SOURCE_SCAN})
+    const gain = await Gain.findOne({source: COIN_SOURCE_SCAN})
+    
     await User.updateMany({scans: id}, {$inc: {tokens: gain.gain}})
 
     return
