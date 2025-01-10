@@ -44,6 +44,10 @@ const UserSchema = new Schema({
     enum: Object.keys(ROLES),
     required: [true, 'Le rôle est obligatoire'],
   },
+  last_activity: {
+    type: Date,
+    required: false,
+  },
   statistics: {
     type: Schema.Types.ObjectId,
     ref: 'program',
