@@ -38,7 +38,7 @@ const { getLooking, getEvents } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const Tablemap = require('../../models/Tablemap')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, setComputePicture } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
@@ -51,47 +51,135 @@ const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getW
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
-const computeUrl = ({type, targetId}) => {
+const NotificationModel = mongoose.models.notification
+
+//notif url getterFn
+const computeUrl = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
   let tagUrl
-  switch (type) {
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      tagUrl = getTagUrl('NOTIFICATION_MESSAGE')
+      tagUrl = await getTagUrl('NOTIFICATION_MESSAGE')
       break
     case NOTIFICATION_TYPE_FEED_COMMENT:
     case NOTIFICATION_TYPE_FEED_LIKE:
     case NOTIFICATION_TYPE_GROUP_COMMENT:
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      tagUrl = getTagUrl('NOTIFICATION_POST')
+      tagUrl = await getTagUrl('NOTIFICATION_POST')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      tagUrl = await getTagUrl('PRIVATE_LEAGUE')
+      break;
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      tagUrl = await getTagUrl('SCAN_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      tagUrl = await getTagUrl('DIAG_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      tagUrl = await getTagUrl('MISSION_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      tagUrl = await getTagUrl('JOB_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      tagUrl = await getTagUrl('LEAGUE_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      tagUrl = await getTagUrl('EVENT_DETAILS')
       break;
   }
 
   if (!tagUrl) {
-    throw new Error(`Unknown notification type ${type} in computeUrl`)
+    throw new Error(`Unknown notification type ${dataLoaded.type} in computeUrl`)
   }
 
-  return `${ComputeDomain(tagUrl)}?id=${targetId}`
+  return `${ComputeDomain(tagUrl)}?id=${dataLoaded._target}`
 }
 setComputeUrl(computeUrl)
 
 
-const computeMessage = ({type, user, params}) => {
-  switch (type) {
+//notif message getterFn
+const computeMessage = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+
+  const {customUserId, customGroupId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user, group
+  if (customGroupId) {
+    group = await Group.findById(customGroupId)
+  }
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
+
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      return `${user.shortname} vous a envoyé un nouveau message`
+      return `${target.shortname} vous a envoyé un nouveau message` // target is a user
     case NOTIFICATION_TYPE_FEED_COMMENT:
       return `${user.shortname} a commenté une de vos publications`
     case NOTIFICATION_TYPE_FEED_LIKE:
       return `${user.shortname} a aimé une de vos publications`
     case NOTIFICATION_TYPE_GROUP_COMMENT:
-      return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a commenté une de vos publications sur la ligue ${group.name}`
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a aimé une de vos publications sur la ligue ${group.name}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      return `Félicitation ! Votre demande de rejoindre la ligue ${target.name} a été acceptée` //target is a group
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      return `${user.fullname} a effectué un scan de surface`
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      return `${user.fullname} a effectué un diagnostique`
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      return `${user.fullname} a effectué une demande de mission`
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      return `${user.fullname} a répondu à votre offre d'emploi : ${target.position}` //target is a carreer
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+      return `${target.shortname} souhaite rejoindre votre ligue ${group.name}` // target is a user
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      return `${user.shortname} s'est inscrit à votre événement ${target.name}` // target is an event
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return `${user.fullname} s'est inscrit à l'événement ${target.name}` // target is an event
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      return `${target.fullname} souhaite rejoindre la ligue ${group.name}` // target is a user
   }
-  throw new Error(`Unknown notification type ${type} in computeMessage`)
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computeMessage`)
 }
 setComputeMessage(computeMessage)
 
+//Notif picture getterFn
+const computePicture = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+  const {customUserId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
 
+  switch (dataLoaded.type) {
+    case NOTIFICATION_TYPE_MESSAGE: // target is user
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
+      return target.picture
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+    case NOTIFICATION_TYPE_FEED_LIKE:
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+    case NOTIFICATION_TYPE_NEW_SCAN:
+    case NOTIFICATION_TYPE_NEW_DIAG:
+    case NOTIFICATION_TYPE_NEW_MISSION:
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return user.picture
+  }
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
+}
+setComputePicture(computePicture)
 
 
 
