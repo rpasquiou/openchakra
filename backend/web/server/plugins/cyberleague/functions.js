@@ -667,8 +667,12 @@ const ensureGains = () => {
 ensureGains()
 
 //Ensure there is an adminDashboard
-const ensureAdminDashboard = () => {
-  return Promise.resolve(AdminDashboard.findOneAndUpdate({}, {}, {upsert: true}))
+const ensureAdminDashboard = async () => {
+  return AdminDashboard.findOneAndUpdate(
+    {}, 
+    {},
+    {upsert: true}
+  )
 }
 
 ensureAdminDashboard()
