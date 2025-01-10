@@ -20,42 +20,48 @@ let pageCount=null
 const renderComponent = async (component, pdf) => {
   let header = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_HEADER')
   const headerImg = header ? await generateImage({element: header}) : null
-  let footer = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_FOOTER')
-  let pageNumberChildren=Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_NUMBER')
-  let pageCountChildren=Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_TOTAL')
+  let headerPageNumberChildren=header ?  Array.from(header.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_NUMBER') : null
+  let headerPageCountChildren=header ? Array.from(header.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_TOTAL') : null
   
+  let footer = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_FOOTER')
   const footerImg = footer ? await generateImage({element: footer}) : null
+  let footerPageNumberChildren=footer ?  Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_NUMBER') : null
+  let footerPageCountChildren=footer ? Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_TOTAL') : null
+
   const middle = Array.from(component.children)[header ? 1 : 0];
   const middleImg=await generateImage({element: middle})
 
   const remaining=PAGE_HEIGHT-(headerImg?.height||0)-(footerImg?.height||0)
 
-  let requiredPageCount=Math.ceil(middleImg.height/remaining)
-  pageCountChildren.forEach(child => child.innerText=pageCount)
-
+  const requiredPageCount=Math.ceil(middleImg.height/remaining)
+  
+  const result=[]
   for (const i=0; i<requiredPageCount; i++) {
-    let position=0
-    if (headerImg) {
-      await drawImage(headerImg, pdf, position)
-      position += headerImg.height
-    }
+    let headerRerender=(headerPageNumberChildren?.length+headerPageCountChildren?.length)==0 ? null :
+      ({pageCount, pageNumber}) => {
+        headerPageNumberChildren.forEach(child => child.innerText=pageNumber)
+        headerPageCountChildren.forEach(child => child.innerText=pageCount)
+        return generateImage({element: header})
+      }
+    let footerRerender=(footerPageNumberChildren?.length+footerPageCountChildren?.length)==0 ? null :
+      ({pageCount, pageNumber}) => {
+        footerPageNumberChildren.forEach(child => child.innerText=pageNumber)
+        footerPageCountChildren.forEach(child => child.innerText=pageCount)
+        return generateImage({element: footer})
+      }
 
-    // await drawImage(middleImg, pdf, position)
-    const cropped=await cropImage({image: middleImg, cropY: i*remaining, cropHeight: middleImg.height})
-    await drawImage(cropped, pdf, position)
-    if (footerImg) {
-      // Update page number ?
-      pageNumberChildren.forEach(child => child.innerText=pageNumber)
-      const updatedImage=await generateImage({element: footer})
-      await drawImage(updatedImage, pdf, PAGE_HEIGHT-footerImg.height)
-    }
-    if (i!=requiredPageCount-1) {
-      pdf.addPage()
-      pageNumber++
-    } 
+    const middlePosition=-remaining*i+(headerImg?.height||0)
+    result.push({
+      renders: [
+        {y:middlePosition, image: middleImg},
+        headerImg ? {y:0, image: headerImg, rerender: headerRerender} : null,
+        footerImg ? {y:PAGE_HEIGHT-footerImg.height, image: footerImg, rerender: footerRerender} : null,
+      ].filter(v => !!v)
+    })
   }
-  pdf.addPage()
+  // pdf.addPage()
   pageNumber++
+  return result
 }
 
 /** Generates image from DOM element
@@ -71,30 +77,6 @@ const generateImage = async ({element}) => {
     width: PAGE_WIDTH,
     height: imgHeight,
     data: imgData
-  }
-}
-
-// FIX: higher quality
-// FIX: generates light gray background
-const cropImage = async ({image, cropY, cropHeight}) => {
-  const QUALITY=7
-  try {
-    const canvas=await createCanvas(PAGE_WIDTH*QUALITY, cropHeight*QUALITY)
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = 'white'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    const img=await loadImage(image.data)
-    ctx.drawImage(img, 0, -cropY*QUALITY, image.width*QUALITY, cropHeight*QUALITY)
-    const imgData=canvas.toDataURL(IMAGE_FORMAT, 1)
-    return {
-      width: image.width,
-      height: cropHeight,
-      data: imgData,
-    }
-  }
-  catch(err) {
-    console.error(err)
-    return image
   }
 }
 
@@ -125,21 +107,25 @@ const generatePDF = async (targetId, level,fileName) => {
     format: [PAGE_WIDTH, PAGE_HEIGHT],
   })
 
+  let pages=[]
   for (const component of childrenPages) {
-    await renderComponent(component, pdf);
+    const res=await renderComponent(component, pdf)
+    pages=[...pages, ...res]
   }
-
-  pageCount=pdf.getNumberOfPages()
-  pageNumber=1
-
-  pdf = new jsPDF({
-    orientation: 'p',
-    unit: 'mm',
-    format: [PAGE_WIDTH, PAGE_HEIGHT],
-  })
-
-  for (const component of childrenPages) {
-    await renderComponent(component, pdf);
+  let pageNumber=1
+  for (const page of pages) {
+    const {renders}=page
+    for (const render of renders) {
+      let {image, y, rerender}=render
+      if (rerender) {
+        image=await rerender({pageNumber, pageCount:pages.length})
+      } 
+      await drawImage(image, pdf, y)
+    }
+    if (pdf.getNumberOfPages()<pages.length) {
+      pdf.addPage()
+      pageNumber+=1
+    }
   }
 
   fileName=fileName +'_'+moment().format("YYYY-MM-DD-HH-mm-ss")
