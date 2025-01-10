@@ -624,6 +624,9 @@ declareVirtualField({model: 'document', field: 'type', requires: 'company', inst
 //AdminDashboard declaration
 //declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
 
+//Note declarations
+declareVirtualField({model: 'note', field: 'sector', enumValues:SECTOR})
+
 
 
 
