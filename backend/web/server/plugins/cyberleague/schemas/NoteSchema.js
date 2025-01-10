@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { NOTE_TYPES, SECTOR } = require('../consts')
+const { NUTRISCORE, NOTE_TYPES, SECTOR } = require('../consts')
 const Schema = mongoose.Schema
 
 let NoteSchema = new Schema({
@@ -18,6 +18,10 @@ let NoteSchema = new Schema({
     type: Date,
     default: Date.now,
     required: [true, `la date de la note est obligatoire`],
+  },
+  nutriscore: {
+    type: String,
+    enum: Object.keys(NUTRISCORE),
   },
 }, {...schemaOptions})
 

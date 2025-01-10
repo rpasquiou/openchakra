@@ -627,6 +627,7 @@ declareVirtualField({model: 'document', field: 'type', requires: 'company', inst
 //Note declarations
 declareVirtualField({model: 'note', field: 'sector', enumValues:SECTOR})
 declareVirtualField({model: 'note', field: 'type', enumValues:NOTE_TYPES})
+declareVirtualField({model: 'note', field: 'nutriscore', enumValues:NUTRISCORE})
 
 
 
