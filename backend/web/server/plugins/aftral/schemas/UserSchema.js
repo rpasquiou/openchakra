@@ -34,6 +34,10 @@ const UserSchema = new Schema({
     ref: 'session',
     required: true,
   }],
+  last_activity: {
+    type: Date,
+    required: false
+  }
 }, schemaOptions)
 
 UserSchema.virtual('contact_name').get(function() {
