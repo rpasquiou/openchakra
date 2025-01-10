@@ -1,10 +1,12 @@
 // Compute rates according to rating guide here : https://github.com/ssllabs/research/wiki/SSL-Server-Rating-Guide
 
+const Company = require('../../models/Company')
 const Scan = require('../../models/Scan')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { getSslScan } = require('../SslLabs')
-const { SCAN_STATUS_READY, SCAN_STATUS_ERROR, COIN_SOURCE_SCAN } = require('./consts')
+const { SCAN_STATUS_READY, SCAN_STATUS_ERROR, COIN_SOURCE_SCAN, NOTE_TYPE_SCAN } = require('./consts')
+const { addToLivefeed } = require('./adminDashboard')
 
 const PROTOCOL_RATES = {
   ['2']: 0,     //SSL 2.0
@@ -92,15 +94,28 @@ const computeScanRates = async (data) => {
 }
 
 const computeScanRatesIfResults = async (id,url) => {
+
   const data = await getSslScan(url)
+  
   if (data.status == SCAN_STATUS_READY) {
     const scanRates = await computeScanRates(data)
     await Scan.findByIdAndUpdate(id, {...scanRates, status:SCAN_STATUS_READY})
-
+    
     //Token gain for scan action
     const gain = await Gain.findOne({source: COIN_SOURCE_SCAN})
     
     await User.updateMany({scans: id}, {$inc: {tokens: gain.gain}})
+    
+    //new notes for livefeed
+    const users = await User.find({scans: id})
+    const companies = await Promise.all(users.map(async (u) => {
+      return Company.findById(u.company)
+    }))
+
+    const sectors = companies.map (c => c.sector)
+    await Promise.all(sectors.map(async (s) => {
+      return addToLivefeed({sector: s, date: Date.now(), nutriscore: scanRates.nutriscore, type: NOTE_TYPE_SCAN})
+    }))
 
     return
 
