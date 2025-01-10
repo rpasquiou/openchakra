@@ -5,17 +5,14 @@
 
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-const {createCanvas, loadImage}=require('canvas')
 var moment = require('moment')
 
 const PAGE_WIDTH = 210
 const PAGE_HEIGHT = 297
 
-//const IMAGE_FORMAT='image/jpeg'
 const IMAGE_FORMAT='image/jpeg'
-
-let pageNumber=1
-let pageCount=null
+const IMAGE_SCALE=1.5
+const IMAGE_QUALITY=undefined
 
 const renderComponent = async (component, pdf) => {
   let header = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_HEADER')
@@ -35,23 +32,24 @@ const renderComponent = async (component, pdf) => {
 
   const requiredPageCount=Math.ceil(middleImg.height/remaining)
   
-  const result=[]
+  const pagesDefinition=[]
+
   for (const i=0; i<requiredPageCount; i++) {
     let headerRerender=(headerPageNumberChildren?.length+headerPageCountChildren?.length)==0 ? null :
       ({pageCount, pageNumber}) => {
         headerPageNumberChildren.forEach(child => child.innerText=pageNumber)
         headerPageCountChildren.forEach(child => child.innerText=pageCount)
-        return generateImage({element: header})
+        return generateImage({element: header, label: 'Rerender header'})
       }
     let footerRerender=(footerPageNumberChildren?.length+footerPageCountChildren?.length)==0 ? null :
       ({pageCount, pageNumber}) => {
         footerPageNumberChildren.forEach(child => child.innerText=pageNumber)
         footerPageCountChildren.forEach(child => child.innerText=pageCount)
-        return generateImage({element: footer})
+        return generateImage({element: footer, label: 'Rerender footer'})
       }
 
     const middlePosition=-remaining*i+(headerImg?.height||0)
-    result.push({
+    pagesDefinition.push({
       renders: [
         {y:middlePosition, image: middleImg},
         headerImg ? {y:0, image: headerImg, rerender: headerRerender} : null,
@@ -59,19 +57,14 @@ const renderComponent = async (component, pdf) => {
       ].filter(v => !!v)
     })
   }
-  // pdf.addPage()
-  pageNumber++
-  return result
+  return pagesDefinition
 }
 
-/** Generates image from DOM element
- * If height is provided, image will be cropped at this height
-*/
+/** Generates image from DOM element */
 const generateImage = async ({element}) => {
-  const QUALITY=2
-  let canvas = await html2canvas(element, { scale: QUALITY, useCORS: true, logging: true, scrollY: -window.scrollY });
+  let canvas = await html2canvas(element, { scale: IMAGE_SCALE, useCORS: true, scrollY: -window.scrollY });
   let imgHeight=canvas.height * PAGE_WIDTH /canvas.width
-  let imgData = canvas.toDataURL(IMAGE_FORMAT, 1/QUALITY)
+  let imgData = canvas.toDataURL(IMAGE_FORMAT, IMAGE_QUALITY)
 
   return {
     width: PAGE_WIDTH,
@@ -99,8 +92,6 @@ const generatePDF = async (targetId, level,fileName) => {
   
   const childrenPages = Array.from(input.children).filter(child => child.getAttribute('tag') === 'PDF_PAGE')
 
-  // #FIX Don't play twice to get pages count
-  // Instead pre generate blocks then render
   let pdf = new jsPDF({
     orientation: 'p',
     unit: 'mm',
