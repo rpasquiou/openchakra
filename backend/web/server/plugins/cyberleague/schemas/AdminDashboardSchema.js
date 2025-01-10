@@ -10,6 +10,15 @@ const AdminDashboardSchema = new Schema({
     ref: 'company',
     required: false
   },
+  livefeed: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'note',
+      required: true
+    }],
+    default: [],
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
