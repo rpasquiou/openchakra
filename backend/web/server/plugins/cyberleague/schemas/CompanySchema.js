@@ -180,7 +180,7 @@ const CompanySchema = new Schema(
       }],
       default: []
     },
-    saleforce_id: {
+    customer_id: {
       type: String,
       required: false
     },
