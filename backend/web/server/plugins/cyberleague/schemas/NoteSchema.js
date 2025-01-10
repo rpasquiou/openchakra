@@ -23,6 +23,9 @@ let NoteSchema = new Schema({
     type: String,
     enum: Object.keys(NUTRISCORE),
   },
+  global_rate: {
+    type: Number,
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
