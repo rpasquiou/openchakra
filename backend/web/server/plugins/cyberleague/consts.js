@@ -510,6 +510,7 @@ const NOTE_TYPES = {
   [NOTE_TYPE_EXPERT_DIAG]: `diag expert`
 }
 
+const LIVEFEED_MAX_LENGTH = 10
 
 module.exports = {
   DISC_ADMIN, DISC_MEMBER, DISC_PARTNER, DISCRIMINATOR_KEY,
