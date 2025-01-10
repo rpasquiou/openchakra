@@ -31,7 +31,6 @@ export const deploy = (state: ProjectState, models: any) => {
   console.time(deployMsg)
   const taggedPages=Object.values(state.pages).filter(page => !lodash.isEmpty(page.components?.root?.props?.tag))
     .map(page => ({tag: page.components.root.props.tag, url: '/'+getPageUrl(page.pageId, state.pages)}))
-  console.log('tagged pages', taggedPages)
   return Promise.resolve(validateProject(state))
     .then(res => {
             if (res) {

@@ -1,21 +1,108 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+/**
+ * Muilti page : https://phppot.com/javascript/jspdf-html-example/
+ */
+
+
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+const {createCanvas, loadImage}=require('canvas')
 var moment = require('moment')
 
-const drawImage = async (element, pageWidth, pageHeight, pdf, positionY) => {
-  let elementCanvas = await html2canvas(element, { scale: 2, useCORS: true, logging: true, scrollY: -window.scrollY });
-  const elementImg = elementCanvas.toDataURL('image/jpeg', 0.5);
-  const elementImgHeight = elementCanvas.height * pageWidth / elementCanvas.width;
-  if (positionY==-1) {
-    console.log('Before')
-    positionY=pageHeight-elementImgHeight
-    console.log('After')
+const PAGE_WIDTH = 210
+const PAGE_HEIGHT = 297
+
+//const IMAGE_FORMAT='image/jpeg'
+const IMAGE_FORMAT='image/jpeg'
+
+let pageNumber=1
+let pageCount=null
+
+const renderComponent = async (component, pdf) => {
+  let header = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_HEADER')
+  const headerImg = header ? await generateImage({element: header}) : null
+  let footer = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_FOOTER')
+  let pageNumberChildren=Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_NUMBER')
+  let pageCountChildren=Array.from(footer.querySelectorAll('*')).filter(c => c.getAttribute('tag')=='PDF_PAGE_TOTAL')
+  
+  const footerImg = footer ? await generateImage({element: footer}) : null
+  const middle = Array.from(component.children)[header ? 1 : 0];
+  const middleImg=await generateImage({element: middle})
+
+  const remaining=PAGE_HEIGHT-(headerImg?.height||0)-(footerImg?.height||0)
+
+  let requiredPageCount=Math.ceil(middleImg.height/remaining)
+  pageCountChildren.forEach(child => child.innerText=pageCount)
+
+  for (const i=0; i<requiredPageCount; i++) {
+    let position=0
+    if (headerImg) {
+      await drawImage(headerImg, pdf, position)
+      position += headerImg.height
+    }
+
+    // await drawImage(middleImg, pdf, position)
+    const cropped=await cropImage({image: middleImg, cropY: i*remaining, cropHeight: middleImg.height})
+    await drawImage(cropped, pdf, position)
+    if (footerImg) {
+      // Update page number ?
+      pageNumberChildren.forEach(child => child.innerText=pageNumber)
+      const updatedImage=await generateImage({element: footer})
+      await drawImage(updatedImage, pdf, PAGE_HEIGHT-footerImg.height)
+    }
+    if (i!=requiredPageCount-1) {
+      pdf.addPage()
+      pageNumber++
+    } 
   }
-  console.log('DRawing at', positionY)
-  pdf.addImage(elementImg, 'JPEG', 0, positionY, pageWidth, elementImgHeight);
-  return elementImgHeight;
+  pdf.addPage()
+  pageNumber++
 }
 
+/** Generates image from DOM element
+ * If height is provided, image will be cropped at this height
+*/
+const generateImage = async ({element}) => {
+  const QUALITY=2
+  let canvas = await html2canvas(element, { scale: QUALITY, useCORS: true, logging: true, scrollY: -window.scrollY });
+  let imgHeight=canvas.height * PAGE_WIDTH /canvas.width
+  let imgData = canvas.toDataURL(IMAGE_FORMAT, 1/QUALITY)
+
+  return {
+    width: PAGE_WIDTH,
+    height: imgHeight,
+    data: imgData
+  }
+}
+
+// FIX: higher quality
+// FIX: generates light gray background
+const cropImage = async ({image, cropY, cropHeight}) => {
+  const QUALITY=7
+  try {
+    const canvas=await createCanvas(PAGE_WIDTH*QUALITY, cropHeight*QUALITY)
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = 'white'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const img=await loadImage(image.data)
+    ctx.drawImage(img, 0, -cropY*QUALITY, image.width*QUALITY, cropHeight*QUALITY)
+    const imgData=canvas.toDataURL(IMAGE_FORMAT, 1)
+    return {
+      width: image.width,
+      height: cropHeight,
+      data: imgData,
+    }
+  }
+  catch(err) {
+    console.error(err)
+    return image
+  }
+}
+
+const drawImage = async (image, pdf, positionY) => {
+  pdf.addImage(image.data, IMAGE_FORMAT, 0, positionY, image.width, image.height)
+  return image
+}
+  
 const generatePDF = async (targetId, level,fileName) => {
   if (targetId=='root'){targetId='__next'}
   let input = document.getElementById(targetId);
@@ -23,45 +110,36 @@ const generatePDF = async (targetId, level,fileName) => {
     input = document.getElementById(targetId+level)
   }
 
+  // TODO: proxify images in PDF to enable rendering
+  const imgs=Array.from(input.querySelectorAll('img'))
+  imgs.forEach(img => img.src = /proxy/.test(img.src) ? img.src : `/proxy?url=${img.src}`)
+    
+  
   const childrenPages = Array.from(input.children).filter(child => child.getAttribute('tag') === 'PDF_PAGE')
 
-  // TODO: include images in PDF
-  const imgs= input.querySelectorAll('img')
-  await Promise.all(Array.from(imgs).map(async (img) => {
-    try {
-      img.src = /proxy/.test(img.src) ? img.src : `/proxy?url=${img.src}`
-      console.log('Loaded', img.src)
-    } catch (error) {
-      console.error(`Error loading image ${img.src}: ${error}`);
-    }
-  }))
-  
-  const imgWidth = 210
-  const pageHeight = 297
-
-  const pdf = new jsPDF({
+  // #FIX Don't play twice to get pages count
+  // Instead pre generate blocks then render
+  let pdf = new jsPDF({
     orientation: 'p',
     unit: 'mm',
-    format: [imgWidth, pageHeight],
+    format: [PAGE_WIDTH, PAGE_HEIGHT],
   })
 
   for (const component of childrenPages) {
-    let position=0
-    let remaining=pageHeight
-    const header = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_HEADER')
-    if (header) {
-      const headerImgHeight = await drawImage(header, imgWidth, pageHeight, pdf, position);
-      position+=headerImgHeight
-      remaining-=headerImgHeight
-    }
-    const middle=Array.from(component.children)[header ? 1 : 0]
-    const middleHeight=await drawImage(middle, imgWidth, pageHeight, pdf, position);
-    position+=middleHeight
-    const footer = Array.from(component.children).find(child => child.getAttribute('tag') === 'PDF_FOOTER')
-    if (footer) {
-      await drawImage(footer, imgWidth, pageHeight, pdf, -1)
-    }
-    pdf.addPage()
+    await renderComponent(component, pdf);
+  }
+
+  pageCount=pdf.getNumberOfPages()
+  pageNumber=1
+
+  pdf = new jsPDF({
+    orientation: 'p',
+    unit: 'mm',
+    format: [PAGE_WIDTH, PAGE_HEIGHT],
+  })
+
+  for (const component of childrenPages) {
+    await renderComponent(component, pdf);
   }
 
   fileName=fileName +'_'+moment().format("YYYY-MM-DD-HH-mm-ss")
@@ -69,4 +147,4 @@ const generatePDF = async (targetId, level,fileName) => {
 
 }
 
-export {generatePDF};
+export {generatePDF}
