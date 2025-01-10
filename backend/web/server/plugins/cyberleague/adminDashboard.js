@@ -1,5 +1,5 @@
 const AdminDashboard = require('../../models/AdminDashboard')
-const AdminDashboard = require('../../models/Note')
+const Note = require('../../models/Note')
 const { LIVEFEED_MAX_LENGTH } = require('./consts')
 
 const addToLivefeed = async (params) => {
