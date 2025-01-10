@@ -14,6 +14,11 @@ let NoteSchema = new Schema({
     enum: Object.keys(SECTOR),
     required: [true,`Le secteur de l'utilisateur à l'origine de la note est obligatoire`],
   },
+  date: {
+    type: Date,
+    default: Date.now,
+    required: [true, `la date de la note est obligatoire`],
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
