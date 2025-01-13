@@ -891,11 +891,11 @@ const callPostDeleteData = data => {
 const putAttribute = async (input_params) => {
   let res=await getModel(input_params.id)
       let preParams={[input_params.attribute]: input_params.value}
-      let {model, id, params, user, skip_validation} = await callPrePutData({...input_params, model: res, params: preParams})
+      let {model, id, params, user, skip_validation, userData} = await callPrePutData({...input_params, model: res, params: preParams, userData: {}})
       const [attribute, value]=Object.entries(params)[0]
       const setter=lodash.get(COMPUTED_FIELDS_SETTERS, `${model}.${input_params.attribute}`)
       if (setter) {
-        callPostPutData({model, id, attribute, value, user})
+        callPostPutData({model, id, attribute, value, user, userData})
         return setter({id, attribute, value, user})
       }
       const mongooseModel = mongoose.connection.models[model]
@@ -909,7 +909,7 @@ const putAttribute = async (input_params) => {
             return object.save({...validation})
               .then(obj => {
                 const postParams={[attribute]: value}
-                return callPostPutData({model, id, attribute, value, params:postParams, user, data: obj})
+                return callPostPutData({model, id, attribute, value, params:postParams, user, data: obj,userData})
                   .then(() => obj)
               })
           })
