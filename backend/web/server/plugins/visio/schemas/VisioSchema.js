@@ -85,8 +85,15 @@ VisioSchema.virtual('type', DUMMY_REF).get(function() {
   return TYPES[this._owner_type]
 })
 
+// A visio is considered active from 10 minutes before start to 10 minutes after end
 VisioSchema.virtual('active', DUMMY_REF).get(function() {
   return !!this.start_date && !!this.end_date && moment().isBetween(moment(this.start_date).add(-10, 'minutes'), moment(this.end_date).add(10, 'minutes'))
+})
+
+// A visio is considered future if it starts after today midnight
+VisioSchema.virtual('future', DUMMY_REF).get(function() {
+  const startDay=moment().startOf('day')
+  return !!this.start_date && this.start_date.isAfter(startDay)
 })
 
 VisioSchema.pre('validate',function(next) {
