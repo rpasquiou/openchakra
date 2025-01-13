@@ -1118,9 +1118,9 @@ const postPutData = async ({model, id, user, attribute, value, userData}) => {
         }
         const event = await Event.findById(id)
         if (!user.company_sponsorship || user.company_sponsorship != event.company) {
-          const admins = await Company.findById(event.company)
+          const company = await Company.findById(event.company)
           await addNotification({
-            users: admins,
+            users: company.administrators,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
             type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,
