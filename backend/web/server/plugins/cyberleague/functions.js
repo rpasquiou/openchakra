@@ -1179,6 +1179,11 @@ const postPutData = async ({model, id, user, attribute, value, userData}) => {
     }
   }
 
+  if (model == 'company' && attribute == 'statut') {
+    const newRole = value == STATUT_MEMBER ? ROLE_MEMBER : ROLE_PARTNER
+    await User.updateMany({company: id}, {role: newRole})
+  }
+
   return {model, user, attribute, value}
 }
 
