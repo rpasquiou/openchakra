@@ -1021,8 +1021,8 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 
-const postPutData = async ({model, id, user, attribute, value}) => {
-  // console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
+const postPutData = async ({model, id, user, attribute, value, userData}) => {
+  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value, 'userdata', userData)
   if (model == `group`) {
     const group = await Group.findById(id)
 
@@ -1175,7 +1175,7 @@ const postPutData = async ({model, id, user, attribute, value}) => {
 setPostPutData(postPutData)
 
 
-const prePutData = async ({model, id, params, user}) => {
+const prePutData = async ({model, id, params, user, userData}) => {
   //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
@@ -1191,7 +1191,12 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
-  return {model, id, params, user}
+  if (model == 'mission' && params.companies ) {
+    const mission = await Mission.findById(id)
+    userData.companies = mission.companies
+  }
+
+  return {model, id, params, user,userData}
 }
 
 setPrePutData(prePutData)
