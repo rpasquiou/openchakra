@@ -147,6 +147,8 @@ const computeMessage = async (userId, params, data) => {
       return `${user.fullname} s'est inscrit à l'événement ${target.name}` // target is an event
     case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
       return `${target.fullname} souhaite rejoindre la ligue ${group.name}` // target is a user
+    case NOTIFICATION_TYPE_MISSION_ACCEPTED:
+      return `${user.shortname} a accepté votre candidature`
   }
   throw new Error(`Unknown notification type ${dataLoaded.type} in computeMessage`)
 }
