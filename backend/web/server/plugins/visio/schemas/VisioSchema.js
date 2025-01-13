@@ -93,7 +93,7 @@ VisioSchema.virtual('active', DUMMY_REF).get(function() {
 // A visio is considered future if it starts after today midnight
 VisioSchema.virtual('future', DUMMY_REF).get(function() {
   const startDay=moment().startOf('day')
-  return !!this.start_date && this.start_date.isAfter(startDay)
+  return !!this.start_date && moment(this.start_date).isAfter(startDay)
 })
 
 VisioSchema.pre('validate',function(next) {
