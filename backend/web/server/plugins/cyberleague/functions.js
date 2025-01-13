@@ -168,7 +168,8 @@ const computePicture = async (userId, params, data) => {
   switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE: // target is user
     case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
-    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: // target is group
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:// target is user
       return target.picture
     case NOTIFICATION_TYPE_FEED_COMMENT:
     case NOTIFICATION_TYPE_FEED_LIKE:
@@ -178,7 +179,6 @@ const computePicture = async (userId, params, data) => {
     case NOTIFICATION_TYPE_NEW_DIAG:
     case NOTIFICATION_TYPE_NEW_MISSION:
     case NOTIFICATION_TYPE_JOB_ANSWER:
-    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
     case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
     case NOTIFICATION_TYPE_MISSION_ACCEPTED:
