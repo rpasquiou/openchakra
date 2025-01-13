@@ -180,6 +180,7 @@ const computePicture = async (userId, params, data) => {
     case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
     case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_MISSION_ACCEPTED:
       return user.picture
   }
   throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
