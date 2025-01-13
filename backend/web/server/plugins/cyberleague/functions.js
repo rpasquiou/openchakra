@@ -854,13 +854,6 @@ const preCreate = async ({model, params, user}) => {
     params.company = params.parent
   }
 
-  if (model == 'user') {
-    if (!params.company_sponsorship) {
-      const default_sponsor = await Company.findOne({is_default_sponsor: true})
-      params.company_sponsorship = default_sponsor ? default_sponsor._id : null
-    }
-  }
-
   if (model == 'adminDashboard') {
     const admin_dashboard = AdminDashboard.findOne({})
     if (admin_dashboard) {
@@ -982,12 +975,6 @@ const postCreate = async ({ model, params, data, user }) => {
         type: NOTIFICATION_TYPE_NEW_SCAN,
         customData: JSON.stringify({customUserId: user._id}),
       })
-    }
-  }
-
-  if (model == 'company') {
-    if (data.is_default_sponsor) {
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
     }
   }
 
@@ -1175,12 +1162,6 @@ const postPutData = async ({model, id, user, attribute, value, userData}) => {
     }
   }
 
-  if (model == 'company' ) {
-    if (attribute == 'is_default_sponsor' && value) {
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
-    }
-  }
-
   if (model == 'carreer') {
     //carreer sponsor candidates notif
     if (attribute == 'candidates' && user.company_sponsorship && lodash.find(value,(v) => idEqual(user._id, v))) {
@@ -1246,11 +1227,6 @@ const preDeleteData = async ({model, id, data, user}) => {
 setPreDeleteData(preDeleteData)
 
 const preRegister = async (body) => {
-  if (!body.company_sponsorship) {
-    const defaultSponsor = await Company.findOne({is_default_sponsor: true}, ['_id'])
-    return {...body, company_sponsorship: defaultSponsor._id}
-  }
-
   return body
 }
 
