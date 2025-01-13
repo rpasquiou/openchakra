@@ -153,6 +153,8 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
     params: params,
   })
   
+  // Re-order resources according to resourceIds order
+  resources=resourceIds.map(({_id}) => resources.find(r => idEqual(_id, r._id))).filter(v => !!v)
   return resources.map(r => new Resource(r))
 }
 
@@ -172,6 +174,8 @@ const getHomeworkResources = async (userId, params, data, fields, actualLogged) 
     params: params,
   })
   
+  // Re-order resources according to resourceIds order
+  resources=resourceIds.map(({_id}) => resources.find(r => idEqual(_id, r._id))).filter(v => !!v)
   return resources.map(r => new Resource(r))
 }
 
