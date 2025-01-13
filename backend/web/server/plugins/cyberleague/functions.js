@@ -49,6 +49,7 @@ const Post = require('../../models/Post')
 const AdminDashboard = require('../../models/AdminDashboard')
 const Event = require('../../models/Event')
 const Carreer = require('../../models/Carreer')
+const Mission = require('../../models/Mission')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -1142,6 +1143,34 @@ const postPutData = async ({model, id, user, attribute, value, userData}) => {
       } else {
         //console.log('unregistered')
         await User.findByIdAndUpdate(user._id, {$set: {tokens: user.tokens - gain.gain }})
+      }
+    }
+  }
+
+  if (model == 'mission') {
+
+    if (attribute == 'companies') {
+      //userData = mission.companies old value
+      const [changedcompanyId] = lodash.xorWith(userData.companies, value, (val1,val2) => idEqual(val1,val2))
+
+      if (userData.companies.length < value.length) {
+        //company has been added to accepted companies => new notif
+        const changedcompany = await Company.findById(changedcompanyId)
+        await addNotification({
+          users: changedcompany.administrators,
+          targetId: id,
+          targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MISSION_ACCEPTED],
+          type: NOTIFICATION_TYPE_MISSION_ACCEPTED,
+          customData: JSON.stringify({customUserId: user._id})
+        })
+
+      } else {
+        //company has been removed from accepted companies => delete notif
+        await NotificationModel.deleteOne({
+          type: NOTIFICATION_TYPE_MISSION_ACCEPTED,
+          _target: id,
+          custom_data: JSON.stringify({customUserId: user._id})
+        })
       }
     }
   }
