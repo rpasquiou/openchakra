@@ -156,6 +156,25 @@ const getEvalResources = async (userId, params, data, fields, actualLogged) => {
   return resources.map(r => new Resource(r))
 }
 
+const getHomeworkResources = async (userId, params, data, fields, actualLogged) => {
+  const resourceIds = await getBlockResources({blockId: data._id, userId: actualLogged, includeUnavailable: true, includeOptional: true})
+
+  params=lodash(params)
+    .omitBy((_, k) => ['filter', 'limit'].includes(k) || !/homework_resources\./.test(k))
+    .mapKeys((_, k) => k.replace(/^(limit|sort).*\.homework_resources(.*)$/, '$1$2'))
+    .value()
+  params={...params, [`filter._id`]: {$in: resourceIds}, ['filter.homework_mode']: true}
+
+  let resources = await loadFromDb({
+    model: `resource`,
+    user: userId,
+    fields: [...fields, 'homeworks'],
+    params: params,
+  })
+  
+  return resources.map(r => new Resource(r))
+}
+
 module.exports={
-  getSessionCertificate, getEvalResources
+  getSessionCertificate, getEvalResources, getHomeworkResources,
 }

@@ -311,6 +311,15 @@ const BlockSchema = new Schema({
     required: true,
     default: []
   },
+  // Computed
+  homework_resources: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: `block`,
+    }],
+    required: true,
+    default: []
+  },
   can_upload_homework: {
     type: Boolean,
     required: true,
