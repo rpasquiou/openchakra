@@ -286,7 +286,11 @@ const EventSchema = new Schema({
     default: []
   },
   banner_text: {
-    type, String,
+    type: String,
+    required: false,
+  },
+  banner_target: {
+    type: String,
     required: false,
   },
 }, schemaOptions)
