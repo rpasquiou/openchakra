@@ -404,6 +404,26 @@ const setMasterStatus = async () => {
   })
 }
 
+const formatEmail = (email) => {
+  if (email.startsWith('development+') || email.startsWith('validation+')) {
+    return email
+  }
+
+  if (isDevelopment()) {
+    return `development+${email}`
+  } else if (isValidation()) {
+    return `validation+${email}`
+  }
+  return email
+}
+
+const addEnvironmentAttributes = (attributes) => {
+  return {
+    ...attributes,
+    ENVIRONMENT: get_mode(),
+  }
+}
+
 // Public API
 module.exports = {
   databaseName: databaseName,
@@ -454,4 +474,7 @@ module.exports = {
   setMasterStatus,
   getSmartdietAPIConfig,
   computeUrl,
+  get_mode,
+  formatEmail,
+  addEnvironmentAttributes,
 }

@@ -4,14 +4,15 @@ const lodash = require('lodash')
 const {schemaOptions} = require('../../../utils/schemas')
 const customerSchema=require('./CustomerSchema')
 const AddressSchema = require('../../../models/AddressSchema')
-const {COMPANY_SIZE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, VALID_STATUS_PENDING, EXPERIENCE, ROLE_FREELANCE, ROLES, 
+const {COMPANY_SIZE, WORK_DURATION, SOURCE, SOSYNPL, DISCRIMINATOR_KEY, EXPERIENCE, ROLE_FREELANCE, ROLES, 
   MOBILITY, MOBILITY_REGIONS, MOBILITY_CITY, MOBILITY_FRANCE, AVAILABILITY, AVAILABILITY_UNDEFINED, AVAILABILITY_OFF, AVAILABILITY_ON, SS_MEDALS_GOLD, SS_MEDALS_SILVER, SS_MEDALS_BRONZE, SS_PILAR_CREATOR, SS_PILAR,
   CF_MAX_GOLD_SOFT_SKILLS,
   CF_MAX_SILVER_SOFT_SKILLS,
   CF_MAX_BRONZE_SOFT_SKILLS,
   ANNOUNCE_STATUS_ACTIVE,
   ANNOUNCE_STATUS_DRAFT,
-  REPORT_STATUS_SENT} = require('../consts')
+  REPORT_STATUS_SENT,
+  ANNOUNCE_STATUS_PROVIDED} = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { REGIONS } = require('../../../../utils/consts')
 const { computePilars, computePilar } = require('../soft_skills')
@@ -153,11 +154,6 @@ const CustomerFreelanceSchema = new Schema({
   experience: {
     type: String,
     required: [function() {return isFreelance(this)}, `L'expérience est obligatoire`],
-  },
-  validation_status: {
-    type: String,
-    default: VALID_STATUS_PENDING,
-    required: [function() {return isFreelance(this)}, `Le statut de validation est obligatoire`],
   },
   professional_rc: {
     type: String,
@@ -654,7 +650,7 @@ CustomerFreelanceSchema.virtual('customer_published_announces_count', {
   localField: '_id',
   foreignField: 'user',
   match: {
-    status: {$ne:ANNOUNCE_STATUS_DRAFT},
+    status: {$ne:ANNOUNCE_STATUS_PROVIDED},
   },
   count: true,
 })

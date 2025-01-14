@@ -75,7 +75,7 @@ class SIB_V3 {
     if (isProduction()) {
       return true
     }
-    return /@wappizy/.test(email) || /@smartdiet/.test(email)
+    return /@wappizy/.test(email) || /@smartdiet/.test(email) || /@yelowi/.test(email)
   }
 
   async getContacts() {

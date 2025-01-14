@@ -2,7 +2,7 @@ const User = require("../../models/User")
 const Admin = require("../../models/Admin")
 const Announce = require("../../models/Announce")
 const Search = require("../../models/Search")
-const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel } = require("../../utils/database");
+const { declareVirtualField, declareEnumField, callPostCreateData, setPostCreateData, setPreprocessGet, setPreCreateData, declareFieldDependencies, declareComputedField, setFilterDataUser, idEqual, setPrePutData, getModel, callPostPutData, setPostPutData } = require("../../utils/database");
 const { addAction } = require("../../utils/studio/actions");
 const { SOURCE, EXPERIENCE, ROLES, ROLE_CUSTOMER, ROLE_FREELANCE, WORK_DURATION, COMPANY_SIZE, LEGAL_STATUS, DEACTIVATION_REASON, SUSPEND_REASON, ACTIVITY_STATE, MOBILITY, AVAILABILITY, SOFT_SKILLS, SS_PILAR, DURATION_UNIT, ANNOUNCE_MOBILITY, ANNOUNCE_STATUS, APPLICATION_STATUS, AVAILABILITY_ON, SOSYNPL_LANGUAGES, ANNOUNCE_SUGGESTION, REFUSE_REASON, QUOTATION_STATUS, APPLICATION_REFUSE_REASON, MISSION_STATUS, REPORT_STATUS, SEARCH_MODE, FREELANCE_REQUIRED_ATTRIBUTES, SOFT_SKILLS_ATTR, FREELANCE_MANDATORY_ATTRIBUTES, CUSTOMER_REQUIRED_ATTRIBUTES, APPLICATION_VISIBILITY, TARGET, APPLICATION_VISIBILITY_VISIBLE, APPLICATION_VISIBILITY_HIDDEN, APPLICATION_STATUS_ACCEPTED, APPLICATION_STATUS_REFUSED, APPLICATION_STATUS_SENT, APPLICATION_STATUS_DRAFT } = require("./consts")
 const Freelance=require('../../models/Freelance')
@@ -29,6 +29,7 @@ const Application = require("../../models/Application");
 const Question = require("../../models/Question");
 const { isEmailOk } = require("../../../utils/sms");
 const { BadRequestError } = require("../../utils/errors");
+const { crmUpsertAccount } = require("./crm");
 
 // TODO move in DB migration
 // Ensure softSkills
@@ -816,6 +817,11 @@ const preCreate = async ({model, params, user, skip_validation}) => {
 setPreCreateData(preCreate)
 
 const postCreate = async ({model, params, data, user}) => {
+
+  if (model === 'customerFreelance') {
+    await crmUpsertAccount(model, data._id)
+  }
+
   if (data.role==ROLE_CUSTOMER) {
     await sendCustomerConfirmEmail({user: data})
   }
@@ -871,6 +877,15 @@ const postCreate = async ({model, params, data, user}) => {
 }
 
 setPostCreateData(postCreate)
+
+const postPutData = async ({model, params, data, user}) => {
+  if (model === 'customerFreelance') {
+    await crmUpsertAccount(model, data._id)
+  }
+  return Promise.resolve({model, params, user})
+}
+
+setPostPutData(postPutData)
 
 const prePutData = async ({model, id, params, user}) => {
   // Check passwords

@@ -40,7 +40,8 @@ const UserSchema = new Schema({
   },
   email_valid: {
     type: Boolean,
-    required: false,
+    required: true,
+    default: false,
   },
   picture: {
     type: String,
@@ -57,6 +58,9 @@ const UserSchema = new Schema({
   address: {
     type: AddressSchema,
     required: false,
+  },
+  crm_id: {
+    type: Number,
   },
 }, {...schemaOptions})
 
