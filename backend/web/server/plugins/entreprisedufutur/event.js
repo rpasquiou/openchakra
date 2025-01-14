@@ -52,11 +52,10 @@ const getStatusNumber = (status) => {
 
 const getReservableTickets = async function (userId, params, data, fields) {
   const user = await User.findById(userId)
-  const eventTickets = await EventTicket.find({event: data._id})
-  
+  const eventTickets = await loadFromDb({model: 'eventTicket',user: userId, fields, params: {}})
   return eventTickets.filter((t) => {
-    return user ? t.targeted_roles.includes(user.role) : true
-  })
+    return ((user ? t.targeted_roles.includes(user.role) : true) && idEqual(t.event._id,data._id))
+  }).map((t) => new EventTicket(t))
 }
 
 const getBookedTickets = async function (userId, params, data, fields) {
