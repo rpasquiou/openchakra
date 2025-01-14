@@ -285,6 +285,10 @@ const EventSchema = new Schema({
     }],
     default: []
   },
+  banner_text: {
+    type, String,
+    required: false,
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
