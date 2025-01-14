@@ -392,6 +392,7 @@ USER_MODELS.forEach(m => {
     }
   })
   declareVirtualField({model: m, field: 'conversations_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'platypus', instance: 'Boolean'})
 })
 
 //Company declarations
@@ -630,9 +631,9 @@ declareVirtualField({model: 'document', field: 'type', requires: 'company', inst
 //declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
 
 //Note declarations
-declareVirtualField({model: 'note', field: 'sector', enumValues:SECTOR})
-declareVirtualField({model: 'note', field: 'type', enumValues:NOTE_TYPES})
-declareVirtualField({model: 'note', field: 'nutriscore', enumValues:NUTRISCORE})
+declareEnumField({model: 'note', field: 'sector', enumValues:SECTOR})
+declareEnumField({model: 'note', field: 'type', enumValues:NOTE_TYPES})
+declareEnumField({model: 'note', field: 'nutriscore', enumValues:NUTRISCORE})
 
 
 
