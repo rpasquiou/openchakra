@@ -28,7 +28,8 @@ const CompanySchema = new Schema(
         ref: 'user',
         required: true,
       }],
-      required: false
+      required: true,
+      default: [],
     },
     sector: {
       type: String,
