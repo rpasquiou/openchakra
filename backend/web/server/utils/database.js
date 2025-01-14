@@ -1134,7 +1134,7 @@ const createSearchFilter = ({attributes}) => {
   return value => {
     const re=new RegExp(value, 'i')
     const filter=({$or:attributes.map(f => ({[f]: re}))})
-    console.log('CReated filter for value', value, filter)
+    console.log('Created filter for value', value, filter)
     return filter
   }
 }
