@@ -392,6 +392,7 @@ USER_MODELS.forEach(m => {
     }
   })
   declareVirtualField({model: m, field: 'conversations_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'platypus', instance: 'Boolean'})
 })
 
 //Company declarations
