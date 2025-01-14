@@ -1,10 +1,10 @@
 const { addAction, setAllowActionFn } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
-const { idEqual, getModel } = require('../../utils/database')
+const { idEqual, getModel, loadFromDb } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG, ROLE_PARTNER, NOTE_TYPE_BEGINNER_DIAG, NOTE_TYPE_MEDIUM_DIAG, NOTE_TYPE_EXPERT_DIAG } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG, ROLE_PARTNER, NOTE_TYPE_BEGINNER_DIAG, NOTE_TYPE_MEDIUM_DIAG, NOTE_TYPE_EXPERT_DIAG, ERR_IMPORT_DENIED, ROLE_ADMIN } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
@@ -223,6 +223,27 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     const userComp = user.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
     if (!idEqual(receiverComp, userComp)) {
       throw new ForbiddenError(`Vous ne pouvez parler à quelqu'un qui n'a pas le même partenaire que vous`)
+    }
+  }
+
+  if (action=='import_model_data') {
+    const company=await Company.findOne({_id: user.company, administrators: user})
+    if (!company?.customer_id) {
+      throw new Error(ERR_IMPORT_DENIED)
+    }
+  }
+
+  if (['register', 'import_model_data'].includes(action)) {
+    if (user.role!=ROLE_ADMIN) {
+      // For import action, allow 'user' model only
+      if (action=='import_model_data' && rest?.actionProps?.model!='user') {
+        throw new Error(`Import modèle ${model} impossible`)
+      }
+      // Allow for company admins with registered companies only
+      const [loaded]=await loadFromDb({model: 'user', id: user._id, fields: ['is_company_admin', 'company.customer_id']})
+      if (!(loaded.is_company_admin && !!loaded.company.customer_id)) {
+        throw new Error(ERR_IMPORT_DENIED)
+      }
     }
   }
 

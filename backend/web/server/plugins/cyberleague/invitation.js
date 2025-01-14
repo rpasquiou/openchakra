@@ -53,7 +53,7 @@ async function fetchData(endpoint) {
 }
 
 // Call visitiv API to create an invitation
-const createAccount = async user => {
+const createAccount = async (user, customerId) => {
   const body={
     email: user.email,
     firstname: user.firstname,
@@ -72,6 +72,7 @@ const createAccount = async user => {
     // TODO: role ?
     // role: "'admin' | 'manager' | null",
     // function: "Product Owner"
+    customerId,
   }
   try {
     const token = await getAccessToken();

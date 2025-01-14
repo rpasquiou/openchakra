@@ -7,6 +7,8 @@ const { parse } = require('dotenv')
 const { CompleteMultipartUploadRequestFilterSensitiveLog } = require('@aws-sdk/client-s3')
 const { createAccount } = require('./invitation')
 const { sendInvitation } = require('./mailing')
+const Company = require('../../models/Company')
+const { ERR_IMPORT_DENIED, STATUT_MEMBER, ROLE_PARTNER, ROLE_MEMBER } = require('./consts')
 
 const getLooking = async function () {
   const looking = await loadFromDb({model: 'user', fields: ['looking_for_opportunities']})
@@ -18,6 +20,10 @@ const getLooking = async function () {
 }
 
 const inviteUsers =  async (data, user) => {
+  const company=await Company.findById(user.company)
+  if (!company?.customer_id) {
+    return [ERR_IMPORT_DENIED]
+  }
   const REQUIRED_FIELDS=['firstname', 'lastname', 'email']
   const formatted=await extractData(data)
   const missing=lodash(REQUIRED_FIELDS).difference(formatted.headers)
@@ -26,33 +32,33 @@ const inviteUsers =  async (data, user) => {
   }
   const {records}=formatted
   const importResult=await Promise.allSettled(records.map(async record => {
-    // Essayer d'enregistrer le user
-    if (Object.values(record).every(l => !l.trim())) {
-      return `Ligne vide`
-    }
-    // TODO: check constraints (i.e. attributes can not be modified)
+    // Skip existing users
     const userExists=await User.exists({email: record.email})
-    const user=await User.findOneAndUpdate(
-      {email: record.email},
-      {email: record.email, firstname: record.firstname, lastname: record.lastname},
-      {upsert: true, new: true, runValidators: true},
-    )
-    console.log('Upserting user', record, user)
-    // User did not exists => send visiativ invitation
-    if (!userExists) {
-      await createAccount(user)
-        .then(async response => {
-          await User.findOneAndUpdate({email: user.email}, {guid: response.guid })
-          console.log('Response', response)
-          sendInvitation({user, url: response.magicLink})
-        })
-        .catch(err => console.error(`Err à l'invitation:${JSON.stringify(err)}`))
+    if (userExists) {
+      return `Compte ${record.email} déjà existant`
     }
-    return `${record.email} ${userExists ? 'mis à jour' : 'créé'}`
+    if (!record.email?.trim() || !record.firstname?.trim() || !record.lastname?.trim()) {
+      return `Email, prénom et nom sont obligatoires`
+    }
+    const isInternal=record.member=='1'
+    const isSponsored=record.sponsored=='1'
+    if (!(isInternal != isSponsored)) {
+      return `le compte doit être un collaborateur ou être sponsorisé`
+    }
+    // I'm a partner if
+    const role=isInternal && company.statut!=STATUT_MEMBER ? ROLE_PARTNER : ROLE_MEMBER
+    const account=await User.insert({
+        email: record.email, firstname: record.firstname, lastname: record.lastname,
+        company: isInternal ? company : undefined, company_sponsorship: company,
+        role,
+    })
+    const invitation=await createAccount(account, company.customer_id)
+    account.guid=invitation.guid
+    await account.save()
+    await sendInvitation({user, url: response.magicLink})
   }))
   const result=lodash.zip(importResult, records)
     .map(([r, record], idx) => {
-      // console.log(r.status, record, r.status=='rejected' ? parseError(r.reason): r.value)
       if (r.status=='fulfilled') {
         return `Ligne ${idx+1}: ${r.value}`
       }
@@ -65,7 +71,11 @@ const getUserImportTemplate = (model, user) => {
   return {
     mimeType: 'text/csv',
     filename: 'Modèle invitations.csv',
-    data: [`firstname;lastname;email`,`Gérard;Moulins;unknown@unknown.com`].join('\n')
+    data: [
+      `firstname;lastname;email;member;sponsored`,
+      `Gérard;Moulins;gerard.moulins@unknown.com;1;0`,
+      `François;Martin;f.martin@unknown.com;0;1`,
+    ].join('\n')
   }
 }
 
