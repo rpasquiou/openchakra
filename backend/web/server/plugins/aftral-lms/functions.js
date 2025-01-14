@@ -740,7 +740,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
     id = undefined
   }
 
-  if (model == `ticket` && ![ROLE_CONCEPTEUR, ROLE_HELPDESK].includes(user.role)) {
+  if (model == `ticket` && user.role==ROLE_APPRENANT) {
     params[`filter.user`] = user._id
   }
 
