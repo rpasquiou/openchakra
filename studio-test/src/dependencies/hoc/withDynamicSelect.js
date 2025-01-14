@@ -15,10 +15,6 @@ const withDynamicSelect = Component => {
       value?._id || value
     const [internalValue, setInternalValue]=useState(value)
 
-    // EDF Hack: update value from backend
-    if (value!=internalValue) {
-      setInternalValue(value)
-    }
     setComponentValue(props.id, internalValue)
     if (props.setComponentAttribute) {
       props.setComponentAttribute(props.id, props.attribute)
