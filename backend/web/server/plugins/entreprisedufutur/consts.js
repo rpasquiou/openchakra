@@ -412,7 +412,6 @@ const REQUIRED_COMPLETION_FIELDS = {
 
 const OPTIONAL_COMPLETION_FIELDS = {
   city: 'Ville',
-  school: 'Ecole',
   picture: 'Photo de profil'
 }
 
