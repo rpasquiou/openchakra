@@ -94,7 +94,7 @@ const getWaitingTickets = async function (userId, params, data, fields) {
 }
 
 const getIsRegistered = async function (userId, params, data,fields) {
-  const registeredUsers = await getStatus('registered')(userId, params, data, fields)
+  const registeredUsers = await getStatus('registered')(userId, {}, data, fields)
   return registeredUsers.some(user => idEqual(user._id, userId))
 }
 
