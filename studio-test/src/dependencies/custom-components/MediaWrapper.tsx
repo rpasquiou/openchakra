@@ -126,27 +126,62 @@ export const mediaWrapper = ({
     case 'webm':
       return (
         <>
-        <video
-          width={doc.width}
-          controls
-          preload="none"
-          poster="images/videocover.png"
-        >
-          <source src={src} type={`video/${ext}`} />
-        </video>
-        <Comp />
+          <video
+            width={doc.width}
+            controls
+            preload="none"
+            poster="images/videocover.png"
+          >
+            <source src={src} type={`video/${ext}`} />
+          </video>
+          <Comp />
         </>
       )
     case 'pdf':
-      return (
-        <><object
-          type="application/pdf"
-          data={src}
-          role={'document'}
-          width={doc.width}
-          height={doc.height}
-        ></object>
-        <Comp />
+      const isMobile = /Mobi|Android/i.test(navigator.userAgent)
+
+      return isMobile ? (
+        <>
+          <iframe
+            src={src}
+            style={{
+              width: '100%',
+              height: '100vh',
+              border: 'none',
+            }}
+            title="PDF document"
+          ></iframe>
+          <Comp />
+        </>
+      ) : (
+        <>
+          <div
+            style={{
+              width: doc.width,
+              height: doc.height,
+              overflow: 'auto',
+            }}
+          >
+            <object
+              type="application/pdf"
+              data={src}
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+              aria-label="PDF document"
+            >
+              <p>
+                Votre navigateur ne supporte pas l'affichage des PDF. Vous
+                pouvez le{' '}
+                <a href={src} download>
+                  télécharger ici
+                </a>
+                .
+              </p>
+            </object>
+          </div>
+          <Comp />
         </>
       )
     case 'doc':
@@ -157,58 +192,55 @@ export const mediaWrapper = ({
     case 'pptx':
     case 'pps':
     case 'ppsx':
-            return (
+      return (
         <>
-        <iframe
-          title={src}
-          src={`https://view.officeapps.live.com/op/embed.aspx?src=${src}`}
-          width={doc.width}
-          height={doc.height}
-          frameBorder="0"
-          allowFullScreen
-        ></iframe>
-        <Comp />
+          <iframe
+            title={src}
+            src={`https://view.officeapps.live.com/op/embed.aspx?src=${src}`}
+            width={doc.width}
+            height={doc.height}
+            frameBorder="0"
+            allowFullScreen
+          ></iframe>
+          <Comp />
         </>
       )
     case 'txt':
     case 'html':
       return (
         <>
-        <iframe
-          style={
-            {
+          <iframe
+            style={{
               height: 'inherit',
               width: 'inherit',
               minHeight: 'inherit',
               minWidth: 'inherit',
               borderRadius: 'inherit',
-            }
-          }
-          loading="lazy"
-          title={src}
-          src={src}
-          width={htmlWidth}
-          height={htmlHeight}
-          allow={visio? "camera *;microphone *" : ''}
-          allowFullScreen
-        ></iframe>
-        <Comp />
+            }}
+            loading="lazy"
+            title={src}
+            src={src}
+            width={htmlWidth}
+            height={htmlHeight}
+            allow={visio ? 'camera *;microphone *' : ''}
+            allowFullScreen
+          ></iframe>
+          <Comp />
         </>
-
       )
     default:
       const srcSet = imageSrcSetPaths(src)
       return (
         <>
-        <img
-          loading="lazy"
-          src={src}  
-          width={doc.width}
-          height={doc.height}
-          alt=""
-          srcSet={(srcSet && srcSet.join(', ')) || ''}
-        />
-        <Comp />
+          <img
+            loading="lazy"
+            src={src}
+            width={doc.width}
+            height={doc.height}
+            alt=""
+            srcSet={(srcSet && srcSet.join(', ')) || ''}
+          />
+          <Comp />
         </>
       )
   }
