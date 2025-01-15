@@ -349,6 +349,8 @@ EventSchema.virtual('price_range', DUMMY_REF).get(function () {
   return `${minPrice}€ - ${maxPrice}€`
 })
 
+EventSchema.virtual('search_text',DUMMY_REF)
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = EventSchema

@@ -535,6 +535,9 @@ declareVirtualField({model: 'event', field: 'attachments', multiple: true, insta
   }
 })
 declareComputedField({model: 'event', field: 'allergies', getterFn: getAllergies})
+declareVirtualField({ model: 'event', field: 'search_text', instance: 'String', requires: EVENT_SEARCH_TEXT_FIELDS,
+  dbFilter: createSearchFilter({attributes: EVENT_SEARCH_TEXT_FIELDS.split(',')}),
+})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
