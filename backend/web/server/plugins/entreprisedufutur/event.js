@@ -123,4 +123,5 @@ module.exports = {
   getBookedTickets,
   getWaitingTickets,
   getAllergies,
+  getUserTicketsInProgress,
 }
