@@ -46,16 +46,36 @@ const exportModel = async model => {
   const collectionName=model.collection.collectionName
   const modelName=model.modelName
   console.log(`Exporting ${modelName}/${collectionName}`)
+  // Format date attributes
+  const dateAttributes=lodash(model.schema.paths).values().filter(att => att.instance=='Date').map('path').value()
+  // Array attributes
+  const arrayAttributes=lodash(model.schema.paths).values().filter(att => att.instance=='Array').map('path').value()
+  console.log(`${modelName} date:${dateAttributes} arrays:${arrayAttributes}`)
   let data=await model.collection.find({}).toArray()
+  console.log('Loaded', data.length)
   // Set same keys to each record
   const allKeys=lodash(data).map(d => Object.keys(d)).flatten().uniq().map(k => [k, undefined]).fromPairs().value()
   data=data.map(d => ({...allKeys, ...d}))
-  // Format date attributes
-  const dateAttributes=lodash(model.schema.paths).values().filter(att => att.instance=='Date').map('path').value()
   if (dateAttributes.length>0) {
     data=data.map(d => lodash.mapValues(d, (v, k) => dateAttributes.includes(k) && !!v ? moment(v).format('YYYY-MM-DD HH:mm:ss') : v))
   }
-  addData(collectionName, data)
+  const nonArrayData=data.map(d => lodash.omit(d, arrayAttributes))
+  addData(collectionName, nonArrayData)
+  arrayAttributes.forEach(arrayAttribute => {
+    console.log('Generating for', arrayAttribute)
+    const attData=[]
+    data
+      .filter(d => d[arrayAttribute]?.length>0)
+      .forEach(d => {
+        d[arrayAttribute].forEach(value => {
+          attData.push({_id: d._id, [arrayAttribute.replace(/s$/, '')]: value})
+        })
+      })
+    console.log('Generating for', arrayAttribute, ':', attData.length)
+    if (attData.length>0) {
+      addData(`${collectionName}_${arrayAttribute}`, attData)
+    }
+  })
 }
 
 const isDerivedModel = (model, models) => {
@@ -67,8 +87,10 @@ const exportDatabase = async (destinationDirectory) => {
     console.log('Connected to', getDatabaseUri())
     const models=Object.values(mongoose.models)
     let baseModels=models.filter(m => !isDerivedModel(m, models))
+    // TEST
+    baseModels=baseModels.filter(m => /userquizzques/i.test(m.modelName))
+    // END TEST
     baseModels=lodash.sortBy(baseModels, m => m.modelName)
-    baseModels=baseModels.filter(m => m.modelName!='userQuizzQuestion')
     console.log('Exporting models', baseModels.map(m => m.modelName))
     const res=await runPromisesWithDelay(baseModels.map(model => () => exportModel(model)))
     const errors=res.filter(r=> r.status=='rejected').map(r => r.reason)
@@ -88,7 +110,7 @@ const exportDatabase = async (destinationDirectory) => {
 const destinationDir=process.argv[2]
 
 if (!destinationDir) {
-  console.error(`Usage: ${process.argv.join(' ')} <destination_directory`)
+  console.error(`Usage: ${process.argv.join(' ')} <destination_directory>`)
   process.exit(1)
 }
 
