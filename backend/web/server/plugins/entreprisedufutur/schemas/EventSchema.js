@@ -293,6 +293,16 @@ const EventSchema = new Schema({
     type: String,
     required: false,
   },
+  user_tickets_inprogress: {
+    //computed
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'userTicket',
+      required: true,
+    }],
+    required: false,
+    default: [],
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
