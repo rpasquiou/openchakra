@@ -4,7 +4,7 @@ const lodash=require('lodash')
 const moment=require('moment')
 const ExcelJS = require('exceljs')
 const {JSON_TYPE, TEXT_TYPE, XL_TYPE, CREATED_AT_ATTRIBUTE} = require('./consts')
-const {bufferToString} = require('./text')
+const {bufferToString, guessDelimiter} = require('./text')
 const mongoose=require('mongoose')
 const { runPromisesWithDelay } = require('../server/utils/concurrency')
 const NodeCache = require('node-cache')
@@ -100,11 +100,17 @@ const extractXls=(bufferData, options) => {
     })
 }
 
-const extractData = (bufferData, options) => {
+const extractData = async (bufferData, options={}) => {
   const EXTRACTS={
     [XL_TYPE]: extractXls,
     [JSON_TYPE]: extractJSON,
     [TEXT_TYPE]: extractCsv,
+  }
+  if (!options?.format) {
+    options.format=await guessFileType(bufferData)
+    if (options.format==TEXT_TYPE){
+      options.delimiter=guessDelimiter(bufferData)
+    }
   }
   if (!Object.keys(EXTRACTS).includes(options?.format)) {
     return Promise.reject(`Null or invalid options.format:${options?.format}`)

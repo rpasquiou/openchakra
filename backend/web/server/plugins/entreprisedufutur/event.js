@@ -2,7 +2,7 @@ const UserTicket = require('../../models/UserTicket')
 const EventTicket = require('../../models/EventTicket')
 const User = require('../../models/User')
 const { USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST } = require('./consts')
-const { loadFromDb } = require('../../utils/database')
+const { loadFromDb, idEqual } = require('../../utils/database')
 
 const getStatus = (status) => {
   let statusFilter = {}
@@ -34,20 +34,28 @@ const getStatus = (status) => {
   }
 }
 
-const getRegisteredNumber = async function (userId, params, data,fields) {
-  const eventTickets = await EventTicket.find({event: data._id})
-  const eventTicketIds = eventTickets.map(ticket => ticket._id)
-  const userTickets = await UserTicket.find({event_ticket: {$in: eventTicketIds}, status: {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}})
-  return userTickets.map(ticket=> ticket.user).length
+const getStatusNumber = (status) => {
+  let statusFilter = {}
+  if (status == 'registered') {
+    statusFilter = {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED]}
+  }
+  if (status == 'waiting') {
+    statusFilter = USERTICKET_STATUS_WAITING_LIST
+  }
+  return async function (userId, params, data,fields) {
+    const eventTickets = await EventTicket.find({event: data._id})
+    const eventTicketIds = eventTickets.map(ticket => ticket._id)
+    const userTickets = await UserTicket.find({event_ticket: {$in: eventTicketIds}, status: statusFilter})
+    return userTickets.map(ticket=> ticket.user).length
+  }
 }
 
 const getReservableTickets = async function (userId, params, data, fields) {
   const user = await User.findById(userId)
-  const eventTickets = await EventTicket.find({event: data._id}).populate('quantity_registered')
-  
+  const eventTickets = await loadFromDb({model: 'eventTicket',user: userId, fields, params: {}})
   return eventTickets.filter((t) => {
-    return t.targeted_roles.includes(user.role)
-  })
+    return ((user ? t.targeted_roles.includes(user.role) : true) && idEqual(t.event._id,data._id))
+  }).map((t) => new EventTicket(t))
 }
 
 const getBookedTickets = async function (userId, params, data, fields) {
@@ -85,15 +93,21 @@ const getWaitingTickets = async function (userId, params, data, fields) {
 }
 
 const getIsRegistered = async function (userId, params, data,fields) {
+  const registeredUsers = await getStatus('registered')(userId, {}, data, fields)
+  return registeredUsers.some(user => idEqual(user._id, userId))
+}
+
+const getAllergies = async function (userId, params, data,fields) {
   const registeredUsers = await getStatus('registered')(userId, params, data, fields)
-  return registeredUsers.some(user => user._id.toString() === userId.toString())
+  return registeredUsers.filter(u => u.is_allergic).map(u => u.allergy)
 }
 
 module.exports = {
   getStatus,
-  getRegisteredNumber,
+  getStatusNumber,
   getReservableTickets,
   getIsRegistered,
   getBookedTickets,
   getWaitingTickets,
+  getAllergies,
 }

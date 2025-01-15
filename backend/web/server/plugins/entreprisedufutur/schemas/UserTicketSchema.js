@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const {schemaOptions} = require('../../../utils/schemas')
-const { USERTICKET_STATUSES } = require('../consts')
+const { USERTICKET_STATUSES, IS_SPEAKER_NO, IS_SPEAKER } = require('../consts')
 
 const Schema = mongoose.Schema
 
@@ -37,6 +37,12 @@ const UserTicketSchema = new Schema({
     required: true,
     default: false,
   },
+  is_speaker: {
+    type: String,
+    enum: Object.keys(IS_SPEAKER),
+    required: true,
+    default: IS_SPEAKER_NO
+  }
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */

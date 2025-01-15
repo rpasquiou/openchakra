@@ -347,10 +347,9 @@ export const ACTIONS = {
       }))
   },
 
-  logout: () => {
+  logout: async () => {
     clearToken()
     window.location='/'
-    return Promise.resolve()
   },
 
   // From https://developer.withings.com/sdk/v2/tree/sdk-webviews/device-setup-webview
@@ -400,6 +399,7 @@ export const ACTIONS = {
     let url = `${API_ROOT}/action`
     const body = {
       action: 'changePassword',
+      value: value._id,
       password,
       password2,
     }
@@ -1188,6 +1188,11 @@ return Promise.allSettled(imagePromises)
   refresh: async ({reload}) => {
     reload()
   },
+
+  login_sso: async ({value}) => {
+    return window.location=`${API_ROOT}/login/sso`
+  },
+
 
   generate_tables: ({value, props, level, getComponentValue}) => {
     const nb_tables = getComponentValue(props.nb_tables, level)

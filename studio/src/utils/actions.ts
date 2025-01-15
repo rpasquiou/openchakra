@@ -105,7 +105,7 @@ export const ACTIONS: IActions = {
       password: ({ components }) =>
         components.map(p => ({ key: p.id, label: `${p.type}/${p.id}` })),
     },
-    next: ['openPage'],
+    next: ['openPage','reload'],
   },
   openPage: {
     label: 'Open page',
@@ -227,7 +227,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage', 'previous','smartdiet_start_survey','back'],
+    next: ['openPage', 'previous','smartdiet_start_survey','back','refresh','reload'],
   },
   // Mettre un warning si les composants ne sont pas dans le même flex
   registerToEvent: {
@@ -301,7 +301,7 @@ export const ACTIONS: IActions = {
 
       ]})),
     },
-    next: ['openPage'],
+    next: ['openPage','reload'],
   },
 
   reset_soft_skills: {
@@ -771,6 +771,11 @@ export const ACTIONS: IActions = {
     label: 'check_profil_completion',
     options: {},
     next: ['openPage'],
+  },
+  login_sso: {
+    label: 'Login SSO',
+    options: {},
+    next: [],
   },
   generate_tables: {
     label: 'generate tables',

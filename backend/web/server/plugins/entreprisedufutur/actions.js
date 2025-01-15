@@ -1,8 +1,12 @@
 const { addAction, setAllowActionFn, ACTIONS } = require('../../utils/studio/actions')
 const Score = require('../../models/Score')
 const lodash = require('lodash')
+const moment = require('moment')
+const ResetToken = require('../../models/ResetToken')
+const { sendForgotPassword, sendResetPassword } = require('./mailing')
+const { RESET_TOKEN_VALIDITY } = require('./consts')
 const { idEqual, getModel, loadFromDb } = require('../../utils/database')
-const { NotFoundError, ForbiddenError } = require('../../utils/errors')
+const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST, ORDER_STATUS_VALIDATED, ROLE_MEMBER, ROLE_ADMIN, ROLE_SUPERADMIN } = require('./consts')
 const User = require('../../models/User')
@@ -14,7 +18,7 @@ const EventTicket = require('../../models/EventTicket')
 const OrderTicket = require('../../models/OrderTicket')
 const Order = require('../../models/Order')
 const UserTicket = require('../../models/UserTicket')
-const { generatePassword } = require('../../../utils/passwords')
+const { generatePassword, validatePassword } = require('../../../utils/passwords')
 
 //TODO take scoreLevel into account
 const startSurvey = async (_, user) => {
@@ -54,6 +58,43 @@ const startSurvey3 = async (_, user) => {
 }
 //TODO remove once start_survey take scorelevel into account
 addAction('smartdiet_start_survey_3', startSurvey3)
+
+const forgotPasswordAction = async ({ context, parent, email }) => {
+  return User.findOne({ email })
+    .then(async user => {
+      if (!user) {
+        throw new BadRequestError(`Aucun compte n'est associé à cet email`)
+      }
+      if (user.reset_token) {
+        await ResetToken.findByIdAndDelete(user.reset_token)
+      }
+      const token = await ResetToken.create({})
+      user.reset_token = token
+      return user.save()
+        .then(user => sendResetPassword({ user, duration: RESET_TOKEN_VALIDITY, token: token.token}))
+        .then(user => `Un email a été envoyé à l'adresse ${email}`)
+    })
+}
+addAction('forgotPassword', forgotPasswordAction)
+
+const changePasswordAction = async ({value, password, password2}) => {
+  const token=await ResetToken.findById(value)
+  if (!token || moment().isAfter(token.valid_until)) {
+    console.warn(`Invalid token`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  const user=await User.findOne({reset_token: value})
+  if (!user) {
+    console.warn(`No user for`, token)
+    throw new BadRequestError(`Le token est invalide`)
+  }
+  await validatePassword({password, password2})
+  user.password=password
+  const res=user.save()
+  await ResetToken.findByIdAndDelete(user.reset_token)
+  return res
+}
+addAction('changePassword', changePasswordAction)
 
 
 //value : _id of the answered question
@@ -172,11 +213,10 @@ const generateOrder = async ({value,nb_tickets: nb_tickets_str}, user) => {
     throw new ForbiddenError(`Le nombre de billets de cette catégorie achetés par une même personne ne peut pas dépasser ${eventTicket.quantity_max_per_user}, vous en auriez acheté ${nb_tickets + boughtNumber} avec cette commande`)
   }
 
-  const status = eventTicket.remaining_tickets > 0 ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
-
   const order = await Order.create({event_ticket: value, status: ORDER_STATUS_IN_PROGRESS})
 
   for (let i = 0; i < nb_tickets; i++) {
+    const status = i < eventTicket.remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
     if (i == 0) {
       await OrderTicket.create({order: order._id, status, firstname: user.firstname, lastname: user.lastname, email: user.email})
     } else {
@@ -198,6 +238,7 @@ const validateOrder = async ({value}, user) => {
     model: 'order',
     fields: ['order_tickets.firstname', 'order_tickets.lastname', 'order_tickets.email', 'order_tickets.status','event_ticket.remaining_tickets', 'event_ticket.event','event_ticket.quantity','event_ticket.quantity_registered'],
     id: value,
+    user
   })
 
   const obj = lodash.countBy(order.order_tickets, (v)=> v.email)
@@ -298,6 +339,23 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     const model = await getModel(dataId)
     if (model == 'notification') {
       await isDeleteUserNotificationAllowed({dataId, user, ...rest})
+    } else if (lodash.includes(['attachment','eventTicket','table'],model)) {
+      if (user.role != ROLE_ADMIN && user.role != ROLE_SUPERADMIN) {
+        throw new ForbiddenError(`You must be an admin to delete ${model}`)
+      }
+      if (model == 'eventTicket') {
+        const exist = await UserTicket.exists({event_ticket: dataId})
+        if (exist) {
+          throw new ForbiddenError(`You can't delete an event ticket because someone already bought one`)
+        }
+      }
+    } else if (model == 'userTicket') {
+      if (user.role != ROLE_ADMIN && user.role != ROLE_SUPERADMIN) {
+        const uTicket = await UserTicket.findById(dataId)
+        if (!idEqual(user._id, uTicket.user)) {
+          throw new ForbiddenError(`Vous ne pouvez pas supprimer un billet qui ne vous appartient pas à moins d'être administrateur`)
+        }
+      }
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
@@ -322,7 +380,7 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
           },
         })
 
-      const existingTicket = await UserTicket.findOne({
+      const existingTicket = await UserTicket.exists({
         user: user._id,
         status: {
           $in: [USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST],
@@ -336,7 +394,6 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
         throw new ForbiddenError('Vous avez déjà un billet pour cet événement')
       }
     }
-    return true
   }
 
   return true

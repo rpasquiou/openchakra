@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const lodash = require('lodash')
+const moment = require('moment')
 const {
   declareEnumField,
   declareVirtualField,
@@ -13,8 +14,9 @@ const {
   loadFromDb,
   setPrePutData,
   setPreDeleteData,
+  createSearchFilter,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZES, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, BOOLEAN_ENUM, EVENT_AVAILABILITIES, BIOGRAPHY_STATUSES, USERTICKET_STATUSES, ACCOMODATION_TYPES, TIMEZONES, PARTNER_LEVELS, COMPANY_TURNOVERS, STATUT_MEMBER, ORDER_STATUSES, COMPANY_TYPES, USER_GENRES, COMPANY_CAPITALS, EVENT_STATUSES, EVENT_STATUS_PAST, EVENT_TARGET } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZES, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, BOOLEAN_ENUM, EVENT_AVAILABILITIES, BIOGRAPHY_STATUSES, USERTICKET_STATUSES, ACCOMODATION_TYPES, TIMEZONES, PARTNER_LEVELS, COMPANY_TURNOVERS, STATUT_MEMBER, ORDER_STATUSES, COMPANY_TYPES, USER_GENRES, COMPANY_CAPITALS, EVENT_STATUSES, EVENT_STATUS_PAST, IS_SPEAKER, ANONYMOUS_ALLOWED_MODELS, EVENT_SEARCH_TEXT_FIELDS, USER_SEARCH_TEXT_FIELDS } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -37,59 +39,148 @@ const { getLooking, getEvents } = require('./user')
 const { computeBellwetherStatistics } = require('./statistic')
 const User = require('../../models/User')
 const Tablemap = require('../../models/Tablemap')
-const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, callComputeMessage } = require('../notifications/functions')
+const { getPendingNotifications, getPendingNotificationsCount, setAllowedTypes, getSeenNotifications, getSeenNotificationsCount, setComputeUrl, setComputeMessage, setComputePicture } = require('../notifications/functions')
 const { deleteUserNotification, addNotification } = require('../notifications/actions')
 const { computeUrl: ComputeDomain } = require('../../../config/config')
 const { getTagUrl } = require('../../utils/mailing')
 const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
-const { getRegisteredNumber, getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets } = require('./event')
+const ResetToken = require('../../models/ResetToken')
+const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber, getAllergies } = require('./event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
 
-const computeUrl = ({type, targetId}) => {
+const NotificationModel = mongoose.models.notification
+
+//notif url getterFn
+const computeUrl = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
   let tagUrl
-  switch (type) {
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      tagUrl = getTagUrl('NOTIFICATION_MESSAGE')
+      tagUrl = await getTagUrl('NOTIFICATION_MESSAGE')
       break
     case NOTIFICATION_TYPE_FEED_COMMENT:
     case NOTIFICATION_TYPE_FEED_LIKE:
     case NOTIFICATION_TYPE_GROUP_COMMENT:
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      tagUrl = getTagUrl('NOTIFICATION_POST')
+      tagUrl = await getTagUrl('NOTIFICATION_POST')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      tagUrl = await getTagUrl('PRIVATE_LEAGUE')
+      break;
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      tagUrl = await getTagUrl('SCAN_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      tagUrl = await getTagUrl('DIAG_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      tagUrl = await getTagUrl('MISSION_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      tagUrl = await getTagUrl('JOB_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      tagUrl = await getTagUrl('LEAGUE_DETAILS')
+      break;
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      tagUrl = await getTagUrl('EVENT_DETAILS')
       break;
   }
 
   if (!tagUrl) {
-    throw new Error(`Unknown notification type ${type} in computeUrl`)
+    throw new Error(`Unknown notification type ${dataLoaded.type} in computeUrl`)
   }
 
-  return `${ComputeDomain(tagUrl)}?id=${targetId}`
+  return `${ComputeDomain(tagUrl)}?id=${dataLoaded._target}`
 }
 setComputeUrl(computeUrl)
 
 
-const computeMessage = ({type, user, params}) => {
-  switch (type) {
+//notif message getterFn
+const computeMessage = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+
+  const {customUserId, customGroupId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user, group
+  if (customGroupId) {
+    group = await Group.findById(customGroupId)
+  }
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
+
+  switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE:
-      return `${user.shortname} vous a envoyé un nouveau message`
+      return `${target.shortname} vous a envoyé un nouveau message` // target is a user
     case NOTIFICATION_TYPE_FEED_COMMENT:
       return `${user.shortname} a commenté une de vos publications`
     case NOTIFICATION_TYPE_FEED_LIKE:
       return `${user.shortname} a aimé une de vos publications`
     case NOTIFICATION_TYPE_GROUP_COMMENT:
-      return `${user.shortname} a commenté une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a commenté une de vos publications sur la ligue ${group.name}`
     case NOTIFICATION_TYPE_GROUP_LIKE:
-      return `${user.shortname} a aimé une de vos publications sur la ligue ${params.groupName}`
+      return `${user.shortname} a aimé une de vos publications sur la ligue ${group.name}`
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED:
+      return `Félicitation ! Votre demande de rejoindre la ligue ${target.name} a été acceptée` //target is a group
+    case NOTIFICATION_TYPE_NEW_SCAN:
+      return `${user.fullname} a effectué un scan de surface`
+    case NOTIFICATION_TYPE_NEW_DIAG:
+      return `${user.fullname} a effectué un diagnostique`
+    case NOTIFICATION_TYPE_NEW_MISSION:
+      return `${user.fullname} a effectué une demande de mission`
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+      return `${user.fullname} a répondu à votre offre d'emploi : ${target.position}` //target is a carreer
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+      return `${target.shortname} souhaite rejoindre votre ligue ${group.name}` // target is a user
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+      return `${user.shortname} s'est inscrit à votre événement ${target.name}` // target is an event
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return `${user.fullname} s'est inscrit à l'événement ${target.name}` // target is an event
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
+      return `${target.fullname} souhaite rejoindre la ligue ${group.name}` // target is a user
   }
-  throw new Error(`Unknown notification type ${type} in computeMessage`)
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computeMessage`)
 }
 setComputeMessage(computeMessage)
 
+//Notif picture getterFn
+const computePicture = async (userId, params, data) => {
+  const dataLoaded = await NotificationModel.findById(data._id)
+  const target = await mongoose.models[dataLoaded._target_type].findById(dataLoaded._target)
+  const {customUserId} = dataLoaded.custom_data ? JSON.parse(dataLoaded.custom_data) : {}
+  let user
+  if (customUserId) {
+    user = await User.findById(customUserId)
+  }
 
+  switch (dataLoaded.type) {
+    case NOTIFICATION_TYPE_MESSAGE: // target is user
+    case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
+      return target.picture
+    case NOTIFICATION_TYPE_FEED_COMMENT:
+    case NOTIFICATION_TYPE_FEED_LIKE:
+    case NOTIFICATION_TYPE_GROUP_COMMENT:
+    case NOTIFICATION_TYPE_GROUP_LIKE:
+    case NOTIFICATION_TYPE_NEW_SCAN:
+    case NOTIFICATION_TYPE_NEW_DIAG:
+    case NOTIFICATION_TYPE_NEW_MISSION:
+    case NOTIFICATION_TYPE_JOB_ANSWER:
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
+    case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+      return user.picture
+  }
+  throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
+}
+setComputePicture(computePicture)
 
 
 
@@ -248,6 +339,9 @@ USER_MODELS.forEach(m => {
   declareEnumField({model: m, field:'is_allergic', enumValues: BOOLEAN_ENUM})
   declareEnumField({model: m, field: 'genre', enumValues:USER_GENRES})
   declareComputedField({model:m, field: 'events', getterFn: getEvents})
+  declareVirtualField({ model: m, field: 'search_text', instance: 'String', requires: USER_SEARCH_TEXT_FIELDS,
+    dbFilter: createSearchFilter({attributes: USER_SEARCH_TEXT_FIELDS.split(',')}),
+  })
 })
 
 //Company declarations
@@ -400,7 +494,6 @@ declareEnumField( {model: 'expertiseCategory', field: 'value', enumValues: EXPER
 // Event declarations
 declareEnumField({model: 'event', field: 'visibility', enumValues: EVENT_VISIBILITY})
 declareEnumField({model: 'event', field: 'star_event', enumValues: BOOLEAN_ENUM})
-declareEnumField({model: 'event', field: 'target', multiple: true, enumValues: EVENT_TARGET})
 declareEnumField({model: 'event', field: 'reservable_tickets', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'meal_included', enumValues: BOOLEAN_ENUM})
 declareEnumField({model: 'event', field: 'tablemap_included', enumValues: BOOLEAN_ENUM})
@@ -428,17 +521,22 @@ declareVirtualField({model: 'event', field: 'status', requires: 'start_date', in
   dbFilter: value => {return RegExp(value).test(EVENT_STATUS_PAST) ? {start_date: {$lt: Date.now()}} : {start_date: {$gt: Date.now()}}}
 })
 declareComputedField({model: 'event', field: 'registered_users', getterFn: getStatus('registered')})
-declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getRegisteredNumber})
+declareComputedField({model: 'event', field: 'registered_users_count', getterFn: getStatusNumber('registered')})
 declareComputedField({model: 'event', field: 'available_tickets', getterFn: getReservableTickets})
 declareComputedField({model: 'event', field: 'is_registered', getterFn: getIsRegistered})
 declareComputedField({model: 'event', field: 'booked_tickets', getterFn: getBookedTickets})
 declareComputedField({model: 'event', field: 'waiting_list', getterFn: getStatus('waiting')})
+declareComputedField({model: 'event', field: 'waiting_list_count', getterFn: getStatusNumber('waiting')})
 declareComputedField({model: 'event', field: 'waiting_tickets', getterFn: getWaitingTickets})
 declareVirtualField({model: 'event', field: 'attachments', multiple: true, instance: 'Array', 
   caster: {
     instance: 'ObjectID',
     options: {ref: 'attachment'}
   }
+})
+declareComputedField({model: 'event', field: 'allergies', getterFn: getAllergies})
+declareVirtualField({ model: 'event', field: 'search_text', instance: 'String', requires: EVENT_SEARCH_TEXT_FIELDS,
+  dbFilter: createSearchFilter({attributes: EVENT_SEARCH_TEXT_FIELDS.split(',')}),
 })
 
 // Mission declaration
@@ -507,6 +605,7 @@ declareEnumField({model:'eventTicket', field: 'template', enumValues: BOOLEAN_EN
 
 //UserTicket declarations
 declareEnumField({model: 'userTicket', field: 'status', enumValues: USERTICKET_STATUSES})
+declareEnumField({model: 'userTicket', field: 'is_speaker', enumValues: IS_SPEAKER})
 
 //Offer declarations
 declareEnumField({model: 'offer', field: 'visibility', enumValues: OFFER_VISIBILITY})
@@ -520,6 +619,8 @@ declareEnumField({model: 'statistic', field: 'enoughScores', enumValues: ENOUGH_
 
 //Table declarations
 declareEnumField({model: 'table', field: 'partner_level', enumValues: PARTNER_LEVELS})
+declareVirtualField({model: 'table', field: 'assigned_users_count', instance: 'Number'})
+declareVirtualField({model: 'table', field: 'allergies', multiple: true, instance: 'Array', requires: 'guests.is_allergic, guests.allergy,staff.is_allergic,staff.allergy,assigned_users.is_allergic,assigned_users.allergy'})
 
 //Tablemap declarations
 declareVirtualField({model: 'tablemap', field: 'tables', multiple: true, instance: 'Array',
@@ -610,7 +711,21 @@ const ensureAdminDashboard = async () => {
 ensureAdminDashboard()
 
 const preprocessGet = async ({model, fields, id, user, params}) => {
+  if (model == 'resetToken') {
+    const t = await ResetToken.findOne({ token: id })
+    if (!t || moment().isAfter(t.valid_until)) {
+      console.warn(`Invalid token`, t)
+      return { data: [] }
+    }
+    id = t._id
+  }
   //console.log('preGet : model', model, 'fields', fields, 'id', id, 'user', user, 'params', params)
+
+  //If anonymous user then intersect fields with authorized fields
+  if (!user) {
+    fields = lodash.intersection(fields, ANONYMOUS_ALLOWED_MODELS[model])
+  }
+
   if (model=='loggedUser') {
     model='user'
     id = user?._id || 'INVALIDID'
@@ -627,7 +742,6 @@ const preprocessGet = async ({model, fields, id, user, params}) => {
   if (model == 'conversation') {
     if (id) {
       if(idEqual(id, user._id)) {
-        console.log(user._id, id)
         id=undefined
       }
       else{
@@ -823,10 +937,8 @@ const postCreate = async ({ model, params, data, user }) => {
       users: [params.receiver],
       targetId: user._id,
       targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MESSAGE],
-      text: callComputeMessage({type: NOTIFICATION_TYPE_MESSAGE,user}),
       type: NOTIFICATION_TYPE_MESSAGE,
       customData: null,
-      picture: user.picture
     })
   }
 
@@ -921,7 +1033,7 @@ const preDeleteData = async ({model, id, data, user}) => {
   if (model == 'notification') {
     const notification = await deleteUserNotification(id,user)
     returnedData = notification.recipients ? null : notification
-  } else {
+  } else if (!lodash.includes(['attachment','eventTicket','table','userTicket'],model)) {
     throw new ForbiddenError(`Pas de delete pour l'instant`)
   }
   return {model, id, data: returnedData, user, params: null}

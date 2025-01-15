@@ -1042,15 +1042,9 @@ const loadFromDb = ({model, fields, id, user, params={}}) => {
 }
 
 const DATA_IMPORT_FN={}
+const DATA_IMPORT_TEMPLATE_FN={}
 
 // Imports data for model. Delegated to plugins
-const importData=({model, data, user}) => {
-  if (!DATA_IMPORT_FN[model]) {
-    throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
-  }
-  return DATA_IMPORT_FN[model](data, user)
-}
-
 const setImportDataFunction = ({model, fn}) => {
   if (!model || !fn) {
     throw new Error(`Import data function: expected model and function`)
@@ -1059,6 +1053,33 @@ const setImportDataFunction = ({model, fn}) => {
     throw new Error(`Import function already exists for model ${model}`)
   }
   DATA_IMPORT_FN[model]=fn
+}
+
+const importData=({model, data, user}) => {
+  if (!DATA_IMPORT_FN[model]) {
+    console.error(`No function to import ${model}`)
+    throw new BadRequestError(`Impossible d'importer le modèle ${model}`)
+  }
+  return DATA_IMPORT_FN[model](data, user)
+}
+
+// Returns template file for import
+const setImportDataTemplateFunction = ({model, fn}) => {
+  if (!model || !fn) {
+    throw new Error(`Import template function: expected model and function`)
+  }
+  if (!!DATA_IMPORT_TEMPLATE_FN[model]) {
+    throw new Error(`Import template function already exists for model ${model}`)
+  }
+  DATA_IMPORT_TEMPLATE_FN[model]=fn
+}
+
+const importDataTemplate=({model, user}) => {
+  if (!DATA_IMPORT_TEMPLATE_FN[model]) {
+    console.error(`No function to import ${model}`)
+    throw new BadRequestError(`Pas de modèle de fichier pour ${model}`)
+  }
+  return DATA_IMPORT_TEMPLATE_FN[model](model, user)
 }
 
 const DUMMY_REF={localField: 'tagada', foreignField: 'tagada'}
@@ -1113,7 +1134,7 @@ const createSearchFilter = ({attributes}) => {
   return value => {
     const re=new RegExp(value, 'i')
     const filter=({$or:attributes.map(f => ({[f]: re}))})
-    console.log('CReated filter for value', value, filter)
+    console.log('Created filter for value', value, filter)
     return filter
   }
 }
@@ -1168,5 +1189,6 @@ module.exports = {
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
   setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter, setPreRegister, callPreRegister,
+  importDataTemplate, setImportDataTemplateFunction,
 }
 

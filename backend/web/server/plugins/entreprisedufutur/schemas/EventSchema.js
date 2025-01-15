@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const { schemaOptions } = require('../../../utils/schemas')
-const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST, EVENT_TARGET } = require('../consts')
+const { EVENT_VISIBILITY, EVENT_VISIBILITY_PUBLIC, BOOLEAN_ENUM, EVENT_AVAILABILITIES, TIMEZONES, TIMEZONE_PLUS_1, EVENT_STATUS_FUTUR, EVENT_STATUS_PAST } = require('../consts')
 const { DUMMY_REF } = require('../../../utils/database')
 const { isEmailOk, isPhoneOk } = require('../../../../utils/sms')
 const AddressSchema = require('../../../models/AddressSchema')
@@ -105,7 +105,7 @@ const EventSchema = new Schema({
     type: String,
     validate: [value => !value || isPhoneOk(value), `Le numéro de téléphone doit commencer par 0 ou +33`],
     set: v => v?.replace(/^0/, '+33'),
-    required: [true, `Le numéro de téléphone de l'organisateur est obligatoire`],
+    required: false,
   },
   banner: {
     type: String,
@@ -135,6 +135,10 @@ const EventSchema = new Schema({
       required: true,
     }],
     default: []
+  },
+  waiting_list_count: {
+    //computed
+    type: Number,
   },
   evaluations: {
     type: [{
@@ -215,14 +219,15 @@ const EventSchema = new Schema({
     required: false
   },
   target: {
-     type: String,
-     enum: Object.keys(EVENT_TARGET),
-     required: false
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'target',
+      required: true
+    }],
+    required: false,
+    default: [],
   },
   category: {
-    // type: Schema.Types.ObjectId,
-    // ref: 'eventCategory',
-    // required: false
     type: [{
       type: Schema.Types.ObjectId,
       ref: 'eventCategory',
@@ -270,6 +275,22 @@ const EventSchema = new Schema({
   is_registered: {
     //computed
     type: Boolean,
+    required: false,
+  },
+  allergies: {
+    //computed
+    type: [{
+      type: String,
+      required: true,
+    }],
+    default: []
+  },
+  banner_text: {
+    type: String,
+    required: false,
+  },
+  banner_target: {
+    type: String,
     required: false,
   },
 }, schemaOptions)
@@ -327,6 +348,8 @@ EventSchema.virtual('price_range', DUMMY_REF).get(function () {
 
   return `${minPrice}€ - ${maxPrice}€`
 })
+
+EventSchema.virtual('search_text',DUMMY_REF)
 
 /* eslint-enable prefer-arrow-callback */
 

@@ -4,6 +4,7 @@ import { ACTIONS } from '../utils/actions'
 import {Select} from 'chakra-react-select'
 
 const withDynamicSelect = Component => {
+
   const Internal = ({noautosave, dataSource, subDataSource, subAttribute, subAttributeDisplay, setComponentValue, isSearchable, isMulti, ...props}) => {
 
     let values = props.dataSourceId ? dataSource: null
@@ -83,6 +84,10 @@ const withDynamicSelect = Component => {
           .then(() => props.reload())
           .catch(err => console.error(err))
       }
+    }
+
+    if(props.attribute=='company.turnover') {
+      console.log('Value:', value, ', internal value', internalValue)
     }
 
     const chakraStyles={

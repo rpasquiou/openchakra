@@ -200,6 +200,15 @@ const UserSchema = new Schema({
     }],
     default: []
   },
+  // Provided by Visiativ on logging or account creation
+  guid: {
+    type: String,
+  },
+  // Keep track of logins
+  last_login: {
+    type: Date,
+    required: false,
+  }
   }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */

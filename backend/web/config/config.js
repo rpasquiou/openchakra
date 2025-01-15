@@ -112,7 +112,9 @@ const getHostName = () => {
 }
 
 const computeUrl = _path => {
-  return `https://${getHostName()}${_path}`
+  console.log(process.env.FRONTEND_APP_PORT, _path)
+  const port=isDevelopment() ? `:${process.env.FRONTEND_APP_PORT}`: ''
+  return `https://${getHostName()}${port}${_path}`
 }
 
 const getPort = () => {

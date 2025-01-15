@@ -209,6 +209,11 @@ const UserSchema = new Schema({
     required: true,
     default: false,
   },
+  reset_token: {
+    type: Schema.Types.ObjectId,
+    ref: 'resetToken',
+    required: false,
+  },
 }, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
@@ -405,6 +410,8 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
 
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
+
+UserSchema.virtual('search_text',DUMMY_REF)
 
 /* eslint-enable prefer-arrow-callback */
 
