@@ -102,6 +102,19 @@ const getAllergies = async function (userId, params, data,fields) {
   return registeredUsers.filter(u => u.is_allergic).map(u => u.allergy)
 }
 
+const getUserTicketsInProgress = async function (userId, params, data,fields) {
+  const eventTickets = await EventTicket.find({event: data._id})
+  const userTickets = await loadFromDb({
+    model: 'userTicket',
+    user: userId,
+    fields: fields,
+    params: {
+      'filter.event_ticket': {$in: eventTickets.map((et)=> et._id)},
+      'filter.status': {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED,USERTICKET_STATUS_WAITING_LIST]}
+    }
+  })
+}
+
 module.exports = {
   getStatus,
   getStatusNumber,
