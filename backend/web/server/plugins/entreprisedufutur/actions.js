@@ -349,6 +349,8 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
           throw new ForbiddenError(`You can't delete an event ticket because someone already bought one`)
         }
       }
+    } else if (model == 'userTicket') {
+      
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
