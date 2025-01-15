@@ -69,6 +69,10 @@ export const mediaWrapper = ({
         if (!pdfContainer.current) return;
   
         const pdf = await pdfjsLib.getDocument(src).promise;
+
+        // Vérifie de nouveau au cas où le composant aurait été démonté pendant le chargement
+        if (!pdfContainer.current) return;
+
         pdfContainer.current.innerHTML = ''; // Réinitialise le conteneur
   
         // Rendre chaque page du PDF
