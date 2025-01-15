@@ -411,6 +411,8 @@ UserSchema.virtual('missing_attributes', DUMMY_REF).get(function() {
   return `Information${s} manquante${s} : ` + missingFields.map((e)=> {return e[2]}).join(`, `)
 })
 
+UserSchema.virtual('search_text',DUMMY_REF)
+
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema
