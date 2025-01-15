@@ -350,7 +350,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
         }
       }
     } else if (model == 'userTicket') {
-      
+      if (user.role != ROLE_ADMIN && user.role != ROLE_SUPERADMIN) {
+        const uTicket = await UserTicket.findById(dataId)
+        if (!idEqual(user._id, uTicket.user)) {
+          throw new ForbiddenError(`Vous ne pouvez pas supprimer un billet qui ne vous appartient pas à moins d'être administrateur`)
+        }
+      }
     } else {
       throw new ForbiddenError(`Deleting is forbidden for model ${model}`)
     }
