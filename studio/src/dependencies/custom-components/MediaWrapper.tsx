@@ -1,22 +1,18 @@
-import React from 'react'
-import {IconButton} from '@chakra-ui/react'
-import { DownloadIcon } from '@chakra-ui/icons'
-import { imageSrcSetPaths } from '../utils/misc'
-import '../utils/scorm'
+import React, { useEffect, useRef } from 'react';
+import { IconButton } from '@chakra-ui/react';
+import { DownloadIcon } from '@chakra-ui/icons';
+import { imageSrcSetPaths } from '../utils/misc';
+import '../utils/scorm';
+import * as pdfjsLib from 'pdfjs-dist';
+import 'pdfjs-dist/web/pdf_viewer.css';
 
-/** TODO NGINX rewrite
-https://my-alfred-data-test.s3.eu-west-3.amazonaws.com/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
-
-==> 
-
-/SCORM/aftral-lms/prod/8ea1fa94-XXXXX-les/lms/blank.html
-
-*/
+// Configure le chemin du worker PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
 
 const PATTERN = new RegExp(`${process.env.S3_BUCKET}.s3.${process.env.S3_REGION}`);
 
 export const getExtension = (filename: string) =>
-  filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename
+  filename.substring(filename.lastIndexOf('.') + 1, filename.length) || filename;
 
 export const mediaWrapper = ({
   src,
@@ -26,99 +22,133 @@ export const mediaWrapper = ({
   visio,
   downloadable,
 }: {
-  src: string
-  htmlHeight?: string
-  htmlWidth?: string
-  isIframe?: boolean
-  visio?: boolean
-  downloadable?: boolean
+  src: string;
+  htmlHeight?: string;
+  htmlWidth?: string;
+  isIframe?: boolean;
+  visio?: boolean;
+  downloadable?: boolean;
 }) => {
-
-  /* TODO assign type to htmlWidth, htmlHeight */
   const doc = {
     width: htmlWidth || '100%',
     height: htmlHeight || '100%',
-  }
-
-  const forceExt = (src: string, isIframe:boolean) => {
-     if (isIframe || isVideoProvider(src)) {
-      return 'html'
-     }
-     return false
-  }
+  };
 
   const isVideoProvider = (src: string) => {
-    /* Detect YouTube and Vimeo url videos */
-    const regex = /(http:|https:|)\/\/(player.|www.|meet.)?(jit\.si|vimeo\.com|youtu(be\.com|\.be|be\.googleapis\.com))\/(video\/|embed\/|watch\?v=|v\/)?([A-Za-z0-9._%-]*)(\&\S+)?/g
-    return regex.test(src)
-  }
-  function forceDownload(blob:any, filename:any) {
-    var a = document.createElement('a');
-    a.download = filename;
-    a.href = blob;
-    // For Firefox https://stackoverflow.com/a/32226068
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
+    const regex = /(http:|https:|)\/\/(player.|www.|meet.)?(jit\.si|vimeo\.com|youtu(be\.com|\.be|be\.googleapis\.com))\/(video\/|embed\/|watch\?v=|v\/)?([A-Za-z0-9._%-]*)(\&\S+)?/g;
+    return regex.test(src);
+  };
 
-  // Current blob size limit is around 500MB for browsers
-  function downloadResource(url:string|undefined) {
-    if (!url) { return}
-    const filename = url?.split('\\')?.pop()?.split('/')?.pop();
-    fetch(url,{
+  const downloadResource = (url: string | undefined) => {
+    if (!url) return;
+    const filename = url.split('\\').pop()?.split('/').pop();
+    fetch(url, {
       headers: new Headers({
-        'Origin': document.location.origin
+        Origin: document.location.origin,
       }),
-      mode: 'cors'
+      mode: 'cors',
     })
-      .then(response => response.blob())
-      .then(blob => {
-        let blobUrl = window.URL.createObjectURL(blob);
-        forceDownload(blobUrl, filename);
+      .then((response) => response.blob())
+      .then((blob) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = filename || 'download';
+        a.href = blobUrl;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       })
-      .catch(e => console.error(e));
-  }
+      .catch((e) => console.error(e));
+  };
+
+  const PDFViewer = ({ src }: { src: string }) => {
+    const pdfContainer = useRef<HTMLDivElement | null>(null);
+  
+    useEffect(() => {
+      const loadPDF = async () => {
+        if (!pdfContainer.current) return;
+  
+        const pdf = await pdfjsLib.getDocument(src).promise;
+        pdfContainer.current.innerHTML = ''; // Réinitialise le conteneur
+  
+        // Rendre chaque page du PDF
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+  
+          // Adapte la taille au conteneur parent
+          const containerWidth = pdfContainer.current.clientWidth;
+          const viewport = page.getViewport({ scale: containerWidth / page.getViewport({ scale: 1 }).width });
+  
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          canvas.style.maxWidth = '100%'; // Pour que chaque page soit responsif
+          canvas.style.height = 'auto';
+  
+          if (context) {
+            const renderContext = {
+              canvasContext: context,
+              viewport: viewport,
+            };
+            await page.render(renderContext).promise;
+  
+            if (pdfContainer.current) {
+              pdfContainer.current.appendChild(canvas);
+            }
+          }
+        }
+      };
+  
+      loadPDF();
+    }, [src]);
+  
+    return (
+      <div
+        ref={pdfContainer}
+        style={{
+          overflowY: 'auto',
+          height: '100vh',
+          width: '100%',
+          background: '#f5f5f5',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      />
+    );
+  };
 
   const Comp = () =>
-    downloadable &&
-      (
-      <div style={{display:'flex', justifyContent:'center'}} ><IconButton
-        aria-label='download'
-        icon={<DownloadIcon />}
-        onClick={() => downloadResource(src||undefined)}
-      /></div>) || (null)
+    downloadable && (
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <IconButton
+          aria-label="download"
+          icon={<DownloadIcon />}
+          onClick={() => downloadResource(src || undefined)}
+        />
+      </div>
+    );
 
-  const orgExt=getExtension(src.toLowerCase())
-  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)  ? orgExt : forceExt(src?.toLowerCase(), isIframe)
-  // TODO: must handle actual src with LMS system
-  if (ext=='html') {
-    const parsedUrl = new URL(src)
-    // Embed youtube
+  const orgExt = getExtension(src.toLowerCase());
+  const ext = ['doc', 'docx', 'xls', 'xlsx', 'pps', 'ppsx', 'ppt', 'pptx', 'html', 'csv', 'pdf', 'mp4', 'webm'].includes(orgExt)
+    ? orgExt
+    : isIframe || isVideoProvider(src)
+    ? 'html'
+    : false;
+
+  if (ext === 'html') {
+    const parsedUrl = new URL(src);
     if (/youtube.com/.test(parsedUrl.hostname)) {
-      const videoId=parsedUrl.searchParams.get('v')
-      src=`https://www.youtube.com/embed/${videoId}`
+      const videoId = parsedUrl.searchParams.get('v');
+      src = `https://www.youtube.com/embed/${videoId}`;
+    } else if (/vimeo\.com/.test(parsedUrl.hostname) && !/player\.vimeo\.com/.test(parsedUrl.hostname)) {
+      const parts = parsedUrl.pathname.match(/[^/]+/g);
+      src = `https://player.vimeo.com/video/${parts[0]}?h=${parts[1]}`;
+    } else if (PATTERN.test(parsedUrl.hostname)) {
+      const scormId = parsedUrl.pathname;
+      src = `/SCORM${scormId}`;
     }
-    // Embed video
-    else if (/vimeo\.com/.test(parsedUrl.hostname) && !/player\.vimeo\.com/.test(parsedUrl.hostname)) {
-      const parts=parsedUrl.pathname.match(/[^/]+/g)
-      src=`https://player.vimeo.com/video/${parts[0]}?h=${parts[1]}`
-    }
-    else {//Certainly a SCORM
-      if (PATTERN.test(parsedUrl.hostname)) {
-        const scormId=parsedUrl.pathname
-        src=`/SCORM${scormId}`
-      }
-    }
-
-    // Preview for scorms for builders TODO really useful ?
-    // else {
-    //   // Replace the last part of the path with 'story.html'
-    //   const pathParts = parsedUrl.pathname.split('/')
-    //   pathParts[pathParts.length - 1] = 'story.html'
-    //   parsedUrl.pathname = pathParts.join('/')
-    //   src=parsedUrl.toString()
-    // }
   }
 
   switch (ext) {
@@ -136,54 +166,14 @@ export const mediaWrapper = ({
           </video>
           <Comp />
         </>
-      )
+      );
     case 'pdf':
-      const isMobile = /Mobi|Android/i.test(navigator.userAgent)
-
-      return isMobile ? (
+      return (
         <>
-          <iframe
-            src={src}
-            style={{
-              width: '100%',
-              height: '100vh',
-              border: 'none',
-            }}
-            title="PDF document"
-          ></iframe>
+          <PDFViewer src={src} />
           <Comp />
         </>
-      ) : (
-        <>
-          <div
-            style={{
-              width: doc.width,
-              height: doc.height,
-              overflow: 'auto',
-            }}
-          >
-            <object
-              type="application/pdf"
-              data={src}
-              style={{
-                width: '100%',
-                height: '100%',
-              }}
-              aria-label="PDF document"
-            >
-              <p>
-                Votre navigateur ne supporte pas l'affichage des PDF. Vous
-                pouvez le{' '}
-                <a href={src} download>
-                  télécharger ici
-                </a>
-                .
-              </p>
-            </object>
-          </div>
-          <Comp />
-        </>
-      )
+      );
     case 'doc':
     case 'docx':
     case 'xls':
@@ -204,7 +194,7 @@ export const mediaWrapper = ({
           ></iframe>
           <Comp />
         </>
-      )
+      );
     case 'txt':
     case 'html':
       return (
@@ -227,9 +217,9 @@ export const mediaWrapper = ({
           ></iframe>
           <Comp />
         </>
-      )
+      );
     default:
-      const srcSet = imageSrcSetPaths(src)
+      const srcSet = imageSrcSetPaths(src);
       return (
         <>
           <img
@@ -242,6 +232,6 @@ export const mediaWrapper = ({
           />
           <Comp />
         </>
-      )
+      );
   }
-}
+};
