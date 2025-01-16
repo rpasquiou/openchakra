@@ -303,6 +303,16 @@ const EventSchema = new Schema({
     required: false,
     default: [],
   },
+  loggeduser_tickets: {
+    //computed
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'userTicket',
+      required: true,
+    }],
+    required: false,
+    default: [],
+  },
 }, schemaOptions)
 
 /* eslint-disable prefer-arrow-callback */
