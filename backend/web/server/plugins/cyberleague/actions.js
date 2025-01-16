@@ -226,13 +226,6 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
-  if (action=='import_model_data') {
-    const company=await Company.findOne({_id: user.company, administrators: user})
-    if (!company?.customer_id) {
-      throw new Error(ERR_IMPORT_DENIED)
-    }
-  }
-
   if (['register', 'import_model_data'].includes(action)) {
     if (user.role!=ROLE_ADMIN) {
       // For import action, allow 'user' model only

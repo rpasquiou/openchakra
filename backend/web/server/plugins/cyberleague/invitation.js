@@ -84,8 +84,8 @@ const createAccount = async (user, customerId) => {
 
     return response.data;
   } 
-  catch (error) {
-    throw error.response?.data || error.message;
+  catch (err) {
+    throw new Error(err.response?.data?.description || err.message)
   }
 }
 

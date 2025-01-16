@@ -24,7 +24,7 @@ const inviteUsers =  async (data, user) => {
   if (!company?.customer_id) {
     return [ERR_IMPORT_DENIED]
   }
-  const REQUIRED_FIELDS=['firstname', 'lastname', 'email']
+  const REQUIRED_FIELDS=['firstname', 'lastname', 'email', 'member', 'sponsored']
   const formatted=await extractData(data)
   const missing=lodash(REQUIRED_FIELDS).difference(formatted.headers)
   if (!missing.isEmpty()) {
@@ -45,17 +45,17 @@ const inviteUsers =  async (data, user) => {
     if (!(isInternal != isSponsored)) {
       return `le compte doit être un collaborateur ou être sponsorisé`
     }
-    // I'm a partner if
     const role=isInternal && company.statut!=STATUT_MEMBER ? ROLE_PARTNER : ROLE_MEMBER
-    const account=await User.insert({
+    const account=await User.create({
         email: record.email, firstname: record.firstname, lastname: record.lastname,
         company: isInternal ? company : undefined, company_sponsorship: company,
-        role,
+        role, password: 'DUMMY',
     })
     const invitation=await createAccount(account, company.customer_id)
     account.guid=invitation.guid
     await account.save()
-    await sendInvitation({user, url: response.magicLink})
+    await sendInvitation({user: account, url: invitation.magicLink})
+    return 'import OK'
   }))
   const result=lodash.zip(importResult, records)
     .map(([r, record], idx) => {
