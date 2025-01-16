@@ -1563,6 +1563,10 @@ declareVirtualField({ model: 'adminDashboard', field: 'leads_count', instance: '
 declareVirtualField({ model: 'adminDashboard', field: 'users_men_count', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'user_women_count', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'users_no_gender_count', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'weight_lost_total', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'imc_average', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'waist_total_lost', instance: 'Number' })
+declareVirtualField({ model: 'adminDashboard', field: 'hips_total_lost', instance: 'Number' })
 declareVirtualField({ model: 'adminDashboard', field: 'started_coachings', instance: 'Number' })
 declareVirtualField({
   model: 'adminDashboard', field: `specificities_users`, instance: 'Array', multiple: true,
@@ -2220,8 +2224,13 @@ const ensureChallengePipsConsistency = () => {
 const computeStatistics = async ({ fields, company, start_date, end_date, diet }) => {
   const comp=await Company.findById(company).populate('children')
   const companyFilter = comp ? {$in: [comp._id, ...comp.children.map(c => c._id)]} : { $ne: null };
-  const result = {};
-  result.company = company?.toString();
+  const result = {
+    company: company?.toString(),
+    weight_lost_total: 0,
+    imc_average: 0,
+    waist_total_lost: 0,
+    hips_total_lost: 0,
+  };
   const cache = {};
 
   const fetchAndCache = async (field, func, params) => {
@@ -2275,7 +2284,78 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
     }
   };
 
+  const calculateUserStats = (users) => {
+    if (!users || users.length === 0) {
+      console.warn('No users found for statistics calculation.')
+      return
+    }
+
+    const get_measure_lost = (measures, measure_name) => {
+      const sortedMeasures = lodash.orderBy(measures, ['date'], ['asc'])
+      if (!sortedMeasures.length) return 0
+
+      const firstMeasure = sortedMeasures[0]?.[measure_name] || 0
+      const lastMeasure =
+        sortedMeasures[sortedMeasures.length - 1]?.[measure_name] || 0
+      return lastMeasure - firstMeasure
+    }
+
+    const weight_lost_total = lodash.sumBy(users, (u) => {
+      if (!u.measures || !u.measures.length) return 0
+      return get_measure_lost(u.measures, 'weight')
+    })
+
+    const waist_total_lost = lodash.sumBy(users, (u) => {
+      if (!u.measures || !u.measures.length) return 0
+      return get_measure_lost(u.measures, 'waist')
+    })
+
+    const hips_total_lost = lodash.sumBy(users, (u) => {
+      if (!u.measures || !u.measures.length) return 0
+      return get_measure_lost(u.measures, 'hips')
+    })
+
+    const usersWithImc = users.filter(
+      (u) =>
+        typeof u.imc === 'number' && !isNaN(u.imc) && u.imc > 10 && u.imc < 60
+    )
+
+    const imc_average =
+      usersWithImc.length > 0 ? lodash.meanBy(usersWithImc, 'imc') : null
+
+    if (!usersWithImc.length) {
+      console.warn('No valid IMC values found for users.')
+    } else if (!isFinite(imc_average)) {
+      console.error('IMC Average is not finite:', { imc_average, usersWithImc })
+    }
+
+    // Mise à jour du résultat avec les statistiques calculées
+    result.weight_lost_total = Math.round(weight_lost_total * 10) / 10
+    result.waist_total_lost = Math.round(waist_total_lost * 10) / 10
+    result.hips_total_lost = Math.round(hips_total_lost * 10) / 10
+    result.imc_average =
+      imc_average !== null ? Math.round(imc_average * 10) / 10 : null
+  }
+
+  const users = await User.find({ company: companyFilter }).populate('measures')
+  calculateUserStats(users)
+
+  const userStats = {
+    weight_lost_total: result.weight_lost_total || 0,
+    imc_average: result.imc_average || 0,
+    waist_total_lost: result.waist_total_lost || 0,
+    hips_total_lost: result.hips_total_lost || 0,
+  }
+
+  const protectedFields = [
+    'weight_lost_total',
+    'imc_average',
+    'waist_total_lost',
+    'hips_total_lost',
+  ]
+
   for (const field of fields) {
+    if (protectedFields.includes(field)) continue
     if (['company', 'diet', 'start_date', 'end_date'].includes(field)) continue;
     if (!field.includes('gender') && !field.includes('coachings_stats') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
       await fetchAndCache(field, kpi[field], {company, companyFilter, start_date, end_date, diet });
@@ -2301,6 +2381,8 @@ const computeStatistics = async ({ fields, company, start_date, end_date, diet }
       }
     }
   }
+  Object.assign(result, userStats)
+
   return result;
 };
 
