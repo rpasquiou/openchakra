@@ -37,6 +37,37 @@ const users_men_count = async ({ companyFilter }) => {
 const users_no_gender_count = async ({ companyFilter }) => {
     return await User.countDocuments({company: companyFilter, gender: GENDER_NON_BINARY})
 }
+
+const users_with_gender_count = async ({ companyFilter }) => {
+  return await User.countDocuments({
+    company: companyFilter,
+    gender: { $in: [GENDER_MALE, GENDER_FEMALE, GENDER_NON_BINARY] },
+  })
+}
+
+const users_men_percent = async ({ companyFilter }) => {
+  const usersWithGender = await users_with_gender_count({ companyFilter })
+  const menCount = await users_men_count({ companyFilter })
+  return usersWithGender
+    ? Number(((menCount / usersWithGender) * 100).toFixed(2))
+    : 0
+}
+
+const users_women_percent = async ({ companyFilter }) => {
+  const usersWithGender = await users_with_gender_count({ companyFilter })
+  const womenCount = await user_women_count({ companyFilter })
+  return usersWithGender
+    ? Number(((womenCount / usersWithGender) * 100).toFixed(2))
+    : 0
+}
+
+const users_no_gender_percent = async ({ companyFilter }) => {
+  const usersWithGender = await users_with_gender_count({ companyFilter })
+  const noGenderCount = await users_no_gender_count({ companyFilter })
+  return usersWithGender
+    ? Number(((noGenderCount / usersWithGender) * 100).toFixed(2))
+    : 0
+}
    
 const webinars_count = async ({ companyFilter }) => {
     return await Webinar.countDocuments({companies: companyFilter})
@@ -1144,5 +1175,6 @@ module.exports={
   coachings_ongoing, coachings_renewed, coachings_started, coachings_stats, coachings_stopped, decline_reasons_, diet_activated, 
   diet_coaching_enabled, diet_recruiting, diet_refused, diet_site_enabled, diet_visio_enabled, groups_count, jobs_, join_reasons_, leads_by_campain,
   leads_count, messages_count, nut_advices, ratio_dropped_started, ratio_stopped_started, reasons_users, specificities_users, started_coachings, 
-  user_women_count, users_count, users_men_count, users_no_gender_count, validated_appts, webinars_by_company_, webinars_count, webinars_replayed_count,
+  user_women_count, users_count, users_men_count, users_no_gender_count, validated_appts, webinars_by_company_, webinars_count, webinars_replayed_count, 
+  users_men_percent, users_women_percent, users_no_gender_percent,
 }
