@@ -406,12 +406,11 @@ const STATUSES = {
 const REQUIRED_COMPLETION_FIELDS = {
   job: `Service`,
   company: `Entreprise`,
-  function: `Intitulé de poste`,
-  phone: `Téléphone`
+  phone: `Téléphone`,
+  city: 'Ville',
 }
 
 const OPTIONAL_COMPLETION_FIELDS = {
-  city: 'Ville',
   picture: 'Photo de profil'
 }
 
