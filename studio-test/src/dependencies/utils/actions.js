@@ -977,7 +977,7 @@ return Promise.allSettled(imagePromises)
     window.location=thisUrl.toString()
   },
 
-  import_model_data: props => {
+  import_model_data: async props => {
     const prevResults=document.getElementById('import_results')
     if (prevResults) {
       prevResults.parentNode.removeChild(prevResults)
@@ -999,17 +999,22 @@ return Promise.allSettled(imagePromises)
     fileInput.id='import_data'
     form.appendChild(fileInput)
 
-    fileInput.addEventListener('change', event => {
-      const formData = new FormData(form);
-      axios.post(`${API_ROOT}/import-data/${props.props.model}`, formData)
-         .then(response => {
-           alert(response.data.join('\n'))
-         })
-         .catch(error => alert('Error:', error))
-
+    return new Promise((resolve, reject) => {
+      fileInput.addEventListener('change', event => {
+        const formData = new FormData(form);
+        axios.post(`${API_ROOT}/import-data/${props.props.model}`, formData)
+           .then(response => {
+             alert(response.data.join('\n'))
+             return resolve()
+           })
+           .catch(error => {
+            alert('Error:', error)
+            return reject(error)
+          })
+  
+      })
+      fileInput.click()
     })
-    fileInput.click()
-    return Promise.resolve(true)
   },
 
   smartdiet_affect_lead: ({value}) => {
