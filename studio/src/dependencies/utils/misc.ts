@@ -15,7 +15,7 @@ export function isJsonString(str: string) {
 export const NOT_CONNECTED="NOT_CONNECTED"
 
 export const normalize = (str:string) => {
-  str = str
+  str = str && typeof(str)=='string'
     ? str
         .trim()
         .normalize('NFD')

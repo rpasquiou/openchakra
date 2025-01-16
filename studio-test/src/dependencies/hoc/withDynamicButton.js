@@ -107,7 +107,7 @@ const withDynamicButton = Component => {
             if (props.confirmationmessage && MESSAGES[nextAction]) {
               displaySuccess({toast, message: MESSAGES[nextAction]})
             }
-            if (action!='openPage' && nextAction!='openPage') {
+            if (action!='openPage' && nextAction!='openPage' && action!='open_popup' && nextAction!='open_popup') {
               console.log(`Action ${action} fires reload`)
               props.reload()
             }

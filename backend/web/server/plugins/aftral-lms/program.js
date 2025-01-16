@@ -58,7 +58,7 @@ const getSessionCertificate = async (userId, params, data) => {
   }
 
   if (!template) {
-    throw new NotFoundError(`Session ${data.name} : modèle de certificat non défini`)
+    throw new NotFoundError(`Session ${data.code} : modèle de certificat non défini`)
   }
 
   const documents=await Promise.all(data.trainees.map(async trainee => {

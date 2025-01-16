@@ -282,6 +282,19 @@ declareEnumField({ model: 'homework', field: 'scale', enumValues: SCALE })
 declareVirtualField({ model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String' })
 declareComputedField({ model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr })
 declareVirtualField({ model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean' })
+declareVirtualField({ model: 'visio', field: 'future', requires: 'start_date', instance: 'Boolean',
+  dbFilter: value => {
+    const startDay=moment().startOf('day')
+    let filter={}
+    if (value.source=='true') {
+      filter={start_date: {$gte: startDay}}
+    }
+    if (value.source=='false') {
+      filter={start_date: {$lte: startDay}}
+    }
+    return filter
+  }
+})
 // Visio end
 
 // ProductCode start
@@ -739,7 +752,7 @@ const preprocessGet = async ({ model, fields, id, user, params }) => {
     id = undefined
   }
 
-  if (model == `ticket` && ![ROLE_CONCEPTEUR, ROLE_HELPDESK].includes(user.role)) {
+  if (model == `ticket` && user.role==ROLE_APPRENANT) {
     params[`filter.user`] = user._id
   }
 
@@ -930,19 +943,30 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
 }, null, true, 'Europe/Paris')
 
 // Send certificates the day after the session ends
-!isDevelopment() && cron.schedule('0 0 4 * * *', async () => {
+!isDevelopment() && cron.schedule('0 0 7 * * *', async () => {
+  const PREFIX='Send certificate'
   const yesterdayFilter = getDateFilter({ attribute: 'end_date', day: moment().add(-1, 'day') })
+  console.log(`${PREFIX}:Checking finished sessions ${JSON.stringify(yesterdayFilter)}`)
   const sessions = await Block.find({ type: 'session', ...yesterdayFilter }).populate(['children', 'trainees'])
   for (const session of sessions) {
-    console.log(`Session ${session.name} finished yesterday`)
-    for (const trainee of session.trainees) {
-      const progress = await Progress.findOne({ block: session._id, user: trainee._id, achievement_status: BLOCK_STATUS_FINISHED })
-      if (progress) {
-        const certif_name = await getCertificateName(session._id, trainee._id)
-        const certificate = await getSessionCertificate(trainee._id, null, session)
-        await sendCertificate({ user: trainee, session, attachment_name: certif_name, attachment_url: certificate }).catch(console.error)
+    console.log(`${PREFIX}:Session ${session.code} finished yesterday, ${session.trainees.length} trainees`)
+    await runPromisesWithDelay(session.trainees.map(trainee => async () => {
+      try {
+        const finishedProgress = await Progress.findOne({ block: session._id, user: trainee._id, finished_resources_count: session.mandatory_resources_count})
+        if (finishedProgress) {
+          const certif_name = await getCertificateName(session._id, trainee._id)
+          const certificate = await getSessionCertificate(trainee._id, null, session)
+          await sendCertificate({ user: trainee, session, attachment_name: certif_name, attachment_url: certificate })
+          console.log(`${PREFIX}:Session ${session.code} ${trainee.email} received certificate`)
+        }
+        else {
+          console.log(`${PREFIX}:${session.code} ${trainee.email} did not finish`)
+        }
       }
-    }
+      catch(err) {
+        console.error(err.message)
+      }
+    }))
   }
 })
 

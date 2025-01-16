@@ -7,7 +7,7 @@ const {addAction, setAllowActionFn}=require('../../utils/studio/actions')
 const { ROLE_CONCEPTEUR, ROLE_FORMATEUR, ROLES, BLOCK_STATUS_FINISHED,ROLE_HELPDESK, ROLE_APPRENANT, RESOURCE_TYPE_SCORM, BLOCK_STATUS_CURRENT, ROLE_ADMINISTRATEUR, BLOCK_TYPE_RESOURCE, VISIO_TYPE_GROUP, VISIO_TYPE_SESSION, BLOCK_TYPE_PROGRAM } = require('./consts')
 const { onBlockFinished, getNextResource, getPreviousResource, getParentBlocks, getSession, updateChildrenOrder, cloneTemplate, addChild, getTemplate, lockSession, onBlockAction, getBlockStatus, saveBlockStatus, getSessionProof, getSessionBlocks, ensureValidProgramProduction } = require('./block')
 const Progress = require('../../models/Progress')
-const { canPlay, canResume, canReplay } = require('./resources')
+const { canPlay, canResume, canReplay, getMandatoryResourcesCount, getAllResourcesCount } = require('./resources')
 const User = require('../../models/User')
 const { setpreLogin, getModel, idEqual } = require('../../utils/database')
 const { sendForgotPassword } = require('./mailing')
@@ -53,7 +53,10 @@ const moveChildInParent= async (childId, up) => {
 }
 
 const addChildAction = async ({parent, child}, user) => {
-  return addChild({parent, child, user})
+  const res=await addChild({parent, child, user})
+  const mandatory_count=await getMandatoryResourcesCount(user._id, null, {_id: parent})
+  const all_count=await getAllResourcesCount(user._id, null, {_id: parent})
+  await Block.findByIdAndUpdate(parent, {mandatory_resources_count: mandatory_count, resources_count: all_count})
 }
 addAction('addChild', addChildAction)
 
@@ -68,6 +71,9 @@ const removeChildAction = async ({parent, child}, user) => {
   // Propagate deletion
   const linkedChildren=await Block.find({origin: child, _locked: false}).populate('parent')
   await Promise.all(linkedChildren.map(linkedChild => removeChildAction({parent: linkedChild.parent._id, child: linkedChild._id}, user)))
+  const mandatory_count=await getMandatoryResourcesCount(user._id, null, {_id: parent})
+  const all_count=await getAllResourcesCount(user._id, null, {_id: parent})
+  await Block.findByIdAndUpdate(parent, {mandatory_resources_count: mandatory_count, resources_count: all_count})
 }
 addAction('removeChild', removeChildAction)
 
