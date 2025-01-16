@@ -282,7 +282,19 @@ declareEnumField({ model: 'homework', field: 'scale', enumValues: SCALE })
 declareVirtualField({ model: 'visio', field: 'type', requires: '_owner_type', enumValues: VISIO_TYPE, instance: 'String' })
 declareComputedField({ model: 'visio', field: 'type_str', requires: 'type', instance: 'String', getterFn: getVisioTypeStr })
 declareVirtualField({ model: 'visio', field: 'active', requires: 'start_date,end_date', instance: 'Boolean' })
-declareVirtualField({ model: 'visio', field: 'future', requires: 'start_date', instance: 'Boolean' })
+declareVirtualField({ model: 'visio', field: 'future', requires: 'start_date', instance: 'Boolean',
+  dbFilter: value => {
+    const startDay=moment().startOf('day')
+    let filter={}
+    if (value.source=='true') {
+      filter={start_date: {$gte: startDay}}
+    }
+    if (value.source=='false') {
+      filter={start_date: {$lte: startDay}}
+    }
+    return filter
+  }
+})
 // Visio end
 
 // ProductCode start
