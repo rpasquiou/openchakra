@@ -92,6 +92,9 @@ const withDynamicButton = Component => {
 
     if (action) {
       onClick = () => {
+        if (!actionAllowed && !!props.activeIfForbidden) {
+          return setErrorMessage(actionMessage)
+        }
         if (!ACTIONS[action]) {
           return setErrorMessage(`Undefined action ${action}`)
         }
@@ -157,9 +160,12 @@ const withDynamicButton = Component => {
         return null
       }
 
+      // Disable if action unavailable and not active if forbidden
+      const disabled=!props.activeIfForbidden && !actionAllowed
+
       return (
         <>
-      <Component disabled={!actionAllowed}
+      <Component disabled={disabled}
         {...props}
         onClick={lodash.debounce(onClick, 200)} //For Calendar, ensure value had time to update
           title={actionMessage}

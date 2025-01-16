@@ -21,7 +21,7 @@ const getLocationSuggestions = (value, type) => {
     .then(res => {
       let suggestions=lodash.orderBy(res, r => -r.importance)
       if (cityOnly) {
-        suggestions=res.filter(r => r.address && r.lat && r.lon && r.address.state && ((r.address.city || r.address.village || r.address.town)))
+        suggestions=res.filter(r => r.address && r.lat && r.lon && (r.address.state || r.address.region) && ((r.address.city || r.address.village || r.address.town)))
       }
       else {
         suggestions=res.filter(r => r.address && r.lat && r.lon && r.address.state && (r.address.postcode && r.address.road && (r.address.city || r.address.village || r.address.town || r.address.county)))
@@ -34,7 +34,7 @@ const getLocationSuggestions = (value, type) => {
         country: r.address.country,
         latitude: r.lat,
         longitude: r.lon,
-        region: r.address.state,
+        region: r.address.state || r.address.region,
       }))
 
       suggestions=lodash.uniqBy(suggestions, r => (cityOnly ? `${r.city},${r.zip_code},${r.country},${r.region}`: `${r.name},${r.city},${r.zip_code},${r.country},${r.region}`))
