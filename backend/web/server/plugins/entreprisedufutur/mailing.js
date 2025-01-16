@@ -6,6 +6,7 @@ const SIB_IDS = {
   RESET_PASSWORD: 1,
   EVENT_REGISTRATION: 3,
   EVENT_REGISTRATION_WAITING_LIST: 5,
+  WELCOME_USER: 4,
 }
 
 addValidationAllowedDomain('plateforme.entreprisedufutur.com')
@@ -48,8 +49,19 @@ const sendEventRegistrationWaitingList = async ({ user, eventName }) => {
   })
 }
 
+const sendWelcomeEmail = async ({ user }) => {
+  return sendNotification({
+    notification: SIB_IDS.WELCOME_USER,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+    },
+  })
+}
+
 module.exports = {
   sendResetPassword,
   sendEventRegistration,
   sendEventRegistrationWaitingList,
+  sendWelcomeEmail,
 }

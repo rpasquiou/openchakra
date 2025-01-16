@@ -3,9 +3,9 @@ const Score = require('../../models/Score')
 const lodash = require('lodash')
 const moment = require('moment')
 const ResetToken = require('../../models/ResetToken')
-const { sendForgotPassword, sendResetPassword, sendEventRegistration, sendEventRegistrationWaitingList } = require('./mailing')
+const { sendForgotPassword, sendResetPassword, sendEventRegistration, sendEventRegistrationWaitingList, sendWelcomeEmail } = require('./mailing')
 const { RESET_TOKEN_VALIDITY } = require('./consts')
-const { idEqual, getModel, loadFromDb } = require('../../utils/database')
+const { idEqual, getModel, loadFromDb, setPostRegister } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
 const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, ORDER_STATUS_IN_PROGRESS, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST, ORDER_STATUS_VALIDATED, ROLE_MEMBER, ROLE_ADMIN, ROLE_SUPERADMIN } = require('./consts')
@@ -425,3 +425,10 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
 }
 
 setAllowActionFn(isActionAllowed)
+
+const sendWelcomeEmailAfterRegistration = async (user) => {
+  await sendWelcomeEmail({ user })
+  return user
+}
+
+setPostRegister(sendWelcomeEmailAfterRegistration)
