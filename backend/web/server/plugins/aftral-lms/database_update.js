@@ -37,7 +37,7 @@ const setSessionOnTickets = async () => {
 // Set resources count on session blocks
 const setSessionResourcesCount = async () => {
   log('Setting resources_count on session blocks')
-  const blocks=await Block.find({_locked: true, $or: [{resources_count: null}, {mandatory_resources_count: null}]})
+  const blocks=await Block.find({$or: [{resources_count: null}, {mandatory_resources_count: null}]})
   log(blocks.length, 'blocks with no resources_count')
   await Promise.all(blocks.map(async block => {
     if (block.type==BLOCK_TYPE_RESOURCE) {
@@ -49,7 +49,7 @@ const setSessionResourcesCount = async () => {
       block.mandatory_resources_count=await getMandatoryResourcesCount(null, null, {_id: block._id})
     }
     log(block.type, block.name, block.resources_count, block.mandatory_resources_count)
-    await block.save()
+    await block.save().catch(console.error)
   }))
 }
 
