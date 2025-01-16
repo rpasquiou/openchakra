@@ -29,9 +29,23 @@ const setPreRegister = fn => {
   preRegister=fn
 }
 
-const callPreRegister = async p => {
+const callPreRegister = async (...p) => {
   if (preRegister) {
-    return preRegister(p)
+    return preRegister(...p)
+  } else {
+    return p
+  }
+}
+
+let postRegister=null
+
+const setPostRegister = fn => {
+  postRegister=fn
+}
+
+const callPostRegister = async (...p) => {
+  if (postRegister) {
+    return postRegister(...p)
   } else {
     return p
   }
@@ -1189,6 +1203,6 @@ module.exports = {
   getFieldsToCompute, getFirstLevelFields, getNextLevelFields, getSecondLevelFields,
   DUMMY_REF, checkIntegrity, getDateFilter, getMonthFilter, getYearFilter, declareFieldDependencies,
   setPrePutData, callPrePutData, setpreLogin, callPreLogin,  createSearchFilter, setPreRegister, callPreRegister,
-  importDataTemplate, setImportDataTemplateFunction,
+  importDataTemplate, setImportDataTemplateFunction, setPostRegister, callPostRegister,
 }
 
