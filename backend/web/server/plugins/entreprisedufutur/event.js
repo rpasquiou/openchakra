@@ -146,4 +146,5 @@ module.exports = {
   getWaitingTickets,
   getAllergies,
   getUserTicketsInProgress,
+  getLoggeduserTickets,
 }
