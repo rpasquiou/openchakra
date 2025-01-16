@@ -1030,15 +1030,14 @@ setPrePutData(prePutData)
 
 
 const preDeleteData = async ({model, id, data, user}) => {
-  let returnedData = null
   //deleteAction is forbidden except for notifications from notification plugin
   if (model == 'notification') {
     const notification = await deleteUserNotification(id,user)
-    returnedData = notification.recipients ? null : notification
+    data = notification.recipients ? null : notification
   } else if (!lodash.includes(['attachment','eventTicket','table','userTicket'],model)) {
     throw new ForbiddenError(`Pas de delete pour l'instant`)
   }
-  return {model, id, data: returnedData, user, params: null}
+  return {model, id, data, user, params: null}
 }
 
 setPreDeleteData(preDeleteData)
