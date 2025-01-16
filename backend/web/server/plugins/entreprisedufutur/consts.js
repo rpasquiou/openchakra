@@ -18,7 +18,7 @@ const ROLES = {
   [ROLE_ADMIN]: `Administrateur`,
   [ROLE_EXTERNAL_ADMIN]: `Administrateur externe`,
   [ROLE_SUPERADMIN]: `Super administrateur`,
-  [ROLE_LEADER]: `Leader`
+  [ROLE_LEADER]: `Leader en Action`
 }
 
 const BOOLEAN_ENUM_YES = `BOOLEAN_ENUM_YES`
