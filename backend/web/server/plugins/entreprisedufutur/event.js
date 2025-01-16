@@ -120,6 +120,23 @@ const getUserTicketsInProgress = async function (userId, params, data,fields) {
   return userTickets.map(u => new UserTicket({...u, user: new User(u.user)}))
 }
 
+const getLoggeduserTickets = async function (userId, params, data,fields) {
+  const eventTickets = await EventTicket.find({event: data._id})
+  if (lodash.includes(fields,'user.fullname')) {
+    fields = [...fields, 'user.lastname', 'user.firstname']
+  }
+  const userTickets = await loadFromDb({
+    model: 'userTicket',
+    user: userId,
+    fields: fields,
+    params: {
+      'filter.event_ticket': {$in: eventTickets.map((et)=> et._id)},
+      'filter.user': userId
+    }
+  })
+  return userTickets.map(u => new UserTicket({...u, user: new User(u.user)}))
+}
+
 module.exports = {
   getStatus,
   getStatusNumber,
