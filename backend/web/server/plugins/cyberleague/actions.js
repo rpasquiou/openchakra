@@ -4,19 +4,25 @@ const lodash = require('lodash')
 const { idEqual, getModel } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
 const { createScore } = require('./score')
-const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG } = require('./consts')
+const { SCORE_LEVEL_1, ANSWERS, SCORE_LEVEL_3, SCORE_LEVEL_2, COIN_SOURCE_BEGINNER_DIAG, COIN_SOURCE_MEDIUM_DIAG, COIN_SOURCE_EXPERT_DIAG, COIN_SOURCE_WATCH, NOTIFICATION_TYPES, NOTIFICATION_TYPE_NEW_DIAG, ROLE_PARTNER, NOTE_TYPE_BEGINNER_DIAG, NOTE_TYPE_MEDIUM_DIAG, NOTE_TYPE_EXPERT_DIAG } = require('./consts')
 const User = require('../../models/User')
 const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
 const Company = require('../../models/Company')
+const { addToLivefeed } = require('./adminDashboard')
 
 
-const check_profil_completion = async ({ value }, user) => {
+const checkProfilCompletion = async ({ value }, user) => {
   //action used for isActionAllowed
   return {_id: value}
 }
-//TODO rename action to next_question
-addAction('check_profil_completion', check_profil_completion)
+addAction('check_profil_completion', checkProfilCompletion)
+
+const checkAuthorizedConversation = async ({ value }, user) => {
+  //action used for isActionAllowed
+  return {_id: value}
+}
+addAction('check_authorized_conversation', checkAuthorizedConversation)
 
 
 const startSurvey = async (_, user) => {
@@ -78,16 +84,22 @@ addAction('smartdiet_next_question', nextQuestion)
 
 const finishSurvey = async ({ value }, user) => {
   const score = await Score.findOne({answers: value}).populate('answers')
+  const company = await Company.findById(user.company)
+  const noteCreationParams = {sector: company.sector, date: Date.now(), global_rate: score.global_rate}
+
   let gain
   switch (score.level) {
     case SCORE_LEVEL_1:
       gain = await Gain.findOne({source: COIN_SOURCE_BEGINNER_DIAG})
+      noteCreationParams.type = NOTE_TYPE_BEGINNER_DIAG
       break;
     case SCORE_LEVEL_2:
       gain = await Gain.findOne({source: COIN_SOURCE_MEDIUM_DIAG})
+      noteCreationParams.type = NOTE_TYPE_MEDIUM_DIAG
       break;
     case SCORE_LEVEL_3:
       gain = await Gain.findOne({source: COIN_SOURCE_EXPERT_DIAG})
+      noteCreationParams.type = NOTE_TYPE_EXPERT_DIAG
       break;
   }
   await User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
@@ -103,6 +115,8 @@ const finishSurvey = async ({ value }, user) => {
       customData: JSON.stringify({customUserId: user._id}),
     })
   }
+
+  await addToLivefeed(noteCreationParams)
 
   return score
 }
@@ -193,6 +207,22 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   if (action == 'check_profil_completion') {
     if (!user.is_profil_completed) {
       throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
+    }
+  }
+
+  if (action == 'check_authorized_conversation') {
+    const model = await getModel(dataId)
+    if (model != 'user') {
+      throw new BadRequestError(`Vous ne pouvez parler qu'à un user`)
+    }
+    if (!user.is_profil_completed) {
+      throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
+    }
+    const receiver = await User.findById(dataId)
+    const receiverComp = receiver.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
+    const userComp = user.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
+    if (!idEqual(receiverComp, userComp)) {
+      throw new ForbiddenError(`Vous ne pouvez parler à quelqu'un qui n'a pas le même partenaire que vous`)
     }
   }
 

@@ -64,7 +64,7 @@ const MissionSchema = new Schema(
       type: Boolean,
       required: false,
     },
-    companies: {
+    companies: {//represent accepted candidates
       type: [
         {
           type: Schema.Types.ObjectId,

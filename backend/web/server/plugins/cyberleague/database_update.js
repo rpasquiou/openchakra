@@ -120,12 +120,12 @@ const addSector = async () => {
 
 const databaseUpdate = async () => {
   console.log('************ UPDATING DATABASE')
-  await normalizeRoles()
-  await updateCompanyAdmin()
-  await normalizeJobs()
-  await normalizeCompanySize()
-  await addExpertiseSet()
-  await addSector()
+  // await normalizeRoles()
+  // await updateCompanyAdmin()
+  // await normalizeJobs()
+  // await normalizeCompanySize()
+  // await addExpertiseSet()
+  // await addSector()
 }
 
 module.exports=databaseUpdate
