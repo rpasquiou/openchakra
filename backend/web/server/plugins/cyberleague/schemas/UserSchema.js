@@ -7,8 +7,14 @@ const { DUMMY_REF, idEqual } = require('../../../utils/database')
 const { ROLES , JOBS, DISCRIMINATOR_KEY, LEVEL_THRESHOLD_EXPLORER, USER_LEVEL_CURIOUS, LEVEL_THRESHOLD_AMBASSADOR, USER_LEVEL_AMBASSADOR, USER_LEVEL_EXPLORER, COMPLETED_YES, OPTIONAL_COMPLETION_FIELDS, REQUIRED_COMPLETION_FIELDS, LOOKING_FOR_OPPORTUNITIES_STATUS } = require('../consts')
 const AddressSchema = require('../../../models/AddressSchema')
 const { CREATED_AT_ATTRIBUTE } = require('../../../../utils/consts')
+const { hasFrenchAccents } = require('../../../../utils/text')
 
 const Schema = mongoose.Schema
+
+// Visiativ CMS forbids email addresses with french accents
+const isEmailValidForVisiativ = value => {
+  return isEmailOk(v) && !hasFrenchAccents(v)
+}
 
 const UserSchema = new Schema({
   role: {
@@ -33,7 +39,7 @@ const UserSchema = new Schema({
     required: [true, `L'email est obligatoire`],
     set: v => v ? v.toLowerCase().trim() : v,
     index: true,
-    validate: [isEmailOk, v => `L'email '${v.value}' est invalide`],
+    validate: [v => isEmailValidForVisiativ, v => `L'email '${v.value}' est invalide`],
   },
   password: {
     type: String,

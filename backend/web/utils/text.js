@@ -254,6 +254,13 @@ const sortObject = (object, firstKey) => {
   return result
 } 
 
+const hasFrenchAccents = str => {
+  if (!str || !lodash.isString(str)) {
+    return false
+  }
+  return /[À-ÿ]/.test(str)
+}
+
 module.exports = {
   normalize,
   matches,
@@ -282,4 +289,5 @@ module.exports = {
   getWordsDistance, getNearestWord,
   sortObject,
   formatDateTimeShort,
+  hasFrenchAccents,
 }
