@@ -113,6 +113,7 @@ const getUserTicketsInProgress = async function (userId, params, data,fields) {
       'filter.status': {$in: [USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT,USERTICKET_STATUS_REGISTERED,USERTICKET_STATUS_WAITING_LIST]}
     }
   })
+  return userTickets.map(u => new UserTicket(u))
 }
 
 module.exports = {
