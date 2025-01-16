@@ -2,8 +2,10 @@ const lodash = require('lodash')
 const UserTicket = require('../../models/UserTicket')
 const EventTicket = require('../../models/EventTicket')
 const User = require('../../models/User')
+const Company = require('../../models/Company')
 const { USERTICKET_STATUS_PAYED, USERTICKET_STATUS_PENDING_PAYMENT, USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST } = require('./consts')
 const { loadFromDb, idEqual } = require('../../utils/database')
+const Event = require('../../models/Event')
 
 const getStatus = (status) => {
   let statusFilter = {}
@@ -130,11 +132,16 @@ const getLoggeduserTickets = async function (userId, params, data,fields) {
     user: userId,
     fields: fields,
     params: {
-      'filter.event_ticket': {$in: eventTickets.map((et)=> et._id)},
-      'filter.user': userId
-    }
+      'filter.event_ticket._id': {$in: eventTickets.map((et)=> et._id)},
+      'filter.user._id': userId
+    },
   })
-  return userTickets.map(u => new UserTicket({...u, user: new User(u.user)}))
+
+  return userTickets.filter((ut) => ut.user && ut.event_ticket).map(u => new UserTicket({
+    ...u,
+    user: new User({...u.user,company: new Company(u.user.company)}),
+    event_ticket: new EventTicket({...u.event_ticket, event: new Event(u.event_ticket.event)})
+  }))
 }
 
 module.exports = {
