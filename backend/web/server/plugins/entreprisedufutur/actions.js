@@ -3,7 +3,7 @@ const Score = require('../../models/Score')
 const lodash = require('lodash')
 const moment = require('moment')
 const ResetToken = require('../../models/ResetToken')
-const { sendForgotPassword, sendResetPassword } = require('./mailing')
+const { sendForgotPassword, sendResetPassword, sendEventRegistration, sendEventRegistrationWaitingList } = require('./mailing')
 const { RESET_TOKEN_VALIDITY } = require('./consts')
 const { idEqual, getModel, loadFromDb } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
@@ -249,6 +249,7 @@ const validateOrder = async ({value}, user) => {
   })
 
   const event = await Event.findById(order.event_ticket.event._id)
+  .populate('admin')
 
   await Promise.all(order.order_tickets.map(async (orderTicket) => {
     const userF = await User.findOne({email:orderTicket.email})
@@ -273,10 +274,34 @@ const validateOrder = async ({value}, user) => {
   //UserTicket creations
   const remaining_tickets = order.event_ticket.remaining_tickets
 
-  await Promise.all(order.order_tickets.map(async (orderTicket,index) => {
+    const tickets = await Promise.all(order.order_tickets.map(async (orderTicket,index) => {
     const userL = await User.findOne({email: orderTicket.email})
     const status = index < remaining_tickets ? USERTICKET_STATUS_REGISTERED : USERTICKET_STATUS_WAITING_LIST
-    return UserTicket.create({event_ticket: order.event_ticket.id, user: userL._id, status: status, buyer: user._id})
+    return await UserTicket.create({event_ticket: order.event_ticket.id, user: userL._id, status: status, buyer: user._id})
+  }))
+
+  const MAIL_FNS = {
+    [USERTICKET_STATUS_REGISTERED]: (params) => sendEventRegistration(params),
+    [USERTICKET_STATUS_WAITING_LIST]: ({user, eventName}) => sendEventRegistrationWaitingList({user, eventName}),
+  }
+  
+  await Promise.allSettled(tickets.filter(t => [USERTICKET_STATUS_REGISTERED, USERTICKET_STATUS_WAITING_LIST].includes(t.status)).map(async ticket => {
+    const mailFn = MAIL_FNS[ticket.status]
+    const ticketUser = await User.findById(ticket.user)
+    
+    if (ticket.status === USERTICKET_STATUS_REGISTERED) {
+      await Promise.allSettled(event.admin.map(admin => mailFn({
+        user: ticketUser,
+        ticketStatus: ticket.status,
+        eventName: event.name,
+        admin,
+      })))
+    } else {
+      await mailFn({
+        user: ticketUser,
+        eventName: event.name,
+      })
+    }
   }))
   
   //order status update
