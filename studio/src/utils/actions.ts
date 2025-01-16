@@ -772,6 +772,11 @@ export const ACTIONS: IActions = {
     options: {},
     next: ['openPage'],
   },
+  check_authorized_conversation: {
+    label: 'check_authorized_conversation',
+    options: {},
+    next: ['openPage'],
+  },
   login_sso: {
     label: 'Login SSO',
     options: {},

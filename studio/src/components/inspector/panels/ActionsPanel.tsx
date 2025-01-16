@@ -90,6 +90,7 @@ const ActionPanel = ({
 const ActionsPanel: React.FC = () => {
   const { setValueFromEvent, setValue, removeValue } = useForm()
   const hideIfForbidden = usePropsSelector('hideIfForbidden')
+  const activeIfForbidden = usePropsSelector('activeIfForbidden')
   const action = usePropsSelector('action')
   const nextAction = usePropsSelector('nextAction')
   const actionProps = usePropsSelector('actionProps')
@@ -101,6 +102,11 @@ const ActionsPanel: React.FC = () => {
   const activeComponent: IComponent = useSelector(getSelectedComponent)
   const [attrs, setAttrs] = useState({})
 
+  // Forbid hide if forbidden & active is forbidden together
+  if (hideIfForbidden && activeIfForbidden) {
+    setValue('activeIfForbidden', false)
+  }
+  
   useEffect(() => {
     try {
       const attributes = getAvailableAttributes(
@@ -150,6 +156,10 @@ const ActionsPanel: React.FC = () => {
         <SwitchControl
           name='hideIfForbidden'
           label='Hide if forbidden'
+        />
+        <SwitchControl
+          name='activeIfForbidden'
+          label='Active if forbidden'
         />
         <SwitchControl
           name='confirmationmessage'

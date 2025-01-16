@@ -15,7 +15,7 @@ const {
   setPreDeleteData,
   setPreRegister,
 } = require('../../utils/database')
-const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS, NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, NOTIFICATION_TYPE_NEW_SCAN, NOTIFICATION_TYPE_NEW_DIAG, NOTIFICATION_TYPE_NEW_MISSION, NOTIFICATION_TYPE_JOB_ANSWER, NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST, NOTIFICATION_TYPE_EVENT_PARTICIPATION, NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION, GROUP_VISIBILITY_PRIVATE, NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST, STATUT_MEMBER, LEVEL_THRESHOLD_AMBASSADOR } = require('./consts')
+const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS, NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, NOTIFICATION_TYPE_NEW_SCAN, NOTIFICATION_TYPE_NEW_DIAG, NOTIFICATION_TYPE_NEW_MISSION, NOTIFICATION_TYPE_JOB_ANSWER, NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST, NOTIFICATION_TYPE_EVENT_PARTICIPATION, NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION, GROUP_VISIBILITY_PRIVATE, NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST, STATUT_MEMBER, LEVEL_THRESHOLD_AMBASSADOR, NOTE_TYPES, NOTIFICATION_TYPE_MISSION_ACCEPTED } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
 const Company = require('../../models/Company')
 const { BadRequestError, ForbiddenError } = require('../../utils/errors')
@@ -49,6 +49,7 @@ const Post = require('../../models/Post')
 const AdminDashboard = require('../../models/AdminDashboard')
 const Event = require('../../models/Event')
 const Carreer = require('../../models/Carreer')
+const Mission = require('../../models/Mission')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -79,6 +80,7 @@ const computeUrl = async (userId, params, data) => {
       tagUrl = await getTagUrl('DIAG_DETAILS')
       break;
     case NOTIFICATION_TYPE_NEW_MISSION:
+    case NOTIFICATION_TYPE_MISSION_ACCEPTED:
       tagUrl = await getTagUrl('MISSION_DETAILS')
       break;
     case NOTIFICATION_TYPE_JOB_ANSWER:
@@ -146,6 +148,8 @@ const computeMessage = async (userId, params, data) => {
       return `${user.fullname} s'est inscrit à l'événement ${target.name}` // target is an event
     case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST:
       return `${target.fullname} souhaite rejoindre la ligue ${group.name}` // target is a user
+    case NOTIFICATION_TYPE_MISSION_ACCEPTED:
+      return `${user.shortname} a accepté votre candidature`
   }
   throw new Error(`Unknown notification type ${dataLoaded.type} in computeMessage`)
 }
@@ -164,7 +168,8 @@ const computePicture = async (userId, params, data) => {
   switch (dataLoaded.type) {
     case NOTIFICATION_TYPE_MESSAGE: // target is user
     case NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST: // target is user
-    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: //target is group
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED: // target is group
+    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:// target is user
       return target.picture
     case NOTIFICATION_TYPE_FEED_COMMENT:
     case NOTIFICATION_TYPE_FEED_LIKE:
@@ -174,9 +179,9 @@ const computePicture = async (userId, params, data) => {
     case NOTIFICATION_TYPE_NEW_DIAG:
     case NOTIFICATION_TYPE_NEW_MISSION:
     case NOTIFICATION_TYPE_JOB_ANSWER:
-    case NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST:
     case NOTIFICATION_TYPE_EVENT_PARTICIPATION:
     case NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION:
+    case NOTIFICATION_TYPE_MISSION_ACCEPTED:
       return user.picture
   }
   throw new Error(`Unknown notification type ${dataLoaded.type} in computePicture`)
@@ -387,6 +392,7 @@ USER_MODELS.forEach(m => {
     }
   })
   declareVirtualField({model: m, field: 'conversations_count', instance: 'Number'})
+  declareVirtualField({model: m, field: 'platypus', instance: 'Boolean'})
 })
 
 //Company declarations
@@ -624,6 +630,11 @@ declareVirtualField({model: 'document', field: 'type', requires: 'company', inst
 //AdminDashboard declaration
 //declareVirtualField({model: 'adminDashboard', field: 'current_advertising', requires: 'current_campaign.current_advertising', instance: 'advertising'})
 
+//Note declarations
+declareEnumField({model: 'note', field: 'sector', enumValues:SECTOR})
+declareEnumField({model: 'note', field: 'type', enumValues:NOTE_TYPES})
+declareEnumField({model: 'note', field: 'nutriscore', enumValues:NUTRISCORE})
+
 
 
 
@@ -667,8 +678,12 @@ const ensureGains = () => {
 ensureGains()
 
 //Ensure there is an adminDashboard
-const ensureAdminDashboard = () => {
-  return Promise.resolve(AdminDashboard.findOneAndUpdate({}, {}, {upsert: true}))
+const ensureAdminDashboard = async () => {
+  return AdminDashboard.findOneAndUpdate(
+    {}, 
+    {},
+    {upsert: true}
+  )
 }
 
 ensureAdminDashboard()
@@ -773,6 +788,10 @@ const preCreate = async ({model, params, user}) => {
   }
 
   if(model === 'post') {
+    if (params.url) {
+      const regex = /http.*/
+      params.url = regex.test(params.url) ? params.url : `https://${params.url}`
+    }
     if (params.parent) {
       const parentModel = await getModel(params.parent, ['group','user'])
       if (parentModel === 'group') {
@@ -834,13 +853,6 @@ const preCreate = async ({model, params, user}) => {
 
   if (model == 'advertising') {
     params.company = params.parent
-  }
-
-  if (model == 'user') {
-    if (!params.company_sponsorship) {
-      const default_sponsor = await Company.findOne({is_default_sponsor: true})
-      params.company_sponsorship = default_sponsor ? default_sponsor._id : null
-    }
   }
 
   if (model == 'adminDashboard') {
@@ -967,12 +979,6 @@ const postCreate = async ({ model, params, data, user }) => {
     }
   }
 
-  if (model == 'company') {
-    if (data.is_default_sponsor) {
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
-    }
-  }
-
   //Message notification
   if (model == 'message') {
     await addNotification({
@@ -1004,8 +1010,8 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 
-const postPutData = async ({model, id, user, attribute, value}) => {
-  // console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value)
+const postPutData = async ({model, id, user, attribute, value, userData}) => {
+  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value, 'userdata', userData)
   if (model == `group`) {
     const group = await Group.findById(id)
 
@@ -1113,9 +1119,9 @@ const postPutData = async ({model, id, user, attribute, value}) => {
         }
         const event = await Event.findById(id)
         if (!user.company_sponsorship || user.company_sponsorship != event.company) {
-          const admins = await Company.findById(event.company)
+          const company = await Company.findById(event.company)
           await addNotification({
-            users: admins,
+            users: company.administrators,
             targetId: id,
             targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_EVENT_PARTICIPATION],
             type: NOTIFICATION_TYPE_EVENT_PARTICIPATION,
@@ -1129,9 +1135,31 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
-  if (model == 'company' ) {
-    if (attribute == 'is_default_sponsor' && value) {
-      await ensureOnlyOneTrue({model, id: data._id, field: 'is_default_sponsor', filter: {}})
+  if (model == 'mission') {
+
+    if (attribute == 'companies') {
+      //userData = mission.companies old value
+      const [changedcompanyId] = lodash.xorWith(userData.companies, value, (val1,val2) => idEqual(val1,val2))
+
+      if (userData.companies.length < value.length) {
+        //company has been added to accepted companies => new notif
+        const changedcompany = await Company.findById(changedcompanyId)
+        await addNotification({
+          users: changedcompany.administrators,
+          targetId: id,
+          targetType: NOTIFICATION_TYPES[NOTIFICATION_TYPE_MISSION_ACCEPTED],
+          type: NOTIFICATION_TYPE_MISSION_ACCEPTED,
+          customData: JSON.stringify({customUserId: user._id})
+        })
+
+      } else {
+        //company has been removed from accepted companies => delete notif
+        await NotificationModel.deleteOne({
+          type: NOTIFICATION_TYPE_MISSION_ACCEPTED,
+          _target: id,
+          custom_data: JSON.stringify({customUserId: user._id})
+        })
+      }
     }
   }
 
@@ -1152,13 +1180,18 @@ const postPutData = async ({model, id, user, attribute, value}) => {
     }
   }
 
+  if (model == 'company' && attribute == 'statut') {
+    const newRole = value == STATUT_MEMBER ? ROLE_MEMBER : ROLE_PARTNER
+    await User.updateMany({company: id}, {role: newRole})
+  }
+
   return {model, user, attribute, value}
 }
 
 setPostPutData(postPutData)
 
 
-const prePutData = async ({model, id, params, user}) => {
+const prePutData = async ({model, id, params, user, userData}) => {
   //console.log('prePut : model', model, 'id', id, 'user', user, 'params', params)
 
   if (model == 'company') {
@@ -1167,7 +1200,19 @@ const prePutData = async ({model, id, params, user}) => {
     }
   }
 
-  return {model, id, params, user}
+  if (model == 'post') {
+    if (params.url) {
+      const regex = /http.*/
+      params.url = regex.test(params.url) ? params.url : `https://${params.url}`
+    }
+  }
+
+  if (model == 'mission' && params.companies ) {
+    const mission = await Mission.findById(id)
+    userData.companies = mission.companies
+  }
+
+  return {model, id, params, user,userData}
 }
 
 setPrePutData(prePutData)
@@ -1188,11 +1233,6 @@ const preDeleteData = async ({model, id, data, user}) => {
 setPreDeleteData(preDeleteData)
 
 const preRegister = async (body) => {
-  if (!body.company_sponsorship) {
-    const defaultSponsor = await Company.findOne({is_default_sponsor: true}, ['_id'])
-    return {...body, company_sponsorship: defaultSponsor._id}
-  }
-
   return body
 }
 

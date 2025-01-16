@@ -1185,6 +1185,16 @@ return Promise.allSettled(imagePromises)
       .then(res => ({value: res.data}))
   },
 
+  check_authorized_conversation: async ({value}) => {
+    let url = `${API_ROOT}/action`
+    const body = {
+      action: 'check_authorized_conversation',
+      value: value?._id,
+    }
+    return axios.post(url, body)
+      .then(res => ({value: res.data}))
+  },
+
   refresh: async ({reload}) => {
     reload()
   },

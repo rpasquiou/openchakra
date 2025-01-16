@@ -208,8 +208,8 @@ const UserSchema = new Schema({
   last_login: {
     type: Date,
     required: false,
-  }
-  }, {...schemaOptions, ...DISCRIMINATOR_KEY})
+  },
+}, {...schemaOptions, ...DISCRIMINATOR_KEY})
 
 /* eslint-disable prefer-arrow-callback */
 UserSchema.virtual('password2', DUMMY_REF).get(function() {})
@@ -510,6 +510,7 @@ UserSchema.virtual('conversations_count', {
   count: true
 })
 
+UserSchema.virtual('platypus')
 /* eslint-enable prefer-arrow-callback */
 
 module.exports = UserSchema

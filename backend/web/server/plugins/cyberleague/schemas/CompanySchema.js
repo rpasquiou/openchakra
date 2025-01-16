@@ -28,7 +28,8 @@ const CompanySchema = new Schema(
         ref: 'user',
         required: true,
       }],
-      required: false
+      required: true,
+      default: [],
     },
     sector: {
       type: String,
@@ -162,11 +163,6 @@ const CompanySchema = new Schema(
     //   ref: 'advertising',
     //   required: false
     // },
-    is_default_sponsor: {
-      type: Boolean,
-      required: [true, `Il est obligatoire de préciser si l'entreprise a est sponsor par défaut ou non`],
-      default: false
-    },
     current_campaign_status: {
       type: String,
       enum: Object.keys(CURRENT_CAMPAIGN_STATUSES),
@@ -179,6 +175,10 @@ const CompanySchema = new Schema(
         ref: 'document'
       }],
       default: []
+    },
+    customer_id: {
+      type: String,
+      required: false
     },
   },
   schemaOptions,
