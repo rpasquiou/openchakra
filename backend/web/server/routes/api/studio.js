@@ -17,6 +17,7 @@ const {
   callPreLogin,
   callPreRegister,
   importDataTemplate,
+  callPostRegister,
 } = require('../../utils/database')
 const axios=require('axios')
 const path = require('path')
@@ -417,7 +418,10 @@ router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session
   body = await callPreRegister(body)
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body, req.user)
-    .then(result => res.json(result))
+    .then(async result => {
+      await callPostRegister(result)
+      return res.json(result)
+    })
 })
 
 router.post('/register-and-login', async (req, res) => {
@@ -426,7 +430,8 @@ router.post('/register-and-login', async (req, res) => {
   body = await callPreRegister(body)
   console.log(`Registering & login on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body)
-    .then(result => {
+    .then(async result => {
+      await callPostRegister(result)
       const {email, password}=body
       return login(email, password)
         .then(user => {
