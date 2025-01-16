@@ -155,7 +155,7 @@ const JOBS = {
   [JOB_GENERAL_MANAGER]: `Directeur(trice) Général(e)`,
   [JOB_DEPUTY_GENERAL_MANAGER]: `Directeur(trice) Général(e) Adjoint(e)`,
   [JOB_REGIONAL_GENERAL_MANAGER]: `Directeur(trice) Général(e) Région`,
-  [JOB_INDUSTRIAL_GENERAL_MANAGER]: `Directeur(trice) Général(e) Industriel`,
+  [JOB_INDUSTRIAL_GENERAL_MANAGER]: `Directeur(trice) Industriel`,
   [JOB_INNOVATION_DIRECTOR]: `Directeur(trice) Innovation`,
   [JOB_LEGAL_DIRECTOR]: `Directeur(trice) Juridique`,
   [JOB_MAINTENANCE_DIRECTOR]: `Directeur(trice) Maintenance`,
