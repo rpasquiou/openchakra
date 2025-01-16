@@ -13,7 +13,7 @@ const ROLE_EXPERT = `ROLE_EXPERT`
 const ROLE_LEADER = `ROLE_LEADER`
 const ROLE_MEMBER = `ROLE_MEMBER`
 const ROLES = {
-  [ROLE_EXPERT]: `Expert`,
+  [ROLE_EXPERT]: `Expert en Action`,
   [ROLE_MEMBER]: `Membre`,
   [ROLE_ADMIN]: `Administrateur`,
   [ROLE_EXTERNAL_ADMIN]: `Administrateur externe`,
