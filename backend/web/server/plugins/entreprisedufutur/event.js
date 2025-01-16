@@ -52,7 +52,7 @@ const getStatusNumber = (status) => {
 
 const getReservableTickets = async function (userId, params, data, fields) {
   const user = await User.findById(userId)
-  const eventTickets = await loadFromDb({model: 'eventTicket',user: userId, fields, params: {}})
+  const eventTickets = await loadFromDb({model: 'eventTicket',user: userId, fields: [...fields, 'event'], params: {}})
   return eventTickets.filter((t) => {
     return ((user ? t.targeted_roles.includes(user.role) : true) && idEqual(t.event._id,data._id))
   }).map((t) => new EventTicket(t))
