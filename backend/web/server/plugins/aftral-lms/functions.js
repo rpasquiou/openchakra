@@ -931,19 +931,30 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
 }, null, true, 'Europe/Paris')
 
 // Send certificates the day after the session ends
-!isDevelopment() && cron.schedule('0 0 4 * * *', async () => {
+!isDevelopment() && cron.schedule('0 0 7 * * *', async () => {
+  const PREFIX='Send certificate'
   const yesterdayFilter = getDateFilter({ attribute: 'end_date', day: moment().add(-1, 'day') })
+  console.log(`${PREFIX}:Checking finished sessions ${JSON.stringify(yesterdayFilter)}`)
   const sessions = await Block.find({ type: 'session', ...yesterdayFilter }).populate(['children', 'trainees'])
   for (const session of sessions) {
-    console.log(`Session ${session.name} finished yesterday`)
-    for (const trainee of session.trainees) {
-      const progress = await Progress.findOne({ block: session._id, user: trainee._id, achievement_status: BLOCK_STATUS_FINISHED })
-      if (progress) {
-        const certif_name = await getCertificateName(session._id, trainee._id)
-        const certificate = await getSessionCertificate(trainee._id, null, session)
-        await sendCertificate({ user: trainee, session, attachment_name: certif_name, attachment_url: certificate }).catch(console.error)
+    console.log(`${PREFIX}:Session ${session.code} finished yesterday, ${session.trainees.length} trainees`)
+    await runPromisesWithDelay(session.trainees.map(trainee => async () => {
+      try {
+        const finishedProgress = await Progress.findOne({ block: session._id, user: trainee._id, finished_resources_count: session.mandatory_resources_count})
+        if (finishedProgress) {
+          const certif_name = await getCertificateName(session._id, trainee._id)
+          const certificate = await getSessionCertificate(trainee._id, null, session)
+          await sendCertificate({ user: trainee, session, attachment_name: certif_name, attachment_url: certificate })
+          console.log(`${PREFIX}:Session ${session.code} ${trainee.email} received certificate`)
+        }
+        else {
+          console.log(`${PREFIX}:${session.code} ${trainee.email} did not finish`)
+        }
       }
-    }
+      catch(err) {
+        console.error(err.message)
+      }
+    }))
   }
 })
 
