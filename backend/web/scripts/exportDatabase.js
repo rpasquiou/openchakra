@@ -68,7 +68,7 @@ const exportModel = async model => {
       .filter(d => d[arrayAttribute]?.length>0)
       .forEach(d => {
         d[arrayAttribute].forEach(value => {
-          attData.push({_id: d._id, [arrayAttribute.replace(/s$/, '')]: value})
+          attData.push({_id: d._id, [arrayAttribute]: value})
         })
       })
     console.log('Generating for', arrayAttribute, ':', attData.length)
@@ -88,7 +88,7 @@ const exportDatabase = async (destinationDirectory) => {
     const models=Object.values(mongoose.models)
     let baseModels=models.filter(m => !isDerivedModel(m, models))
     // TEST
-    baseModels=baseModels.filter(m => /userquizzques/i.test(m.modelName))
+    baseModels=baseModels.filter(m => !(['userQuizz', 'userQuizzQuestion'].includes(m.modelName)))
     // END TEST
     baseModels=lodash.sortBy(baseModels, m => m.modelName)
     console.log('Exporting models', baseModels.map(m => m.modelName))
