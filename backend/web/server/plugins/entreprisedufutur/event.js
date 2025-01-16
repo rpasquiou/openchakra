@@ -1,3 +1,4 @@
+const lodash = require('lodash')
 const UserTicket = require('../../models/UserTicket')
 const EventTicket = require('../../models/EventTicket')
 const User = require('../../models/User')
@@ -104,6 +105,9 @@ const getAllergies = async function (userId, params, data,fields) {
 
 const getUserTicketsInProgress = async function (userId, params, data,fields) {
   const eventTickets = await EventTicket.find({event: data._id})
+  if (lodash.includes(fields,'user.fullname')) {
+    fields = [...fields, 'user.lastname', 'user.firstname']
+  }
   const userTickets = await loadFromDb({
     model: 'userTicket',
     user: userId,
