@@ -7,6 +7,7 @@ const SIB_IDS = {
   EVENT_REGISTRATION: 3,
   EVENT_REGISTRATION_WAITING_LIST: 5,
   WELCOME_USER: 4,
+  USER_EVENT_CONFIRMATION: 2,
 }
 
 addValidationAllowedDomain('plateforme.entreprisedufutur.com')
@@ -59,9 +60,26 @@ const sendWelcomeEmail = async ({ user }) => {
   })
 }
 
+const sendUserEventConfirmation = async ({ user, eventName, ticketStatus, eventLocationName, eventStartDate, eventEndDate, eventAddress }) => {
+  return sendNotification({
+    notification: SIB_IDS.USER_EVENT_CONFIRMATION,
+    destinee: user,
+    params: {
+      firstname: user.firstname,
+      event_name: eventName,
+      ticket_status: USERTICKET_STATUSES[ticketStatus],
+      event_location_name: eventLocationName,
+      event_start_date: eventStartDate,
+      event_end_date: eventEndDate,
+      event_address: eventAddress,
+    },
+  })
+}
+
 module.exports = {
   sendResetPassword,
   sendEventRegistration,
   sendEventRegistrationWaitingList,
   sendWelcomeEmail,
+  sendUserEventConfirmation,
 }

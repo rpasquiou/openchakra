@@ -3,7 +3,7 @@ const Score = require('../../models/Score')
 const lodash = require('lodash')
 const moment = require('moment')
 const ResetToken = require('../../models/ResetToken')
-const { sendForgotPassword, sendResetPassword, sendEventRegistration, sendEventRegistrationWaitingList, sendWelcomeEmail } = require('./mailing')
+const { sendForgotPassword, sendResetPassword, sendEventRegistration, sendEventRegistrationWaitingList, sendWelcomeEmail, sendUserEventConfirmation } = require('./mailing')
 const { RESET_TOKEN_VALIDITY } = require('./consts')
 const { idEqual, getModel, loadFromDb, setPostRegister } = require('../../utils/database')
 const { NotFoundError, ForbiddenError, BadRequestError } = require('../../utils/errors')
@@ -250,6 +250,7 @@ const validateOrder = async ({value}, user) => {
 
   const event = await Event.findById(order.event_ticket.event._id)
   .populate('admin')
+  .select(['name', 'admin', 'location_name', 'start_date', 'end_date', 'location_address'])
 
   await Promise.all(order.order_tickets.map(async (orderTicket) => {
     const userF = await User.findOne({email:orderTicket.email})
@@ -296,13 +297,22 @@ const validateOrder = async ({value}, user) => {
         eventName: event.name,
         admin,
       })))
+      await sendUserEventConfirmation({
+        user: ticketUser,
+        eventName: event.name,
+        ticketStatus: ticket.status,
+        eventLocationName: event.location_name,
+        eventStartDate: event.start_date,
+        eventEndDate: event.end_date,
+        eventAddress: event.location_address.text,
+      })
     } else {
       await mailFn({
         user: ticketUser,
         eventName: event.name,
       })
     }
-  }))
+}))
   
   //order status update
   await Order.findByIdAndUpdate(order._id, {status: ORDER_STATUS_VALIDATED})
