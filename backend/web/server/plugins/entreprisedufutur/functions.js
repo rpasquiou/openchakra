@@ -47,7 +47,7 @@ const { getterPartnerList } = require('./admin_dashboard')
 const { getUnknownEmails, getInputsValid } = require('./order')
 const AdminDashboard = require('../../models/AdminDashboard')
 const ResetToken = require('../../models/ResetToken')
-const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber, getAllergies, getUserTicketsInProgress } = require('./event')
+const { getReservableTickets, getIsRegistered, getStatus, getBookedTickets, getWaitingTickets, getStatusNumber, getAllergies, getUserTicketsInProgress, getLoggeduserTickets } = require('./event')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -539,6 +539,7 @@ declareVirtualField({ model: 'event', field: 'search_text', instance: 'String', 
   dbFilter: createSearchFilter({attributes: EVENT_SEARCH_TEXT_FIELDS.split(',')}),
 })
 declareComputedField({model: 'event', field: 'user_tickets_inprogress', getterFn: getUserTicketsInProgress})
+declareComputedField({model: 'event', field: 'loggeduser_tickets', getterFn: getLoggeduserTickets})
 
 // Mission declaration
 declareEnumField({model: 'mission', field: 'estimation_duration_unit', enumValues: ESTIMATED_DURATION_UNITS})
@@ -1030,7 +1031,9 @@ setPrePutData(prePutData)
 
 
 const preDeleteData = async ({model, id, data, user}) => {
-  //deleteAction is forbidden except for notifications from notification plugin
+  //console.log('pre delete model : ', model, 'id', id, 'data', data, 'user', user?._id)
+
+  //deleteAction is forbidden except for authorized models and notifications from notification plugin 
   if (model == 'notification') {
     const notification = await deleteUserNotification(id,user)
     data = notification.recipients ? null : notification
