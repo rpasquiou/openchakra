@@ -102,11 +102,6 @@ const UserSchema = new Schema({
     required: false,
     set: v => v || undefined,
   },
-  school: {
-    type: Schema.Types.ObjectId,
-    ref: 'school',
-    required: false
-  },
   city: {
     type: AddressSchema,
     required: false
