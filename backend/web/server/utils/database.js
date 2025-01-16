@@ -29,9 +29,9 @@ const setPreRegister = fn => {
   preRegister=fn
 }
 
-const callPreRegister = async (...p) => {
+const callPreRegister = async p => {
   if (preRegister) {
-    return preRegister(...p)
+    return preRegister(p)
   } else {
     return p
   }
