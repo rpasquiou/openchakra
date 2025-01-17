@@ -514,7 +514,7 @@ const NOTE_TYPES = {
 
 const LIVEFEED_MAX_LENGTH = 10
 
-const ERR_IMPORT_DENIED = `Vous devez être administrateur d'une compagnie enregistrée pour importer des comptes`
+const ERR_IMPORT_DENIED = `Vous devez être super administrateur ou administrateur d'une compagnie enregistrée pour importer des comptes`
 
 module.exports = {
   DISC_ADMIN, DISC_MEMBER, DISC_PARTNER, DISCRIMINATOR_KEY,

@@ -15,7 +15,7 @@ const CLIENT_SECRET = process.env.API_CLIENT_SECRET
 const SCOPE = process.env.API_SCOPE
 
 // Fonction pour obtenir le token OAuth2
-async function getAccessToken() {
+const getAccessToken = async () => {
   try {
     const response = await axios.post(AUTH_URL, new URLSearchParams({
       client_id: CLIENT_ID,
@@ -31,23 +31,6 @@ async function getAccessToken() {
     return response.data.access_token;
   } catch (error) {
     console.error('Erreur lors de la récupération du token :', error.response?.data || error.message);
-    throw error;
-  }
-}
-
-// Fonction pour effectuer une requête avec le token
-async function fetchData(endpoint) {
-  try {
-    const token = await getAccessToken();
-    const response = await axios.get(`${API_URL}${endpoint}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Erreur lors de la requête API :', error.response?.data || error.message);
     throw error;
   }
 }
@@ -89,6 +72,68 @@ const createAccount = async (user, customerId) => {
   }
 }
 
+// Update account
+// Sponsorship_company must be provided
+const updateAccount = async user => {
+  console.log('Updating account', user)
+  if (!user.company_sponsorship) {
+    throw new Error(`CRM Update: Company sponsorship is missing`)
+  }
+  const customerId=user.company?.customer_id || user.company_sponsorship.customer_id
+  const body={
+    email: user.email,
+    firstname: user.firstname,
+    lastname: user.lastname,
+    phone: user.phone||undefined,
+    //idContactSalesforce: "xxxxxxxxxxxxxxxxxx",
+    // TODO: civility
+    //civility: 1,
+    language: "fr-FR",
+    picture: user.picture || undefined,
+    preferred_username: user.fullname || undefined,
+    // isInternalUser: false,
+    // isCustomerAdmin": true,
+    // TODO: provide Callback to Visiativ
+    // TODO: role ?
+    // role: "'admin' | 'manager' | null",
+    // function: "Product Owner"
+    customerId,
+  }
+  try {
+    const token = await getAccessToken();
+    const response = await axios.post(`${API_URL}/user/update/${user.guid}`, body, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    // Check result
+    const loaded=await getAccount(user.guid).catch(console.error)
+    console.debug('Updated', JSON.stringify(user, null, 2))
+    console.debug('Got', JSON.stringify(loaded, null, 2))
+    return response.data;
+  } 
+  catch (err) {
+    throw new Error(err.response?.data?.description || err.message)
+  }
+}
+
+const getAccount = async guid => {
+  try {
+    const token = await getAccessToken();
+    const response = await axios.get(`${API_URL}/user?guid=${guid}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    return response.data;
+  } 
+  catch (err) {
+    throw new Error(err.response?.data?.description || err.message)
+  }
+}
+
 module.exports={
-  createAccount,
+  createAccount, updateAccount, getAccount
 }

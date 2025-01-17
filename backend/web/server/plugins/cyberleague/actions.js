@@ -227,17 +227,18 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
   }
 
   if (['register', 'import_model_data'].includes(action)) {
+    // Allow for company admins with registered companies only
     if (user.role!=ROLE_ADMIN) {
-      // For import action, allow 'user' model only
-      if (action=='import_model_data' && rest?.actionProps?.model!='user') {
-        throw new Error(`Import modèle ${model} impossible`)
-      }
-      // Allow for company admins with registered companies only
-      const [loaded]=await loadFromDb({model: 'user', id: user._id, fields: ['is_company_admin', 'company.customer_id']})
-      if (!(loaded.is_company_admin && !!loaded.company.customer_id)) {
+      const [loaded]=await loadFromDb({model: 'user', id: user._id, fields: ['is_company_admin']})
+      if (!loaded.is_company_admin) {
         throw new Error(ERR_IMPORT_DENIED)
       }
     }
+    // For import action, allow 'user' model only
+    if (action=='import_model_data' && rest?.actionProps?.model!='user') {
+      throw new Error(`Import modèle ${model} impossible`)
+    }
+    
   }
 
   return true

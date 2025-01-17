@@ -51,6 +51,7 @@ const Event = require('../../models/Event')
 const Carreer = require('../../models/Carreer')
 const Mission = require('../../models/Mission')
 const { isIn } = require('validator')
+const { updateAccount } = require('./invitation')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -1011,8 +1012,8 @@ const postCreate = async ({ model, params, data, user }) => {
 setPostCreateData(postCreate)
 
 
-const postPutData = async ({model, id, user, attribute, value, userData}) => {
-  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value, 'userdata', userData)
+const postPutData = async ({model, id, user, attribute, value, userData, params}) => {
+  //console.log('postPut : model', model, 'id', id, 'user', user, 'attribute', attribute, 'value', value, 'userdata', userData, 'params', params)
   if (model == `group`) {
     const group = await Group.findById(id)
 
@@ -1181,11 +1182,27 @@ const postPutData = async ({model, id, user, attribute, value, userData}) => {
     }
   }
 
+
   if (model == 'company' && attribute == 'statut') {
     const newRole = value == STATUT_MEMBER ? ROLE_MEMBER : ROLE_PARTNER
     await User.updateMany({company: id}, {role: newRole})
   }
 
+  if (model=='company') {
+    // If company changed, update all members accounts
+    const users=await User.find({company: id}).populate(['company', 'company_sponsorship'])
+    const res=await Promise.allSettled(users.map(u => updateAccount(u)))
+    const errors=res.filter(r => r.status=='rejected')
+    if (errors.length>0) {
+      console.error(errors)
+      console.error(errors.length, 'on', res.length, 'updates')
+    }
+  }
+
+  if (model=='user') {
+    const loaded=await User.findById(id).populate(['company', 'company_sponsorship'])
+    await updateAccount(loaded)
+  }
   return {model, user, attribute, value}
 }
 
@@ -1235,11 +1252,20 @@ setPreDeleteData(preDeleteData)
 
 // Manage register status: company member or sponsored, role according to company statut...
 const preRegister = async (body, user) => {
+  let rootCompany=null
   // Company must be provided by Cyber Adminb, else will be the logged user's company
-  const rootCompany=await Company.findById(user.role==ROLE_ADMIN ? body.company : user.company)
-  if (!rootCompany?.customer_id) {
-    console.error('Company', rootCompany?._id, 'customer_id', rootCompany?.customer_id)
-    throw new ForbiddenError(ERR_IMPORT_DENIED)
+  if (user.role==ROLE_ADMIN) {
+    rootCompany=body.company
+    if (!rootCompany) {
+      throw new Error(`Vous devez indiquer la compagnie du membre`)
+    }
+  }
+  else {
+    rootCompany=await Company.findById(user.role==ROLE_ADMIN ? body.company : user.company)
+    if (!rootCompany) {
+      console.error('Company', rootCompany?._id, 'customer_id', rootCompany?.customer_id)
+      throw new ForbiddenError(ERR_IMPORT_DENIED)
+    }
   }
   const isInternal=body.platypus===true
   body.role=(isInternal && rootCompany.statut!=STATUT_MEMBER) ? ROLE_PARTNER : ROLE_MEMBER
@@ -1260,10 +1286,8 @@ const ssoProfileCallback = async (iss, sub, profile, accessToken, refreshToken) 
   const rawProfile=profile._json
   const email=rawProfile.email
   let user=await User.findOne({email})
-  if (user) {
-    // User existed, update guid if required
-    await User.findByIdAndUpdate(user._id, {guid: rawProfile.guid})
-    return user
+  if (!user) {
+    throw new Error(`Aucune invitation trouvée pour ${email}`)
   }
   const firstname=rawProfile.firstname
   const lastname=rawProfile.lastname

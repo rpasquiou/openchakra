@@ -1,5 +1,5 @@
 const lodash = require('lodash')
-const { loadFromDb, setImportDataFunction, setImportDataTemplateFunction } = require('../../utils/database')
+const { loadFromDb, setImportDataFunction, setImportDataTemplateFunction, setPostRegister } = require('../../utils/database')
 const { extractData } = require('../../../utils/import')
 const { BadRequestError, parseError } = require('../../utils/errors')
 const User = require('../../models/User')
@@ -81,5 +81,13 @@ const getUserImportTemplate = (model, user) => {
 
 setImportDataFunction({model: 'user', fn: inviteUsers})
 setImportDataTemplateFunction({model: 'user', fn: getUserImportTemplate})
+
+const postRegisterUser = async user => {
+  const invitation=await createAccount(user, user.company_sponsorship?.customer_id)
+  await User.findByIdAndUpdate(user._id, {guid: invitation.guid})
+  await sendInvitation({user, url: invitation.magicLink})
+}
+
+setPostRegister(postRegisterUser)
 
 module.exports = { getLooking }
