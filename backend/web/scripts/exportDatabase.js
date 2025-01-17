@@ -53,27 +53,24 @@ const exportModel = async model => {
   const arrayAttributes=lodash(model.schema.paths).values().filter(att => att.instance=='Array').map('path').value()
   console.log(`${modelName} date:${dateAttributes} arrays:${arrayAttributes}`)
 
-  console.log(attributes)
+  let fileStream = fs.createWriteStream(`/tmp/${collectionName}.csv`)
+
+  console.log(JSON.stringify(attributes))
   let stringifier 
-  console.log(1)
-  try  {
-    stringifier=stringify({delimiter: ':', header: true})
-  }
-  catch(err) {
-    console.error(err)
-  }
-  console.log(2)
+  stringifier=stringify({delimiter: ';', header: true, columns: attributes})
 
   let size=0
   stringifier.on('readable', function(){
     let row
     while((row = stringifier.read()) !== null){
-      console.log(row.toString())
+      // console.log(size, '/', length)
+      fileStream.write(row.toString()+'\r')
       size++
     }
   })
 
   const length=await model.collection.countDocuments({})
+  console.log('To load', length)
   const cursor=model.collection.find({})
   while (await cursor.hasNext()) {
     const d=await cursor.next()
@@ -119,7 +116,7 @@ const exportDatabase = async (destinationDirectory) => {
     const models=Object.values(mongoose.models)
     let baseModels=models.filter(m => !isDerivedModel(m, models))
     // TEST
-    baseModels=baseModels.filter(m => (['userQuizzQuestion'].includes(m.modelName)))
+    // baseModels=baseModels.filter(m => (['userQuizzQuestion'].includes(m.modelName)))
     // END TEST
     baseModels=lodash.sortBy(baseModels, m => m.modelName)
     console.log('Exporting models', baseModels.map(m => m.modelName))
