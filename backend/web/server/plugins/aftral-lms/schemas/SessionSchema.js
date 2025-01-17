@@ -78,6 +78,15 @@ const SessionSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'visioDay',
   }],
+  complementary: {
+    type: [{
+      type: Schema.Types.ObjectId,
+      ref: 'resource',
+      required: true,
+    }],
+    default: [],
+    required: true,
+  }
 }, {...schemaOptions, ...BLOCK_DISCRIMINATOR})
 
 /* eslint-disable prefer-arrow-callback */

@@ -16,6 +16,7 @@ const { ForbiddenError, NotFoundError } = require('../../utils/errors')
 const { getCertificateName } = require('./utils')
 const axios = require('axios')
 const Progress = require('../../models/Progress')
+const { isCertificateAvailable } = require('./session')
 
 async function getModulesData(userId, params, children) {
   return Promise.all(children.map(async child => ({
@@ -61,8 +62,13 @@ const getSessionCertificate = async (userId, params, data) => {
     throw new NotFoundError(`Session ${data.code} : modèle de certificat non défini`)
   }
 
-  const documents=await Promise.all(data.trainees.map(async trainee => {
+  let documents=await Promise.all(data.trainees.map(async trainee => {
 
+    const isCertifAvailable=await isCertificateAvailable(trainee._id, data._id)
+    if (!isCertifAvailable) {
+      console.log(`No certificate available for session ${data._id} trainee ${trainee._id}`)
+      return null
+    }
     const filename= await getCertificateName(data._id, trainee._id)
     let buffer=null
     let location=(await Progress.findOne({block: data._id, user: trainee._id}))?.certificate_url
@@ -122,6 +128,14 @@ const getSessionCertificate = async (userId, params, data) => {
     }
     return {location,filename, buffer}
   }))
+
+  // Some may be empty
+  documents=documents.filter(d => !!d)
+
+  if (documents.length==0) {
+    console.log(`Session ${data._id}: No certificate available`)
+    return null
+  }
 
   if (role==ROLE_APPRENANT) {
     return documents[0].location
