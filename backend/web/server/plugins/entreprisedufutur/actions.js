@@ -396,6 +396,12 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     }
   }
 
+  if (action == 'validate_order') {
+    //check that user has required fields
+
+    //check that users's company has a turnover, size & sector
+  }
+
   return true
 }
 
