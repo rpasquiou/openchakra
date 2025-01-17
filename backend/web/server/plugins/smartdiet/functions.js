@@ -2224,172 +2224,304 @@ const ensureChallengePipsConsistency = () => {
 }
 
 
-const computeStatistics = async ({ fields, company, start_date, end_date, diet }) => {
-  const comp=await Company.findById(company).populate('children')
-  const companyFilter = comp ? {$in: [comp._id, ...comp.children.map(c => c._id)]} : { $ne: null };
-  const result = {
-    company: company?.toString(),
+const computeStatistics = async ({
+  fields,
+  company,
+  start_date,
+  end_date,
+  diet,
+}) => {
+  const comp = await Company.findById(company).populate('children')
+  const companyFilter = comp
+    ? { $in: [comp._id, ...comp.children.map((c) => c._id)] }
+    : { $ne: null }
+
+  const measureStats = await User.aggregate([
+    { $match: { company: companyFilter } },
+    {
+      $lookup: {
+        from: 'measures',
+        let: { userId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$user', '$$userId'] },
+              ...(start_date && { date: { $gte: new Date(start_date) } }),
+              ...(end_date && { date: { $lte: new Date(end_date) } }),
+            },
+          },
+          { $sort: { date: 1 } },
+        ],
+        as: 'measures',
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        height: 1,
+        measures: 1,
+        firstMeasures: { $arrayElemAt: ['$measures', 0] },
+        lastMeasures: { $arrayElemAt: ['$measures', -1] },
+        latestWeight: {
+          $let: {
+            vars: {
+              lastMeasureWithWeight: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: '$measures',
+                      as: 'measure',
+                      cond: { $ne: ['$$measure.weight', null] },
+                    },
+                  },
+                  -1,
+                ],
+              },
+            },
+            in: '$$lastMeasureWithWeight.weight',
+          },
+        },
+      },
+    },
+    {
+      $addFields: {
+        imc: {
+          $cond: {
+            if: {
+              $and: [{ $gt: ['$height', 0] }, { $ne: ['$latestWeight', null] }],
+            },
+            then: {
+              $divide: [
+                '$latestWeight',
+                {
+                  $pow: [{ $divide: ['$height', 100] }, 2],
+                },
+              ],
+            },
+            else: null,
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        weight_lost_total: {
+          $sum: {
+            $subtract: [
+              { $ifNull: ['$lastMeasures.weight', 0] },
+              { $ifNull: ['$firstMeasures.weight', 0] },
+            ],
+          },
+        },
+        waist_total_lost: {
+          $sum: {
+            $subtract: [
+              { $ifNull: ['$lastMeasures.waist', 0] },
+              { $ifNull: ['$firstMeasures.waist', 0] },
+            ],
+          },
+        },
+        hips_total_lost: {
+          $sum: {
+            $subtract: [
+              { $ifNull: ['$lastMeasures.hips', 0] },
+              { $ifNull: ['$firstMeasures.hips', 0] },
+            ],
+          },
+        },
+        imc_average: {
+          $avg: {
+            $cond: [
+              {
+                $and: [{ $gt: ['$imc', 10] }, { $lt: ['$imc', 60] }],
+              },
+              '$imc',
+              null,
+            ],
+          },
+        },
+      },
+    },
+  ])
+
+  const userStats = measureStats[0] || {
     weight_lost_total: 0,
-    imc_average: 0,
     waist_total_lost: 0,
     hips_total_lost: 0,
-  };
-  const cache = {};
+    imc_average: 0,
+  }
+
+  const result = {
+    company: company?.toString(),
+    ...userStats,
+  }
+  
+  const cache = {}
 
   const fetchAndCache = async (field, func, params) => {
-    if (cache[field]) return;
-    cache[field] = true;
+    if (cache[field]) return
+    cache[field] = true
     try {
       if (typeof func !== 'function') {
-        console.error(`Error: ${func} is not a function`);
-        result[field] = undefined;
-        return;
+        console.error(`Error: ${func} is not a function`)
+        result[field] = undefined
+        return
       }
-      const functionResult = await func(params);
-      result[field] = functionResult;
+      const functionResult = await func(params)
+      result[field] = functionResult
     } catch (error) {
-      console.error(`Error while executing ${func}:`, error);
-      result[field] = undefined;
+      console.error(`Error executing ${func}:`, error)
+      result[field] = undefined
     }
-  };
+  }
 
   const handleRatios = async (field) => {
     if (!cache['coachings_started']) {
-      await fetchAndCache('coachings_started', kpi['coachings_started'], { companyFilter, start_date, end_date, diet });
+      await fetchAndCache('coachings_started', kpi['coachings_started'], {
+        companyFilter,
+        start_date,
+        end_date,
+        diet,
+      })
     }
+
     if (field === 'ratio_stopped_started') {
       if (!cache['coachings_stopped']) {
-        await fetchAndCache('coachings_stopped', kpi['coachings_stopped'], { companyFilter, start_date, end_date, diet });
+        await fetchAndCache('coachings_stopped', kpi['coachings_stopped'], {
+          companyFilter,
+          start_date,
+          end_date,
+          diet,
+        })
       }
-      result['ratio_stopped_started'] = result['coachings_started'] !== 0 
-        ? Number((result['coachings_stopped'] / result['coachings_started'] * 100).toFixed(2)) 
-        : 0;
+      result['ratio_stopped_started'] =
+        result['coachings_started'] !== 0
+          ? Number(
+              (
+                (result['coachings_stopped'] / result['coachings_started']) *
+                100
+              ).toFixed(2)
+            )
+          : 0
     } else if (field === 'ratio_dropped_started') {
       if (!cache['coachings_dropped']) {
-        await fetchAndCache('coachings_dropped', kpi['coachings_dropped'], { companyFilter, start_date, end_date, diet });
+        await fetchAndCache('coachings_dropped', kpi['coachings_dropped'], {
+          companyFilter,
+          start_date,
+          end_date,
+          diet,
+        })
       }
-      result['ratio_dropped_started'] = result['coachings_started'] !== 0 
-        ? Number((result['coachings_dropped'] / result['coachings_started'] * 100).toFixed(2)) 
-        : 0;
+      result['ratio_dropped_started'] =
+        result['coachings_started'] !== 0
+          ? Number(
+              (
+                (result['coachings_dropped'] / result['coachings_started']) *
+                100
+              ).toFixed(2)
+            )
+          : 0
     } else if (field === 'ratio_appointments_coaching') {
       if (!cache['coachings_ongoing']) {
-        await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], { companyFilter, start_date, end_date, diet });
+        await fetchAndCache('coachings_ongoing', kpi['coachings_ongoing'], {
+          companyFilter,
+          start_date,
+          end_date,
+          diet,
+        })
       }
       try {
-        const appts = await kpi.validated_appts({company, start_date, end_date, diet});
-        result['ratio_appointments_coaching'] = result['coachings_started'] !== 0 
-          ? Number((appts / (result['coachings_started'] - result['coachings_ongoing'])).toFixed(2)) 
-          : 0;
+        const appts = await kpi.validated_appts({
+          company,
+          start_date,
+          end_date,
+          diet,
+        })
+        result['ratio_appointments_coaching'] =
+          result['coachings_started'] !== 0
+            ? Number(
+                (
+                  appts /
+                  (result['coachings_started'] - result['coachings_ongoing'])
+                ).toFixed(2)
+              )
+            : 0
       } catch (error) {
-        console.error('Error calculating ratio_appointments_coaching:', error);
-        result['ratio_appointments_coaching'] = undefined;
+        console.error('Error calculating ratio_appointments_coaching:', error)
+        result['ratio_appointments_coaching'] = undefined
       }
     }
-  };
+  }
 
-  const calculateUserStats = (users) => {
-    if (!users || users.length === 0) {
-      console.warn('No users found for statistics calculation.')
-      return
-    }
+  const baseFields = fields.filter(
+    (field) =>
+      !['company', 'diet', 'start_date', 'end_date'].includes(field) &&
+      !field.includes('gender') &&
+      !field.includes('coachings_stats') &&
+      !field.endsWith('_details') &&
+      !field.endsWith('_total') &&
+      !field.includes('ratio_') &&
+      !Object.keys(userStats).includes(field)
+  )
 
-    const get_measure_lost = (measures, measure_name) => {
-      const sortedMeasures = lodash.orderBy(measures, ['date'], ['asc'])
-      if (!sortedMeasures.length) return 0
-
-      const firstMeasure = sortedMeasures[0]?.[measure_name] || 0
-      const lastMeasure =
-        sortedMeasures[sortedMeasures.length - 1]?.[measure_name] || 0
-      return lastMeasure - firstMeasure
-    }
-
-    const weight_lost_total = lodash.sumBy(users, (u) => {
-      if (!u.measures || !u.measures.length) return 0
-      return get_measure_lost(u.measures, 'weight')
-    })
-
-    const waist_total_lost = lodash.sumBy(users, (u) => {
-      if (!u.measures || !u.measures.length) return 0
-      return get_measure_lost(u.measures, 'waist')
-    })
-
-    const hips_total_lost = lodash.sumBy(users, (u) => {
-      if (!u.measures || !u.measures.length) return 0
-      return get_measure_lost(u.measures, 'hips')
-    })
-
-    const usersWithImc = users.filter(
-      (u) =>
-        typeof u.imc === 'number' && !isNaN(u.imc) && u.imc > 10 && u.imc < 60
+  await Promise.all(
+    baseFields.map((field) =>
+      fetchAndCache(field, kpi[field], {
+        company,
+        companyFilter,
+        start_date,
+        end_date,
+        diet,
+      })
     )
+  )
 
-    const imc_average =
-      usersWithImc.length > 0 ? lodash.meanBy(usersWithImc, 'imc') : null
+  for (const field of fields) {
+    if (['company', 'diet', 'start_date', 'end_date'].includes(field)) continue
+    if (Object.keys(userStats).includes(field)) continue
 
-    if (!usersWithImc.length) {
-      console.warn('No valid IMC values found for users.')
-    } else if (!isFinite(imc_average)) {
-      console.error('IMC Average is not finite:', { imc_average, usersWithImc })
+    if (field.includes('coachings_stats')) {
+      await fetchAndCache('coachings_stats', kpi['coachings_stats'], {
+        company,
+        start_date,
+        end_date,
+        diet,
+      })
+    } else if (field.endsWith('_details') || field.endsWith('_total')) {
+      const baseField = field.replace('_details', '').replace('_total', '')
+      await fetchAndCache(baseField, kpi[`${baseField}_`], {
+        companyFilter,
+        start_date,
+        end_date,
+        diet,
+      })
+      const baseResult = result[baseField]
+      if (baseResult) {
+        result[`${baseField}_total`] = baseResult[`${baseField}_total`]
+        result[`${baseField}_details`] = baseResult[`${baseField}_details`]
+      }
+    } else if (field.includes('ratio_')) {
+      await handleRatios(field)
     }
-
-    // Mise à jour du résultat avec les statistiques calculées
-    result.weight_lost_total = Math.round(weight_lost_total * 10) / 10
-    result.waist_total_lost = Math.round(waist_total_lost * 10) / 10
-    result.hips_total_lost = Math.round(hips_total_lost * 10) / 10
-    result.imc_average =
-      imc_average !== null ? Math.round(imc_average * 10) / 10 : null
   }
 
-  const users = await User.find({ company: companyFilter }).populate('measures')
-  calculateUserStats(users)
-
-  const userStats = {
-    weight_lost_total: result.weight_lost_total || 0,
-    imc_average: result.imc_average || 0,
-    waist_total_lost: result.waist_total_lost || 0,
-    hips_total_lost: result.hips_total_lost || 0,
-  }
-
-  const protectedFields = [
+  const roundNumericFields = [
     'weight_lost_total',
     'imc_average',
     'waist_total_lost',
     'hips_total_lost',
   ]
-
-  for (const field of fields) {
-    if (protectedFields.includes(field)) continue
-    if (['company', 'diet', 'start_date', 'end_date'].includes(field)) continue;
-    if (!field.includes('gender') && !field.includes('coachings_stats') && !field.endsWith('_details') && !field.endsWith('_total') && !field.includes('ratio_')) {
-      await fetchAndCache(field, kpi[field], {company, companyFilter, start_date, end_date, diet });
-    } else {
-      if (field.includes('coachings_stats')) {
-        await fetchAndCache('coachings_stats', kpi['coachings_stats'], { company, start_date, end_date, diet });
-      } else if (field.includes('coachings_gender')) {
-        if (!cache['coachings_by_gender_']) {
-          await fetchAndCache('coachings_by_gender_', kpi['coachings_by_gender_'], { companyFilter, start_date, end_date, diet });
-          const genderResult = result['coachings_by_gender_'];
-          for (const [gender, count] of Object.entries(genderResult)) {
-            result[`coachings_gender_${gender}`] = count;
-          }
-        }
-      } else if (field.endsWith('_details') || field.endsWith('_total')) {
-        const baseField = field.replace('_details', '').replace('_total', '');
-        await fetchAndCache(baseField, kpi[`${baseField}_`], { companyFilter, start_date, end_date, diet });
-        const baseResult = result[baseField];
-        result[`${baseField}_total`] = baseResult[`${baseField}_total`];
-        result[`${baseField}_details`] = baseResult[`${baseField}_details`];
-      } else if (field.includes('ratio_')) {
-        await handleRatios(field);
-      }
+  roundNumericFields.forEach((field) => {
+    if (typeof result[field] === 'number') {
+      result[field] = Math.round(result[field] * 10) / 10
     }
-  }
-  Object.assign(result, userStats)
+  })
 
-  return result;
-};
+  return result
+}
 
-exports.computeStatistics = computeStatistics;
+exports.computeStatistics = computeStatistics
 
 
 
