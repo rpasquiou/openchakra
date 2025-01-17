@@ -141,7 +141,7 @@ addAction('previous_question', previousQuestion)
 const readContent = async ({ value }, user) => {
   const gain = await Gain.findOne({source: COIN_SOURCE_WATCH})
   await User.findByIdAndUpdate({_id: user._id}, {$set: {tokens: user.tokens + gain.gain}})
-  return value
+  return {_id: value}
 }
 //TODO rename action to read_content
 addAction('smartdiet_read_content', readContent)
