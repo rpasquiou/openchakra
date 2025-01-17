@@ -178,7 +178,7 @@ const CompanySchema = new Schema(
     },
     customer_id: {
       type: String,
-      required: false
+      required: [function() {return this.statut!=STATUT_MEMBER}, `L'id CRM est obligatoire pour une entreprise partenaire`]
     },
   },
   schemaOptions,
