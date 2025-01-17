@@ -12,7 +12,7 @@ const ScanSchema = new Schema({
   },
   url: {
     type: String,
-    required: true
+    required: [true,`Veuillez entrer une url pour commencer le scan de surface`]
   },
   protocole_rate: {
     type: Number,
