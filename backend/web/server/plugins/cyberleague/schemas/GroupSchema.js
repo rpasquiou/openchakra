@@ -52,7 +52,11 @@ const GroupSchema = new Schema({
     type: String,
     enum: Object.keys(GROUP_VISIBILITY),
     default: GROUP_VISIBILITY_PRIVATE
-  }
+  },
+  full_banner: {
+    type: String,
+    required: false
+  },
 }, {...schemaOptions})
 
 /* eslint-disable prefer-arrow-callback */
