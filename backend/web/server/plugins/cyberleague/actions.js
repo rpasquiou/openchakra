@@ -10,6 +10,8 @@ const Gain = require('../../models/Gain')
 const { isValidateNotificationAllowed, isDeleteUserNotificationAllowed, addNotification } = require('../notifications/actions')
 const Company = require('../../models/Company')
 const { addToLivefeed } = require('./adminDashboard')
+const Group = require('../../models/Group')
+const Mission = require('../../models/Mission')
 
 
 const checkProfilCompletion = async ({ value }, user) => {
@@ -218,11 +220,28 @@ const isActionAllowed = async ({action, dataId, user, ...rest}) => {
     if (!user.is_profil_completed) {
       throw new BadRequestError(`Action impossible tant que le profil n'est pas complété`)
     }
-    const receiver = await User.findById(dataId)
-    const receiverComp = receiver.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
-    const userComp = user.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
-    if (!idEqual(receiverComp, userComp)) {
-      throw new ForbiddenError(`Vous ne pouvez parler à quelqu'un qui n'a pas le même partenaire que vous`)
+    //if user is admin or member (ie. not a partner), can see / speak to anyone
+    if (user.role == ROLE_PARTNER) {
+      //OR
+      //partner needs to belong to receiver sponsor if receiver is a member or same company if receiver is also a partner
+      const receiver = await User.findById(dataId)
+      const receiverComp = receiver.role == ROLE_PARTNER ? receiver.company : receiver.company_sponsorship
+      const samePartner = idEqual(receiverComp, user.company)
+
+      //partner needs to have at least one group in common with receiver
+      const receiverGroups = await Group.find({users: receiver._id})
+      const userGroups = await Group.find({users: user._id})
+      const sameGroup = lodash.intersectionWith(userGroups,receiverGroups, (ug,rg)=> idEqual(ug._id,rg._id))
+
+      //partner needs to be an admin of a company that has been accepted for at least one mission of the receiver
+      let receiverAcceptedMission = []
+      const userComp = await Company.findById(user.company)
+      if (userComp.administrators.includes(user._id)) {
+        receiverAcceptedMission = await Mission.find({creator: receiver._id, companies: userComp._id})
+      }
+      if (!samePartner && sameGroup.length == 0 && receiverAcceptedMission.length == 0) {
+        throw new ForbiddenError(`Vous ne pouvez parler à quelqu'un qui n'a pas le même partenaire que vous`)
+      }
     }
   }
 
