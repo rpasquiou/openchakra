@@ -13,6 +13,7 @@ const { setpreLogin, getModel, idEqual } = require('../../utils/database')
 const { sendForgotPassword } = require('./mailing')
 const { addVisioSpentTime } = require('../visio/functions')
 const { getSessionCertificate } = require('./program')
+const { isCertificateAvailable } = require('./session')
 
 const preLogin = async ({email}) => {
   const user=await User.findOne({email})
@@ -242,14 +243,15 @@ const isActionAllowed = async ({ action, dataId, user }) => {
     if (action=='get_proof' && moment().isBefore(session.start_date)) {
       throw new BadRequestError(`La session n'a pas commencé`)
     }
-    if (action=='get_certificate' && moment().endOf('day').isBefore(session.end_date)) {
-      throw new BadRequestError(`La session n'est pas terminée`)
-    }
   }
   if (action=='get_certificate') {
+    const trainees=(await Session.findById(dataId))?.trainees || []
+    const available=await Promise.all(trainees.map(t => isCertificateAvailable(t, dataId)))
+    if (available.every(r => !r)) {
+      throw new Error(`Aucun certificat n'est disponible pour la session`)
+    }
   }
 
-  return true
 }
 
 setAllowActionFn(isActionAllowed)

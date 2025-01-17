@@ -62,6 +62,7 @@ const { getGroupTrainees, getGroupTraineesCount } = require('./group')
 const { getCertificateName } = require('./utils')
 const { sendCertificate } = require('./mailing')
 const { runPromisesWithDelay } = require('../../utils/concurrency')
+const { isCertificateAvailable } = require('./session')
 require('../visio/functions')
 
 const GENERAL_FEED_ID = 'FFFFFFFFFFFFFFFFFFFFFFFF'
@@ -952,15 +953,15 @@ const POLLING_FREQUENCY = '0 */5 * * * *'
     console.log(`${PREFIX}:Session ${session.code} finished yesterday, ${session.trainees.length} trainees`)
     await runPromisesWithDelay(session.trainees.map(trainee => async () => {
       try {
-        const finishedProgress = await Progress.findOne({ block: session._id, user: trainee._id, finished_resources_count: session.mandatory_resources_count})
-        if (finishedProgress) {
+        const certifAvailable=await isCertificateAvailable(trainee._id, session._id)
+        if (certifAvailable) {
           const certif_name = await getCertificateName(session._id, trainee._id)
           const certificate = await getSessionCertificate(trainee._id, null, session)
           await sendCertificate({ user: trainee, session, attachment_name: certif_name, attachment_url: certificate })
           console.log(`${PREFIX}:Session ${session.code} ${trainee.email} received certificate`)
         }
         else {
-          console.log(`${PREFIX}:${session.code} ${trainee.email} did not finish`)
+          console.log(`${PREFIX}:${session.code} ${trainee.email} did not reach 100%`)
         }
       }
       catch(err) {
