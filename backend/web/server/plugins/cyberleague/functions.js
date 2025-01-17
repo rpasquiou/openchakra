@@ -843,7 +843,7 @@ const preCreate = async ({model, params, user}) => {
 
   if (model == 'mission') {
     if (params.parent) {
-      params.company = [params.parent]
+      params.companies = [params.parent]
       params.is_public = false
     } else {
       if (!params.companies?.[0] && !params.is_public) {
