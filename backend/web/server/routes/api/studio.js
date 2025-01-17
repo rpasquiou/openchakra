@@ -419,7 +419,7 @@ router.post('/register', passport.authenticate(['cookie', 'anonymous'], {session
   console.log(`Registering  on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body, req.user)
     .then(async result => {
-      await callPostRegister(result, req.user)
+      await callPostRegister(result, body, req.user)
       return res.json(result)
     })
 })
@@ -431,7 +431,7 @@ router.post('/register-and-login', async (req, res) => {
   console.log(`Registering & login on ${ip} with body ${JSON.stringify(body)}`)
   return ACTIONS.register(body, res.user)
     .then(async result => {
-      await callPostRegister(result)
+      await callPostRegister(result, body, req.user)
       const {email, password}=body
       return login(email, password)
         .then(user => {

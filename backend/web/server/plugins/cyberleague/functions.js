@@ -14,6 +14,7 @@ const {
   setPrePutData,
   setPreDeleteData,
   setPreRegister,
+  setPostRegister,
 } = require('../../utils/database')
 const { ROLES, SECTOR, EXPERTISE_CATEGORIES, CONTENT_TYPE, JOBS, COMPANY_SIZE, ROLE_PARTNER, ROLE_ADMIN, ROLE_MEMBER, ESTIMATED_DURATION_UNITS, LOOKING_FOR_MISSION, CONTENT_VISIBILITY, EVENT_VISIBILITY, ANSWERS, QUESTION_CATEGORIES, SCORE_LEVELS, COIN_SOURCES, STATUTS, GROUP_VISIBILITY, USER_LEVELS, CONTRACT_TYPES, WORK_DURATIONS, PAY, STATUT_SPONSOR, STATUT_FOUNDER, STATUSES, STATUT_PARTNER, COMPLETED, OFFER_VISIBILITY, MISSION_VISIBILITY, COIN_SOURCE_LIKE_COMMENT, COMPLETED_YES, COIN_SOURCE_PARTICIPATE, REQUIRED_COMPLETION_FIELDS, OPTIONAL_COMPLETION_FIELDS, ENOUGH_SCORES, NUTRISCORE, SCAN_STATUS_IN_PROGRESS, SCAN_STATUSES, NOTIFICATION_TYPES, NOTIFICATION_TYPE_MESSAGE, NOTIFICATION_TYPE_FEED_COMMENT, NOTIFICATION_TYPE_FEED_LIKE, NOTIFICATION_TYPE_GROUP_COMMENT, NOTIFICATION_TYPE_GROUP_LIKE, EVENT_STATUSES, DOCUMENT_TYPES, CURRENT_CAMPAIGN_STATUSES, CURRENT_ADVERTISING, EVENT_STATUS_PAST, LOOKING_FOR_OPPORTUNITIES_STATUS, NOTIFICATION_TYPE_PRIVATE_LEAGUE_ACCEPTED, NOTIFICATION_TYPE_NEW_SCAN, NOTIFICATION_TYPE_NEW_DIAG, NOTIFICATION_TYPE_NEW_MISSION, NOTIFICATION_TYPE_JOB_ANSWER, NOTIFICATION_TYPE_PRIVATE_LEAGUE_REQUEST, NOTIFICATION_TYPE_EVENT_PARTICIPATION, NOTIFICATION_TYPE_SPONSOR_EVENT_PARTICIPATION, GROUP_VISIBILITY_PRIVATE, NOTIFICATION_TYPE_SPONSOR_PRIVATE_LEAGUE_REQUEST, STATUT_MEMBER, LEVEL_THRESHOLD_AMBASSADOR, NOTE_TYPES, NOTIFICATION_TYPE_MISSION_ACCEPTED, ERR_IMPORT_DENIED } = require('./consts')
 const { PURCHASE_STATUS, REGIONS } = require('../../../utils/consts')
@@ -51,7 +52,8 @@ const Event = require('../../models/Event')
 const Carreer = require('../../models/Carreer')
 const Mission = require('../../models/Mission')
 const { isIn } = require('validator')
-const { updateAccount } = require('./invitation')
+const { updateAccount, createAccount } = require('./invitation')
+const { sendInvitation } = require('./mailing')
 
 //Notification plugin setup
 setAllowedTypes(NOTIFICATION_TYPES)
@@ -1182,13 +1184,14 @@ const postPutData = async ({model, id, user, attribute, value, userData, params}
     }
   }
 
-
   if (model == 'company' && attribute == 'statut') {
     const newRole = value == STATUT_MEMBER ? ROLE_MEMBER : ROLE_PARTNER
     await User.updateMany({company: id}, {role: newRole})
   }
 
   if (model=='company') {
+    const newRole = value == STATUT_MEMBER ? ROLE_MEMBER : ROLE_PARTNER
+    await User.updateMany({company: id}, {role: newRole})
     // If company changed, update all members accounts
     const users=await User.find({company: id}).populate(['company', 'company_sponsorship'])
     const res=await Promise.allSettled(users.map(u => updateAccount(u)))
@@ -1252,31 +1255,48 @@ setPreDeleteData(preDeleteData)
 
 // Manage register status: company member or sponsored, role according to company statut...
 const preRegister = async (body, user) => {
-  let rootCompany=null
-  // Company must be provided by Cyber Adminb, else will be the logged user's company
+  let isInternal, company
+  // Company must be provided by Cyber Admin, else will be the logged user's company
   if (user.role==ROLE_ADMIN) {
-    rootCompany=body.company
-    if (!rootCompany) {
+    if (!body.company) {
       throw new Error(`Vous devez indiquer la compagnie du membre`)
     }
+    if (body.is_company_admin!='true') {
+      throw new Error(`Vous ne pouvez créer que des administrateurs`)
+    }
+    company=await Company.findById(body.company)
+    isInternal=true
   }
   else {
-    rootCompany=await Company.findById(user.role==ROLE_ADMIN ? body.company : user.company)
-    if (!rootCompany) {
-      console.error('Company', rootCompany?._id, 'customer_id', rootCompany?.customer_id)
+    company=await Company.findOne({_id: user.company, administrators: user._id})
+    if (!company) {
       throw new ForbiddenError(ERR_IMPORT_DENIED)
     }
+    isInternal=body.platypus===true
   }
-  const isInternal=body.platypus===true
-  body.role=(isInternal && rootCompany.statut!=STATUT_MEMBER) ? ROLE_PARTNER : ROLE_MEMBER
-  body.company=isInternal ? rootCompany : undefined
-  body.company_sponsorship=rootCompany
+  body.company=isInternal ? company._id : undefined
+  body.company_sponsorship=company._id
+  body.role=(isInternal && company.statut!=STATUT_MEMBER) ? ROLE_PARTNER : ROLE_MEMBER
   body.password='Password1;'
   body.password2='Password1;'
+  console.log('Body modified is', body)
   return body
 }
 
 setPreRegister(preRegister)
+
+const postRegisterUser = async (user, body) => {
+  console.log(user, body)
+  if (body.is_company_admin=='true') {
+    // Set as company admin
+    await Company.findByIdAndUpdate(user.company, {$addToSet: {administrators: user._id}})
+  }
+  const invitation=await createAccount(user, user.company_sponsorship?.customer_id)
+  await User.findByIdAndUpdate(user._id, {guid: invitation.guid})
+  await sendInvitation({user, url: invitation.magicLink})
+}
+
+setPostRegister(postRegisterUser)
 
 const ssoProfileCallback = async (iss, sub, profile, accessToken, refreshToken) => {
   // The user profile returned by Azure AD
