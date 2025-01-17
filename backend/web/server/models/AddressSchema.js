@@ -25,6 +25,11 @@ const AddressSchema=new Schema({
   },
 })
 
+AddressSchema.virtual('text').get(function() {
+  const {address, zip_code, city}=this
+  return `${address||''}, ${zip_code || ''} ${city || ''}`
+})
+
 AddressSchema.methods.match = function(rhs) {
 
   const normalizeText= txt => {
