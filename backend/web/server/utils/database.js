@@ -266,6 +266,11 @@ const getBaseModelAttributes = modelName => {
   const schema_atts = Object.values(schema.paths).filter(
     att => !['__v', '_id'].includes(att.path) //!att.path.startsWith('_'),
   )
+  
+  const trueRequired=schema_atts.find(att => att.options?.required===true && att.options?.default==null)
+  if (!!trueRequired) {
+    throw new Error(`Required ${modelName}.${trueRequired.path} lacks message`)
+  }
   const virtuals_atts = Object.keys(schema.virtuals)
     .filter(c => c != 'id')
     .map(att => getVirtualCharacteristics(modelName, att))
