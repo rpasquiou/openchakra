@@ -8,7 +8,7 @@ const ScanSchema = new Schema({
   status: {
     type: String,
     enum: Object.keys(SCAN_STATUSES),
-    required: true
+    required: [true, `Le statut est obligatoire`],
   },
   url: {
     type: String,

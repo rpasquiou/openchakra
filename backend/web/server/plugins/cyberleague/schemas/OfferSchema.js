@@ -22,7 +22,7 @@ const OfferSchema = new Schema({
   description: {
     type: String,
     validate: [value => value.length > 14, `La description de l'offre doit avoir plus de trois caractères`],
-    required: true
+    required: [true, `La description est obligatoire`],
   },
   url: {
     type: String,
