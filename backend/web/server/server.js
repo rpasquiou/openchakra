@@ -35,7 +35,7 @@ const session = require("express-session")
 require('./models/PageTag_')
 
 // Project mdels
-const {MONGOOSE_OPTIONS} = require('./utils/database')
+const {MONGOOSE_OPTIONS, getModels} = require('./utils/database')
 
 require('console-stamp')(console, '[dd/mm/yy HH:MM:ss.l]')
 
@@ -95,6 +95,7 @@ checkConfig()
     return nextApp.prepare()
   })
   .then(() => passportInit())
+  .then(() => getModels())
   .then(() => {
     // Body parser middleware
     app.use(bodyParser.urlencoded({extended: true}))
