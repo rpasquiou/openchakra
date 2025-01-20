@@ -38,6 +38,9 @@ const addValidationAllowedDomain = domain => {
 }
 
 const isAllowedEmail = email => {
+  if (isDevelopment()) {
+    return false
+  }
   return isProduction() || ALLOWED_VALIDATION_DOMAINS.some(domain => email.endsWith(domain))
 }
 
