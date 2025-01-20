@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const { idEqual } = require('./database')
+const User = require('../models/User')
 
 /*
 Setter and Getter for pinned items by a user, the parameter attribute is here if the attribute is not named "pinned_by" (for example : liked_by)
@@ -14,8 +15,8 @@ const setterPinnedFn = (model, attribute = `pinned_by`) => {
 }
 
 const getterPinnedFn = (model, attribute = `pinned_by`) => {
-  return async (userId, params, data) => {
-    const pinned = data?.[attribute]?.some(l => idEqual(l._id, userId))
+  return async (userId, params, data, fields, actualLogged) => {
+    const pinned = data?.[attribute]?.some(l => idEqual(l._id, actualLogged))
     return pinned
   }
 }

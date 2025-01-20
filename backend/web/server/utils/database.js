@@ -724,7 +724,11 @@ const addComputedFields = (
   queryParams,
   data,
   model,
+  actualLogged
 ) => {
+  if (!actualLogged) {
+    actualLogged=userId
+  }
   let fields=getFieldsToCompute({model, fields: originalFields})
   if (lodash.isEmpty(fields)) {
     return data
@@ -746,6 +750,7 @@ const addComputedFields = (
               queryParams,
               child,
               attParams.type,
+              actualLogged,
             ),
           ),
         )
@@ -757,7 +762,7 @@ const addComputedFields = (
         return Promise.all(
           Object.keys(requiredCompFields).map(f => {
             const displayFields=getRequiredSubFields(originalFields, f)
-            return requiredCompFields[f](newUserId, queryParams, data, displayFields)
+            return requiredCompFields[f](newUserId, queryParams, data, displayFields, actualLogged)
               .then(res => {
                 data[f] = res
                 return data
