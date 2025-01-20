@@ -712,8 +712,8 @@ const lockSession = async (blockId, trainee) => {
     throw new BadRequestError(`Démarrage session ${session.code} impossible: pas de programme`)
   }
 
-  console.log('Locking session', blockId, 'trainees', session.trainees.map(t => [t._id, t.email]))
   const trainees=trainee ? [trainee] : session.trainees
+  console.log('Locking session', blockId, 'trainees', trainees)
 
   const setTraineesStatus = async (blockId, status, withChildren) => {
     await Promise.all(trainees.map(t  => saveBlockStatus(t._id, blockId, status, withChildren)))
