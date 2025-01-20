@@ -446,7 +446,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   console.log('**** IMPORT SESSION')
   // Get previous sessions state
   let result = []
-  const trainees = (await loadRecords(traineesFilename)).map(t => t.EMAIL_STAGIAIRE?.toLowerCase())
+  const trainees = (await loadRecords(traineesFilename)).map(t => ({...t, EMAIL_STAGIAIRE: t.EMAIL_STAGIAIRE?.toLowerCase()}))
   let trainers = await loadRecords(trainersFilename)
   trainers=trainers.filter(r => !!r[TRAINER_AFTRAL_ID])
   console.log('FTP IMPORT:import sessions All trainees:', JSON.stringify(trainees))
