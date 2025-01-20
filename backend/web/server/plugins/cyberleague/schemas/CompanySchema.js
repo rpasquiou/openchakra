@@ -87,7 +87,7 @@ const CompanySchema = new Schema(
     },
     city: {
       type: AddressSchema,
-      required: true
+      required: [true, `La ville de l'entreprise est requise`]
     },
     perimeter: {
       type: Number,
