@@ -1204,7 +1204,12 @@ const postPutData = async ({model, id, user, attribute, value, userData, params}
 
   if (model=='user') {
     const loaded=await User.findById(id).populate(['company', 'company_sponsorship'])
-    await updateAccount(loaded).catch(console.error)
+    try {
+      await updateAccount(loaded).catch(console.error)
+    }
+    catch (err) {
+      console.error(err)
+    }
   }
   return {model, user, attribute, value}
 }
