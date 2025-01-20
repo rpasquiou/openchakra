@@ -347,7 +347,7 @@ const TRAINEE_MAPPING = {
   role: () => ROLE_APPRENANT,
   firstname: 'PRENOM_STAGIAIRE',
   lastname: 'NOM_STAGIAIRE',
-  email: 'EMAIL_STAGIAIRE',
+  email: ({ record }) => record[EMAIL_STAGIAIRE]?.toLowerCase(),
   aftral_id: ({ record }) => parseInt(record[TRAINEE_AFTRAL_ID]),
   password: TRAINEE_AFTRAL_ID,
   plain_password: TRAINEE_AFTRAL_ID,
@@ -446,7 +446,7 @@ const importSessions = async (trainersFilename, traineesFilename) => {
   console.log('**** IMPORT SESSION')
   // Get previous sessions state
   let result = []
-  const trainees = await loadRecords(traineesFilename)
+  const trainees = (await loadRecords(traineesFilename)).map(t => t.EMAIL_STAGIAIRE.toLowerCase())
   let trainers = await loadRecords(trainersFilename)
   trainers=trainers.filter(r => !!r[TRAINER_AFTRAL_ID])
   console.log('FTP IMPORT:import sessions All trainees:', JSON.stringify(trainees))
