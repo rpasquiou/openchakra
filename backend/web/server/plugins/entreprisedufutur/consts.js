@@ -718,7 +718,7 @@ const ANONYMOUS_ALLOWED_MODELS = {
 const RESET_TOKEN_VALIDITY=2
 
 const USER_SEARCH_TEXT_FIELDS = `lastname,firstname,email,city.city`
-const EVENT_SEARCH_TEXT_FIELDS = `name, location_name` //TODO : add category.name target.name (dbFilter pb)
+const EVENT_SEARCH_TEXT_FIELDS = `name,location_name` //TODO : add category.name target.name (dbFilter pb)
 
 module.exports = {
   DISC_ADMIN, DISC_MEMBER, DISC_EXPERT, DISCRIMINATOR_KEY, DISC_EXTERNAL_ADMIN,DISC_LEADER,DISC_SUPERADMIN,
