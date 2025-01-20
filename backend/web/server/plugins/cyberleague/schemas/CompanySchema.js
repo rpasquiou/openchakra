@@ -34,7 +34,7 @@ const CompanySchema = new Schema(
     sector: {
       type: String,
       enum: Object.keys(SECTOR),
-      required: true,
+      required: [true, `Le secteur de l'entreprise est requis`],
     },
     email: {
       type: String,
