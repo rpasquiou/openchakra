@@ -75,9 +75,9 @@ const createAccount = async (user, customerId) => {
 // Update account
 // Sponsorship_company must be provided
 const updateAccount = async user => {
-  console.log('Updating account', user)
-  if (!user.company_sponsorship) {
-    throw new Error(`CRM Update: Company sponsorship is missing`)
+  console.log('Updating account', user._id)
+  if (!user.guid) {
+    throw new Error(`User ${user._id} has no guid`)
   }
   const customerId=user.company?.customer_id || user.company_sponsorship.customer_id
   const body={
